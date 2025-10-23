@@ -15,7 +15,7 @@ pub trait ConditionalSend: Send {}
 impl<T: Send> ConditionalSend for T {}
 
 #[cfg(target_arch = "wasm32")]
-pub trait CosmosConditionalSend {}
+pub trait ConditionalSend {}
 #[cfg(target_arch = "wasm32")]
 impl<T> ConditionalSend for T {}
 
@@ -96,7 +96,7 @@ impl BackOffRetryHandler {
     /// retry policy should be used for this specific request.
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn policy_for_request(&self, _request: &Request) -> Arc<dyn RetryPolicy> {
+    pub fn retry_policy_for_request(&self, _request: &Request) -> Arc<dyn RetryPolicy> {
         // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
         // the request operation type and resource type and accordingly return the respective retry
         // policy.
@@ -125,7 +125,7 @@ impl RetryHandler for BackOffRetryHandler {
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
     {
         // Get the appropriate retry policy based on the request
-        let retry_policy = self.policy_for_request(request);
+        let retry_policy = self.retry_policy_for_request(request);
         retry_policy.before_send_request(request);
 
         loop {
