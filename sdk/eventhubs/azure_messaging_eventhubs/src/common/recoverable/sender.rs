@@ -87,7 +87,7 @@ impl AmqpSenderApis for RecoverableSender {
                                     described,
                                 )))
                             } else {
-                                // THe server rejected the error but didn't provide a specific error.
+                                // The server rejected the error but didn't provide a specific error.
                                 Err(AmqpError::from(AmqpErrorKind::SendRejected))
                             }
                         }
