@@ -4,8 +4,6 @@
 mod authorization_policy;
 mod signature_target;
 
-use std::sync::Arc;
-
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
     pager::PagerState,
@@ -15,8 +13,11 @@ use azure_core::http::{
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
+use std::sync::Arc;
+use typespec_client_core::http::RetryOptions;
 use url::Url;
 
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::{
     constants,
     models::ThroughputProperties,
@@ -29,24 +30,29 @@ use crate::{
 pub struct CosmosPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
+    retry_handler: BackOffRetryHandler,
 }
 
 impl CosmosPipeline {
     pub fn new(
         endpoint: Url,
         auth_policy: AuthorizationPolicy,
-        client_options: ClientOptions,
+        mut client_options: ClientOptions,
     ) -> Self {
+        client_options.retry = RetryOptions::none();
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::new(),
+            vec![Arc::new(auth_policy)],
+            None,
+        );
+
         CosmosPipeline {
             endpoint,
-            pipeline: azure_core::http::Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                client_options,
-                Vec::new(),
-                vec![Arc::new(auth_policy)],
-                None,
-            ),
+            pipeline,
+            retry_handler: BackOffRetryHandler,
         }
     }
 
@@ -65,9 +71,20 @@ impl CosmosPipeline {
         request: &mut Request,
         resource_link: ResourceLink,
     ) -> azure_core::Result<RawResponse> {
-        let ctx = ctx.with_value(resource_link);
-        let r = self.pipeline.send(&ctx, request, None).await?;
-        Ok(r)
+        // Clone pipeline and convert context to owned so the closure can be Fn
+        let pipeline = self.pipeline.clone();
+        let ctx_owned = ctx.with_value(resource_link).into_owned();
+
+        // Build a sender closure that forwards to the inner pipeline.send
+        let sender = move |req: &mut Request| {
+            let pipeline = pipeline.clone();
+            let ctx = ctx_owned.clone();
+            let mut req_clone = req.clone();
+            async move { pipeline.send(&ctx, &mut req_clone, None).await }
+        };
+
+        // Delegate to the retry handler, providing the sender callback
+        self.retry_handler.send(request, sender).await
     }
 
     pub async fn send<T>(

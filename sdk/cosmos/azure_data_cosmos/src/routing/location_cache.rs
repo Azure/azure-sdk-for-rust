@@ -45,7 +45,7 @@ impl RequestOperation {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct DatabaseAccountLocationsInfo {
     pub preferred_locations: Vec<String>,
     account_write_locations: Vec<String>,
@@ -62,6 +62,7 @@ pub struct LocationUnavailabilityInfo {
     pub unavailable_operation: RequestOperation,
 }
 
+#[derive(Default, Debug)]
 pub struct LocationCache {
     pub default_endpoint: String,
     pub locations_info: DatabaseAccountLocationsInfo,
@@ -78,6 +79,14 @@ impl LocationCache {
             },
             location_unavailability_info_map: RwLock::new(HashMap::new()),
         }
+    }
+
+    pub fn read_endpoints(&self) -> Vec<String> {
+        self.locations_info.read_endpoints.clone()
+    }
+
+    pub fn write_endpoints(&self) -> Vec<String> {
+        self.locations_info.write_endpoints.clone()
     }
 
     pub fn update(
@@ -177,6 +186,10 @@ impl LocationCache {
         } else {
             self.default_endpoint.clone()
         }
+    }
+
+    pub fn can_use_multiple_write_locations(&mut self) -> bool {
+        !self.write_endpoints().is_empty()
     }
 
     fn refresh_endpoints(&mut self) {

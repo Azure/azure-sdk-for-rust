@@ -17,8 +17,6 @@ pub(crate) mod utils;
 
 pub mod models;
 
-mod location_cache;
-
 #[doc(inline)]
 pub use clients::CosmosClient;
 
@@ -28,3 +26,6 @@ pub use partition_key::*;
 pub use query::Query;
 
 pub use feed::{FeedPage, FeedPager};
+mod handler;
+mod retry_policies;
+pub mod routing;
