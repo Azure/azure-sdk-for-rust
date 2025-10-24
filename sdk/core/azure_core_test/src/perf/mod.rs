@@ -412,7 +412,7 @@ impl PerfRunner {
     ) -> azure_core::Result<f64> {
         // Reset the performance measurements before starting the test.
         self.progress.store(0, Ordering::SeqCst);
-        let mut tasks: JoinSet<Result<(i64, tokio::time::Duration)>> = JoinSet::new();
+        let mut tasks: JoinSet<_> = JoinSet::new();
         (0..self.options.parallel).for_each(|i| {
             let test_instance_clone = Arc::clone(&test_instance);
             let progress = self.progress.clone();
