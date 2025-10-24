@@ -54,16 +54,12 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
-    client
-        .begin_create_certificate("certificate-roundtrip", body.try_into()?, None)?
-        .wait()
-        .await?;
-
-    // Get the latest version of the certificate we just created.
     let certificate = client
-        .get_certificate("certificate-roundtrip", None)
+        .begin_create_certificate("certificate-roundtrip", body.try_into()?, None)?
         .await?
         .into_body()?;
+
+    // Get the latest version of the certificate we just created.
     let version = certificate.resource_id()?.version;
 
     assert!(certificate.id.is_some());
@@ -91,16 +87,12 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
-    client
-        .begin_create_certificate("update-properties", body.try_into()?, None)?
-        .wait()
-        .await?;
-
-    // Get the latest version of the certificate we just created.
     let certificate = client
-        .get_certificate("update-properties", None)
+        .begin_create_certificate("update-properties", body.try_into()?, None)?
         .await?
         .into_body()?;
+
+    // Get the latest version of the certificate we just created.
     let certificate_version = certificate.resource_id()?.version;
 
     // Update certificate properties.
@@ -154,11 +146,9 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
     };
     client
         .begin_create_certificate("list-certificates-1", body.clone().try_into()?, None)?
-        .wait()
         .await?;
     client
         .begin_create_certificate("list-certificates-2", body.try_into()?, None)?
-        .wait()
         .await?;
 
     // List certificates.
@@ -197,7 +187,6 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     const NAME: &str = "purge-certificate";
     client
         .begin_create_certificate(NAME, body.try_into()?, None)?
-        .wait()
         .await?;
 
     // Delete the certificate.
@@ -271,7 +260,6 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     const NAME: &str = "ec-certificate-signer";
     client
         .begin_create_certificate(NAME, body.try_into()?, None)?
-        .wait()
         .await?;
 
     let mut key_options = KeyClientOptions::default();
@@ -331,17 +319,9 @@ async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
         .try_next()
         .await?;
 
-    // Now get and wait on the pending operation.
-    let operation = client
-        .resume_certificate_operation(CERTIFICATE_NAME, None)?
-        .wait()
-        .await?
-        .into_body()?;
-    assert_eq!(operation.status, Some("completed".into()));
-
-    // Get the latest version of the certificate we just created.
+    // Now resume the operation and get the self-signed certificate.
     let certificate = client
-        .get_certificate(CERTIFICATE_NAME, None)
+        .resume_certificate_operation(CERTIFICATE_NAME, None)?
         .await?
         .into_body()?;
     let version = certificate.resource_id()?.version;
@@ -372,7 +352,6 @@ async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
     };
     let err = client
         .begin_create_certificate("create_invalid_certificate", body.try_into()?, None)?
-        .wait()
         .await
         .expect_err("expected HTTP error");
 

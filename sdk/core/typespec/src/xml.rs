@@ -18,10 +18,12 @@ const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 const DECLARATION: &[u8; 38] = br#"<?xml version="1.0" encoding="utf-8"?>"#;
 
 /// Reads XML from bytes.
-pub fn from_xml<T>(body: &[u8]) -> Result<T>
+pub fn from_xml<S, T>(body: S) -> Result<T>
 where
+    S: AsRef<[u8]>,
     T: DeserializeOwned,
 {
+    let body = body.as_ref();
     from_reader(slice_bom(body)).with_context_fn(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
         let xml = std::str::from_utf8(body).unwrap_or("(XML is not UTF8-encoded)");
@@ -101,7 +103,7 @@ mod test {
         let xml = br#"<?xml version="1.0" encoding="utf-8"?><Foo><x>Hello, world!</x></Foo>"#;
         assert_eq!(test, from_xml(xml)?);
 
-        let error = from_xml::<Test>(&xml[..xml.len() - 2]).unwrap_err();
+        let error = from_xml::<_, Test>(&xml[..xml.len() - 2]).unwrap_err();
         assert!(format!("{error}").contains("typespec::xml::test::Test"));
         Ok(())
     }

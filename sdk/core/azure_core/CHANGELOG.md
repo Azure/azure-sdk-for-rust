@@ -4,14 +4,21 @@
 
 ### Features Added
 
+- Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
+- Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
 
 ### Breaking Changes
 
+- Added `F: Format` type parameter to `Poller` and `PollerResult`.
+- Added `Format` associated type to `StatusMonitor`.
+- Added `Format::deserialize()` function to `Format` trait.
+- Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
 - Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
 - Removed `CustomHeaders` policy.
 - Removed `ErrorKind::MockFramework`.
+- Removed `Poller::wait()` function. Call `await` on a `Poller` to wait for it to complete and, upon success, return the final model.
 - Removed `xml::read_xml_str()`.
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 

@@ -148,6 +148,55 @@ where
 /// Represents a paginated stream of items returned by a collection request to a service.
 ///
 /// Specifically, this is a [`ItemIterator`] that yields [`Response<T>`] items.
+///
+/// # Examples
+///
+/// For clients that return a `Pager`, you can iterate over items across one or more pages:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // List secret properties using a Pager.
+/// let mut pager = client.list_secret_properties(None)?;
+/// while let Some(secret) = pager.try_next().await? {
+///     println!("{}", secret.resource_id()?.name);
+/// }
+/// # Ok(()) }
+/// ```
+///
+/// If you want to iterate each page of items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // Iterate each page of secrets using a PageIterator.
+/// let mut pager = client.list_secret_properties(None)?.into_pages();
+/// while let Some(page) = pager.try_next().await? {
+///     let page = page.into_body()?;
+///     for secret in page.value {
+///         println!("{}", secret.resource_id()?.name);
+///     }
+/// }
+/// # Ok(()) }
+/// ```
 pub type Pager<P, F = JsonFormat> = ItemIterator<Response<P, F>>;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -160,6 +209,55 @@ type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>>>;
 ///
 /// You can asynchronously iterate over items returned by a collection request to a service,
 /// or asynchronously fetch pages of items if preferred.
+///
+/// # Examples
+///
+/// For clients that return a `Pager`, you can iterate over items across one or more pages:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // List secret properties using a Pager.
+/// let mut pager = client.list_secret_properties(None)?;
+/// while let Some(secret) = pager.try_next().await? {
+///     println!("{}", secret.resource_id()?.name);
+/// }
+/// # Ok(()) }
+/// ```
+///
+/// If you want to iterate each page of items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // Iterate each page of secrets using a PageIterator.
+/// let mut pager = client.list_secret_properties(None)?.into_pages();
+/// while let Some(page) = pager.try_next().await? {
+///     let page = page.into_body()?;
+///     for secret in page.value {
+///         println!("{}", secret.resource_id()?.name);
+///     }
+/// }
+/// # Ok(()) }
+/// ```
 #[pin_project::pin_project]
 pub struct ItemIterator<P: Page> {
     #[pin]
@@ -361,6 +459,35 @@ impl<P: Page> fmt::Debug for ItemIterator<P> {
 }
 
 /// Iterates over a collection pages of items from a service.
+///
+/// # Examples
+///
+/// Some clients may return a `PageIterator` if there are no items to iterate or multiple items to iterate.
+/// The following example shows how you can also get a `PageIterator` from a [`Pager`] to iterate over pages instead of items.
+/// The pattern for iterating pages is otherwise the same:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // Iterate each page of secrets using a PageIterator.
+/// let mut pager = client.list_secret_properties(None)?.into_pages();
+/// while let Some(page) = pager.try_next().await? {
+///     let page = page.into_body()?;
+///     for secret in page.value {
+///         println!("{}", secret.resource_id()?.name);
+///     }
+/// }
+/// # Ok(()) }
+/// ```
 #[pin_project::pin_project]
 pub struct PageIterator<P> {
     #[pin]

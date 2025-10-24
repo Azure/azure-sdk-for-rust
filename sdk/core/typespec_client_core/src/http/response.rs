@@ -118,6 +118,11 @@ impl<T, F> Response<T, F> {
     pub fn into_raw_body(self) -> ResponseBody {
         self.raw.into_body()
     }
+
+    /// Create a [`RawResponse`] by cloning borrowed data.
+    pub fn to_raw_response(&self) -> RawResponse {
+        self.raw.clone()
+    }
 }
 
 impl<T: DeserializeWith<F>, F: Format> Response<T, F> {

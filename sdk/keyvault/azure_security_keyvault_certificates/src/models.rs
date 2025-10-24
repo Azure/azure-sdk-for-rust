@@ -5,18 +5,20 @@ pub use crate::generated::models::*;
 use azure_core::{
     fmt::SafeDebug,
     http::{
-        poller::PollerStatus,
-        poller::{PollerOptions, StatusMonitor},
-        ClientMethodOptions,
+        poller::{PollerOptions, PollerStatus, StatusMonitor},
+        ClientMethodOptions, JsonFormat,
     },
 };
 impl StatusMonitor for CertificateOperation {
     type Output = Certificate;
+    type Format = JsonFormat;
     fn status(&self) -> PollerStatus {
-        self.status
-            .as_deref()
-            .map(Into::into)
-            .unwrap_or(PollerStatus::InProgress)
+        match self.status.as_deref() {
+            Some("completed") => PollerStatus::Succeeded,
+            Some("cancelled") => PollerStatus::Canceled,
+            Some(_) if self.error.is_some() => PollerStatus::Failed,
+            _ => PollerStatus::InProgress,
+        }
     }
 }
 

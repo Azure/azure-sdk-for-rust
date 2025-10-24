@@ -379,18 +379,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    // Wait for the certificate operation to complete and get the last status monitor.
-    let operation = client
+    // Wait for the certificate operation to complete and get the certificate.
+    let certificate = client
         .begin_create_certificate("certificate-name", body.try_into()?, None)?
-        .wait()
         .await?
-        // Deserialize the CertificateOperation:
         .into_body()?;
-
-    if matches!(operation.status, Some(status) if status == "completed") {
-        let target = operation.target.ok_or("expected target")?;
-        println!("Created certificate {}", target);
-    }
 
     Ok(())
 }
