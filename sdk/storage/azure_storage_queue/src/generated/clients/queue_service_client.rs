@@ -17,7 +17,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
-        policies::{BearerTokenCredentialPolicy, Policy},
+        policies::{BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
     },
@@ -64,7 +64,7 @@ impl QueueServiceClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));
