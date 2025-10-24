@@ -441,12 +441,12 @@ impl PerfRunner {
                     let collected_results: Result<Vec<_>> = results.into_iter().collect();
 
                     // Calculate the operations/second for each of the tasks.
-                    let rv = collected_results?.into_iter().map(|(count, duration)| {
+                    let collected_ops = collected_results?.into_iter().map(|(count, duration)| {
                         count as f64 / duration.as_secs_f64()
                      }).collect::<Vec<_>>();
 
                      // And sum all the operations/second.
-                     let total_ops = rv.iter().sum();
+                     let total_ops = collected_ops.iter().sum();
                      println!("Total operations per second: {total_ops}");
                      return Ok(total_ops);
                 },
