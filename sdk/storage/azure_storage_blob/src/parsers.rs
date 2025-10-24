@@ -1,11 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::time::{parse_rfc3339, to_rfc3339, OffsetDateTime};
+use azure_core::time::{parse_rfc3339, OffsetDateTime};
 use std::{
     collections::HashMap,
     io::{Error, ErrorKind},
 };
+use time::{
+    format_description::{well_known::Rfc3339, FormatItem},
+    macros::format_description,
+    UtcOffset,
+};
+
+// Compile-time format description: RFC3339 with exactly 7 fractional digits and a Z suffix.
+static RFC3339_7: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:7]Z");
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
 ///  returns the HTTP range in String format.
@@ -68,61 +77,9 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
 /// # Arguments
 /// * `datetime` - OffsetDateTime to format.
 pub fn format_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
-    // Convert to UTC first
-    let utc_datetime = datetime.to_utc();
-    let rfc3339_str = to_rfc3339(&utc_datetime.into());
-
-    // Find the position of the decimal point and timezone indicator
-    if let Some(dot_pos) = rfc3339_str.find('.') {
-        // Find where the timezone / offset part starts (Z, +, or -)
-        let tz_pos = rfc3339_str[dot_pos..]
-            .find(['Z', '+', '-'])
-            .map(|pos| dot_pos + pos)
-            .ok_or_else(|| {
-                Error::new(
-                    ErrorKind::InvalidData,
-                    format!(
-                        "Invalid RFC3339 format: missing timezone in '{}'",
-                        rfc3339_str
-                    ),
-                )
-            })?;
-
-        // Extract the decimal portion and timezone
-        let fractional = &rfc3339_str[dot_pos + 1..tz_pos];
-        let timezone = &rfc3339_str[tz_pos..];
-
-        // Pad or truncate to exactly 7 digits
-        let seven_digit_fractional = if fractional.len() >= 7 {
-            fractional[..7].to_string()
-        } else {
-            format!("{:0<7}", fractional)
-        };
-
-        // Reconstruct the string
-        Ok(format!(
-            "{}.{}{}",
-            &rfc3339_str[..dot_pos],
-            seven_digit_fractional,
-            timezone
-        ))
-    } else {
-        // No fractional seconds, need to add full padding before the timezone
-        // Search from the end to avoid matching '-' in the date part
-        let tz_pos = rfc3339_str.rfind(['Z', '+', '-']).ok_or_else(|| {
-            Error::new(
-                ErrorKind::InvalidData,
-                format!(
-                    "Invalid RFC3339 format: missing timezone in '{}'",
-                    rfc3339_str
-                ),
-            )
-        })?;
-
-        let base = &rfc3339_str[..tz_pos];
-        let timezone = &rfc3339_str[tz_pos..];
-        Ok(format!("{}.0000000{}", base, timezone))
-    }
+    let utc = datetime.to_offset(UtcOffset::UTC);
+    utc.format(&RFC3339_7)
+        .map_err(|e| Error::new(ErrorKind::InvalidData, e.to_string()))
 }
 
 #[cfg(test)]
