@@ -108,6 +108,43 @@ struct ErrorDetailsInternal<'a> {
     message: Option<&'a str>,
 }
 
+/// A trait for deserializing error responses based on the format type.
+///
+/// This trait is specialized for different format markers (JsonFormat, XmlFormat, etc.)
+/// to deserialize `ErrorResponse` from raw bytes.
+pub(crate) trait DeserializeErrorResponse: crate::http::Format {
+    /// Deserialize an `ErrorResponse` from raw bytes.
+    ///
+    /// # Arguments
+    /// * `body` - The raw response body bytes.
+    ///
+    /// # Returns
+    /// * `Ok(ErrorResponse)` if deserialization succeeds; otherwise, an `Err(azure_core::Error)`.
+    fn deserialize_error<S: AsRef<[u8]>>(_body: S) -> crate::Result<ErrorResponse> {
+        Err(crate::Error::new(
+            ErrorKind::DataConversion,
+            "unsupported error format",
+        ))
+    }
+}
+
+/// Implementation for JSON format.
+impl DeserializeErrorResponse for crate::http::JsonFormat {
+    fn deserialize_error<S: AsRef<[u8]>>(body: S) -> crate::Result<ErrorResponse> {
+        crate::json::from_json(body)
+    }
+}
+
+/// Implementation for XML format.
+#[cfg(feature = "xml")]
+impl DeserializeErrorResponse for crate::http::XmlFormat {
+    fn deserialize_error<S: AsRef<[u8]>>(body: S) -> crate::Result<ErrorResponse> {
+        crate::xml::from_xml(body)
+    }
+}
+
+impl DeserializeErrorResponse for crate::http::NoFormat {}
+
 /// Represents a response from which we can get a [`StatusCode`] and collect into a [`RawResponse`].
 ///
 /// This is intended for internal use only and implemented only by [`BufResponse`] and [`RawResponse`].
