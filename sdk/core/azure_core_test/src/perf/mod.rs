@@ -467,7 +467,6 @@ impl PerfRunner {
                         }
                     }, if !self.options.disable_progress => {},
         );
-        // tasks.join_all().await;
         Err(azure_core::Error::with_message(
             ErrorKind::Other,
             "This code path should be unreachable.",
