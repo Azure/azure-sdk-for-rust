@@ -412,7 +412,7 @@ impl PerfRunner {
     ) -> azure_core::Result<f64> {
         // Reset the performance measurements before starting the test.
         self.progress.store(0, Ordering::SeqCst);
-        let mut tasks: JoinSet<_> = JoinSet::new();
+        let mut tasks: JoinSet<Result<(i64, tokio::time::Duration)>> = JoinSet::new();
         (0..self.options.parallel).for_each(|i| {
             let test_instance_clone = Arc::clone(&test_instance);
             let progress = self.progress.clone();
@@ -434,21 +434,20 @@ impl PerfRunner {
         });
         let start = tokio::time::Instant::now();
 
-        select!(
+        let operations_per_second = select!(
                 results = tasks.join_all() =>  {
                     println!("All test tasks completed: {:?}", start.elapsed());
                     // Collect the results of the test tasks.
                     let collected_results: Result<Vec<_>> = results.into_iter().collect();
 
-                    // Calculate the operations/second for each of the tasks.
-                    let collected_ops = collected_results?.into_iter().map(|(count, duration)| {
-                        count as f64 / duration.as_secs_f64()
-                     }).collect::<Vec<_>>();
+                    // Calculate the operations/second for each of the tasks and sum them to a single result.
+                    let total_ops:f64 = collected_results?
+                        .into_iter()
+                        .map(|(count, duration)| {count as f64 / duration.as_secs_f64()})
+                        .sum();
 
-                     // And sum all the operations/second.
-                     let total_ops = collected_ops.iter().sum();
-                     println!("Total operations per second: {total_ops}");
-                     return Ok(total_ops);
+                    println!("Total operations per second: {total_ops}");
+                    Ok(total_ops)
                 },
                 _ = async {
                         let mut last_count = 0;
@@ -465,12 +464,12 @@ impl PerfRunner {
 
                             last_count = current_total;
                         }
-                    }, if !self.options.disable_progress => {},
-        );
-        Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "This code path should be unreachable.",
-        ))
+                    }, if !self.options.disable_progress => {Err(azure_core::Error::with_message(
+                        ErrorKind::Other,
+                        "Progress reporting task exited unexpectedly.",
+                    ))},
+        )?;
+        Ok(operations_per_second)
     }
 
     // Future command line switches:
