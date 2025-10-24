@@ -100,7 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .open(
             "my-eventhubs-host-name",
             "my-eventhub-name".to_string(),
-            Some(credential.clone()),
+            credential.clone(),
         )
         .await?;
 
