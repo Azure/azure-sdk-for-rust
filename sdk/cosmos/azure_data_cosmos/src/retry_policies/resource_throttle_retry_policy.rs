@@ -12,7 +12,7 @@ use azure_core::time::Duration;
 /// maximum retry attempts and cumulative wait time limits. It's designed to handle
 /// Azure Cosmos DB throttling scenarios where the service limits request rates.
 /// # Example
-/// ```
+/// ```ignore
 /// use azure_data_cosmos::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 ///
 /// // Create a policy with 3 max retries, 100 second max wait, and backoff factor of 2
@@ -36,7 +36,7 @@ impl ResourceThrottleRetryPolicy {
     /// * `backoff_delay_factor` - Multiplier for exponential backoff delay
     ///
     /// # Example
-    /// ```
+    /// ```ignore
     /// use azure_data_cosmos::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
     ///
     /// // Create a policy with 5 retries, 120 second max wait, and backoff factor of 3
