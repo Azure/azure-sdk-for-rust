@@ -63,7 +63,7 @@ pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClien
     };
     BlobServiceClient::new(
         &endpoint,
-        recording.credential(),
+        Some(recording.credential()),
         Some(service_client_options),
     )
 }
@@ -87,7 +87,7 @@ pub async fn get_container_client(
     let container_client = BlobContainerClient::new(
         &endpoint,
         &container_name,
-        recording.credential(),
+        Some(recording.credential()),
         Some(container_client_options),
     )?;
     if create {

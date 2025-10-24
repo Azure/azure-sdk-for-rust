@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
         "container_name",                                        // container name
         "blob_name",                                             // blob name
-        credential,                                              // credential
+        Some(credential),                                        // credential
         Some(BlobClientOptions::default()),                      // BlobClient options
     )?;
     Ok(())
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
         "container_name",                                        // container name
         "blob_name",                                             // blob name
-        credential,                                              // credential
+        Some(credential),                                        // credential
         Some(BlobClientOptions::default()),                      // BlobClient options
     )?;
     Ok(())
@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "https://<storage_account_name>.blob.core.windows.net/",
         "container_name",
         "blob_name",
-        credential,
+        Some(credential),
         Some(BlobClientOptions::default()),
     )?;
 

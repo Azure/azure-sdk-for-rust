@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blob_client = BlobContainerClient::new(
         "https://yourstorageaccount.blob.core.windows.net",
         "yourcontainername",
-        credential.clone(),
+        Some(credential.clone()),
         None,
     )?;
 
@@ -100,7 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .open(
             "my-eventhubs-host-name",
             "my-eventhub-name".to_string(),
-            credential.clone(),
+            Some(credential.clone()),
         )
         .await?;
 

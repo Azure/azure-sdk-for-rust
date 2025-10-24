@@ -98,12 +98,12 @@ impl BlobContainerClient {
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
     /// * `container_name` - The name of the container.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
         container_name: &str,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
@@ -118,35 +118,7 @@ impl BlobContainerClient {
             path_segments.extend([container_name]);
         }
 
-        let client = GeneratedBlobContainerClient::from_url(url, Some(credential), options)?;
-        Ok(Self { client })
-    }
-
-    /// Creates a new BlobContainerClient, without providing any authentication information.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container.
-    /// * `options` - Optional configuration for the client.
-    pub fn with_no_credential(
-        endpoint: &str,
-        container_name: &str,
-        options: Option<BlobContainerClientOptions>,
-    ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-
-        {
-            let mut path_segments = url.path_segments_mut().map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
-                )
-            })?;
-            path_segments.extend([container_name]);
-        }
-
-        let client = GeneratedBlobContainerClient::from_url(url, None, options)?;
+        let client = GeneratedBlobContainerClient::from_url(url, credential, options)?;
         Ok(Self { client })
     }
 
@@ -157,29 +129,12 @@ impl BlobContainerClient {
     /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    pub fn from_container_url(
+    pub fn from_url(
         container_url: Url,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
-        let client =
-            GeneratedBlobContainerClient::from_url(container_url, Some(credential), options)?;
-
-        Ok(Self { client })
-    }
-
-    /// Creates a new BlobContainerClient from a container URL containing the SAS (shared access signature) query parameters.
-    ///
-    /// # Arguments
-    ///
-    /// * `container_sas_url` - The full URL of the container, including the SAS query parameters.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn from_container_sas_url(
-        container_sas_url: Url,
-        options: Option<BlobContainerClientOptions>,
-    ) -> Result<Self> {
-        let client = GeneratedBlobContainerClient::from_url(container_sas_url, None, options)?;
+        let client = GeneratedBlobContainerClient::from_url(container_url, credential, options)?;
 
         Ok(Self { client })
     }

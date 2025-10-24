@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blob_container_client = BlobContainerClient::new(
         &storage_account_url,
         &container,
-        credential,
+        Some(credential),
         Some(BlobContainerClientOptions {
             client_options: ClientOptions {
                 instrumentation: InstrumentationOptions {

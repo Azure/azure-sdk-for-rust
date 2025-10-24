@@ -111,7 +111,7 @@ impl BlobClient {
         endpoint: &str,
         container_name: &str,
         blob_name: &str,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
@@ -126,37 +126,7 @@ impl BlobClient {
             path_segments.extend([container_name, blob_name]);
         }
 
-        let client = GeneratedBlobClient::from_url(url, Some(credential), options)?;
-        Ok(Self { client })
-    }
-
-    /// Creates a new BlobClient, without providing any authentication information.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container containing this blob.
-    /// * `blob_name` - The name of the blob to interact with.
-    /// * `options` - Optional configuration for the client.
-    pub fn with_no_credential(
-        endpoint: &str,
-        container_name: &str,
-        blob_name: &str,
-        options: Option<BlobClientOptions>,
-    ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-
-        {
-            let mut path_segments = url.path_segments_mut().map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
-                )
-            })?;
-            path_segments.extend([container_name, blob_name]);
-        }
-
-        let client = GeneratedBlobClient::from_url(url, None, options)?;
+        let client = GeneratedBlobClient::from_url(url, credential, options)?;
         Ok(Self { client })
     }
 
@@ -165,29 +135,14 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `blob_url` - The full URL of the blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    pub fn from_blob_url(
+    pub fn from_url(
         blob_url: Url,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedBlobClient::from_url(blob_url, Some(credential), options)?;
-
-        Ok(Self { client })
-    }
-
-    /// Creates a new BlobClient from a blob URL containing the SAS (shared access signature) query parameters.
-    ///
-    /// # Arguments
-    ///
-    /// * `blob_sas_url` - The full URL of the blob, including the SAS query parameters.
-    /// * `options` - Optional configuration for the client.
-    pub fn from_blob_sas_url(
-        blob_sas_url: Url,
-        options: Option<BlobClientOptions>,
-    ) -> Result<Self> {
-        let client = GeneratedBlobClient::from_url(blob_sas_url, None, options)?;
+        let client = GeneratedBlobClient::from_url(blob_url, credential, options)?;
 
         Ok(Self { client })
     }

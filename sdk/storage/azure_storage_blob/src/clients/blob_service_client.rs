@@ -90,44 +90,16 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
         let url = Url::parse(endpoint)?;
 
-        let client = GeneratedBlobServiceClient::from_url(url, Some(credential), options)?;
-        Ok(Self { client })
-    }
-
-    /// Creates a new BlobServiceClient, without providing any authentication information.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `options` - Optional configuration for the client.
-    pub fn with_no_credential(
-        endpoint: &str,
-        options: Option<BlobServiceClientOptions>,
-    ) -> Result<Self> {
-        let url = Url::parse(endpoint)?;
-
-        let client = GeneratedBlobServiceClient::from_url(url, None, options)?;
-        Ok(Self { client })
-    }
-
-    /// Creates a new BlobServiceClient from the URL of the Azure storage account containing the SAS (shared access signature) query parameters.
-    ///
-    /// # Arguments
-    ///
-    /// * `sas_url` - The full URL of the Azure storage account, including the SAS query parameters.
-    /// * `options` - Optional configuration for the client.
-    pub fn from_sas_url(sas_url: Url, options: Option<BlobServiceClientOptions>) -> Result<Self> {
-        let client = GeneratedBlobServiceClient::from_url(sas_url, None, options)?;
-
+        let client = GeneratedBlobServiceClient::from_url(url, credential, options)?;
         Ok(Self { client })
     }
 
