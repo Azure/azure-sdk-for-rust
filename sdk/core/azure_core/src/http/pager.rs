@@ -151,7 +151,7 @@ where
 ///
 /// # Examples
 ///
-/// For clients that return a `Pager`, you can iterator over items across one or more pages:
+/// For clients that return a `Pager`, you can iterate over items across one or more pages:
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
@@ -173,7 +173,7 @@ where
 /// # Ok(()) }
 /// ```
 ///
-/// If you want to iterate each page items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
+/// If you want to iterate each page of items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
@@ -212,7 +212,7 @@ type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>>>;
 ///
 /// # Examples
 ///
-/// For clients that return a `Pager`, you can iterator over items across one or more pages:
+/// For clients that return a `Pager`, you can iterate over items across one or more pages:
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
@@ -234,7 +234,7 @@ type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>>>;
 /// # Ok(()) }
 /// ```
 ///
-/// If you want to iterate each page items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
+/// If you want to iterate each page of items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};

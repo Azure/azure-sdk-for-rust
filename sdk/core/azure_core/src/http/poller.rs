@@ -659,9 +659,10 @@ where
     let target = Box::new(async move {
         match target_rx.await {
             Ok(fut) => fut.await,
-            Err(_) => Err(crate::Error::new(
+            Err(err) => Err(crate::Error::with_error(
                 ErrorKind::Other,
-                "poller completed without sending target response",
+                err,
+                "poller completed without defining a target",
             )),
         }
     });

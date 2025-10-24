@@ -131,7 +131,7 @@ impl CertificateClient {
                 let pipeline = pipeline.clone();
                 let api_version = api_version.clone();
                 async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request, None).await?;
+                    let rsp = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
@@ -269,7 +269,7 @@ impl CertificateClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request, None).await?;
+                    let rsp = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,

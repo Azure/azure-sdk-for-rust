@@ -4,18 +4,18 @@
 use crate::{error::ErrorKind, http::response::ResponseBody};
 use serde::de::DeserializeOwned;
 
-/// A marker trait used to indicate the serialization format used for a response body.
+/// A trait used to indicate the serialization format used for a response body.
 ///
-/// The [`Response`](crate::http::Response) type uses this trait, in the `F` parameter, to determine how to deserialize the body in to the `T` model when using [`Response::into_body`](crate::http::Response::into_body).
-///
-/// ## How this trait works
-///
-/// This trait is a little funky, in order to allow the deserialization behavior of the format to be adjusted based on the type of the response body.
-/// This is just a marker trait, it has no methods.
-/// Instead, the method to actually perform the deserialization is defined in the [`DeserializeWith`] trait.
-/// This trait is parameterized by a type that implements the [`Format`] trait.
+/// The [`Response`](crate::http::Response) type uses this trait in parameter `F` to determine how to deserialize the body in to the model `T` when using [`Response::into_body`](crate::http::Response::into_body).
+/// This allows the client library to define the format for each client method so callers can deserialize the model `T` without having to know or specify the format.
 pub trait Format: std::fmt::Debug {
-    /// Deserialize
+    /// Deserialize body into model `T`.
+    ///
+    /// # Arguments
+    /// * `body` - The body to deserialize.
+    ///
+    /// # Returns
+    /// * A `Result` containing the deserialized model `T`.
     fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T>;
 }
 

@@ -13,6 +13,7 @@
 - Added `F: Format` type parameter to `Poller` and `PollerResult`.
 - Added `Format` associated type to `StatusMonitor`.
 - Added `Format::deserialize()` function to `Format` trait.
+- Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
 - Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
 - Removed `CustomHeaders` policy.
