@@ -26,6 +26,6 @@ pub use partition_key::*;
 pub use query::Query;
 
 pub use feed::{FeedPage, FeedPager};
-pub(crate) mod handler;
-pub mod retry_policies;
+mod handler;
+mod retry_policies;
 pub mod routing;

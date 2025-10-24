@@ -52,7 +52,7 @@ impl CosmosPipeline {
         CosmosPipeline {
             endpoint,
             pipeline,
-            retry_handler: BackOffRetryHandler::new(),
+            retry_handler: BackOffRetryHandler,
         }
     }
 

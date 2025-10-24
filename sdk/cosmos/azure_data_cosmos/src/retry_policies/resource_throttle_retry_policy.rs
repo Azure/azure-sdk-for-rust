@@ -102,7 +102,7 @@ impl ResourceThrottleRetryPolicy {
             }
         }
 
-        tracing::trace!("Exhausted all retry attempts and reached maximum retry: {:?}. The request will not be retried.", self.max_attempt_count);
+        tracing::trace!(max_attempt_count = self.max_attempt_count, "Exhausted all retry attempts and reached maximum retry. The request will not be retried.");
         RetryResult::DoNotRetry
     }
 
@@ -191,13 +191,13 @@ mod tests {
     use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
     use crate::retry_policies::RetryPolicy;
     use crate::retry_policies::RetryResult;
-    use azure_core::http::{RawResponse, StatusCode};
-    use azure_core::time::Duration;
+    use azure_core::{
+        http::{headers::Headers, RawResponse, StatusCode},
+        time::Duration,
+    };
 
     /// Helper function to create a mock RawResponse with a given status code
     fn create_mock_response(status: StatusCode) -> azure_core::Result<RawResponse> {
-        use typespec_client_core::http::headers::Headers;
-
         // Create headers
         let mut headers = Headers::new();
         headers.insert("content-type", "application/json");

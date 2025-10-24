@@ -4,8 +4,10 @@
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
-use azure_core::http::{request::Request, RawResponse};
-use typespec_client_core::async_runtime::get_async_runtime;
+use azure_core::{
+    async_runtime::get_async_runtime,
+    http::{request::Request, RawResponse},
+};
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -66,29 +68,6 @@ pub trait RetryHandler: Send + Sync {
 pub struct BackOffRetryHandler;
 
 impl BackOffRetryHandler {
-    /// Creates a new instance of `BackOffRetryHandler`
-    ///
-    /// This constructor initializes a retry handler with exponential backoff capabilities.
-    /// The handler will dynamically select appropriate retry policies based on the request
-    /// characteristics (e.g., `ResourceThrottleRetryPolicy` for rate limiting scenarios).
-    ///
-    /// # Returns
-    ///
-    /// A new `BackOffRetryHandler` instance ready to handle request retries with
-    /// automatic policy selection and exponential backoff logic.
-    ///
-    /// # Example
-    ///
-    /// ```rust,ignore
-    /// use azure_data_cosmos::handler::retry_handler::BackOffRetryHandler;
-    ///
-    /// let retry_handler = BackOffRetryHandler::new();
-    /// // Use retry_handler.send() to make requests with automatic retry
-    /// ```
-    pub fn new() -> Self {
-        Self {}
-    }
-
     /// Returns the appropriate retry policy based on the request
     ///
     /// This method examines the underlying operation and resource types and determines
