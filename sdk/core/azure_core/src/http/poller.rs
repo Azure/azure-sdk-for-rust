@@ -4,7 +4,7 @@
 //! Types and methods for long-running operations (LROs).
 
 use crate::{
-    error::{ErrorKind, ErrorResponse},
+    error::{DeserializeErrorResponse, ErrorKind},
     http::{
         headers::{HeaderName, Headers},
         Format, JsonFormat, Response, StatusCode,
@@ -487,9 +487,10 @@ where
     }
 }
 
-impl<M, F: Format> Stream for Poller<M, F>
+impl<M, F> Stream for Poller<M, F>
 where
     M: StatusMonitor,
+    F: Format + DeserializeErrorResponse,
 {
     type Item = crate::Result<Response<M, F>>;
 
@@ -706,7 +707,10 @@ pub fn get_retry_after(
     duration
 }
 
-fn check_status_code<T, F: Format>(response: &Response<T, F>) -> crate::Result<()> {
+fn check_status_code<T, F>(response: &Response<T, F>) -> crate::Result<()>
+where
+    F: Format + DeserializeErrorResponse,
+{
     let status = response.status();
     match status {
         StatusCode::Ok | StatusCode::Accepted | StatusCode::Created | StatusCode::NoContent => {
@@ -715,9 +719,9 @@ fn check_status_code<T, F: Format>(response: &Response<T, F>) -> crate::Result<(
         _ => {
             // Ideally we could take an owned `Response` and move data to avoid cloning the `RawResponse`.
             let raw_response = Box::new(response.to_raw_response());
-            let error_code = F::deserialize(raw_response.body())
+            let error_code = F::deserialize_error(raw_response.body())
                 .ok()
-                .and_then(|err: ErrorResponse| err.error)
+                .and_then(|err| err.error)
                 .and_then(|details| details.code);
             Err(ErrorKind::HttpResponse {
                 status,
