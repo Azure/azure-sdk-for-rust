@@ -5,6 +5,7 @@
 use super::{
     cbs::AmqpClaimsBasedSecurityApis,
     connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
+    error::Result,
     management::AmqpManagementApis,
     messaging::{
         AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget, DeliveryNumber,
@@ -18,7 +19,6 @@ use super::{
 };
 use azure_core::{
     credentials::{AccessToken, Secret},
-    error::Result,
     time::OffsetDateTime,
 };
 

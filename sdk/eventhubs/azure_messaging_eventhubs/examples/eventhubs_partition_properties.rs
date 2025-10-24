@@ -3,13 +3,12 @@
 
 //! Example of using the Event Hubs SDK to get partition properties.
 
-use azure_core::error::Result;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
 use std::env;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Initialize tracing subscriber from environment.
     tracing_subscriber::fmt().init();
 

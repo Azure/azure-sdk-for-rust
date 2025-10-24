@@ -2,11 +2,12 @@
 // Licensed under the MIT license.
 
 use super::{
+    error::Result,
     session::AmqpSession,
     simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
 };
-use azure_core::{credentials::AccessToken, error::Result};
+use azure_core::credentials::AccessToken;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;

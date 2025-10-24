@@ -3,13 +3,12 @@
 
 //! This sample shows retrieving the properties of an Event Hub.
 
-use azure_core::error::Result;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
 use std::env;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Initialize tracing subscriber from environment.
     tracing_subscriber::fmt().init();
 
@@ -18,17 +17,11 @@ async fn main() -> Result<()> {
 
     let credential = DeveloperToolsCredential::new(None)?;
 
-    let result = ProducerClient::builder()
+    let client = ProducerClient::builder()
         .with_application_id("test_get_properties".to_string())
         .open(host.as_str(), eventhub.as_str(), credential.clone())
-        .await;
-    if let Err(err) = result {
-        eprintln!("Error opening client: {err}");
-        return Err(err);
-    }
-    let client = result?;
-    let properties = client.get_eventhub_properties().await.unwrap();
+        .await?;
+    let properties = client.get_eventhub_properties().await?;
     println!("Eventhub Properties for: {eventhub} {properties:?}");
-
     Ok(())
 }

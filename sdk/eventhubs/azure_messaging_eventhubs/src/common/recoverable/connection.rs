@@ -13,12 +13,16 @@ use crate::{
         retry::ErrorRecoveryAction,
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
     },
+    error::Result,
     models::AmqpValue,
     producer::DEFAULT_EVENTHUBS_APPLICATION,
-    ErrorKind, EventHubsError, RetryOptions,
+    RetryOptions,
 };
 use async_lock::Mutex as AsyncMutex;
-use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Result, Uuid};
+use azure_core::{
+    credentials::TokenCredential, error::ErrorKind as AzureErrorKind, http::Url, time::Duration,
+    Uuid,
+};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
@@ -84,7 +88,7 @@ pub(crate) struct RecoverableConnection {
     pub(super) retry_options: RetryOptions,
 
     #[cfg(test)]
-    forced_error: Mutex<Option<azure_core::Error>>,
+    forced_error: Mutex<Option<AmqpError>>,
 }
 
 unsafe impl Send for RecoverableConnection {}
@@ -133,16 +137,19 @@ impl RecoverableConnection {
     }
 
     #[cfg(test)]
-    pub(crate) fn force_error(&self, error: azure_core::Error) -> Result<()> {
-        let mut err = self.forced_error.lock().map_err(|e| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
-        })?;
+    pub(crate) fn force_error(&self, error: AmqpError) -> Result<()> {
+        use crate::EventHubsError;
+
+        let mut err = self
+            .forced_error
+            .lock()
+            .map_err(|e| EventHubsError::with_message(e.to_string()))?;
         *err = Some(error);
         Ok(())
     }
 
     #[cfg(test)]
-    pub(crate) fn get_forced_error(&self) -> azure_core::Result<()> {
+    pub(crate) fn get_forced_error(&self) -> azure_core_amqp::error::Result<()> {
         let v = self
             .forced_error
             .lock()
@@ -250,7 +257,7 @@ impl RecoverableConnection {
     /// where the client is constructed, but the connection is not established until the
     /// first operation is performed.
     ///
-    pub(crate) async fn ensure_connection(&self) -> Result<Arc<AmqpConnection>> {
+    pub(crate) async fn ensure_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
         let mut connection = self.connections.lock().await;
         if connection.is_none() {
             *connection = Some(self.create_connection().await?);
@@ -258,16 +265,14 @@ impl RecoverableConnection {
         if let Some(connection) = connection.as_ref() {
             return Ok(connection.clone());
         }
-        Err(EventHubsError::from(ErrorKind::MissingConnection).into())
+        Err(AmqpError::with_message("Missing Connection."))
     }
 
     /// Creates a new management client for the Event Hubs service.
     ///
     /// This client is used to perform management operations such as querying the status of the Event Hubs service.
-    pub(crate) async fn get_management_client(
-        self: &Arc<Self>,
-    ) -> Result<RecoverableManagementClient> {
-        Ok(RecoverableManagementClient::new(Arc::downgrade(self)))
+    pub(crate) fn get_management_client(self: &Arc<Self>) -> RecoverableManagementClient {
+        RecoverableManagementClient::new(Arc::downgrade(self))
     }
 
     /// Creates a new Claims-Based Security (CBS) client for the Event Hubs service.
@@ -275,8 +280,8 @@ impl RecoverableConnection {
     /// This client is used to perform authorization operations such as acquiring tokens for accessing Event Hubs resources.
     ///
     /// Note: The Cbs client returned integrates retry operations into the authorization call.
-    pub(crate) async fn get_cbs_client(self: &Arc<Self>) -> Result<RecoverableClaimsBasedSecurity> {
-        Ok(RecoverableClaimsBasedSecurity::new(Arc::downgrade(self)))
+    pub(crate) fn get_cbs_client(self: &Arc<Self>) -> RecoverableClaimsBasedSecurity {
+        RecoverableClaimsBasedSecurity::new(Arc::downgrade(self))
     }
 
     /// Creates a new sender for the Event Hubs service.
@@ -324,7 +329,10 @@ impl RecoverableConnection {
         Ok(())
     }
 
-    async fn get_session(self: &Arc<Self>, source_url: &Url) -> Result<Arc<AmqpSession>> {
+    async fn get_session(
+        self: &Arc<Self>,
+        source_url: &Url,
+    ) -> azure_core_amqp::Result<Arc<AmqpSession>> {
         let mut session_instances = self.session_instances.lock().await;
         if !session_instances.contains_key(source_url) {
             debug!("Creating session for partition: {:?}", source_url);
@@ -345,13 +353,18 @@ impl RecoverableConnection {
         }
         let rv = session_instances
             .get(source_url)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingSession))?
+            .ok_or_else(|| {
+                AmqpError::from(azure_core::Error::with_message(
+                    AzureErrorKind::Other,
+                    "Could not find session",
+                ))
+            })?
             .clone();
         debug!("Cloning session for partition {:?}", source_url);
         Ok(rv)
     }
 
-    async fn create_connection(&self) -> Result<Arc<AmqpConnection>> {
+    async fn create_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
         trace!("Creating connection for {}.", self.url);
         let connection = Arc::new(AmqpConnection::new());
 
@@ -380,7 +393,9 @@ impl RecoverableConnection {
         Ok(connection)
     }
 
-    pub(super) async fn ensure_amqp_management(self: &Arc<Self>) -> Result<Arc<AmqpManagement>> {
+    pub(super) async fn ensure_amqp_management(
+        self: &Arc<Self>,
+    ) -> azure_core_amqp::Result<Arc<AmqpManagement>> {
         let mut management_client = self.mgmt_client.lock().await;
         if management_client.is_none() {
             *management_client = Some(
@@ -396,11 +411,13 @@ impl RecoverableConnection {
         }
 
         warn!("Management client is None, cannot ensure management client.");
-        Err(EventHubsError::from(ErrorKind::MissingConnection).into())
+        Err(AmqpError::with_message("Missing Management Client"))
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
-    pub(super) async fn ensure_amqp_cbs(self: &Arc<Self>) -> Result<Arc<AmqpClaimsBasedSecurity>> {
+    pub(super) async fn ensure_amqp_cbs(
+        self: &Arc<Self>,
+    ) -> azure_core_amqp::Result<Arc<AmqpClaimsBasedSecurity>> {
         let span = span!(
             tracing::Level::DEBUG,
             "ensure_amqp_cbs",
@@ -422,7 +439,7 @@ impl RecoverableConnection {
         source_url: &Url,
         message_source: &AmqpSource,
         receiver_options: &AmqpReceiverOptions,
-    ) -> Result<Arc<AmqpReceiver>> {
+    ) -> azure_core_amqp::Result<Arc<AmqpReceiver>> {
         let mut receiver_instances = self.receiver_instances.lock().await;
         if !receiver_instances.contains_key(source_url) {
             self.ensure_connection().await?;
@@ -445,11 +462,14 @@ impl RecoverableConnection {
 
         Ok(receiver_instances
             .get(source_url)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageReceiver))?
+            .ok_or_else(|| AmqpError::with_message("Missing message receiver"))?
             .clone())
     }
 
-    pub(super) async fn ensure_sender(self: &Arc<Self>, path: &Url) -> Result<Arc<AmqpSender>> {
+    pub(super) async fn ensure_sender(
+        self: &Arc<Self>,
+        path: &Url,
+    ) -> azure_core_amqp::Result<Arc<AmqpSender>> {
         let mut sender_instances = self.sender_instances.lock().await;
         if !sender_instances.contains_key(path) {
             // Ensure that we are authorized to access the senders path.
@@ -476,21 +496,26 @@ impl RecoverableConnection {
 
         Ok(sender_instances
             .get(path)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageSender))?
+            .ok_or_else(|| {
+                AmqpError::from(azure_core::Error::with_message(
+                    AzureErrorKind::Other,
+                    "Missing message sender",
+                ))
+            })?
             .clone())
     }
 
     pub(super) async fn recover_from_error(
         connection: Weak<RecoverableConnection>,
         reason: ErrorRecoveryAction,
-    ) -> Result<()> {
+    ) -> azure_core_amqp::error::Result<()> {
         // If the connection is None, we cannot recover.
         let Some(connection) = connection.upgrade() else {
             warn!(
                 "Connection is None, cannot recover from error: {:?}",
                 reason
             );
-            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
+            return Err(AmqpError::with_message("Missing Connection"));
         };
 
         // Log the error and attempt to recover.
@@ -522,10 +547,9 @@ impl RecoverableConnection {
             }
             _ => {
                 warn!("Recover action {reason:?} should already have been handled.");
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Unknown error recovery action",
-                ));
+                return Err(AmqpError::with_message(format!(
+                    "Unknown error recovery action: {reason:?}"
+                )));
             }
         }
 
@@ -567,6 +591,7 @@ impl RecoverableConnection {
                 debug!("Link state error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectLink
             }
+            AmqpErrorKind::SendRejected => ErrorRecoveryAction::ReturnError,
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
                 if matches!(

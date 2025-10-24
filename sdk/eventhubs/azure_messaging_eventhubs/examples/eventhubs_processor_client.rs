@@ -15,7 +15,8 @@ use tokio::sync::Mutex as AsyncMutex;
 
 struct BackgroundProcessor {
     processor: Arc<EventProcessor>,
-    background_task: AsyncMutex<Option<tokio::task::JoinHandle<azure_core::Result<()>>>>,
+    background_task:
+        AsyncMutex<Option<tokio::task::JoinHandle<azure_messaging_eventhubs::Result<()>>>>,
 }
 
 impl BackgroundProcessor {

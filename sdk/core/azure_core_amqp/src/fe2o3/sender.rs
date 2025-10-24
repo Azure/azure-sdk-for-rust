@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{
-    error::{AmqpDescribedError, AmqpError, AmqpErrorKind},
+    error::{AmqpDescribedError, AmqpError, AmqpErrorKind, Result},
     messaging::{AmqpMessage, AmqpTarget},
     sender::{
         AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis, AmqpSenderOptions, SendModification,
@@ -10,7 +10,6 @@ use crate::{
     session::AmqpSession,
     AmqpOrderedMap, AmqpSymbol, AmqpValue,
 };
-use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
 use tokio::sync::Mutex;
@@ -22,17 +21,11 @@ pub(crate) struct Fe2o3AmqpSender {
 }
 
 impl Fe2o3AmqpSender {
-    fn could_not_set_message_sender() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "Could not set message sender",
-        )
+    fn could_not_set_message_sender() -> AmqpError {
+        AmqpError::with_message("Could not set message sender")
     }
-    fn could_not_get_message_sender() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "Could not get message sender",
-        )
+    fn could_not_get_message_sender() -> AmqpError {
+        AmqpError::with_message("Could not get message sender")
     }
 }
 
@@ -87,7 +80,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .target(target.into())
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
-            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
+            .map_err(AmqpError::from)?;
         self.sender
             .set(Mutex::new(sender))
             .map_err(|_| Self::could_not_set_message_sender())?;
@@ -115,13 +108,13 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
                 }
                 _ => {
                     warn!("Error detaching sender: {:?}", e);
-                    Err(e.into())
+                    Err(e)
                 }
             },
         }
     }
 
-    async fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
+    async fn max_message_size(&self) -> Result<Option<u64>> {
         Ok(self
             .sender
             .get()

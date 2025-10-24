@@ -3,11 +3,10 @@
 
 use crate::{
     connection::AmqpConnection,
-    error::AmqpErrorKind,
+    error::{AmqpErrorKind, Result},
     session::{AmqpSessionApis, AmqpSessionOptions},
     AmqpError,
 };
-use azure_core::Result;
 use std::{
     borrow::BorrowMut,
     sync::{Arc, OnceLock},
@@ -42,23 +41,14 @@ impl Fe2o3AmqpSession {
             .clone())
     }
 
-    fn session_already_attached() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "AMQP Session is already attached",
-        )
+    fn session_already_attached() -> AmqpError {
+        AmqpError::with_message("AMQP Session is already attached")
     }
-    fn session_not_set() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "AMQP Session is not set",
-        )
+    fn session_not_set() -> AmqpError {
+        AmqpError::with_message("AMQP Session is not set")
     }
-    fn could_not_set_session() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "Could not set AMQP Session",
-        )
+    fn could_not_set_session() -> AmqpError {
+        AmqpError::with_message("Could not set AMQP Session")
     }
 }
 
@@ -115,7 +105,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let session = session_builder
             .begin(connection.borrow_mut())
             .await
-            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
+            .map_err(AmqpError::from)?;
         self.session
             .set(Arc::new(Mutex::new(session)))
             .map_err(|_| Self::could_not_set_session())?;
@@ -133,10 +123,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             trace!("Session already ended, returning.");
             return Ok(());
         }
-        session
-            .end()
-            .await
-            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
+        session.end().await.map_err(AmqpError::from)?;
         Ok(())
     }
 }

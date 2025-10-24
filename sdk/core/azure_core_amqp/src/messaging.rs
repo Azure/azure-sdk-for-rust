@@ -1,17 +1,18 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::{
+#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+use crate::fe2o3::error::Fe2o3SerializationError;
+#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+use crate::AmqpError;
+#[cfg(feature = "ffi")]
+use crate::Deserializable;
+use crate::{
+    error::Result,
     simple_value::AmqpSimpleValue,
     value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue},
 };
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
-use crate::fe2o3::error::Fe2o3SerializationError;
-#[cfg(feature = "ffi")]
-use crate::Deserializable;
-#[cfg(feature = "ffi")]
-use azure_core::error::ErrorKind;
-use azure_core::{time::Duration, Result, Uuid};
+use azure_core::{time::Duration, Uuid};
 use typespec_macros::SafeDebug;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -1279,7 +1280,10 @@ impl AmqpMessage {
     }
 
     /// Serialize the AMQP message to a vector of bytes.
-    #[allow(unused_variables)]
+    #[cfg_attr(
+        any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"),
+        allow(unused_variables)
+    )]
     pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
@@ -1289,7 +1293,7 @@ impl AmqpMessage {
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )
-            .map_err(|e| azure_core::Error::from(Fe2o3SerializationError(e)))?;
+            .map_err(|e| AmqpError::from(Fe2o3SerializationError(e)))?;
             Ok(res)
         }
         #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
@@ -1401,7 +1405,7 @@ impl From<AmqpList> for AmqpMessage {
 }
 #[cfg(feature = "ffi")]
 impl Deserializable<AmqpMessage> for AmqpMessage {
-    fn decode(data: &[u8]) -> azure_core::Result<AmqpMessage> {
+    fn decode(data: &[u8]) -> Result<AmqpMessage> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
             let value = serde_amqp::de::from_slice::<
@@ -1411,7 +1415,7 @@ impl Deserializable<AmqpMessage> for AmqpMessage {
                     >,
                 >,
             >(data)
-            .map_err(|e| azure_core::error::Error::new(ErrorKind::Other, e))?;
+            .map_err(|e| AmqpError::from(Fe2o3SerializationError(e)))?;
             Ok((&value.0).into())
         }
     }

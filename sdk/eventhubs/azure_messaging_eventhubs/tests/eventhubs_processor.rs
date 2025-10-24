@@ -6,7 +6,7 @@ use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::models::StartPositions;
 use azure_messaging_eventhubs::{
     ConsumerClient, EventProcessor, InMemoryCheckpointStore, ProcessorStrategy, ProducerClient,
-    SendEventOptions, StartLocation, StartPosition,
+    Result, SendEventOptions, StartLocation, StartPosition,
 };
 use futures::StreamExt;
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ use tokio::task::JoinHandle;
 use tracing::{error, info, warn};
 
 #[recorded::test(live)]
-async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
+async fn start_processor(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let consumer_client = ConsumerClient::builder()
@@ -73,35 +73,37 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
     Ok(())
 }
 
-async fn create_consumer_client(ctx: &TestContext) -> azure_core::Result<ConsumerClient> {
+async fn create_consumer_client(ctx: &TestContext) -> Result<ConsumerClient> {
     let recording = ctx.recording();
 
-    ConsumerClient::builder()
+    let c = ConsumerClient::builder()
         .open(
             recording.var("EVENTHUBS_HOST", None).as_str(),
             recording.var("EVENTHUB_NAME", None),
             recording.credential().clone(),
         )
-        .await
+        .await?;
+    Ok(c)
 }
 
-async fn create_producer_client(ctx: &TestContext) -> azure_core::Result<ProducerClient> {
+async fn create_producer_client(ctx: &TestContext) -> Result<ProducerClient> {
     let recording = ctx.recording();
 
-    ProducerClient::builder()
+    let p = ProducerClient::builder()
         .open(
             recording.var("EVENTHUBS_HOST", None).as_str(),
             recording.var("EVENTHUB_NAME", None).as_str(),
             recording.credential().clone(),
         )
-        .await
+        .await?;
+    Ok(p)
 }
 
 async fn create_processor(
     consumer_client: ConsumerClient,
     update_interval: Duration,
     start_positions: Option<StartPositions>,
-) -> azure_core::Result<Arc<EventProcessor>> {
+) -> Result<Arc<EventProcessor>> {
     let mut builder = EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Balanced)
         .with_update_interval(update_interval)
@@ -110,20 +112,21 @@ async fn create_processor(
     if let Some(start_positions) = start_positions {
         builder = builder.with_start_positions(start_positions);
     }
-    builder
+    let p = builder
         .build(consumer_client, Arc::new(InMemoryCheckpointStore::new()))
-        .await
+        .await?;
+    Ok(p)
 }
 
 async fn start_processor_running(
     event_processor: &Arc<EventProcessor>,
-) -> JoinHandle<azure_core::Result<()>> {
+) -> JoinHandle<azure_messaging_eventhubs::Result<()>> {
     let event_processor = Arc::clone(event_processor);
     tokio::spawn(async move { event_processor.run().await })
 }
 
 #[recorded::test(live)]
-async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
+async fn get_next_partition_client(ctx: TestContext) -> Result<()> {
     let consumer_client = create_consumer_client(&ctx).await?;
     let processor = create_processor(consumer_client, Duration::seconds(20), None).await?;
 
@@ -148,8 +151,10 @@ async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
 }
 
 #[recorded::test(live)]
-async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
+async fn get_all_partition_clients(ctx: TestContext) -> Result<()> {
     use std::collections::HashSet;
+
+    use azure_messaging_eventhubs::EventHubsError;
 
     let consumer_client = create_consumer_client(&ctx).await?;
 
@@ -225,10 +230,10 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
         }
         _ = tokio::time::sleep(std::time::Duration::from_secs(15)) => {
             info!("Timeout reached - event processor has no more partitions.");
-            return Err(azure_core::Error::with_message(
+            return Err(EventHubsError::from(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "Timeout waiting for next partition client"
-            ));
+            )));
         }
     };
 
@@ -246,7 +251,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
 }
 
 #[recorded::test(live)]
-async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<()> {
+async fn receive_events_from_processor(ctx: TestContext) -> Result<()> {
     let consumer_client = create_consumer_client(&ctx).await?;
 
     let eh_info = consumer_client.get_eventhub_properties().await?;

@@ -1,18 +1,15 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::recoverable::RecoverableConnection;
-use crate::error::{ErrorKind, EventHubsError};
+use crate::{common::recoverable::RecoverableConnection, error::Result};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     credentials::{AccessToken, TokenCredential},
-    error::ErrorKind as AzureErrorKind,
     http::Url,
     time::{Duration, OffsetDateTime},
-    Result,
 };
-use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
+use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, Rng};
 use std::{
     collections::HashMap,
@@ -83,9 +80,12 @@ impl Authorizer {
 
     #[cfg(test)]
     fn disable_authorization(&self) -> Result<()> {
-        let mut disable_authorization = self.disable_authorization.lock().map_err(|e| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
-        })?;
+        use crate::EventHubsError;
+
+        let mut disable_authorization = self
+            .disable_authorization
+            .lock()
+            .map_err(|e| EventHubsError::with_message(e.to_string()))?;
         *disable_authorization = true;
         Ok(())
     }
@@ -94,7 +94,7 @@ impl Authorizer {
         self: &Arc<Self>,
         connection: &Arc<RecoverableConnection>,
         path: &Url,
-    ) -> Result<AccessToken> {
+    ) -> azure_core_amqp::Result<AccessToken> {
         debug!("Authorizing path: {path}");
         let mut scopes = self.authorization_scopes.lock().await;
 
@@ -105,7 +105,8 @@ impl Authorizer {
             let token = self
                 .credential
                 .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                .await?;
+                .await
+                .map_err(AmqpError::from)?;
 
             debug!("Token for path {path} expires at {}", token.expires_on);
 
@@ -114,7 +115,9 @@ impl Authorizer {
             // insert returns some if it *fails* to insert, None if it succeeded.
             let present = scopes.insert(path.clone(), token);
             if present.is_some() {
-                return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
+                return Err(AmqpError::with_message(
+                    "Unable to add authentication token",
+                ));
             }
 
             debug!("Token verified.");
@@ -129,7 +132,7 @@ impl Authorizer {
         }
         Ok(scopes
             .get(path)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
+            .ok_or_else(|| AmqpError::with_message("Unable to add authentication token"))?
             .clone())
     }
 
@@ -149,15 +152,12 @@ impl Authorizer {
         connection: &Arc<RecoverableConnection>,
         url: &Url,
         new_token: &AccessToken,
-    ) -> Result<()> {
+    ) -> azure_core_amqp::Result<()> {
         // Test Hook: Disable interacting with Event Hubs service if the test doesn't want it.
         #[cfg(test)]
         {
             let disable_authorization = self.disable_authorization.lock().map_err(|e| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("Unable to grab disable mutex: {}", e),
-                )
+                AmqpError::with_message(format!("Unable to grab disable mutex: {}", e))
             })?;
             if *disable_authorization {
                 debug!("Authorization disabled for testing.");
@@ -169,7 +169,6 @@ impl Authorizer {
 
         connection
             .get_cbs_client()
-            .await?
             .authorize_path(
                 url.to_string(),
                 None,
@@ -232,9 +231,9 @@ impl Authorizer {
 
             let mut now = OffsetDateTime::now_utc();
             trace!("refresh_tokens: Start pass for: {now}");
-            let most_recent_refresh = expiration_times.first().ok_or_else(|| {
-                azure_core::Error::with_message(AzureErrorKind::Other, "No tokens to refresh?")
-            })?;
+            let most_recent_refresh = expiration_times
+                .first()
+                .ok_or_else(|| AmqpError::with_message("No tokens to refresh?"))?;
 
             debug!(
                 "Nearest token refresh time: {most_recent_refresh}, in {}",
@@ -245,10 +244,10 @@ impl Authorizer {
             let token_refresh_bias: Duration;
             {
                 let token_refresh_times = self.token_refresh_bias.lock().map_err(|e| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("Unable to grab token refresh bias mutex: {}", e),
-                    )
+                    AmqpError::with_message(format!(
+                        "Unable to grab token refresh bias mutex: {}",
+                        e
+                    ))
                 })?;
 
                 debug!("Token refresh times: {token_refresh_times:?}");
@@ -263,18 +262,14 @@ impl Authorizer {
                     .before_expiration_refresh_time
                     .checked_add(expiration_jitter)
                     .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            AzureErrorKind::Other,
-                            "Unable to calculate token refresh bias - overflow",
-                        )
+                        AmqpError::with_message("Unable to calculate token refresh bias - overflow")
                     })?;
                 debug!("Token refresh bias with jitter: {token_refresh_bias:?}");
 
                 refresh_time = most_recent_refresh
                     .checked_sub(token_refresh_bias)
                     .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            AzureErrorKind::Other,
+                        AmqpError::with_message(
                             "Unable to calculate token refresh bias - underflow",
                         )
                     })?;
@@ -328,10 +323,7 @@ impl Authorizer {
 
                 // Create an ephemeral connection to host the authentication.
                 let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        AzureErrorKind::Other,
-                        "Recoverable connection has been dropped",
-                    )
+                    AmqpError::with_message("Recoverable connection has been dropped")
                 })?;
                 self.perform_authorization(&connection, &url, &new_token)
                     .await?;
@@ -357,7 +349,7 @@ impl Authorizer {
     #[cfg(test)]
     fn set_token_refresh_times(&self, refresh_times: TokenRefreshTimes) -> Result<()> {
         let mut token_refresh_bias = self.token_refresh_bias.lock().map_err(|e| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
+            AmqpError::with_message(format!("Unable to grab token refresh bias mutex: {}", e))
         })?;
         *token_refresh_bias = refresh_times;
         Ok(())

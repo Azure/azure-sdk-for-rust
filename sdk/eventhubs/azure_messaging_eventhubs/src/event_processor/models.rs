@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// Note that this module returns azure_core errors, *not* eventhub errors. That is because these structures are used by checkpoint stores which always return azure_core errors.
 use crate::StartPosition;
 use azure_core::{
     error::ErrorKind as AzureErrorKind, http::Etag, time::OffsetDateTime, Error, Result,
@@ -32,8 +33,7 @@ pub struct Checkpoint {
 macro_rules! check_non_empty_parameter(
     ($field:expr) => {
         if $field.is_empty() {
-            return Err(Error::with_message(
-                AzureErrorKind::Other,
+            return Err(Error::with_message(AzureErrorKind::Other,
                 String::from("Required field ") + stringify!($field) + " is empty",
             ));
         }
@@ -65,12 +65,7 @@ impl Checkpoint {
         consumer_group: &str,
         partition_id: &str,
     ) -> Result<String> {
-        if partition_id.is_empty() {
-            return Err(Error::with_message(
-                AzureErrorKind::Other,
-                "Partition ID is empty",
-            ));
-        }
+        check_non_empty_parameter!(partition_id);
         Ok(Self::get_checkpoint_blob_prefix_name(
             fully_qualified_namespace,
             event_hub_name,

@@ -1,20 +1,19 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::RecoverableConnection;
-use crate::common::retry::ErrorRecoveryAction;
-use crate::{common::recover_azure_operation, RetryOptions};
-use crate::{ErrorKind, EventHubsError};
-use azure_core::{
-    credentials::Secret, error::ErrorKind as AzureErrorKind, error::Result, time::OffsetDateTime,
+use crate::{
+    common::{
+        recover_azure_operation, recoverable::RecoverableConnection, retry::ErrorRecoveryAction,
+    },
+    RetryOptions,
 };
+use azure_core::{credentials::Secret, error::ErrorKind as AzureErrorKind, time::OffsetDateTime};
 use azure_core_amqp::{
-    AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpError, AmqpSession,
-    AmqpSessionApis,
+    error::Result, AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpError,
+    AmqpSession, AmqpSessionApis,
 };
-use std::error::Error;
 use std::sync::{Arc, Weak};
-use tracing::{debug, warn};
+use tracing::warn;
 
 /// Thin wrapper around the [`AmqpClaimsBasedSecurityApis`] trait that implements the retry functionality.
 ///
@@ -60,31 +59,9 @@ impl RecoverableClaimsBasedSecurity {
         .await
     }
 
-    fn should_retry_claims_based_security_response(e: &azure_core::Error) -> ErrorRecoveryAction {
-        match e.kind() {
-            AzureErrorKind::Amqp => {
-                warn!(err=?e, "Amqp operation failed: {:?}", e.source());
-                if let Some(e) = e.source() {
-                    debug!(err=?e, "Error: {e}");
-
-                    if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
-                        RecoverableConnection::should_retry_amqp_error(amqp_error)
-                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
-                        RecoverableConnection::should_retry_amqp_error(amqp_error)
-                    } else {
-                        debug!(err=?e, "Non AMQP error: {e}");
-                        ErrorRecoveryAction::ReturnError
-                    }
-                } else {
-                    debug!("No source error found");
-                    ErrorRecoveryAction::ReturnError
-                }
-            }
-            _ => {
-                debug!(err=?e, "Non AMQP error: {e}");
-                ErrorRecoveryAction::ReturnError
-            }
-        }
+    fn should_retry_claims_based_security_response(e: &AmqpError) -> ErrorRecoveryAction {
+        warn!("Amqp operation failed: {:?}", e);
+        RecoverableConnection::should_retry_amqp_error(e)
     }
 }
 
@@ -108,9 +85,16 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
                     let claims_based_security_client = self
                         .recoverable_connection
                         .upgrade()
-                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                        .ok_or_else(|| AmqpError::with_message("Missing Connection"))?
                         .ensure_amqp_cbs()
-                        .await?;
+                        .await
+                        .map_err(|e| {
+                            AmqpError::from(azure_core::Error::with_error(
+                                AzureErrorKind::Other,
+                                e,
+                                "Failed to ensure AMQP CBS",
+                            ))
+                        })?;
                     claims_based_security_client
                         .authorize_path(path, token_type, &secret, expires_on)
                         .await
@@ -119,7 +103,7 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
             &self
                 .recoverable_connection
                 .upgrade()
-                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                .ok_or_else(|| AmqpError::with_message("Missing connection"))?
                 .retry_options,
             Self::should_retry_claims_based_security_response,
             Some(move |connection: Weak<RecoverableConnection>, reason| {
@@ -135,11 +119,11 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
         Ok(result)
     }
 
-    async fn attach(&self) -> azure_core::Result<()> {
+    async fn attach(&self) -> Result<()> {
         unimplemented!("AmqpClaimsBasedSecurityClient does not support attach operation");
     }
 
-    async fn detach(self) -> azure_core::Result<()> {
+    async fn detach(self) -> Result<()> {
         unimplemented!("AmqpClaimsBasedSecurityClient does not support detach operation");
     }
 }

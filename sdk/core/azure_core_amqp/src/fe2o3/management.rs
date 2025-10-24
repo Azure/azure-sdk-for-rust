@@ -1,19 +1,20 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use std::borrow::BorrowMut;
-
 use crate::{
-    error::AmqpErrorKind,
+    error::{AmqpErrorKind, Result},
     management::AmqpManagementApis,
     session::AmqpSession,
     simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
     AmqpError,
 };
-use azure_core::{credentials::AccessToken, Result};
+use azure_core::credentials::AccessToken;
 use fe2o3_amqp_management::operations::ReadResponse;
-use std::sync::{Arc, OnceLock};
+use std::{
+    borrow::BorrowMut,
+    sync::{Arc, OnceLock},
+};
 use tokio::sync::Mutex;
 use tracing::debug;
 
@@ -48,17 +49,11 @@ impl Fe2o3AmqpManagement {
         })
     }
 
-    fn amqp_management_already_attached() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "AMQP Management is already attached",
-        )
+    fn amqp_management_already_attached() -> AmqpError {
+        AmqpError::with_message("AMQP Management is already attached")
     }
-    fn amqp_management_not_attached() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "AMQP Management is not attached",
-        )
+    fn amqp_management_not_attached() -> AmqpError {
+        AmqpError::with_message("AMQP Management is not attached")
     }
 }
 
@@ -70,7 +65,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .client_node_addr(&self.client_node_name)
             .attach(self.session.lock().await.borrow_mut())
             .await
-            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
+            .map_err(AmqpError::from)?;
 
         self.management
             .set(Mutex::new(management))
@@ -110,36 +105,30 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             application_properties,
         );
 
-        let response = management.call(request).await;
-        if let Err(e) = response {
-            let e = AmqpError::try_from(e)?;
-            Err(e.into())
-        } else {
-            Ok((&response.unwrap().entity_attributes).into())
-        }
+        let response = management.call(request).await.map_err(AmqpError::from)?;
+        Ok((&response.entity_attributes).into())
     }
 }
 
-impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
-    type Error = azure_core::Error;
-    fn try_from(e: fe2o3_amqp_management::error::Error) -> std::result::Result<Self, Self::Error> {
+impl From<fe2o3_amqp_management::error::Error> for AmqpError {
+    fn from(e: fe2o3_amqp_management::error::Error) -> Self {
         match e {
             fe2o3_amqp_management::error::Error::DecodeError(_)
             | fe2o3_amqp_management::error::Error::StatusCodeNotFound
             | fe2o3_amqp_management::error::Error::NotAccepted(_)
-            | fe2o3_amqp_management::error::Error::CorrelationIdAndMessageIdAreNone => Ok(
-                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e))),
-            ),
+            | fe2o3_amqp_management::error::Error::CorrelationIdAndMessageIdAreNone => {
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e)))
+            }
 
             fe2o3_amqp_management::error::Error::Status(s) => {
-                Ok(AmqpError::from(AmqpErrorKind::ManagementStatusCode(
+                AmqpError::from(AmqpErrorKind::ManagementStatusCode(
                     azure_core::http::StatusCode::from(s.code.0.get()),
                     s.description.clone(),
-                )))
+                ))
             }
-            fe2o3_amqp_management::error::Error::Send(s) => Ok(AmqpError::from(s)),
-            fe2o3_amqp_management::error::Error::Recv(r) => Ok(AmqpError::from(r)),
-            fe2o3_amqp_management::error::Error::Disposition(d) => Ok(AmqpError::from(d)),
+            fe2o3_amqp_management::error::Error::Send(s) => AmqpError::from(s),
+            fe2o3_amqp_management::error::Error::Recv(r) => AmqpError::from(r),
+            fe2o3_amqp_management::error::Error::Disposition(d) => AmqpError::from(d),
         }
     }
 }

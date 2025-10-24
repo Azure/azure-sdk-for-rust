@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::{common::recoverable::RecoverableConnection, models::ReceivedEventData};
+use crate::{common::recoverable::RecoverableConnection, error::Result, models::ReceivedEventData};
 use async_stream::try_stream;
-use azure_core::{error::Result, http::Url, time::Duration};
+use azure_core::{http::Url, time::Duration};
 use azure_core_amqp::{
     AmqpDeliveryApis as _, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
 };
@@ -117,7 +117,7 @@ impl EventReceiver {
     ///
     /// ```
     ///
-    pub fn stream_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
+    pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
         // Use async_stream to create a stream that yields messages from the receiver.
         Box::pin(try_stream! {
             loop {

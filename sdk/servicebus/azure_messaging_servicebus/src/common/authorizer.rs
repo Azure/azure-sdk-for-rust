@@ -9,9 +9,10 @@ use azure_core::{
     fmt::SafeDebug,
     http::Url,
     time::{Duration, OffsetDateTime},
-    Result as AzureResult,
 };
-use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpSessionApis as _};
+use azure_core_amqp::{
+    error::Result, AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpSessionApis as _,
+};
 use rand::{rng, Rng};
 use std::{
     collections::HashMap,
@@ -72,7 +73,7 @@ impl Authorizer {
     }
 
     #[cfg(test)]
-    fn disable_authorization(&self) -> AzureResult<()> {
+    fn disable_authorization(&self) -> Result<()> {
         let mut disable_authorization = self.disable_authorization.lock().map_err(|e| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
@@ -84,7 +85,7 @@ impl Authorizer {
         self: &Arc<Self>,
         connection: &Arc<AmqpConnection>,
         path: &Url,
-    ) -> AzureResult<AccessToken> {
+    ) -> Result<AccessToken> {
         debug!("Authorizing path: {path}");
         let mut scopes = self.authorization_scopes.lock().await;
 
@@ -107,7 +108,8 @@ impl Authorizer {
                 return Err(azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     "Unable to add authentication token",
-                ));
+                )
+                .into());
             }
 
             debug!("Token verified.");
@@ -147,7 +149,7 @@ impl Authorizer {
         connection: &Arc<AmqpConnection>,
         url: &Url,
         new_token: &AccessToken,
-    ) -> AzureResult<()> {
+    ) -> Result<()> {
         // Test Hook: Disable interacting with Service Bus service if the test doesn't want it.
         #[cfg(test)]
         {
@@ -213,7 +215,7 @@ impl Authorizer {
     ///
     /// After we wake up, we iterate over all the authorized paths and refresh their tokens with
     /// the Service Bus service.
-    async fn refresh_tokens(self: &Arc<Self>) -> AzureResult<()> {
+    async fn refresh_tokens(self: &Arc<Self>) -> Result<()> {
         debug!("Refreshing tokens.");
         loop {
             let mut expiration_times = vec![];
@@ -363,7 +365,7 @@ impl Authorizer {
     }
 
     #[cfg(test)]
-    fn set_token_refresh_times(&self, refresh_times: TokenRefreshTimes) -> AzureResult<()> {
+    fn set_token_refresh_times(&self, refresh_times: TokenRefreshTimes) -> Result<()> {
         let mut token_refresh_bias = self.token_refresh_bias.lock().map_err(|e| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;

@@ -148,6 +148,8 @@ async fn get_lots_of_properties_multiple_connections1(
 async fn get_lots_of_properties_multiple_connections2(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
+    use azure_messaging_eventhubs::EventHubsError;
+
     let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -158,7 +160,7 @@ async fn get_lots_of_properties_multiple_connections2(
 
     let mut property_futures: Vec<
         tokio::task::JoinHandle<
-            Result<azure_messaging_eventhubs::models::EventHubProperties, azure_core::Error>,
+            Result<azure_messaging_eventhubs::models::EventHubProperties, EventHubsError>,
         >,
     > = Vec::new();
     for _ in 0..CONNECTION_COUNT {

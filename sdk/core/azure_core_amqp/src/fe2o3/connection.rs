@@ -1,11 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError};
-use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
-use crate::error::AmqpErrorKind;
-use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use azure_core::{http::Url, Result};
+use crate::{
+    connection::{AmqpConnectionApis, AmqpConnectionOptions},
+    error::{AmqpErrorKind, Result},
+    fe2o3::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
+    value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
+    AmqpError,
+};
+use azure_core::http::Url;
 use fe2o3_amqp::connection::ConnectionHandle;
 use std::{borrow::BorrowMut, sync::OnceLock};
 use tokio::sync::Mutex;
@@ -27,14 +30,11 @@ impl Fe2o3AmqpConnection {
         &self.connection
     }
 
-    fn connection_not_set() -> azure_core::Error {
-        azure_core::Error::with_message(azure_core::error::ErrorKind::Amqp, "Connection is not set")
+    fn connection_not_set() -> AmqpError {
+        AmqpError::with_message("Connection is not set")
     }
-    fn connection_already_set() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "Connection is already set",
-        )
+    fn connection_already_set() -> AmqpError {
+        AmqpError::with_message("Connection is already set")
     }
 }
 
@@ -118,9 +118,12 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             }
 
             self.connection
-                .set(Mutex::new(builder.open(endpoint).await.map_err(|e| {
-                    azure_core::Error::from(Fe2o3ConnectionOpenError(e))
-                })?))
+                .set(Mutex::new(
+                    builder
+                        .open(endpoint)
+                        .await
+                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?,
+                ))
                 .map_err(|_| Self::connection_already_set())?;
             Ok(())
         }
@@ -130,14 +133,14 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         let mut connection = self
             .connection
             .get()
-            .ok_or::<azure_core::Error>(Self::connection_not_set())?
+            .ok_or_else(Self::connection_not_set)?
             .lock()
             .await;
         connection
             .borrow_mut()
             .close()
             .await
-            .map_err(|e| azure_core::Error::from(Fe2o3ConnectionError(e)))?;
+            .map_err(|e| AmqpError::from(Fe2o3ConnectionError(e)))?;
         Ok(())
     }
 
@@ -163,13 +166,15 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 info.map(Into::into),
             ))
             .await
-            .map_err(|e| azure_core::Error::from(Fe2o3ConnectionError(e)));
+            .map_err(|e| AmqpError::from(Fe2o3ConnectionError(e)));
         // If we're closing with an error, then we might get the transport error back before we get the error back.
         // that's ok.
         match res {
             Ok(_) => Ok(()),
             Err(e) => match e.kind() {
-                azure_core::error::ErrorKind::Io => {
+                AmqpErrorKind::AzureCore(err)
+                    if matches!(err.kind(), azure_core::error::ErrorKind::Io) =>
+                {
                     warn!("I/O closing connection, ignored: {:?}", e);
                     Ok(())
                 }
@@ -179,12 +184,12 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
     }
 }
 
-impl From<Fe2o3ConnectionOpenError> for azure_core::Error {
+impl From<Fe2o3ConnectionOpenError> for AmqpError {
     fn from(e: Fe2o3ConnectionOpenError) -> Self {
         match e.0 {
-            fe2o3_amqp::connection::OpenError::Io(e) => azure_core::Error::from(e),
+            fe2o3_amqp::connection::OpenError::Io(e) => azure_core::Error::from(e).into(),
             fe2o3_amqp::connection::OpenError::UrlError(parse_error) => {
-                azure_core::Error::from(parse_error)
+                azure_core::Error::from(parse_error).into()
             }
             fe2o3_amqp::connection::OpenError::RemoteClosed => {
                 AmqpErrorKind::ConnectionClosedByRemote(Box::new(e.0)).into()
@@ -193,18 +198,18 @@ impl From<Fe2o3ConnectionOpenError> for azure_core::Error {
                 AmqpErrorKind::AmqpDescribedError(error.into()).into()
             }
             fe2o3_amqp::connection::OpenError::TransportError(error) => {
-                azure_core::Error::from(Fe2o3TransportError(error))
+                AmqpError::from(Fe2o3TransportError(error))
             }
             _ => AmqpErrorKind::TransportImplementationError(Box::new(e.0)).into(),
         }
     }
 }
 
-impl From<Fe2o3ConnectionError> for azure_core::Error {
+impl From<Fe2o3ConnectionError> for AmqpError {
     fn from(e: Fe2o3ConnectionError) -> Self {
         match e.0 {
             fe2o3_amqp::connection::Error::TransportError(error) => {
-                azure_core::Error::from(Fe2o3TransportError(error))
+                AmqpError::from(Fe2o3TransportError(error))
             }
             fe2o3_amqp::connection::Error::RemoteClosed => {
                 AmqpErrorKind::ConnectionClosedByRemote(Box::new(e.0)).into()

@@ -14,7 +14,7 @@ use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
-async fn main() -> Result<(), azure_core::Error> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let my_credential = DeveloperToolsCredential::new(None)?;
     let consumer = ConsumerClient::builder()
         .open("my_namespace", "my_eventhub".to_string(), my_credential)
@@ -30,7 +30,7 @@ use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
-async fn main() -> Result<(), azure_core::Error> {
+async fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
     let my_credential = DeveloperToolsCredential::new(None)?;
     let result = ConsumerClient::builder()
         .open("my_namespace", "my_eventhub".to_string(), my_credential)
@@ -57,7 +57,7 @@ use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
-async fn main() -> Result<(), azure_core::Error> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let my_credential = DeveloperToolsCredential::new(None)?;
     let consumer = ConsumerClient::builder()
         .open("my_namespace", "my_eventhub".to_string(), my_credential)

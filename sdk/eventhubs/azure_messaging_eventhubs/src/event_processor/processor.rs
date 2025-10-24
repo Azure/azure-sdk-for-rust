@@ -9,12 +9,12 @@ use super::{
     CheckpointStore, ProcessorStrategy,
 };
 use crate::{
-    models::ConsumerClientDetails, ConsumerClient, OpenReceiverOptions, StartLocation,
-    StartPosition,
+    error::Result, models::ConsumerClientDetails, ConsumerClient, EventHubsError,
+    OpenReceiverOptions, StartLocation, StartPosition,
 };
 //use async_io::Timer;
 use async_lock::Mutex as AsyncMutex;
-use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error, Result};
+use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error};
 use futures::{
     channel::mpsc::{channel, Receiver, Sender},
     SinkExt, StreamExt,
@@ -97,12 +97,10 @@ impl ProcessorConsumersMap {
         partition_client: Arc<PartitionClient>,
     ) -> Result<bool> {
         info!("Adding partition client for partition: {}", partition_id);
-        let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::with_message(
-                AzureErrorKind::Other,
-                "Could not lock consumers mutex.",
-            )
-        })?;
+        let mut consumers = self
+            .consumers
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
         if consumers.contains_key(partition_id) {
             info!(
                 "Partition client already exists for partition: {}",
@@ -117,12 +115,10 @@ impl ProcessorConsumersMap {
 
     pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
         info!("Removing partition client for partition: {}", partition_id);
-        let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::with_message(
-                AzureErrorKind::Other,
-                "Could not lock consumers mutex.",
-            )
-        })?;
+        let mut consumers = self
+            .consumers
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
         consumers.remove(partition_id);
         info!("Consumers for partition now: {:?}", consumers.keys());
         Ok(())
@@ -193,9 +189,8 @@ impl EventProcessor {
     /// use azure_core::time::Duration;
     /// use azure_messaging_eventhubs::ProcessorStrategy;
     /// use azure_messaging_eventhubs::CheckpointStore;
-    /// use azure_core::Result;
     ///
-    /// async fn run_processor(consumer_client: ConsumerClient, checkpoint_store: impl CheckpointStore+Send+Sync+'static) -> Result<()> {
+    /// async fn run_processor(consumer_client: ConsumerClient, checkpoint_store: impl CheckpointStore+Send+Sync+'static) -> Result<(), Box<dyn std::error::Error>> {
     ///   // Create an instance of the EventProcessor
     ///   let event_processor = EventProcessor::builder()
     ///       .with_load_balancing_strategy(ProcessorStrategy::Balanced)
@@ -264,10 +259,7 @@ impl EventProcessor {
         // Implement shutdown logic if needed
 
         let mut is_running = self.is_running.lock().map_err(|_| {
-            Error::with_message(
-                AzureErrorKind::Other,
-                "Failed to acquire lock on is_running for shutdown",
-            )
+            EventHubsError::with_message("Failed to acquire lock on is_running for shutdown")
         })?;
 
         *is_running = false;
@@ -276,12 +268,10 @@ impl EventProcessor {
 
     fn is_shutdown(&self) -> Result<bool> {
         // Implement shutdown logic if needed
-        let is_running = self.is_running.lock().map_err(|_| {
-            Error::with_message(
-                AzureErrorKind::Other,
-                "Failed to acquire lock on is_running",
-            )
-        })?;
+        let is_running = self
+            .is_running
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Failed to acquire lock on is_running"))?;
         if *is_running {
             Ok(false)
         } else {
@@ -358,8 +348,7 @@ impl EventProcessor {
             }
         } else {
             error!("Consumers map is no longer valid.");
-            return Err(Error::with_message(
-                AzureErrorKind::Other,
+            return Err(EventHubsError::with_message(
                 "Consumers map is no longer valid.",
             ));
         }
@@ -394,19 +383,12 @@ impl EventProcessor {
         // Send the partition client to the next partition client receiver
         {
             let mut sender = self.next_partition_client_sender.clone();
-            let r = sender.send(partition_client).await.map_err(|e| {
-                azure_core::Error::with_message(
+            sender.send(partition_client).await.map_err(|e| {
+                EventHubsError::from(azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     format!("Failed to send partition client: {:?}", e),
-                )
-            });
-            if let Err(e) = r {
-                info!("Failed to send partition client: {:?}", e);
-                return Err(Error::with_message(
-                    AzureErrorKind::Other,
-                    "Failed to send partition client",
-                ));
-            }
+                ))
+            })?;
         }
         info!(
             "add_partition_client: Partition client added for partition: {:?}",
@@ -427,10 +409,7 @@ impl EventProcessor {
             // Wait for the next partition client to be available
             let mut clients = self.next_partition_clients.lock().await;
             let next_client = clients.next().await.ok_or_else(|| {
-                azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "No next partition client available: ",
-                )
+                EventHubsError::with_message("No next partition client available: ")
             })?;
 
             info!(
@@ -452,10 +431,7 @@ impl EventProcessor {
                 client.get_partition_id()
             );
             let client = Arc::try_unwrap(client).map_err(|_| {
-                azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "Partition client still has multiple references.",
-                )
+                EventHubsError::with_message("Partition client still has multiple references.")
             })?;
             let res = client.close().await;
             if let Err(e) = res {
@@ -545,9 +521,8 @@ impl EventProcessor {
 
 pub mod builders {
     use super::{CheckpointStore, EventProcessor};
-    use crate::event_processor::models::StartPositions;
-    use crate::ConsumerClient;
-    use azure_core::{time::Duration, Result};
+    use crate::{error::Result, event_processor::models::StartPositions, ConsumerClient};
+    use azure_core::time::Duration;
     use std::sync::Arc;
 
     const DEFAULT_PREFETCH: u32 = 300;

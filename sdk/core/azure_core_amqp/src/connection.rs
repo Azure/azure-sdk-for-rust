@@ -1,8 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use azure_core::{error::Result, http::Url, time::Duration};
+use crate::{
+    error::Result,
+    value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
+};
+use azure_core::{http::Url, time::Duration};
 use std::fmt::Debug;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
