@@ -7,7 +7,6 @@ use crate::models::{
     PageBlobClientCreateOptions,
 };
 use azure_core::error::ErrorKind;
-use percent_encoding::percent_decode;
 use std::collections::HashMap;
 
 /// Augments the current options bag to only create if the Page blob does not already exist.
@@ -108,30 +107,6 @@ impl From<HashMap<String, String>> for BlobTags {
             .collect();
         BlobTags {
             blob_tag_set: Some(blob_tags),
-        }
-    }
-}
-
-/// Converts a `BlobName` struct into a decoded `String`.
-impl TryFrom<BlobName> for String {
-    type Error = azure_core::Error;
-
-    fn try_from(blob_name: BlobName) -> Result<Self, azure_core::Error> {
-        let content = blob_name.content.unwrap_or_default();
-
-        if blob_name.encoded.unwrap_or(false) {
-            // Decode the URL-encoded content
-            percent_decode(content.as_bytes())
-                .decode_utf8()
-                .map(|decoded| decoded.into_owned())
-                .map_err(|e| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        format!("Failed to decode URL-encoded blob name: {}", e),
-                    )
-                })
-        } else {
-            Ok(content)
         }
     }
 }

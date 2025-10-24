@@ -8,7 +8,6 @@ Btext
 copyid
 deletedwithversions
 deletetype
-FFFE
 firsttag
 immutabilitypolicy
 incrementalcopy

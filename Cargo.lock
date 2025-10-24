@@ -515,7 +515,6 @@ dependencies = [
  "azure_identity",
  "azure_storage_blob_test",
  "futures",
- "percent-encoding",
  "serde",
  "serde_json",
  "tokio",

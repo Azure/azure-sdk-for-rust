@@ -129,7 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "https://<storage_account_name>.blob.core.windows.net/",
         "container_name",
         "blob_name",
-        credential,
+        Some(credential),
         Some(BlobClientOptions::default()),
     )?;
     let blob_properties = blob_client.get_properties(
