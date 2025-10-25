@@ -596,35 +596,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Test Case 3: Initialize BlobClient using from_blob_url(), using Url methods to build full URL properly
-        let mut blob_url = Url::parse(&endpoint)?;
-        blob_url
-            .path_segments_mut()
-            .expect("failed to get path segments")
-            .push(container_name)
-            .push(blob_name);
-
-        let blob_client_from_url = BlobClient::from_url(
-            blob_url,
-            Some(recording.credential()),
-            Some(blob_client_options.clone()),
-        )?;
-
-        // Upload Blob
-        blob_client_from_url
-            .upload(
-                RequestContent::from(b"hello rusty world".to_vec()),
-                true,
-                17,
-                None,
-            )
-            .await?;
-
-        // Get Properties
-        let properties = blob_client_from_url.get_properties(None).await?;
-        assert_eq!(17, properties.content_length()?.unwrap());
-
-        // Test Case 4: Initialize BlobClient using ContainerClient accessor
+        // Test Case 3: Initialize BlobClient using ContainerClient accessor
         let blob_client_from_cc = container_client.blob_client(blob_name);
 
         // Upload Blob

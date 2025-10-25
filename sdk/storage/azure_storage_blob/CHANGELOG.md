@@ -8,10 +8,9 @@
   - `AppendBlobClient::from_url()`
   - `BlobClient::from_url()`
   - `BlobContainerClient::from_url()`
-  - `BlobServiceClient::new()` (unchanged)
   - `BlockBlobClient::from_url()`
   - `PageBlobClient::from_url()`
-- Consequently, this also includes support for client construction directly from URLs containing SAS (shared access signature) query parameters.
+- Added support for SAS (shared access signature) URLs via the new `from_url()` methods.
 
 ### Breaking Changes
 
@@ -23,8 +22,6 @@
 ### Bugs Fixed
 
 ### Other Changes
-
-- Added a `TryFrom()` implementation from `BlobName` to `String` to simplify using `BlobName` when dealing with cases where the XML returned a value for the `encoded`field.
 
 ## 0.6.0 (2025-10-06)
 
