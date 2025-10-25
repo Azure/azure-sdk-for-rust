@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `UrlExt::append_path()`.
+- `RetryOptions::with_retry_statuses()` enables configuring which status codes should trigger a retry.
 
 ### Breaking Changes
 
