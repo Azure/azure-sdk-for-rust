@@ -84,10 +84,10 @@ if ($content -ne $updated) {
   Write-Host "Updated version in $tomlPath from $($pkgProperties.Version) to $packageSemVer."
 
   Write-Host "Updaging dependencies in Cargo.toml files."
-  Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
+  Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update"
 
   Write-Host "Updating Cargo.lock using 'cargo update --workspace'."
-  Invoke-LoggedCommand "cargo update --workspace" | Out-Null
+  Invoke-LoggedCommand "cargo update --workspace"
 }
 else {
   Write-Host "$tomlPath already contains version $packageSemVer"
