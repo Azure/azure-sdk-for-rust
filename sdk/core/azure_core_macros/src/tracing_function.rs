@@ -204,11 +204,6 @@ fn is_function_declaration(item: &TokenStream) -> std::result::Result<(), String
         }
     };
 
-    // Function must be public.
-    if !matches!(item_fn.vis, syn::Visibility::Public(_)) {
-        return Err("Function must be public".into());
-    }
-
     // Function must return a Result type.
     if let syn::ReturnType::Type(_, ty) = &item_fn.sig.output {
         if !matches!(ty.as_ref(), syn::Type::Path(_)) {

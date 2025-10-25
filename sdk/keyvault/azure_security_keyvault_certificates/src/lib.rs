@@ -5,7 +5,14 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod clients;
-#[allow(unused_imports)]
+#[allow(
+    dead_code,
+    reason = "CertificateClientBeginCreateCertificateOptions unused; cannot elide in TypeSpec"
+)]
+#[allow(
+    unused_imports,
+    reason = "Publicly exported generated/clients are instead exported from clients"
+)]
 mod generated;
 pub mod models;
 mod resource;

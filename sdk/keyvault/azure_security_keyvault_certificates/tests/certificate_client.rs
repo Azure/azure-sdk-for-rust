@@ -55,7 +55,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .begin_create_certificate("certificate-roundtrip", body.try_into()?, None)?
+        .create_certificate("certificate-roundtrip", body.try_into()?, None)?
         .await?
         .into_body()?;
 
@@ -88,7 +88,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .begin_create_certificate("update-properties", body.try_into()?, None)?
+        .create_certificate("update-properties", body.try_into()?, None)?
         .await?
         .into_body()?;
 
@@ -145,10 +145,10 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     client
-        .begin_create_certificate("list-certificates-1", body.clone().try_into()?, None)?
+        .create_certificate("list-certificates-1", body.clone().try_into()?, None)?
         .await?;
     client
-        .begin_create_certificate("list-certificates-2", body.try_into()?, None)?
+        .create_certificate("list-certificates-2", body.try_into()?, None)?
         .await?;
 
     // List certificates.
@@ -186,7 +186,7 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     };
     const NAME: &str = "purge-certificate";
     client
-        .begin_create_certificate(NAME, body.try_into()?, None)?
+        .create_certificate(NAME, body.try_into()?, None)?
         .await?;
 
     // Delete the certificate.
@@ -259,7 +259,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     };
     const NAME: &str = "ec-certificate-signer";
     client
-        .begin_create_certificate(NAME, body.try_into()?, None)?
+        .create_certificate(NAME, body.try_into()?, None)?
         .await?;
 
     let mut key_options = KeyClientOptions::default();
@@ -293,46 +293,6 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test]
-async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
-    let recording = ctx.recording();
-    recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
-
-    let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    let client = CertificateClient::new(
-        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
-        recording.credential(),
-        Some(options),
-    )?;
-
-    const CERTIFICATE_NAME: &str = "get-certificate-operation";
-
-    // Start creating a self-signed certificate but do not wait until completed.
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
-        ..Default::default()
-    };
-    client
-        .begin_create_certificate(CERTIFICATE_NAME, body.try_into()?, None)?
-        // Request not sent until first execution of pipeline.
-        .try_next()
-        .await?;
-
-    // Now resume the operation and get the self-signed certificate.
-    let certificate = client
-        .resume_certificate_operation(CERTIFICATE_NAME, None)?
-        .await?
-        .into_body()?;
-    let version = certificate.resource_id()?.version;
-
-    assert!(certificate.id.is_some());
-    assert!(version.is_some());
-
-    Ok(())
-}
-
-#[recorded::test]
 async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
@@ -351,7 +311,7 @@ async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let err = client
-        .begin_create_certificate("create_invalid_certificate", body.try_into()?, None)?
+        .create_certificate("create_invalid_certificate", body.try_into()?, None)?
         .await
         .expect_err("expected HTTP error");
 

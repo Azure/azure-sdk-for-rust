@@ -326,7 +326,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     // The Poller implements futures::Stream and automatically waits between polls.
-    let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
+    let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
     while let Some(operation) = poller.try_next().await? {
         let operation = operation.into_body()?;
         match operation.status.as_deref().unwrap_or("unknown") {
@@ -381,7 +381,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete and get the certificate.
     let certificate = client
-        .begin_create_certificate("certificate-name", body.try_into()?, None)?
+        .create_certificate("certificate-name", body.try_into()?, None)?
         .await?
         .into_body()?;
 
