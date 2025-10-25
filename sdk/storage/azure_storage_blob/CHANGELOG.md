@@ -4,7 +4,20 @@
 
 ### Features Added
 
+- Added support for client construction directly from URLs:
+  - `AppendBlobClient::from_url()`
+  - `BlobClient::from_url()`
+  - `BlobContainerClient::from_url()`
+  - `BlockBlobClient::from_url()`
+  - `PageBlobClient::from_url()`
+- Added support for SAS (shared access signature) URLs via the new `from_url()` methods.
+
 ### Breaking Changes
+
+- Removed the `container_name()` and `blob_name()` accessors on relevant clients.
+- Removed the `endpoint` struct field on all clients, as this value is now returned directly from the underlying generated client.
+- Changed the `container_name` and `blob_name` parameters from owned `String` to `&str` reference on relevant client constructor methods (`new()`).
+- The `credential` parameter is now `Optional` on `new()` client constructors, allowing for construction of public access clients.
 
 ### Bugs Fixed
 

@@ -82,7 +82,7 @@ impl PerfTest for ListBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, container_name, credential, None)?;
+        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
         self.client.set(client).map_err(|_| {
             azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
         })?;
@@ -94,7 +94,7 @@ impl PerfTest for ListBlobTest {
         // Create the blobs for the test.
         for i in 0..self.count {
             let blob_name = format!("blob-{}", i);
-            let blob_client = container_client.blob_client(blob_name);
+            let blob_client = container_client.blob_client(&blob_name);
             let body = vec![0u8; 1024 * 1024]; // 1 MB blob
             let body_bytes = Bytes::from(body);
 

@@ -4,6 +4,7 @@ appendpos
 blockid
 blocklist
 blocklisttype
+Btext
 copyid
 deletedwithversions
 deletetype
@@ -12,7 +13,9 @@ immutabilitypolicy
 incrementalcopy
 legalhold
 missingcontainer
+numofmessages
 pagelist
+peekonly
 policyid
 prevsnapshot
 RAGRS
@@ -27,5 +30,3 @@ testcontainer
 uncommittedblobs
 westus
 yourtagname
-numofmessages
-peekonly

@@ -17,7 +17,7 @@ use azure_storage_blob::{
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
+pub fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
     let endpoint = format!(
@@ -63,7 +63,7 @@ pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClien
     };
     BlobServiceClient::new(
         &endpoint,
-        recording.credential(),
+        Some(recording.credential()),
         Some(service_client_options),
     )
 }
@@ -86,8 +86,8 @@ pub async fn get_container_client(
     };
     let container_client = BlobContainerClient::new(
         &endpoint,
-        container_name,
-        recording.credential(),
+        &container_name,
+        Some(recording.credential()),
         Some(container_client_options),
     )?;
     if create {
