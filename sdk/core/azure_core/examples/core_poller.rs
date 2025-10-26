@@ -39,7 +39,7 @@ async fn test_poller() -> Result<(), Box<dyn std::error::Error>> {
 
     // Start a create_certificate long-running operation.
     let certificate = client
-        .begin_create_certificate("my-cert", params.try_into()?, None)?
+        .create_certificate("my-cert", params.try_into()?, None)?
         .await?
         .into_body()?;
     assert_eq!(
@@ -74,7 +74,7 @@ async fn test_poller_stream() -> Result<(), Box<dyn std::error::Error>> {
     let params = CreateCertificateParameters::default();
 
     // Start a create_certificate long-running operation and manually poll status.
-    let mut poller = client.begin_create_certificate("my-cert", params.try_into()?, None)?;
+    let mut poller = client.create_certificate("my-cert", params.try_into()?, None)?;
 
     // Manually poll status updates until completion
     let mut final_status = None;
