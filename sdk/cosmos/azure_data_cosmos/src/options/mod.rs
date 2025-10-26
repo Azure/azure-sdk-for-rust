@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::collections::HashSet;
 use crate::constants;
 use crate::models::ThroughputProperties;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
@@ -8,11 +9,38 @@ use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Display;
+use azure_core::time::Duration;
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 #[derive(Clone, Default, Debug)]
 pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
+    pub application_name: Option<String>,
+    pub application_region: Option<String>,
+    pub application_preferred_regions: Option<Vec<String>>,
+    pub account_initialization_custom_endpoints: Option<HashSet<String>>,
+    pub consistency_level: Option<ConsistencyLevel>,
+    pub request_timeout: Duration,
+    pub enable_remote_region_preferred_for_session_retry: bool,
+    pub enable_partition_level_circuit_breaker: bool,
+    pub disable_partition_level_failover: bool,
+    pub enable_upgrade_consistency_to_local_quorum: bool,
+    pub throughput_bucket: Option<i32>,
+    pub session_retry_options: SessionRetryOptions,
+}
+
+/// SessionRetryOptions is used to configure retry behavior for session consistency scenarios.
+#[derive(Clone, Debug, Default)]
+pub struct SessionRetryOptions {
+    /// Minimum retry time for 404/1002 retries within each region for read and write operations.
+    /// The minimum value is 100ms. Default is 500ms.
+    pub min_in_region_retry_time: Duration,
+    /// Maximum number of retries within each region for read and write operations. Minimum is 1.
+    pub max_in_region_retry_count: usize,
+    /// Hints to SDK-internal retry policies on how early to switch retries to a different region.
+    /// If true, will retry all replicas once and add a minimum delay before switching to the next region.
+    /// If false, will retry in the local region up to 5s.
+    pub remote_region_preferred: bool,
 }
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
@@ -50,7 +78,7 @@ pub struct DeleteDatabaseOptions<'a> {
 /// Specifies consistency levels that can be used when working with Cosmos APIs.
 ///
 /// Learn more at [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ConsistencyLevel {
     ConsistentPrefix,
     Eventual,

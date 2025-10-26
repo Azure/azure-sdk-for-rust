@@ -29,3 +29,7 @@ pub use feed::{FeedPage, FeedPager};
 mod handler;
 mod retry_policies;
 pub mod routing;
+pub mod regions;
+mod cosmos_request;
+mod cosmos_request_context;
+mod operation_context;

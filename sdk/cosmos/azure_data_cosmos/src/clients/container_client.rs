@@ -17,6 +17,7 @@ use azure_core::http::{
     Method,
 };
 use serde::{de::DeserializeOwned, Serialize};
+use crate::cosmos_request::CosmosRequest;
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
@@ -494,6 +495,7 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Get);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
+        // let mut doc_request = DocumentServiceRequest::new();
         self.pipeline
             .send(options.method_options.context, &mut req, link)
             .await
