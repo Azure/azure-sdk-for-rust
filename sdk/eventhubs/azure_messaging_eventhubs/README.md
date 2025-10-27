@@ -124,11 +124,10 @@ Additional examples for various scenarios can be found on in the examples direct
 ### Open an Event Hubs message producer on an Event Hub instance
 
 ```rust no_run
-use azure_core::Error;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn open_producer_client() -> Result<ProducerClient, Error> {
+async fn open_producer_client() -> Result<ProducerClient, Box<dyn std::error::Error>> {
     let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
@@ -151,10 +150,9 @@ send multiple messages in a single network request to the service.
 #### Send events directly to the Event Hub
 
 ```rust no_run
-use azure_core::Error;
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
+async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
     producer.send_event(vec![1, 2, 3, 4], None).await?;
 
     Ok(())
@@ -164,10 +162,9 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
 #### Send events using a batch operation
 
 ```rust no_run
-use azure_core::Error;
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
+async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
     let batch = producer.create_batch(None).await?;
     assert_eq!(batch.len(), 0);
     assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
@@ -182,11 +179,10 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
 ### Open an Event Hubs message consumer on an Event Hub instance
 
 ```rust no_run
-use azure_core::Error;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 
-async fn open_consumer_client() -> Result<ConsumerClient, Error> {
+async fn open_consumer_client() -> Result<ConsumerClient, Box<dyn std::error::Error>> {
     let host = "<EVENTHUBS_HOST>".to_string();
     let eventhub = "<EVENTHUB_NAME>".to_string();
 
@@ -211,7 +207,6 @@ Each message receiver can only receive messages from a single Event Hubs partiti
 
 ```rust no_run
 use futures::stream::StreamExt;
-use azure_core::Error;
 use azure_messaging_eventhubs::{
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
@@ -219,7 +214,7 @@ use azure_messaging_eventhubs::{
 // By default, an event receiver only receives new events from the event hub. To receive events from earlier, specify
 // a `start_position` which represents the position from which to start receiving events.
 // In this example, events are received from the start of the partition.
-async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
+async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::error::Error>> {
     let message_receiver = client
         .open_receiver_on_partition(
             "0".to_string(),

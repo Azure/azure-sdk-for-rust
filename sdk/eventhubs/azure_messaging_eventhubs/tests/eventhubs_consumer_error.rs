@@ -1,12 +1,12 @@
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{
-    ConsumerClient, OpenReceiverOptions, ProducerClient, StartLocation, StartPosition,
+    ConsumerClient, OpenReceiverOptions, ProducerClient, Result, StartLocation, StartPosition,
 };
 use futures::StreamExt;
 use tracing::trace;
 
 #[recorded::test(live)]
-async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
+async fn consumer_error(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     // Set up the Event Hub client
     let eventhub_namespace = recording.var("EVENTHUBS_HOST", None);
@@ -94,14 +94,8 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
     trace!("Receiver closed");
 
     // Error
-    match consumer.close().await {
-        Ok(_) => {
-            trace!("Consumer closed successfully");
-        }
-        Err(e) => {
-            return Err(e);
-        }
-    }
+    consumer.close().await?;
+    trace!("Consumer closed successfully");
 
     Ok(())
 }

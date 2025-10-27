@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 // cspell:: words amqp servicebus sastoken
 
-use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession, AmqpError};
-use azure_core::{credentials::Secret, error::Result, time::OffsetDateTime};
+use crate::{cbs::AmqpClaimsBasedSecurityApis, error::Result, session::AmqpSession, AmqpError};
+use azure_core::{credentials::Secret, time::OffsetDateTime};
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;
@@ -24,23 +24,14 @@ impl Fe2o3ClaimsBasedSecurity {
         })
     }
 
-    fn cbs_already_attached() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "Claims Based Security is already attached",
-        )
+    fn cbs_already_attached() -> AmqpError {
+        AmqpError::with_message("Claims Based Security is already attached")
     }
-    fn cbs_not_set() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "Claims Based Security is not set",
-        )
+    fn cbs_not_set() -> AmqpError {
+        AmqpError::with_message("Claims Based Security is not set")
     }
-    fn cbs_not_attached() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Amqp,
-            "Claims Based Security is not attached",
-        )
+    fn cbs_not_attached() -> AmqpError {
+        AmqpError::with_message("Claims Based Security is not attached")
     }
 }
 
@@ -62,7 +53,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
             .client_node_addr("rust_amqp_cbs")
             .attach(session.borrow_mut())
             .await
-            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
+            .map_err(AmqpError::from)?;
         self.cbs
             .set(Mutex::new(cbs_client))
             .map_err(|_| Self::cbs_already_attached())?;
@@ -97,32 +88,19 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
                     .unix_timestamp()
                     .checked_mul(1_000)
                     .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Amqp,
-                            "Unable to convert time to unix timestamp.",
-                        )
+                        AmqpError::with_message("Unable to convert time to unix timestamp.")
                     })?,
             )),
         );
         self.cbs
             .get()
-            .ok_or::<azure_core::Error>(Self::cbs_not_attached())?
+            .ok_or_else(Self::cbs_not_attached)?
             .lock()
             .await
             .borrow_mut()
             .put_token(path, cbs_token)
             .await
-            .map_err(|e| match AmqpError::try_from(e) {
-                Ok(amqp_error) => amqp_error.into(),
-                Err(e) => {
-                    debug!("Failed to convert management error to azure error: {:?}", e);
-                    azure_core::Error::with_error(
-                        azure_core::error::ErrorKind::Amqp,
-                        e,
-                        "Failed to convert management error to azure error.",
-                    )
-                }
-            })?;
+            .map_err(AmqpError::from)?;
         Ok(())
     }
 }

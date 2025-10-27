@@ -310,12 +310,13 @@ impl ServiceBusClient {
 
     /// Authorizes access to a Service Bus entity path using the configured credential.
     /// This method is used internally by senders and receivers when authentication is required.
-    pub(crate) async fn authorize_path(&self, entity_path: &str) -> azure_core::Result<()> {
+    pub(crate) async fn authorize_path(&self, entity_path: &str) -> Result<()> {
         if let Some(ref authorizer) = self.authorizer {
             let entity_url = azure_core::http::Url::parse(&format!(
                 "amqps://{}:5671/{}",
                 self.namespace, entity_path
-            ))?;
+            ))
+            .map_err(azure_core::Error::from)?;
 
             authorizer
                 .authorize_path(&self.connection, &entity_url)

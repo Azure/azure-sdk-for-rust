@@ -25,7 +25,6 @@ thiserror.workspace = true
 
 [features]
 default = ["http", "json"]
-amqp = []
 http = []
 json = ["dep:serde", "dep:serde_json"]
 xml = ["dep:quick-xml"]
