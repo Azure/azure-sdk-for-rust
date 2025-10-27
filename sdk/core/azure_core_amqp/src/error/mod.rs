@@ -76,12 +76,15 @@ impl From<azure_core::Error> for AmqpError {
     }
 }
 
-impl TryFrom<AmqpError> for azure_core::Error {
-    type Error = AmqpError;
-    fn try_from(value: AmqpError) -> std::result::Result<Self, Self::Error> {
+impl From<AmqpError> for azure_core::Error {
+    fn from(value: AmqpError) -> Self {
         match value.kind {
-            AmqpErrorKind::AzureCore(e) => Ok(e),
-            _ => Err(AmqpError::with_message("Amqp error is not an Azure Error")),
+            AmqpErrorKind::AzureCore(e) => e,
+            _ => azure_core::Error::with_error(
+                azure_core::error::ErrorKind::Other,
+                value,
+                "AMQP error",
+            ),
         }
     }
 }
@@ -175,6 +178,7 @@ impl std::error::Error for AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
             AmqpErrorKind::AzureCore(e) => Some(e),
+
             AmqpErrorKind::TransportImplementationError(e)
             | AmqpErrorKind::DetachError(e)
             | AmqpErrorKind::LinkClosedByRemote(e)
@@ -188,6 +192,7 @@ impl std::error::Error for AmqpError {
             | AmqpErrorKind::TransferLimitExceeded(e)
             | AmqpErrorKind::FramingError(e)
             | AmqpErrorKind::IdleTimeoutElapsed(e) => Some(e.as_ref()),
+
             AmqpErrorKind::ManagementStatusCode(_, _)
             | AmqpErrorKind::NonTerminalDeliveryState
             | AmqpErrorKind::SimpleMessage(_)
@@ -235,10 +240,10 @@ impl std::fmt::Display for AmqpError {
                 write!(f, "Remote connection closed with error: {}", err)
             }
             AmqpErrorKind::DetachError(err) => {
-                write!(f, "AMQP Detach Error: {} ", err)
+                write!(f, "Detach Error: {} ", err)
             }
             AmqpErrorKind::SendRejected => {
-                write!(f, "AMQP Send Rejected with no error information")
+                write!(f, "Send Rejected with no error information")
             }
             AmqpErrorKind::TransportImplementationError(s) => {
                 write!(f, "Transport Implementation Error: {}", s)
@@ -252,20 +257,17 @@ impl std::fmt::Display for AmqpError {
             AmqpErrorKind::IdleTimeoutElapsed(s) => {
                 write!(f, "Connection Idle Timeout elapsed: {}", s)
             }
-            // AmqpErrorKind::SenderError(err) => {
-            //     write!(f, "AMQP Sender Error: {} ", err)
-            // }
             AmqpErrorKind::LinkStateError(err) => {
-                write!(f, "AMQP Link State Error: {} ", err)
+                write!(f, "Link State Error: {} ", err)
             }
             AmqpErrorKind::TransferLimitExceeded(e) => {
-                write!(f, "AMQP Transfer Limit Exceeded: {e}")
+                write!(f, "Transfer Limit Exceeded: {e}")
             }
             AmqpErrorKind::NonTerminalDeliveryState => {
-                write!(f, "AMQP Non Terminal Delivery State")
+                write!(f, "Non Terminal Delivery State")
             }
             AmqpErrorKind::IllegalDeliveryState => {
-                write!(f, "AMQP Illegal Delivery State")
+                write!(f, "Illegal Delivery State")
             }
             AmqpErrorKind::AmqpDescribedError(e) => {
                 write!(
@@ -280,7 +282,7 @@ impl std::fmt::Display for AmqpError {
 
 impl std::fmt::Debug for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "AmqpError: {}", self)?;
+        write!(f, "AMQP Error: {}", self)?;
         Ok(())
     }
 }

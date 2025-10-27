@@ -15,6 +15,7 @@
 ### Other Changes
 
 - Added `azure_messaging_eventhubs::error::ErrorKind::AmqpError`, `azure_messaging_eventhubs::error::ErrorKind::AzureCore`, and `azure_messaging_eventhubs::error::ErrorKind::SimpleMessage` to describe AMQP originated messages, Azure Core originated messages, and messages which just have a string value respectively.
+- Added `azure_messaging_eventhubs::Error::with_message` to enable simple error returns with a text message.
 
 ## 0.8.0 (2025-10-08)
 

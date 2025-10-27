@@ -326,15 +326,15 @@ fn test_amqp_error_from_azure_core() {
 }
 
 #[test]
-fn test_amqp_error_try_into_azure_core() {
-    let azure_error = azure_core::Error::with_message(AzureErrorKind::Other, "Test");
+fn test_amqp_error_into_azure_core() {
+    let azure_error = azure_core::Error::with_message(AzureErrorKind::DataConversion, "Test");
     let amqp_error: AmqpError = azure_error.into();
-    let result: std::result::Result<azure_core::Error, AmqpError> = amqp_error.try_into();
-    assert!(result.is_ok());
+    let unwrapped: azure_core::Error = azure_core::Error::from(amqp_error);
+    assert_eq!(*unwrapped.kind(), AzureErrorKind::DataConversion);
 
     let simple_error = AmqpError::with_message(Cow::Borrowed("Simple"));
-    let result: std::result::Result<azure_core::Error, AmqpError> = simple_error.try_into();
-    assert!(result.is_err());
+    let unwrapped = azure_core::Error::from(simple_error);
+    assert_eq!(*unwrapped.kind(), AzureErrorKind::Other);
 }
 
 #[test]

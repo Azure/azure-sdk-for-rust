@@ -6,7 +6,9 @@
 use azure_core::time::Duration;
 use azure_core_amqp::AmqpErrorKind;
 use azure_core_test::{recorded, TestContext};
-use azure_messaging_eventhubs::{ConsumerClient, ErrorKind, OpenReceiverOptions, StartPosition};
+use azure_messaging_eventhubs::{
+    error::ErrorKind, ConsumerClient, OpenReceiverOptions, StartPosition,
+};
 use futures::StreamExt;
 use std::{env, error::Error};
 use tokio::time::timeout;

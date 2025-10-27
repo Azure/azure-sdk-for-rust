@@ -115,7 +115,7 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         let kind = &err.kind;
         assert!(matches!(
             kind,
-            azure_messaging_eventhubs::ErrorKind::AmqpError(_)
+            azure_messaging_eventhubs::error::ErrorKind::AmqpError(_)
         ));
         let amqp_error = err.source();
         assert!(amqp_error.is_some());
