@@ -2,7 +2,7 @@
 
 # Contributing to the Azure Cosmos DB SDK for Rust.
 
-First, review the Azure Core SDK Contributing guide: [CONTRIBUTING.md](../../CONTRIBUTING.md).
+First, review the Azure Core SDK Contributing guide: [CONTRIBUTING.md](../../../CONTRIBUTING.md).
 
 ## Running Integration Tests
 
