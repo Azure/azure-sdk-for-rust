@@ -66,11 +66,7 @@
     "msrv",
     "newtonsoft",
     "oidc",
-<<<<<<< HEAD
-=======
     "oncreate",
-    "otel",
->>>>>>> db114c1c7 (Remove unnecessary dtolnay entry from cspell and fix remaining spelling errors)
     "opentelemetry",
     "otel",
     "pageable",
