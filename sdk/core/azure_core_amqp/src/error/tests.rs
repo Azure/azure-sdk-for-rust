@@ -418,20 +418,20 @@ fn test_amqp_error_display_send_rejected() {
     let error = AmqpError::from(AmqpErrorKind::SendRejected);
     assert_eq!(
         format!("{}", error),
-        "AMQP Send Rejected with no error information"
+        "Send Rejected with no error information"
     );
 }
 
 #[test]
 fn test_amqp_error_display_non_terminal_delivery_state() {
     let error = AmqpError::from(AmqpErrorKind::NonTerminalDeliveryState);
-    assert_eq!(format!("{}", error), "AMQP Non Terminal Delivery State");
+    assert_eq!(format!("{}", error), "Non Terminal Delivery State");
 }
 
 #[test]
 fn test_amqp_error_display_illegal_delivery_state() {
     let error = AmqpError::from(AmqpErrorKind::IllegalDeliveryState);
-    assert_eq!(format!("{}", error), "AMQP Illegal Delivery State");
+    assert_eq!(format!("{}", error), "Illegal Delivery State");
 }
 
 #[test]
@@ -461,7 +461,7 @@ fn test_amqp_error_source() {
 fn test_amqp_error_debug() {
     let error = AmqpError::with_message(Cow::Borrowed("Debug test"));
     let debug_output = format!("{:?}", error);
-    assert!(debug_output.contains("AmqpError"));
+    assert!(debug_output.contains("AMQP Error:"));
     assert!(debug_output.contains("Debug test"));
 }
 
