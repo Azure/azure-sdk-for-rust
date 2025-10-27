@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Adjusted the query engine abstraction to support future enhancements and optimizations. ([#3166](https://github.com/Azure/azure-sdk-for-rust/pull/3166))
+
 ### Breaking Changes
 
 ### Bugs Fixed
