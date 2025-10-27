@@ -9,12 +9,11 @@ use azure_core::http::{
     pager::PagerState,
     request::{options::ContentType, Request},
     response::Response,
-    ClientOptions, Context, Method, RawResponse,
+    ClientOptions, Context, Method, RawResponse, RetryOptions,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
-use typespec_client_core::http::RetryOptions;
 use url::Url;
 
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
