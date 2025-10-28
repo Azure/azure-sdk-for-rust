@@ -5,7 +5,7 @@ use std::{collections::VecDeque, sync::Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use azure_data_cosmos::query::{PipelineResult, QueryEngine, QueryPipeline};
+use azure_data_cosmos::query::{PipelineResult, QueryEngine, QueryPipeline, QueryResult};
 use serde_json::value::RawValue;
 
 #[derive(Deserialize)]
@@ -42,6 +42,17 @@ pub struct MockItem {
 pub struct MockQueryEngine {
     /// An error to return when creating a pipeline.
     pub create_error: Mutex<Option<azure_core::Error>>,
+    /// Configuration for what kind of QueryRequest the pipeline should return.
+    pub query_request_config: Mutex<Option<QueryRequestConfig>>,
+}
+
+/// Configuration for controlling what QueryRequest objects the MockQueryPipeline returns.
+#[derive(Clone)]
+pub struct QueryRequestConfig {
+    /// The query to return in QueryRequest.query (None means no override)
+    pub query: Option<String>,
+    /// The value of include_parameters in the QueryRequest
+    pub include_parameters: bool,
 }
 
 impl MockQueryEngine {
@@ -49,6 +60,7 @@ impl MockQueryEngine {
     pub fn new() -> Self {
         Self {
             create_error: Mutex::new(None),
+            query_request_config: Mutex::new(None),
         }
     }
 
@@ -56,6 +68,15 @@ impl MockQueryEngine {
     pub fn with_error(error: azure_core::Error) -> Self {
         Self {
             create_error: Mutex::new(Some(error)),
+            query_request_config: Mutex::new(None),
+        }
+    }
+
+    /// Creates a MockQueryEngine with a specific QueryRequest configuration.
+    pub fn with_query_request_config(config: QueryRequestConfig) -> Self {
+        Self {
+            create_error: Mutex::new(None),
+            query_request_config: Mutex::new(Some(config)),
         }
     }
 }
@@ -77,7 +98,8 @@ impl QueryEngine for MockQueryEngine {
         let pkranges: PkRanges = serde_json::from_slice(pkranges)?;
 
         // Create a mock pipeline with the partition key ranges.
-        let pipeline = MockQueryPipeline::new(query.to_string(), pkranges.ranges);
+        let config = self.query_request_config.lock().unwrap().clone();
+        let pipeline = MockQueryPipeline::new(query.to_string(), pkranges.ranges, config);
 
         Ok(Box::new(pipeline))
     }
@@ -92,6 +114,7 @@ struct PartitionState {
     started: bool,
     queue: VecDeque<MockItem>,
     next_continuation: Option<String>,
+    next_index: usize,
 }
 
 impl PartitionState {
@@ -120,10 +143,15 @@ struct MockQueryPipeline {
     query: String,
     partitions: Vec<PartitionState>,
     completed: bool,
+    query_request_config: Option<QueryRequestConfig>,
 }
 
 impl MockQueryPipeline {
-    pub fn new(query: String, pkranges: Vec<PartitionKeyRange>) -> Self {
+    pub fn new(
+        query: String,
+        pkranges: Vec<PartitionKeyRange>,
+        config: Option<QueryRequestConfig>,
+    ) -> Self {
         let partitions = pkranges
             .into_iter()
             .map(|range| PartitionState {
@@ -131,6 +159,7 @@ impl MockQueryPipeline {
                 started: false,
                 queue: VecDeque::new(),
                 next_continuation: None,
+                next_index: 0,
             })
             .collect();
 
@@ -138,20 +167,31 @@ impl MockQueryPipeline {
             query,
             partitions,
             completed: false,
+            query_request_config: config,
         }
     }
 
     fn get_requests(&self) -> Vec<azure_data_cosmos::query::QueryRequest> {
+        let (query, include_parameters) = if let Some(config) = &self.query_request_config {
+            (config.query.clone(), config.include_parameters)
+        } else {
+            (None, false)
+        };
+
         self.partitions
             .iter()
             .filter(|state| !state.exhausted())
-            .map(|state| azure_data_cosmos::query::QueryRequest {
+            .map(move |state| azure_data_cosmos::query::QueryRequest {
                 partition_key_range_id: state.range.id.clone(),
+                index: state.next_index,
                 continuation: if state.started {
                     state.next_continuation.clone()
                 } else {
                     None
                 },
+                query: query.clone(),
+                include_parameters,
+                drain: false,
             })
             .collect()
     }
@@ -227,33 +267,42 @@ impl QueryPipeline for MockQueryPipeline {
         })
     }
 
-    fn provide_data(
-        &mut self,
-        data: azure_data_cosmos::query::QueryResult,
-    ) -> azure_core::Result<()> {
-        let payload: DocumentPayload<MockItem> =
-            serde_json::from_slice(data.result).map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Failed to deserialize payload",
-                )
-            })?;
+    fn provide_data(&mut self, data: Vec<QueryResult<'_>>) -> azure_core::Result<()> {
+        for data in data {
+            let payload: DocumentPayload<MockItem> =
+                serde_json::from_slice(data.result).map_err(|_| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "Failed to deserialize payload",
+                    )
+                })?;
 
-        let partition_state = self
-            .partitions
-            .iter_mut()
-            .find(|state| state.range.id == data.partition_key_range_id);
-        if let Some(partition_state) = partition_state {
-            partition_state.provide_data(payload.documents, data.next_continuation);
-            Ok(())
-        } else {
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "Partition key range {} not found",
-                    data.partition_key_range_id
-                ),
-            ))
+            let partition_state = self
+                .partitions
+                .iter_mut()
+                .find(|state| state.range.id == data.partition_key_range_id);
+            if let Some(partition_state) = partition_state {
+                if partition_state.next_index != data.request_index {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!(
+                            "Out of order data provided for partition key range {}: expected index {}, got {}",
+                            data.partition_key_range_id, partition_state.next_index, data.request_index
+                        ),
+                    ));
+                }
+                partition_state.next_index += 1;
+                partition_state.provide_data(payload.documents, data.next_continuation);
+            } else {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!(
+                        "Partition key range {} not found",
+                        data.partition_key_range_id
+                    ),
+                ));
+            }
         }
+        Ok(())
     }
 }
