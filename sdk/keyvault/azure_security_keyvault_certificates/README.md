@@ -80,13 +80,15 @@ The following section provides several code snippets using the `CertificateClien
 `create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
 Before we can create a new certificate, though, we need to define a certificate policy. This is used for the first certificate version and all subsequent versions of that certificate until changed.
 
+`create_certificate` returns a `Poller<CertificateOperation>`, which implements both `std::future::IntoFuture` and `futures::Stream`.
+You can `await` the `Poller` to get the final result - a `Certificate` - or asynchronously iterate over each status update.
+
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
     CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
-use futures::stream::TryStreamExt as _;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

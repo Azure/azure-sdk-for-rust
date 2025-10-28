@@ -288,7 +288,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Consuming service methods returning `Poller<T>`
 
 If a service call may take a while to process, it should return `Result<Poller<T>>` as a result, representing a long-running operation (LRO).
-The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
+
+The `Poller<T>` implements `std::future::IntoFuture` so you can `await` it to get the final result:
+
+```rust no_run
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_certificates::{
+    CertificateClient,
+    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
+};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DeveloperToolsCredential::new(None)?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Create a self-signed certificate.
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy),
+        ..Default::default()
+    };
+
+    // Wait for the certificate operation to complete and get the certificate.
+    let certificate = client
+        .create_certificate("certificate-name", body.try_into()?, None)?
+        .await?
+        .into_body()?;
+
+    Ok(())
+}
+```
+
+The `Poller<T>` also implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
@@ -343,53 +389,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
-
-If you just want to wait until the `Poller<T>` is complete and get the last status monitor, you can await `wait()`:
-
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{
-    CertificateClient,
-    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
-};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Create a self-signed certificate.
-    let policy = CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
-        ..Default::default()
-    };
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(policy),
-        ..Default::default()
-    };
-
-    // Wait for the certificate operation to complete and get the certificate.
-    let certificate = client
-        .create_certificate("certificate-name", body.try_into()?, None)?
-        .await?
-        .into_body()?;
-
-    Ok(())
-}
-```
-
-Awaiting `wait()` will only fail if the HTTP status code does not indicate successfully fetching the status monitor.
 
 ### Replacing the HTTP client
 
