@@ -390,6 +390,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Adding HTTP policies
+
+You can add custom HTTP policies for each client method (per-call) or request attempt (per-try) by implementing `Policy` and adding it to the appropriate field on `ClientOptions`.
+For example, to remove the `user-agent` header entirely:
+
+```rust no_run
+use azure_core::http::{
+    policies::{Policy, PolicyResult},
+    ClientOptions, Context, Request,
+};
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct RemoveUserAgent;
+
+#[async_trait::async_trait]
+impl Policy for RemoveUserAgent {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let headers = request.headers_mut();
+        headers.remove("user-agent");
+
+        next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+let remove_user_agent = Arc::new(RemoveUserAgent);
+let mut options = SecretClientOptions::default();
+options
+    .client_options
+    .per_call_policies
+    .push(remove_user_agent);
+
+let credential = DeveloperToolsCredential::new(None).unwrap();
+let client = SecretClient::new(
+    "https://your-key-vault-name.vault.azure.net/",
+    credential.clone(),
+    Some(options),
+)
+.unwrap();
+```
+
+See the [example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_remove_user_agent.rs) for a full sample implementation.
+
 ### Replacing the HTTP client
 
 Though `azure_core` uses [`reqwest`] for its default HTTP client, you can replace it with either a customized `reqwest::Client` or an entirely different HTTP client.
