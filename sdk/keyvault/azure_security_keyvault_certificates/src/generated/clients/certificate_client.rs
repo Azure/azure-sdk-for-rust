@@ -5,13 +5,13 @@
 
 use crate::generated::models::{
     BackupCertificateResult, Certificate, CertificateClientBackupCertificateOptions,
-    CertificateClientCreateCertificateOptions, CertificateClientDeleteCertificateOperationOptions,
-    CertificateClientDeleteCertificateOptions, CertificateClientDeleteContactsOptions,
-    CertificateClientDeleteIssuerOptions, CertificateClientGetCertificateOperationOptions,
-    CertificateClientGetCertificateOptions, CertificateClientGetCertificatePolicyOptions,
-    CertificateClientGetContactsOptions, CertificateClientGetDeletedCertificateOptions,
-    CertificateClientGetIssuerOptions, CertificateClientImportCertificateOptions,
-    CertificateClientListCertificatePropertiesOptions,
+    CertificateClientBeginCreateCertificateOptions,
+    CertificateClientDeleteCertificateOperationOptions, CertificateClientDeleteCertificateOptions,
+    CertificateClientDeleteContactsOptions, CertificateClientDeleteIssuerOptions,
+    CertificateClientGetCertificateOperationOptions, CertificateClientGetCertificateOptions,
+    CertificateClientGetCertificatePolicyOptions, CertificateClientGetContactsOptions,
+    CertificateClientGetDeletedCertificateOptions, CertificateClientGetIssuerOptions,
+    CertificateClientImportCertificateOptions, CertificateClientListCertificatePropertiesOptions,
     CertificateClientListCertificatePropertiesVersionsOptions,
     CertificateClientListDeletedCertificatePropertiesOptions,
     CertificateClientListIssuerPropertiesOptions, CertificateClientMergeCertificateOptions,
@@ -162,11 +162,11 @@ impl CertificateClient {
     /// * `parameters` - The parameters to create a certificate.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.createCertificate")]
-    pub async fn create_certificate(
+    pub(crate) async fn begin_create_certificate(
         &self,
         certificate_name: &str,
         parameters: RequestContent<CreateCertificateParameters>,
-        options: Option<CertificateClientCreateCertificateOptions<'_>>,
+        options: Option<CertificateClientBeginCreateCertificateOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
         if certificate_name.is_empty() {
             return Err(azure_core::Error::with_message(
