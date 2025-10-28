@@ -24,6 +24,7 @@ use crate::generated::{
         SignedIdentifier,
     },
 };
+use crate::pipeline::SasQueryPolicy;
 use azure_core::{
     async_runtime::get_async_runtime,
     credentials::TokenCredential,
@@ -128,6 +129,15 @@ impl BlobContainerClient {
             ));
         }
 
+        // Build per-call policies and ensure SAS query is present on every request.
+        let mut per_call: Vec<Arc<dyn Policy>> = Vec::new();
+        if let Some(q) = endpoint.query() {
+            let sas = SasQueryPolicy::from_query_str(q);
+            if !sas.is_empty() {
+                per_call.push(Arc::new(sas));
+            }
+        }
+
         // Build a pipeline without a BearerTokenCredentialPolicy; SAS on the URL is used for auth.
         Ok(Self {
             container_name,
@@ -137,7 +147,7 @@ impl BlobContainerClient {
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
                 options.client_options,
-                Vec::default(),
+                per_call,
                 Vec::new(), // no bearer auth policy for SAS-only
                 None,
             ),
@@ -742,7 +752,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// Returns a new instance of BlobClient.
+    /// Returns a new instance of BlobClient that shares this client's endpoint, pipeline (including SAS policy), and API version.
     ///
     /// # Arguments
     ///
