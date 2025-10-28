@@ -1,13 +1,11 @@
 use std::collections::HashMap;
-use std::io::{Read, Seek, SeekFrom};
-use std::sync::Arc;
 use azure_core::http::{
     request::{options::ContentType, Request},
     response::Response,
     Method,
 };
 use crate::cosmos_request_context::CosmosRequestContext;
-use crate::{CosmosClientOptions, PartitionKey};
+use crate::{ItemOptions, PartitionKey};
 use crate::operation_context::OperationType;
 use crate::resource_context::ResourceType;
 
@@ -45,8 +43,7 @@ pub type Headers = HashMap<String, String>;
 
 /// Main struct for DocumentServiceRequest.
 #[derive(Clone)]
-pub struct CosmosRequest<T> {
-    base: Request,
+pub struct CosmosRequest<'a> {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
     pub resource_id: Option<String>,
@@ -54,7 +51,8 @@ pub struct CosmosRequest<T> {
     pub database_name: Option<String>,
     pub collection_name: Option<String>,
     pub document_name: Option<String>,
-    pub partition_key: Option<PartitionKey>,
+    pub partition_key: PartitionKey,
+    pub options: Option<ItemOptions<'a>>,
     pub is_name_based: bool,
     pub is_feed: bool,
     pub is_resource_name_parsed_from_uri: bool,
@@ -75,9 +73,8 @@ pub struct CosmosRequest<T> {
     pub service_identity: Option<ServiceIdentity>,
     pub partition_key_range_identity: Option<PartitionKeyRangeIdentity>,
     pub request_context: CosmosRequestContext,
-    pub headers: Headers,
     pub properties: HashMap<String, String>,
-    pub body: Option<T>,
+    pub body: Option<Vec<u8>>,
     pub query_string: Option<String>,
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
@@ -87,19 +84,18 @@ pub struct CosmosRequest<T> {
 // Add a method to create a new Request for the pipeline.
 // Add DocumentServiceResponse
 // Flow will look like container_client >> request_handler >> retry_handler
-impl CosmosRequest {
+impl<'a> CosmosRequest<'a> {
     pub fn new(
         operation_type: OperationType,
         resource_type: ResourceType,
         resource_id: Option<String>,
-        body: Option<T>,
-        headers: Option<Headers>,
+        partition_key: PartitionKey,
+        body: Option<Vec<u8>>,
         is_name_based: bool,
         authorization_token_type: AuthorizationTokenType,
-        request: Request
+        options: Option<ItemOptions<'a>>
     ) -> Self {
         Self {
-            base: (request),
             operation_type,
             resource_type,
             resource_id: resource_id.clone(),
@@ -107,6 +103,8 @@ impl CosmosRequest {
             database_name: None,
             collection_name: None,
             document_name: None,
+            partition_key,
+            options,
             is_name_based,
             is_feed: false,
             is_resource_name_parsed_from_uri: false,
@@ -127,7 +125,6 @@ impl CosmosRequest {
             service_identity: None,
             partition_key_range_identity: None,
             request_context: CosmosRequestContext::default(),
-            headers: headers.unwrap_or_default(),
             properties: HashMap::new(),
             body,
             query_string: None,
@@ -166,40 +163,27 @@ impl CosmosRequest {
         }
     }
 
-    pub fn add_prefer_header(&mut self, name: &str, value: &str) {
-        let header_to_add = format!("{}={}", name, value);
-        let prefer = self.headers.entry("Prefer".to_string()).or_default();
-        if !prefer.is_empty() {
-            prefer.push(';');
-        }
-        prefer.push_str(&header_to_add);
-    }
-
-    pub fn dispose(&mut self) {
-        if self.is_disposed {
-            return;
-        }
-        self.body = None;
-        self.is_disposed = true;
-    }
-
-    /// Get a mutable reference to the underlying Request
-    pub fn request_mut(&mut self) -> &mut Request {
-        &mut self.base
-    }
-
-    /// Get a reference to the underlying Request
-    pub fn request(&self) -> &Request {
-        &self.base
-    }
+    // pub fn add_prefer_header(&mut self, name: &str, value: &str) {
+    //     let header_to_add = format!("{}={}", name, value);
+    //     let prefer = self.headers.entry("Prefer".to_string()).or_default();
+    //     if !prefer.is_empty() {
+    //         prefer.push(';');
+    //     }
+    //     prefer.push_str(&header_to_add);
+    // }
 
     pub fn to_raw_request(&self) -> Request {
 
-        let mut req = Request::new(self.request_context.location_endpoint_to_route.unwrap(), self.http_method());
-        req.insert_headers(&options);
-        req.insert_headers(&self.partition_key.unwrap()).unwrap();
-        req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
-        req.set_json(self.body.unwrap()).unwrap();
+        let mut req = Request::new(self.request_context.location_endpoint_to_route.as_ref().unwrap().clone(), self.http_method());
+        req.insert_headers(&self.options).unwrap();
+        req.insert_headers(&self.partition_key).unwrap();
+
+        if !&self.is_read_only_request() {
+            req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
+            if let Some(ref body) = self.body {
+                req.set_body(body.clone());
+            }
+        }
 
         req
     }

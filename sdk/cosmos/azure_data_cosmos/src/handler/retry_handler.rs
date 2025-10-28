@@ -8,6 +8,7 @@ use azure_core::{
     async_runtime::get_async_runtime,
     http::{request::Request, RawResponse},
 };
+use crate::cosmos_request::CosmosRequest;
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -52,11 +53,11 @@ pub trait RetryHandler: Send + Sync {
     /// `Result<RawResponse>` - The final response (success or failure after all retry attempts)
     async fn send<Sender, Fut>(
         &self,
-        request: &mut Request,
+        request: &mut CosmosRequest,
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut Request) -> Fut + Send + Sync,
+        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend;
 }
 
@@ -74,7 +75,7 @@ impl BackOffRetryHandler {
     /// retry policy should be used for this specific request.
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn retry_policy_for_request(&self, _request: &Request) -> Box<ResourceThrottleRetryPolicy> {
+    pub fn retry_policy_for_request(&self, _request: &CosmosRequest) -> Box<ResourceThrottleRetryPolicy> {
         // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
         // the request operation type and resource type and accordingly return the respective retry
         // policy.
@@ -95,11 +96,11 @@ impl RetryHandler for BackOffRetryHandler {
     /// * `sender` - Callback that performs the actual HTTP request
     async fn send<Sender, Fut>(
         &self,
-        request: &mut Request,
+        request: &mut CosmosRequest,
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut Request) -> Fut + Send + Sync,
+        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
     {
         // Get the appropriate retry policy based on the request

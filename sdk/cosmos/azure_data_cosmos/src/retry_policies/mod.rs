@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use azure_core::http::RawResponse;
 use azure_core::time::Duration;
 use typespec_client_core::http::Request;
+use crate::cosmos_request::CosmosRequest;
 
 /// Result of a retry policy decision
 ///
@@ -48,7 +49,7 @@ pub trait RetryPolicy: Send + Sync {
     /// This method is invoked immediately before each request is sent (including retries).
     /// # Arguments
     /// * `request` - Mutable reference to the HTTP request being sent
-    fn before_send_request(&self, _request: &mut Request) {}
+    fn before_send_request(&self, _request: &mut CosmosRequest) {}
 
     /// Determines whether an HTTP request should be retried based on the response or error
     ///

@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
-use std::net::Uri;
-use std::time::Duration;
+use url::Url;
 
 /// Placeholder for types referenced in the context.
 #[derive(Clone, Debug, Default)]
@@ -21,6 +20,7 @@ pub struct ISessionToken;
 #[derive(Clone, Debug, Default)]
 pub struct IClientSideRequestStatistics;
 #[derive(Clone, Debug, Default)]
+#[derive(Eq, Hash, PartialEq)]
 pub struct TransportAddressUri;
 
 /// Reference-counted disposable wrapper (simplified for Rust).
@@ -38,7 +38,7 @@ impl<T: Clone> ReferenceCountedDisposable<T> {
 }
 
 /// Main struct for DocumentServiceRequestContext.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct CosmosRequestContext {
     pub timeout_helper: Option<TimeoutHelper>,
     pub request_charge_tracker: Option<RequestChargeTracker>,
@@ -65,7 +65,7 @@ pub struct CosmosRequestContext {
     pub failed_endpoints: Arc<Mutex<HashMap<TransportAddressUri, bool>>>,
     pub use_preferred_locations: Option<bool>,
     pub location_index_to_route: Option<i32>,
-    pub location_endpoint_to_route: Option<Uri>,
+    pub location_endpoint_to_route: Option<Url>,
     pub ensure_collection_exists_check: bool,
     pub enable_connection_state_listener: bool,
     pub serialized_source_collection_for_materialized_view: Option<String>,
@@ -132,7 +132,7 @@ impl CosmosRequestContext {
         self.location_endpoint_to_route = None;
     }
 
-    pub fn route_to_location_endpoint(&mut self, location_endpoint: Uri) {
+    pub fn route_to_location_endpoint(&mut self, location_endpoint: Url) {
         self.location_endpoint_to_route = Some(location_endpoint);
         self.location_index_to_route = None;
         self.use_preferred_locations = None;
