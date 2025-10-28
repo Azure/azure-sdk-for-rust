@@ -22,7 +22,6 @@ use crate::generated::models::{
     SignedIdentifier,
 };
 use azure_core::{
-    async_runtime::get_async_runtime,
     credentials::TokenCredential,
     error::CheckSuccessOptions,
     fmt::SafeDebug,
@@ -73,7 +72,7 @@ impl BlobContainerClient {
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use https"),
+                format!("{endpoint} must use http(s)"),
             ));
         }
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -873,8 +872,6 @@ impl BlobContainerClient {
                             }),
                         )
                         .await?;
-                    // Because serialization can be a CPU intensive operation, yield the CPU before executing it..
-                    get_async_runtime().yield_now().await;
                     let (status, headers, body) = rsp.deconstruct();
                     let res: ListBlobsFlatSegmentResponse = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();

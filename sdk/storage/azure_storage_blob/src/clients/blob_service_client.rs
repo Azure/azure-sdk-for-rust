@@ -112,7 +112,8 @@ impl BlobServiceClient {
         let mut container_url = self.url().clone();
         container_url
             .path_segments_mut()
-            .expect("Cannot be base")
+            // This should not fail as service URL has already been validated on client construction.
+            .expect("Cannot be a base URL.")
             .push(container_name);
 
         let client = GeneratedBlobContainerClient {

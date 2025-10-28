@@ -148,6 +148,7 @@ impl BlobContainerClient {
         let mut blob_url = self.url().clone();
         blob_url
             .path_segments_mut()
+            // This should not fail as container URL has already been validated on client construction.
             .expect("Invalid endpoint URL: Cannot append blob_name to the blob endpoint.")
             .extend([blob_name]);
 
