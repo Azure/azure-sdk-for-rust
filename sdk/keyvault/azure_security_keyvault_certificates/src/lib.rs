@@ -6,10 +6,6 @@
 
 pub mod clients;
 #[allow(
-    dead_code,
-    reason = "CertificateClientBeginCreateCertificateOptions unused; cannot elide in TypeSpec"
-)]
-#[allow(
     unused_imports,
     reason = "Publicly exported generated/clients are instead exported from clients"
 )]

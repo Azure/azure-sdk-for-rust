@@ -6,8 +6,9 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         poller::{PollerOptions, PollerStatus, StatusMonitor},
-        ClientMethodOptions, JsonFormat,
+        ClientMethodOptions, JsonFormat, RequestContent,
     },
+    json,
 };
 impl StatusMonitor for CertificateOperation {
     type Output = Certificate;
@@ -40,5 +41,12 @@ impl CertificateClientCreateCertificateOptions<'_> {
             },
             poller_options: self.poller_options,
         }
+    }
+}
+
+impl TryFrom<CreateCertificateParameters> for RequestContent<CreateCertificateParameters> {
+    type Error = azure_core::Error;
+    fn try_from(value: CreateCertificateParameters) -> azure_core::Result<Self> {
+        Ok(json::to_json(&value)?.into())
     }
 }
