@@ -12,13 +12,6 @@ pub struct CertificateClientBackupCertificateOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`CertificateClient::begin_create_certificate()`](crate::generated::clients::CertificateClient::begin_create_certificate())
-#[derive(Clone, Default, SafeDebug)]
-pub(crate) struct CertificateClientBeginCreateCertificateOptions<'a> {
-    /// Allows customization of the method call.
-    pub(crate) method_options: ClientMethodOptions<'a>,
-}
-
 /// Options to be passed to [`CertificateClient::delete_certificate()`](crate::generated::clients::CertificateClient::delete_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientDeleteCertificateOptions<'a> {
