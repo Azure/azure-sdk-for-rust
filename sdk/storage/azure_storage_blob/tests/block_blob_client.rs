@@ -18,7 +18,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let block_blob_client = blob_client.block_blob_client();
 
     let block_1 = b"AAA";
@@ -117,40 +117,28 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let source_blob_client = container_client.blob_client(get_blob_name(recording));
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(
         &source_blob_client,
         Some(RequestContent::from(b"initialD ata".to_vec())),
         None,
     )
     .await?;
-    let source_url = format!(
-        "{}{}/{}",
-        source_blob_client.endpoint(),
-        source_blob_client.container_name(),
-        source_blob_client.blob_name()
-    );
 
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    let overwrite_blob_client = container_client.blob_client(get_blob_name(recording));
+    let overwrite_blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(
         &overwrite_blob_client,
         Some(RequestContent::from(b"overruled!".to_vec())),
         None,
     )
     .await?;
-    let overwrite_url = format!(
-        "{}{}/{}",
-        overwrite_blob_client.endpoint(),
-        overwrite_blob_client.container_name(),
-        overwrite_blob_client.blob_name()
-    );
 
     // Regular Scenario
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(source_url.clone(), None)
+        .upload_blob_from_url(source_blob_client.url().as_str().into(), None)
         .await?;
 
     let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
@@ -158,7 +146,10 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // No Overwrite Existing Blob Scenario
     let response = blob_client
         .block_blob_client()
-        .upload_blob_from_url(overwrite_url.clone(), Some(create_options))
+        .upload_blob_from_url(
+            overwrite_blob_client.url().as_str().into(),
+            Some(create_options),
+        )
         .await;
     // Assert
     let error = response.unwrap_err().http_status();
@@ -167,7 +158,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Overwrite Existing Blob Scenario
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(overwrite_url.clone(), None)
+        .upload_blob_from_url(overwrite_blob_client.url().as_str().into(), None)
         .await?;
 
     // Public Resource Scenario
@@ -197,7 +188,10 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(overwrite_url.clone(), Some(source_auth_options))
+        .upload_blob_from_url(
+            overwrite_blob_client.url().as_str().into(),
+            Some(source_auth_options),
+        )
         .await?;
 
     container_client.delete_container(None).await?;

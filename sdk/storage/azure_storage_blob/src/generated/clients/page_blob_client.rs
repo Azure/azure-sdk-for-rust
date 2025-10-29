@@ -31,8 +31,6 @@ use std::sync::Arc;
 
 #[tracing::client]
 pub struct PageBlobClient {
-    pub(crate) blob_name: String,
-    pub(crate) container_name: String,
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
@@ -55,15 +53,11 @@ impl PageBlobClient {
     /// * `endpoint` - Service host
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
-    /// * `container_name` - The name of the container.
-    /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Container.Blob.PageBlob")]
+    #[tracing::new("Storage.Blob.PageBlob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        container_name: String,
-        blob_name: String,
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -79,8 +73,6 @@ impl PageBlobClient {
             vec!["https://storage.azure.com/.default"],
         ));
         Ok(Self {
-            blob_name,
-            container_name,
             endpoint,
             version: options.version,
             pipeline: Pipeline::new(
@@ -138,7 +130,7 @@ impl PageBlobClient {
     /// * [`content_crc64`()](crate::generated::models::PageBlobClientClearPagesResultHeaders::content_crc64) - x-ms-content-crc64
     ///
     /// [`PageBlobClientClearPagesResultHeaders`]: crate::generated::models::PageBlobClientClearPagesResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.clearPages")]
+    #[tracing::function("Storage.Blob.PageBlob.clearPages")]
     pub async fn clear_pages(
         &self,
         range: String,
@@ -147,10 +139,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_key_only("clear")
             .append_pair("comp", "page");
@@ -279,7 +267,7 @@ impl PageBlobClient {
     /// * [`copy_status`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::copy_status) - x-ms-copy-status
     ///
     /// [`PageBlobClientCopyIncrementalResultHeaders`]: crate::generated::models::PageBlobClientCopyIncrementalResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.copyIncremental")]
+    #[tracing::function("Storage.Blob.PageBlob.copyIncremental")]
     pub async fn copy_incremental(
         &self,
         copy_source: String,
@@ -288,10 +276,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "incrementalcopy");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -377,7 +361,7 @@ impl PageBlobClient {
     /// * [`version_id`()](crate::generated::models::PageBlobClientCreateResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`PageBlobClientCreateResultHeaders`]: crate::generated::models::PageBlobClientCreateResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.create")]
+    #[tracing::function("Storage.Blob.PageBlob.create")]
     pub async fn create(
         &self,
         blob_content_length: u64,
@@ -386,10 +370,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
@@ -538,7 +518,7 @@ impl PageBlobClient {
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.getPageRanges")]
+    #[tracing::function("Storage.Blob.PageBlob.getPageRanges")]
     pub async fn get_page_ranges(
         &self,
         options: Option<PageBlobClientGetPageRangesOptions<'_>>,
@@ -546,10 +526,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "pagelist");
         if let Some(marker) = options.marker {
             url.query_pairs_mut().append_pair("marker", &marker);
@@ -646,7 +622,7 @@ impl PageBlobClient {
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.getPageRangesDiff")]
+    #[tracing::function("Storage.Blob.PageBlob.getPageRangesDiff")]
     pub async fn get_page_ranges_diff(
         &self,
         options: Option<PageBlobClientGetPageRangesDiffOptions<'_>>,
@@ -654,10 +630,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "pagelist")
             .append_key_only("diff");
@@ -764,7 +736,7 @@ impl PageBlobClient {
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientResizeResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
     ///
     /// [`PageBlobClientResizeResultHeaders`]: crate::generated::models::PageBlobClientResizeResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.resize")]
+    #[tracing::function("Storage.Blob.PageBlob.resize")]
     pub async fn resize(
         &self,
         blob_content_length: u64,
@@ -773,10 +745,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_key_only("Resize")
             .append_pair("comp", "properties");
@@ -879,7 +847,7 @@ impl PageBlobClient {
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
     ///
     /// [`PageBlobClientSetSequenceNumberResultHeaders`]: crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.setSequenceNumber")]
+    #[tracing::function("Storage.Blob.PageBlob.setSequenceNumber")]
     pub async fn set_sequence_number(
         &self,
         sequence_number_action: SequenceNumberActionType,
@@ -888,10 +856,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_key_only("UpdateSequenceNumber")
             .append_pair("comp", "properties");
@@ -993,7 +957,7 @@ impl PageBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.uploadPages")]
+    #[tracing::function("Storage.Blob.PageBlob.uploadPages")]
     pub async fn upload_pages(
         &self,
         body: RequestContent<Bytes, NoFormat>,
@@ -1004,10 +968,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "page")
             .append_key_only("update");
@@ -1156,7 +1116,7 @@ impl PageBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesFromUrlResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.uploadPagesFromUrl")]
+    #[tracing::function("Storage.Blob.PageBlob.uploadPagesFromUrl")]
     pub async fn upload_pages_from_url(
         &self,
         source_url: String,
@@ -1168,10 +1128,6 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "page")
             .append_key_only("fromUrl")

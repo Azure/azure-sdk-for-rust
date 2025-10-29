@@ -242,7 +242,7 @@ pub struct BlobItemInternal {
     #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
 
-    /// Whether the blog has versions only.
+    /// Whether the blob has versions only.
     #[serde(rename = "HasVersionsOnly", skip_serializing_if = "Option::is_none")]
     pub has_versions_only: Option<bool>,
 
@@ -450,7 +450,7 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "EncryptionScope", skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
 
-    /// The blog ETag.
+    /// The blob ETag.
     #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 
@@ -479,7 +479,7 @@ pub struct BlobPropertiesInternal {
     )]
     pub immutability_policy_mode: Option<BlobImmutabilityPolicyMode>,
 
-    /// Whether the blog is incremental copy.
+    /// Whether the blob is incremental copy.
     #[serde(rename = "IncrementalCopy", skip_serializing_if = "Option::is_none")]
     pub incremental_copy: Option<bool>,
 
@@ -532,7 +532,7 @@ pub struct BlobPropertiesInternal {
     )]
     pub remaining_retention_days: Option<i32>,
 
-    /// Whether the blog is encrypted on the server.
+    /// Whether the blob is encrypted on the server.
     #[serde(rename = "ServerEncrypted", skip_serializing_if = "Option::is_none")]
     pub server_encrypted: Option<bool>,
 
