@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use typespec_client_core::http::{Response};
+use azure_core::http::{Response};
 use crate::{ItemOptions, PartitionKey};
 use crate::cosmos_request::{AuthorizationTokenType, CosmosRequest};
 use crate::operation_context::OperationType;
