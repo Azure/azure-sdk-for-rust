@@ -17,7 +17,7 @@ async fn test_span_creation() -> Result<(), Box<dyn Error>> {
     let tracer = azure_provider.get_tracer(Some("test_namespace"), "test_tracer", Some("1.0.0"));
 
     // Create a span using the Azure tracer
-    let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
+    let span = tracer.start_span("test_span".into(), SpanKind::Internal, vec![]);
 
     // Add attributes to the span using individual set_attribute calls
     span.set_attribute(
@@ -43,7 +43,7 @@ async fn test_tracer_provider_creation() -> Result<(), Box<dyn Error>> {
 
     // Get a tracer and verify it works
     let tracer = azure_provider.get_tracer(Some("test.namespace"), "test_tracer", Some("1.0.0"));
-    let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
+    let span = tracer.start_span("test_span".into(), SpanKind::Internal, vec![]);
     span.end();
 
     Ok(())
@@ -59,7 +59,7 @@ async fn test_span_attributes() -> Result<(), Box<dyn Error>> {
     let tracer = azure_provider.get_tracer(Some("test.namespace"), "test_tracer", Some("1.0.0"));
 
     // Create span with multiple attributes
-    let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
+    let span = tracer.start_span("test_span".into(), SpanKind::Internal, vec![]);
 
     // Add attributes using individual set_attribute calls
     span.set_attribute(

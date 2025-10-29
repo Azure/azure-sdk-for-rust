@@ -60,10 +60,7 @@ pub fn parse_function(attr: TokenStream, item: TokenStream) -> Result<TokenStrea
         let options = {
             let mut options = options.unwrap_or_default();
 
-            let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                api_name: #api_name,
-                attributes: #attributes,
-            };
+            let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new(#api_name, #attributes);
             // Add the span to the tracer.
             let mut ctx = options.method_options.context.with_value(public_api_info);
             // If the service has a tracer, we add it to the context.

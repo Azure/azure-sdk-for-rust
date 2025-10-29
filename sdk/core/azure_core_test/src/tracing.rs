@@ -4,15 +4,21 @@
 // cspell: ignore traceparent
 
 //! This module contains a set of tests to help verify correctness of the Distributed Tracing implementation, and correctness of service client implementations of Distributed Tracing.
-use std::{
-    pin::Pin,
-    sync::{Arc, Mutex},
-};
-use typespec_client_core::{
+
+use azure_core::{
     http::{headers::HeaderName, Context, Request},
     tracing::{
         AsAny, Attribute, AttributeValue, Span, SpanKind, SpanStatus, Tracer, TracerProvider,
     },
+    Uuid,
+};
+use rand::{rng, Rng};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    fmt::Debug,
+    pin::Pin,
+    sync::{Arc, Mutex},
 };
 
 /// Mock Tracing Provider - used for testing distributed tracing without involving a specific tracing implementation.
@@ -71,19 +77,19 @@ impl Tracer for MockTracer {
 
     fn start_span_with_parent(
         &self,
-        name: &str,
+        name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<Attribute>,
-        _parent: Arc<dyn crate::tracing::Span>,
+        parent: Arc<dyn crate::tracing::Span>,
     ) -> Arc<dyn crate::tracing::Span> {
-        let span = Arc::new(MockSpan::new(name, kind, attributes.clone()));
+        let span = Arc::new(MockSpan::new(name, kind, attributes.clone(), Some(parent)));
         self.spans.lock().unwrap().push(span.clone());
         span
     }
 
     fn start_span(
         &self,
-        name: &'static str,
+        name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<Attribute>,
     ) -> Arc<dyn Span> {
@@ -94,7 +100,7 @@ impl Tracer for MockTracer {
                 value: attr.value.clone(),
             })
             .collect();
-        let span = Arc::new(MockSpan::new(name, kind, attributes));
+        let span = Arc::new(MockSpan::new(name, kind, attributes, None));
         self.spans.lock().unwrap().push(span.clone());
         span
     }
@@ -103,19 +109,35 @@ impl Tracer for MockTracer {
 /// Mock span for testing purposes.
 #[derive(Debug)]
 pub struct MockSpan {
-    pub name: String,
+    pub name: Cow<'static, str>,
     pub kind: SpanKind,
+    pub parent: Option<[u8; 8]>,
+    pub id: [u8; 8],
     pub attributes: Mutex<Vec<Attribute>>,
     pub state: Mutex<SpanStatus>,
     pub is_open: Mutex<bool>,
 }
 impl MockSpan {
-    fn new(name: &str, kind: SpanKind, attributes: Vec<Attribute>) -> Self {
-        eprintln!("Creating MockSpan: {}", name);
+    fn new<C>(
+        name: C,
+        kind: SpanKind,
+        attributes: Vec<Attribute>,
+        parent: Option<Arc<dyn crate::tracing::Span>>,
+    ) -> Self
+    where
+        C: Into<Cow<'static, str>> + Debug,
+    {
+        eprintln!("Creating MockSpan: {:?}", name);
+
         eprintln!("Attributes: {:?}", attributes);
+        let id = rng().random();
+
+        let parent = parent.map(|p| p.span_id());
         Self {
-            name: name.to_string(),
+            name: name.into(),
             kind,
+            parent,
+            id,
             attributes: Mutex::new(attributes),
             state: Mutex::new(SpanStatus::Unset),
             is_open: Mutex::new(true),
@@ -150,7 +172,7 @@ impl Span for MockSpan {
     }
 
     fn span_id(&self) -> [u8; 8] {
-        [0; 8] // Mock span ID
+        self.id
     }
 
     fn record_error(&self, _error: &dyn std::error::Error) {
@@ -223,6 +245,7 @@ pub fn check_instrumentation_result(
     for (index, expected) in expected_tracers.iter().enumerate() {
         eprintln!("Checking tracer {}: {}", index, expected.name);
         let tracer = &tracers[index];
+        let mut parent_span_map = HashMap::new();
         assert_eq!(tracer.package_name, expected.name);
         assert_eq!(tracer.package_version, expected.version);
         assert_eq!(tracer.namespace, expected.namespace);
@@ -240,7 +263,9 @@ pub fn check_instrumentation_result(
                 "Checking span {} of tracer {}: {}",
                 span_index, expected.name, span_expected.span_name
             );
-            check_span_information(&spans[span_index], span_expected);
+            check_span_information(&spans[span_index], span_expected, &parent_span_map);
+            // Now that we've verified the span, add the mapping between expected span ID and the actual span ID.
+            parent_span_map.insert(span_expected.span_id, spans[span_index].id);
         }
     }
 }
@@ -253,6 +278,12 @@ pub struct ExpectedSpanInformation<'a> {
     /// The expected status of the span.
     pub status: SpanStatus,
 
+    /// The unique identifier for the span. Assigned when the span is created.
+    pub span_id: Uuid,
+
+    /// The expected parent span ID. When an expected span is a child of another span, this is set to the `span_id` of the parent span.
+    pub parent_id: Option<Uuid>,
+
     /// The expected kind of the span.
     pub kind: SpanKind,
 
@@ -260,10 +291,25 @@ pub struct ExpectedSpanInformation<'a> {
     pub attributes: Vec<(&'a str, AttributeValue)>,
 }
 
-fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformation<'_>) {
+fn check_span_information(
+    span: &Arc<MockSpan>,
+    expected: &ExpectedSpanInformation<'_>,
+    parent_span_map: &HashMap<Uuid, [u8; 8]>,
+) {
     assert_eq!(span.name, expected.span_name);
     assert_eq!(span.kind, expected.kind);
     assert_eq!(*span.state.lock().unwrap(), expected.status);
+    match span.parent {
+        None => assert!(expected.parent_id.is_none()),
+        Some(ref parent) => {
+            println!("Checking parent span: {:?}", parent);
+            println!("Span map: {parent_span_map:?}");
+            let parent_id = parent_span_map
+                .get(expected.parent_id.as_ref().unwrap())
+                .unwrap();
+            assert_eq!(*parent, *parent_id);
+        }
+    }
     let attributes = span.attributes.lock().unwrap();
     eprintln!("Expected attributes: {:?}", expected.attributes);
     eprintln!("Found attributes: {:?}", attributes);
@@ -306,11 +352,10 @@ pub struct ExpectedApiInformation {
     /// instrumentation spans.
     pub api_name: Option<&'static str>,
 
-    /// The HTTP verb used in the API request.
-    pub api_verb: azure_core::http::Method,
-
-    /// Expected status code returned by the service.
-    pub expected_status_code: azure_core::http::StatusCode,
+    /// Information about the child spans generated by the API call.
+    ///
+    /// This is a list of the child spans which are expected to be generated by this API call.
+    pub api_children: Vec<ExpectedRestApiSpan>,
 
     /// A set of optional additional attributes attached to the public API span for service clients which require them.
     /// If the attribute value has the `<ANY>` placeholder, it means that the test should accept any value for that attribute.
@@ -321,9 +366,32 @@ impl Default for ExpectedApiInformation {
     fn default() -> Self {
         Self {
             api_name: None,
+            additional_api_attributes: Vec::new(),
+            // Expect a single successful `get` API.
+            api_children: vec![ExpectedRestApiSpan::default()],
+        }
+    }
+}
+
+/// Information about an instrumented REST API call.
+///
+/// This structure is used to collect information about a specific REST API call that is being instrumented for tracing.
+///
+/// It describes the HTTP method and the expected status code associated with the API call.
+#[derive(Debug, Clone)]
+pub struct ExpectedRestApiSpan {
+    /// The HTTP verb used in the REST API request.
+    pub api_verb: azure_core::http::Method,
+
+    /// Expected status code returned by the service.
+    pub expected_status_code: azure_core::http::StatusCode,
+}
+
+impl Default for ExpectedRestApiSpan {
+    fn default() -> Self {
+        Self {
             api_verb: azure_core::http::Method::Get,
             expected_status_code: azure_core::http::StatusCode::Ok,
-            additional_api_attributes: Vec::new(),
         }
     }
 }
@@ -410,66 +478,89 @@ where
         if let Some(namespace) = api_information.package_namespace {
             public_api_attributes.push(("az.namespace", namespace.into()));
         }
-        if !api_call.expected_status_code.is_success() {
-            public_api_attributes.push((
-                "error.type",
-                api_call.expected_status_code.to_string().into(),
-            ));
+
+        // If any of the child API calls returns an error, we expect the top level span to have the
+        // error.type attribute.
+        let mut span_status = SpanStatus::Unset;
+        for rest_api_call in api_call.api_children.iter() {
+            if !rest_api_call.expected_status_code.is_success() {
+                public_api_attributes.push((
+                    "error.type",
+                    rest_api_call.expected_status_code.to_string().into(),
+                ));
+            }
+            if rest_api_call.expected_status_code.is_server_error() {
+                span_status = SpanStatus::Error {
+                    description: "".into(),
+                };
+                break;
+            }
         }
+
+        let api_id = Uuid::new_v4();
 
         if let Some(api_name) = api_call.api_name {
             // Public API spans only enter the Error state if the status code is a server error.
             expected_spans.push(ExpectedSpanInformation {
                 span_name: api_name,
-                status: if api_call.expected_status_code.is_server_error() {
+                span_id: api_id,
+                status: span_status,
+                kind: SpanKind::Internal,
+                parent_id: None,
+                attributes: public_api_attributes,
+            });
+        }
+
+        // Now add the child spans for each of the expected Rest API calls.
+        for rest_api_call in api_call.api_children.iter() {
+            // Add the HTTP API span after creating the expected set of attributes.
+            let mut http_request_attributes = vec![
+                (
+                    "http.request.method",
+                    rest_api_call.api_verb.as_str().into(),
+                ),
+                ("url.full", "<ANY>".into()),
+                ("server.address", "<ANY>".into()),
+                ("server.port", "<ANY>".into()),
+                ("az.client_request_id", "<ANY>".into()),
+                (
+                    "http.response.status_code",
+                    (*rest_api_call.expected_status_code).into(),
+                ),
+            ];
+            if !rest_api_call.expected_status_code.is_success() {
+                http_request_attributes.push((
+                    "error.type",
+                    rest_api_call.expected_status_code.to_string().into(),
+                ));
+            }
+            // If we have no public API information, we won't have a namespace in the HTTP attributes.
+            if api_call.api_name.is_some() && api_information.package_namespace.is_some() {
+                http_request_attributes.push((
+                    "az.namespace",
+                    api_information.package_namespace.unwrap().into(),
+                ));
+            }
+            expected_spans.push(ExpectedSpanInformation {
+                span_name: rest_api_call.api_verb.as_str(),
+                // If the API call has a name, this should be a child span.
+                parent_id: if api_call.api_name.is_some() {
+                    Some(api_id)
+                } else {
+                    None
+                },
+                span_id: Uuid::new_v4(),
+                status: if !rest_api_call.expected_status_code.is_success() {
                     SpanStatus::Error {
                         description: "".into(),
                     }
                 } else {
                     SpanStatus::Unset
                 },
-                kind: SpanKind::Internal,
-                attributes: public_api_attributes,
+                kind: SpanKind::Client,
+                attributes: http_request_attributes,
             });
         }
-
-        // Add the HTTP API span after creating the expected set of attributes.
-        let mut http_request_attributes = vec![
-            ("http.request.method", api_call.api_verb.as_str().into()),
-            ("url.full", "<ANY>".into()),
-            ("server.address", "<ANY>".into()),
-            ("server.port", "<ANY>".into()),
-            ("az.client_request_id", "<ANY>".into()),
-            (
-                "http.response.status_code",
-                (*api_call.expected_status_code).into(),
-            ),
-        ];
-        if !api_call.expected_status_code.is_success() {
-            http_request_attributes.push((
-                "error.type",
-                api_call.expected_status_code.to_string().into(),
-            ));
-        }
-        // If we have no public API information, we won't have a namespace in the HTTP attributes.
-        if api_call.api_name.is_some() && api_information.package_namespace.is_some() {
-            http_request_attributes.push((
-                "az.namespace",
-                api_information.package_namespace.unwrap().into(),
-            ));
-        }
-        expected_spans.push(ExpectedSpanInformation {
-            span_name: api_call.api_verb.as_str(),
-            status: if !api_call.expected_status_code.is_success() {
-                SpanStatus::Error {
-                    description: "".into(),
-                }
-            } else {
-                SpanStatus::Unset
-            },
-            kind: SpanKind::Client,
-            attributes: http_request_attributes,
-        });
         if api_call.api_name.is_some() {
             public_api_tracer.spans.extend(expected_spans);
         } else {

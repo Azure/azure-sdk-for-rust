@@ -736,6 +736,8 @@ mod tests {
     }
     #[recorded::test()]
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
+        use azure_core_test::tracing::ExpectedRestApiSpan;
+
         let package_name = env!("CARGO_PKG_NAME").to_string();
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
@@ -750,13 +752,15 @@ mod tests {
                 package_namespace: Some("Az.TestServiceClient"),
                 api_calls: vec![ExpectedApiInformation {
                     api_name: Some("macros_get_with_tracing"),
-                    expected_status_code: http::StatusCode::NotFound,
+                    api_children: vec![ExpectedRestApiSpan {
+                        expected_status_code: http::StatusCode::NotFound,
+                        ..Default::default()
+                    }],
                     additional_api_attributes: vec![
                         ("a.b", 1.into()),
                         ("az.telemetry", "Abc".into()),
                         ("string attribute", "index.htm".into()),
                     ],
-                    ..Default::default()
                 }],
             },
         )

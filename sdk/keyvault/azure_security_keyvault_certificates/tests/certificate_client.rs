@@ -3,8 +3,15 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{http::StatusCode, Result};
-use azure_core_test::{recorded, ErrorKind, TestContext, TestMode, SANITIZE_BODY_NAME};
+use azure_core::{
+    http::{Method, StatusCode},
+    Result,
+};
+use azure_core_test::{
+    recorded,
+    tracing::{ExpectedApiInformation, ExpectedInstrumentation, ExpectedRestApiSpan},
+    ErrorKind, TestContext, TestMode, SANITIZE_BODY_NAME,
+};
 use azure_security_keyvault_certificates::{
     models::{
         CertificateClientUpdateCertificatePropertiesOptions, CertificatePolicy,
@@ -18,7 +25,7 @@ use azure_security_keyvault_keys::{
     KeyClient, KeyClientOptions,
 };
 use azure_security_keyvault_test::Retry;
-use futures::TryStreamExt;
+use futures::{FutureExt, TryStreamExt};
 use openssl::sha::sha256;
 use std::{collections::HashMap, sync::LazyLock};
 
@@ -65,6 +72,67 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     assert!(certificate.id.is_some());
     assert!(version.is_some());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
+
+    let mut options = CertificateClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    azure_core_test::tracing::assert_instrumentation_information(
+        |tracer_provider| {
+            options.client_options.instrumentation.tracer_provider = Some(tracer_provider);
+            let client = CertificateClient::new(
+                recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+                recording.credential(),
+                Some(options),
+            )?;
+            Ok(client)
+        },
+        |client| {
+            async move {
+                // Create a self-signed certificate.
+                let body = CreateCertificateParameters {
+                    certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
+                    ..Default::default()
+                };
+                let _certificate = client
+                    .create_certificate("certificate-roundtrip", body.try_into()?, None)?
+                    .await?
+                    .into_body()?;
+                Ok(())
+            }
+            .boxed()
+        },
+        ExpectedInstrumentation {
+            package_name: recording.var("CARGO_PKG_NAME", None),
+            package_namespace: Some("KeyVault"),
+            package_version: recording.var("CARGO_PKG_VERSION", None),
+            api_calls: vec![ExpectedApiInformation {
+                api_name: Some("KeyVault.createCertificate"),
+                api_children: vec![
+                    ExpectedRestApiSpan {
+                        api_verb: Method::Post,
+                        expected_status_code: StatusCode::Accepted,
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: Method::Get,
+                        expected_status_code: StatusCode::Ok,
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: Method::Get,
+                        expected_status_code: StatusCode::Ok,
+                    },
+                ],
+                ..Default::default()
+            }],
+        },
+    )
+    .await?;
     Ok(())
 }
 
