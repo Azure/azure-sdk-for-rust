@@ -8,7 +8,8 @@
 use azure_core::{
     http::{headers::HeaderName, Context, Request},
     tracing::{
-        AsAny, Attribute, AttributeValue, Span, SpanKind, SpanStatus, Tracer, TracerProvider,
+        AsAny, Attribute, AttributeValue, Span, SpanGuard, SpanKind, SpanStatus, Tracer,
+        TracerProvider,
     },
     Uuid,
 };
@@ -179,7 +180,7 @@ impl Span for MockSpan {
         todo!()
     }
 
-    fn set_current(&self, _context: &Context) -> Box<dyn typespec_client_core::tracing::SpanGuard> {
+    fn set_current(&self, _context: &Context) -> Box<dyn SpanGuard> {
         todo!()
     }
 

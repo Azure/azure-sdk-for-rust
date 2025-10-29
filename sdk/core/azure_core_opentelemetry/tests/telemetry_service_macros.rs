@@ -180,7 +180,7 @@ mod tests {
     use super::*;
     use ::tracing::{info, trace};
     use azure_core::{
-        http::{ExponentialRetryOptions, RetryOptions},
+        http::{ExponentialRetryOptions, RetryOptions, StatusCode},
         tracing::TracerProvider,
         Result,
     };
@@ -193,7 +193,6 @@ mod tests {
         SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus,
     };
     use opentelemetry::Value as OpenTelemetryAttributeValue;
-    use typespec_client_core::http;
 
     fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
         let otel_exporter = InMemorySpanExporter::default();
@@ -753,7 +752,7 @@ mod tests {
                 api_calls: vec![ExpectedApiInformation {
                     api_name: Some("macros_get_with_tracing"),
                     api_children: vec![ExpectedRestApiSpan {
-                        expected_status_code: http::StatusCode::NotFound,
+                        expected_status_code: StatusCode::NotFound,
                         ..Default::default()
                     }],
                     additional_api_attributes: vec![

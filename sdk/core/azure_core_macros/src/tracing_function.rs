@@ -49,7 +49,7 @@ pub fn parse_function(attr: TokenStream, item: TokenStream) -> Result<TokenStrea
             .into_iter()
             .map(|(name, value)| {
                 quote! {
-                    ::typespec_client_core::tracing::Attribute{key: #name.into(), value: #value.into()}
+                    ::azure_core::tracing::Attribute{key: #name.into(), value: #value.into()}
                 }
             })
             .collect::<Vec<_>>();
