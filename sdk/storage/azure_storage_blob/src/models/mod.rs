@@ -83,6 +83,5 @@ pub use crate::generated::models::{
     StaticWebsite, StorageErrorCode, StorageServiceStats, StorageServiceStatsHeaders,
     UserDelegationKey, UserDelegationKeyHeaders, VecSignedIdentifierHeaders,
 };
-
 #[allow(unused_imports)]
 pub use extensions::*;
