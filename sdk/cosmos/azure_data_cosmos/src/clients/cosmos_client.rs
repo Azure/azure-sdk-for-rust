@@ -56,6 +56,8 @@ impl CosmosClient {
                 options.client_options,
             ),
         })
+        // Initialize and warm-up database account, endpoint manager and caches.
+        // Self::initialize(client.clone()).await?;
     }
 
     /// Creates a new CosmosClient, using key authentication.
@@ -91,36 +93,28 @@ impl CosmosClient {
         })
     }
 
+    async fn initialize(
+        client: CosmosClient,
+    ) -> azure_core::Result<Self> {
+        let account = client.get_database_account(None).await?.into_body()?;
+        Ok((client))
+    }
 
     /// Reads the properties of the database.
     ///
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # use azure_data_cosmos::clients::DatabaseClient;
-    /// # let database_client: DatabaseClient = panic!("this is a non-running example");
-    /// let response = database_client.read(None)
-    ///     .await?
-    ///     .into_body()?;
-    /// # }
-    /// ```
-    pub async fn read_account(
+    async fn get_database_account(
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<AccountProperties>> {
         let options = options.unwrap_or_default();
-        // let url = self.pipeline.url(&self.pipeline.endpoint);
         let mut req = Request::new(self.pipeline.endpoint.clone(), Method::Get);
         self.pipeline
             .send(options.method_options.context, &mut req, ResourceLink::root(ResourceType::DatabaseAccount))
             .await
     }
-
 
     /// Creates a new CosmosClient, using a connection string.
     ///

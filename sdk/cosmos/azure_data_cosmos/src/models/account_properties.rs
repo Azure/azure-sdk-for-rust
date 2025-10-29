@@ -1,105 +1,124 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
-// Placeholder for serde_json::Value (for AdditionalProperties)
-use serde_json::Value as JsonValue;
+//! Models for deserializing the Cosmos DB Account (DatabaseAccount) JSON payload.
+//! This is a focused representation for the sample JSON provided; fields not
+//! present in the sample are intentionally omitted for now.
 
-#[derive(Clone, Debug, Default)]
-pub struct AccountRegion {
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountLocation {
     pub name: String,
-    pub endpoint: String,
-    pub additional_properties: HashMap<String, JsonValue>,
+    #[serde(rename = "databaseAccountEndpoint")]
+    pub database_account_endpoint: String,
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct AccountConsistency {
-    pub default_consistency_level: ConsistencyLevel,
-    pub max_staleness_prefix: i32,
-    pub max_staleness_interval_in_seconds: i32,
-    pub additional_properties: HashMap<String, JsonValue>,
-}
-
-#[derive(Clone, Debug, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplicationPolicy {
-    pub max_replica_set_size: i32,
+    #[serde(rename = "minReplicaSetSize")]
     pub min_replica_set_size: i32,
-    pub async_replication: bool,
+    // Note: service returns key `maxReplicasetSize` (lowercase 's' in 'set')
+    #[serde(rename = "maxReplicasetSize")]
+    pub max_replica_set_size: i32,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsistencyPolicy {
+    #[serde(rename = "defaultConsistencyLevel")]
+    pub default_consistency_level: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReadPolicy {
+    #[serde(rename = "primaryReadCoefficient")]
     pub primary_read_coefficient: i32,
+    #[serde(rename = "secondaryReadCoefficient")]
     pub secondary_read_coefficient: i32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AccountProperties {
-    pub id: Option<String>,
-    pub etag: Option<String>,
-    pub resource_id: Option<String>,
-    pub writable_regions: Vec<AccountRegion>,
-    pub readable_regions: Vec<AccountRegion>,
-    pub thin_client_writable_locations: Vec<AccountRegion>,
-    pub thin_client_readable_locations: Vec<AccountRegion>,
-    pub max_media_storage_usage_mb: Option<i64>,
-    pub media_storage_usage_mb: Option<i64>,
-    pub consumed_document_storage_mb: Option<i64>,
-    pub reserved_document_storage_mb: Option<i64>,
-    pub provisioned_document_storage_mb: Option<i64>,
-    pub consistency: Option<AccountConsistency>,
-    pub addresses_link: Option<String>,
-    pub replication_policy: Option<ReplicationPolicy>,
-    pub system_replication_policy: Option<ReplicationPolicy>,
-    pub read_policy: Option<ReadPolicy>,
-    pub query_engine_configuration: Option<HashMap<String, JsonValue>>,
-    pub query_engine_configuration_string: Option<String>,
+    #[serde(rename = "_self")]
+    pub self_link: String,
+
+    pub id: String,
+
+    #[serde(rename = "_rid")]
+    pub rid: String,
+
+    pub media: String,
+
+    pub addresses: String,
+
+    #[serde(rename = "_dbs")]
+    pub dbs: String,
+
+    pub writable_locations: Vec<AccountLocation>,
+
+    pub readable_locations: Vec<AccountLocation>,
+
     pub enable_multiple_write_locations: bool,
-    pub enable_partition_level_failover: Option<bool>,
-    pub additional_properties: HashMap<String, JsonValue>,
+
+    pub continuous_backup_enabled: bool,
+
+    pub enable_n_region_synchronous_commit: bool,
+
+    pub enable_per_partition_failover_behavior: bool,
+
+    pub user_replication_policy: ReplicationPolicy,
+
+    pub user_consistency_policy: ConsistencyPolicy,
+
+    pub system_replication_policy: ReplicationPolicy,
+
+    pub read_policy: ReadPolicy,
+
+    pub query_engine_configuration: String,
 }
 
-impl Default for AccountProperties {
-    fn default() -> Self {
-        Self {
-            id: None,
-            etag: None,
-            resource_id: None,
-            writable_regions: Vec::new(),
-            readable_regions: Vec::new(),
-            thin_client_writable_locations: Vec::new(),
-            thin_client_readable_locations: Vec::new(),
-            max_media_storage_usage_mb: None,
-            media_storage_usage_mb: None,
-            consumed_document_storage_mb: None,
-            reserved_document_storage_mb: None,
-            provisioned_document_storage_mb: None,
-            consistency: None,
-            addresses_link: None,
-            replication_policy: None,
-            system_replication_policy: None,
-            read_policy: None,
-            query_engine_configuration: None,
-            query_engine_configuration_string: None,
-            enable_multiple_write_locations: false,
-            enable_partition_level_failover: None,
-            additional_properties: HashMap::new(),
-        }
+impl AccountProperties {
+    /// Attempts to parse the `query_engine_configuration` JSON string into a dynamic map.
+    /// Returns `None` if deserialization fails.
+    pub fn parsed_query_engine_configuration(&self) -> Option<Value> {
+        serde_json::from_str(&self.query_engine_configuration).ok()
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum ConsistencyLevel {
-    Strong,
-    BoundedStaleness,
-    Session,
-    Eventual,
-    ConsistentPrefix,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl Default for ConsistencyLevel {
-    fn default() -> Self {
-        ConsistencyLevel::Session
+    const SAMPLE: &str = r#"{
+  "_self" : "",
+  "id" : "ananthsessionknowledge",
+  "_rid" : "ananthsessionknowledge.documents.azure.com",
+  "media" : "//media/",
+  "addresses" : "//addresses/",
+  "_dbs" : "//dbs/",
+  "writableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://ananthsessionknowledge-westus2.documents.azure.com:443/" } ],
+  "readableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://ananthsessionknowledge-westus2.documents.azure.com:443/" } ],
+  "enableMultipleWriteLocations" : false,
+  "continuousBackupEnabled" : false,
+  "enableNRegionSynchronousCommit" : false,
+  "enablePerPartitionFailoverBehavior" : false,
+  "userReplicationPolicy" : { "asyncReplication" : false, "minReplicaSetSize" : 3, "maxReplicasetSize" : 4 },
+  "userConsistencyPolicy" : { "defaultConsistencyLevel" : "Session" },
+  "systemReplicationPolicy" : { "minReplicaSetSize" : 3, "maxReplicasetSize" : 4, "asyncReplication" : false },
+  "readPolicy" : { "primaryReadCoefficient" : 1, "secondaryReadCoefficient" : 1 },
+  "queryEngineConfiguration" : "{\"allowNewKeywords\":true}"
+}"#;
+
+    #[test]
+    fn deserialize_account_props() {
+        let props: AccountProperties = serde_json::from_str(SAMPLE).expect("deserialize");
+        assert_eq!(props.id, "ananthsessionknowledge");
+        assert_eq!(props.writable_locations.len(), 1);
+        assert_eq!(props.readable_locations.len(), 1);
+        assert_eq!(props.user_replication_policy.min_replica_set_size, 3);
+        assert_eq!(props.user_consistency_policy.default_consistency_level, "Session");
+        assert!(props.parsed_query_engine_configuration().is_some());
     }
 }

@@ -71,14 +71,7 @@ impl CosmosPipeline {
         // Clone pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
-        let response = pipeline.send(&ctx_owned, request, None).await;
-
-        // Print the response body
-        // You can choose to read the body as bytes, text, or copy it directly to stdout.
-        // For raw output, copying to stdout is often suitable.
-        // response.unwrap().copy_to(&mut std::io::stdout()).await?;
-
-        response
+        pipeline.send(&ctx_owned, request, None).await
     }
 
     pub async fn send<T>(
