@@ -9,9 +9,7 @@ use crate::{
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
@@ -19,8 +17,7 @@ use crate::{
         BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
         BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
-        BlockListType, BlockLookupList, StorageErrorCode,
+        BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -30,8 +27,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        AsyncResponse, JsonFormat, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url,
-        XmlFormat,
+        AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     tracing, Bytes, Result,
 };
