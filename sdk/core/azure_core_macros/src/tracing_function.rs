@@ -401,10 +401,7 @@ mod tests {
         pub async fn my_function(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
             let options = {
                 let mut options = options.unwrap_or_default();
-                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                    api_name: "TestFunction",
-                    attributes: Vec::new(),
-                };
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new("TestFunction", Vec::new());
                 let mut ctx = options.method_options.context.with_value(public_api_info);
                 if let Some(tracer) = &self.tracer {
                     ctx = ctx.with_value(tracer.clone());
@@ -515,10 +512,7 @@ mod tests {
         ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
             let options = {
                 let mut options = options.unwrap_or_default();
-                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                    api_name: "TestFunction",
-                    attributes: Vec::new(),
-                };
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new("TestFunction", Vec::new());
                 let mut ctx = options.method_options.context.with_value(public_api_info);
                 if let Some(tracer) = &self.tracer {
                     ctx = ctx.with_value(tracer.clone());
