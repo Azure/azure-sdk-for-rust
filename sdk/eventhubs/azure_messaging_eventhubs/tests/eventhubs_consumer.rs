@@ -4,8 +4,11 @@
 // cspell::ignore Uncategorized
 
 use azure_core::time::Duration;
+use azure_core_amqp::AmqpErrorKind;
 use azure_core_test::{recorded, TestContext};
-use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, StartPosition};
+use azure_messaging_eventhubs::{
+    error::ErrorKind, ConsumerClient, OpenReceiverOptions, StartPosition,
+};
 use futures::StreamExt;
 use std::{env, error::Error};
 use tokio::time::timeout;
@@ -36,8 +39,19 @@ async fn consumer_new_with_error(ctx: TestContext) -> Result<(), Box<dyn Error>>
     assert!(result.is_err());
     match result {
         Err(err) => {
-            info!("Error: {:?}", err);
-            assert_eq!(*err.kind(), azure_core::error::ErrorKind::Io);
+            info!("EH Error: {:?}", err);
+            assert!(matches!(err.kind, ErrorKind::AmqpError(_)));
+            let ErrorKind::AmqpError(err) = err.kind else {
+                panic!("Error is not an AMQP  error.");
+            };
+            info!("AMQP Error: {:?}", err);
+
+            assert!(matches!(*err.kind(), AmqpErrorKind::AzureCore(_)));
+
+            let AmqpErrorKind::AzureCore(ref err) = *err.kind() else {
+                panic!("Error is not an azure core error.");
+            };
+            info!("Azure Error: {:?}", err);
             if matches!(err.kind(), azure_core::error::ErrorKind::Io) {
                 // Dig into the I/O error to determine the type.
                 let e = err

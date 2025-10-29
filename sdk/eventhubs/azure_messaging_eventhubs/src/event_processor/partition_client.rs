@@ -3,16 +3,17 @@
 
 use super::processor::ProcessorConsumersMap;
 use crate::{
+    error::Result,
     models::{Checkpoint, ConsumerClientDetails, ReceivedEventData},
     processor::CheckpointStore,
-    EventReceiver,
+    EventHubsError, EventReceiver,
 };
-use azure_core::Result;
-use azure_core_amqp::message::AmqpAnnotationKey;
-use azure_core_amqp::AmqpValue;
+use azure_core_amqp::{message::AmqpAnnotationKey, AmqpValue};
 use futures::Stream;
-use std::pin::Pin;
-use std::sync::{Arc, OnceLock, Weak};
+use std::{
+    pin::Pin,
+    sync::{Arc, OnceLock, Weak},
+};
 use tracing::{debug, trace, warn};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
@@ -62,19 +63,14 @@ impl PartitionClient {
     ///
     /// # Returns
     /// A stream of `Result<ReceivedEventData>` representing the received events.
-    pub fn stream_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
-        let event_receiver = self.event_receiver.get();
-        if let Some(event_receiver) = event_receiver {
+    pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
+        if let Some(event_receiver) = self.event_receiver.get() {
             Box::pin(event_receiver.stream_events())
                 as Pin<Box<dyn Stream<Item = Result<ReceivedEventData>> + '_>>
         } else {
-            // Return a stream with a single error indicating that the event receiver is not available.
-            Box::pin(futures::stream::once(async {
-                Err(azure_core::error::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Event receiver is not set for this partition.",
-                ))
-            }))
+            Box::pin(futures::stream::once(std::future::ready(Err(
+                EventHubsError::with_message("Event receiver is not set for this partition."),
+            ))))
         }
     }
 
@@ -93,7 +89,7 @@ impl PartitionClient {
     /// # Example
     /// ```
     /// # use azure_messaging_eventhubs::processor::PartitionClient;
-    /// # async fn example(partition_client: PartitionClient) -> azure_core::Result<()> {
+    /// # async fn example(partition_client: PartitionClient) -> Result<(), Box<dyn std::error::Error>> {
     /// partition_client.close().await?;
     /// # Ok(())
     /// # }
@@ -163,7 +159,16 @@ impl PartitionClient {
             offset: offset_option,
             sequence_number: sequence_number_option,
         };
-        self.checkpoint_store.update_checkpoint(checkpoint).await
+        self.checkpoint_store
+            .update_checkpoint(checkpoint)
+            .await
+            .map_err(|e| {
+                e.with_context(format!(
+                    "Failed to update checkpoint for partition {}",
+                    self.partition_id
+                ))
+                .into()
+            })
     }
 
     pub(crate) fn set_event_receiver(&self, event_receiver: EventReceiver) -> Result<()> {
@@ -174,13 +179,10 @@ impl PartitionClient {
                 self.partition_id
             );
             // If the event receiver is already set, return an error
-            azure_core::error::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "Event receiver already set for partition {}",
-                    self.partition_id
-                ),
-            )
+            EventHubsError::with_message(format!(
+                "Event receiver already set for partition {}",
+                self.partition_id
+            ))
         })?;
         Ok(())
     }

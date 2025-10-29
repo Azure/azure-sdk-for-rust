@@ -350,37 +350,24 @@ impl PerfRunner {
                 self.options.duration
             );
 
-            self.run_test_for(
-                Arc::clone(&test_instance),
-                &test_contexts,
-                self.options.duration,
-            )
-            .await?;
+            let operations_per_second = self
+                .run_test_for(
+                    Arc::clone(&test_instance),
+                    &test_contexts,
+                    self.options.duration,
+                )
+                .await?;
             if !self.options.no_cleanup {
                 println!("========== Starting test cleanup ==========");
                 test_instance.cleanup(context.clone()).await?;
             }
 
-            let iteration_count = self.progress.load(Ordering::SeqCst);
             println!(
-                "Completed test iteration {}/{} - {} iterations run in {} seconds - {} iterations/second, {} seconds/iteration",
+                "Completed test iteration {}/{} - {} operations/second",
                 iteration + 1,
                 self.options.iterations,
-                iteration_count,
-                self.options.duration.as_seconds_f64(),
-                iteration_count as f64 / self.options.duration.as_seconds_f64(),
-                self.options.duration.as_seconds_f64() / iteration_count as f64
+                operations_per_second,
             );
-            let operations_per_second =
-                iteration_count as f64 / self.options.duration.as_seconds_f64();
-            let seconds_per_operation =
-                self.options.duration.as_seconds_f64() / iteration_count as f64;
-            if seconds_per_operation != 0.0 {
-                let duration_per_operation = Duration::seconds_f64(seconds_per_operation);
-                println!("{operations_per_second:4} operations/second, {duration_per_operation:4} seconds/operation");
-            } else {
-                println!("{operations_per_second:4} operations/second, {seconds_per_operation:4} seconds/operation");
-            }
 
             if !self.options.test_results_filename.is_empty() {
                 // Write out the results to a file.
@@ -407,31 +394,61 @@ impl PerfRunner {
         }
         Ok(())
     }
+
+    /// Runs the provided test instance for the specified duration using the provided test contexts.
+    ///
+    /// # Arguments
+    /// * `test_instance` - The test instance to run.
+    /// * `test_contexts` - The test contexts to use for each parallel task.
+    /// * `duration` - The duration to run the test for.
+    ///
+    /// # Returns
+    /// The operations per second achieved during the test.
     pub async fn run_test_for(
         &self,
         test_instance: Arc<dyn PerfTest>,
         test_contexts: &[Arc<TestContext>],
         duration: Duration,
-    ) -> azure_core::Result<()> {
+    ) -> azure_core::Result<f64> {
         // Reset the performance measurements before starting the test.
         self.progress.store(0, Ordering::SeqCst);
-        let mut tasks: JoinSet<Result<()>> = JoinSet::new();
+        let mut tasks: JoinSet<Result<(i64, tokio::time::Duration)>> = JoinSet::new();
         (0..self.options.parallel).for_each(|i| {
             let test_instance_clone = Arc::clone(&test_instance);
             let progress = self.progress.clone();
             let test_context = test_contexts[i as usize].clone();
             tasks.spawn(async move {
+                let start = tokio::time::Instant::now();
+                let mut count = 0i64;
+                let timeout = tokio::time::Duration::from_secs_f64(duration.as_seconds_f64());
                 loop {
                     test_instance_clone.run(test_context.clone()).await?;
                     progress.fetch_add(1, Ordering::SeqCst);
+                    count += 1;
+                    if start.elapsed() >= timeout {
+                        break;
+                    }
                 }
+                Ok((count, start.elapsed()))
             });
         });
         let start = tokio::time::Instant::now();
-        let timeout = tokio::time::Duration::from_secs_f64(duration.as_seconds_f64());
-        select!(
-                _ = tokio::time::sleep(timeout) => {println!("Timeout reached, stopping test tasks: {:?}", start.elapsed());},
-                _ = tasks.join_all() =>  {println!("All test tasks completed: {:?}", start.elapsed());},
+
+        let operations_per_second = select!(
+                results = tasks.join_all() =>  {
+                    println!("All test tasks completed: {:?}", start.elapsed());
+                    // Collect the results of the test tasks.
+                    let collected_results: Result<Vec<_>> = results.into_iter().collect();
+
+                    // Calculate the operations/second for each of the tasks and sum them to a single result.
+                    let total_ops:f64 = collected_results?
+                        .into_iter()
+                        .map(|(count, duration)| {count as f64 / duration.as_secs_f64()})
+                        .sum();
+
+                    println!("Total operations per second: {total_ops}");
+                    Ok(total_ops)
+                },
                 _ = async {
                         let mut last_count = 0;
                         loop {
@@ -447,10 +464,12 @@ impl PerfRunner {
 
                             last_count = current_total;
                         }
-                    }, if !self.options.disable_progress => {},
-        );
-        println!("Task time elapsed: {:?}", start.elapsed());
-        Ok(())
+                    }, if !self.options.disable_progress => {Err(azure_core::Error::with_message(
+                        ErrorKind::Other,
+                        "Progress reporting task exited unexpectedly.",
+                    ))},
+        )?;
+        Ok(operations_per_second)
     }
 
     // Future command line switches:
@@ -509,6 +528,8 @@ impl PerfRunner {
                     .value_parser(clap::value_parser!(i64))
                     .global(true),
             )
+            // Cargo bench passes --bench to the test binary to instruct it to run benchmarks only.
+            .arg(clap::arg!(--bench).required(false).global(true))
             .arg(
                 clap::arg!(--"test-results" <FILE> "The file to write test results to")
                     .required(false)

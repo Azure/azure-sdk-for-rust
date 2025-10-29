@@ -3,7 +3,7 @@
 
 // cspell: ignore retryable backoff
 
-use azure_core::{error::Result, sleep, time::Duration};
+use azure_core::{sleep, time::Duration};
 use rand::random;
 use std::{fmt::Debug, pin::Pin};
 use tracing::{info, warn};
@@ -173,7 +173,7 @@ where
 
 /// Helper function to retry specific Azure Core operations.
 ///
-/// This is a specialization of `retry_with_backoff` for Azure operations that return `azure_core::error::Result`.
+/// This is a specialization of `retry_with_backoff` for Azure operations that return `AmqpError`.
 ///
 /// # Arguments
 ///
@@ -185,16 +185,17 @@ where
 ///
 /// * `Result<T>` - The result of the operation if it succeeds, or the last error if all
 ///   retries are exhausted.
-pub(crate) async fn recover_azure_operation<F, Fut, T, C>(
+pub(crate) async fn recover_azure_operation<F, Fut, T, C, E>(
     operation: F,
     options: &RetryOptions,
-    categorize_error: fn(&azure_core::Error) -> ErrorRecoveryAction,
-    recover_operation: Option<RecoveryOperation<C, azure_core::Error>>,
+    categorize_error: fn(&E) -> ErrorRecoveryAction,
+    recover_operation: Option<RecoveryOperation<C, E>>,
     context: Option<C>,
-) -> Result<T>
+) -> std::result::Result<T, E>
 where
     F: Fn() -> Fut,
-    Fut: std::future::Future<Output = Result<T>>,
+    Fut: std::future::Future<Output = std::result::Result<T, E>>,
+    E: Debug + std::error::Error,
     C: Clone,
 {
     recover_with_backoff(
@@ -209,6 +210,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::EventHubsError;
+
     use super::*;
     use azure_core_test::{recorded, TestContext};
     use std::{
@@ -218,7 +221,7 @@ mod tests {
     use tracing::info;
 
     #[recorded::test]
-    async fn test_retry_success_on_first_attempt(_ctx: TestContext) -> Result<()> {
+    async fn test_retry_success_on_first_attempt(_ctx: TestContext) -> Result<(), EventHubsError> {
         let result = recover_with_backoff(
             || async { Ok::<_, String>("success") },
             &RetryOptions::default(),
@@ -233,7 +236,7 @@ mod tests {
     }
 
     #[recorded::test]
-    async fn test_retry_success_after_retries(_ctx: TestContext) -> Result<()> {
+    async fn test_retry_success_after_retries(_ctx: TestContext) -> Result<(), EventHubsError> {
         let attempts = AtomicUsize::new(0);
 
         let result = recover_with_backoff(
@@ -258,7 +261,7 @@ mod tests {
     }
 
     #[recorded::test]
-    async fn test_retry_exhausted(_ctx: TestContext) -> Result<()> {
+    async fn test_retry_exhausted(_ctx: TestContext) -> Result<(), EventHubsError> {
         let attempts = AtomicUsize::new(0);
         let options = RetryOptions {
             initial_delay: Duration::milliseconds(10),
@@ -285,7 +288,7 @@ mod tests {
     }
 
     #[recorded::test]
-    async fn test_retry_with_is_retryable(_ctx: TestContext) -> Result<()> {
+    async fn test_retry_with_is_retryable(_ctx: TestContext) -> Result<(), EventHubsError> {
         let attempts = AtomicUsize::new(0);
 
         // Only retry if the error message contains "retry"

@@ -5,7 +5,7 @@ use super::{
     connection::AmqpConnection,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use azure_core::error::Result;
+use crate::error::Result;
 use std::fmt::Debug;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]

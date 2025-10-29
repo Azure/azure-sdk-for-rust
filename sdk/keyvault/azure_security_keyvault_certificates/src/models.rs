@@ -6,8 +6,9 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         poller::{PollerOptions, PollerStatus, StatusMonitor},
-        ClientMethodOptions, JsonFormat,
+        ClientMethodOptions, JsonFormat, RequestContent,
     },
+    json,
 };
 impl StatusMonitor for CertificateOperation {
     type Output = Certificate;
@@ -22,9 +23,9 @@ impl StatusMonitor for CertificateOperation {
     }
 }
 
-/// Options to be passed to [`CertificateClient::begin_create_certificate()`](crate::clients::CertificateClient::begin_create_certificate())
+/// Options to be passed to [`CertificateClient::create_certificate()`](crate::clients::CertificateClient::create_certificate())
 #[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientBeginCreateCertificateOptions<'a> {
+pub struct CertificateClientCreateCertificateOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -32,9 +33,9 @@ pub struct CertificateClientBeginCreateCertificateOptions<'a> {
     pub poller_options: PollerOptions,
 }
 
-impl CertificateClientBeginCreateCertificateOptions<'_> {
-    pub fn into_owned(self) -> CertificateClientBeginCreateCertificateOptions<'static> {
-        CertificateClientBeginCreateCertificateOptions {
+impl CertificateClientCreateCertificateOptions<'_> {
+    pub fn into_owned(self) -> CertificateClientCreateCertificateOptions<'static> {
+        CertificateClientCreateCertificateOptions {
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
             },
@@ -43,23 +44,9 @@ impl CertificateClientBeginCreateCertificateOptions<'_> {
     }
 }
 
-/// Options to be passed to [`CertificateClient::resume_certificate_operation()`](crate::clients::CertificateClient::resume_certificate_operation())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientResumeCertificateOperationOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// Allows customization of the [`Poller`](azure_core::http::poller::Poller).
-    pub poller_options: PollerOptions,
-}
-
-impl CertificateClientResumeCertificateOperationOptions<'_> {
-    pub fn into_owned(self) -> CertificateClientResumeCertificateOperationOptions<'static> {
-        CertificateClientResumeCertificateOperationOptions {
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-            poller_options: self.poller_options,
-        }
+impl TryFrom<CreateCertificateParameters> for RequestContent<CreateCertificateParameters> {
+    type Error = azure_core::Error;
+    fn try_from(value: CreateCertificateParameters) -> azure_core::Result<Self> {
+        Ok(json::to_json(&value)?.into())
     }
 }

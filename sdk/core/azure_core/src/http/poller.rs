@@ -297,7 +297,7 @@ type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 ///
 /// // Await the poller to get the final certificate.
 /// let certificate = client
-///     .begin_create_certificate("my-cert", params.try_into()?, None)?
+///     .create_certificate("my-cert", params.try_into()?, None)?
 ///     .await?
 ///     .into_body()?;
 /// # Ok(()) }
@@ -321,7 +321,7 @@ type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 ///
 /// // Manually poll status updates.
 /// let mut poller = client
-///     .begin_create_certificate("my-cert", params.try_into()?, None)?;
+///     .create_certificate("my-cert", params.try_into()?, None)?;
 ///
 /// while let Some(status) = poller.try_next().await? {
 ///     let status = status.into_body()?;

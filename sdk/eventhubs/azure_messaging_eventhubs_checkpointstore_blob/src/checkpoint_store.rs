@@ -68,9 +68,7 @@ impl BlobCheckpointStore {
         blob_name: &str,
         metadata: HashMap<String, String>,
     ) -> Result<(Option<OffsetDateTime>, Option<Etag>)> {
-        let blob_client = self
-            .blob_container_client
-            .blob_client(blob_name.to_string());
+        let blob_client = self.blob_container_client.blob_client(blob_name);
 
         let result = blob_client.set_metadata(metadata.clone(), None).await;
         match result {
@@ -106,9 +104,7 @@ impl BlobCheckpointStore {
         metadata: Option<HashMap<String, String>>,
         etag: Option<Etag>,
     ) -> Result<(Option<OffsetDateTime>, Option<Etag>)> {
-        let blob_client = self
-            .blob_container_client
-            .blob_client(blob_name.to_string());
+        let blob_client = self.blob_container_client.blob_client(blob_name);
 
         if etag.is_some() {
             debug!(

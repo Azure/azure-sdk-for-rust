@@ -77,8 +77,11 @@ The following section provides several code snippets using the `CertificateClien
 
 ### Create a certificate
 
-`begin_create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
+`create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
 Before we can create a new certificate, though, we need to define a certificate policy. This is used for the first certificate version and all subsequent versions of that certificate until changed.
+
+`create_certificate` returns a `Poller<CertificateOperation>`, which implements both `std::future::IntoFuture` and `futures::Stream`.
+You can `await` the `Poller` to get the final result - a `Certificate` - or asynchronously iterate over each status update.
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
@@ -86,7 +89,6 @@ use azure_security_keyvault_certificates::{
     CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
-use futures::stream::TryStreamExt as _;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -117,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Wait for the certificate operation to complete.
     // The Poller implements futures::Stream and automatically waits between polls.
     let certificate = client
-        .begin_create_certificate("certificate-name", body.try_into()?, None)?
+        .create_certificate("certificate-name", body.try_into()?, None)?
         .await?
         .into_body()?;
 
@@ -318,7 +320,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     certificate_client
-        .begin_create_certificate("ec-signing-certificate", body.try_into()?, None)?
+        .create_certificate("ec-signing-certificate", body.try_into()?, None)?
         .await?;
 
     // Hash the plaintext to be signed.

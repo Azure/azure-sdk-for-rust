@@ -5,7 +5,7 @@ use azure_core::{error::ErrorKind as CoreErrorKind, fmt::SafeDebug};
 use std::fmt;
 
 /// The kind of Service Bus error.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ErrorKind {
     /// An error occurred in the underlying AMQP transport.
     Amqp,
@@ -53,11 +53,11 @@ impl fmt::Display for ErrorKind {
 }
 
 /// A Service Bus specific error.
-#[derive(SafeDebug, Clone, PartialEq, Eq)]
+#[derive(SafeDebug)]
 pub struct ServiceBusError {
     kind: ErrorKind,
     message: String,
-    source: Option<Box<ServiceBusError>>,
+    source: Option<Box<dyn std::error::Error + 'static>>,
 }
 
 impl ServiceBusError {
@@ -74,12 +74,12 @@ impl ServiceBusError {
     pub fn with_source(
         kind: ErrorKind,
         message: impl Into<String>,
-        source: ServiceBusError,
+        source: Box<dyn std::error::Error + 'static>,
     ) -> Self {
         Self {
             kind,
             message: message.into(),
-            source: Some(Box::new(source)),
+            source: Some(source),
         }
     }
 
@@ -92,11 +92,6 @@ impl ServiceBusError {
     pub fn message(&self) -> &str {
         &self.message
     }
-
-    /// Returns the source error, if any.
-    pub fn source(&self) -> Option<&ServiceBusError> {
-        self.source.as_deref()
-    }
 }
 
 impl fmt::Display for ServiceBusError {
@@ -107,7 +102,7 @@ impl fmt::Display for ServiceBusError {
 
 impl std::error::Error for ServiceBusError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.source.as_ref().map(|e| e as &dyn std::error::Error)
+        self.source.as_deref()
     }
 }
 
@@ -126,6 +121,6 @@ impl From<azure_core::error::Error> for ServiceBusError {
 
 impl From<azure_core_amqp::AmqpError> for ServiceBusError {
     fn from(error: azure_core_amqp::AmqpError) -> Self {
-        ServiceBusError::new(ErrorKind::Amqp, error.to_string())
+        ServiceBusError::with_source(ErrorKind::Amqp, format!("{}", error), Box::new(error))
     }
 }

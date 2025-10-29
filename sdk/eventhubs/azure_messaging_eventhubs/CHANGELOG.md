@@ -6,9 +6,16 @@
 
 ### Breaking Changes
 
+- All Event Hubs APIs now return an `azure_messaging_eventhubs::EventHubError` instead of an `azure_core::Error`.
+- Several `azure_messaging_eventhubs::error::ErrorKind` enumerations have been removed because they are no longer needed.
+- Modified several errors which previously used `azure_core::Error::with_message` to use `azure_messaging_eventhubs::EventHubsError::with_message`, changing their underlying type.
+
 ### Bugs Fixed
 
 ### Other Changes
+
+- Added `azure_messaging_eventhubs::error::ErrorKind::AmqpError`, `azure_messaging_eventhubs::error::ErrorKind::AzureCore`, and `azure_messaging_eventhubs::error::ErrorKind::SimpleMessage` to describe AMQP originated messages, Azure Core originated messages, and messages which just have a string value respectively.
+- Added `azure_messaging_eventhubs::Error::with_message` to enable simple error returns with a text message.
 
 ## 0.8.0 (2025-10-08)
 
