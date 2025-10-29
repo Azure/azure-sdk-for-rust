@@ -302,8 +302,6 @@ fn check_span_information(
     match span.parent {
         None => assert!(expected.parent_id.is_none()),
         Some(ref parent) => {
-            println!("Checking parent span: {:?}", parent);
-            println!("Span map: {parent_span_map:?}");
             let parent_id = parent_span_map
                 .get(expected.parent_id.as_ref().unwrap())
                 .unwrap();
