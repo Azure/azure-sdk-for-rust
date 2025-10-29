@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added a SAS-only constructor to `BlobContainerClient` (`new_sas`) that builds a pipeline without a bearer token policy. This enables using SAS in the endpoint without requiring a `TokenCredential`.
+- Introduced a SAS query policy that ensures SAS query parameters from the client endpoint are appended to every outgoing request. Sub-clients created via `get_blob_client` inherit this policy.
+
 ### Breaking Changes
 
 ### Bugs Fixed

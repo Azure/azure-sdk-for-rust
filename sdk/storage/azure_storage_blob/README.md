@@ -57,6 +57,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+#### SAS-only authentication
+
+You can use Shared Access Signatures (SAS) without providing a `TokenCredential`. The SAS-only constructors build a pipeline without a bearer-token policy and apply a SAS query policy that ensures the SAS query parameters are present on every outgoing request, even when URLs are recomposed internally. Clients created via `get_blob_client` inherit this pipeline.
+
+```rust no_run
+use azure_core::http::{ClientOptions, Transport};
+use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Endpoint must include a valid SAS query string.
+    let endpoint = "https://<account>.blob.core.windows.net/?<SAS>";
+    let container = "container_name".to_string();
+
+    // Optional: inject a custom HTTP transport (e.g., reqwest). Otherwise, use defaults.
+    // let http = std::sync::Arc::new(reqwest::Client::builder().build()?);
+    // let client_options = ClientOptions { transport: Some(Transport::new(http)), ..Default::default() };
+
+    let client_options = ClientOptions::default();
+    let options = BlobContainerClientOptions { client_options, ..Default::default() };
+
+    // No TokenCredential required for SAS-only.
+    let container_client = BlobContainerClient::new_sas(endpoint, container, Some(options))?;
+
+    // The SAS query policy ensures SAS params are attached on every request.
+    // Example operation:
+    let _exists = container_client.exists().await?;
+    Ok(())
+}
+```
+
 #### Permissions
 
 You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID. Please see [Assign an Azure role for access to blob data] for more details.
@@ -111,6 +142,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,                                // upload options
         )
         .await?;
+    Ok(())
+}
+```
+
+### SAS-only: Upload Blob via `BlobContainerClient`
+
+```rust no_run
+use azure_core::http::{ClientOptions, RequestContent};
+use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Endpoint must include a valid SAS query string.
+    let endpoint = "https://<account>.blob.core.windows.net/?<SAS>";
+    let container = "container_name".to_string();
+
+    let options = BlobContainerClientOptions {
+        client_options: ClientOptions::default(),
+        ..Default::default()
+    };
+    let container_client = BlobContainerClient::new_sas(endpoint, container, Some(options))?;
+
+    // Create a per-blob client from the container client; it inherits the SAS policy.
+    let blob = container_client.blob_client("blob_name".to_string());
+
+    let data = b"hello world";
+    blob.upload(
+        RequestContent::from(data.to_vec()),
+        false,                               // overwrite
+        u64::try_from(data.len())?,          // content length
+        None,                                // upload options
+    ).await?;
     Ok(())
 }
 ```
