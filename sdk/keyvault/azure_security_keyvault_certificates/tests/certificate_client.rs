@@ -101,7 +101,11 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
                     ..Default::default()
                 };
                 let _certificate = client
-                    .create_certificate("certificate-roundtrip", body.try_into()?, None)?
+                    .create_certificate(
+                        "certificate-validate-instrumentation",
+                        body.try_into()?,
+                        None,
+                    )?
                     .await?
                     .into_body()?;
                 Ok(())
