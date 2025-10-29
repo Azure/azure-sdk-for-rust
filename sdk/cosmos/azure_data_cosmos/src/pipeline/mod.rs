@@ -17,21 +17,18 @@ use std::sync::Arc;
 use typespec_client_core::http::RetryOptions;
 use url::Url;
 
-use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::{
     constants,
     models::ThroughputProperties,
     resource_context::{ResourceLink, ResourceType},
     FeedPage, FeedPager, Query,
 };
-use crate::cosmos_request::{CosmosRequest};
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
 pub struct CosmosPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
-    retry_handler: BackOffRetryHandler,
 }
 
 impl CosmosPipeline {
@@ -53,7 +50,6 @@ impl CosmosPipeline {
         CosmosPipeline {
             endpoint,
             pipeline,
-            retry_handler: BackOffRetryHandler,
         }
     }
 
@@ -75,9 +71,14 @@ impl CosmosPipeline {
         // Clone pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
+        let response = pipeline.send(&ctx_owned, request, None).await;
 
-        // Delegate to the retry handler, providing the sender callback
-        pipeline.send(&ctx_owned, request, None).await
+        // Print the response body
+        // You can choose to read the body as bytes, text, or copy it directly to stdout.
+        // For raw output, copying to stdout is often suitable.
+        // response.unwrap().copy_to(&mut std::io::stdout()).await?;
+
+        response
     }
 
     pub async fn send<T>(
@@ -91,41 +92,6 @@ impl CosmosPipeline {
             .map(Into::into)
     }
 
-    /// Send a DocumentServiceRequest through the pipeline and deserialize the response
-    pub async fn send_doc<T>(
-        &self,
-        ctx: Context<'_>,
-        doc_request: &mut CosmosRequest<'_>,
-        resource_link: ResourceLink,
-    ) -> azure_core::Result<Response<T>> {
-        self.send_doc_raw(ctx, doc_request, resource_link)
-            .await
-            .map(Into::into)
-    }
-
-    /// Send a DocumentServiceRequest through the pipeline with retry logic
-    pub async fn send_doc_raw(
-        &self,
-        ctx: Context<'_>,
-        doc_request: &mut CosmosRequest<'_>,
-        resource_link: ResourceLink,
-    ) -> azure_core::Result<RawResponse> {
-        // Clone pipeline and convert context to owned so the closure can be Fn
-        let pipeline = self.pipeline.clone();
-        let ctx_owned = ctx.with_value(resource_link).into_owned();
-
-        // Build a sender closure that forwards to the inner pipeline.send
-        let sender = move |req: &mut CosmosRequest| {
-            let pipeline = pipeline.clone();
-            let ctx = ctx_owned.clone();
-            let mut raw_req = req.clone().to_raw_request();
-            async move { pipeline.send(&ctx, &mut raw_req, None).await }
-        };
-
-        // Delegate to the retry handler, providing the sender callback
-        self.retry_handler.send(doc_request, sender).await
-    }
-    
     pub fn send_query_request<T: DeserializeOwned + Send>(
         &self,
         ctx: Context<'_>,

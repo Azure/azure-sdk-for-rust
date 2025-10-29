@@ -1,28 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::ptr::null;
-use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
-use crate::retry_policies::{RetryPolicy, RetryResult};
-use async_trait::async_trait;
-use serde::Serialize;
-use azure_core::{
-    async_runtime::get_async_runtime,
-    http::{request::Request, RawResponse},
-};
-use typespec_client_core::http::{Method, Response};
-use typespec_client_core::http::request::options::ContentType;
+use typespec_client_core::http::{Response};
 use crate::{ItemOptions, PartitionKey};
 use crate::cosmos_request::{AuthorizationTokenType, CosmosRequest};
 use crate::operation_context::OperationType;
 use crate::pipeline::CosmosPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
-
-// Helper trait to conditionally require Send on non-WASM targets
-#[cfg(not(target_arch = "wasm32"))]
-pub trait ConditionalSend: Send {}
-#[cfg(not(target_arch = "wasm32"))]
-impl<T: Send> ConditionalSend for T {}
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 
 /// Concrete retry handler implementation with exponential back off.
 /// This handler provides automatic retry capabilities for Cosmos DB operations using
@@ -31,7 +16,8 @@ impl<T: Send> ConditionalSend for T {}
 #[derive(Debug, Clone)]
 pub struct RequestHandler {
 
-    pipeline: CosmosPipeline
+    pipeline: CosmosPipeline,
+    retry_handler: BackOffRetryHandler,
 }
 
 impl RequestHandler {
@@ -48,7 +34,10 @@ impl RequestHandler {
     /// let handler = RequestHandler::new(pipeline.clone());
     /// ```
     pub fn new(pipeline: CosmosPipeline) -> Self {
-        Self { pipeline }
+        Self {
+            pipeline,
+            retry_handler: BackOffRetryHandler
+        }
     }
 
     pub async fn send<T>(
@@ -61,13 +50,40 @@ impl RequestHandler {
         resource_link: ResourceLink
     ) -> azure_core::Result<Response<T>> {
 
-        let mut cosmos_request = CosmosRequest::new(operation_type, resource_type, Some("abv".parse()?), partition_key, body, false, AuthorizationTokenType::Primary, options);
+        // TODO: Pass the real resource id (RID) if available; None means it may be resolved later.
+        // `CosmosRequest::new` signature:
+        // (operation_type, resource_type, resource_id: Option<String>, partition_key, body, headers: Option<Headers>, is_name_based, auth_token_type, options)
+        let mut cosmos_request = CosmosRequest::new(
+            operation_type,
+            resource_type,
+            None,                // resource_id (RID) not yet known here
+            partition_key,
+            body,                 // raw body bytes (if any)
+            false,                // is_name_based
+            AuthorizationTokenType::Primary,
+            options,
+        );
         cosmos_request.request_context.location_endpoint_to_route = Option::from(resource_link.url(&self.pipeline.endpoint));
-        // let mut request = cosmos_request.to_raw_request();
         let item_options = cosmos_request.clone().options.unwrap_or_default();
+        let ctx = item_options.method_options.context.with_value(resource_link.clone());
 
-        self.pipeline
-            .send_doc(item_options.method_options.context, &mut cosmos_request, resource_link.clone())
-            .await
+        // Clone pipeline and convert context to owned so the closure can be Fn
+        let pipeline = self.pipeline.clone();
+
+        // Prepare a cloneable ResourceLink to avoid moving it, allowing the closure to be Fn
+        let resource_link_for_sender = resource_link.clone();
+        let sender = move |req: &mut CosmosRequest| {
+            let pipeline = pipeline.clone();
+            let ctx = ctx.clone();
+            let mut raw_req = req.clone().to_raw_request();
+            let url = resource_link_for_sender.clone();
+            async move { pipeline.send_raw(ctx, &mut raw_req, url).await }
+        };
+
+        // Delegate to the retry handler, providing the sender callback
+        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
+
+        // Convert RawResponse into typed Response<T>
+        res.map(Into::into)
     }
 }

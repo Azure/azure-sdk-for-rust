@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use azure_core::http::{
     request::{options::ContentType, Request},
-    response::Response,
     Method,
 };
 use crate::cosmos_request_context::CosmosRequestContext;
@@ -43,6 +42,7 @@ pub type Headers = HashMap<String, String>;
 
 /// Main struct for DocumentServiceRequest.
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct CosmosRequest<'a> {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,

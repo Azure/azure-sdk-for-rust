@@ -9,6 +9,7 @@ use crate::utils::url_encode;
 #[allow(dead_code)] // For the variants. Can be removed when we have them all implemented.
 pub enum ResourceType {
     Databases,
+    DatabaseAccount,
     Containers,
     Items,
     StoredProcedures,
@@ -24,6 +25,7 @@ impl ResourceType {
     pub fn path_segment(self) -> &'static str {
         match self {
             ResourceType::Databases => "dbs",
+            ResourceType::DatabaseAccount => "",
             ResourceType::Containers => "colls",
             ResourceType::Items => "docs",
             ResourceType::StoredProcedures => "sprocs",

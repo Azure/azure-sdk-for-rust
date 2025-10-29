@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use url::Url;
 
-/// Placeholder for types referenced in the context.
+#[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 pub struct TimeoutHelper;
 #[derive(Clone, Debug, Default)]

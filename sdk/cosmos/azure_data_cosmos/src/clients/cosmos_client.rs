@@ -1,13 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    clients::DatabaseClient,
-    models::DatabaseProperties,
-    pipeline::{AuthorizationPolicy, CosmosPipeline},
-    resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
-};
+use crate::{clients::DatabaseClient, models::DatabaseProperties, pipeline::{AuthorizationPolicy, CosmosPipeline}, resource_context::{ResourceLink, ResourceType}, CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions, ReadDatabaseOptions};
 use azure_core::{
     credentials::TokenCredential,
     http::{
@@ -21,6 +15,7 @@ use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
+use crate::models::AccountProperties;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -95,6 +90,37 @@ impl CosmosClient {
             ),
         })
     }
+
+
+    /// Reads the properties of the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # use azure_data_cosmos::clients::DatabaseClient;
+    /// # let database_client: DatabaseClient = panic!("this is a non-running example");
+    /// let response = database_client.read(None)
+    ///     .await?
+    ///     .into_body()?;
+    /// # }
+    /// ```
+    pub async fn read_account(
+        &self,
+        options: Option<ReadDatabaseOptions<'_>>,
+    ) -> azure_core::Result<Response<AccountProperties>> {
+        let options = options.unwrap_or_default();
+        // let url = self.pipeline.url(&self.pipeline.endpoint);
+        let mut req = Request::new(self.pipeline.endpoint.clone(), Method::Get);
+        self.pipeline
+            .send(options.method_options.context, &mut req, ResourceLink::root(ResourceType::DatabaseAccount))
+            .await
+    }
+
 
     /// Creates a new CosmosClient, using a connection string.
     ///

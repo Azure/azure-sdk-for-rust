@@ -6,7 +6,7 @@ use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
 use azure_core::{
     async_runtime::get_async_runtime,
-    http::{request::Request, RawResponse},
+    http::{RawResponse},
 };
 use crate::cosmos_request::CosmosRequest;
 
