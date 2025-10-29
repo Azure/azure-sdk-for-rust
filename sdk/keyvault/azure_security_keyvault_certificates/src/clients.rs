@@ -16,7 +16,7 @@ use azure_core::{
         Body, Method, RawResponse, Request, RequestContent, Url,
     },
     json,
-    tracing::{self},
+    tracing::{self, SpanStatus},
     Result,
 };
 
@@ -190,6 +190,21 @@ impl CertificateClient {
                                             pipeline.send(&ctx, &mut request, None).await?;
                                         let (status, headers, body) = rsp.deconstruct();
                                         if let Some(span) = span {
+                                            // 5xx status codes SHOULD set status to Error.
+                                            // The description should not be set because it can be inferred from "http.response.status_code".
+                                            if status.is_server_error() {
+                                                span.set_status(SpanStatus::Error {
+                                                    description: "".to_string(),
+                                                });
+                                            }
+                                            if status.is_client_error() || status.is_server_error()
+                                            {
+                                                span.set_attribute(
+                                                    "error.type",
+                                                    status.to_string().into(),
+                                                );
+                                            }
+
                                             span.end();
                                         }
                                         Ok(RawResponse::from_bytes(status, headers, body).into())
