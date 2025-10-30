@@ -219,6 +219,8 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
 
 #[recorded::test]
 async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
+    use azure_core_test::tracing::ExpectedRestApiSpan;
+
     let recording = ctx.recording();
 
     // Verify that the distributed tracing traces generated from the API call below match the expected traces.
@@ -271,7 +273,10 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
             api_calls: vec![
                 ExpectedApiInformation {
                     api_name: Some("KeyVault.setSecret"),
-                    api_verb: azure_core::http::Method::Put,
+                    api_children: vec![ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Put,
+                        ..Default::default()
+                    }],
                     ..Default::default()
                 },
                 ExpectedApiInformation {

@@ -35,7 +35,6 @@ tracing-subscriber = { workspace = true, features = [
   "env-filter",
   "fmt",
 ], optional = true }
-typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

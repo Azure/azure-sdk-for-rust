@@ -250,7 +250,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec_client_core",
 ]
 
 [[package]]
@@ -268,7 +267,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec_client_core",
  "url",
 ]
 
@@ -294,7 +292,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec_client_core",
  "url",
  "uuid",
  "zip",
@@ -455,7 +452,6 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
- "typespec_client_core",
 ]
 
 [[package]]
@@ -476,7 +472,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "tokio",
- "typespec_client_core",
 ]
 
 [[package]]
@@ -495,7 +490,6 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
- "typespec_client_core",
 ]
 
 [[package]]

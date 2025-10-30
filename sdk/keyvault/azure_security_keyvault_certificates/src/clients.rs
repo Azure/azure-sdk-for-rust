@@ -9,12 +9,15 @@ use azure_core::{
     error::ErrorKind,
     http::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+        policies::create_public_api_span,
         poller::{
             get_retry_after, Poller, PollerResult, PollerState, PollerStatus, StatusMonitor as _,
         },
         Body, Method, RawResponse, Request, RequestContent, Url,
     },
-    json, tracing, Result,
+    json,
+    tracing::{self, SpanStatus},
+    Result,
 };
 
 impl CertificateClient {
@@ -92,6 +95,12 @@ impl CertificateClient {
         let certificate_name = certificate_name.to_owned();
         let parameters: Body = parameters.into();
 
+        let mut ctx = options.method_options.context;
+        let span = create_public_api_span(&ctx, None, None);
+        if let Some(ref s) = span {
+            ctx = ctx.with_value(s.clone());
+        }
+
         Ok(Poller::from_callback(
             move |next_link: PollerState<Url>| {
                 let (mut request, next_link) = match next_link {
@@ -127,9 +136,10 @@ impl CertificateClient {
                     }
                 };
 
-                let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 let api_version = api_version.clone();
+                let ctx = ctx.clone();
+                let span = span.clone();
                 async move {
                     let rsp = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
@@ -179,6 +189,24 @@ impl CertificateClient {
                                         let rsp: RawResponse =
                                             pipeline.send(&ctx, &mut request, None).await?;
                                         let (status, headers, body) = rsp.deconstruct();
+                                        if let Some(span) = span {
+                                            // 5xx status codes SHOULD set status to Error.
+                                            // The description should not be set because it can be inferred from "http.response.status_code".
+                                            if status.is_server_error() {
+                                                span.set_status(SpanStatus::Error {
+                                                    description: "".to_string(),
+                                                });
+                                            }
+                                            if status.is_client_error() || status.is_server_error()
+                                            {
+                                                span.set_attribute(
+                                                    "error.type",
+                                                    status.to_string().into(),
+                                                );
+                                            }
+
+                                            span.end();
+                                        }
                                         Ok(RawResponse::from_bytes(status, headers, body).into())
                                     })
                                 }),
