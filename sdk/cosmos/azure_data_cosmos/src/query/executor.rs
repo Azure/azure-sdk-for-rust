@@ -96,11 +96,14 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                 let pipeline =
                     self.query_engine
                         .create_pipeline(&self.query.text, &query_plan, &pkranges)?;
-                self.query.text = pipeline.query().into();
-                self.base_request = Some(crate::pipeline::create_base_query_request(
-                    self.http_pipeline.url(&self.items_link),
-                    &self.query,
-                )?);
+                if let Some(query) = pipeline.query() {
+                    let query = Query::from(query).with_parameters_from(&self.query);
+                    self.base_request = Some(crate::pipeline::create_base_query_request(
+                        self.http_pipeline.url(&self.items_link),
+                        &query,
+                    )?);
+                }
+
                 self.pipeline = Some(pipeline);
                 (
                     self.pipeline.as_mut().unwrap(),
@@ -139,8 +142,18 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                         self.http_pipeline.url(&self.items_link),
                         &query,
                     )?
-                } else {
+                } else if let Some(base_request) = &self.base_request {
                     base_request.clone()
+                } else {
+                    if cfg!(debug_assertions) {
+                        panic!(
+                            "internal error: base_request should be set if no query is provided"
+                        );
+                    }
+                    return Err(azure_core::error::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "internal error: pipeline had no query, and neither did the query request",
+                    ));
                 };
 
                 query_request.insert_header(
@@ -174,7 +187,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                     let body = resp.into_body();
                     let result = QueryResult {
                         partition_key_range_id: &request.partition_key_range_id,
-                        request_index: request.index,
+                        request_id: request.id,
                         next_continuation,
                         result: &body,
                     };

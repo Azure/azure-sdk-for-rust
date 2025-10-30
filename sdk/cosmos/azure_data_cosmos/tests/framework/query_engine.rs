@@ -183,7 +183,7 @@ impl MockQueryPipeline {
             .filter(|state| !state.exhausted())
             .map(move |state| azure_data_cosmos::query::QueryRequest {
                 partition_key_range_id: state.range.id.clone(),
-                index: state.next_index,
+                id: state.next_index,
                 continuation: if state.started {
                     state.next_continuation.clone()
                 } else {
