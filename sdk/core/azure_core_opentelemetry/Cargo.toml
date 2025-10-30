@@ -23,7 +23,6 @@ opentelemetry-http.workspace = true
 opentelemetry_sdk.workspace = true
 reqwest.workspace = true
 tracing.workspace = true
-typespec_client_core.workspace = true
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }

@@ -8,7 +8,7 @@ mod client_request_id;
 mod instrumentation;
 mod user_agent;
 
-pub use bearer_token_policy::BearerTokenCredentialPolicy;
+pub use bearer_token_policy::BearerTokenAuthorizationPolicy;
 pub use client_request_id::*;
 pub use instrumentation::*;
 pub use typespec_client_core::http::policies::*;

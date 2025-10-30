@@ -24,7 +24,7 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
+        policies::{BearerTokenAuthorizationPolicy, Policy},
         NoFormat, PageIterator, Pipeline, Response, StatusCode, Url, XmlFormat,
     },
     tracing, Result,
@@ -65,7 +65,7 @@ impl GeneratedBlobContainerClient {
                     format!("{container_url} must use https"),
                 ));
             }
-            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));

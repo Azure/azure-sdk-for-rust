@@ -4,7 +4,7 @@
 //! Distributed tracing trait definitions
 //!
 use crate::http::{Context, Request};
-use std::{fmt::Debug, sync::Arc};
+use std::{borrow::Cow, fmt::Debug, sync::Arc};
 
 /// Overall architecture for distributed tracing in the SDK.
 ///
@@ -59,7 +59,7 @@ pub trait Tracer: Send + Sync + Debug {
     ///
     fn start_span(
         &self,
-        name: &'static str,
+        name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<Attribute>,
     ) -> Arc<dyn Span>;
@@ -79,7 +79,7 @@ pub trait Tracer: Send + Sync + Debug {
     ///
     fn start_span_with_parent(
         &self,
-        name: &'static str,
+        name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<Attribute>,
         parent: Arc<dyn Span>,

@@ -17,7 +17,7 @@ use crate::{
 use azure_core::{
     credentials::TokenCredential,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
+        policies::{BearerTokenAuthorizationPolicy, Policy},
         NoFormat, PageIterator, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Result,
@@ -58,7 +58,7 @@ impl GeneratedBlobServiceClient {
                     format!("{blob_service_url} must use https"),
                 ));
             }
-            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));

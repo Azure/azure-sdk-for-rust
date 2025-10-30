@@ -21,7 +21,6 @@ proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
 tracing.workspace = true
-typespec_client_core = { workspace = true, features = ["http", "json"] }
 
 [dev-dependencies]
 tokio.workspace = true
