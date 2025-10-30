@@ -63,9 +63,9 @@ impl RequestHandler {
         );
         cosmos_request.request_context.location_endpoint_to_route =
             Option::from(resource_link.url(&self.pipeline.endpoint));
-        
+
         let item_options = cosmos_request.clone().options.unwrap_or_default();
-        
+
         let ctx = item_options
             .method_options
             .context

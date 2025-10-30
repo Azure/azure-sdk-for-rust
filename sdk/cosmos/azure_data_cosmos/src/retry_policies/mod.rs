@@ -4,7 +4,7 @@
 pub mod resource_throttle_retry_policy;
 use crate::cosmos_request::CosmosRequest;
 use async_trait::async_trait;
-use azure_core::http::{RawResponse};
+use azure_core::http::RawResponse;
 use azure_core::time::Duration;
 
 /// Result of a retry policy decision
