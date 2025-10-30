@@ -3,11 +3,12 @@ pub struct QueryRequest {
     /// The ID of the partition key range to query.
     pub partition_key_range_id: String,
 
-    /// The index of this request, within the partition key range.
+    /// The ID of this request, within the partition key range.
     ///
-    /// This value will always increase for subsequent requests for the same partition key range.
+    /// This value allows the pipeline to track which requests correspond to which results.
+    /// All [`QueryResult`]s provided back to the pipeline as a result of this request must have this same ID in the [`QueryResult::request_id`] field.
     /// It must be provided back to the pipeline when providing data, so that the pipeline can ensure that data is provided in order.
-    pub index: usize,
+    pub id: usize,
 
     /// The continuation to use, if any.
     pub continuation: Option<String>,
@@ -22,6 +23,7 @@ pub struct QueryRequest {
 
     /// If specified, indicates that the SDK should IMMEDIATELY drain all remaining results from this partition key range, following continuation tokens, until no more results are available.
     /// All the data from this partition key range should be provided BEFORE any new items will be made available.
+    /// The data may be provided in multiple [`QueryResult`]s, but every result correlated to this request should have the same [`QueryResult::request_id`].
     ///
     /// This allows engines to optimize for non-streaming scenarios, where the entire result set must be provided to the engine before it can make progress.
     pub drain: bool,
@@ -32,8 +34,8 @@ pub struct QueryResult<'a> {
     /// The ID of the partition key range that was queried.
     pub partition_key_range_id: &'a str,
 
-    /// The index of the [`QueryRequest`] that generated this result.
-    pub request_index: usize,
+    /// The ID of the [`QueryRequest`] that generated this result.
+    pub request_id: usize,
 
     /// The continuation token to be used for the next request, if any.
     pub next_continuation: Option<String>,
@@ -57,7 +59,9 @@ pub struct PipelineResult {
 /// Provides an interface to a query pipeline, which aggregates data from multiple single partition queries into a single cross-partition result set.
 pub trait QueryPipeline: Send {
     /// The query to be executed, which may have been modified by the gateway when generating a query plan.
-    fn query(&self) -> &str;
+    ///
+    /// This may be `None`, which indicates that every [`QueryRequest`] will have the [`QueryRequest::query`] field set to indicate a specific query to use.
+    fn query(&self) -> Option<&str>;
 
     /// Indicates if the pipeline is complete.
     fn complete(&self) -> bool;

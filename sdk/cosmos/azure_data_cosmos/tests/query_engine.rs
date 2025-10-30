@@ -251,3 +251,76 @@ pub async fn no_query_override_uses_original(
     account.cleanup().await?;
     Ok(())
 }
+
+#[recorded::test]
+pub async fn no_global_query_with_override(
+    context: TestContext,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use framework::query_engine::{MockQueryEngine, QueryRequestConfig};
+
+    let account = TestAccount::from_env(context, None).await?;
+    let cosmos_client = account.connect_with_key(None)?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let items = test_data::generate_mock_items(5, 5);
+    let container_client = test_data::create_container_with_items(
+        db_client,
+        items.clone(),
+        Some(ThroughputProperties::manual(40000)), // Force multiple physical partitions
+    )
+    .await?;
+
+    // Configure a query override that will be used in all QueryRequests
+    let query_config = QueryRequestConfig {
+        query: Some("SELECT * FROM c WHERE c.mergeOrder = @targetOrder".to_string()),
+        include_parameters: true,
+    };
+
+    // Create a MockQueryEngine with NO top-level global query (rewritten_query = None)
+    let mut query_engine = MockQueryEngine::with_rewritten_query(None);
+    query_engine.query_request_config = std::sync::Mutex::new(Some(query_config));
+    let query_engine = Arc::new(query_engine);
+
+    let target_merge_order = items[0].merge_order;
+
+    // The original query doesn't matter since there's no global query in the pipeline
+    // and we're using an override
+    let original_query =
+        azure_data_cosmos::Query::from("SELECT * FROM c WHERE c.id = @targetOrder")
+            .with_parameter("@targetOrder", target_merge_order)?;
+
+    let result_items: Vec<MockItem> = container_client
+        .query_items(
+            original_query,
+            (),
+            Some(QueryOptions {
+                query_engine: Some(query_engine),
+                ..Default::default()
+            }),
+        )?
+        .try_collect()
+        .await?;
+
+    // The override query uses "c.mergeOrder = @targetOrder" (not "c.id = @targetOrder"),
+    // so we should get items matching the target merge order.
+    // This proves that:
+    // 1. The pipeline has no global query (query() returns None)
+    // 2. The QueryRequest always contains the override query
+    // 3. The override query is used for execution
+    let expected_items: Vec<MockItem> = items
+        .into_iter()
+        .filter(|item| item.merge_order == target_merge_order)
+        .collect();
+
+    assert_eq!(expected_items.len(), result_items.len());
+    assert!(
+        !expected_items.is_empty(),
+        "Should have found at least one matching item"
+    );
+
+    for expected_item in expected_items {
+        assert!(result_items.contains(&expected_item));
+    }
+
+    account.cleanup().await?;
+    Ok(())
+}
