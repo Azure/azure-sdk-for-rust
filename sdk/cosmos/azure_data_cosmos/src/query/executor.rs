@@ -67,13 +67,8 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     /// An item to yield, or None if execution is complete.
     #[tracing::instrument(skip_all)]
     async fn step(&mut self) -> azure_core::Result<Option<FeedPage<T>>> {
-        let (pipeline, base_request) = match self.pipeline.as_mut() {
-            Some(pipeline) => (
-                pipeline,
-                self.base_request
-                    .as_ref()
-                    .expect("base_request should be set when pipeline is set"),
-            ),
+        let pipeline = match self.pipeline.as_mut() {
+            Some(pipeline) => pipeline,
             None => {
                 // Initialize the pipeline.
                 let query_plan = get_query_plan(
@@ -105,10 +100,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                 }
 
                 self.pipeline = Some(pipeline);
-                (
-                    self.pipeline.as_mut().unwrap(),
-                    self.base_request.as_ref().unwrap(),
-                )
+                self.pipeline.as_mut().unwrap()
             }
         };
 
