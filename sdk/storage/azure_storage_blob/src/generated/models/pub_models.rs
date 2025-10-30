@@ -14,7 +14,7 @@ use super::{
     QueryRequestType, QueryType, RehydratePriority,
 };
 use azure_core::{
-    base64::option::{deserialize, serialize},
+    base64::{deserialize, serialize},
     fmt::SafeDebug,
     time::OffsetDateTime,
 };
