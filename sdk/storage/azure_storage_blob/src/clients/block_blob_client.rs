@@ -4,16 +4,13 @@
 use crate::{
     generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult,
+        BlockBlobClientUploadBlobFromUrlResult,
     },
     models::{
-        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
-        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions, BlockList,
+        BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlockBlobClientOptions,

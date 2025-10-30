@@ -17,7 +17,7 @@ pub fn parse_subclient(_attr: TokenStream, item: TokenStream) -> Result<TokenStr
     if let Err(e) = is_subclient_declaration(&item) {
         return Err(syn::Error::new(
             item.span(),
-            format!("{} {}", INVALID_SUBCLIENT_MESSAGE, e),
+            format!("{INVALID_SUBCLIENT_MESSAGE} {e}"),
         ));
     }
 
