@@ -46,10 +46,7 @@ impl CosmosPipeline {
             None,
         );
 
-        CosmosPipeline {
-            endpoint,
-            pipeline,
-        }
+        CosmosPipeline { endpoint, pipeline }
     }
 
     /// Creates a [`Url`] out of the provided [`ResourceLink`]

@@ -1,7 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{clients::DatabaseClient, models::DatabaseProperties, pipeline::{AuthorizationPolicy, CosmosPipeline}, resource_context::{ResourceLink, ResourceType}, CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions, ReadDatabaseOptions};
+use crate::{
+    clients::DatabaseClient,
+    models::DatabaseProperties,
+    pipeline::{AuthorizationPolicy, CosmosPipeline},
+    resource_context::{ResourceLink, ResourceType},
+    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
+    ReadDatabaseOptions,
+};
 use azure_core::{
     credentials::TokenCredential,
     http::{
@@ -13,9 +20,9 @@ use azure_core::{
 use serde::Serialize;
 use std::sync::Arc;
 
+use crate::models::AccountProperties;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
-use crate::models::AccountProperties;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -93,11 +100,10 @@ impl CosmosClient {
         })
     }
 
-    async fn initialize(
-        client: CosmosClient,
-    ) -> azure_core::Result<Self> {
-        let account = client.get_database_account(None).await?.into_body()?;
-        Ok((client))
+    #[allow(dead_code)]
+    async fn initialize(client: CosmosClient) -> azure_core::Result<Self> {
+        let _account = client.get_database_account(None).await?.into_body()?;
+        Ok(client)
     }
 
     /// Reads the properties of the database.
@@ -112,7 +118,11 @@ impl CosmosClient {
         let options = options.unwrap_or_default();
         let mut req = Request::new(self.pipeline.endpoint.clone(), Method::Get);
         self.pipeline
-            .send(options.method_options.context, &mut req, ResourceLink::root(ResourceType::DatabaseAccount))
+            .send(
+                options.method_options.context,
+                &mut req,
+                ResourceLink::root(ResourceType::DatabaseAccount),
+            )
             .await
     }
 

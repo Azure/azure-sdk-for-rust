@@ -1,14 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
-use azure_core::{
-    async_runtime::get_async_runtime,
-    http::{RawResponse},
-};
-use crate::cosmos_request::CosmosRequest;
+use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -75,7 +72,10 @@ impl BackOffRetryHandler {
     /// retry policy should be used for this specific request.
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn retry_policy_for_request(&self, _request: &CosmosRequest) -> Box<ResourceThrottleRetryPolicy> {
+    pub fn retry_policy_for_request(
+        &self,
+        _request: &CosmosRequest,
+    ) -> Box<ResourceThrottleRetryPolicy> {
         // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
         // the request operation type and resource type and accordingly return the respective retry
         // policy.

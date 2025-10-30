@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{Response};
-use crate::{ItemOptions, PartitionKey};
 use crate::cosmos_request::{AuthorizationTokenType, CosmosRequest};
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::operation_context::OperationType;
 use crate::pipeline::CosmosPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
-use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::{ItemOptions, PartitionKey};
+use azure_core::http::Response;
 
 /// Concrete retry handler implementation with exponential back off.
 /// This handler provides automatic retry capabilities for Cosmos DB operations using
@@ -15,7 +15,6 @@ use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
 pub struct RequestHandler {
-
     pipeline: CosmosPipeline,
     retry_handler: BackOffRetryHandler,
 }
@@ -36,7 +35,7 @@ impl RequestHandler {
     pub fn new(pipeline: CosmosPipeline) -> Self {
         Self {
             pipeline,
-            retry_handler: BackOffRetryHandler
+            retry_handler: BackOffRetryHandler,
         }
     }
 
@@ -47,25 +46,30 @@ impl RequestHandler {
         operation_type: OperationType,
         resource_type: ResourceType,
         options: Option<ItemOptions<'_>>,
-        resource_link: ResourceLink
+        resource_link: ResourceLink,
     ) -> azure_core::Result<Response<T>> {
-
         // TODO: Pass the real resource id (RID) if available; None means it may be resolved later.
         // `CosmosRequest::new` signature:
         // (operation_type, resource_type, resource_id: Option<String>, partition_key, body, headers: Option<Headers>, is_name_based, auth_token_type, options)
         let mut cosmos_request = CosmosRequest::new(
             operation_type,
             resource_type,
-            None,                // resource_id (RID) not yet known here
+            None, // resource_id (RID) not yet known here
             partition_key,
-            body,                 // raw body bytes (if any)
-            false,                // is_name_based
+            body,  // raw body bytes (if any)
+            false, // is_name_based
             AuthorizationTokenType::Primary,
             options,
         );
-        cosmos_request.request_context.location_endpoint_to_route = Option::from(resource_link.url(&self.pipeline.endpoint));
+        cosmos_request.request_context.location_endpoint_to_route =
+            Option::from(resource_link.url(&self.pipeline.endpoint));
+        
         let item_options = cosmos_request.clone().options.unwrap_or_default();
-        let ctx = item_options.method_options.context.with_value(resource_link.clone());
+        
+        let ctx = item_options
+            .method_options
+            .context
+            .with_value(resource_link.clone());
 
         // Clone pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();

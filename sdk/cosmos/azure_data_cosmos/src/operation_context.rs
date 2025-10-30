@@ -20,4 +20,3 @@ pub enum OperationType {
     HeadFeed,
     // ... add other variants as needed
 }
-

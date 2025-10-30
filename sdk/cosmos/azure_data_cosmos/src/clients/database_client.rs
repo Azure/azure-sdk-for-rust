@@ -3,7 +3,7 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{ContainerProperties, DatabaseProperties, ThroughputProperties, AccountProperties},
+    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},

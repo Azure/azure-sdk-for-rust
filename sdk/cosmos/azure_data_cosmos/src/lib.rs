@@ -26,10 +26,10 @@ pub use partition_key::*;
 pub use query::Query;
 
 pub use feed::{FeedPage, FeedPager};
-mod handler;
-mod retry_policies;
-pub mod routing;
-pub mod regions;
 mod cosmos_request;
 mod cosmos_request_context;
+mod handler;
 mod operation_context;
+pub mod regions;
+mod retry_policies;
+pub mod routing;

@@ -118,7 +118,10 @@ mod tests {
         assert_eq!(props.writable_locations.len(), 1);
         assert_eq!(props.readable_locations.len(), 1);
         assert_eq!(props.user_replication_policy.min_replica_set_size, 3);
-        assert_eq!(props.user_consistency_policy.default_consistency_level, "Session");
+        assert_eq!(
+            props.user_consistency_policy.default_consistency_level,
+            "Session"
+        );
         assert!(props.parsed_query_engine_configuration().is_some());
     }
 }

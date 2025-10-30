@@ -1,14 +1,15 @@
-use std::collections::HashMap;
+use crate::cosmos_request_context::CosmosRequestContext;
+use crate::operation_context::OperationType;
+use crate::resource_context::ResourceType;
+use crate::{constants, ItemOptions, PartitionKey};
 use azure_core::http::{
     request::{options::ContentType, Request},
     Method,
 };
-use crate::cosmos_request_context::CosmosRequestContext;
-use crate::{ItemOptions, PartitionKey};
-use crate::operation_context::OperationType;
-use crate::resource_context::ResourceType;
+use std::collections::HashMap;
 
 /// Placeholder for authorization token type.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum AuthorizationTokenType {
     Primary,
@@ -17,14 +18,18 @@ pub enum AuthorizationTokenType {
 }
 
 /// Placeholder for partition key range identity.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct PartitionKeyRangeIdentity {
     pub id: String,
 }
 
+#[allow(dead_code)]
 impl PartitionKeyRangeIdentity {
     pub fn from_header(header: &str) -> Self {
-        Self { id: header.to_string() }
+        Self {
+            id: header.to_string(),
+        }
     }
     pub fn to_header(&self) -> String {
         self.id.clone()
@@ -32,13 +37,11 @@ impl PartitionKeyRangeIdentity {
 }
 
 /// Placeholder for service identity.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct ServiceIdentity {
     pub uri: String,
 }
-
-/// Placeholder for headers.
-pub type Headers = HashMap<String, String>;
 
 /// Main struct for DocumentServiceRequest.
 #[derive(Clone)]
@@ -81,9 +84,6 @@ pub struct CosmosRequest<'a> {
     pub is_disposed: bool,
 }
 
-// Add a method to create a new Request for the pipeline.
-// Add DocumentServiceResponse
-// Flow will look like container_client >> request_handler >> retry_handler
 impl<'a> CosmosRequest<'a> {
     pub fn new(
         operation_type: OperationType,
@@ -93,7 +93,7 @@ impl<'a> CosmosRequest<'a> {
         body: Option<Vec<u8>>,
         is_name_based: bool,
         authorization_token_type: AuthorizationTokenType,
-        options: Option<ItemOptions<'a>>
+        options: Option<ItemOptions<'a>>,
     ) -> Self {
         Self {
             operation_type,
@@ -163,23 +163,23 @@ impl<'a> CosmosRequest<'a> {
         }
     }
 
-    // pub fn add_prefer_header(&mut self, name: &str, value: &str) {
-    //     let header_to_add = format!("{}={}", name, value);
-    //     let prefer = self.headers.entry("Prefer".to_string()).or_default();
-    //     if !prefer.is_empty() {
-    //         prefer.push(';');
-    //     }
-    //     prefer.push_str(&header_to_add);
-    // }
-
     pub fn to_raw_request(&self) -> Request {
-
-        let mut req = Request::new(self.request_context.location_endpoint_to_route.as_ref().unwrap().clone(), self.http_method());
+        let mut req = Request::new(
+            self.request_context
+                .location_endpoint_to_route
+                .as_ref()
+                .unwrap()
+                .clone(),
+            self.http_method(),
+        );
         req.insert_headers(&self.options).unwrap();
         req.insert_headers(&self.partition_key).unwrap();
 
-        if !&self.is_read_only_request() {
+        if !self.is_read_only_request() {
             req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
+            if self.operation_type == OperationType::Upsert {
+                req.insert_header(constants::IS_UPSERT, "true");
+            }
             if let Some(ref body) = self.body {
                 req.set_body(body.clone());
             }

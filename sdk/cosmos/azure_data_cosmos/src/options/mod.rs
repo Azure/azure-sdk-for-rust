@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::collections::HashSet;
 use crate::constants;
 use crate::models::ThroughputProperties;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
+use azure_core::time::Duration;
+use std::collections::HashSet;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Display;
-use azure_core::time::Duration;
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 #[derive(Clone, Default, Debug)]

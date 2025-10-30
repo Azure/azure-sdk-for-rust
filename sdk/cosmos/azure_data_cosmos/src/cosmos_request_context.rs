@@ -1,10 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use url::Url;
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, Default)]
-pub struct TimeoutHelper;
 #[derive(Clone, Debug, Default)]
 pub struct RequestChargeTracker;
 #[derive(Clone, Debug, Default)]
@@ -19,28 +17,32 @@ pub struct PartitionKeyRange;
 pub struct ISessionToken;
 #[derive(Clone, Debug, Default)]
 pub struct IClientSideRequestStatistics;
-#[derive(Clone, Debug, Default)]
-#[derive(Eq, Hash, PartialEq)]
-pub struct TransportAddressUri;
 
 /// Reference-counted disposable wrapper (simplified for Rust).
+#[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 pub struct ReferenceCountedDisposable<T: Clone> {
     pub value: Arc<T>,
 }
+
+#[allow(dead_code)]
 impl<T: Clone> ReferenceCountedDisposable<T> {
     pub fn new(value: T) -> Self {
-        Self { value: Arc::new(value) }
+        Self {
+            value: Arc::new(value),
+        }
     }
     pub fn clone_ref(&self) -> Self {
-        Self { value: Arc::clone(&self.value) }
+        Self {
+            value: Arc::clone(&self.value),
+        }
     }
 }
 
-/// Main struct for DocumentServiceRequestContext.
+/// Main struct for CosmosRequestContext.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct CosmosRequestContext {
-    pub timeout_helper: Option<TimeoutHelper>,
     pub request_charge_tracker: Option<RequestChargeTracker>,
     pub force_refresh_address_cache: bool,
     pub last_partition_address_information_hash_code: i32,
@@ -62,7 +64,7 @@ pub struct CosmosRequestContext {
     pub is_retry: bool,
     pub is_partition_failover_retry: bool,
     pub exclude_regions: Option<Vec<String>>,
-    pub failed_endpoints: Arc<Mutex<HashMap<TransportAddressUri, bool>>>,
+    pub failed_endpoints: Arc<Mutex<HashMap<Url, bool>>>,
     pub use_preferred_locations: Option<bool>,
     pub location_index_to_route: Option<i32>,
     pub location_endpoint_to_route: Option<Url>,
@@ -74,7 +76,6 @@ pub struct CosmosRequestContext {
 impl Default for CosmosRequestContext {
     fn default() -> Self {
         Self {
-            timeout_helper: None,
             request_charge_tracker: None,
             force_refresh_address_cache: false,
             last_partition_address_information_hash_code: 0,
@@ -107,6 +108,7 @@ impl Default for CosmosRequestContext {
     }
 }
 
+#[allow(dead_code)]
 impl CosmosRequestContext {
     pub fn update_quorum_selected_store_response(
         &mut self,
@@ -119,7 +121,7 @@ impl CosmosRequestContext {
     pub fn add_to_failed_endpoints(
         &mut self,
         _store_exception: &str, // Replace with actual error type
-        target_uri: TransportAddressUri,
+        target_uri: Url,
     ) {
         // In a real implementation, inspect the error for status code, etc.
         let mut failed = self.failed_endpoints.lock().unwrap();
