@@ -1,14 +1,31 @@
 # Release History
 
-## 0.29.0 (Unreleased)
+## 0.30.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
+- `ClientCertificateCredential::new()`:
+  - `client_certificate` parameter is now `certificate`
+  - `client_certificate_password` parameter is now `password: Option<azure_core::credentials::Secret>` in `ClientCertificateCredentialOptions`
+  - now returns an error when the given certificate can't be parsed
+- Removed `ClientCertificateCredentialOptions.send_certificate_chain`. Set environment variable `AZURE_CLIENT_SEND_CERTIFICATE_CHAIN` to "1" or "true" to enable this feature.
+
 ### Bugs Fixed
 
+- `ClientCertificateCredential::get_token()` returned an error when given multiple scopes
+
 ### Other Changes
+
+## 0.29.0 (2025-10-08)
+
+### Breaking Changes
+
+- `ClientCertificateCredential::new()` takes `Option<ClientCertificateCredentialOptions>` instead of `impl Into<ClientCertificateCredentialOptions>`.
+- Credential constructors return an error when given a non-HTTPS authority host.
+- Renamed `ClientCertificateCredential::new()` parameter `client_certificate_pass` to `client_certificate_password`.
+- Replaced credential-specific `authority_host` options with `azure_core::cloud::CloudConfiguration` configured via `ClientOptions.cloud`.
 
 ## 0.28.0 (2025-09-16)
 

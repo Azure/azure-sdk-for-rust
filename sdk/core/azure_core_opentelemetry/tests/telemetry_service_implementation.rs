@@ -9,7 +9,7 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        BufResponse, ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, Request,
+        ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, RawResponse, Request,
         Url,
     },
     tracing::{PublicApiInstrumentationInformation, Tracer},
@@ -120,7 +120,7 @@ impl TestServiceClient {
         &self,
         path: &str,
         options: Option<TestServiceClientGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
         let mut url = self.endpoint.clone();
         url.set_path(path);
@@ -169,13 +169,10 @@ impl TestServiceClient {
         &self,
         path: &str,
         options: Option<TestServiceClientGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let mut options = options.unwrap_or_default();
 
-        let public_api_info = PublicApiInstrumentationInformation {
-            api_name: "get_with_tracing",
-            attributes: vec![],
-        };
+        let public_api_info = PublicApiInstrumentationInformation::new("get_with_tracing", vec![]);
         // Add the span to the tracer.
         let mut ctx = options.method_options.context.with_value(public_api_info);
         // If the service has a tracer, we add it to the context.

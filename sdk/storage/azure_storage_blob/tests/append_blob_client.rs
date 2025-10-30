@@ -14,7 +14,7 @@ async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>>
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let append_blob_client = blob_client.append_blob_client();
 
     append_blob_client.create(None).await?;
@@ -36,7 +36,7 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let append_blob_client = blob_client.append_blob_client();
     append_blob_client.create(None).await?;
     let mut block_1 = b"hello".to_vec();
@@ -65,7 +65,7 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(status_code.is_success());
     assert_eq!(17, content_length.unwrap());
     block_1.extend(&block_2);
-    assert_eq!(block_1, response_body.collect().await?);
+    assert_eq!(block_1, response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -76,21 +76,15 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
-    let blob_client_2 = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let blob_client_2 = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client_2, None, None).await?;
-    let source_url = format!(
-        "{}{}/{}",
-        blob_client_2.endpoint(),
-        blob_client_2.container_name(),
-        blob_client_2.blob_name()
-    );
     let append_blob_client = blob_client.append_blob_client();
     append_blob_client.create(None).await?;
 
     // Act
     append_blob_client
-        .append_block_from_url(source_url, 17, None)
+        .append_block_from_url(blob_client_2.url().as_str().into(), 17, None)
         .await?;
 
     // Assert
@@ -101,7 +95,7 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
     assert_eq!(17, content_length.unwrap());
     assert_eq!(
         b"hello rusty world".to_vec(),
-        response_body.collect().await?
+        response_body.collect().await?.to_vec(),
     );
 
     container_client.delete_container(None).await?;
@@ -113,7 +107,7 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let append_blob_client = blob_client.append_blob_client();
     append_blob_client.create(None).await?;
     let test_block = b"test".to_vec();
@@ -140,7 +134,7 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     assert!(status_code.is_success());
     assert_eq!(0, content_length.unwrap());
-    assert_eq!(b"".to_vec(), response_body.collect().await?);
+    assert_eq!(b"".to_vec(), response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())

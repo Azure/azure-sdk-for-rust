@@ -21,7 +21,7 @@ jobs:
     parameters:
       paths:
       - "/*"
-      
+
   - ${{ if ne(parameters.Toolchain, 'nightly') }}:
       - template: /eng/pipelines/templates/steps/use-rust.yml@self
         parameters:
@@ -40,6 +40,7 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -Toolchain 'nightly'
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
         -Deny
 

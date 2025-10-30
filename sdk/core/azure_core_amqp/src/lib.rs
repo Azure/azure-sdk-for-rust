@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -25,7 +25,7 @@ mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
 pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
-pub use error::{AmqpDescribedError, AmqpError};
+pub use error::*;
 pub use management::{AmqpManagement, AmqpManagementApis};
 pub use messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget};
 pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
@@ -88,21 +88,21 @@ pub enum ReceiverSettleMode {
 }
 
 /// Trait for types that can be serialized to and deserialized from a byte buffer.
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 pub trait Serializable {
     /// Serializes the type into the provided byte buffer.
-    fn serialize(&self, buffer: &mut [u8]) -> azure_core::Result<()>;
+    fn serialize(&self, buffer: &mut [u8]) -> crate::error::Result<()>;
 
     /// Returns the size in bytes that the type will occupy when serialized.
-    fn encoded_size(&self) -> azure_core::Result<usize>;
+    fn encoded_size(&self) -> crate::error::Result<usize>;
 }
 
 /// Trait for types that can be deserialized from a byte buffer.
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 pub trait Deserializable<T> {
     /// Deserializes the type from the provided byte buffer.
-    fn decode(data: &[u8]) -> azure_core::Result<T>;
+    fn decode(data: &[u8]) -> crate::error::Result<T>;
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 pub use value::{AmqpComposite, AmqpDescriptor};

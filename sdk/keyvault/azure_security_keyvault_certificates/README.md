@@ -77,8 +77,11 @@ The following section provides several code snippets using the `CertificateClien
 
 ### Create a certificate
 
-`begin_create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
+`create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
 Before we can create a new certificate, though, we need to define a certificate policy. This is used for the first certificate version and all subsequent versions of that certificate until changed.
+
+`create_certificate` returns a `Poller<CertificateOperation>`, which implements both `std::future::IntoFuture` and `futures::Stream`.
+You can `await` the `Poller` to get the final result - a `Certificate` - or asynchronously iterate over each status update.
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
@@ -86,7 +89,6 @@ use azure_security_keyvault_certificates::{
     CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
-use futures::stream::TryStreamExt as _;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -116,78 +118,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     // The Poller implements futures::Stream and automatically waits between polls.
-    let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
-    while let Some(operation) = poller.try_next().await? {
-        let operation = operation.into_body().await?;
-        match operation.status.as_deref().unwrap_or("unknown") {
-            "inProgress" => continue,
-            "completed" => {
-                let target = operation.target.ok_or("expected target")?;
-                println!("Created certificate {}", target);
-                break;
-            },
-            status => Err(format!("operation terminated with status {status}"))?,
-        }
-    }
-
-    Ok(())
-}
-```
-
-If you just want to wait until the `Poller<CertificateOperation>` is complete and get the last status monitor, you can await `wait()`:
-
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{
-    CertificateClient,
-    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
-};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Create a self-signed certificate.
-    let policy = CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
-        ..Default::default()
-    };
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(policy),
-        ..Default::default()
-    };
-
-    // Wait for the certificate operation to complete and get the last status monitor.
-    let operation = client
-        .begin_create_certificate("certificate-name", body.try_into()?, None)?
-        .wait()
+    let certificate = client
+        .create_certificate("certificate-name", body.try_into()?, None)?
         .await?
-        // Deserialize the CertificateOperation:
-        .into_body()
-        .await?;
-
-    if matches!(operation.status, Some(status) if status == "completed") {
-        let target = operation.target.ok_or("expected target")?;
-        println!("Created certificate {}", target);
-    }
+        .into_body()?;
 
     Ok(())
 }
 ```
-
-Awaiting `wait()` will only fail if the HTTP status code does not indicate successfully fetching the status monitor.
 
 ### Retrieve a certificate
 
@@ -215,8 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let certificate = client
         .get_certificate("certificate-name", Some(get_options))
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     println!(
         "Certificate thumbprint: {:?}",
@@ -261,8 +198,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     Ok(())
 }
@@ -384,8 +320,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     certificate_client
-        .begin_create_certificate("ec-signing-certificate", body.try_into()?, None)?
-        .wait()
+        .create_certificate("ec-signing-certificate", body.try_into()?, None)?
         .await?;
 
     // Hash the plaintext to be signed.
@@ -405,8 +340,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signature = key_client
         .sign("ec-signing-certificate", body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     if let Some(signature) = signature.result.map(base64::encode_url_safe) {
         println!("Signature: {}", signature);
@@ -438,7 +372,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_certificate("certificate-name".into(), None).await {
-        Ok(response) => println!("Certificate: {:#?}", response.into_body().await?.x509_thumbprint),
+        Ok(response) => println!("Certificate: {:#?}", response.into_body()?.x509_thumbprint),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
 

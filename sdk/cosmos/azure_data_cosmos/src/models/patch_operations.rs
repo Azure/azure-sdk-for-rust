@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 ///     .with_add("/color", "silver")?
 ///     .with_move("/from", "/to")?;
 /// # assert_eq!(patch, PatchDocument {
+/// #     condition: None,
 /// #     operations: vec![
 /// #         PatchOperation::Add {
 /// #             path: "/color".into(),
@@ -39,10 +40,20 @@ use serde::{Deserialize, Serialize};
 /// ```
 #[derive(Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PatchDocument {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub condition: Option<Cow<'static, str>>,
     pub operations: Vec<PatchOperation>,
 }
 
 impl PatchDocument {
+    /// Adds a condition, which determines whether or not the patch should be applied.
+    ///
+    /// The value is an SQL-like filter predicate as a string. For example, `from c where c.taskNum = 3`.
+    pub fn with_condition(mut self, condition: impl Into<Cow<'static, str>>) -> Self {
+        self.condition = Some(condition.into());
+        self
+    }
+
     /// Adds a new "add" operation to the patch document.
     ///
     /// See the [type documentation](PatchDocument) for more information on patch operations.
@@ -256,6 +267,18 @@ mod tests {
     }
 
     #[test]
+    pub fn serialize_condition() -> Result<(), Box<dyn std::error::Error>> {
+        let patch_document = PatchDocument::default().with_condition("from c where c.value = 0");
+
+        let serialized = serde_json::to_string(&patch_document).unwrap();
+        assert_eq!(
+            serialized,
+            "{\"condition\":\"from c where c.value = 0\",\"operations\":[]}"
+        );
+        Ok(())
+    }
+
+    #[test]
     pub fn serialize_add() -> Result<(), Box<dyn std::error::Error>> {
         let patch_document = PatchDocument::default().with_add(
             "/parent",
@@ -376,6 +399,30 @@ mod tests {
                 .with_increment("/inventory/quantity", 10)?
                 .with_add("/tags/-", "featured-bikes")?
                 .with_move("/color", "/inventory/color")?
+        );
+        Ok(())
+    }
+
+    #[test]
+    pub fn cosmos_docs_conditional_patch_example() -> Result<(), Box<dyn std::error::Error>> {
+        const TEST_DOC: &str = r#"{
+            "condition": "from c where c.Address.ZipCode = '98101'",
+            "operations": [
+                {
+                    "op":"replace",
+                    "path":"/Address/ZipCode",
+                    "value":98107
+                }
+            ]
+        }"#;
+
+        let doc: PatchDocument = serde_json::from_str(TEST_DOC)?;
+
+        assert_eq!(
+            doc,
+            PatchDocument::default()
+                .with_condition("from c where c.Address.ZipCode = '98101'")
+                .with_replace("/Address/ZipCode", 98107)?
         );
         Ok(())
     }

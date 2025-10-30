@@ -13,7 +13,7 @@ use std::sync::{
     Arc,
 };
 
-// This example demonstrates using a Pager to list secret properties from Key Vault.
+/// This example demonstrates using a [`Pager`] to list secret properties from Key Vault.
 async fn test_pager() -> Result<(), Box<dyn std::error::Error>> {
     let mut options = SecretClientOptions::default();
 
@@ -30,10 +30,44 @@ async fn test_pager() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // List secret properties using a Pager.
-    let mut pager = client.list_secret_properties(None)?.into_stream();
+    let mut pager = client.list_secret_properties(None)?;
     let mut names = Vec::new();
     while let Some(secret) = pager.try_next().await? {
         names.push(secret.resource_id()?.name);
+    }
+    assert_eq!(names, vec!["secret-a", "secret-b", "secret-c"]);
+
+    Ok(())
+}
+
+/// This example demonstrates using a [`PageIterator`] to list pages of secret properties from Key Vault.
+///
+/// Some clients may return a `PageIterator` if there are no items to iterate or multiple items to iterate.
+/// The following example shows how you can also get a `PageIterator` from a [`Pager`] to iterate over pages instead of items.
+/// The pattern for iterating pages is otherwise the same:
+async fn test_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
+    let mut options = SecretClientOptions::default();
+
+    // Ignore: this is only set up for testing.
+    // You normally would create credentials from `azure_identity` and
+    // use the default transport in production.
+    let (credential, transport) = setup()?;
+    options.client_options.transport = Some(Transport::new(transport));
+
+    let client = SecretClient::new(
+        "https://my-vault.vault.azure.net",
+        credential,
+        Some(options),
+    )?;
+
+    // List secret properties using a Pager.
+    let mut pager = client.list_secret_properties(None)?.into_pages();
+    let mut names = Vec::new();
+    while let Some(page) = pager.try_next().await? {
+        let page = page.into_body()?;
+        for secret in page.value {
+            names.push(secret.resource_id()?.name);
+        }
     }
     assert_eq!(names, vec!["secret-a", "secret-b", "secret-c"]);
 
@@ -46,9 +80,17 @@ async fn test_core_pager() -> Result<(), Box<dyn std::error::Error>> {
     test_pager().await
 }
 
+#[tokio::test]
+async fn test_core_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
+    test_page_iterator().await
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    test_pager().await
+    test_pager().await?;
+    test_page_iterator().await?;
+
+    Ok(())
 }
 
 #[allow(clippy::type_complexity)]

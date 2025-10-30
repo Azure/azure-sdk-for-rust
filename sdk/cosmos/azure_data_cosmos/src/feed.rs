@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use azure_core::http::{
     headers::Headers,
     pager::{Page, PagerResult},
-    BufResponse, ItemIterator,
+    ItemIterator, RawResponse,
 };
 use serde::{de::DeserializeOwned, Deserialize};
 
@@ -91,10 +91,10 @@ struct FeedBody<T> {
 }
 
 impl<T: DeserializeOwned> FeedPage<T> {
-    pub(crate) async fn from_response(response: BufResponse) -> azure_core::Result<Self> {
+    pub(crate) async fn from_response(response: RawResponse) -> azure_core::Result<Self> {
         let headers = response.headers().clone();
         let continuation = headers.get_optional_string(&constants::CONTINUATION);
-        let body: FeedBody<T> = response.into_body().json().await?;
+        let body: FeedBody<T> = response.into_body().json()?;
 
         Ok(Self {
             items: body.items,

@@ -140,7 +140,7 @@ where
     type Item = P::Item;
     type IntoIter = P::IntoIter;
     async fn into_items(self) -> crate::Result<Self::IntoIter> {
-        let page: P = self.into_body().await?;
+        let page: P = self.into_body()?;
         page.into_items().await
     }
 }
@@ -148,6 +148,55 @@ where
 /// Represents a paginated stream of items returned by a collection request to a service.
 ///
 /// Specifically, this is a [`ItemIterator`] that yields [`Response<T>`] items.
+///
+/// # Examples
+///
+/// For clients that return a `Pager`, you can iterate over items across one or more pages:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // List secret properties using a Pager.
+/// let mut pager = client.list_secret_properties(None)?;
+/// while let Some(secret) = pager.try_next().await? {
+///     println!("{}", secret.resource_id()?.name);
+/// }
+/// # Ok(()) }
+/// ```
+///
+/// If you want to iterate each page of items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // Iterate each page of secrets using a PageIterator.
+/// let mut pager = client.list_secret_properties(None)?.into_pages();
+/// while let Some(page) = pager.try_next().await? {
+///     let page = page.into_body()?;
+///     for secret in page.value {
+///         println!("{}", secret.resource_id()?.name);
+///     }
+/// }
+/// # Ok(()) }
+/// ```
 pub type Pager<P, F = JsonFormat> = ItemIterator<Response<P, F>>;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -160,6 +209,55 @@ type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>>>;
 ///
 /// You can asynchronously iterate over items returned by a collection request to a service,
 /// or asynchronously fetch pages of items if preferred.
+///
+/// # Examples
+///
+/// For clients that return a `Pager`, you can iterate over items across one or more pages:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // List secret properties using a Pager.
+/// let mut pager = client.list_secret_properties(None)?;
+/// while let Some(secret) = pager.try_next().await? {
+///     println!("{}", secret.resource_id()?.name);
+/// }
+/// # Ok(()) }
+/// ```
+///
+/// If you want to iterate each page of items, you can call [`Pager::into_pages`] to get a [`PageIterator`]:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // Iterate each page of secrets using a PageIterator.
+/// let mut pager = client.list_secret_properties(None)?.into_pages();
+/// while let Some(page) = pager.try_next().await? {
+///     let page = page.into_body()?;
+///     for secret in page.value {
+///         println!("{}", secret.resource_id()?.name);
+///     }
+/// }
+/// # Ok(()) }
+/// ```
 #[pin_project::pin_project]
 pub struct ItemIterator<P: Page> {
     #[pin]
@@ -185,7 +283,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{BufResponse, Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -226,9 +324,8 @@ impl<P: Page> ItemIterator<P> {
     ///           .send(&Context::new(), &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
-    ///         let bytes = body.collect().await?;
-    ///         let result: ListItemsResult = json::from_json(&bytes)?;
-    ///         let resp: Response<ListItemsResult> = BufResponse::from_bytes(status, headers, bytes).into();
+    ///         let result: ListItemsResult = json::from_json(&body)?;
+    ///         let resp: Response<ListItemsResult> = RawResponse::from_bytes(status, headers, body).into();
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
@@ -362,6 +459,35 @@ impl<P: Page> fmt::Debug for ItemIterator<P> {
 }
 
 /// Iterates over a collection pages of items from a service.
+///
+/// # Examples
+///
+/// Some clients may return a `PageIterator` if there are no items to iterate or multiple items to iterate.
+/// The following example shows how you can also get a `PageIterator` from a [`Pager`] to iterate over pages instead of items.
+/// The pattern for iterating pages is otherwise the same:
+///
+/// ```no_run
+/// # use azure_core::{credentials::TokenCredential, http::Transport};
+/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use futures::TryStreamExt;
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
+/// let client = SecretClient::new(
+///     "https://my-vault.vault.azure.net",
+///     credential.clone(),
+///     None,
+/// )?;
+///
+/// // Iterate each page of secrets using a PageIterator.
+/// let mut pager = client.list_secret_properties(None)?.into_pages();
+/// while let Some(page) = pager.try_next().await? {
+///     let page = page.into_body()?;
+///     for secret in page.value {
+///         println!("{}", secret.resource_id()?.name);
+///     }
+/// }
+/// # Ok(()) }
+/// ```
 #[pin_project::pin_project]
 pub struct PageIterator<P> {
     #[pin]
@@ -387,7 +513,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{BufResponse, Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -419,9 +545,8 @@ impl<P> PageIterator<P> {
     ///           .send(&Context::new(), &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
-    ///         let bytes = body.collect().await?;
-    ///         let result: ListItemsResult = json::from_json(&bytes)?;
-    ///         let resp: Response<ListItemsResult> = BufResponse::from_bytes(status, headers, bytes).into();
+    ///         let result: ListItemsResult = json::from_json(&body)?;
+    ///         let resp: Response<ListItemsResult> = RawResponse::from_bytes(status, headers, body).into();
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
@@ -545,7 +670,7 @@ impl<P> PageIterator<P> {
     ///     .with_continuation_token("continuation_token_from_another_pager".to_string());
     ///
     /// while let Some(secrets) = pager.try_next().await? {
-    ///     let secrets = secrets.into_body().await?;
+    ///     let secrets = secrets.into_body()?;
     ///     for secret in secrets.value {
     ///         println!("{:?}", secret.id);
     ///     }
@@ -657,7 +782,7 @@ mod tests {
     use crate::http::{
         headers::{HeaderName, HeaderValue},
         pager::{PageIterator, Pager, PagerResult, PagerState},
-        BufResponse, Response, StatusCode,
+        RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};
@@ -686,7 +811,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 PagerState::Initial => Ok(PagerResult::More {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -699,7 +824,7 @@ mod tests {
                     continuation: "1",
                 }),
                 PagerState::More("1") => Ok(PagerResult::More {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -712,7 +837,7 @@ mod tests {
                     continuation: "2",
                 }),
                 PagerState::More("2") => Ok(PagerResult::Done {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -737,7 +862,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 PagerState::Initial => Ok(PagerResult::More {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -766,7 +891,7 @@ mod tests {
                     .headers()
                     .get_optional_string(&HeaderName::from_static("x-test-header"))
                     .unwrap();
-                let body = r.into_body().await?;
+                let body = r.into_body()?;
                 Ok((header, body))
             })
             .collect()
@@ -794,7 +919,7 @@ mod tests {
             |continuation: PagerState<String>| async move {
                 match continuation.as_deref() {
                     PagerState::Initial => Ok(PagerResult::More {
-                        response: BufResponse::from_bytes(
+                        response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             Default::default(),
                             r#"{"items":[1],"page":1}"#,
@@ -803,7 +928,7 @@ mod tests {
                         continuation: "next-token-1".to_string(),
                     }),
                     PagerState::More("next-token-1") => Ok(PagerResult::More {
-                        response: BufResponse::from_bytes(
+                        response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(
                                 HeaderName::from_static("x-test-header"),
@@ -816,7 +941,7 @@ mod tests {
                         continuation: "next-token-2".to_string(),
                     }),
                     PagerState::More("next-token-2") => Ok(PagerResult::Done {
-                        response: BufResponse::from_bytes(
+                        response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(
                                 HeaderName::from_static("x-test-header"),
@@ -848,7 +973,6 @@ mod tests {
             .expect("expected first page")
             .expect("expected successful first page")
             .into_body()
-            .await
             .expect("expected page");
         assert_eq!(first_page.page, Some(1));
         assert_eq!(first_page.items, vec![1]);
@@ -877,7 +1001,6 @@ mod tests {
             .expect("expected second page")
             .expect("expected successful second page")
             .into_body()
-            .await
             .expect("expected page");
         assert_eq!(second_page.page, Some(2));
         assert_eq!(second_page.items, vec![2]);
@@ -893,7 +1016,6 @@ mod tests {
             .expect("expected last page")
             .expect("expected successful last page")
             .into_body()
-            .await
             .expect("expected page");
         assert_eq!(last_page.page, None);
         assert_eq!(last_page.items, vec![3]);

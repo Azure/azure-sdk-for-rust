@@ -1,8 +1,5 @@
 steps:
-  - pwsh: |
-      Write-Host '##vso[task.setvariable variable=VCPKG_BINARY_SOURCES_SECRET;issecret=true;]clear;x-azblob,https://azuresdkartifacts.blob.core.windows.net/public-vcpkg-container,,read'
-      Write-Host '##vso[task.setvariable variable=X_VCPKG_ASSET_SOURCES_SECRET;issecret=true;]clear;x-azurl,https://azuresdkartifacts.blob.core.windows.net/public-vcpkg-container,,read'
-    displayName: Set vcpkg variables
+  - template: /eng/common/pipelines/templates/steps/set-vcpkg-cache-vars.yml
 
   - script: vcpkg --version
     condition: >-
@@ -11,19 +8,6 @@ steps:
       eq(variables['Agent.OS'], 'Windows_NT')
       )
     displayName: vcpkg --version
-
-  - ${{if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], 'PullRequest')) }}:
-    - task: AzurePowerShell@5
-      displayName: Set vcpkg write-mode cache
-      inputs:
-        ScriptType: FilePath
-        ScriptPath: eng/scripts/Set-VcpkgWriteModeCache.ps1
-        azureSubscription: Azure SDK Artifacts
-        azurePowerShellVersion: LatestVersion
-        pwsh: true
-      # This step is idempotent and can be run multiple times in cases of
-      # failure and partial execution.
-      retryCountOnTaskFailure: 3
 
   - pwsh: |
       vcpkg install

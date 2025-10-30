@@ -1,20 +1,25 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 0.9.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
+### Bugs Fixed
+
+### Other Changes
+
+## 0.8.0 (2025-10-07)
+
+### Breaking Changes
+
+- Client methods that return a `Response<T>>` asynchronously buffer the entire model within the internal pipeline, so `into_body()` and other methods on the response are no longer async.
 - Renamed `KeyType::EC` to `KeyType::Ec` to align with guidelines.
 - Renamed `KeyType::RSA` to `KeyType::Rsa` to align with guidelines.
 - Renamed `EncryptionAlgorithm::RSA1_5` to `EncryptionAlgorithm::Rsa1_5` to align with guidelines.
 - Renamed `EncryptionAlgorithm::RsaOAEP256` to `EncryptionAlgorithm::RsaOaep256` to align with guidelines.
 - Renamed several variants in `SignatureAlgorithm` to align with guidelines e.g., `ES256K` to `Es256K`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.7.0 (2025-09-16)
 

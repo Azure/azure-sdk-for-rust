@@ -1,14 +1,34 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 0.9.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
-- Removed non-idiomatic accessor functions from `AmqpDescribed`, `AmqpSessionOptions`, `AmqpDescribedError`, `AmqpMessage`, and `AmqpTarget`
+- All AMQP APIs now return an `azure_core_amqp::AmqpError` instead of an `azure_core::Error`.
+- Several `azure_core_amqp::error::AmqpErrorKind` enumerations have been removed because they are no longer needed.
+- Modified several errors which previously used `azure_core::Error::with_message` to use `azure_core_amqp::AmqpError::with_message`, changing their underlying type.
 
 ### Bugs Fixed
+
+### Other Changes
+
+- Added  `azure_core_amqp::error::AmqpErrorKind::AzureCore`, and `azure_core_amqp::error::AmqpErrorKind::SimpleMessage` to describe Azure Core originated errors, and messages which just have a string value respectively.
+- Added `azure_core_amqp::Error::with_message` to enable simple error returns with a text message.
+
+## 0.8.1 (2025-10-06)
+
+### Bugs Fixed
+
+- Fix feature documentation ([#3118](https://github.com/Azure/azure-sdk-for-rust/issues/3118))
+
+## 0.8.0 (2025-10-03)
+
+### Breaking Changes
+
+- Removed non-idiomatic accessor functions from `AmqpDescribed`, `AmqpSessionOptions`, `AmqpDescribedError`, `AmqpMessage`, and `AmqpTarget`
+- Renamed the "cplusplus" feature to "ffi" because "ffi" is more idiomatic to Rust.
 
 ### Other Changes
 

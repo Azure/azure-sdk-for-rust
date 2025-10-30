@@ -5,6 +5,12 @@ euclidian
 pkranges
 sprocs
 udfs
+backoff
+pluggable
 
 # Cosmos' docs all use "Autoscale" as a single word, rather than a compound "AutoScale" or "Auto Scale"
 autoscale
+
+# Words used within the Cosmos Native Client (azure_data_cosmos_native)
+azurecosmos
+cosmosclient

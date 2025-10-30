@@ -3,29 +3,35 @@
 
 use azure_core::{
     error::ErrorKind,
-    http::{RequestContent, StatusCode},
+    http::{ClientOptions, RequestContent, StatusCode},
     Bytes,
 };
 use azure_core_test::{recorded, Matcher, TestContext};
-use azure_storage_blob::models::{
-    AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
-    BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
-    BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState, StorageError,
+use azure_storage_blob::{
+    models::{
+        AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
+        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
+        BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        BlockBlobClientUploadOptions, LeaseState, StorageError,
+    },
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
-
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, get_container_name, recorded_test_setup,
+};
+use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
+use typespec_client_core::http::Url;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, false).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Container Doesn't Exist Scenario
     let response = blob_client.get_properties(None).await;
@@ -63,7 +69,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     // Set Content Settings
@@ -93,7 +99,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     let data = b"hello rusty world";
 
@@ -113,7 +119,10 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(17, content_length.unwrap());
-    assert_eq!(Bytes::from_static(data), response_body.collect().await?);
+    assert_eq!(
+        Bytes::from_static(data),
+        response_body.collect().await?.as_ref()
+    );
 
     // Overwrite Scenarios
     let new_data = b"hello overwritten rusty world";
@@ -150,7 +159,10 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(29, content_length.unwrap());
-    assert_eq!(Bytes::from_static(new_data), response_body.collect().await?);
+    assert_eq!(
+        Bytes::from_static(new_data),
+        response_body.collect().await?.as_ref()
+    );
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -161,7 +173,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     // Existence Check
@@ -184,7 +196,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data = b"hello rusty world";
 
     blob_client
@@ -204,7 +216,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(17, content_length.unwrap());
     assert_eq!(
         b"hello rusty world".to_vec(),
-        response_body.collect().await?
+        response_body.collect().await?.to_vec(),
     );
 
     container_client.delete_container(None).await?;
@@ -217,7 +229,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data = b"hello rusty world";
 
     // Upload Blob With Metadata
@@ -265,7 +277,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     let original_response = blob_client.get_properties(None).await?;
@@ -290,8 +302,8 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_name = get_blob_name(recording);
-    let blob_client = container_client.blob_client(blob_name.clone());
-    let other_blob_client = container_client.blob_client(blob_name);
+    let blob_client = container_client.blob_client(&blob_name.clone());
+    let other_blob_client = container_client.blob_client(&blob_name);
     create_test_blob(&blob_client, None, None).await?;
 
     // Acquire Lease
@@ -346,7 +358,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_name = get_blob_name(recording);
-    let blob_client = container_client.blob_client(blob_name.clone());
+    let blob_client = container_client.blob_client(&blob_name.clone());
     create_test_blob(&blob_client, None, None).await?;
     let acquire_response = blob_client.acquire_lease(-1, None).await?;
     let lease_id = acquire_response.lease_id()?.unwrap();
@@ -422,7 +434,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(10, content_length.unwrap());
-    assert_eq!(data.to_vec(), response_body.collect().await?);
+    assert_eq!(data.to_vec(), response_body.collect().await?.to_vec());
 
     blob_client.break_lease(None).await?;
     container_client.delete_container(None).await?;
@@ -435,7 +447,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     recording.set_matcher(Matcher::BodilessMatcher).await?;
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     // Set Tags with Tags Specified
@@ -446,7 +458,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     blob_client.set_tags(blob_tags.clone(), None).await?;
 
     // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    let response_tags = blob_client.get_tags(None).await?.into_body()?;
     let map: HashMap<String, String> = response_tags.try_into()?;
     assert_eq!(blob_tags, map);
 
@@ -454,7 +466,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     blob_client.set_tags(HashMap::new(), None).await?;
 
     // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    let response_tags = blob_client.get_tags(None).await?.into_body()?;
     let map: HashMap<String, String> = response_tags.try_into()?;
     assert_eq!(HashMap::new(), map);
 
@@ -465,9 +477,10 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 #[recorded::test]
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
+
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Act
     let response = blob_client.get_account_info(None).await?;
@@ -487,7 +500,7 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Act
     let response = blob_client.download(None).await;
@@ -497,7 +510,6 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
 
     let storage_error: StorageError = error_response.try_into()?;
-
     println!("{}", storage_error);
 
     Ok(())
@@ -508,7 +520,7 @@ async fn test_bodyless_storage_error_model(ctx: TestContext) -> Result<(), Box<d
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Act
     let response = blob_client.get_properties(None).await;
@@ -527,14 +539,27 @@ async fn test_bodyless_storage_error_model(ctx: TestContext) -> Result<(), Box<d
 #[recorded::test]
 async fn test_additional_storage_info_parsing(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
+
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
-    let source_blob_client = container_client.blob_client(get_blob_name(recording));
+    let container_name = get_container_name(recording);
+    let (options, endpoint) = recorded_test_setup(recording);
+    let container_client_options = BlobContainerClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        &container_name,
+        Some(recording.credential()),
+        Some(container_client_options),
+    )?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&source_blob_client, None, None).await?;
 
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    let overwrite_blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_name = get_blob_name(recording);
+    let overwrite_blob_client = container_client.blob_client(&blob_name);
     create_test_blob(
         &overwrite_blob_client,
         Some(RequestContent::from(b"overruled!".to_vec())),
@@ -545,9 +570,9 @@ async fn test_additional_storage_info_parsing(ctx: TestContext) -> Result<(), Bo
     // Inject an erroneous 'c' so we raise Copy Source Errors
     let overwrite_url = format!(
         "{}{}c/{}",
-        overwrite_blob_client.endpoint(),
-        overwrite_blob_client.container_name(),
-        overwrite_blob_client.blob_name()
+        overwrite_blob_client.url(),
+        container_name,
+        blob_name
     );
 
     // Copy Source Error Scenario
@@ -564,5 +589,157 @@ async fn test_additional_storage_info_parsing(ctx: TestContext) -> Result<(), Bo
     println!("{}", storage_error);
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let mut client_options = ClientOptions::default();
+    recording.instrument(&mut client_options);
+
+    // ContainerClient Options
+    let container_client_options = BlobContainerClientOptions {
+        client_options: client_options.clone(),
+        ..Default::default()
+    };
+
+    // BlobClient Options
+    let blob_client_options = BlobClientOptions {
+        ..Default::default()
+    };
+
+    // Endpoint
+    let endpoint = format!(
+        "https://{}.blob.core.windows.net/",
+        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+    );
+
+    let container_name = "test-container-encoding-edge-cases";
+    // Create Container & Container Client
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        container_name,
+        Some(recording.credential()),
+        Some(container_client_options.clone()),
+    )?;
+    container_client.create_container(None).await?;
+
+    // Test Data for Parameterization
+    let test_cases = [
+        // Basic + paths - combines simple case with forward slashes (virtual directories)
+        "folder/subfolder/file.txt",
+        // Reserved URL characters requiring encoding - combines spaces, %, ?, &, =, #, + in one test
+        "Q4 2024/report 50%+tax?final=true&approved#section-1.pdf",
+        // Unicode (multi-script) + unreserved chars - combines UTF-8 with chars that don't need encoding
+        "カニのフェリス_🦀.txt",
+        // Consecutive special chars
+        "path\\\\with___...~~~consecutive///chars",
+        // Additional reserved chars: parentheses, brackets, colon, quotes, leading/trailing spaces
+        " file (copy) [2024]:version'1'.txt ",
+        // Mix of forward and backslashes to test normalization/preservation
+        "forward/back\\forward/back\\",
+        // Test of already encoded characters but we want them preserved as-is
+        "data%20set%ferris%3D1%the%23crab%2D2",
+    ];
+    for blob_name in test_cases {
+        // Test Case 1: Initialize BlobClient using new() constructor
+        let blob_client_new = BlobClient::new(
+            &endpoint,
+            container_name,
+            blob_name,
+            Some(recording.credential()),
+            Some(blob_client_options.clone()),
+        )?;
+
+        // Upload Blob
+        blob_client_new
+            .upload(
+                RequestContent::from(b"hello rusty world".to_vec()),
+                true,
+                17,
+                None,
+            )
+            .await?;
+
+        // Get Properties
+        let properties = blob_client_new.get_properties(None).await?;
+        assert_eq!(17, properties.content_length()?.unwrap());
+
+        // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
+        let mut blob_url = Url::parse(&endpoint)?;
+        blob_url
+            .path_segments_mut()
+            .expect("Storage Endpoint must be a valid base URL with http/https scheme")
+            .push(container_name)
+            .push(blob_name);
+
+        let blob_client_from_url = BlobClient::from_url(
+            blob_url,
+            Some(recording.credential()),
+            Some(blob_client_options.clone()),
+        )?;
+
+        // Upload Blob
+        blob_client_from_url
+            .upload(
+                RequestContent::from(b"hello rusty world".to_vec()),
+                true,
+                17,
+                None,
+            )
+            .await?;
+
+        // Get Properties
+        let properties = blob_client_from_url.get_properties(None).await?;
+        assert_eq!(17, properties.content_length()?.unwrap());
+
+        // Test Case 3: Initialize BlobClient using ContainerClient accessor
+        let blob_client_from_cc = container_client.blob_client(blob_name);
+
+        // Upload Blob
+        blob_client_from_cc
+            .upload(
+                RequestContent::from(b"hello rusty world".to_vec()),
+                true,
+                17,
+                None,
+            )
+            .await?;
+
+        // Get Properties
+        let properties = blob_client_from_cc.get_properties(None).await?;
+        assert_eq!(17, properties.content_length()?.unwrap());
+    }
+
+    // Check name equality for all test cases
+    let mut list_blobs_response = container_client.list_blobs(None)?;
+    let page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = page.unwrap().into_body()?;
+    let blob_items = list_blob_segment_response.segment.blob_items;
+
+    // Ensure we have the expected number of blobs
+    assert_eq!(test_cases.len(), blob_items.len());
+
+    // Extract all blob names from list_blobs() response
+    let listed_blob_names: Vec<String> = blob_items
+        .iter()
+        .map(|blob| blob.name.clone().unwrap().content.unwrap())
+        .collect();
+    // Verify each test case blob name appears in the list (with normalization)
+    for blob_name in test_cases {
+        let normalized_name = blob_name.replace('\\', "/");
+        assert!(
+            listed_blob_names.contains(&normalized_name),
+            "Blob name '{}' (normalized: '{}') not found in list: {:?}",
+            blob_name,
+            normalized_name,
+            listed_blob_names
+        );
+    }
+
+    container_client.delete_container(None).await?;
+
     Ok(())
 }

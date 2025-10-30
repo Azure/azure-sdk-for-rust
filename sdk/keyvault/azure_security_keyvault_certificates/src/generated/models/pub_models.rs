@@ -7,7 +7,7 @@ use super::{
     models_serde, CertificatePolicyAction, CurveName, DeletionRecoveryLevel, KeyType, KeyUsageType,
 };
 use azure_core::{
-    base64::{deserialize, deserialize_url_safe, serialize, serialize_url_safe},
+    base64::option::{deserialize, deserialize_url_safe, serialize, serialize_url_safe},
     fmt::SafeDebug,
     time::OffsetDateTime,
 };
@@ -764,6 +764,14 @@ pub struct SubjectAlternativeNames {
     /// Email addresses.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emails: Option<Vec<String>>,
+
+    /// IP addresses; supports IPv4 and IPv6.
+    #[serde(rename = "ipAddresses", skip_serializing_if = "Option::is_none")]
+    pub ip_addresses: Option<Vec<String>>,
+
+    /// Uniform Resource Identifiers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uris: Option<Vec<String>>,
 
     /// User Principal Names.
     #[serde(rename = "upns", skip_serializing_if = "Option::is_none")]

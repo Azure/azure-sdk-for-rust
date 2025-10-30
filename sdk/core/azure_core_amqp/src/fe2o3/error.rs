@@ -72,7 +72,7 @@ impl From<&fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition
 // Implement specific From traits for the error types we need instead of using a generic implementation
 impl From<&fe2o3_amqp_types::definitions::AmqpError> for AmqpErrorCondition {
     fn from(e: &fe2o3_amqp_types::definitions::AmqpError) -> Self {
-        // Note that the `from_str` implementation from `create_extensible_enum` will
+        // Note that the `from_str` implementation for `AmqpErrorCondition` will
         // never return an error. So the `unwrap` is there to silence the compiler.
         AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
             .unwrap()
@@ -157,19 +157,19 @@ impl From<fe2o3_amqp::link::IllegalLinkStateError> for AmqpError {
     }
 }
 
-impl From<Fe2o3TransportError> for azure_core::Error {
+impl From<Fe2o3TransportError> for AmqpError {
     fn from(e: Fe2o3TransportError) -> Self {
         match e.0 {
-            fe2o3_amqp::transport::Error::Io(e) => azure_core::Error::from(e),
+            fe2o3_amqp::transport::Error::Io(e) => azure_core::Error::from(e).into(),
             fe2o3_amqp::transport::Error::IdleTimeoutElapsed => {
-                AmqpError::from(AmqpErrorKind::IdleTimeoutElapsed(Box::new(e.0))).into()
+                AmqpError::from(AmqpErrorKind::IdleTimeoutElapsed(Box::new(e.0)))
             }
             fe2o3_amqp::transport::Error::FramingError => {
-                AmqpError::from(AmqpErrorKind::FramingError(Box::new(e.0))).into()
+                AmqpError::from(AmqpErrorKind::FramingError(Box::new(e.0)))
             }
             fe2o3_amqp::transport::Error::NotImplemented(_)
             | fe2o3_amqp::transport::Error::DecodeError(_) => {
-                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0))).into()
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0)))
             }
         }
     }

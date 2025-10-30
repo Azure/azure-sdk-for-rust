@@ -78,7 +78,7 @@ async fn deserialize_error_response() -> Result<(), Box<dyn std::error::Error>> 
     };
 
     // Deserialize the RawResponse
-    let error_response: ErrorResponse = raw_response.clone().json()?;
+    let error_response: ErrorResponse = raw_response.body().clone().json()?;
 
     assert_eq!(status, &StatusCode::BadRequest);
     assert_eq!(error_code.as_deref(), Some("BadParameter"));

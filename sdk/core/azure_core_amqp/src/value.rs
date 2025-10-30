@@ -4,17 +4,13 @@
 use azure_core::Uuid;
 use std::borrow::Borrow;
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
+use crate::error::Result;
+#[cfg(feature = "ffi")]
 use crate::fe2o3::error::Fe2o3SerializationError;
-#[cfg(all(
-    feature = "cplusplus",
-    feature = "fe2o3_amqp",
-    not(target_arch = "wasm32")
-))]
-#[cfg(feature = "cplusplus")]
+#[cfg(all(feature = "ffi", feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "ffi")]
 use crate::{Deserializable, Serializable};
-#[cfg(feature = "cplusplus")]
-use azure_core::Result;
 use std::time::SystemTime;
 
 /// An AMQP symbol.
@@ -213,13 +209,13 @@ impl AmqpDescribed {
 /// The descriptor is used to identify the type of the value.
 /// The value is the actual value.
 #[derive(Debug, PartialEq, Clone)]
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 pub struct AmqpComposite {
     descriptor: AmqpDescriptor,
     value: AmqpList,
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl AmqpComposite {
     /// Creates a new AMQP Composite type.
     ///
@@ -308,18 +304,20 @@ pub enum AmqpValue {
     Described(Box<AmqpDescribed>),
 
     /// An AMQP composite value.
-    #[cfg(feature = "cplusplus")]
+    #[cfg(feature = "ffi")]
     Composite(Box<AmqpComposite>),
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl Serializable for AmqpValue {
     fn encoded_size(&self) -> Result<usize> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
+            use crate::AmqpError;
+
             let fe2o3_value = fe2o3_amqp_types::primitives::Value::from(self.clone());
             serde_amqp::serialized_size(&fe2o3_value)
-                .map_err(|e| azure_core::Error::from(Fe2o3SerializationError(e)))
+                .map_err(|e| AmqpError::from(Fe2o3SerializationError(e)))
         }
         #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
         {
@@ -346,10 +344,10 @@ impl Serializable for AmqpValue {
     }
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl Deserializable<AmqpValue> for AmqpValue {
     #[allow(unused_variables)]
-    fn decode(data: &[u8]) -> azure_core::Result<AmqpValue> {
+    fn decode(data: &[u8]) -> Result<AmqpValue> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
             let fe2o3_value: fe2o3_amqp_types::primitives::Value = serde_amqp::from_slice(data)
@@ -962,7 +960,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "cplusplus")]
+    #[cfg(feature = "ffi")]
     fn amqp_composite() {
         let composite =
             AmqpComposite::new(0x270, AmqpList::from(vec![AmqpValue::from("String value")]));

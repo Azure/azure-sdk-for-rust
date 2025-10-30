@@ -3,7 +3,7 @@
 # AMQP Stack for consumption by packages in the Azure SDK.
 [package]
 name = "azure_core_amqp"
-version = "0.8.0"
+version = "0.9.0"
 description = "Rust client library for the AMQP protocol"
 readme = "README.md"
 authors.workspace = true
@@ -19,7 +19,7 @@ edition.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { path = "../azure_core", version = "0.29.0", default-features = false }
+azure_core = { path = "../azure_core", version = "0.30.0", default-features = false }
 fe2o3-amqp = { workspace = true, optional = true }
 fe2o3-amqp-cbs = { workspace = true, optional = true }
 fe2o3-amqp-ext = { workspace = true, optional = true }
@@ -30,15 +30,16 @@ serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
 tokio.workspace = true
 tracing.workspace = true
-typespec = { workspace = true, features = ["amqp"] }
+typespec.workspace = true
 typespec_macros.workspace = true
 
 [dev-dependencies]
+serde_json.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
 default = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
-cplusplus = []
+ffi = []
 test = []
 fe2o3_amqp = [
   "dep:fe2o3-amqp",

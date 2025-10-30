@@ -17,14 +17,14 @@ use typespec_client_core::time::{Duration, OffsetDateTime};
 
 /// Authentication policy for a bearer token.
 #[derive(Debug, Clone)]
-pub struct BearerTokenCredentialPolicy {
+pub struct BearerTokenAuthorizationPolicy {
     credential: Arc<dyn TokenCredential>,
     scopes: Vec<String>,
     access_token: Arc<RwLock<Option<AccessToken>>>,
 }
 
-impl BearerTokenCredentialPolicy {
-    /// Creates a new `BearerTokenCredentialPolicy`.
+impl BearerTokenAuthorizationPolicy {
+    /// Creates a new `BearerTokenAuthorizationPolicy`.
     pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self
     where
         A: IntoIterator<Item = B>,
@@ -52,7 +52,7 @@ impl BearerTokenCredentialPolicy {
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-impl Policy for BearerTokenCredentialPolicy {
+impl Policy for BearerTokenAuthorizationPolicy {
     async fn send(
         &self,
         ctx: &Context,
@@ -142,7 +142,7 @@ mod tests {
         credentials::{Secret, TokenCredential, TokenRequestOptions},
         http::{
             headers::{Headers, AUTHORIZATION},
-            policies::Policy,
+            policies::{Policy, TransportPolicy},
             Request, StatusCode,
         },
         time::OffsetDateTime,
@@ -156,7 +156,7 @@ mod tests {
         Arc,
     };
     use typespec_client_core::{
-        http::{policies::TransportPolicy, BufResponse, Method, Transport},
+        http::{BufResponse, Method, Transport},
         time::Duration,
     };
 
@@ -209,7 +209,7 @@ mod tests {
     async fn authn_error() {
         // this mock's get_token() will return an error because it has no tokens
         let credential = MockCredential::new(&[]);
-        let policy = BearerTokenCredentialPolicy::new(Arc::new(credential), ["scope"]);
+        let policy = BearerTokenAuthorizationPolicy::new(Arc::new(credential), ["scope"]);
         let client = MockHttpClient::new(|_| panic!("expected an error from get_token"));
         let transport = Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
         let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
@@ -228,7 +228,7 @@ mod tests {
 
     async fn run_test(tokens: &[AccessToken]) {
         let credential = Arc::new(MockCredential::new(tokens));
-        let policy = BearerTokenCredentialPolicy::new(credential.clone(), ["scope"]);
+        let policy = BearerTokenAuthorizationPolicy::new(credential.clone(), ["scope"]);
         let client = Arc::new(MockHttpClient::new(move |actual| {
             let credential = credential.clone();
             async move {

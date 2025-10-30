@@ -1,6 +1,6 @@
 [package]
 name = "azure_core_macros"
-version = "0.3.0"
+version = "0.4.0"
 description = "Procedural macros for client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
@@ -20,7 +20,6 @@ proc-macro = true
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
-typespec_client_core = { workspace = true, features = ["http", "json"] }
 tracing.workspace = true
 
 [dev-dependencies]

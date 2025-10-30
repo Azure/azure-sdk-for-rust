@@ -49,7 +49,7 @@ pub fn parse_function(attr: TokenStream, item: TokenStream) -> Result<TokenStrea
             .into_iter()
             .map(|(name, value)| {
                 quote! {
-                    ::typespec_client_core::tracing::Attribute{key: #name.into(), value: #value.into()}
+                    ::azure_core::tracing::Attribute{key: #name.into(), value: #value.into()}
                 }
             })
             .collect::<Vec<_>>();
@@ -60,10 +60,7 @@ pub fn parse_function(attr: TokenStream, item: TokenStream) -> Result<TokenStrea
         let options = {
             let mut options = options.unwrap_or_default();
 
-            let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                api_name: #api_name,
-                attributes: #attributes,
-            };
+            let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new(#api_name, #attributes);
             // Add the span to the tracer.
             let mut ctx = options.method_options.context.with_value(public_api_info);
             // If the service has a tracer, we add it to the context.
@@ -203,11 +200,6 @@ fn is_function_declaration(item: &TokenStream) -> std::result::Result<(), String
             return Err(format!("Failed to parse function declaration: {e}"));
         }
     };
-
-    // Function must be public.
-    if !matches!(item_fn.vis, syn::Visibility::Public(_)) {
-        return Err("Function must be public".into());
-    }
 
     // Function must return a Result type.
     if let syn::ReturnType::Type(_, ty) = &item_fn.sig.output {
@@ -409,10 +401,7 @@ mod tests {
         pub async fn my_function(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
             let options = {
                 let mut options = options.unwrap_or_default();
-                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                    api_name: "TestFunction",
-                    attributes: Vec::new(),
-                };
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new("TestFunction", Vec::new());
                 let mut ctx = options.method_options.context.with_value(public_api_info);
                 if let Some(tracer) = &self.tracer {
                     ctx = ctx.with_value(tracer.clone());
@@ -523,10 +512,7 @@ mod tests {
         ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
             let options = {
                 let mut options = options.unwrap_or_default();
-                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                    api_name: "TestFunction",
-                    attributes: Vec::new(),
-                };
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new("TestFunction", Vec::new());
                 let mut ctx = options.method_options.context.with_value(public_api_info);
                 if let Some(tracer) = &self.tracer {
                     ctx = ctx.with_value(tracer.clone());

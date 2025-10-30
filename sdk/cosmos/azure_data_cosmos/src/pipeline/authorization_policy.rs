@@ -14,7 +14,7 @@ use azure_core::{
         headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION},
         policies::{Policy, PolicyResult},
         request::Request,
-        Context, Url,
+        Context,
     },
     time::{self, OffsetDateTime},
 };
@@ -26,6 +26,7 @@ use crate::{pipeline::signature_target::SignatureTarget, resource_context::Resou
 use crate::utils::url_encode;
 
 const AZURE_VERSION: &str = "2020-07-15";
+const COSMOS_AAD_SCOPE: &str = "https://cosmos.azure.com/.default";
 
 #[derive(Debug, Clone)]
 enum Credential {
@@ -82,7 +83,6 @@ impl Policy for AuthorizationPolicy {
 
         let auth = generate_authorization(
             &self.credential,
-            request.url(),
             SignatureTarget::new(request.method(), resource_link, &date_string),
         )
         .await?;
@@ -110,15 +110,13 @@ impl Policy for AuthorizationPolicy {
 /// NOTE: Resource tokens are not yet supported.
 async fn generate_authorization(
     auth_token: &Credential,
-    url: &Url,
-
     // Unused unless feature="key_auth", but I don't want to mess with excluding it since it makes call sites more complicated
     #[allow(unused_variables)] signature_target: SignatureTarget<'_>,
 ) -> azure_core::Result<String> {
     let token = match auth_token {
         Credential::Token(token_credential) => {
             let token = token_credential
-                .get_token(&[&scope_from_url(url)], None)
+                .get_token(&[COSMOS_AAD_SCOPE], None)
                 .await?
                 .token
                 .secret()
@@ -133,14 +131,6 @@ async fn generate_authorization(
     Ok(url_encode(token))
 }
 
-/// This function generates the scope string from the passed url. The scope string is used to
-/// request the AAD token.
-fn scope_from_url(url: &Url) -> String {
-    let scheme = url.scheme();
-    let hostname = url.host_str().unwrap();
-    format!("{scheme}://{hostname}/.default")
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -150,11 +140,10 @@ mod tests {
         http::Method,
         time::{Duration, OffsetDateTime},
     };
-    use url::Url;
 
     use crate::{
         pipeline::{
-            authorization_policy::{generate_authorization, scope_from_url, Credential},
+            authorization_policy::{generate_authorization, Credential, COSMOS_AAD_SCOPE},
             signature_target::SignatureTarget,
         },
         resource_context::{ResourceLink, ResourceType},
@@ -188,12 +177,8 @@ mod tests {
         let cred = Arc::new(TestTokenCredential("test_token".to_string()));
         let auth_token = Credential::Token(cred);
 
-        // Use a fake URL since the actual endpoint URL is not important for this test
-        let url = Url::parse("https://test_account.example.com/dbs/ToDoList").unwrap();
-
         let ret = generate_authorization(
             &auth_token,
-            &url,
             SignatureTarget::new(
                 Method::Get,
                 &ResourceLink::root(ResourceType::Databases).item("ToDoList"),
@@ -203,10 +188,8 @@ mod tests {
         .await
         .unwrap();
 
-        let expected: String = url_encode(
-            b"type=aad&ver=1.0&sig=test_token+https://test_account.example.com/.default",
-        );
-
+        let expected: String =
+            url_encode(format!("type=aad&ver=1.0&sig=test_token+{}", COSMOS_AAD_SCOPE).as_bytes());
         assert_eq!(ret, expected);
     }
 
@@ -221,12 +204,8 @@ mod tests {
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".into(),
         );
 
-        // Use a fake URL since the actual endpoint URL is not important for this test
-        let url = Url::parse("https://test_account.example.com/dbs/ToDoList").unwrap();
-
         let ret = generate_authorization(
             &auth_token,
-            &url,
             SignatureTarget::new(
                 Method::Get,
                 &ResourceLink::root(ResourceType::Databases)
@@ -256,12 +235,8 @@ mod tests {
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".into(),
         );
 
-        // Use a fake URL since the actual endpoint URL is not important for this test
-        let url = Url::parse("https://test_account.example.com/dbs/ToDoList").unwrap();
-
         let ret = generate_authorization(
             &auth_token,
-            &url,
             SignatureTarget::new(
                 Method::Get,
                 &ResourceLink::root(ResourceType::Databases).item("ToDoList"),
@@ -277,9 +252,69 @@ mod tests {
         assert_eq!(ret, expected);
     }
 
-    #[test]
-    fn scope_from_url_extracts_correct_scope() {
-        let scope = scope_from_url(&Url::parse("https://example.com/dbs/test_db/colls").unwrap());
-        assert_eq!(scope, "https://example.com/.default");
+    /// Tests that AAD authentication explicitly uses the constant scope value.
+    #[tokio::test]
+    async fn aad_token_uses_constant_scope() {
+        use std::sync::Mutex;
+
+        // Mock credential that captures the exact scopes passed to get_token
+        #[derive(Debug)]
+        struct ScopeCapturingCredential {
+            captured_scopes: Arc<Mutex<Vec<Vec<String>>>>,
+        }
+
+        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        impl TokenCredential for ScopeCapturingCredential {
+            async fn get_token(
+                &self,
+                scopes: &[&str],
+                _: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                self.captured_scopes
+                    .lock()
+                    .unwrap()
+                    .push(scopes.iter().map(|s| s.to_string()).collect());
+
+                Ok(AccessToken::new(
+                    "mock_token".to_string(),
+                    OffsetDateTime::now_utc().saturating_add(Duration::minutes(5)),
+                ))
+            }
+        }
+
+        let captured_scopes = Arc::new(Mutex::new(Vec::new()));
+        let cred = Arc::new(ScopeCapturingCredential {
+            captured_scopes: captured_scopes.clone(),
+        });
+        let auth_token = Credential::Token(cred);
+
+        let time_nonce =
+            azure_core::time::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = azure_core::time::to_rfc7231(&time_nonce).to_lowercase();
+
+        let _result = generate_authorization(
+            &auth_token,
+            SignatureTarget::new(
+                Method::Get,
+                &ResourceLink::root(ResourceType::Databases).item("TestDB"),
+                &date_string,
+            ),
+        )
+        .await
+        .unwrap();
+
+        // Verifies that get_token was called exactly once with the constant scope
+        let scopes = captured_scopes.lock().unwrap();
+        assert_eq!(scopes.len(), 1, "get_token should be called exactly once");
+        assert_eq!(
+            scopes[0].len(),
+            1,
+            "get_token should be called with exactly one scope"
+        );
+        assert_eq!(
+            scopes[0][0], COSMOS_AAD_SCOPE,
+            "get_token should be called with COSMOS_AAD_SCOPE constant"
+        );
     }
 }

@@ -40,7 +40,10 @@ impl PatchCommand {
             .iter()
             .map(|op| serde_json::from_str(op).expect("Invalid JSON patch operation"))
             .collect();
-        let patch = PatchDocument { operations };
+        let patch = PatchDocument {
+            condition: None,
+            operations,
+        };
 
         let response = container_client
             .patch_item(pk, &self.item_id, patch, None)
@@ -48,7 +51,7 @@ impl PatchCommand {
         match response {
             Err(e) if e.http_status() == Some(StatusCode::NotFound) => println!("Item not found!"),
             Ok(r) => {
-                let item: serde_json::Value = r.into_raw_body().json().await?;
+                let item: serde_json::Value = r.into_raw_body().json()?;
                 println!("Patched item:");
                 println!("{:#?}", item);
             }

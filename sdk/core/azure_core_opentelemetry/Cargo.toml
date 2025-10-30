@@ -1,6 +1,6 @@
 [package]
 name = "azure_core_opentelemetry"
-version = "0.3.0"
+version = "0.4.0"
 description = "OpenTelemetry integration for the Azure SDK for Rust"
 readme = "README.md"
 authors.workspace = true
@@ -23,7 +23,6 @@ opentelemetry-http.workspace = true
 opentelemetry_sdk.workspace = true
 reqwest.workspace = true
 tracing.workspace = true
-typespec_client_core.workspace = true
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }

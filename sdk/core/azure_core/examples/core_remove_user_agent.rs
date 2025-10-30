@@ -62,11 +62,7 @@ async fn test_remove_user_agent() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // We'll fetch a secret and let the mock client assert the User-Agent header was removed.
-    let secret = client
-        .get_secret("my-secret", None)
-        .await?
-        .into_body()
-        .await?;
+    let secret = client.get_secret("my-secret", None).await?.into_body()?;
     assert_eq!(secret.value.as_deref(), Some("secret-value"));
 
     Ok(())

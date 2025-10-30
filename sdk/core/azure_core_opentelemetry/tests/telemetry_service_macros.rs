@@ -8,7 +8,7 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        BufResponse, ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, Request,
+        ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, RawResponse, Request,
         Url,
     },
     tracing, Result,
@@ -95,7 +95,7 @@ impl TestServiceClientWithMacros {
         &self,
         path: &str,
         options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
         let mut url = self.endpoint.clone();
         url.set_path(path);
@@ -145,7 +145,7 @@ impl TestServiceClientWithMacros {
         &self,
         path: &str,
         options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
 
         let mut url = self.endpoint.clone();
@@ -180,7 +180,7 @@ mod tests {
     use super::*;
     use ::tracing::{info, trace};
     use azure_core::{
-        http::{ExponentialRetryOptions, RetryOptions},
+        http::{ExponentialRetryOptions, RetryOptions, StatusCode},
         tracing::TracerProvider,
         Result,
     };
@@ -193,7 +193,6 @@ mod tests {
         SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus,
     };
     use opentelemetry::Value as OpenTelemetryAttributeValue;
-    use typespec_client_core::http;
 
     fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
         let otel_exporter = InMemorySpanExporter::default();
@@ -736,6 +735,8 @@ mod tests {
     }
     #[recorded::test()]
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
+        use azure_core_test::tracing::ExpectedRestApiSpan;
+
         let package_name = env!("CARGO_PKG_NAME").to_string();
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
@@ -750,13 +751,15 @@ mod tests {
                 package_namespace: Some("Az.TestServiceClient"),
                 api_calls: vec![ExpectedApiInformation {
                     api_name: Some("macros_get_with_tracing"),
-                    expected_status_code: http::StatusCode::NotFound,
+                    api_children: vec![ExpectedRestApiSpan {
+                        expected_status_code: StatusCode::NotFound,
+                        ..Default::default()
+                    }],
                     additional_api_attributes: vec![
                         ("a.b", 1.into()),
                         ("az.telemetry", "Abc".into()),
                         ("string attribute", "index.htm".into()),
                     ],
-                    ..Default::default()
                 }],
             },
         )

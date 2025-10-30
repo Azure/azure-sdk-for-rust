@@ -4,7 +4,7 @@
 #![recursion_limit = "128"]
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod checkpoint_store;
 pub use checkpoint_store::BlobCheckpointStore;

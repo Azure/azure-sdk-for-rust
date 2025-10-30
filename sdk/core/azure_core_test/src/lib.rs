@@ -7,6 +7,7 @@ pub mod credentials;
 #[cfg(doctest)]
 mod docs;
 pub mod http;
+pub mod perf;
 pub mod proxy;
 pub mod recorded;
 mod recording;
@@ -14,7 +15,6 @@ mod recording;
 mod root_readme;
 pub mod stream;
 pub mod tracing;
-
 use azure_core::Error;
 pub use azure_core::{error::ErrorKind, test::TestMode};
 pub use proxy::{matchers::*, sanitizers::*};

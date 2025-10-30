@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::generated::models::StorageErrorCode;
-use azure_core::error::ErrorKind;
-use azure_core::http::RawResponse;
+use azure_core::{error::ErrorKind, http::RawResponse, xml};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -120,7 +119,7 @@ impl StorageError {
             additional_fields: HashMap<String, Value>,
         }
 
-        let xml_fields = azure_core::xml::read_xml::<StorageErrorXml>(xml_body)?;
+        let xml_fields = xml::from_xml::<_, StorageErrorXml>(xml_body)?;
 
         // Parse error code from XML body
         let error_code = xml_fields.code.and_then(|code| {

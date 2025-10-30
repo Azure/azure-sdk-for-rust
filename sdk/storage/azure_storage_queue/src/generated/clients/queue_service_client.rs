@@ -17,8 +17,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
-        policies::{BearerTokenCredentialPolicy, Policy},
-        BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions,
+        policies::{BearerTokenAuthorizationPolicy, Policy},
+        ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Result,
@@ -64,7 +64,7 @@ impl QueueServiceClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));
@@ -92,7 +92,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.getProperties")]
     pub async fn get_properties(
         &self,
@@ -151,7 +151,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     ///
     /// ## Response Headers
     ///
@@ -217,7 +217,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.getQueues")]
     pub fn list_queues(
         &self,
@@ -291,9 +291,8 @@ impl QueueServiceClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let bytes = body.collect().await?;
-                    let res: ListQueuesResponse = xml::read_xml(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let res: ListQueuesResponse = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
@@ -312,7 +311,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `queue_service_properties` - The storage service properties to set.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.setProperties")]
     pub async fn set_properties(
         &self,

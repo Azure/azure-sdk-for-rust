@@ -3,6 +3,7 @@
 #Requires -Version 7.0
 param(
   [string]$PackageInfoDirectory,
+  [string]$Toolchain = 'stable',
   [switch]$CheckWasm = $true,
   [switch]$Deny,
   [switch]$SkipPackageAnalysis
@@ -60,6 +61,10 @@ if (!$SkipPackageAnalysis) {
     return Invoke-LoggedCommand "&$verifyDependenciesScript $RepoRoot/Cargo.toml"
   }
 
+  if ($Toolchain -eq 'nightly') {
+    Invoke-LoggedCommand "cargo install --locked cargo-docs-rs"
+  }
+
   $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
   | Get-Content -Raw
   | ConvertFrom-Json
@@ -67,5 +72,9 @@ if (!$SkipPackageAnalysis) {
   foreach ($package in $packagesToTest) {
     Write-Host "Analyzing package '$($package.Name)' in directory '$($package.DirectoryPath)'`n"
     Invoke-LoggedCommand "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml"
+
+    if ($Toolchain -eq 'nightly') {
+      Invoke-LoggedCommand "cargo +nightly docs-rs --package $($package.Name)"
+    }
   }
 }

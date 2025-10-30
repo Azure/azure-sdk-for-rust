@@ -167,7 +167,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure subscription]: https://azure.microsoft.com/free/
 [cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
 [cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureCliCredential.html
-[devtool_cred_ref]: https://aka.ms/azsdk/rust/identity/docs#structs
+[devtool_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DeveloperToolsCredential.html
 [managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ManagedIdentityCredential.html
 [Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
 [API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/

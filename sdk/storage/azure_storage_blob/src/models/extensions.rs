@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
-    BlockBlobClientUploadOptions, PageBlobClientCreateOptions,
+    AppendBlobClientCreateOptions, BlobName, BlobTag, BlobTags,
+    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions,
+    PageBlobClientCreateOptions,
 };
 use std::collections::HashMap;
 

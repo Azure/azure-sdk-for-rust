@@ -12,7 +12,7 @@ use opentelemetry::{
     trace::{TraceContextExt, Tracer as OpenTelemetryTracerTrait},
     Context, KeyValue,
 };
-use std::{fmt::Debug, sync::Arc};
+use std::{borrow::Cow, fmt::Debug, sync::Arc};
 
 pub struct OpenTelemetryTracer {
     namespace: Option<&'static str>,
@@ -44,7 +44,7 @@ impl Tracer for OpenTelemetryTracer {
 
     fn start_span(
         &self,
-        name: &'static str,
+        name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
     ) -> Arc<dyn azure_core::tracing::Span> {
@@ -63,12 +63,12 @@ impl Tracer for OpenTelemetryTracer {
 
     fn start_span_with_parent(
         &self,
-        name: &'static str,
+        name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
         parent: Arc<dyn azure_core::tracing::Span>,
     ) -> Arc<dyn azure_core::tracing::Span> {
-        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name.to_owned())
+        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
             .with_kind(OpenTelemetrySpanKind(kind).into())
             .with_attributes(
                 attributes
@@ -107,7 +107,7 @@ mod tests {
         let noop_tracer = NoopTracerProvider::new();
         let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(noop_tracer));
         let tracer = otel_provider.get_tracer(Some("name"), "test_tracer", Some("1.0.0"));
-        let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
+        let span = tracer.start_span("test_span".into(), SpanKind::Internal, vec![]);
         span.end();
     }
 
@@ -123,6 +123,6 @@ mod tests {
         let provider = SdkTracerProvider::builder().build();
         let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(provider));
         let tracer = otel_provider.get_tracer(Some("My.Namespace"), "test_tracer", Some("1.0.0"));
-        let _span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
+        let _span = tracer.start_span("test_span".into(), SpanKind::Internal, vec![]);
     }
 }

@@ -7,16 +7,13 @@ pub(crate) mod event_receiver;
 
 use crate::{
     common::{recoverable::RecoverableConnection, ManagementInstance},
+    error::Result,
     models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
-    RetryOptions,
+    EventHubsError, RetryOptions,
 };
-use azure_core::{
-    credentials::TokenCredential,
-    error::{Error, ErrorKind as AzureErrorKind, Result},
-    http::Url,
-    time::Duration,
-    Uuid,
-};
+use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
+#[cfg(test)]
+use azure_core_amqp::AmqpError;
 use azure_core_amqp::{
     message::AmqpSourceFilter, AmqpDescribed, AmqpOrderedMap, AmqpReceiverOptions, AmqpSource,
     AmqpSymbol, AmqpValue, ReceiverCreditMode,
@@ -90,7 +87,7 @@ impl ConsumerClient {
             "amqps://{}/{}/ConsumerGroups/{}",
             fully_qualified_namespace, eventhub_name, consumer_group
         );
-        let url = Url::parse(&url)?;
+        let url = Url::parse(&url).map_err(azure_core::Error::from)?;
 
         trace!("Creating consumer client for {url}.");
         let retry_options = options.retry_options.unwrap_or_default();
@@ -150,8 +147,7 @@ impl ConsumerClient {
         trace!("Closing consumer client for {}.", self.endpoint);
         let recoverable_connection =
             Arc::try_unwrap(self.recoverable_connection).map_err(|_| {
-                Error::with_message(
-                    AzureErrorKind::Other,
+                EventHubsError::with_message(
                     "Could not close consumer recoverable connection, multiple references exist",
                 )
             })?;
@@ -165,7 +161,7 @@ impl ConsumerClient {
 
     /// Forces an error on the connection.
     #[cfg(test)]
-    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+    pub fn force_error(&self, error: AmqpError) -> Result<()> {
         self.recoverable_connection.force_error(error)
     }
 
@@ -180,10 +176,7 @@ impl ConsumerClient {
                 .endpoint
                 .host()
                 .ok_or_else(|| {
-                    Error::with_message(
-                        AzureErrorKind::Other,
-                        "Could not find host in consumer client",
-                    )
+                    EventHubsError::with_message("Could not find host in consumer client")
                 })?
                 .to_string(),
             client_id: self.recoverable_connection.get_connection_id().to_string(),
@@ -259,7 +252,7 @@ impl ConsumerClient {
         );
 
         let source_url = format!("{}/Partitions/{}", &self.endpoint, &partition_id);
-        let source_url = Url::parse(&source_url)?;
+        let source_url = Url::parse(&source_url).map_err(azure_core::Error::from)?;
 
         let message_source = AmqpSource::builder()
             .with_address(source_url.to_string())
@@ -396,7 +389,7 @@ impl ConsumerClient {
         Ok(ManagementInstance::new(self.recoverable_connection.clone()))
     }
 
-    async fn ensure_connection(&self) -> Result<()> {
+    async fn ensure_connection(&self) -> azure_core_amqp::Result<()> {
         self.recoverable_connection.ensure_connection().await?;
         Ok(())
     }
@@ -549,7 +542,7 @@ impl StartPosition {
 
 pub mod builders {
     use super::*;
-    use azure_core::Result;
+    use crate::Result;
     use std::sync::Arc;
 
     /// A builder for creating a [`ConsumerClient`].
@@ -691,7 +684,7 @@ pub mod builders {
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {
             let custom_endpoint = match self.custom_endpoint {
-                Some(endpoint) => Some(Url::parse(&endpoint)?),
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
                 None => None,
             };
             trace!("Opening consumer client on {fully_qualified_namespace}.");
@@ -715,8 +708,10 @@ pub mod builders {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use crate::{common::tests::force_errors, ConsumerClient, StartLocation, StartPosition};
-    use azure_core::{time::Duration, Result};
+    use crate::{
+        common::tests::force_errors, ConsumerClient, Result, StartLocation, StartPosition,
+    };
+    use azure_core::time::Duration;
     use azure_core_amqp::error::AmqpErrorKind;
     use azure_core_test::{recorded, TestContext};
     use std::{
@@ -886,14 +881,11 @@ pub(crate) mod tests {
             },
             |consumer| {
                 consumer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
-                                azure_core::error::ErrorKind::Other,
-                                "Forced error",
-                            )),
-                        )),
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::LinkClosedByRemote(Box::new(azure_core::error::Error::new(
+                            azure_core::error::ErrorKind::Other,
+                            "Forced error",
+                        ))),
                     ))
                     .unwrap();
             },
@@ -937,13 +929,12 @@ pub(crate) mod tests {
             },
             |consumer| {
                 consumer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::SessionClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::SessionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();
@@ -987,13 +978,12 @@ pub(crate) mod tests {
             },
             |consumer| {
                 consumer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::ConnectionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();

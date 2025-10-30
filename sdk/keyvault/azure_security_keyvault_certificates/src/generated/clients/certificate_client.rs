@@ -5,13 +5,12 @@
 
 use crate::generated::models::{
     BackupCertificateResult, Certificate, CertificateClientBackupCertificateOptions,
-    CertificateClientCreateCertificateOptions, CertificateClientDeleteCertificateOperationOptions,
-    CertificateClientDeleteCertificateOptions, CertificateClientDeleteContactsOptions,
-    CertificateClientDeleteIssuerOptions, CertificateClientGetCertificateOperationOptions,
-    CertificateClientGetCertificateOptions, CertificateClientGetCertificatePolicyOptions,
-    CertificateClientGetContactsOptions, CertificateClientGetDeletedCertificateOptions,
-    CertificateClientGetIssuerOptions, CertificateClientImportCertificateOptions,
-    CertificateClientListCertificatePropertiesOptions,
+    CertificateClientDeleteCertificateOperationOptions, CertificateClientDeleteCertificateOptions,
+    CertificateClientDeleteContactsOptions, CertificateClientDeleteIssuerOptions,
+    CertificateClientGetCertificateOperationOptions, CertificateClientGetCertificateOptions,
+    CertificateClientGetCertificatePolicyOptions, CertificateClientGetContactsOptions,
+    CertificateClientGetDeletedCertificateOptions, CertificateClientGetIssuerOptions,
+    CertificateClientImportCertificateOptions, CertificateClientListCertificatePropertiesOptions,
     CertificateClientListCertificatePropertiesVersionsOptions,
     CertificateClientListDeletedCertificatePropertiesOptions,
     CertificateClientListIssuerPropertiesOptions, CertificateClientMergeCertificateOptions,
@@ -21,8 +20,8 @@ use crate::generated::models::{
     CertificateClientUpdateCertificateOperationOptions,
     CertificateClientUpdateCertificatePolicyOptions,
     CertificateClientUpdateCertificatePropertiesOptions, CertificateClientUpdateIssuerOptions,
-    CertificateOperation, CertificatePolicy, Contacts, CreateCertificateParameters,
-    DeletedCertificate, ImportCertificateParameters, Issuer, ListCertificatePropertiesResult,
+    CertificateOperation, CertificatePolicy, Contacts, DeletedCertificate,
+    ImportCertificateParameters, Issuer, ListCertificatePropertiesResult,
     ListDeletedCertificatePropertiesResult, ListIssuerPropertiesResult, MergeCertificateParameters,
     RestoreCertificateParameters, SetIssuerParameters, UpdateCertificateOperationParameter,
     UpdateCertificatePropertiesParameters, UpdateIssuerParameters,
@@ -33,8 +32,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
-        policies::{BearerTokenCredentialPolicy, Policy},
-        BufResponse, ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions,
+        policies::{BearerTokenAuthorizationPolicy, Policy},
+        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url,
     },
     json, tracing, Result,
@@ -81,7 +80,7 @@ impl CertificateClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
             credential,
             vec!["https://vault.azure.net/.default"],
         ));
@@ -143,57 +142,6 @@ impl CertificateClient {
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
                         success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
-    /// Creates a new certificate.
-    ///
-    /// If this is the first version, the certificate resource is created. This operation requires the certificates/create permission.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate_name` - The name of the certificate. The value you provide may be copied globally for the purpose of running
-    ///   the service. The value provided should not include personally identifiable or sensitive information.
-    /// * `parameters` - The parameters to create a certificate.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("KeyVault.createCertificate")]
-    pub async fn create_certificate(
-        &self,
-        certificate_name: &str,
-        parameters: RequestContent<CreateCertificateParameters>,
-        options: Option<CertificateClientCreateCertificateOptions<'_>>,
-    ) -> Result<Response<CertificateOperation>> {
-        if certificate_name.is_empty() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "parameter certificate_name cannot be empty",
-            ));
-        }
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("certificates/{certificate-name}/create");
-        path = path.replace("{certificate-name}", certificate_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
-        request.insert_header("accept", "application/json");
-        request.insert_header("content-type", "application/json");
-        request.set_body(parameters);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[202],
                     },
                     ..Default::default()
                 }),
@@ -775,9 +723,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -859,9 +806,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -939,9 +885,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListDeletedCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListDeletedCertificatePropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -1013,9 +958,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListIssuerPropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListIssuerPropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -1519,7 +1463,7 @@ impl CertificateClient {
 impl Default for CertificateClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6"),
+            api_version: String::from("2025-07-01"),
             client_options: ClientOptions::default(),
         }
     }

@@ -27,6 +27,21 @@ pub use engine::*;
 /// # assert_eq!(serde_json::to_string(&query).unwrap(), "{\"query\":\"SELECT * FROM c WHERE c.id = @customer_id\",\"parameters\":[{\"name\":\"@customer_id\",\"value\":42}]}");
 /// ```
 ///
+/// You can also modify the query text using [`Query::with_text()`] to replace it entirely
+/// or [`Query::append_text()`] to add to the existing text:
+///
+/// ```rust
+/// # use azure_data_cosmos::Query;
+/// let query = Query::from("SELECT * FROM c")
+///     .append_text(" WHERE c.time >= @low_time")
+///     .with_parameter("@low_time", "2023-01-01").unwrap()
+///     .append_text(" AND c.time <= @high_time")
+///     .with_parameter("@high_time", "2023-12-31").unwrap();
+/// # // We can't directly access the text field as it's private, but we can serialize to verify
+/// # let serialized = serde_json::to_string(&query).unwrap();
+/// # assert!(serialized.contains("WHERE c.time >= @low_time AND c.time <= @high_time"));
+/// ```
+///
 /// # Specifying Parameters
 ///
 /// Any JSON-serializable value, including an empty tuple (`()`), which indicates `null`, can be used as a parameter.
@@ -91,6 +106,27 @@ impl Query {
         self.parameters.push(parameter);
 
         Ok(self)
+    }
+
+    /// Replaces all parameters in this [`Query`] instance with the parameters from another [`Query`] instance, and returns it.
+    ///
+    /// Since the parameters in the other query are already serialized, this method cannot fail.
+    #[cfg(feature = "preview_query_engine")] // Crate-private for now, and thus only in the preview_query_engine feature (which is the only place it's used).
+    pub(crate) fn with_parameters_from(mut self, other: &Query) -> Self {
+        self.parameters = other.parameters.clone();
+        self
+    }
+
+    /// Consumes this [`Query`] instance, replaces its text with the provided value, and returns it.
+    pub fn with_text(mut self, text: String) -> Self {
+        self.text = text;
+        self
+    }
+
+    /// Consumes this [`Query`] instance, appends the provided text to its current text, and returns it.
+    pub fn append_text(mut self, text: &str) -> Self {
+        self.text.push_str(text);
+        self
     }
 }
 
@@ -167,6 +203,91 @@ mod tests {
             serialized,
             r#"{"query":"SELECT * FROM c","parameters":[{"name":"string_param","value":"value1"},{"name":"int_param","value":42},{"name":"float_param","value":4.2},{"name":"bool_param","value":true},{"name":"obj_param","value":{"name":"foo","value":"bar"}},{"name":"arr_param","value":["a","b","c"]},{"name":"null_option","value":null},{"name":"null_value","value":null}]}"#
         );
+        Ok(())
+    }
+
+    #[test]
+    pub fn with_text_replaces_query_text() {
+        let query = Query::from("SELECT * FROM c").with_text("SELECT c.id FROM c".to_string());
+        assert_eq!(query.text, "SELECT c.id FROM c");
+    }
+
+    #[test]
+    pub fn with_text_preserves_parameters() -> Result<(), Box<dyn Error>> {
+        let query = Query::from("SELECT * FROM c")
+            .with_parameter("@id", 42)?
+            .with_text("SELECT c.name FROM c WHERE c.id = @id".to_string());
+
+        assert_eq!(query.text, "SELECT c.name FROM c WHERE c.id = @id");
+        assert_eq!(query.parameters.len(), 1);
+        assert_eq!(query.parameters[0].name, "@id");
+        Ok(())
+    }
+
+    #[test]
+    pub fn append_text_adds_to_existing_text() {
+        let query = Query::from("SELECT * FROM c").append_text(" WHERE c.id = @id");
+        assert_eq!(query.text, "SELECT * FROM c WHERE c.id = @id");
+    }
+
+    #[test]
+    pub fn append_text_preserves_parameters() -> Result<(), Box<dyn Error>> {
+        let query = Query::from("SELECT * FROM c")
+            .with_parameter("@id", 42)?
+            .append_text(" WHERE c.id = @id");
+
+        assert_eq!(query.text, "SELECT * FROM c WHERE c.id = @id");
+        assert_eq!(query.parameters.len(), 1);
+        assert_eq!(query.parameters[0].name, "@id");
+        Ok(())
+    }
+
+    #[test]
+    pub fn method_chaining_works_with_new_methods() -> Result<(), Box<dyn Error>> {
+        let query = Query::from("SELECT * FROM c")
+            .append_text(" WHERE c.time >= @low_time")
+            .with_parameter("@low_time", "2023-01-01")?
+            .append_text(" AND c.time <= @high_time")
+            .with_parameter("@high_time", "2023-12-31")?;
+
+        assert_eq!(
+            query.text,
+            "SELECT * FROM c WHERE c.time >= @low_time AND c.time <= @high_time"
+        );
+        assert_eq!(query.parameters.len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "preview_query_engine")]
+    pub fn with_parameters_from_replaces_all_parameters() -> Result<(), Box<dyn Error>> {
+        let source_query = Query::from("SELECT * FROM c")
+            .with_parameter("@id", 42)?
+            .with_parameter("@name", "Contoso")?;
+
+        let target_query = Query::from("SELECT c.value FROM c WHERE c.id = @id AND c.name = @name")
+            .with_parameter("@old_param", "old_value")?
+            .with_parameters_from(&source_query);
+
+        // Check that the text is preserved from the target query
+        assert_eq!(
+            target_query.text,
+            "SELECT c.value FROM c WHERE c.id = @id AND c.name = @name"
+        );
+
+        // Check that parameters are replaced with those from source query
+        assert_eq!(target_query.parameters.len(), 2);
+        assert_eq!(target_query.parameters[0].name, "@id");
+        assert_eq!(
+            target_query.parameters[0].value,
+            serde_json::Value::Number(serde_json::Number::from(42))
+        );
+        assert_eq!(target_query.parameters[1].name, "@name");
+        assert_eq!(
+            target_query.parameters[1].value,
+            serde_json::Value::String("Contoso".to_string())
+        );
+
         Ok(())
     }
 }

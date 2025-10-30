@@ -5,7 +5,7 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        BufResponse, ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, Request,
+        ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, RawResponse, Request,
         Transport, Url,
     },
     Result,
@@ -14,6 +14,10 @@ use azure_core::{
 use azure_identity::DeveloperToolsCredential;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::sync::Arc;
+
+#[cfg_attr(target_os = "macos", allow(dead_code))]
+const HTTP_ENDPOINT: &str = "https://azuresdkforcpp.azurewebsites.net";
+//const HTTP_ENDPOINT: &str = "http://httpbin.org";
 
 #[derive(Clone, SafeDebug)]
 pub struct TestServiceClientOptions {
@@ -85,7 +89,7 @@ impl TestServiceClient {
         &self,
         path: &str,
         options: Option<TestServiceClientGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
         let mut url = self.endpoint.clone();
         url.set_path(path);
@@ -136,7 +140,7 @@ pub fn simple_http_transport_test(c: &mut Criterion) {
     {
         let rt = tokio::runtime::Runtime::new().unwrap();
 
-        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+        let endpoint = HTTP_ENDPOINT;
         let credential = DeveloperToolsCredential::new(None).unwrap();
         let options = TestServiceClientOptions::default();
 
@@ -163,7 +167,7 @@ pub fn disable_pooling_http_transport_test(c: &mut Criterion) {
     {
         let rt = tokio::runtime::Runtime::new().unwrap();
 
-        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+        let endpoint = HTTP_ENDPOINT;
         let credential = DeveloperToolsCredential::new(None).unwrap();
         let transport = new_reqwest_client_disable_connection_pool();
         let options = TestServiceClientOptions {
@@ -196,21 +200,50 @@ pub fn baseline_http_transport_test(c: &mut Criterion) {
     #[cfg(not(target_os = "macos"))]
     {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+        let endpoint = HTTP_ENDPOINT;
 
         let http_client = new_default_reqwest_client();
 
+        let url = Url::parse(&format!("{}/get", endpoint)).unwrap();
+
         // Benchmark GET and POST requests
         c.bench_function("baseline_http_pipeline_test", |b| {
+            b.to_async(&rt).iter(|| {
+                // Clone the Url for this iteration so the async block can take ownership.
+                let url = url.clone();
+                let http_client = http_client.clone();
+                async move {
+                    let request = Request::new(url, Method::Get);
+                    let response = http_client.execute_request(&request).await;
+                    assert!(response.is_ok());
+                    let response = response.unwrap();
+                    assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+                }
+            });
+        });
+    }
+}
+
+#[cfg_attr(target_os = "macos", allow(unused_variables))]
+pub fn raw_reqwest_http_transport_test(c: &mut Criterion) {
+    #[cfg(target_os = "macos")]
+    return;
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let endpoint = HTTP_ENDPOINT;
+
+        let client = ::reqwest::Client::new();
+
+        // Benchmark GET and POST requests
+        c.bench_function("raw_http_pipeline_test", |b| {
             b.to_async(&rt).iter(|| async {
-                let request = Request::new(
-                    Url::parse(&format!("{}/get", endpoint)).unwrap(),
-                    Method::Get,
-                );
-                let response = http_client.execute_request(&request).await;
+                let request = client.get(format!("{}/get", endpoint));
+                let response = request.send().await;
                 assert!(response.is_ok());
                 let response = response.unwrap();
-                assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+                assert_eq!(response.status(), reqwest::StatusCode::OK);
             });
         });
     }
@@ -219,10 +252,10 @@ pub fn baseline_http_transport_test(c: &mut Criterion) {
 // Main benchmark configuration
 criterion_group!(name=http_transport_benchmarks;
     config=Criterion::default()
-        .sample_size(100)
+        .sample_size(500)
         .warm_up_time(std::time::Duration::new(10, 0))
-        .measurement_time(std::time::Duration::new(50, 0));
-    targets=simple_http_transport_test, disable_pooling_http_transport_test, baseline_http_transport_test
+        .measurement_time(std::time::Duration::new(60, 0));
+    targets=simple_http_transport_test, disable_pooling_http_transport_test, baseline_http_transport_test, raw_reqwest_http_transport_test
 );
 
 criterion_main!(http_transport_benchmarks);

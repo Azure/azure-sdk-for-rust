@@ -104,7 +104,7 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
     // Read an item
     let item_response = container.read_item("partition1", "1", None).await?;
-    let mut item: Item = item_response.into_body().await?;
+    let mut item: Item = item_response.into_body()?;
 
     item.value = "3".into();
 

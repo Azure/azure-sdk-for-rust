@@ -55,7 +55,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_native-tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
+- `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
 - `tokio`: enables and sets `tokio` as the default async runtime.
 - `wasm_bindgen`: enables the async runtime for WASM.
 - `xml`: enables XML support.
@@ -159,7 +159,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Response<T> has two main accessors:
     // 1. The `into_body()` function consumes self to deserialize into a model type
-    let secret = response.into_body().await?;
+    let secret = response.into_body()?;
 
     // get response again because it was moved in above statement
     let response: Response<Secret> = client.get_secret("secret-name", None).await?;
@@ -199,7 +199,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_secret("secret-name", None).await {
-        Ok(secret) => println!("Secret: {:?}", secret.into_body().await?.value),
+        Ok(secret) => println!("Secret: {:?}", secret.into_body()?.value),
         Err(e) => match e.kind() {
             ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
                 // handle not found error
@@ -272,7 +272,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // poll the pager until there are no more SecretListResults
     while let Some(secrets) = pager.try_next().await? {
-        let secrets = secrets.into_body().await?.value;
+        let secrets = secrets.into_body()?.value;
         // loop through secrets in SecretsListResults
         for secret in secrets {
             // get the secret name from the ID
@@ -288,7 +288,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Consuming service methods returning `Poller<T>`
 
 If a service call may take a while to process, it should return `Result<Poller<T>>` as a result, representing a long-running operation (LRO).
-The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
+
+The `Poller<T>` implements `std::future::IntoFuture` so you can `await` it to get the final result:
+
+```rust no_run
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_certificates::{
+    CertificateClient,
+    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
+};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DeveloperToolsCredential::new(None)?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Create a self-signed certificate.
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy),
+        ..Default::default()
+    };
+
+    // Wait for the certificate operation to complete and get the certificate.
+    let certificate = client
+        .create_certificate("certificate-name", body.try_into()?, None)?
+        .await?
+        .into_body()?;
+
+    Ok(())
+}
+```
+
+The `Poller<T>` also implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
@@ -326,9 +372,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     // The Poller implements futures::Stream and automatically waits between polls.
-    let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
+    let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
     while let Some(operation) = poller.try_next().await? {
-        let operation = operation.into_body().await?;
+        let operation = operation.into_body()?;
         match operation.status.as_deref().unwrap_or("unknown") {
             "inProgress" => continue,
             "completed" => {
@@ -344,60 +390,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-If you just want to wait until the `Poller<T>` is complete and get the last status monitor, you can await `wait()`:
+### Adding HTTP policies
+
+You can add custom HTTP policies for each client method (per-call) or request attempt (per-try) by implementing `Policy` and adding it to the appropriate field on `ClientOptions`.
+For example, to remove the `user-agent` header entirely:
 
 ```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{
-    CertificateClient,
-    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
+use azure_core::http::{
+    policies::{Policy, PolicyResult},
+    ClientOptions, Context, Request,
 };
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
+use std::sync::Arc;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+#[derive(Debug)]
+struct RemoveUserAgent;
 
-    // Create a self-signed certificate.
-    let policy = CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
-        ..Default::default()
-    };
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(policy),
-        ..Default::default()
-    };
+#[async_trait::async_trait]
+impl Policy for RemoveUserAgent {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let headers = request.headers_mut();
+        headers.remove("user-agent");
 
-    // Wait for the certificate operation to complete and get the last status monitor.
-    let operation = client
-        .begin_create_certificate("certificate-name", body.try_into()?, None)?
-        .wait()
-        .await?
-        // Deserialize the CertificateOperation:
-        .into_body()
-        .await?;
-
-    if matches!(operation.status, Some(status) if status == "completed") {
-        let target = operation.target.ok_or("expected target")?;
-        println!("Created certificate {}", target);
+        next[0].send(ctx, request, &next[1..]).await
     }
-
-    Ok(())
 }
+
+let remove_user_agent = Arc::new(RemoveUserAgent);
+let mut options = SecretClientOptions::default();
+options
+    .client_options
+    .per_call_policies
+    .push(remove_user_agent);
+
+let credential = DeveloperToolsCredential::new(None).unwrap();
+let client = SecretClient::new(
+    "https://your-key-vault-name.vault.azure.net/",
+    credential.clone(),
+    Some(options),
+)
+.unwrap();
 ```
 
-Awaiting `wait()` will only fail if the HTTP status code does not indicate successfully fetching the status monitor.
+See the [example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_remove_user_agent.rs) for a full sample implementation.
 
 ### Replacing the HTTP client
 
@@ -547,6 +588,9 @@ impl AsyncRuntime for CustomRuntime {
     fn sleep(&self, duration: Duration) -> TaskFuture {
       unimplemented!("Custom sleep not implemented");
     }
+    fn yield_now(&self) -> TaskFuture {
+        unimplemented!("Custom yield not implemented");
+    }
   }
 
   set_async_runtime(Arc::new(CustomRuntime)).expect("Failed to set async runtime");
@@ -577,8 +621,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // get a secret
     let secret = client.get_secret("secret-name", None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     println!("{secret:#?}");
 

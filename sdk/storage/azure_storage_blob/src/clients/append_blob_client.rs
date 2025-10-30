@@ -10,39 +10,35 @@ use crate::{
         AppendBlobClientSealResult,
     },
     pipeline::StorageHeadersPolicy,
-    AppendBlobClientOptions, BlobClientOptions,
+    AppendBlobClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url,
+        policies::{BearerTokenAuthorizationPolicy, Policy},
+        NoFormat, Pipeline, RequestContent, Response, Url,
     },
-    Bytes, Result,
+    tracing, Bytes, Result,
 };
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage Append blob, although that blob may not yet exist.
 pub struct AppendBlobClient {
-    pub(crate) endpoint: Url,
-    pub(crate) client: GeneratedAppendBlobClient,
+    pub(super) client: GeneratedAppendBlobClient,
 }
 
-impl AppendBlobClient {
-    /// Creates a new AppendBlobClient, using Entra ID authentication.
+impl GeneratedAppendBlobClient {
+    /// Creates a new GeneratedAppendBlobClient from a blob URL.
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container containing this Append blob.
-    /// * `blob_name` - The name of the Append blob to interact with.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `blob_url` - The full URL of the Append blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        container_name: String,
-        blob_name: String,
-        credential: Arc<dyn TokenCredential>,
+    #[tracing::new("Storage.Blob.AppendBlob")]
+    pub fn from_url(
+        blob_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
@@ -53,32 +49,92 @@ impl AppendBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedAppendBlobClient::new(
-            endpoint,
-            credential,
-            container_name,
-            blob_name,
-            Some(options),
-        )?;
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !blob_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{blob_url} must use https"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
+
         Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
+            endpoint: blob_url,
+            version: options.version,
+            pipeline,
         })
     }
+}
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+impl AppendBlobClient {
+    /// Creates a new AppendBlobClient, using Entra ID authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `container_name` - The name of the container containing this Append blob.
+    /// * `blob_name` - The name of the Append blob to interact with.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn new(
+        endpoint: &str,
+        container_name: &str,
+        blob_name: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<AppendBlobClientOptions>,
+    ) -> Result<Self> {
+        let mut url = Url::parse(endpoint)?;
+
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
+        }
+
+        let client = GeneratedAppendBlobClient::from_url(url, credential, options)?;
+        Ok(Self { client })
     }
 
-    /// Gets the container name of the Storage account this client is connected to.
-    pub fn container_name(&self) -> &str {
-        &self.client.container_name
+    /// Creates a new AppendBlobClient from a blob URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the Append blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_url(
+        blob_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<AppendBlobClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedAppendBlobClient::from_url(blob_url, credential, options)?;
+
+        Ok(Self { client })
     }
 
-    /// Gets the blob name of the Storage account this client is connected to.
-    pub fn blob_name(&self) -> &str {
-        &self.client.blob_name
+    /// Gets the URL of the resource this client is configured for.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Creates a new Append blob.

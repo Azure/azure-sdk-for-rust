@@ -110,7 +110,7 @@ impl CosmosClient {
     /// use azure_core::credentials::Secret;
     ///
     /// let client = CosmosClient::with_connection_string(
-    ///     "AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey",
+    ///     Secret::from("AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey"),
     ///     None)
     ///     .unwrap();
     /// ```

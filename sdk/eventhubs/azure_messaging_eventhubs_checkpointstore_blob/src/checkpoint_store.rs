@@ -68,9 +68,7 @@ impl BlobCheckpointStore {
         blob_name: &str,
         metadata: HashMap<String, String>,
     ) -> Result<(Option<OffsetDateTime>, Option<Etag>)> {
-        let blob_client = self
-            .blob_container_client
-            .blob_client(blob_name.to_string());
+        let blob_client = self.blob_container_client.blob_client(blob_name);
 
         let result = blob_client.set_metadata(metadata.clone(), None).await;
         match result {
@@ -106,9 +104,7 @@ impl BlobCheckpointStore {
         metadata: Option<HashMap<String, String>>,
         etag: Option<Etag>,
     ) -> Result<(Option<OffsetDateTime>, Option<Etag>)> {
-        let blob_client = self
-            .blob_container_client
-            .blob_client(blob_name.to_string());
+        let blob_client = self.blob_container_client.blob_client(blob_name);
 
         if etag.is_some() {
             debug!(
@@ -238,7 +234,7 @@ impl CheckpointStore for BlobCheckpointStore {
         };
 
         while let Some(blob) = blobs.try_next().await? {
-            let blob_body = blob.into_body().await?;
+            let blob_body = blob.into_body()?;
             debug!("Blob body: {blob_body:?}, {:?}", blob_body.container_name);
             for blob in blob_body.segment.blob_items.iter() {
                 let mut checkpoint = checkpoint.clone();
@@ -307,7 +303,7 @@ impl CheckpointStore for BlobCheckpointStore {
         };
 
         while let Some(blob) = blobs.try_next().await? {
-            let blob_body = blob.into_body().await?;
+            let blob_body = blob.into_body()?;
             debug!("Blob body: {blob_body:?}, {:?}", blob_body.container_name);
             for blob in blob_body.segment.blob_items.iter() {
                 let mut ownership = ownership.clone();
