@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
 - Added `UrlExt::append_path()`.
 
 ### Breaking Changes

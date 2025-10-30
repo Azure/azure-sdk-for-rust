@@ -109,6 +109,16 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// If `None` is returned, no headers will be checked.
     fn get_retry_headers(&self) -> Option<&RetryHeaders>;
 
+    /// Get the status codes that should trigger retries. When the returned slice
+    /// is empty, the policy retries these status codes:
+    /// - 408 Request Timeout
+    /// - 429 Too Many Requests
+    /// - 500 Internal Server Error
+    /// - 502 Bad Gateway
+    /// - 503 Service Unavailable
+    /// - 504 Gateway Timeout
+    fn get_retry_status_codes(&self) -> &[StatusCode];
+
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
     /// A Future that will wait until the request can be retried.
@@ -127,10 +137,10 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     }
 }
 
-/// The status codes where a retry should be attempted.
+/// Default status codes where a retry should be attempted.
 ///
 /// On all other 4xx and 5xx status codes no retry is attempted.
-const RETRY_STATUSES: &[StatusCode] = &[
+const DEFAULT_RETRY_STATUSES: &[StatusCode] = &[
     StatusCode::RequestTimeout,
     StatusCode::TooManyRequests,
     StatusCode::InternalServerError,
@@ -168,7 +178,13 @@ where
             let (last_result, retry_after) = match result {
                 Ok(response) => {
                     let status = response.status();
-                    if !RETRY_STATUSES.contains(&status) {
+                    let retry_status_codes = self.get_retry_status_codes();
+                    let retry_status_codes = if retry_status_codes.is_empty() {
+                        DEFAULT_RETRY_STATUSES
+                    } else {
+                        retry_status_codes
+                    };
+                    if !retry_status_codes.contains(&status) {
                         if status.is_success() {
                             trace!("server returned success status {}", status,);
                         } else {
@@ -242,7 +258,8 @@ mod test {
     use super::*;
     use crate::http::{
         headers::{Headers, RETRY_AFTER},
-        BufResponse, Context, FixedRetryOptions, Method, Request, RetryOptions, Url,
+        BufResponse, Context, ExponentialRetryOptions, FixedRetryOptions, Method, Request,
+        RetryOptions, Url,
     };
     use ::time::macros::datetime;
     use std::sync::{Arc, Mutex};
@@ -339,11 +356,11 @@ mod test {
             max_retries: retries,
             ..Default::default()
         })
-        .to_policy(retry_headers);
+        .to_policy(retry_headers, DEFAULT_RETRY_STATUSES);
         let ctx = Context::new();
         let url = Url::parse("http://localhost").unwrap();
 
-        for &status in RETRY_STATUSES {
+        for &status in DEFAULT_RETRY_STATUSES {
             let mut request = Request::new(url.clone(), Method::Get);
             let count = Arc::new(Mutex::new(0));
             let mock = StatusResponder {
@@ -385,5 +402,114 @@ mod test {
             *count.lock().unwrap(),
             "Policy shouldn't retry after receiving a response whose status isn't in RETRY_STATUSES"
         );
+    }
+
+    #[tokio::test]
+    async fn test_custom_status_codes() {
+        async fn test_custom_retry_statuses(retry_policy: Arc<dyn Policy>) {
+            let ctx = Context::new();
+            let url = Url::parse("http://localhost").unwrap();
+
+            let mut request = Request::new(url.clone(), Method::Get);
+            let count = Arc::new(Mutex::new(0));
+            let next = vec![Arc::new(StatusResponder {
+                request_count: count.clone(),
+                status: StatusCode::Gone,
+            }) as Arc<dyn Policy>];
+
+            let response = retry_policy
+                .send(&ctx, &mut request, &next)
+                .await
+                .expect("Policy should return a response after exhausting retries");
+
+            assert_eq!(response.status(), StatusCode::Gone);
+            assert_eq!(
+                2,
+                *count.lock().unwrap(),
+                "Policy should retry status in specified list"
+            );
+
+            let mut request = Request::new(url.clone(), Method::Get);
+            let count = Arc::new(Mutex::new(0));
+            let next = vec![Arc::new(StatusResponder {
+                request_count: count.clone(),
+                status: StatusCode::TooManyRequests,
+            }) as Arc<dyn Policy>];
+
+            let response = retry_policy
+                .send(&ctx, &mut request, &next)
+                .await
+                .expect("Policy should return a response without retrying");
+
+            assert_eq!(response.status(), StatusCode::TooManyRequests);
+            assert_eq!(
+                1,
+                *count.lock().unwrap(),
+                "Policy should not retry status not in custom retry list"
+            );
+        }
+
+        let statuses = vec![StatusCode::Gone];
+
+        let retry_policy = RetryOptions::fixed(FixedRetryOptions {
+            delay: Duration::nanoseconds(1),
+            max_retries: 1,
+            ..Default::default()
+        })
+        .to_policy(RetryHeaders::default(), &statuses);
+        test_custom_retry_statuses(retry_policy).await;
+
+        let retry_policy = RetryOptions::exponential(ExponentialRetryOptions {
+            initial_delay: Duration::nanoseconds(1),
+            max_retries: 1,
+            ..Default::default()
+        })
+        .to_policy(RetryHeaders::default(), &statuses);
+        test_custom_retry_statuses(retry_policy).await;
+    }
+
+    #[tokio::test]
+    async fn test_empty_status_codes_use_default_retry_behavior() {
+        async fn test_retries_for_default_statuses(retry_policy: Arc<dyn Policy>) {
+            let ctx = Context::new();
+            let url = Url::parse("http://localhost").unwrap();
+            for &status in DEFAULT_RETRY_STATUSES {
+                let mut request = Request::new(url.clone(), Method::Get);
+                let count = Arc::new(Mutex::new(0));
+                let mock = StatusResponder {
+                    request_count: count.clone(),
+                    status,
+                };
+                let next = vec![Arc::new(mock) as Arc<dyn Policy>];
+                let result = retry_policy
+                    .send(&ctx, &mut request, &next)
+                    .await
+                    .expect("Policy should return after exhausting retries");
+                assert_eq!(result.status(), status);
+                assert_eq!(
+                    2,
+                    *count.lock().unwrap(),
+                    "Policy should retry {status} when given an empty list of status codes"
+                );
+            }
+        }
+
+        let empty: &[StatusCode] = &[];
+
+        let retry_policy = RetryOptions::fixed(FixedRetryOptions {
+            delay: Duration::nanoseconds(1),
+            max_retries: 1,
+            ..Default::default()
+        })
+        .to_policy(RetryHeaders::default(), empty);
+        test_retries_for_default_statuses(retry_policy).await;
+
+        let retry_policy = RetryOptions::exponential(ExponentialRetryOptions {
+            initial_delay: Duration::nanoseconds(1),
+            max_retries: 1,
+            ..Default::default()
+        })
+        .to_policy(RetryHeaders::default(), empty);
+        test_retries_for_default_statuses(retry_policy).await;
     }
 }

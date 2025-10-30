@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 use super::RetryPolicy;
-use crate::{http::policies::RetryHeaders, time::Duration};
+use crate::{
+    http::{policies::RetryHeaders, StatusCode},
+    time::Duration,
+};
 
 /// Retry policy with exponential back-off.
 ///
@@ -18,6 +21,7 @@ pub(crate) struct ExponentialRetryPolicy {
     max_elapsed: Duration,
     max_delay: Duration,
     retry_headers: RetryHeaders,
+    status_codes: Vec<StatusCode>,
 }
 
 impl ExponentialRetryPolicy {
@@ -27,6 +31,7 @@ impl ExponentialRetryPolicy {
         max_elapsed: Duration,
         max_delay: Duration,
         retry_headers: RetryHeaders,
+        status_codes: Vec<StatusCode>,
     ) -> Self {
         Self {
             initial_delay: initial_delay.max(Duration::milliseconds(1)),
@@ -34,6 +39,7 @@ impl ExponentialRetryPolicy {
             max_elapsed,
             max_delay: max_delay.max(Duration::seconds(1)),
             retry_headers,
+            status_codes,
         }
     }
 }
@@ -45,6 +51,10 @@ impl RetryPolicy for ExponentialRetryPolicy {
 
     fn get_retry_headers(&self) -> Option<&RetryHeaders> {
         Some(&self.retry_headers)
+    }
+
+    fn get_retry_status_codes(&self) -> &[StatusCode] {
+        &self.status_codes
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
@@ -83,6 +93,7 @@ mod tests {
                     RETRY_AFTER,
                 ],
             },
+            vec![],
         );
 
         let mut elapsed_time = Duration::seconds(0);
