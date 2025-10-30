@@ -18,6 +18,7 @@ pub struct AccountLocation {
 
 /// Describes replica set sizing characteristics for user/system replication policies.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+// cSpell:disable
 pub struct ReplicationPolicy {
     #[serde(rename = "minReplicaSetSize")]
     pub min_replica_set_size: i32,
@@ -114,6 +115,7 @@ impl AccountProperties {
 }
 
 #[cfg(test)]
+// cSpell:disable
 mod tests {
     use super::*;
 

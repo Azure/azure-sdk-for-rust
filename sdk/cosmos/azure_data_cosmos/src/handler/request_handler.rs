@@ -9,10 +9,12 @@ use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{ItemOptions, PartitionKey};
 use azure_core::http::Response;
 
-/// Concrete retry handler implementation with exponential back off.
-/// This handler provides automatic retry capabilities for Cosmos DB operations using
-/// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
-/// that handles both transient network errors and HTTP error responses.
+/// Facade wrapping a `CosmosPipeline` to add retry/backoff when sending requests.
+///
+/// Builds a `CosmosRequest`, sets routing context, and dispatches through
+/// `BackOffRetryHandler` which applies exponential backoff for transient
+/// failures (e.g. throttling). Produces typed `Response<T>` while keeping
+/// the underlying pipeline pluggable.
 #[derive(Debug, Clone)]
 pub struct RequestHandler {
     pipeline: CosmosPipeline,
