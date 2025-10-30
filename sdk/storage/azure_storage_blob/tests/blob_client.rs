@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
+    error::ErrorKind,
     http::{ClientOptions, RequestContent, StatusCode},
     Bytes,
 };
@@ -13,11 +14,13 @@ use azure_storage_blob::{
         BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientUploadOptions, LeaseState,
+        BlockBlobClientUploadOptions, LeaseState, StorageError,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, get_container_name, recorded_test_setup,
+};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
@@ -493,6 +496,103 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
+async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Act
+    let response = blob_client.download(None).await;
+    let error_response = response.unwrap_err();
+
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+
+    let storage_error: StorageError = error_response.try_into()?;
+    println!("{}", storage_error);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_bodyless_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Act
+    let response = blob_client.get_properties(None).await;
+    let error_response = response.unwrap_err();
+
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+
+    let storage_error: StorageError = error_response.try_into()?;
+
+    println!("{}", storage_error);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_additional_storage_info_parsing(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+
+    let recording = ctx.recording();
+    let container_name = get_container_name(recording);
+    let (options, endpoint) = recorded_test_setup(recording);
+    let container_client_options = BlobContainerClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        &container_name,
+        Some(recording.credential()),
+        Some(container_client_options),
+    )?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&source_blob_client, None, None).await?;
+
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    let blob_name = get_blob_name(recording);
+    let overwrite_blob_client = container_client.blob_client(&blob_name);
+    create_test_blob(
+        &overwrite_blob_client,
+        Some(RequestContent::from(b"overruled!".to_vec())),
+        None,
+    )
+    .await?;
+
+    // Inject an erroneous 'c' so we raise Copy Source Errors
+    let overwrite_url = format!(
+        "{}{}c/{}",
+        overwrite_blob_client.url(),
+        container_name,
+        blob_name
+    );
+
+    // Copy Source Error Scenario
+    let response = blob_client
+        .block_blob_client()
+        .upload_blob_from_url(overwrite_url.clone(), None)
+        .await;
+    // Assert
+    let error = response.unwrap_err();
+    assert_eq!(StatusCode::NotFound, error.http_status().unwrap());
+
+    let storage_error: StorageError = error.try_into()?;
+
+    println!("{}", storage_error);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -507,7 +607,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     // BlobClient Options
     let blob_client_options = BlobClientOptions {
-        client_options: client_options.clone(),
         ..Default::default()
     };
 

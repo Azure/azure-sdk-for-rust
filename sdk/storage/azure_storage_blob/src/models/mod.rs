@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 mod extensions;
+mod storage_error;
 
 pub use crate::generated::models::{
     AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
@@ -84,3 +85,4 @@ pub use crate::generated::models::{
     UserDelegationKey, UserDelegationKeyHeaders, VecSignedIdentifierHeaders,
 };
 pub use extensions::*;
+pub use storage_error::StorageError;

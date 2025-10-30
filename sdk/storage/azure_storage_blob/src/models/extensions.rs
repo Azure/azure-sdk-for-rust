@@ -6,7 +6,6 @@ use crate::models::{
     BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions,
     PageBlobClientCreateOptions,
 };
-use azure_core::error::ErrorKind;
 use std::collections::HashMap;
 
 /// Augments the current options bag to only create if the Page blob does not already exist.
