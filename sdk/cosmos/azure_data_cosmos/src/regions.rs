@@ -5,6 +5,7 @@
 /// that are currently supported by the Azure Cosmos DB service.
 pub struct Regions;
 
+// cSpell:disable
 impl Regions {
     pub const WEST_US: &'static str = "West US";
     pub const WEST_US_2: &'static str = "West US 2";
