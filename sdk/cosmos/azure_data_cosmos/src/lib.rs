@@ -27,9 +27,9 @@ pub use query::Query;
 
 pub use feed::{FeedPage, FeedPager};
 mod cosmos_request;
-mod cosmos_request_context;
 mod handler;
 mod operation_context;
 pub mod regions;
+mod request_context;
 mod retry_policies;
 pub mod routing;

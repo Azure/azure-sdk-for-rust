@@ -48,16 +48,13 @@ impl RequestHandler {
         options: Option<ItemOptions<'_>>,
         resource_link: ResourceLink,
     ) -> azure_core::Result<Response<T>> {
-        // TODO: Pass the real resource id (RID) if available; None means it may be resolved later.
-        // `CosmosRequest::new` signature:
-        // (operation_type, resource_type, resource_id: Option<String>, partition_key, body, headers: Option<Headers>, is_name_based, auth_token_type, options)
         let mut cosmos_request = CosmosRequest::new(
             operation_type,
             resource_type,
             None, // resource_id (RID) not yet known here
             partition_key,
-            body,  // raw body bytes (if any)
-            false, // is_name_based
+            body,
+            false,
             AuthorizationTokenType::Primary,
             options,
         );
@@ -89,5 +86,55 @@ impl RequestHandler {
 
         // Convert RawResponse into typed Response<T>
         res.map(Into::into)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
+    use azure_core::time::{Duration, OffsetDateTime};
+    use std::sync::Arc;
+
+    #[derive(Debug)]
+    struct TestTokenCredential;
+
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    impl TokenCredential for TestTokenCredential {
+        async fn get_token(
+            &self,
+            _scopes: &[&str],
+            _: Option<TokenRequestOptions<'_>>,
+        ) -> azure_core::Result<AccessToken> {
+            Ok(AccessToken::new(
+                "test_token".to_string(),
+                OffsetDateTime::now_utc().saturating_add(Duration::minutes(5)),
+            ))
+        }
+    }
+
+    fn test_pipeline() -> CosmosPipeline {
+        let cred: Arc<dyn TokenCredential> = Arc::new(TestTokenCredential);
+        let auth = crate::pipeline::AuthorizationPolicy::from_token_credential(cred);
+        CosmosPipeline::new(
+            "https://example.com/".parse().unwrap(),
+            auth,
+            Default::default(),
+        )
+    }
+
+    #[test]
+    fn new_preserves_endpoint() {
+        let pipeline = test_pipeline();
+        let endpoint = pipeline.endpoint.clone();
+        let handler = RequestHandler::new(pipeline.clone());
+        assert_eq!(
+            endpoint, handler.pipeline.endpoint,
+            "handler should retain pipeline endpoint"
+        );
+        // cloning handler should preserve endpoint
+        let handler_clone = handler.clone();
+        assert_eq!(handler_clone.pipeline.endpoint, handler.pipeline.endpoint);
     }
 }

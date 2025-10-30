@@ -106,11 +106,12 @@ impl CosmosClient {
         Ok(client)
     }
 
-    /// Reads the properties of the database.
+    /// Retrieves the Cosmos DB account ("database account") properties.
     ///
     /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional request options (currently unused for custom
+    ///   headers, but the context can carry per-call metadata for tracing or
+    ///   cancellation).
     async fn get_database_account(
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
