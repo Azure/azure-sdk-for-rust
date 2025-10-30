@@ -327,12 +327,14 @@ impl BlobClient {
     }
 
     /// Full URL for the blob.
+    ///
+    /// Leading and trailing `/` characters in the blob name are preserved so the generated URL
+    /// addresses the exact blob requested.
     pub fn url(&self) -> azure_core::Result<Url> {
         let mut url = self.container_client().url()?;
-        let parts = self.blob_name().trim_matches('/').split('/');
         url.path_segments_mut()
             .map_err(|()| Error::message(ErrorKind::DataConversion, "Invalid url"))?
-            .extend(parts);
+            .extend(self.blob_name().split('/'));
         Ok(url)
     }
 
@@ -446,13 +448,26 @@ mod tests {
         let url = build_url("a", "/b/c/d", &sas);
         assert_eq!(
             url.as_str(),
-            "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d?fake_token"
+            "http://127.0.0.1:10000/devstoreaccount1/a//b/c/d?fake_token"
         );
 
         let url = build_url("a", "b/c/d/hi there", &sas);
         assert_eq!(
             url.as_str(),
             "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d/hi%20there?fake_token"
+        );
+    }
+
+    #[test]
+    fn test_generate_url_preserves_leading_and_trailing_slashes() {
+        let sas = FakeSas {
+            token: "fake_token".to_owned(),
+        };
+
+        let url = build_url("a", "//foo/bar//", &sas);
+        assert_eq!(
+            url.as_str(),
+            "http://127.0.0.1:10000/devstoreaccount1/a///foo/bar//?fake_token"
         );
     }
 }
