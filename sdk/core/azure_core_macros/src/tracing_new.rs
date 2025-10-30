@@ -542,7 +542,7 @@ mod tests {
                     ));
                 }
                 endpoint.set_query(None);
-                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                     credential,
                     vec!["https://vault.azure.net/.default"],
                 ));
@@ -581,7 +581,7 @@ mod tests {
                     ));
                 }
                 endpoint.set_query(None);
-                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                     credential,
                     vec!["https://vault.azure.net/.default"],
                 ));
@@ -635,7 +635,7 @@ mod tests {
                     ));
                 }
                 endpoint.set_query(None);
-                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                     credential,
                     vec!["https://vault.azure.net/.default"],
                 ));
@@ -674,7 +674,7 @@ mod tests {
                     ));
                 }
                 endpoint.set_query(None);
-                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                     credential,
                     vec!["https://vault.azure.net/.default"],
                 ));
