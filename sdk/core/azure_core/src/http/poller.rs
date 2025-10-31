@@ -246,10 +246,10 @@ pub trait StatusMonitor {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-type BoxedStream<'a, M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + Send + 'a>;
+type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + Send + 'static>;
 
 #[cfg(target_arch = "wasm32")]
-type BoxedStream<'a, M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + 'a>;
+type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + 'static>;
 
 #[cfg(not(target_arch = "wasm32"))]
 type BoxedFuture<M> = Box<
@@ -336,16 +336,16 @@ type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 /// # Ok(()) }
 /// ```
 #[pin_project::pin_project]
-pub struct Poller<'a, M, F: Format = JsonFormat>
+pub struct Poller<M, F: Format = JsonFormat>
 where
     M: StatusMonitor,
 {
     #[pin]
-    stream: Pin<BoxedStream<'a, M, F>>,
+    stream: Pin<BoxedStream<M, F>>,
     target: Option<BoxedFuture<M>>,
 }
 
-impl<'a, M, F> Poller<'a, M, F>
+impl<'a, M, F> Poller<M, F>
 where
     M: StatusMonitor,
     F: Format + Send,
@@ -392,7 +392,7 @@ where
     /// let url = "https://example.com/my_operation".parse().unwrap();
     /// let mut req = Request::new(url, Method::Post);
     ///
-    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>| {
+    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>, ctx| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -409,7 +409,7 @@ where
     ///             .append_pair("api-version", &api_version);
     ///
     ///         let resp = pipeline
-    ///             .send(&Context::new(), &mut req, None)
+    ///             .send(&ctx, &mut req, None)
     ///             .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: OperationResult = json::from_json(&body)?;
@@ -444,21 +444,22 @@ where
     ///             _ => Ok(PollerResult::Done { response: resp })
     ///         }
     ///     }
-    /// }, None);
+    /// }, Context::new(), None);
     /// ```
     pub fn from_callback<
-        #[cfg(not(target_arch = "wasm32"))] N: Send + 'a,
-        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'a,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'a,
-        #[cfg(target_arch = "wasm32")] N: 'a,
-        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'a,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'a,
+        #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] N: 'static,
+        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
     >(
         make_request: Fun,
         ctx: Context<'a>,
         options: Option<PollerOptions>,
     ) -> Self
     where
+        'a: 'static,
         M: Send + 'static,
         M::Output: Send + 'static,
         M::Format: Send + 'static,
@@ -479,8 +480,8 @@ where
     /// also taking into account any `retry-after` header.
     pub fn from_stream<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = crate::Result<Response<M, F>>> + Send + 'a,
-        #[cfg(target_arch = "wasm32")] S: Stream<Item = crate::Result<Response<M, F>>> + 'a,
+        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = crate::Result<Response<M, F>>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] S: Stream<Item = crate::Result<Response<M, F>>> + 'static,
     >(
         stream: S,
     ) -> Self {
@@ -491,7 +492,7 @@ where
     }
 }
 
-impl<M, F: Format> Stream for Poller<'_, M, F>
+impl<M, F: Format> Stream for Poller<M, F>
 where
     M: StatusMonitor,
 {
@@ -508,7 +509,7 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl<'a, M, F: Format + 'static> IntoFuture for Poller<'a, M, F>
+impl<M, F: Format + 'static> IntoFuture for Poller<M, F>
 where
     M: StatusMonitor + 'static,
     M::Output: Send + 'static,
@@ -516,7 +517,7 @@ where
 {
     type Output = crate::Result<Response<M::Output, M::Format>>;
     // Tie the boxed future's lifetime to 'a so it can capture Context<'a> without requiring 'static.
-    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send + 'a>>;
+    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send + 'static>>;
 
     fn into_future(mut self) -> Self::IntoFuture {
         Box::pin(async move {
@@ -572,7 +573,7 @@ where
     }
 }
 
-impl<M: StatusMonitor, F: Format> fmt::Debug for Poller<'_, M, F> {
+impl<M: StatusMonitor, F: Format> fmt::Debug for Poller<M, F> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Poller")
     }
@@ -605,21 +606,22 @@ fn create_poller_stream<
     'a,
     M,
     F: Format,
-    #[cfg(not(target_arch = "wasm32"))] N: Send + 'a,
-    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'a,
-    #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'a,
-    #[cfg(target_arch = "wasm32")] N: 'a,
-    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'a,
-    #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'a,
+    #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
+    #[cfg(target_arch = "wasm32")] N: 'static,
+    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
 >(
     make_request: Fun,
     ctx: Context<'a>,
     options: Option<PollerOptions>,
 ) -> (
-    impl Stream<Item = crate::Result<Response<M, F>>> + 'a,
+    impl Stream<Item = crate::Result<Response<M, F>>> + 'static,
     BoxedFuture<M>,
 )
 where
+    'a: 'static,
     M: StatusMonitor + 'static,
     M::Output: Send + 'static,
     M::Format: Send + 'static,

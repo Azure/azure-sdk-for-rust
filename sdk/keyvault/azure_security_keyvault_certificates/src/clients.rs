@@ -77,7 +77,7 @@ impl CertificateClient {
         certificate_name: &str,
         parameters: RequestContent<CreateCertificateParameters>,
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
-    ) -> Result<Poller<'_, CertificateOperation>> {
+    ) -> Result<Poller<CertificateOperation>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
 

@@ -16,7 +16,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        pager::{PagerResult, PagerState},
+        pager::{PagerOptions, PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
@@ -255,7 +255,7 @@ impl QueueServiceClient {
         }
         let version = self.version.clone();
         Ok(PageIterator::from_callback(
-            move |marker: PagerState<String>| {
+            move |marker: PagerState<String>, ctx| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
@@ -275,7 +275,6 @@ impl QueueServiceClient {
                     request.insert_header("x-ms-client-request-id", client_request_id);
                 }
                 request.insert_header("x-ms-version", &version);
-                let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
                     let rsp = pipeline
@@ -302,6 +301,9 @@ impl QueueServiceClient {
                     })
                 }
             },
+            Some(PagerOptions {
+                context: options.method_options.context.clone(),
+            }),
         ))
     }
 
