@@ -217,6 +217,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+Most Azure services return a standard error response model, which will populate the `status` and `error_code` with more specific information.
+The `raw_response` field (elided above) will always contain the `RawResponse` including the error response body in its entirety,
+and you can [deserialize](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_error_response.rs) the standard error response model to get more information.
+
 ### Consuming service methods returning `Pager<T>`
 
 If a service call returns multiple values in pages, it should return `Result<Pager<T>>` as a result. You can iterate all items from all pages.
