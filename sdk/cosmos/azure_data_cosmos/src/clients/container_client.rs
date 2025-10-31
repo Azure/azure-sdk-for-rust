@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use crate::{
-    constants,
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
@@ -11,6 +10,8 @@ use crate::{
     ThroughputOptions,
 };
 
+use crate::handler::request_handler::RequestHandler;
+use crate::operation_context::OperationType;
 use azure_core::http::{
     request::{options::ContentType, Request},
     response::Response,
@@ -26,6 +27,7 @@ pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
     pipeline: CosmosPipeline,
+    request_handler: RequestHandler,
 }
 
 impl ContainerClient {
@@ -38,11 +40,13 @@ impl ContainerClient {
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Items);
+        let request_handler = RequestHandler::new(pipeline.clone());
 
         Self {
             link,
             items_link,
             pipeline,
+            request_handler,
         }
     }
 
@@ -256,17 +260,14 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&item)?;
-        self.pipeline
+        let body = serde_json::to_vec(&item)?;
+        self.request_handler
             .send(
-                options.method_options.context,
-                &mut req,
+                partition_key.into(),
+                Option::from(body),
+                OperationType::Create,
+                ResourceType::Items,
+                options,
                 self.items_link.clone(),
             )
             .await
@@ -344,16 +345,17 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Put);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&item)?;
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
+        let body = serde_json::to_vec(&item)?;
+        self.request_handler
+            .send(
+                partition_key.into(),
+                Option::from(body),
+                OperationType::Replace,
+                ResourceType::Items,
+                options,
+                link,
+            )
             .await
     }
 
@@ -431,18 +433,14 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options)?;
-        req.insert_header(constants::IS_UPSERT, "true");
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&item)?;
-        self.pipeline
+        let body = serde_json::to_vec(&item)?;
+        self.request_handler
             .send(
-                options.method_options.context,
-                &mut req,
+                partition_key.into(),
+                Option::from(body),
+                OperationType::Upsert,
+                ResourceType::Items,
+                options,
                 self.items_link.clone(),
             )
             .await
@@ -490,12 +488,15 @@ impl ContainerClient {
         options.enable_content_response_on_write = true;
 
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Get);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
+        self.request_handler
+            .send(
+                partition_key.into(),
+                None,
+                OperationType::Read,
+                ResourceType::Items,
+                Option::from(options.clone()),
+                link,
+            )
             .await
     }
 
@@ -525,14 +526,16 @@ impl ContainerClient {
         item_id: &str,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Delete);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
+        self.request_handler
+            .send(
+                partition_key.into(),
+                None,
+                OperationType::Delete,
+                ResourceType::Items,
+                options,
+                link,
+            )
             .await
     }
 
@@ -598,17 +601,17 @@ impl ContainerClient {
         patch: PatchDocument,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Patch);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&patch)?;
-
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
+        let body = serde_json::to_vec(&patch)?;
+        self.request_handler
+            .send(
+                partition_key.into(),
+                Option::from(body),
+                OperationType::Delete,
+                ResourceType::Items,
+                options,
+                link,
+            )
             .await
     }
 

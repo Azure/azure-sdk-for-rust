@@ -7,6 +7,7 @@ use crate::{
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
+    ReadDatabaseOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -19,6 +20,7 @@ use azure_core::{
 use serde::Serialize;
 use std::sync::Arc;
 
+use crate::models::AccountProperties;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 
@@ -61,6 +63,8 @@ impl CosmosClient {
                 options.client_options,
             ),
         })
+        // Initialize and warm-up database account, endpoint manager and caches.
+        // Self::initialize(client.clone()).await?;
     }
 
     /// Creates a new CosmosClient, using key authentication.
@@ -94,6 +98,33 @@ impl CosmosClient {
                 options.client_options,
             ),
         })
+    }
+
+    #[allow(dead_code)]
+    async fn initialize(client: CosmosClient) -> azure_core::Result<Self> {
+        let _account = client.get_database_account(None).await?.into_body()?;
+        Ok(client)
+    }
+
+    /// Retrieves the Cosmos DB account ("database account") properties.
+    ///
+    /// # Arguments
+    /// * `options` - Optional request options (currently unused for custom
+    ///   headers, but the context can carry per-call metadata for tracing or
+    ///   cancellation).
+    async fn get_database_account(
+        &self,
+        options: Option<ReadDatabaseOptions<'_>>,
+    ) -> azure_core::Result<Response<AccountProperties>> {
+        let options = options.unwrap_or_default();
+        let mut req = Request::new(self.pipeline.endpoint.clone(), Method::Get);
+        self.pipeline
+            .send(
+                options.method_options.context,
+                &mut req,
+                ResourceLink::root(ResourceType::DatabaseAccount),
+            )
+            .await
     }
 
     /// Creates a new CosmosClient, using a connection string.

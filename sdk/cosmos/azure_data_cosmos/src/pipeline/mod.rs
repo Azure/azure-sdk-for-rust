@@ -16,7 +16,6 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
-use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::{
     constants,
     models::ThroughputProperties,
@@ -29,7 +28,6 @@ use crate::{
 pub struct CosmosPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
-    retry_handler: BackOffRetryHandler,
 }
 
 impl CosmosPipeline {
@@ -48,11 +46,7 @@ impl CosmosPipeline {
             None,
         );
 
-        CosmosPipeline {
-            endpoint,
-            pipeline,
-            retry_handler: BackOffRetryHandler,
-        }
+        CosmosPipeline { endpoint, pipeline }
     }
 
     /// Creates a [`Url`] out of the provided [`ResourceLink`]
@@ -73,17 +67,7 @@ impl CosmosPipeline {
         // Clone pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
-
-        // Build a sender closure that forwards to the inner pipeline.send
-        let sender = move |req: &mut Request| {
-            let pipeline = pipeline.clone();
-            let ctx = ctx_owned.clone();
-            let mut req_clone = req.clone();
-            async move { pipeline.send(&ctx, &mut req_clone, None).await }
-        };
-
-        // Delegate to the retry handler, providing the sender callback
-        self.retry_handler.send(request, sender).await
+        pipeline.send(&ctx_owned, request, None).await
     }
 
     pub async fn send<T>(

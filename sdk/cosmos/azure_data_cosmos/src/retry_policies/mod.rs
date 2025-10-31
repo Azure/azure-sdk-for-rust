@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 pub mod resource_throttle_retry_policy;
+use crate::cosmos_request::CosmosRequest;
 use async_trait::async_trait;
-use azure_core::http::{RawResponse, Request};
+use azure_core::http::RawResponse;
 use azure_core::time::Duration;
 
 /// Result of a retry policy decision
@@ -47,7 +48,7 @@ pub trait RetryPolicy: Send + Sync {
     /// This method is invoked immediately before each request is sent (including retries).
     /// # Arguments
     /// * `request` - Mutable reference to the HTTP request being sent
-    fn before_send_request(&self, _request: &mut Request) {}
+    fn before_send_request(&self, _request: &mut CosmosRequest) {}
 
     /// Determines whether an HTTP request should be retried based on the response or error
     ///
