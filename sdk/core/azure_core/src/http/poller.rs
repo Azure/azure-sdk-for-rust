@@ -7,12 +7,14 @@ use crate::{
     error::{ErrorKind, ErrorResponse},
     http::{
         headers::{HeaderName, Headers},
-        Format, JsonFormat, Response, StatusCode,
+        policies::create_public_api_span,
+        Context, Format, JsonFormat, Response, StatusCode,
     },
     sleep,
     time::{Duration, OffsetDateTime},
+    tracing::{Span, SpanStatus},
 };
-use futures::{stream::unfold, Stream, StreamExt};
+use futures::{channel::oneshot, stream::unfold, Stream, StreamExt};
 use serde::Deserialize;
 use std::{
     convert::Infallible,
@@ -20,7 +22,8 @@ use std::{
     future::{Future, IntoFuture},
     pin::Pin,
     str::FromStr,
-    task::{Context, Poll},
+    sync::Arc,
+    task::{Context as TaskContext, Poll},
 };
 
 /// Default retry time for long-running operations if no retry-after header is present
@@ -243,10 +246,10 @@ pub trait StatusMonitor {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + Send>;
+type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + Send + 'static>;
 
 #[cfg(target_arch = "wasm32")]
-type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>>>;
+type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + 'static>;
 
 #[cfg(not(target_arch = "wasm32"))]
 type BoxedFuture<M> = Box<
@@ -342,7 +345,7 @@ where
     target: Option<BoxedFuture<M>>,
 }
 
-impl<M, F> Poller<M, F>
+impl<'a, M, F> Poller<M, F>
 where
     M: StatusMonitor,
     F: Format + Send,
@@ -389,7 +392,7 @@ where
     /// let url = "https://example.com/my_operation".parse().unwrap();
     /// let mut req = Request::new(url, Method::Post);
     ///
-    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>| {
+    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>, ctx| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -406,7 +409,7 @@ where
     ///             .append_pair("api-version", &api_version);
     ///
     ///         let resp = pipeline
-    ///             .send(&Context::new(), &mut req, None)
+    ///             .send(&ctx, &mut req, None)
     ///             .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: OperationResult = json::from_json(&body)?;
@@ -441,25 +444,27 @@ where
     ///             _ => Ok(PollerResult::Done { response: resp })
     ///         }
     ///     }
-    /// }, None);
+    /// }, Context::new(), None);
     /// ```
     pub fn from_callback<
         #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] N: 'static,
-        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
     >(
         make_request: Fun,
+        ctx: Context<'a>,
         options: Option<PollerOptions>,
     ) -> Self
     where
+        'a: 'static,
         M: Send + 'static,
         M::Output: Send + 'static,
         M::Format: Send + 'static,
     {
-        let (stream, target) = create_poller_stream(make_request, options);
+        let (stream, target) = create_poller_stream(make_request, ctx, options);
         Self {
             stream: Box::pin(stream),
             target: Some(target),
@@ -493,7 +498,7 @@ where
 {
     type Item = crate::Result<Response<M, F>>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut TaskContext<'_>) -> Poll<Option<Self::Item>> {
         let state = self.project().stream.poll_next(cx);
         if let Poll::Ready(Some(Ok(ref response))) = state {
             check_status_code(response)?;
@@ -511,7 +516,8 @@ where
     M::Format: Send + 'static,
 {
     type Output = crate::Result<Response<M::Output, M::Format>>;
-    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send>>;
+    // Tie the boxed future's lifetime to 'a so it can capture Context<'a> without requiring 'static.
+    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send + 'static>>;
 
     fn into_future(mut self) -> Self::IntoFuture {
         Box::pin(async move {
@@ -579,29 +585,47 @@ enum State<N> {
     Done,
 }
 
+/// Represents the state used for each iteration through the poller stream.
+struct UnfoldState<'a, M, N, Fun>
+where
+    M: StatusMonitor,
+{
+    /// The current polling state (Init, InProgress, or Done)
+    state: State<N>,
+    /// The callback function to make requests
+    make_request: Fun,
+    /// Optional channel sender for the target future
+    target_tx: Option<oneshot::Sender<Pin<BoxedFuture<M>>>>,
+    /// The context for the operation
+    ctx: Context<'a>,
+    /// Whether a span was added to the context
+    added_span: bool,
+}
+
 fn create_poller_stream<
+    'a,
     M,
     F: Format,
     #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
     #[cfg(target_arch = "wasm32")] N: 'static,
-    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
 >(
     make_request: Fun,
+    ctx: Context<'a>,
     options: Option<PollerOptions>,
 ) -> (
     impl Stream<Item = crate::Result<Response<M, F>>> + 'static,
     BoxedFuture<M>,
 )
 where
+    'a: 'static,
     M: StatusMonitor + 'static,
     M::Output: Send + 'static,
     M::Format: Send + 'static,
 {
-    use futures::channel::oneshot;
-
     let (target_tx, target_rx) = oneshot::channel();
     let frequency = options
         .unwrap_or_default()
@@ -614,15 +638,36 @@ where
 
     let stream = unfold(
         // We flow the `make_request` callback through the state value to avoid cloning.
-        (State::Init, make_request, Some(target_tx)),
-        move |(state, make_request, target_tx)| async move {
-            let result = match state {
-                State::Init => make_request(PollerState::Initial).await,
-                State::InProgress(n) => make_request(PollerState::More(n)).await,
+        UnfoldState::<M, N, Fun> {
+            state: State::Init,
+            make_request,
+            target_tx: Some(target_tx),
+            ctx,
+            added_span: false,
+        },
+        move |mut unfold_state| async move {
+            let result = match unfold_state.state {
+                State::Init => {
+                    // At the very start of polling, create a span for the entire request, and attach it to the context
+                    let span = create_public_api_span(&unfold_state.ctx, None, None);
+                    if let Some(ref s) = span {
+                        unfold_state.added_span = true;
+                        unfold_state.ctx = unfold_state.ctx.with_value(s.clone());
+                    }
+                    (unfold_state.make_request)(PollerState::Initial, unfold_state.ctx.clone())
+                        .await
+                }
+                State::InProgress(n) => {
+                    (unfold_state.make_request)(PollerState::More(n), unfold_state.ctx.clone())
+                        .await
+                }
                 State::Done => return None,
             };
             let (item, next_state) = match result {
-                Err(e) => return Some((Err(e), (State::Done, make_request, target_tx))),
+                Err(e) => {
+                    unfold_state.state = State::Done;
+                    return Some((Err(e), unfold_state));
+                }
                 Ok(PollerResult::InProgress {
                     response,
                     retry_after,
@@ -637,22 +682,49 @@ where
 
                     (Ok(response), State::InProgress(n))
                 }
-                Ok(PollerResult::Done { response }) => (Ok(response), State::Done),
+                Ok(PollerResult::Done { response }) => {
+                    // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
+                    // otherwise it is the responsibility of the caller to end their span.
+                    if unfold_state.added_span {
+                        if let Some(span) = unfold_state.ctx.value::<Arc<dyn Span>>() {
+                            // 5xx status codes SHOULD set status to Error.
+                            // The description should not be set because it can be inferred from "http.response.status_code".
+                            if response.status().is_server_error() {
+                                span.set_status(SpanStatus::Error {
+                                    description: "".to_string(),
+                                });
+                            }
+                            if response.status().is_client_error()
+                                || response.status().is_server_error()
+                            {
+                                span.set_attribute(
+                                    "error.type",
+                                    response.status().to_string().into(),
+                                );
+                            }
+
+                            span.end();
+                        }
+                    }
+                    (Ok(response), State::Done)
+                }
                 Ok(PollerResult::Succeeded {
                     response,
                     target: get_target,
                 }) => {
                     // Send the target callback through the channel
-                    if let Some(tx) = target_tx {
+                    if let Some(tx) = unfold_state.target_tx.take() {
                         let _ = tx.send(get_target());
                     }
-                    // Also yield the final status response and set target_tx to None since we consumed it
-                    return Some((Ok(response), (State::Done, make_request, None)));
+                    // Also yield the final status response
+                    unfold_state.state = State::Done;
+                    return Some((Ok(response), unfold_state));
                 }
             };
 
-            // Flow 'make_request' and target_tx through to avoid cloning
-            Some((item, (next_state, make_request, target_tx)))
+            // Update state and return
+            unfold_state.state = next_state;
+            Some((item, unfold_state))
         },
     );
 
@@ -813,8 +885,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -836,6 +909,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -894,9 +968,9 @@ mod tests {
                 .boxed()
             }))
         };
-
+        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -921,6 +995,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -980,8 +1055,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1013,6 +1089,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -1070,8 +1147,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1112,6 +1190,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -1172,8 +1251,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new(
@@ -1232,6 +1312,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -1294,8 +1375,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1332,6 +1414,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -1380,8 +1463,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1403,6 +1487,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -1466,8 +1551,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1506,6 +1592,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -1574,8 +1661,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1617,6 +1705,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
@@ -1686,8 +1775,9 @@ mod tests {
             }))
         };
 
+        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1728,6 +1818,7 @@ mod tests {
                     }
                 }
             },
+            ctx,
             None,
         );
 
