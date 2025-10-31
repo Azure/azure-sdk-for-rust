@@ -10,18 +10,19 @@ use serde_json::Value;
 
 /// Represents a single regional endpoint for the Cosmos DB account (readable or writable).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AccountLocation {
+#[serde(rename_all = "camelCase")]
+pub struct AccountRegion {
     pub name: String,
-    #[serde(rename = "databaseAccountEndpoint")]
     pub database_account_endpoint: String,
 }
 
 /// Describes replica set sizing characteristics for user/system replication policies.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 // cSpell:disable
+#[serde(rename_all = "camelCase")]
 pub struct ReplicationPolicy {
-    #[serde(rename = "minReplicaSetSize")]
     pub min_replica_set_size: i32,
+
     // Note: service returns key `maxReplicasetSize` (lowercase 's' in 'set')
     #[serde(rename = "maxReplicasetSize")]
     pub max_replica_set_size: i32,
@@ -29,17 +30,17 @@ pub struct ReplicationPolicy {
 
 /// User-configured default consistency level for the account.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ConsistencyPolicy {
-    #[serde(rename = "defaultConsistencyLevel")]
     pub default_consistency_level: String,
 }
 
 /// Read preference coefficients used by the service when selecting regions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ReadPolicy {
-    #[serde(rename = "primaryReadCoefficient")]
     pub primary_read_coefficient: i32,
-    #[serde(rename = "secondaryReadCoefficient")]
+
     pub secondary_read_coefficient: i32,
 }
 
@@ -72,10 +73,10 @@ pub struct AccountProperties {
     pub dbs: String,
 
     /// Regions currently accepting writes for the account (multi-master may yield >1).
-    pub writable_locations: Vec<AccountLocation>,
+    pub writable_locations: Vec<AccountRegion>,
 
     /// Regions from which the account can be read (includes writable regions plus any read regions).
-    pub readable_locations: Vec<AccountLocation>,
+    pub readable_locations: Vec<AccountRegion>,
 
     /// True when multi-master writes are enabled (more than one writable region allowed).
     pub enable_multiple_write_locations: bool,

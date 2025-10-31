@@ -56,12 +56,11 @@ impl RequestHandler {
             None, // resource_id (RID) not yet known here
             partition_key,
             body,
-            false,
             AuthorizationTokenType::Primary,
             options,
         );
         cosmos_request.request_context.location_endpoint_to_route =
-            Option::from(resource_link.url(&self.pipeline.endpoint));
+            Some(resource_link.url(&self.pipeline.endpoint));
 
         let item_options = cosmos_request.clone().options.unwrap_or_default();
 
@@ -78,7 +77,7 @@ impl RequestHandler {
         let sender = move |req: &mut CosmosRequest| {
             let pipeline = pipeline.clone();
             let ctx = ctx.clone();
-            let mut raw_req = req.clone().to_raw_request();
+            let mut raw_req = req.clone().into_raw_request();
             let url = resource_link_for_sender.clone();
             async move { pipeline.send_raw(ctx, &mut raw_req, url).await }
         };

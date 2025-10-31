@@ -48,22 +48,12 @@ pub struct CosmosRequest<'a> {
     pub document_name: Option<String>,
     pub partition_key: PartitionKey,
     pub options: Option<ItemOptions<'a>>,
-    pub is_name_based: bool,
     pub is_feed: bool,
-    pub is_resource_name_parsed_from_uri: bool,
     pub use_gateway_mode: bool,
-    pub use_status_code_for_failures: bool,
-    pub use_status_code_for_403: bool,
-    pub use_status_code_for_4041002: bool,
-    pub use_status_code_for_429: bool,
-    pub use_status_code_for_bad_request: bool,
-    pub disable_archival_partition_not_found_retry: bool,
-    pub disable_retry_with_policy: bool,
     pub force_name_cache_refresh: bool,
     pub force_partition_key_range_refresh: bool,
     pub force_collection_routing_map_refresh: bool,
     pub force_master_refresh: bool,
-    pub last_collection_routing_map_hash_code: i32,
     pub request_authorization_token_type: AuthorizationTokenType,
     pub partition_key_range_identity: Option<PartitionKeyRangeIdentity>,
     pub request_context: RequestContext,
@@ -77,14 +67,12 @@ pub struct CosmosRequest<'a> {
 impl<'a> CosmosRequest<'a> {
     /// Creates a new `CosmosRequest` with core operation metadata and optional
     /// body.
-    #[allow(clippy::too_many_arguments)]
     pub fn new(
         operation_type: OperationType,
         resource_type: ResourceType,
         resource_id: Option<String>,
         partition_key: PartitionKey,
         body: Option<Vec<u8>>,
-        is_name_based: bool,
         authorization_token_type: AuthorizationTokenType,
         options: Option<ItemOptions<'a>>,
     ) -> Self {
@@ -98,22 +86,12 @@ impl<'a> CosmosRequest<'a> {
             document_name: None,
             partition_key,
             options,
-            is_name_based,
             is_feed: false,
-            is_resource_name_parsed_from_uri: false,
             use_gateway_mode: false,
-            use_status_code_for_failures: false,
-            use_status_code_for_403: false,
-            use_status_code_for_4041002: false,
-            use_status_code_for_429: false,
-            use_status_code_for_bad_request: false,
-            disable_archival_partition_not_found_retry: false,
-            disable_retry_with_policy: false,
             force_name_cache_refresh: false,
             force_partition_key_range_refresh: false,
             force_collection_routing_map_refresh: false,
             force_master_refresh: false,
-            last_collection_routing_map_hash_code: 0,
             request_authorization_token_type: authorization_token_type,
             partition_key_range_identity: None,
             request_context: RequestContext::default(),
@@ -163,7 +141,7 @@ impl<'a> CosmosRequest<'a> {
     /// write operations, sets JSON content type, upsert header (when applicable)
     /// and attaches the body bytes. Panics if location routing information is
     /// missing from `request_context`.
-    pub fn to_raw_request(&self) -> Request {
+    pub fn into_raw_request(self) -> Request {
         let mut req = Request::new(
             self.request_context
                 .location_endpoint_to_route
@@ -203,7 +181,6 @@ mod tests {
             Some("dbs/Db/colls/Coll/docs/Doc".to_string()),
             PartitionKey::from("pk"),
             Some(b"{\"id\":\"1\"}".to_vec()),
-            true,
             AuthorizationTokenType::Primary,
             None,
         );
@@ -256,7 +233,7 @@ mod tests {
     #[test]
     fn to_raw_request_create_sets_headers() {
         let req = make_base_request(OperationType::Create);
-        let raw = req.to_raw_request();
+        let raw = req.into_raw_request();
         fn header_exists(raw: &Request, name: &azure_core::http::headers::HeaderName) -> bool {
             raw.headers().iter().any(|(n, _)| n == name)
         }
@@ -269,7 +246,7 @@ mod tests {
     #[test]
     fn to_raw_request_upsert_sets_upsert_header() {
         let req = make_base_request(OperationType::Upsert);
-        let raw = req.to_raw_request();
+        let raw = req.into_raw_request();
         let has_upsert = raw
             .headers()
             .iter()
@@ -280,7 +257,7 @@ mod tests {
     #[test]
     fn to_raw_request_read_omits_write_headers() {
         let req = make_base_request(OperationType::Read);
-        let raw = req.to_raw_request();
+        let raw = req.into_raw_request();
         // Read should not set content-type or upsert header
         let has_upsert = raw
             .headers()

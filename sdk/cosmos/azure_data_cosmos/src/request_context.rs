@@ -24,7 +24,6 @@ pub struct PartitionKeyRange;
 #[derive(Clone, Debug)]
 pub struct RequestContext {
     pub force_refresh_address_cache: bool,
-    pub last_partition_address_information_hash_code: i32,
     pub original_request_consistency_level: Option<String>, // Use enum if available
     pub quorum_selected_lsn: i64,
     pub global_committed_selected_lsn: i64,
@@ -39,21 +38,16 @@ pub struct RequestContext {
     pub local_region_request: bool,
     pub is_retry: bool,
     pub is_partition_failover_retry: bool,
-    pub exclude_regions: Option<Vec<String>>,
     pub failed_endpoints: Arc<Mutex<HashMap<Url, bool>>>,
     pub use_preferred_locations: Option<bool>,
     pub location_index_to_route: Option<i32>,
     pub location_endpoint_to_route: Option<Url>,
-    pub ensure_collection_exists_check: bool,
-    pub enable_connection_state_listener: bool,
-    pub serialized_source_collection_for_materialized_view: Option<String>,
 }
 
 impl Default for RequestContext {
     fn default() -> Self {
         Self {
             force_refresh_address_cache: false,
-            last_partition_address_information_hash_code: 0,
             original_request_consistency_level: None,
             quorum_selected_lsn: 0,
             global_committed_selected_lsn: 0,
@@ -68,14 +62,10 @@ impl Default for RequestContext {
             local_region_request: false,
             is_retry: false,
             is_partition_failover_retry: false,
-            exclude_regions: None,
             failed_endpoints: Arc::new(Mutex::new(HashMap::new())),
             use_preferred_locations: None,
             location_index_to_route: None,
             location_endpoint_to_route: None,
-            ensure_collection_exists_check: false,
-            enable_connection_state_listener: false,
-            serialized_source_collection_for_materialized_view: None,
         }
     }
 }
