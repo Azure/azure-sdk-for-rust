@@ -334,6 +334,12 @@ fn check_span_information(
             panic!("Expected attribute not found: {} = {:?}", key, value);
         }
     }
+    // Finally, ensure the span has been closed (`end()` was called).
+    assert!(
+        !*span.is_open.lock().unwrap(),
+        "Span {} was not ended",
+        span.name
+    );
 }
 
 /// Information about an instrumented API call.

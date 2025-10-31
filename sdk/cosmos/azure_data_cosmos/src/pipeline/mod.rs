@@ -6,7 +6,7 @@ mod signature_target;
 
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
-    pager::PagerState,
+    pager::{PagerOptions, PagerState},
     request::{options::ContentType, Request},
     response::Response,
     ClientOptions, Context, Method, RawResponse, RetryOptions,
@@ -116,24 +116,28 @@ impl CosmosPipeline {
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
         let ctx = ctx.with_value(resource_link).into_owned();
-        Ok(FeedPager::from_callback(move |continuation| {
-            // Then we have to clone it again to pass it in to the async block.
-            // This is because Pageable can't borrow any data, it has to own it all.
-            // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
-            let pipeline = pipeline.clone();
-            let mut req = base_request.clone();
-            let ctx = ctx.clone();
-            async move {
-                if let PagerState::More(continuation) = continuation {
-                    req.insert_header(constants::CONTINUATION, continuation);
+        Ok(FeedPager::from_callback(
+            move |continuation, ctx| {
+                // Then we have to clone it again to pass it in to the async block.
+                // This is because Pageable can't borrow any data, it has to own it all.
+                // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
+                let pipeline = pipeline.clone();
+                let mut req = base_request.clone();
+                async move {
+                    if let PagerState::More(continuation) = continuation {
+                        req.insert_header(constants::CONTINUATION, continuation);
+                    }
+
+                    let resp = pipeline.send(&ctx, &mut req, None).await?;
+                    let page = FeedPage::<T>::from_response(resp).await?;
+
+                    Ok(page.into())
                 }
-
-                let resp = pipeline.send(&ctx, &mut req, None).await?;
-                let page = FeedPage::<T>::from_response(resp).await?;
-
-                Ok(page.into())
-            }
-        }))
+            },
+            Some(PagerOptions {
+                context: ctx.clone(),
+            }),
+        ))
     }
 
     /// Helper function to read a throughput offer given a resource ID.
