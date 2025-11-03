@@ -20,7 +20,7 @@ pub struct PartitionKeyRange;
 /// or explicit endpoint), resolved partition ranges, session tokens, and
 /// various internal flags influencing retries and cache refresh behavior.
 #[allow(dead_code)]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct RequestContext {
     pub force_refresh_address_cache: bool,
     pub original_request_consistency_level: Option<String>, // Use enum if available
@@ -41,32 +41,6 @@ pub struct RequestContext {
     pub use_preferred_locations: Option<bool>,
     pub location_index_to_route: Option<i32>,
     pub location_endpoint_to_route: Option<Url>,
-}
-
-impl Default for RequestContext {
-    fn default() -> Self {
-        Self {
-            force_refresh_address_cache: false,
-            original_request_consistency_level: None,
-            quorum_selected_lsn: 0,
-            global_committed_selected_lsn: 0,
-            store_response: None,
-            perform_local_refresh_on_gone_exception: false,
-            effective_partition_key: None,
-            resolved_partition_key_range: None,
-            session_token: None,
-            performed_background_address_refresh: false,
-            resolved_collection_rid: None,
-            region_name: None,
-            local_region_request: false,
-            is_retry: false,
-            is_partition_failover_retry: false,
-            failed_endpoints: HashMap::new(),
-            use_preferred_locations: None,
-            location_index_to_route: None,
-            location_endpoint_to_route: None,
-        }
-    }
 }
 
 #[allow(dead_code)]
