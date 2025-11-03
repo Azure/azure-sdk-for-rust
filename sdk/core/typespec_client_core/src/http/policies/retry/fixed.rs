@@ -18,7 +18,7 @@ pub(crate) struct FixedRetryPolicy {
     max_retries: u32,
     max_elapsed: Duration,
     retry_headers: RetryHeaders,
-    status_codes: Vec<StatusCode>,
+    retry_status_codes: Vec<StatusCode>,
 }
 
 impl FixedRetryPolicy {
@@ -27,14 +27,14 @@ impl FixedRetryPolicy {
         max_retries: u32,
         max_elapsed: Duration,
         retry_headers: RetryHeaders,
-        status_codes: Vec<StatusCode>,
+        retry_status_codes: Vec<StatusCode>,
     ) -> Self {
         Self {
             delay: delay.max(Duration::milliseconds(10)),
             max_retries,
             max_elapsed,
             retry_headers,
-            status_codes,
+            retry_status_codes,
         }
     }
 }
@@ -48,8 +48,8 @@ impl super::RetryPolicy for FixedRetryPolicy {
         Some(&self.retry_headers)
     }
 
-    fn get_retry_status_codes(&self) -> &[StatusCode] {
-        &self.status_codes
+    fn retry_status_codes(&self) -> &[StatusCode] {
+        &self.retry_status_codes
     }
 
     fn sleep_duration(&self, _retry_count: u32) -> Duration {

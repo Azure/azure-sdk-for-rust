@@ -94,7 +94,7 @@ impl RetryOptions {
     pub(crate) fn to_policy(
         &self,
         retry_headers: RetryHeaders,
-        status_codes: &[StatusCode],
+        retry_status_codes: &[StatusCode],
     ) -> Arc<dyn Policy> {
         match &self.mode {
             RetryMode::Exponential(options) => Arc::new(ExponentialRetryPolicy::new(
@@ -103,14 +103,14 @@ impl RetryOptions {
                 options.max_total_elapsed,
                 options.max_delay,
                 retry_headers,
-                status_codes.to_vec(),
+                retry_status_codes.to_vec(),
             )),
             RetryMode::Fixed(options) => Arc::new(FixedRetryPolicy::new(
                 options.delay,
                 options.max_retries,
                 options.max_total_elapsed,
                 retry_headers,
-                status_codes.to_vec(),
+                retry_status_codes.to_vec(),
             )),
             RetryMode::Custom(c) => c.clone(),
             RetryMode::None => Arc::new(NoRetryPolicy::new(retry_headers)),

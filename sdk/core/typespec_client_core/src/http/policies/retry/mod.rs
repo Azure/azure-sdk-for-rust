@@ -117,7 +117,7 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// - 502 Bad Gateway
     /// - 503 Service Unavailable
     /// - 504 Gateway Timeout
-    fn get_retry_status_codes(&self) -> &[StatusCode];
+    fn retry_status_codes(&self) -> &[StatusCode];
 
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
@@ -140,7 +140,7 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
 /// Default status codes where a retry should be attempted.
 ///
 /// On all other 4xx and 5xx status codes no retry is attempted.
-const DEFAULT_RETRY_STATUSES: &[StatusCode] = &[
+const DEFAULT_RETRY_STATUS_CODES: &[StatusCode] = &[
     StatusCode::RequestTimeout,
     StatusCode::TooManyRequests,
     StatusCode::InternalServerError,
@@ -178,9 +178,9 @@ where
             let (last_result, retry_after) = match result {
                 Ok(response) => {
                     let status = response.status();
-                    let retry_status_codes = self.get_retry_status_codes();
+                    let retry_status_codes = self.retry_status_codes();
                     let retry_status_codes = if retry_status_codes.is_empty() {
-                        DEFAULT_RETRY_STATUSES
+                        DEFAULT_RETRY_STATUS_CODES
                     } else {
                         retry_status_codes
                     };
@@ -356,11 +356,11 @@ mod test {
             max_retries: retries,
             ..Default::default()
         })
-        .to_policy(retry_headers, DEFAULT_RETRY_STATUSES);
+        .to_policy(retry_headers, DEFAULT_RETRY_STATUS_CODES);
         let ctx = Context::new();
         let url = Url::parse("http://localhost").unwrap();
 
-        for &status in DEFAULT_RETRY_STATUSES {
+        for &status in DEFAULT_RETRY_STATUS_CODES {
             let mut request = Request::new(url.clone(), Method::Get);
             let count = Arc::new(Mutex::new(0));
             let mock = StatusResponder {
@@ -473,7 +473,7 @@ mod test {
         async fn test_retries_for_default_statuses(retry_policy: Arc<dyn Policy>) {
             let ctx = Context::new();
             let url = Url::parse("http://localhost").unwrap();
-            for &status in DEFAULT_RETRY_STATUSES {
+            for &status in DEFAULT_RETRY_STATUS_CODES {
                 let mut request = Request::new(url.clone(), Method::Get);
                 let count = Arc::new(Mutex::new(0));
                 let mock = StatusResponder {

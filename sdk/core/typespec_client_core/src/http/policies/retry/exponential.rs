@@ -21,7 +21,7 @@ pub(crate) struct ExponentialRetryPolicy {
     max_elapsed: Duration,
     max_delay: Duration,
     retry_headers: RetryHeaders,
-    status_codes: Vec<StatusCode>,
+    retry_status_codes: Vec<StatusCode>,
 }
 
 impl ExponentialRetryPolicy {
@@ -31,7 +31,7 @@ impl ExponentialRetryPolicy {
         max_elapsed: Duration,
         max_delay: Duration,
         retry_headers: RetryHeaders,
-        status_codes: Vec<StatusCode>,
+        retry_status_codes: Vec<StatusCode>,
     ) -> Self {
         Self {
             initial_delay: initial_delay.max(Duration::milliseconds(1)),
@@ -39,7 +39,7 @@ impl ExponentialRetryPolicy {
             max_elapsed,
             max_delay: max_delay.max(Duration::seconds(1)),
             retry_headers,
-            status_codes,
+            retry_status_codes,
         }
     }
 }
@@ -53,8 +53,8 @@ impl RetryPolicy for ExponentialRetryPolicy {
         Some(&self.retry_headers)
     }
 
-    fn get_retry_status_codes(&self) -> &[StatusCode] {
-        &self.status_codes
+    fn retry_status_codes(&self) -> &[StatusCode] {
+        &self.retry_status_codes
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
