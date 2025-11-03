@@ -25,6 +25,7 @@ use std::{
     sync::Arc,
     task::{Context as TaskContext, Poll},
 };
+use typespec_client_core::http::ClientMethodOptions;
 
 /// Default retry time for long-running operations if no retry-after header is present
 ///
@@ -448,14 +449,14 @@ where
     /// ```
     pub fn from_callback<
         #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>, PollerOptions) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] N: 'static,
-        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>, PollerOptions) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
     >(
         make_request: Fun,
-        ctx: Context<'a>,
+        method_options: Option<ClientMethodOptions<'a>>,
         options: Option<PollerOptions>,
     ) -> Self
     where
@@ -464,7 +465,9 @@ where
         M::Output: Send + 'static,
         M::Format: Send + 'static,
     {
-        let (stream, target) = create_poller_stream(make_request, ctx, options);
+        let method_options = method_options.unwrap_or_default();
+        let options = options.unwrap_or_default();
+        let (stream, target) = create_poller_stream(make_request, method_options, options);
         Self {
             stream: Box::pin(stream),
             target: Some(target),
@@ -600,6 +603,8 @@ where
     target_tx: Option<oneshot::Sender<TargetTransmitterType<'a, M>>>,
     /// The context for the operation
     ctx: Context<'a>,
+    /// The poller options
+    options: PollerOptions,
     /// Whether a span was added to the context
     added_span: bool,
 }
@@ -609,15 +614,15 @@ fn create_poller_stream<
     M,
     F: Format,
     #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, Context<'a>, PollerOptions) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
     #[cfg(target_arch = "wasm32")] N: 'static,
-    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, Context<'a>, PollerOptions) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
 >(
     make_request: Fun,
-    ctx: Context<'a>,
-    options: Option<PollerOptions>,
+    method_options: ClientMethodOptions<'a>,
+    options: PollerOptions,
 ) -> (
     impl Stream<Item = crate::Result<Response<M, F>>> + 'static,
     BoxedFuture<M>,
@@ -628,11 +633,10 @@ where
     M::Output: Send + 'static,
     M::Format: Send + 'static,
 {
+    let ctx = method_options.context.clone();
     let (target_tx, target_rx) = oneshot::channel();
-    let frequency = options
-        .unwrap_or_default()
-        .frequency
-        .unwrap_or(DEFAULT_RETRY_TIME);
+
+    let frequency = options.frequency.unwrap_or(DEFAULT_RETRY_TIME);
     assert!(
         frequency >= MIN_RETRY_TIME,
         "minimum polling frequency is 1 second"
@@ -645,6 +649,7 @@ where
             make_request,
             target_tx: Some(target_tx),
             ctx,
+            options,
             added_span: false,
         },
         move |mut poller_stream_state| async move {
@@ -659,6 +664,7 @@ where
                     (poller_stream_state.make_request)(
                         PollerState::Initial,
                         poller_stream_state.ctx.clone(),
+                        poller_stream_state.options,
                     )
                     .await
                 }
@@ -666,6 +672,7 @@ where
                     (poller_stream_state.make_request)(
                         PollerState::More(n),
                         poller_stream_state.ctx.clone(),
+                        poller_stream_state.options,
                     )
                     .await
                 }
@@ -921,9 +928,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -945,7 +951,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1004,9 +1010,8 @@ mod tests {
                 .boxed()
             }))
         };
-        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1031,7 +1036,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1091,9 +1096,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1125,7 +1129,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1183,9 +1187,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1226,7 +1229,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1287,9 +1290,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new(
@@ -1348,7 +1350,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1411,9 +1413,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1450,7 +1451,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1499,9 +1500,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1523,7 +1523,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1587,9 +1587,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1628,7 +1627,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1697,9 +1696,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1741,7 +1739,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 
@@ -1811,9 +1809,8 @@ mod tests {
             }))
         };
 
-        let ctx = crate::http::Context::new();
         let mut poller = Poller::from_callback(
-            move |_, _| {
+            move |_, _, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1854,7 +1851,7 @@ mod tests {
                     }
                 }
             },
-            ctx,
+            None,
             None,
         );
 

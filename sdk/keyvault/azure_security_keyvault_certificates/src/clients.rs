@@ -92,9 +92,9 @@ impl CertificateClient {
         let certificate_name = certificate_name.to_owned();
         let parameters: Body = parameters.into();
 
-        let ctx = options.method_options.context;
+        //        let ctx = options.method_options.context;
         Ok(Poller::from_callback(
-            move |next_link: PollerState<Url>, ctx: Context| {
+            move |next_link: PollerState<Url>, ctx: Context, poller_options| {
                 let (mut request, next_link) = match next_link {
                     PollerState::More(next_link) => {
                         // Make sure the `api-version` is set appropriately.
@@ -136,7 +136,7 @@ impl CertificateClient {
                     let retry_after = get_retry_after(
                         &headers,
                         &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
-                        &options.poller_options,
+                        &poller_options,
                     );
                     let res: CertificateOperation = json::from_json(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
@@ -188,8 +188,8 @@ impl CertificateClient {
                     })
                 }
             },
-            ctx,
-            None,
+            Some(options.method_options),
+            Some(options.poller_options),
         ))
     }
 }
