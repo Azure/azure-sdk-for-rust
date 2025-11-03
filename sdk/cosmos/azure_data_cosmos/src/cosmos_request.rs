@@ -16,7 +16,7 @@ use serde::Serialize;
 /// the request. The SDK generally uses the primary key, but some operations
 /// may be signed with a resource token (e.g. restricted delegation scenarios).
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AuthorizationTokenType {
     /// Use the account's primary (or secondary) key material.
     Primary,
@@ -25,7 +25,7 @@ pub enum AuthorizationTokenType {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PartitionKeyRangeIdentity {
     pub collection_rid: String,
     pub partition_key_range_id: String,
@@ -37,7 +37,7 @@ pub struct PartitionKeyRangeIdentity {
 /// It collects operation intent (create/read/query/etc.), resource routing
 /// information, partition key, optional item-level options and flags that
 /// influence retry or gateway behaviors.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 #[allow(dead_code)]
 pub struct CosmosRequest {
     pub operation_type: OperationType,

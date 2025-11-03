@@ -4,14 +4,13 @@
 use crate::PartitionKey;
 use azure_core::http::RawResponse;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use url::Url;
 
 /// Placeholder for a resolved physical partition key range.
 ///
 /// In a fuller implementation this would include identifiers and possibly
 /// the min/max effective partition key values that define the range.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PartitionKeyRange;
 
 /// Carries per-request routing, partition resolution, retry and regional state.
@@ -21,7 +20,7 @@ pub struct PartitionKeyRange;
 /// or explicit endpoint), resolved partition ranges, session tokens, and
 /// various internal flags influencing retries and cache refresh behavior.
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RequestContext {
     pub force_refresh_address_cache: bool,
     pub original_request_consistency_level: Option<String>, // Use enum if available
@@ -38,7 +37,7 @@ pub struct RequestContext {
     pub local_region_request: bool,
     pub is_retry: bool,
     pub is_partition_failover_retry: bool,
-    pub failed_endpoints: Arc<Mutex<HashMap<Url, bool>>>,
+    pub failed_endpoints: HashMap<Url, bool>,
     pub use_preferred_locations: Option<bool>,
     pub location_index_to_route: Option<i32>,
     pub location_endpoint_to_route: Option<Url>,
@@ -62,7 +61,7 @@ impl Default for RequestContext {
             local_region_request: false,
             is_retry: false,
             is_partition_failover_retry: false,
-            failed_endpoints: Arc::new(Mutex::new(HashMap::new())),
+            failed_endpoints: HashMap::new(),
             use_preferred_locations: None,
             location_index_to_route: None,
             location_endpoint_to_route: None,
@@ -80,9 +79,7 @@ impl RequestContext {
         _store_exception: &str, // Replace with actual error type
         target_uri: Url,
     ) {
-        // In a real implementation, inspect the error for status code, etc.
-        let mut failed = self.failed_endpoints.lock().unwrap();
-        failed.insert(target_uri, true);
+        self.failed_endpoints.insert(target_uri, true);
     }
 
     /// Routes the request to a region by its index within the preferred
