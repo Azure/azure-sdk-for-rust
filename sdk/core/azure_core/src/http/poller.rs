@@ -246,10 +246,10 @@ pub trait StatusMonitor {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + Send + 'static>;
+type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + Send>;
 
 #[cfg(target_arch = "wasm32")]
-type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>> + 'static>;
+type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>>>;
 
 #[cfg(not(target_arch = "wasm32"))]
 type BoxedFuture<M> = Box<
@@ -517,7 +517,7 @@ where
 {
     type Output = crate::Result<Response<M::Output, M::Format>>;
     // Tie the boxed future's lifetime to 'a so it can capture Context<'a> without requiring 'static.
-    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send + 'static>>;
+    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send>>;
 
     fn into_future(mut self) -> Self::IntoFuture {
         Box::pin(async move {
@@ -585,8 +585,11 @@ enum State<N> {
     Done,
 }
 
+/// The type of the oneshot channel sender for the target future.
+type TargetTransmitterType<'a, M> = oneshot::Sender<(Pin<BoxedFuture<M>>, Option<Context<'a>>)>;
+
 /// Represents the state used for each iteration through the poller stream.
-struct UnfoldState<'a, M, N, Fun>
+struct PollerStreamState<'a, M, N, Fun>
 where
     M: StatusMonitor,
 {
@@ -595,7 +598,7 @@ where
     /// The callback function to make requests
     make_request: Fun,
     /// Optional channel sender for the target future
-    target_tx: Option<oneshot::Sender<Pin<BoxedFuture<M>>>>,
+    target_tx: Option<TargetTransmitterType<'a, M>>,
     /// The context for the operation
     ctx: Context<'a>,
     /// Whether a span was added to the context
@@ -638,7 +641,7 @@ where
 
     let stream = unfold(
         // We flow the `make_request` callback through the state value to avoid cloning.
-        UnfoldState::<M, N, Fun> {
+        PollerStreamState::<M, N, Fun> {
             state: State::Init,
             make_request,
             target_tx: Some(target_tx),
@@ -661,7 +664,9 @@ where
                     (unfold_state.make_request)(PollerState::More(n), unfold_state.ctx.clone())
                         .await
                 }
-                State::Done => return None,
+                State::Done => {
+                    return None;
+                }
             };
             let (item, next_state) = match result {
                 Err(e) => {
@@ -682,41 +687,28 @@ where
 
                     (Ok(response), State::InProgress(n))
                 }
-                Ok(PollerResult::Done { response }) => {
-                    // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
-                    // otherwise it is the responsibility of the caller to end their span.
-                    if unfold_state.added_span {
-                        if let Some(span) = unfold_state.ctx.value::<Arc<dyn Span>>() {
-                            // 5xx status codes SHOULD set status to Error.
-                            // The description should not be set because it can be inferred from "http.response.status_code".
-                            if response.status().is_server_error() {
-                                span.set_status(SpanStatus::Error {
-                                    description: "".to_string(),
-                                });
-                            }
-                            if response.status().is_client_error()
-                                || response.status().is_server_error()
-                            {
-                                span.set_attribute(
-                                    "error.type",
-                                    response.status().to_string().into(),
-                                );
-                            }
-
-                            span.end();
-                        }
-                    }
-                    (Ok(response), State::Done)
-                }
+                // Note that we will normally never reach this state. The normal progression of the `make_request` callback is to return `Succeeded` with a target future,
+                // and then the stream yields the final response and transitions to `Done` state.
+                // The only time that the `make_request` callback will normally enter the `Done` state directly is if the LRO fails or is canceled.
+                Ok(PollerResult::Done { response }) => (Ok(response), State::Done),
                 Ok(PollerResult::Succeeded {
                     response,
                     target: get_target,
                 }) => {
+                    println!("PollerResult::Succeeded: sending target future through channel");
                     // Send the target callback through the channel
                     if let Some(tx) = unfold_state.target_tx.take() {
-                        let _ = tx.send(get_target());
+                        let _ = tx.send((
+                            get_target(),
+                            if unfold_state.added_span {
+                                Some(unfold_state.ctx.clone())
+                            } else {
+                                None
+                            },
+                        ));
                     }
                     // Also yield the final status response
+                    println!("PollerResult::Succeeded: Moving to Done state.");
                     unfold_state.state = State::Done;
                     return Some((Ok(response), unfold_state));
                 }
@@ -730,7 +722,41 @@ where
 
     let target = Box::new(async move {
         match target_rx.await {
-            Ok(fut) => fut.await,
+            Ok(fut) => {
+                let res = fut.0.await;
+                if let Some(ctx) = fut.1 {
+                    match &res {
+                        Ok(response) => {
+                            // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
+                            // otherwise it is the responsibility of the caller to end their span.
+                            if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+                                // 5xx status codes SHOULD set status to Error.
+                                // The description should not be set because it can be inferred from "http.response.status_code".
+                                if response.status().is_server_error() {
+                                    span.set_status(SpanStatus::Error {
+                                        description: "".to_string(),
+                                    });
+                                }
+                                if response.status().is_client_error()
+                                    || response.status().is_server_error()
+                                {
+                                    span.set_attribute(
+                                        "error.type",
+                                        response.status().to_string().into(),
+                                    );
+                                }
+
+                                span.end();
+                            }
+                        }
+                        Err(err) => {
+                            println!("Poller target error: {:?}", err);
+                        }
+                    }
+                }
+
+                res
+            }
             Err(err) => Err(crate::Error::with_error(
                 ErrorKind::Other,
                 err,
