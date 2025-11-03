@@ -17,8 +17,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
-        policies::{BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
+        policies::{BearerTokenCredentialPolicy, Policy},
+        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Result,
@@ -64,7 +64,7 @@ impl BlobServiceClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));
@@ -412,7 +412,7 @@ impl BlobServiceClient {
     pub fn list_containers_segment(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListContainersSegmentResponse>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -444,55 +444,53 @@ impl BlobServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(PageIterator::from_callback(
-            move |marker: PagerState<String>| {
-                let mut url = first_url.clone();
-                if let PagerState::More(marker) = marker {
-                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
-                        let mut new_url = url.clone();
-                        new_url
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
-                        url = new_url;
-                    }
-                    url.query_pairs_mut().append_pair("marker", &marker);
+        Ok(Pager::from_callback(move |marker: PagerState<String>| {
+            let mut url = first_url.clone();
+            if let PagerState::More(marker) = marker {
+                if url.query_pairs().any(|(name, _)| name.eq("marker")) {
+                    let mut new_url = url.clone();
+                    new_url
+                        .query_pairs_mut()
+                        .clear()
+                        .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
+                    url = new_url;
                 }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", "application/xml");
-                request.insert_header("content-type", "application/xml");
-                if let Some(client_request_id) = &options.client_request_id {
-                    request.insert_header("x-ms-client-request-id", client_request_id);
-                }
-                request.insert_header("x-ms-version", &version);
-                let ctx = options.method_options.context.clone();
-                let pipeline = pipeline.clone();
-                async move {
-                    let rsp = pipeline
-                        .send(
-                            &ctx,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListContainersSegmentResponse = xml::from_xml(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_marker {
-                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: next_marker,
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
-                }
-            },
-        ))
+                url.query_pairs_mut().append_pair("marker", &marker);
+            }
+            let mut request = Request::new(url, Method::Get);
+            request.insert_header("accept", "application/xml");
+            request.insert_header("content-type", "application/xml");
+            if let Some(client_request_id) = &options.client_request_id {
+                request.insert_header("x-ms-client-request-id", client_request_id);
+            }
+            request.insert_header("x-ms-version", &version);
+            let ctx = options.method_options.context.clone();
+            let pipeline = pipeline.clone();
+            async move {
+                let rsp = pipeline
+                    .send(
+                        &ctx,
+                        &mut request,
+                        Some(PipelineSendOptions {
+                            check_success: CheckSuccessOptions {
+                                success_codes: &[200],
+                            },
+                            ..Default::default()
+                        }),
+                    )
+                    .await?;
+                let (status, headers, body) = rsp.deconstruct();
+                let res: ListContainersSegmentResponse = xml::from_xml(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
+                Ok(match res.next_marker {
+                    Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                        response: rsp,
+                        continuation: next_marker,
+                    },
+                    _ => PagerResult::Done { response: rsp },
+                })
+            }
+        }))
     }
 
     /// Sets properties for a storage account's Blob service endpoint, including properties for Storage Analytics and CORS (Cross-Origin

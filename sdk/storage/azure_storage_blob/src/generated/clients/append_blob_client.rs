@@ -15,7 +15,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        policies::{BearerTokenAuthorizationPolicy, Policy},
+        policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
         Response, Url,
     },
@@ -63,7 +63,7 @@ impl AppendBlobClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));

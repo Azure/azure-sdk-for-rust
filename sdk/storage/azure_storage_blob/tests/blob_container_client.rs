@@ -422,6 +422,5 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         .set_access_policy(vec![signed_identifier], None)
         .await?;
 
-    container_client.delete_container(None).await?;
     Ok(())
 }
