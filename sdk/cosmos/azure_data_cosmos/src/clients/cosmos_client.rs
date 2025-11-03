@@ -7,7 +7,6 @@ use crate::{
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
-    ReadDatabaseOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -17,7 +16,6 @@ use serde::Serialize;
 use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequestBuilder;
-use crate::models::AccountProperties;
 use crate::operation_context::OperationType;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
@@ -96,34 +94,6 @@ impl CosmosClient {
                 options.client_options,
             ),
         })
-    }
-
-    #[allow(dead_code)]
-    async fn initialize(client: CosmosClient) -> azure_core::Result<Self> {
-        let _account = client.get_database_account(None).await?.into_body()?;
-        Ok(client)
-    }
-
-    /// Retrieves the Cosmos DB account ("database account") properties.
-    ///
-    /// # Arguments
-    /// * `options` - Optional request options (currently unused for custom
-    ///   headers, but the context can carry per-call metadata for tracing or
-    ///   cancellation).
-    pub async fn get_database_account(
-        &self,
-        options: Option<ReadDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<AccountProperties>> {
-        let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::DatabaseAccount);
-        let cosmos_request = builder.build();
-        self.pipeline
-            .send(
-                cosmos_request?,
-                ResourceLink::root(ResourceType::DatabaseAccount),
-                options.method_options.context,
-            )
-            .await
     }
 
     /// Creates a new CosmosClient, using a connection string.
@@ -228,16 +198,15 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let body = serde_json::to_vec(&RequestBody { id })?;
         let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Databases);
         let cosmos_request = builder
             .headers(&options.throughput)
-            .body(Some(body))
-            .build();
+            .json(&RequestBody { id })
+            .build()?;
 
         self.pipeline
             .send(
-                cosmos_request?,
+                cosmos_request,
                 self.databases_link.clone(),
                 options.method_options.context,
             )

@@ -10,6 +10,7 @@ use azure_core::http::{
     request::{options::ContentType, Request},
     Method,
 };
+use serde::Serialize;
 
 /// Specifies which form of authorization token should be used when signing
 /// the request. The SDK generally uses the primary key, but some operations
@@ -96,20 +97,6 @@ impl CosmosRequest {
         }
     }
 
-    /// Returns true if the operation does not modify server state and can be
-    /// treated as read-only for caching / retry heuristics.
-    pub fn is_read_only_request(&self) -> bool {
-        matches!(
-            self.operation_type,
-            OperationType::Read
-                | OperationType::Query
-                | OperationType::SqlQuery
-                | OperationType::QueryPlan
-                | OperationType::Head
-                | OperationType::HeadFeed
-        )
-    }
-
     /// Maps the logical `OperationType` to its corresponding HTTP verb.
     pub fn http_method(&self) -> Method {
         match self.operation_type {
@@ -124,7 +111,6 @@ impl CosmosRequest {
             OperationType::Replace => Method::Put,
             OperationType::Patch => Method::Patch,
             OperationType::Head | OperationType::HeadFeed => Method::Head,
-            _ => Method::Post,
         }
     }
 
@@ -155,7 +141,7 @@ impl CosmosRequest {
             req.insert_headers(pk).unwrap();
         }
 
-        if !self.is_read_only_request() {
+        if !OperationType::is_read_only(&self.operation_type) {
             req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
             if self.operation_type == OperationType::Upsert {
                 req.insert_header(constants::IS_UPSERT, "true");
@@ -176,10 +162,10 @@ impl CosmosRequest {
 pub struct CosmosRequestBuilder {
     operation_type: OperationType,
     resource_type: ResourceType,
-    partition_key: Option<PartitionKey>,
+    partition_key: PartitionKey,
     resource_id: Option<String>,
     headers: Headers,
-    body: Option<Vec<u8>>,
+    body: Vec<u8>,
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
@@ -197,9 +183,9 @@ impl CosmosRequestBuilder {
         CosmosRequestBuilder {
             operation_type,
             resource_type,
-            partition_key: None,
+            partition_key: PartitionKey::EMPTY,
             resource_id: None,
-            body: None,
+            body: Vec::new(),
             authorization_token_type: AuthorizationTokenType::Primary,
             headers: Headers::new(),
             continuation: None,
@@ -211,10 +197,12 @@ impl CosmosRequestBuilder {
             force_collection_routing_map_refresh: false,
         }
     }
+
     pub fn resource_id(mut self, rid: impl Into<String>) -> Self {
         self.resource_id = Some(rid.into());
         self
     }
+
     pub fn headers<T: AsHeaders>(mut self, headers: &T) -> Self {
         // Collect all headers exposed by the `AsHeaders` implementation.
         // If conversion fails we silently ignore (the caller can always add
@@ -226,6 +214,7 @@ impl CosmosRequestBuilder {
         }
         self
     }
+
     pub fn header<K, V>(mut self, key: K, value: V) -> Self
     where
         K: Into<HeaderName>,
@@ -234,16 +223,23 @@ impl CosmosRequestBuilder {
         self.headers.insert(key, value);
         self
     }
-    pub fn body(mut self, body: Option<Vec<u8>>) -> Self {
+
+    pub fn body(mut self, body: Vec<u8>) -> Self {
         self.body = body;
         self
     }
+
+    pub fn json<T: Serialize>(mut self, value: T) -> Self {
+        self.body = serde_json::to_vec(&value).unwrap();
+        self
+    }
+
     pub fn authorization_token_type(mut self, ty: AuthorizationTokenType) -> Self {
         self.authorization_token_type = ty;
         self
     }
 
-    pub fn partition_key(mut self, pk: Option<PartitionKey>) -> Self {
+    pub fn partition_key(mut self, pk: PartitionKey) -> Self {
         self.partition_key = pk;
         self
     }
@@ -254,8 +250,8 @@ impl CosmosRequestBuilder {
             self.operation_type,
             self.resource_type,
             self.resource_id,
-            self.partition_key,
-            self.body,
+            Some(self.partition_key),
+            Some(self.body),
             self.authorization_token_type,
         );
         req.is_feed = self.is_feed;
@@ -281,8 +277,8 @@ mod tests {
     fn make_base_request(op: OperationType) -> CosmosRequest {
         let req = CosmosRequestBuilder::new(op, ResourceType::Items)
             .resource_id("dbs/Db/colls/Coll/docs/Doc")
-            .partition_key(Some(PartitionKey::from("pk")))
-            .body(Some(b"{\"id\":\"1\"}".to_vec()))
+            .partition_key(PartitionKey::from("pk"))
+            .body(b"{\"id\":\"1\"}".to_vec())
             .build();
 
         let mut req = req.unwrap();
@@ -304,8 +300,8 @@ mod tests {
         );
         let from_builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Items)
             .resource_id("rid")
-            .partition_key(Some(PartitionKey::from("pk")))
-            .body(Some(b"{}".to_vec()))
+            .partition_key(PartitionKey::from("pk"))
+            .body(b"{}".to_vec())
             .build();
 
         let builder_request = from_builder.unwrap();
@@ -349,10 +345,18 @@ mod tests {
 
     #[test]
     fn is_read_only_flags() {
-        assert!(make_base_request(OperationType::Read).is_read_only_request());
-        assert!(make_base_request(OperationType::Query).is_read_only_request());
-        assert!(!make_base_request(OperationType::Create).is_read_only_request());
-        assert!(!make_base_request(OperationType::Upsert).is_read_only_request());
+        assert!(make_base_request(OperationType::Read)
+            .operation_type
+            .is_read_only());
+        assert!(make_base_request(OperationType::Query)
+            .operation_type
+            .is_read_only());
+        assert!(!make_base_request(OperationType::Create)
+            .operation_type
+            .is_read_only());
+        assert!(!make_base_request(OperationType::Upsert)
+            .operation_type
+            .is_read_only());
     }
 
     #[test]

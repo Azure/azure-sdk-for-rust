@@ -86,12 +86,11 @@ impl CosmosPipeline {
         cosmos_request.request_context.location_endpoint_to_route =
             Some(resource_link.url(&self.endpoint));
 
-        // Prepare a cloneable ResourceLink to avoid moving it, allowing the closure to be Fn
-        let resource_link_for_sender = resource_link.clone();
+        // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
             let ctx = context.clone();
             let mut raw_req = req.clone().into_raw_request();
-            let url = resource_link_for_sender.clone();
+            let url = resource_link.clone();
             async move { self.send_raw(ctx, &mut raw_req, url).await }
         };
 

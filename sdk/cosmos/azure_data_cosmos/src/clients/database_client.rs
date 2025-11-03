@@ -139,16 +139,15 @@ impl DatabaseClient {
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&properties)?;
         let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Containers);
         let cosmos_request = builder
             .headers(&options.throughput)
-            .body(Some(body))
-            .build();
+            .json(&properties)
+            .build()?;
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request,
                 self.containers_link.clone(),
                 options.method_options.context,
             )

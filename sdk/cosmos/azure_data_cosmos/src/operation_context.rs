@@ -3,9 +3,7 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)] // For the variants. Can be removed when we have them all implemented.
-/// Placeholder for operation type.
 pub enum OperationType {
-    Invalid,
     Create,
     Read,
     Replace,
@@ -18,5 +16,20 @@ pub enum OperationType {
     Patch,
     Head,
     HeadFeed,
-    // ... add other variants as needed
+}
+
+impl OperationType {
+    /// Returns true if the operation does not modify server state and can be
+    /// treated as read-only for caching / retry heuristics.
+    pub fn is_read_only(&self) -> bool {
+        matches!(
+            self,
+            OperationType::Read
+                | OperationType::Query
+                | OperationType::SqlQuery
+                | OperationType::QueryPlan
+                | OperationType::Head
+                | OperationType::HeadFeed
+        )
+    }
 }
