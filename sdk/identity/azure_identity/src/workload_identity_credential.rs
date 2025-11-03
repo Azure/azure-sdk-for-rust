@@ -191,12 +191,11 @@ mod tests {
         client_assertion_credential::tests::{is_valid_request, FAKE_ASSERTION},
         env::Env,
         tests::*,
-        TSG_LINK_ERROR_TEXT,
     };
     use azure_core::{
         http::{
-            headers::Headers, AsyncRawResponse, ClientOptions, Method, Request, StatusCode,
-            Transport, Url,
+            headers::Headers, AsyncRawResponse, ClientOptions, Method, RawResponse, Request,
+            StatusCode, Transport, Url,
         },
         Bytes,
     };
@@ -278,15 +277,16 @@ mod tests {
     #[tokio::test]
     async fn get_token_error() {
         let temp_file = TempFile::new(FAKE_ASSERTION);
-        let description = "invalid assertion";
+        let expected_status = StatusCode::Forbidden;
+        let body = r#"{"error":"invalid_request","error_description":"invalid assertion"}"#;
+        let mut headers = Headers::default();
+        headers.insert("key", "value");
+        let expected_response = RawResponse::from_bytes(expected_status, headers.clone(), body);
         let mock = MockSts::new(
             vec![AsyncRawResponse::from_bytes(
-                StatusCode::BadRequest,
-                Headers::default(),
-                Bytes::from(format!(
-                    r#"{{"error":"invalid_request","error_description":"{}"}}"#,
-                    description
-                )),
+                expected_status,
+                headers.clone(),
+                Bytes::from(body),
             )],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
@@ -316,16 +316,28 @@ mod tests {
             .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect_err("expected error");
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::Credential
-        ));
-        assert!(err.to_string().contains(description));
-        assert!(
-            err.to_string()
-                .contains(&format!("{TSG_LINK_ERROR_TEXT}#workload")),
-            "expected error to contain a link to the troubleshooting guide, got '{err}'",
+
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            "WorkloadIdentityCredential authentication failed. invalid assertion\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#workload",
+             err.to_string(),
         );
+        match err
+            .downcast_ref::<azure_core::Error>()
+            .expect("returned error should wrap an azure_core::Error")
+            .kind()
+        {
+            ErrorKind::HttpResponse {
+                error_code: None,
+                raw_response: Some(response),
+                status,
+                ..
+            } => {
+                assert_eq!(&expected_response, response.as_ref());
+                assert_eq!(expected_status, *status);
+            }
+            kind => panic!("unexpected ErrorKind {:?}", kind),
+        };
     }
 
     #[test]

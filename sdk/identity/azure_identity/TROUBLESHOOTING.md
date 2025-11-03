@@ -42,6 +42,39 @@ This error contains several pieces of information:
 
 - __Correlation ID and Timestamp__: The correlation ID and timestamp identify the request in server-side logs. This information can be useful to support engineers diagnosing unexpected Microsoft Entra ID failures.
 
+Many credential errors also carry the HTTP response that motivated them. The example below demonstrates how to access that response in such a case.
+
+```rust
+use azure_core::error::ErrorKind;
+
+let result = client.method().await;
+if let Err(err) = result {
+    match err.kind() {
+        // ErrorKind::Credential indicates an authentication problem
+        ErrorKind::Credential => {
+            // a credential error may wrap another error having an HTTP response
+            if let Some(inner) = err.downcast_ref::<azure_core::Error>() {
+                if let ErrorKind::HttpResponse {
+                    raw_response: Some(response),
+                    status,
+                    ..
+                } = inner.kind()
+                {
+                    let headers = response.headers();
+                    let body = String::from_utf8_lossy(response.body());
+                    eprintln!("status: {status}");
+                    eprintln!("headers: {headers:?}");
+                    eprintln!("body: {body}");
+                }
+            }
+        }
+        _ => {
+            // TODO: handle other kinds of error
+        }
+    }
+}
+```
+
 <a id="client-secret"></a>
 ## Troubleshoot ClientSecretCredential authentication issues
 

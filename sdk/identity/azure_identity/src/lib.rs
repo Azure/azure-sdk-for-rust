@@ -50,8 +50,10 @@ pub(crate) use virtual_machine_managed_identity_credential::*;
 use crate::env::Env;
 use azure_core::{
     cloud::CloudConfiguration,
-    error::{ErrorKind, ResultExt},
+    credentials::AccessToken,
+    error::ErrorKind,
     http::{RawResponse, Url},
+    time::{Duration, OffsetDateTime},
     Error, Result,
 };
 use serde::Deserialize;
@@ -60,6 +62,7 @@ use std::borrow::Cow;
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct EntraIdErrorResponse {
+    error_codes: Vec<i32>,
     error_description: String,
 }
 
@@ -74,20 +77,44 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
+fn deserialize<T>(res: &RawResponse) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
-    let t: T = res
-        .into_body()
-        .json()
-        .with_context_fn(ErrorKind::Credential, || {
-            format!(
-                "{} authentication failed: invalid response",
-                credential_name
-            )
-        })?;
-    Ok(t)
+    res.body().json()
+}
+
+fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
+    let status = response.status();
+    if status.is_success() {
+        let token_response: EntraIdTokenResponse = deserialize(&response)?;
+        return Ok(AccessToken::new(
+            token_response.access_token,
+            OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
+        ));
+    }
+
+    let error_response: EntraIdErrorResponse = deserialize(&response)?;
+    let error_code = if error_response.error_codes.is_empty() {
+        None
+    } else {
+        Some(
+            error_response
+                .error_codes
+                .iter()
+                .map(i32::to_string)
+                .collect::<Vec<_>>()
+                .join(","),
+        )
+    };
+    Err(Error::new(
+        ErrorKind::HttpResponse {
+            status,
+            error_code,
+            raw_response: Some(Box::new(response)),
+        },
+        error_response.error_description,
+    ))
 }
 
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>
@@ -134,30 +161,48 @@ fn get_authority_host(env: Option<Env>, cloud: Option<&CloudConfiguration>) -> R
 }
 
 const TSG_LINK_ERROR_TEXT: &str =
-    ". To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot";
+    "\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot";
 
 /// Map an error from a credential's get_token() method to an ErrorKind::Credential error, appending
 /// a link to the troubleshooting guide entry for that credential, if it has one.
-///
-/// TODO: decide whether to map to ErrorKind::Credential here (https://github.com/Azure/azure-sdk-for-rust/issues/3127)
-fn authentication_error<T: 'static>(e: azure_core::Error) -> azure_core::Error {
-    azure_core::Error::with_message_fn(e.kind().clone(), || {
-        let type_name = std::any::type_name::<T>();
-        let short_name = type_name.rsplit("::").next().unwrap_or(type_name); // cspell:ignore rsplit
-        let link = match short_name {
-            "AzureCliCredential" => format!("{TSG_LINK_ERROR_TEXT}#azure-cli"),
-            "AzureDeveloperCliCredential" => format!("{TSG_LINK_ERROR_TEXT}#azd"),
-            "AzurePipelinesCredential" => format!("{TSG_LINK_ERROR_TEXT}#apc"),
-            #[cfg(feature = "client_certificate")]
-            "ClientCertificateCredential" => format!("{TSG_LINK_ERROR_TEXT}#client-cert"),
-            "ClientSecretCredential" => format!("{TSG_LINK_ERROR_TEXT}#client-secret"),
-            "ManagedIdentityCredential" => format!("{TSG_LINK_ERROR_TEXT}#managed-id"),
-            "WorkloadIdentityCredential" => format!("{TSG_LINK_ERROR_TEXT}#workload"),
-            _ => "".to_string(),
-        };
+fn authentication_error<T>(err: azure_core::Error) -> azure_core::Error {
+    let type_name = std::any::type_name::<T>();
+    // remove generic parameters; we want only the credential name
+    let type_name = type_name.split('<').next().unwrap_or(type_name);
+    let short_name = type_name.rsplit("::").next().unwrap_or(type_name); // cspell:ignore rsplit
 
-        format!("{short_name} authentication failed: {e}{link}")
-    })
+    let (wrap_inner_error, link_fragment) = match short_name {
+        stringify!(AzureCliCredential) => (false, "#azure-cli"),
+        stringify!(AzureDeveloperCliCredential) => (false, "#azd"),
+        stringify!(AzurePipelinesCredential) => (true, "#apc"),
+        stringify!(ClientCertificateCredential) => (false, "#client-cert"),
+        stringify!(ClientSecretCredential) => (false, "#client-secret"),
+        stringify!(ManagedIdentityCredential) => (false, "#managed-id"),
+        stringify!(WorkloadIdentityCredential) => (true, "#workload"),
+        _ => (false, ""),
+    };
+
+    let mut details = err.to_string();
+    if wrap_inner_error {
+        // details is e.g. "ClientAssertionCredential authentication failed. <more details>".
+        // We want only the "<more details>" part because we want to return an error like
+        // "OtherCredential authentication failed. <more details>".
+        const FAILED_STR: &str = " authentication failed. ";
+        if let Some(index) = details.find(FAILED_STR) {
+            details.drain(..index + FAILED_STR.len());
+        }
+    }
+    let mut message = format!("{short_name} authentication failed. {details}");
+    if !link_fragment.is_empty() {
+        message.push_str(TSG_LINK_ERROR_TEXT);
+        message.push_str(link_fragment);
+    }
+    if wrap_inner_error {
+        let inner = err.into_inner().unwrap_or_else(|e| Box::new(e));
+        azure_core::Error::with_error(ErrorKind::Credential, inner, message)
+    } else {
+        azure_core::Error::with_error(ErrorKind::Credential, err, message)
+    }
 }
 
 #[test]

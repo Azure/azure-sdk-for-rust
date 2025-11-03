@@ -1,26 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    deserialize, get_authority_host, validate_not_empty, validate_tenant_id, EntraIdErrorResponse,
-    EntraIdTokenResponse, TokenCache,
-};
+use crate::{get_authority_host, validate_not_empty, validate_tenant_id, TokenCache};
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
-        ClientMethodOptions, ClientOptions, Method, Pipeline, PipelineSendOptions, Request,
-        StatusCode, Url,
+        ClientMethodOptions, ClientOptions, Method, Pipeline, PipelineSendOptions, Request, Url,
     },
-    time::{Duration, OffsetDateTime},
-    Error,
 };
 use std::{fmt::Debug, str, sync::Arc};
 use url::form_urlencoded;
 
 const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
-const CLIENT_ASSERTION_CREDENTIAL: &str = "ClientAssertionCredential";
 
 /// Enables authentication of a Microsoft Entra service principal using a signed client assertion.
 #[derive(Debug)]
@@ -144,29 +137,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             )
             .await?;
 
-        match res.status() {
-            StatusCode::Ok => {
-                let token_response: EntraIdTokenResponse =
-                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res)?;
-                Ok(AccessToken::new(
-                    token_response.access_token,
-                    OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
-                ))
-            }
-            _ => {
-                let error_response: EntraIdErrorResponse =
-                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res)?;
-                let message = if error_response.error_description.is_empty() {
-                    format!("{} authentication failed.", CLIENT_ASSERTION_CREDENTIAL)
-                } else {
-                    format!(
-                        "{} authentication failed. {}",
-                        CLIENT_ASSERTION_CREDENTIAL, error_response.error_description
-                    )
-                };
-                Err(Error::with_message(ErrorKind::Credential, message))
-            }
-        }
+        crate::handle_entra_response(res)
     }
 }
 
@@ -181,6 +152,7 @@ impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
+            .map_err(crate::authentication_error::<ClientAssertionCredential<C>>)
     }
 }
 
@@ -191,7 +163,7 @@ pub(crate) mod tests {
     use azure_core::{
         http::{
             headers::{self, content_type, Headers},
-            AsyncRawResponse, Body, Method, Request, Transport,
+            AsyncRawResponse, Body, Method, RawResponse, Request, StatusCode, Transport,
         },
         Bytes,
     };
@@ -261,16 +233,18 @@ pub(crate) mod tests {
 
     #[tokio::test]
     async fn get_token_error() {
-        let expected = "error description from the response";
+        let body = Bytes::from(
+            r#"{"error":"invalid_request","error_description":"error description from the response","error_codes":[50027],"timestamp":"2025-04-18 16:04:37Z","trace_id":"...","correlation_id":"...","error_uri":"https://login.microsoftonline.com/error?code=50027"}"#,
+        );
+        let mut headers = Headers::default();
+        headers.insert("key", "value");
+        let expected_status = StatusCode::BadRequest;
+        let expected_response =
+            RawResponse::from_bytes(expected_status, headers.clone(), body.clone());
+        let mock_response = AsyncRawResponse::from_bytes(expected_status, headers, body);
+
         let mock = MockSts::new(
-            vec![AsyncRawResponse::from_bytes(
-                StatusCode::BadRequest,
-                Headers::default(),
-                Bytes::from(format!(
-                    r#"{{"error":"invalid_request","error_description":"{}","error_codes":[50027],"timestamp":"2025-04-18 16:04:37Z","trace_id":"...","correlation_id":"...","error_uri":"https://login.microsoftonline.com/error?code=50027"}}"#,
-                    expected
-                )),
-            )],
+            vec![mock_response],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
                 Some(FAKE_ASSERTION.to_string()),
@@ -290,16 +264,31 @@ pub(crate) mod tests {
         )
         .expect("valid credential");
 
-        let error = credential
+        let err = credential
             .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect_err("authentication error");
-        assert!(matches!(error.kind(), ErrorKind::Credential));
-        assert!(
-            error.to_string().contains(expected),
-            "expected error description from the response, got '{}'",
-            error
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            "ClientAssertionCredential authentication failed. error description from the response",
+            err.to_string(),
         );
+        match err
+            .downcast_ref::<azure_core::Error>()
+            .expect("returned error should wrap an azure_core::Error")
+            .kind()
+        {
+            ErrorKind::HttpResponse {
+                error_code: Some(error_code),
+                raw_response: Some(response),
+                status,
+            } => {
+                assert_eq!("50027", error_code);
+                assert_eq!(&expected_response, response.as_ref());
+                assert_eq!(expected_status, *status);
+            }
+            err => panic!("unexpected {:?}", err),
+        };
     }
 
     #[tokio::test]
