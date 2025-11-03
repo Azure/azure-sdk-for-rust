@@ -20,7 +20,7 @@ pub struct CosmosClientOptions {
     pub application_preferred_regions: Option<Vec<String>>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     pub consistency_level: Option<ConsistencyLevel>,
-    pub request_timeout: Duration,
+    pub request_timeout: Option<Duration>,
     pub enable_remote_region_preferred_for_session_retry: bool,
     pub enable_partition_level_circuit_breaker: bool,
     pub disable_partition_level_failover: bool,

@@ -1,5 +1,11 @@
 # Release History
 
+## 0.30.0 (Unreleased)
+
+### Features Added 
+
+- Added Regions to pass preferred regions through Cosmos Client Options. ([#3274](https://github.com/Azure/azure-sdk-for-rust/pull/3274))
+
 ## 0.29.0 (Unreleased)
 
 ### Features Added

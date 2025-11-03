@@ -264,11 +264,7 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let item_options = options.clone().unwrap_or_default();
-        let ctx = item_options
-            .method_options
-            .context
-            .with_value(self.items_link.clone());
+        let options = options.clone().unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
         let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Items);
         let cosmos_request = builder
@@ -278,7 +274,11 @@ impl ContainerClient {
             .build();
 
         self.pipeline
-            .send(cosmos_request.unwrap(), self.items_link.clone(), ctx)
+            .send(
+                cosmos_request.unwrap(),
+                self.items_link.clone(),
+                options.method_options.context,
+            )
             .await
     }
 
@@ -356,8 +356,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let link = self.items_link.item(item_id);
         let body = serde_json::to_vec(&item)?;
-        let item_options = options.clone().unwrap_or_default();
-        let ctx = item_options.method_options.context.with_value(link.clone());
+        let options = options.clone().unwrap_or_default();
 
         let builder = CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Items);
         let cosmos_request = builder
@@ -366,7 +365,13 @@ impl ContainerClient {
             .partition_key(Some(partition_key.into()))
             .build();
 
-        self.pipeline.send(cosmos_request.unwrap(), link, ctx).await
+        self.pipeline
+            .send(
+                cosmos_request.unwrap(),
+                link,
+                options.method_options.context,
+            )
+            .await
     }
 
     /// Creates or replaces an item in the container.
@@ -443,12 +448,7 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let item_options = options.clone().unwrap_or_default();
-        let ctx = item_options
-            .method_options
-            .context
-            .with_value(self.items_link.clone());
-
+        let options = options.clone().unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
         let builder = CosmosRequestBuilder::new(OperationType::Upsert, ResourceType::Items);
         let cosmos_request = builder
@@ -458,7 +458,11 @@ impl ContainerClient {
             .build();
 
         self.pipeline
-            .send(cosmos_request.unwrap(), self.items_link.clone(), ctx)
+            .send(
+                cosmos_request.unwrap(),
+                self.items_link.clone(),
+                options.method_options.context,
+            )
             .await
     }
 
@@ -499,23 +503,24 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<T>> {
         let mut options = options.unwrap_or_default();
+
         // Read APIs should always return the item, ignoring whatever the user set.
         options.enable_content_response_on_write = true;
 
         let link = self.items_link.item(item_id);
-        let ctx = options
-            .clone()
-            .method_options
-            .context
-            .with_value(link.clone());
-
         let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::Items);
         let cosmos_request = builder
             .partition_key(Some(partition_key.into()))
             .headers(&options)
             .build();
 
-        self.pipeline.send(cosmos_request.unwrap(), link, ctx).await
+        self.pipeline
+            .send(
+                cosmos_request.unwrap(),
+                link,
+                options.method_options.context,
+            )
+            .await
     }
 
     /// Deletes an item from the container.
@@ -545,8 +550,7 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let link = self.items_link.item(item_id);
-        let item_options = options.clone().unwrap_or_default();
-        let ctx = item_options.method_options.context.with_value(link.clone());
+        let options = options.clone().unwrap_or_default();
 
         let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Items);
         let cosmos_request = builder
@@ -554,7 +558,13 @@ impl ContainerClient {
             .headers(&options)
             .build();
 
-        self.pipeline.send(cosmos_request.unwrap(), link, ctx).await
+        self.pipeline
+            .send(
+                cosmos_request.unwrap(),
+                link,
+                options.method_options.context,
+            )
+            .await
     }
 
     /// Patches an item in the container.
@@ -619,10 +629,9 @@ impl ContainerClient {
         patch: PatchDocument,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
+        let options = options.clone().unwrap_or_default();
         let link = self.items_link.item(item_id);
         let body = serde_json::to_vec(&patch)?;
-        let item_options = options.clone().unwrap_or_default();
-        let ctx = item_options.method_options.context.with_value(link.clone());
 
         let builder = CosmosRequestBuilder::new(OperationType::Patch, ResourceType::Items);
         let cosmos_request = builder
@@ -631,7 +640,13 @@ impl ContainerClient {
             .body(Some(body))
             .build();
 
-        self.pipeline.send(cosmos_request.unwrap(), link, ctx).await
+        self.pipeline
+            .send(
+                cosmos_request.unwrap(),
+                link,
+                options.method_options.context,
+            )
+            .await
     }
 
     /// Executes a single-partition query against items in the container.
