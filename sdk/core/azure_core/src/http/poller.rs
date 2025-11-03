@@ -32,6 +32,8 @@ use typespec_client_core::http::ClientMethodOptions;
 /// This value is the same as the default used in other Azure SDKs e.g.,
 /// <https://github.com/Azure/azure-sdk-for-python/blob/azure-core_1.35.0/sdk/core/azure-core/azure/core/polling/base_polling.py#L586>
 const DEFAULT_RETRY_TIME: Duration = Duration::seconds(30);
+
+/// Minimum retry time for long-running operations
 const MIN_RETRY_TIME: Duration = Duration::seconds(1);
 
 /// Represents the state of a [`Poller`].
@@ -154,13 +156,13 @@ pub struct PollerOptions {
     /// The time to wait between polling intervals in absence of a `retry-after` header.
     ///
     /// The default is 30 seconds. The minimum time enforced by [`Poller::from_callback`] is 1 second.
-    pub frequency: Option<Duration>,
+    pub frequency: Duration,
 }
 
 impl Default for PollerOptions {
     fn default() -> Self {
         Self {
-            frequency: Some(DEFAULT_RETRY_TIME),
+            frequency: DEFAULT_RETRY_TIME,
         }
     }
 }
@@ -393,7 +395,7 @@ where
     /// let url = "https://example.com/my_operation".parse().unwrap();
     /// let mut req = Request::new(url, Method::Post);
     ///
-    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>, ctx| {
+    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>, ctx, _options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -445,7 +447,7 @@ where
     ///             _ => Ok(PollerResult::Done { response: resp })
     ///         }
     ///     }
-    /// }, Context::new(), None);
+    /// }, None, None);
     /// ```
     pub fn from_callback<
         #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
@@ -636,12 +638,10 @@ where
     let ctx = method_options.context.clone();
     let (target_tx, target_rx) = oneshot::channel();
 
-    let frequency = options.frequency.unwrap_or(DEFAULT_RETRY_TIME);
     assert!(
-        frequency >= MIN_RETRY_TIME,
+        options.frequency >= MIN_RETRY_TIME,
         "minimum polling frequency is 1 second"
     );
-
     let stream = unfold(
         // We flow the `make_request` callback through the state value to avoid cloning.
         PollerStreamState::<M, N, Fun> {
@@ -692,8 +692,7 @@ where
                 }) => {
                     // Note that test-proxy automatically adds a transform that zeroes an existing `after-retry` header during playback, so don't check at runtime:
                     // <https://github.com/Azure/azure-sdk-tools/blob/a80b559d7682891f36a491b73f52fcb679d40923/tools/test-proxy/Azure.Sdk.Tools.TestProxy/RecordingHandler.cs#L1175>
-                    let duration = retry_after.unwrap_or(frequency);
-
+                    let duration = retry_after.unwrap_or(poller_stream_state.options.frequency);
                     tracing::trace!("retry poller in {}s", duration.whole_seconds());
                     sleep(duration).await;
 
@@ -790,11 +789,11 @@ pub fn get_retry_after(
     headers: &Headers,
     retry_headers: &[HeaderName],
     options: &PollerOptions,
-) -> Option<Duration> {
+) -> Duration {
     #[cfg_attr(feature = "test", allow(unused_mut))]
     let duration =
         crate::http::policies::get_retry_after(headers, OffsetDateTime::now_utc, retry_headers)
-            .or(options.frequency);
+            .unwrap_or(options.frequency);
 
     #[cfg(feature = "test")]
     {
@@ -804,17 +803,14 @@ pub fn get_retry_after(
         // we need to override the frequency for services which do not send back supported headers in their response.
         if matches!(headers.get_optional::<RecordingMode>(), Ok(Some(mode)) if mode == RecordingMode::Playback)
         {
-            match duration {
-                Some(duration) if duration > Duration::ZERO => {
-                    tracing::debug!(
-                        "overriding {}s poller retry in playback",
-                        duration.whole_seconds()
-                    );
-                }
-                _ => {}
+            if duration > Duration::ZERO {
+                tracing::debug!(
+                    "overriding {}s poller retry in playback",
+                    duration.whole_seconds()
+                );
             }
 
-            return Some(Duration::ZERO);
+            return Duration::ZERO;
         }
     }
 

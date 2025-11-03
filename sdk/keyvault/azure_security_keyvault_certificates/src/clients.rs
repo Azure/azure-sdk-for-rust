@@ -144,7 +144,7 @@ impl CertificateClient {
                     Ok(match res.status() {
                         PollerStatus::InProgress => PollerResult::InProgress {
                             response: rsp,
-                            retry_after,
+                            retry_after: Some(retry_after),
                             next: next_link,
                         },
                         PollerStatus::Succeeded => {
