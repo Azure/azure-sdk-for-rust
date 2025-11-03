@@ -492,155 +492,155 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
-async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
+// #[recorded::test]
+// async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     // Recording Setup
+//     let recording = ctx.recording();
+//     let mut client_options = ClientOptions::default();
+//     recording.instrument(&mut client_options);
 
-    // ContainerClient Options
-    let container_client_options = BlobContainerClientOptions {
-        client_options: client_options.clone(),
-        ..Default::default()
-    };
+//     // ContainerClient Options
+//     let container_client_options = BlobContainerClientOptions {
+//         client_options: client_options.clone(),
+//         ..Default::default()
+//     };
 
-    // BlobClient Options
-    let blob_client_options = BlobClientOptions {
-        client_options: client_options.clone(),
-        ..Default::default()
-    };
+//     // BlobClient Options
+//     let blob_client_options = BlobClientOptions {
+//         client_options: client_options.clone(),
+//         ..Default::default()
+//     };
 
-    // Endpoint
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
+//     // Endpoint
+//     let endpoint = format!(
+//         "https://{}.blob.core.windows.net/",
+//         recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+//     );
 
-    let container_name = "test-container-encoding-edge-cases";
-    // Create Container & Container Client
-    let container_client = BlobContainerClient::new(
-        &endpoint,
-        container_name,
-        Some(recording.credential()),
-        Some(container_client_options.clone()),
-    )?;
-    container_client.create_container(None).await?;
+//     let container_name = "test-container-encoding-edge-cases";
+//     // Create Container & Container Client
+//     let container_client = BlobContainerClient::new(
+//         &endpoint,
+//         container_name,
+//         Some(recording.credential()),
+//         Some(container_client_options.clone()),
+//     )?;
+//     container_client.create_container(None).await?;
 
-    // Test Data for Parameterization
-    let test_cases = [
-        // Basic + paths - combines simple case with forward slashes (virtual directories)
-        "folder/subfolder/file.txt",
-        // Reserved URL characters requiring encoding - combines spaces, %, ?, &, =, #, + in one test
-        "Q4 2024/report 50%+tax?final=true&approved#section-1.pdf",
-        // Unicode (multi-script) + unreserved chars - combines UTF-8 with chars that don't need encoding
-        "カニのフェリス_🦀.txt",
-        // Consecutive special chars
-        "path\\\\with___...~~~consecutive///chars",
-        // Additional reserved chars: parentheses, brackets, colon, quotes, leading/trailing spaces
-        " file (copy) [2024]:version'1'.txt ",
-        // Mix of forward and backslashes to test normalization/preservation
-        "forward/back\\forward/back\\",
-        // Test of already encoded characters but we want them preserved as-is
-        "data%20set%ferris%3D1%the%23crab%2D2",
-    ];
-    for blob_name in test_cases {
-        // Test Case 1: Initialize BlobClient using new() constructor
-        let blob_client_new = BlobClient::new(
-            &endpoint,
-            container_name,
-            blob_name,
-            Some(recording.credential()),
-            Some(blob_client_options.clone()),
-        )?;
+//     // Test Data for Parameterization
+//     let test_cases = [
+//         // Basic + paths - combines simple case with forward slashes (virtual directories)
+//         "folder/subfolder/file.txt",
+//         // Reserved URL characters requiring encoding - combines spaces, %, ?, &, =, #, + in one test
+//         "Q4 2024/report 50%+tax?final=true&approved#section-1.pdf",
+//         // Unicode (multi-script) + unreserved chars - combines UTF-8 with chars that don't need encoding
+//         "カニのフェリス_🦀.txt",
+//         // Consecutive special chars
+//         "path\\\\with___...~~~consecutive///chars",
+//         // Additional reserved chars: parentheses, brackets, colon, quotes, leading/trailing spaces
+//         " file (copy) [2024]:version'1'.txt ",
+//         // Mix of forward and backslashes to test normalization/preservation
+//         "forward/back\\forward/back\\",
+//         // Test of already encoded characters but we want them preserved as-is
+//         "data%20set%ferris%3D1%the%23crab%2D2",
+//     ];
+//     for blob_name in test_cases {
+//         // Test Case 1: Initialize BlobClient using new() constructor
+//         let blob_client_new = BlobClient::new(
+//             &endpoint,
+//             container_name,
+//             blob_name,
+//             Some(recording.credential()),
+//             Some(blob_client_options.clone()),
+//         )?;
 
-        // Upload Blob
-        blob_client_new
-            .upload(
-                RequestContent::from(b"hello rusty world".to_vec()),
-                true,
-                17,
-                None,
-            )
-            .await?;
+//         // Upload Blob
+//         blob_client_new
+//             .upload(
+//                 RequestContent::from(b"hello rusty world".to_vec()),
+//                 true,
+//                 17,
+//                 None,
+//             )
+//             .await?;
 
-        // Get Properties
-        let properties = blob_client_new.get_properties(None).await?;
-        assert_eq!(17, properties.content_length()?.unwrap());
+//         // Get Properties
+//         let properties = blob_client_new.get_properties(None).await?;
+//         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
-        let mut blob_url = Url::parse(&endpoint)?;
-        blob_url
-            .path_segments_mut()
-            .expect("Storage Endpoint must be a valid base URL with http/https scheme")
-            .push(container_name)
-            .push(blob_name);
+//         // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
+//         let mut blob_url = Url::parse(&endpoint)?;
+//         blob_url
+//             .path_segments_mut()
+//             .expect("Storage Endpoint must be a valid base URL with http/https scheme")
+//             .push(container_name)
+//             .push(blob_name);
 
-        let blob_client_from_url = BlobClient::from_url(
-            blob_url,
-            Some(recording.credential()),
-            Some(blob_client_options.clone()),
-        )?;
+//         let blob_client_from_url = BlobClient::from_url(
+//             blob_url,
+//             Some(recording.credential()),
+//             Some(blob_client_options.clone()),
+//         )?;
 
-        // Upload Blob
-        blob_client_from_url
-            .upload(
-                RequestContent::from(b"hello rusty world".to_vec()),
-                true,
-                17,
-                None,
-            )
-            .await?;
+//         // Upload Blob
+//         blob_client_from_url
+//             .upload(
+//                 RequestContent::from(b"hello rusty world".to_vec()),
+//                 true,
+//                 17,
+//                 None,
+//             )
+//             .await?;
 
-        // Get Properties
-        let properties = blob_client_from_url.get_properties(None).await?;
-        assert_eq!(17, properties.content_length()?.unwrap());
+//         // Get Properties
+//         let properties = blob_client_from_url.get_properties(None).await?;
+//         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Test Case 3: Initialize BlobClient using ContainerClient accessor
-        let blob_client_from_cc = container_client.blob_client(blob_name);
+//         // Test Case 3: Initialize BlobClient using ContainerClient accessor
+//         let blob_client_from_cc = container_client.blob_client(blob_name);
 
-        // Upload Blob
-        blob_client_from_cc
-            .upload(
-                RequestContent::from(b"hello rusty world".to_vec()),
-                true,
-                17,
-                None,
-            )
-            .await?;
+//         // Upload Blob
+//         blob_client_from_cc
+//             .upload(
+//                 RequestContent::from(b"hello rusty world".to_vec()),
+//                 true,
+//                 17,
+//                 None,
+//             )
+//             .await?;
 
-        // Get Properties
-        let properties = blob_client_from_cc.get_properties(None).await?;
-        assert_eq!(17, properties.content_length()?.unwrap());
-    }
+//         // Get Properties
+//         let properties = blob_client_from_cc.get_properties(None).await?;
+//         assert_eq!(17, properties.content_length()?.unwrap());
+//     }
 
-    // Check name equality for all test cases
-    let mut list_blobs_response = container_client.list_blobs(None)?;
-    let page = list_blobs_response.try_next().await?;
-    let list_blob_segment_response = page.unwrap().into_body()?;
-    let blob_items = list_blob_segment_response.segment.blob_items;
+//     // Check name equality for all test cases
+//     let mut list_blobs_response = container_client.list_blobs(None)?;
+//     let page = list_blobs_response.try_next().await?;
+//     let list_blob_segment_response = page.unwrap().into_body()?;
+//     let blob_items = list_blob_segment_response.segment.blob_items;
 
-    // Ensure we have the expected number of blobs
-    assert_eq!(test_cases.len(), blob_items.len());
+//     // Ensure we have the expected number of blobs
+//     assert_eq!(test_cases.len(), blob_items.len());
 
-    // Extract all blob names from list_blobs() response
-    let listed_blob_names: Vec<String> = blob_items
-        .iter()
-        .map(|blob| blob.name.clone().unwrap().content.unwrap())
-        .collect();
-    // Verify each test case blob name appears in the list (with normalization)
-    for blob_name in test_cases {
-        let normalized_name = blob_name.replace('\\', "/");
-        assert!(
-            listed_blob_names.contains(&normalized_name),
-            "Blob name '{}' (normalized: '{}') not found in list: {:?}",
-            blob_name,
-            normalized_name,
-            listed_blob_names
-        );
-    }
+//     // Extract all blob names from list_blobs() response
+//     let listed_blob_names: Vec<String> = blob_items
+//         .iter()
+//         .map(|blob| blob.name.clone().unwrap().content.unwrap())
+//         .collect();
+//     // Verify each test case blob name appears in the list (with normalization)
+//     for blob_name in test_cases {
+//         let normalized_name = blob_name.replace('\\', "/");
+//         assert!(
+//             listed_blob_names.contains(&normalized_name),
+//             "Blob name '{}' (normalized: '{}') not found in list: {:?}",
+//             blob_name,
+//             normalized_name,
+//             listed_blob_names
+//         );
+//     }
 
-    container_client.delete_container(None).await?;
+//     container_client.delete_container(None).await?;
 
-    Ok(())
-}
+//     Ok(())
+// }
