@@ -119,7 +119,7 @@ impl CosmosClient {
         let cosmos_request = builder.build();
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 ResourceLink::root(ResourceType::DatabaseAccount),
                 options.method_options.context,
             )
@@ -237,7 +237,7 @@ impl CosmosClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 self.databases_link.clone(),
                 options.method_options.context,
             )

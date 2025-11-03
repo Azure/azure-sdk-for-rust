@@ -79,7 +79,7 @@ impl DatabaseClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 self.link.clone(),
                 options.method_options.context,
             )

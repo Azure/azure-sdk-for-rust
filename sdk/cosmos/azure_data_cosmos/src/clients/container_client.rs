@@ -68,7 +68,7 @@ impl ContainerClient {
             CosmosRequestBuilder::new(OperationType::Read, ResourceType::Containers).build();
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 self.link.clone(),
                 options.method_options.context,
             )
@@ -116,7 +116,7 @@ impl ContainerClient {
         let cosmos_request = builder.body(Some(body)).build();
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 self.link.clone(),
                 options.method_options.context,
             )
@@ -186,7 +186,7 @@ impl ContainerClient {
         let cosmos_request = builder.build();
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 self.link.clone(),
                 options.method_options.context,
             )
@@ -275,7 +275,7 @@ impl ContainerClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 self.items_link.clone(),
                 options.method_options.context,
             )
@@ -367,7 +367,7 @@ impl ContainerClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 link,
                 options.method_options.context,
             )
@@ -459,7 +459,7 @@ impl ContainerClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 self.items_link.clone(),
                 options.method_options.context,
             )
@@ -516,7 +516,7 @@ impl ContainerClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 link,
                 options.method_options.context,
             )
@@ -560,7 +560,7 @@ impl ContainerClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 link,
                 options.method_options.context,
             )
@@ -642,7 +642,7 @@ impl ContainerClient {
 
         self.pipeline
             .send(
-                cosmos_request.unwrap(),
+                cosmos_request?,
                 link,
                 options.method_options.context,
             )

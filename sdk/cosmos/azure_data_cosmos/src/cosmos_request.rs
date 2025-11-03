@@ -42,7 +42,6 @@ pub struct CosmosRequest {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
     pub resource_id: Option<String>,
-    pub resource_address: Option<String>,
     pub database_name: Option<String>,
     pub collection_name: Option<String>,
     pub document_name: Option<String>,
@@ -76,8 +75,7 @@ impl CosmosRequest {
         Self {
             operation_type,
             resource_type,
-            resource_id: resource_id.clone(),
-            resource_address: resource_id,
+            resource_id: resource_id,
             database_name: None,
             collection_name: None,
             document_name: None,
@@ -251,7 +249,7 @@ impl CosmosRequestBuilder {
     }
 
     /// Finish construction and return the immutable `CosmosRequest`.
-    pub fn build(self) -> Result<CosmosRequest, String> {
+    pub fn build(self) -> azure_core::Result<CosmosRequest> {
         let mut req = CosmosRequest::new(
             self.operation_type,
             self.resource_type,
