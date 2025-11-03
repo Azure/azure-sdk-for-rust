@@ -516,7 +516,6 @@ where
     M::Format: Send + 'static,
 {
     type Output = crate::Result<Response<M::Output, M::Format>>;
-    // Tie the boxed future's lifetime to 'a so it can capture Context<'a> without requiring 'static.
     type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send>>;
 
     fn into_future(mut self) -> Self::IntoFuture {
@@ -586,7 +585,7 @@ enum State<N> {
 }
 
 /// The type of the oneshot channel sender for the target future.
-type TargetTransmitterType<'a, M> = oneshot::Sender<(Pin<BoxedFuture<M>>, Option<Context<'a>>)>;
+type TargetTransmitterType<'a, M> = (Pin<BoxedFuture<M>>, Option<Context<'a>>);
 
 /// Represents the state used for each iteration through the poller stream.
 struct PollerStreamState<'a, M, N, Fun>
@@ -598,7 +597,7 @@ where
     /// The callback function to make requests
     make_request: Fun,
     /// Optional channel sender for the target future
-    target_tx: Option<TargetTransmitterType<'a, M>>,
+    target_tx: Option<oneshot::Sender<TargetTransmitterType<'a, M>>>,
     /// The context for the operation
     ctx: Context<'a>,
     /// Whether a span was added to the context
@@ -695,7 +694,6 @@ where
                     response,
                     target: get_target,
                 }) => {
-                    println!("PollerResult::Succeeded: sending target future through channel");
                     // Send the target callback through the channel
                     if let Some(tx) = unfold_state.target_tx.take() {
                         let _ = tx.send((
@@ -708,7 +706,6 @@ where
                         ));
                     }
                     // Also yield the final status response
-                    println!("PollerResult::Succeeded: Moving to Done state.");
                     unfold_state.state = State::Done;
                     return Some((Ok(response), unfold_state));
                 }
@@ -722,9 +719,11 @@ where
 
     let target = Box::new(async move {
         match target_rx.await {
-            Ok(fut) => {
-                let res = fut.0.await;
-                if let Some(ctx) = fut.1 {
+            Ok(target_state) => {
+                // Await the target future to get the final response from the poller.
+                let res = target_state.0.await;
+                // If we added a span to the target, take the result of the final target future to finalize the span.
+                if let Some(ctx) = target_state.1 {
                     match &res {
                         Ok(response) => {
                             // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
@@ -750,11 +749,16 @@ where
                             }
                         }
                         Err(err) => {
-                            println!("Poller target error: {:?}", err);
+                            if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+                                span.set_status(SpanStatus::Error {
+                                    description: err.to_string(),
+                                });
+                                span.set_attribute("error.type", err.kind().to_string().into());
+                                span.end();
+                            }
                         }
                     }
                 }
-
                 res
             }
             Err(err) => Err(crate::Error::with_error(
