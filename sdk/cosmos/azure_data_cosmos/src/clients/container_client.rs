@@ -366,11 +366,7 @@ impl ContainerClient {
             .build();
 
         self.pipeline
-            .send(
-                cosmos_request?,
-                link,
-                options.method_options.context,
-            )
+            .send(cosmos_request?, link, options.method_options.context)
             .await
     }
 
@@ -515,11 +511,7 @@ impl ContainerClient {
             .build();
 
         self.pipeline
-            .send(
-                cosmos_request?,
-                link,
-                options.method_options.context,
-            )
+            .send(cosmos_request?, link, options.method_options.context)
             .await
     }
 
@@ -559,11 +551,7 @@ impl ContainerClient {
             .build();
 
         self.pipeline
-            .send(
-                cosmos_request?,
-                link,
-                options.method_options.context,
-            )
+            .send(cosmos_request?, link, options.method_options.context)
             .await
     }
 
@@ -641,11 +629,7 @@ impl ContainerClient {
             .build();
 
         self.pipeline
-            .send(
-                cosmos_request?,
-                link,
-                options.method_options.context,
-            )
+            .send(cosmos_request?, link, options.method_options.context)
             .await
     }
 
