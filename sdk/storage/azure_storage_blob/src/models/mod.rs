@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-mod extensions;
+pub mod extensions;
 
 pub use crate::generated::models::{
-    AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
+    AccessPolicy, AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
     AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockFromUrlResultHeaders,
     AppendBlobClientAppendBlockOptions, AppendBlobClientAppendBlockResult,
     AppendBlobClientAppendBlockResultHeaders, AppendBlobClientCreateOptions,
@@ -36,15 +36,16 @@ pub use crate::generated::models::{
     BlobContainerClientBreakLeaseResultHeaders, BlobContainerClientChangeLeaseOptions,
     BlobContainerClientChangeLeaseResult, BlobContainerClientChangeLeaseResultHeaders,
     BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccountInfoOptions,
-    BlobContainerClientGetAccountInfoResult, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
-    BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
-    BlobContainerClientReleaseLeaseResultHeaders, BlobContainerClientRenameResult,
-    BlobContainerClientRenameResultHeaders, BlobContainerClientRenewLeaseOptions,
-    BlobContainerClientRenewLeaseResult, BlobContainerClientRenewLeaseResultHeaders,
-    BlobContainerClientRestoreResult, BlobContainerClientRestoreResultHeaders,
+    BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
+    BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
+    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
+    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientReleaseLeaseResult, BlobContainerClientReleaseLeaseResultHeaders,
+    BlobContainerClientRenameResult, BlobContainerClientRenameResultHeaders,
+    BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
+    BlobContainerClientRenewLeaseResultHeaders, BlobContainerClientRestoreResult,
+    BlobContainerClientRestoreResultHeaders, BlobContainerClientSetAccessPolicyOptions,
     BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetAccessPolicyResultHeaders,
     BlobContainerClientSetMetadataOptions, BlobCopySourceTags, BlobDeleteType, BlobExpiryOptions,
     BlobFlatListSegment, BlobImmutabilityPolicyMode, BlobItemInternal, BlobMetadata, BlobName,

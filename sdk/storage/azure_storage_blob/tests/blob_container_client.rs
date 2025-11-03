@@ -3,13 +3,14 @@
 
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, Matcher, TestContext, TestMode};
-use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
-    AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
+    AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
+    SignedIdentifier,
 };
+use azure_storage_blob::{format_datetime, format_filter_expression};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name,
@@ -17,6 +18,7 @@ use azure_storage_blob_test::{
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
+use typespec_client_core::time::OffsetDateTime;
 
 #[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -390,6 +392,35 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
             .any(|blob| blob.name.as_ref().unwrap() == &blob2_name),
         "Failed to find \"{blob2_name}\" in filtered blob results."
     );
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    container_client.create_container(None).await?;
+
+    // Set Access Policy w/ Policy Defined
+    let access_policy = AccessPolicy {
+        expiry: Some(format_datetime(
+            OffsetDateTime::now_utc() + Duration::seconds(10),
+        )?),
+        permission: Some("rw".to_string()),
+        start: Some(format_datetime(OffsetDateTime::now_utc())?),
+    };
+    let signed_identifier = SignedIdentifier {
+        access_policy: Some(access_policy),
+        id: Some("testid".into()),
+    };
+
+    container_client
+        .set_access_policy(vec![signed_identifier], None)
+        .await?;
 
     container_client.delete_container(None).await?;
     Ok(())

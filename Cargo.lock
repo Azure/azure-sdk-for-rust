@@ -511,6 +511,7 @@ dependencies = [
  "futures",
  "serde",
  "serde_json",
+ "time",
  "tokio",
  "tracing",
  "typespec_client_core",

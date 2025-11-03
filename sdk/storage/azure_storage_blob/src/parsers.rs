@@ -1,8 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::{error::ErrorKind, Error};
 use std::collections::HashMap;
-use std::io::{Error, ErrorKind};
+use time::{format_description::FormatItem, macros::format_description, OffsetDateTime, UtcOffset};
+
+static RFC3339_7: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:7]Z");
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
 ///  returns the HTTP range in String format.
@@ -16,7 +20,7 @@ use std::io::{Error, ErrorKind};
 pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     if offset % 512 != 0 {
         return Err(Error::new(
-            ErrorKind::InvalidInput,
+            ErrorKind::DataConversion,
             format!(
                 "provided offset {} is not aligned to a 512-byte boundary.",
                 offset
@@ -25,7 +29,7 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     }
     if length % 512 != 0 {
         return Err(Error::new(
-            ErrorKind::InvalidInput,
+            ErrorKind::DataConversion,
             format!(
                 "provided length {} is not aligned to a 512-byte boundary.",
                 offset
@@ -47,7 +51,7 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
 pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String, Error> {
     if tags.is_empty() {
         return Err(Error::new(
-            ErrorKind::InvalidInput,
+            ErrorKind::DataConversion,
             "Tags HashMap cannot be empty.".to_string(),
         ));
     }
@@ -58,4 +62,18 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
         .collect();
 
     Ok(format_expression.join(" and "))
+}
+
+/// Takes in a OffsetDateTime and converts to RFC3339-like string with exactly 7 decimal precision and converted to UTC.
+///
+/// # Arguments
+/// * `datetime` - OffsetDateTime to format.
+pub fn format_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
+    let utc = datetime.to_offset(UtcOffset::UTC);
+    utc.format(RFC3339_7).map_err(|e| {
+        Error::new(
+            ErrorKind::DataConversion,
+            format!("Failed to format datetime: {}", e),
+        )
+    })
 }
