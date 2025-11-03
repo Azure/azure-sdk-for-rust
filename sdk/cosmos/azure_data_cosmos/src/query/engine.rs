@@ -76,9 +76,9 @@ pub trait QueryPipeline: Send {
     /// So, for any given partition key range, page n's results must be earlier in the `data` vector than page n+1's results.
     /// Data from different partition key ranges may be interleaved, as long as each partition key range's pages are in order.
     ///
-    /// The pipeline will use the [`QueryResult::request_index`] field to validate this.
+    /// The pipeline will use the [`QueryResult::request_id`] field to validate this.
     ///
-    /// When providing data from a draining request (i.e. a request with `drain = true`), all pages for that draining request can share the same [`QueryResult::request_index`].
+    /// When providing data from a draining request (i.e. a request with `drain = true`), all pages for that draining request can share the same [`QueryResult::request_id`].
     fn provide_data(&mut self, data: Vec<QueryResult>) -> azure_core::Result<()>;
 }
 
