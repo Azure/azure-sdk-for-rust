@@ -11,16 +11,14 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{
-        request::{options::ContentType, Request},
-        response::Response,
-        Method, Url,
-    },
+    http::{response::Response, Url},
 };
 use serde::Serialize;
 use std::sync::Arc;
 
+use crate::cosmos_request::CosmosRequestBuilder;
 use crate::models::AccountProperties;
+use crate::operation_context::OperationType;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 
@@ -112,17 +110,18 @@ impl CosmosClient {
     /// * `options` - Optional request options (currently unused for custom
     ///   headers, but the context can carry per-call metadata for tracing or
     ///   cancellation).
-    async fn get_database_account(
+    pub async fn get_database_account(
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<AccountProperties>> {
         let options = options.unwrap_or_default();
-        let mut req = Request::new(self.pipeline.endpoint.clone(), Method::Get);
+        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::DatabaseAccount);
+        let cosmos_request = builder.build();
         self.pipeline
             .send(
-                options.method_options.context,
-                &mut req,
+                cosmos_request.unwrap(),
                 ResourceLink::root(ResourceType::DatabaseAccount),
+                options.method_options.context,
             )
             .await
     }
@@ -229,17 +228,18 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let url = self.pipeline.url(&self.databases_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options.throughput)?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&RequestBody { id })?;
+        let body = serde_json::to_vec(&RequestBody { id })?;
+        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Databases);
+        let cosmos_request = builder
+            .headers(&options.throughput)
+            .body(Some(body))
+            .build();
 
         self.pipeline
             .send(
-                options.method_options.context,
-                &mut req,
+                cosmos_request.unwrap(),
                 self.databases_link.clone(),
+                options.method_options.context,
             )
             .await
     }

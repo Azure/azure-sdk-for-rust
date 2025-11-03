@@ -16,6 +16,8 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
+use crate::cosmos_request::CosmosRequest;
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::{
     constants,
     models::ThroughputProperties,
@@ -28,6 +30,7 @@ use crate::{
 pub struct CosmosPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
+    retry_handler: BackOffRetryHandler,
 }
 
 impl CosmosPipeline {
@@ -45,8 +48,12 @@ impl CosmosPipeline {
             vec![Arc::new(auth_policy)],
             None,
         );
-
-        CosmosPipeline { endpoint, pipeline }
+        let retry_handler = BackOffRetryHandler;
+        CosmosPipeline {
+            endpoint,
+            pipeline,
+            retry_handler,
+        }
     }
 
     /// Creates a [`Url`] out of the provided [`ResourceLink`]
@@ -72,13 +79,27 @@ impl CosmosPipeline {
 
     pub async fn send<T>(
         &self,
-        ctx: Context<'_>,
-        request: &mut Request,
+        mut cosmos_request: CosmosRequest,
         resource_link: ResourceLink,
+        context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        self.send_raw(ctx, request, resource_link)
-            .await
-            .map(Into::into)
+        cosmos_request.request_context.location_endpoint_to_route =
+            Some(resource_link.url(&self.endpoint));
+
+        // Prepare a cloneable ResourceLink to avoid moving it, allowing the closure to be Fn
+        let resource_link_for_sender = resource_link.clone();
+        let sender = move |req: &mut CosmosRequest| {
+            let ctx = context.clone();
+            let mut raw_req = req.clone().into_raw_request();
+            let url = resource_link_for_sender.clone();
+            async move { self.send_raw(ctx, &mut raw_req, url).await }
+        };
+
+        // Delegate to the retry handler, providing the sender callback
+        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
+
+        // Convert RawResponse into typed Response<T>
+        res.map(Into::into)
     }
 
     pub fn send_query_request<T: DeserializeOwned + Send>(
@@ -152,7 +173,10 @@ impl CosmosPipeline {
 
         // Now we can read the offer itself
         let mut req = Request::new(offer_url, Method::Get);
-        self.send(context, &mut req, offer_link).await.map(Some)
+        self.send_raw(context, &mut req, offer_link)
+            .await
+            .map(Into::into)
+            .map(Some)
     }
 
     /// Helper function to update a throughput offer given a resource ID.
@@ -183,7 +207,9 @@ impl CosmosPipeline {
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&current_throughput)?;
 
-        self.send(context, &mut req, offer_link).await
+        self.send_raw(context, &mut req, offer_link)
+            .await
+            .map(Into::into)
     }
 }
 
