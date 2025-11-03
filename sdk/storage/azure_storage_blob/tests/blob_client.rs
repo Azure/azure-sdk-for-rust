@@ -9,7 +9,7 @@ use azure_core_test::{recorded, Matcher, TestContext};
 use azure_storage_blob::{
     models::{
         AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
-        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
+        BlobClientChangeLeaseResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
@@ -642,5 +642,52 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     container_client.delete_container(None).await?;
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_delete_blob_multiple_versions_issue(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Create Test Blob
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Get Old Version
+    let response = blob_client.get_properties(None).await?;
+    let old_version = response.version_id()?;
+    println!("Old Version ID: {:?}", old_version); // Some("2025-11-03T20:26:15.3021299Z")
+
+    // Generate New Version by Overwriting Blob
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from("overwrite original contents".into())),
+        None,
+    )
+    .await?;
+
+    // Get New Version
+    let response = blob_client.get_properties(None).await?;
+    let new_version = response.version_id()?;
+    println!("New Version ID: {:?}", new_version); // Some("2025-11-03T20:26:15.3800869Z")
+
+    // Get a version-aware BlobClient for Old Version
+    let old_version_blob_client = blob_client.with_version_id(&old_version.unwrap())?;
+
+    // Call delete on old version BlobClient while also providing new version ID in options bag
+    let blob_client_delete_options = BlobClientDeleteOptions {
+        version_id: Some(new_version.unwrap()),
+        ..Default::default()
+    };
+
+    // Observe request in Fiddler
+    old_version_blob_client
+        .delete(Some(blob_client_delete_options))
+        .await?;
+    // DELETE /containernjznmvgq/blobeexqko1s?versionid=2025-11-03T20%3A26%3A15.3021299Z&versionid=2025-11-03T20%3A26%3A15.3800869Z HTTP/1.1
+
+    container_client.delete_container(None).await?;
     Ok(())
 }

@@ -143,6 +143,48 @@ impl BlobClient {
         Ok(Self { client })
     }
 
+    /// Creates a new BlobClient targeting a specific blob version.
+    ///
+    /// # Arguments
+    ///
+    /// * `version_id` - The version ID of the blob to target.
+    pub fn with_version_id(&self, version_id: &str) -> Result<Self> {
+        let mut versioned_endpoint = self.client.endpoint.clone();
+        versioned_endpoint
+            .query_pairs_mut()
+            .append_pair("versionid", version_id);
+
+        Ok(Self {
+            client: GeneratedBlobClient {
+                endpoint: versioned_endpoint,
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+        })
+    }
+
+    /// Creates a new BlobClient targeting a specific blob snapshot.
+    ///
+    /// # Arguments
+    ///
+    /// * `snapshot` - The snapshot ID of the blob to target.
+    pub fn with_snapshot(&self, snapshot: &str) -> Result<Self> {
+        let mut snapshot_endpoint = self.client.endpoint.clone();
+        snapshot_endpoint
+            .query_pairs_mut()
+            .append_pair("snapshot", snapshot);
+
+        Ok(Self {
+            client: GeneratedBlobClient {
+                endpoint: snapshot_endpoint,
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+        })
+    }
+
     /// Returns a new instance of AppendBlobClient.
     pub fn append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
