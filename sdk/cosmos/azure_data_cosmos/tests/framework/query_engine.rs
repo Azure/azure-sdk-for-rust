@@ -137,7 +137,7 @@ struct PartitionState {
     started: bool,
     queue: VecDeque<MockItem>,
     next_continuation: Option<String>,
-    next_id: usize,
+    next_id: u64,
 }
 
 impl PartitionState {

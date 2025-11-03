@@ -8,7 +8,7 @@ pub struct QueryRequest {
     /// This value allows the pipeline to track which requests correspond to which results.
     /// All [`QueryResult`]s provided back to the pipeline as a result of this request must have this same ID in the [`QueryResult::request_id`] field.
     /// It must be provided back to the pipeline when providing data, so that the pipeline can ensure that data is provided in order.
-    pub id: usize,
+    pub id: u64,
 
     /// The continuation to use, if any.
     pub continuation: Option<String>,
@@ -35,7 +35,7 @@ pub struct QueryResult<'a> {
     pub partition_key_range_id: &'a str,
 
     /// The ID of the [`QueryRequest`] that generated this result.
-    pub request_id: usize,
+    pub request_id: u64,
 
     /// The continuation token to be used for the next request, if any.
     pub next_continuation: Option<String>,
