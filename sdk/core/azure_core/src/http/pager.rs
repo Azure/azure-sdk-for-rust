@@ -752,6 +752,16 @@ enum State<T> {
     Done,
 }
 
+struct PagerStreamState<'a, C, F, G, S> {
+    state: State<C>,
+    make_request: F,
+    get_next: G,
+    set_next: S,
+    ctx: Context<'a>,
+    added_span: bool,
+    //    _phantom: std::marker::PhantomData<(P, Fut)>,
+}
+
 fn iter_from_callback<
     'a,
     P,
@@ -779,53 +789,53 @@ where
     // (e.g., for tracing) without forcing non-'static borrows that trigger lifetime errors.
     unfold(
         // Flow `make_request`, `get_next`, `set_next`, and `ctx` through the state to avoid cloning.
-        (State::Init, make_request, get_next, set_next, ctx, false),
-        |(mut state, make_request, get_next, set_next, mut ctx, mut added_span)| async move {
-            if let Some(next_token) = get_next() {
-                state = State::More(next_token);
+        PagerStreamState::<C, F, G, S> {
+            state: State::Init,
+            make_request,
+            get_next,
+            set_next,
+            ctx,
+            added_span: false,
+        },
+        |mut stream_state| async move {
+            if let Some(next_token) = (stream_state.get_next)() {
+                stream_state.state = State::More(next_token);
             }
-            let result = match state {
+            let result = match stream_state.state {
                 State::Init => {
                     // At the very start of polling, create a span for the entire request, and attach it to the context
-                    let span = create_public_api_span(&ctx, None, None);
+                    let span = create_public_api_span(&stream_state.ctx, None, None);
                     if let Some(ref s) = span {
-                        added_span = true;
-                        ctx = ctx.with_value(s.clone());
+                        stream_state.added_span = true;
+                        stream_state.ctx = stream_state.ctx.with_value(s.clone());
                     }
-                    make_request(PagerState::Initial, ctx.clone()).await
+                    (stream_state.make_request)(PagerState::Initial, stream_state.ctx.clone()).await
                 }
-                State::More(n) => make_request(PagerState::More(n), ctx.clone()).await,
+                State::More(n) => {
+                    (stream_state.make_request)(PagerState::More(n), stream_state.ctx.clone()).await
+                }
                 State::Done => {
-                    set_next(None);
+                    (stream_state.set_next)(None);
                     return None;
                 }
             };
             let (item, next_state) = match result {
                 Err(e) => {
-                    return Some((
-                        Err(e),
-                        (
-                            State::Done,
-                            make_request,
-                            get_next,
-                            set_next,
-                            ctx,
-                            added_span,
-                        ),
-                    ));
+                    stream_state.state = State::Done;
+                    return Some((Err(e), stream_state));
                 }
                 Ok(PagerResult::More {
                     response,
                     continuation: next_token,
                 }) => {
-                    set_next(Some(next_token.as_ref()));
+                    (stream_state.set_next)(Some(next_token.as_ref()));
                     (Ok(response), State::More(next_token))
                 }
                 Ok(PagerResult::Done { response }) => {
                     // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
                     // otherwise it is the responsibility of the caller to end their span.
-                    if added_span {
-                        if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+                    if stream_state.added_span {
+                        if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
                             // P is unconstrained, so it's not possible to retrieve the status code for now.
 
                             // // 5xx status codes SHOULD set status to Error.
@@ -847,23 +857,14 @@ where
                             span.end();
                         }
                     }
-                    set_next(None);
+                    (stream_state.set_next)(None);
                     (Ok(response), State::Done)
                 }
             };
 
             // Propagate state (including `ctx`) without cloning.
-            Some((
-                item,
-                (
-                    next_state,
-                    make_request,
-                    get_next,
-                    set_next,
-                    ctx,
-                    added_span,
-                ),
-            ))
+            stream_state.state = next_state;
+            Some((item, stream_state))
         },
     )
 }

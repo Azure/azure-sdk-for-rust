@@ -647,21 +647,27 @@ where
             ctx,
             added_span: false,
         },
-        move |mut unfold_state| async move {
-            let result = match unfold_state.state {
+        move |mut poller_stream_state| async move {
+            let result = match poller_stream_state.state {
                 State::Init => {
                     // At the very start of polling, create a span for the entire request, and attach it to the context
-                    let span = create_public_api_span(&unfold_state.ctx, None, None);
+                    let span = create_public_api_span(&poller_stream_state.ctx, None, None);
                     if let Some(ref s) = span {
-                        unfold_state.added_span = true;
-                        unfold_state.ctx = unfold_state.ctx.with_value(s.clone());
+                        poller_stream_state.added_span = true;
+                        poller_stream_state.ctx = poller_stream_state.ctx.with_value(s.clone());
                     }
-                    (unfold_state.make_request)(PollerState::Initial, unfold_state.ctx.clone())
-                        .await
+                    (poller_stream_state.make_request)(
+                        PollerState::Initial,
+                        poller_stream_state.ctx.clone(),
+                    )
+                    .await
                 }
                 State::InProgress(n) => {
-                    (unfold_state.make_request)(PollerState::More(n), unfold_state.ctx.clone())
-                        .await
+                    (poller_stream_state.make_request)(
+                        PollerState::More(n),
+                        poller_stream_state.ctx.clone(),
+                    )
+                    .await
                 }
                 State::Done => {
                     return None;
@@ -669,8 +675,8 @@ where
             };
             let (item, next_state) = match result {
                 Err(e) => {
-                    unfold_state.state = State::Done;
-                    return Some((Err(e), unfold_state));
+                    poller_stream_state.state = State::Done;
+                    return Some((Err(e), poller_stream_state));
                 }
                 Ok(PollerResult::InProgress {
                     response,
@@ -695,25 +701,25 @@ where
                     target: get_target,
                 }) => {
                     // Send the target callback through the channel
-                    if let Some(tx) = unfold_state.target_tx.take() {
+                    if let Some(tx) = poller_stream_state.target_tx.take() {
                         let _ = tx.send((
                             get_target(),
-                            if unfold_state.added_span {
-                                Some(unfold_state.ctx.clone())
+                            if poller_stream_state.added_span {
+                                Some(poller_stream_state.ctx.clone())
                             } else {
                                 None
                             },
                         ));
                     }
                     // Also yield the final status response
-                    unfold_state.state = State::Done;
-                    return Some((Ok(response), unfold_state));
+                    poller_stream_state.state = State::Done;
+                    return Some((Ok(response), poller_stream_state));
                 }
             };
 
             // Update state and return
-            unfold_state.state = next_state;
-            Some((item, unfold_state))
+            poller_stream_state.state = next_state;
+            Some((item, poller_stream_state))
         },
     );
 
