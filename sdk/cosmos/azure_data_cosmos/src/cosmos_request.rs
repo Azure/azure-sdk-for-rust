@@ -75,7 +75,7 @@ impl CosmosRequest {
         Self {
             operation_type,
             resource_type,
-            resource_id: resource_id,
+            resource_id,
             database_name: None,
             collection_name: None,
             document_name: None,
