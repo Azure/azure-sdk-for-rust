@@ -178,12 +178,10 @@ where
             let (last_result, retry_after) = match result {
                 Ok(response) => {
                     let status = response.status();
-                    let retry_status_codes = self.retry_status_codes();
-                    let retry_status_codes = if retry_status_codes.is_empty() {
-                        DEFAULT_RETRY_STATUS_CODES
-                    } else {
-                        retry_status_codes
-                    };
+                    let mut retry_status_codes = self.retry_status_codes();
+                    if retry_status_codes.is_empty() {
+                        retry_status_codes = DEFAULT_RETRY_STATUS_CODES;
+                    }
                     if !retry_status_codes.contains(&status) {
                         if status.is_success() {
                             trace!("server returned success status {}", status,);
