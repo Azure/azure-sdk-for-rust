@@ -134,9 +134,7 @@ impl CosmosPipeline {
                     Ok(page.into())
                 }
             },
-            Some(PagerOptions {
-                context: ctx.clone(),
-            }),
+            Some(PagerOptions { context: ctx }),
         ))
     }
 

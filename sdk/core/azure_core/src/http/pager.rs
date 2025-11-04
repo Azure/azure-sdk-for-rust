@@ -313,7 +313,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, ctx| {
+    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, ctx: Context| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -400,9 +400,7 @@ impl<P: Page> ItemIterator<P> {
     where
         'a: 'static,
     {
-        let options = options.unwrap_or(PagerOptions {
-            context: Context::new(),
-        });
+        let options = options.unwrap_or_default();
         Self::from_stream(iter_from_callback(
             make_request,
             options.context.clone(),
@@ -759,7 +757,6 @@ struct PagerStreamState<'a, C, F, G, S> {
     set_next: S,
     ctx: Context<'a>,
     added_span: bool,
-    //    _phantom: std::marker::PhantomData<(P, Fut)>,
 }
 
 fn iter_from_callback<
@@ -1091,13 +1088,9 @@ mod tests {
 
         // Create the second PageIterator.
         let context = Context::new();
-        let mut second_pager: PageIterator<Response<Page>> = PageIterator::from_callback(
-            make_callback(),
-            Some(PagerOptions {
-                context: context.clone(),
-            }),
-        )
-        .with_continuation_token(continuation_token);
+        let mut second_pager: PageIterator<Response<Page>> =
+            PageIterator::from_callback(make_callback(), Some(PagerOptions { context }))
+                .with_continuation_token(continuation_token);
 
         // Should start with link to second page.
         assert_eq!(
