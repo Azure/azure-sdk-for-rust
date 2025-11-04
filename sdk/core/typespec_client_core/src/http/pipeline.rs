@@ -73,7 +73,10 @@ impl Pipeline {
 
         let pipeline_options = pipeline_options.unwrap_or_default();
 
-        let retry_policy = options.retry.to_policy(pipeline_options.retry_headers);
+        let retry_policy = options.retry.to_policy(
+            pipeline_options.retry_headers.clone(),
+            &pipeline_options.retry_status_codes,
+        );
         pipeline.push(retry_policy);
 
         pipeline.extend_from_slice(&per_try_policies);
@@ -134,10 +137,8 @@ mod tests {
     use crate::{
         error::{Error, ErrorKind},
         http::{
-            headers::{Headers, RETRY_AFTER},
-            policies::{PolicyResult, RetryHeaders},
-            BufResponse, FixedRetryOptions, JsonFormat, Method, Response, RetryOptions, StatusCode,
-            Transport,
+            headers::Headers, policies::PolicyResult, BufResponse, FixedRetryOptions, JsonFormat,
+            Method, Response, RetryOptions, StatusCode, Transport,
         },
         stream::BytesStream,
         Bytes,
@@ -180,12 +181,7 @@ mod tests {
                 transport: Some(Transport::with_policy(Arc::new(Responder {}))),
                 ..Default::default()
             };
-            let pipeline_options = PipelineOptions {
-                retry_headers: RetryHeaders {
-                    retry_headers: vec![RETRY_AFTER],
-                },
-            };
-            let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), Some(pipeline_options));
+            let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), None);
             let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
             let raw_response = pipeline
                 .send(&Context::default(), &mut request, None)

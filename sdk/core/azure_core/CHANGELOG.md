@@ -21,6 +21,7 @@
 - Removed `Poller::wait()` function. Call `await` on a `Poller` to wait for it to complete and, upon success, return the final model.
 - Removed `xml::read_xml_str()`.
 - Renamed `BearerTokenCredentialPolicy` to `BearerTokenAuthorizationPolicy`.
+- Renamed `RetryPolicy::get_retry_headers()` to `RetryPolicy::retry_headers()`
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed
