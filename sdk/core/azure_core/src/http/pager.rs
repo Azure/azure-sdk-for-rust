@@ -3,7 +3,10 @@
 
 //! Types and methods for pageable responses.
 
-use crate::http::{headers::HeaderName, response::Response, DeserializeWith, Format, JsonFormat};
+use crate::{
+    error::ErrorKind,
+    http::{headers::HeaderName, response::Response, DeserializeWith, Format, JsonFormat},
+};
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
 use std::{
@@ -272,7 +275,7 @@ impl<P: Page> ItemIterator<P> {
     ///
     /// This method expect a callback that accepts a single [`PagerState<C>`] parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
     /// The `C` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
-    /// The result will be an asynchronous stream of [`Result<T>`](typespec::Result<T>) values.
+    /// The result will be an asynchronous stream of [`Result<T>`](crate::Result<T>) values.
     ///
     /// The first time your callback is called, it will be called with [`Option::None`], indicating no next link/continuation token is present.
     ///
@@ -387,7 +390,7 @@ impl<P: Page> ItemIterator<P> {
         make_request: F,
     ) -> Self
     where
-        <C as FromStr>::Err: fmt::Debug,
+        <C as FromStr>::Err: std::error::Error,
     {
         let next_token = Arc::new(Mutex::new(None::<String>));
         let stream = iter_from_callback(make_request, next_token.clone());
@@ -440,7 +443,7 @@ impl<P: Page> ItemIterator<P> {
         }
     }
 
-    /// Advance the `ItemIterator` to the page referenced by `continuation_token`.
+    /// Start the `ItemIterator` at the page referenced by `continuation_token`.
     ///
     /// You should call this before iterating the [`Stream`] or results may be unpredictable.
     /// Iteration of items will start from the beginning on the current page until _after_ all items are iterated.
@@ -461,9 +464,11 @@ impl<P: Page> ItemIterator<P> {
     /// # async fn main() -> azure_core::Result<()> {
     /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
     ///
-    /// // Advance first pager to first page.
+    /// // Start the first pager at the first page.
     /// let mut pager = client.list_secret_properties(None)?;
     ///
+    /// // Continue the second pager from where the first pager left off,
+    /// // which is the first page in this example.
     /// let mut pager = client.list_secret_properties(None)?
     ///     .with_continuation_token(Some("continuation_token_from_another_pager".into()));
     ///
@@ -588,7 +593,7 @@ impl<P> PageIterator<P> {
     ///
     /// This method expect a callback that accepts a single [`PagerState<C>`] parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
     /// The `C` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
-    /// The result will be an asynchronous stream of [`Result<T>`](typespec::Result<T>) values.
+    /// The result will be an asynchronous stream of [`Result<T>`](crate::Result<T>) values.
     ///
     /// The first time your callback is called, it will be called with [`PagerState::Initial`], indicating no next link/continuation token is present.
     ///
@@ -685,7 +690,7 @@ impl<P> PageIterator<P> {
         make_request: F,
     ) -> Self
     where
-        <C as FromStr>::Err: fmt::Debug,
+        <C as FromStr>::Err: std::error::Error,
     {
         let continuation_token = Arc::new(Mutex::new(None::<String>));
         let stream = iter_from_callback(make_request, continuation_token.clone());
@@ -696,7 +701,7 @@ impl<P> PageIterator<P> {
         }
     }
 
-    /// Creates a [`PageIterator<P>`] from a raw stream of [`Result<P>`](typespec::Result<P>) values.
+    /// Creates a [`PageIterator<P>`] from a raw stream of [`Result<P>`](crate::Result<P>) values.
     ///
     /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
     pub fn from_stream<
@@ -712,7 +717,7 @@ impl<P> PageIterator<P> {
         }
     }
 
-    /// Advance the `PageIterator` to the page referenced by `continuation_token`.
+    /// Start the `PageIterator` at the page referenced by `continuation_token`.
     ///
     /// You should call this before iterating the [`Stream`] or results may be unpredictable.
     ///
@@ -730,10 +735,12 @@ impl<P> PageIterator<P> {
     /// # async fn main() -> azure_core::Result<()> {
     /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
     ///
-    /// // Advance first pager to first page.
+    /// // Start the first pager at the first page.
     /// let mut pager = client.list_secret_properties(None)?
     ///     .into_pages();
     ///
+    /// // Continue the second pager from where the first pager left off,
+    /// // which is the first page in this example.
     /// let mut pager = client.list_secret_properties(None)?
     ///     .into_pages()
     ///     .with_continuation_token("continuation_token_from_another_pager".to_string());
@@ -816,7 +823,7 @@ fn iter_from_callback<
     continuation_token: Arc<Mutex<Option<String>>>,
 ) -> impl Stream<Item = crate::Result<P>> + 'static
 where
-    <C as FromStr>::Err: fmt::Debug,
+    <C as FromStr>::Err: std::error::Error,
 {
     unfold(
         // We flow the `make_request` callback and `continuation_token` through the state value so that we can avoid cloning.
@@ -825,13 +832,32 @@ where
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
             if state != State::Done {
-                if let Ok(next_token) = continuation_token.lock() {
-                    let next_token = next_token
-                        .clone()
-                        .map(|n| n.parse().expect("valid continuation_token"));
-                    // Restart the pager if `next_token` is None indicating we resumed from before or within the first page.
-                    state = next_token.map_or_else(|| State::Init, |n| State::More(n));
-                }
+                state = match continuation_token.lock() {
+                    Ok(next_token) => match next_token.as_deref() {
+                        Some(n) => match n.parse() {
+                            Ok(s) => State::More(s),
+                            Err(err) => {
+                                return Some((
+                                    Err(crate::Error::with_message_fn(
+                                        ErrorKind::DataConversion,
+                                        || format!("invalid continuation token: {err}"),
+                                    )),
+                                    (State::Done, make_request, continuation_token.clone()),
+                                ))
+                            }
+                        },
+                        // Restart the pager if `next_token` is None indicating we resumed from before or within the first page.
+                        None => State::Init,
+                    },
+                    Err(err) => {
+                        return Some((
+                            Err(crate::Error::with_message_fn(ErrorKind::Other, || {
+                                format!("continuation token lock: {err}")
+                            })),
+                            (State::Done, make_request, continuation_token.clone()),
+                        ))
+                    }
+                };
             }
             let result = match state {
                 State::Init => {
@@ -880,10 +906,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::http::{
-        headers::{HeaderName, HeaderValue},
-        pager::{PageIterator, Pager, PagerResult, PagerState},
-        RawResponse, Response, StatusCode,
+    use crate::{
+        error::ErrorKind,
+        http::{
+            headers::{HeaderName, HeaderValue},
+            pager::{PageIterator, Pager, PagerResult, PagerState},
+            RawResponse, Response, StatusCode,
+        },
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};
@@ -977,8 +1006,8 @@ mod tests {
                         .into(),
                         continuation: "1".into(),
                     }),
-                    PagerState::More(ref i) if i == "1" => Err(typespec::Error::with_message(
-                        typespec::error::ErrorKind::Other,
+                    PagerState::More(ref i) if i == "1" => Err(crate::Error::with_message(
+                        crate::error::ErrorKind::Other,
                         "yon request didst fail",
                     )),
                     _ => {
@@ -986,7 +1015,7 @@ mod tests {
                     }
                 }
             });
-        let pages: Vec<Result<(String, Page), typespec::Error>> = pager
+        let pages: Vec<Result<(String, Page), crate::Error>> = pager
             .into_pages()
             .then(|r| async move {
                 let r = r?;
@@ -1012,7 +1041,7 @@ mod tests {
         );
 
         let err = pages[1].as_ref().unwrap_err();
-        assert_eq!(&typespec::error::ErrorKind::Other, err.kind());
+        assert_eq!(&crate::error::ErrorKind::Other, err.kind());
         assert_eq!("yon request didst fail", format!("{}", err));
     }
 
@@ -1369,6 +1398,63 @@ mod tests {
         // Get remaining items.
         let items: Vec<i32> = second_pager.try_collect().await.unwrap();
         assert_eq!(items.as_slice(), vec![2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    /// A continuation token type that always fails to parse, used to test FromStr constraint.
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct ContinuationToken(String);
+
+    impl AsRef<str> for ContinuationToken {
+        fn as_ref(&self) -> &str {
+            &self.0
+        }
+    }
+
+    impl std::str::FromStr for ContinuationToken {
+        type Err = std::io::Error;
+
+        fn from_str(_s: &str) -> Result<Self, Self::Err> {
+            // Always fail to parse
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "ContinuationToken parsing always fails",
+            ))
+        }
+    }
+
+    #[tokio::test]
+    async fn callback_item_pagination_from_str_error() {
+        let mut pager: Pager<Page> =
+            Pager::from_callback(|continuation: PagerState<ContinuationToken>| async move {
+                match continuation {
+                    PagerState::Initial => Ok(PagerResult::More {
+                        response: RawResponse::from_bytes(
+                            StatusCode::Ok,
+                            HashMap::from([(
+                                HeaderName::from_static("x-test-header"),
+                                HeaderValue::from_static("page-1"),
+                            )])
+                            .into(),
+                            r#"{"items":[1],"page":1}"#,
+                        )
+                        .into(),
+                        // cspell:ignore unparseable
+                        continuation: ContinuationToken("unparseable-token".to_string()),
+                    }),
+                    _ => {
+                        panic!("Unexpected continuation value: {:?}", continuation)
+                    }
+                }
+            });
+
+        // Get the first item from the first page.
+        let first_item = pager.try_next().await.expect("expected first page");
+        assert_eq!(first_item, Some(1));
+
+        // Attempt to get the second page, which will attempt to parse the continuation token that should fail.
+        assert!(
+            matches!(pager.try_next().await, Err(err) if err.kind() == &ErrorKind::DataConversion)
+        );
     }
 
     #[allow(clippy::type_complexity)]
