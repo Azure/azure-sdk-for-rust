@@ -44,6 +44,13 @@ pub struct MockQueryEngine {
     pub create_error: Mutex<Option<azure_core::Error>>,
     /// Configuration for what kind of QueryRequest the pipeline should return.
     pub query_request_config: Mutex<Option<QueryRequestConfig>>,
+    /// An optional "rewritten" query to assume is present in the query plan.
+    ///
+    /// The double-Option is a little awkward, but it allows us to represent three states:
+    /// - None: No rewritten query present.
+    /// - Some(None): The pipeline should return `None` from [`QueryPipeline::query`].
+    /// - Some(Some(String)): The pipeline should return the given string from [`QueryPipeline::query`].
+    pub rewritten_query: Option<Option<String>>,
 }
 
 /// Configuration for controlling what QueryRequest objects the MockQueryPipeline returns.
@@ -61,6 +68,7 @@ impl MockQueryEngine {
         Self {
             create_error: Mutex::new(None),
             query_request_config: Mutex::new(None),
+            rewritten_query: None,
         }
     }
 
@@ -69,6 +77,7 @@ impl MockQueryEngine {
         Self {
             create_error: Mutex::new(Some(error)),
             query_request_config: Mutex::new(None),
+            rewritten_query: None,
         }
     }
 
@@ -77,6 +86,15 @@ impl MockQueryEngine {
         Self {
             create_error: Mutex::new(None),
             query_request_config: Mutex::new(Some(config)),
+            rewritten_query: None,
+        }
+    }
+
+    pub fn with_rewritten_query(rewritten_query: Option<String>) -> Self {
+        Self {
+            create_error: Mutex::new(None),
+            query_request_config: Mutex::new(None),
+            rewritten_query: Some(rewritten_query),
         }
     }
 }
@@ -99,7 +117,12 @@ impl QueryEngine for MockQueryEngine {
 
         // Create a mock pipeline with the partition key ranges.
         let config = self.query_request_config.lock().unwrap().clone();
-        let pipeline = MockQueryPipeline::new(query.to_string(), pkranges.ranges, config);
+        let query = if let Some(rewritten_query) = &self.rewritten_query {
+            rewritten_query.clone()
+        } else {
+            Some(query.to_string())
+        };
+        let pipeline = MockQueryPipeline::new(query, pkranges.ranges, config);
 
         Ok(Box::new(pipeline))
     }
@@ -114,7 +137,7 @@ struct PartitionState {
     started: bool,
     queue: VecDeque<MockItem>,
     next_continuation: Option<String>,
-    next_index: usize,
+    next_id: u64,
 }
 
 impl PartitionState {
@@ -140,7 +163,7 @@ impl PartitionState {
 }
 
 struct MockQueryPipeline {
-    query: String,
+    query: Option<String>,
     partitions: Vec<PartitionState>,
     completed: bool,
     query_request_config: Option<QueryRequestConfig>,
@@ -148,7 +171,7 @@ struct MockQueryPipeline {
 
 impl MockQueryPipeline {
     pub fn new(
-        query: String,
+        query: Option<String>,
         pkranges: Vec<PartitionKeyRange>,
         config: Option<QueryRequestConfig>,
     ) -> Self {
@@ -159,7 +182,7 @@ impl MockQueryPipeline {
                 started: false,
                 queue: VecDeque::new(),
                 next_continuation: None,
-                next_index: 0,
+                next_id: 0,
             })
             .collect();
 
@@ -183,7 +206,7 @@ impl MockQueryPipeline {
             .filter(|state| !state.exhausted())
             .map(move |state| azure_data_cosmos::query::QueryRequest {
                 partition_key_range_id: state.range.id.clone(),
-                index: state.next_index,
+                id: state.next_id,
                 continuation: if state.started {
                     state.next_continuation.clone()
                 } else {
@@ -198,8 +221,8 @@ impl MockQueryPipeline {
 }
 
 impl QueryPipeline for MockQueryPipeline {
-    fn query(&self) -> &str {
-        &self.query
+    fn query(&self) -> Option<&str> {
+        self.query.as_deref()
     }
 
     fn complete(&self) -> bool {
@@ -282,16 +305,16 @@ impl QueryPipeline for MockQueryPipeline {
                 .iter_mut()
                 .find(|state| state.range.id == data.partition_key_range_id);
             if let Some(partition_state) = partition_state {
-                if partition_state.next_index != data.request_index {
+                if partition_state.next_id != data.request_id {
                     return Err(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         format!(
-                            "Out of order data provided for partition key range {}: expected index {}, got {}",
-                            data.partition_key_range_id, partition_state.next_index, data.request_index
+                            "Out of order data provided for partition key range {}: expected id {}, got {}",
+                            data.partition_key_range_id, partition_state.next_id, data.request_id
                         ),
                     ));
                 }
-                partition_state.next_index += 1;
+                partition_state.next_id += 1;
                 partition_state.provide_data(payload.documents, data.next_continuation);
             } else {
                 return Err(azure_core::Error::with_message(
