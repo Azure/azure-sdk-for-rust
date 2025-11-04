@@ -92,7 +92,7 @@ pub mod as_string {
 
 /// Contains serde functions for special handling of empty strings.
 pub mod empty_as_null {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserialize, Deserializer};
 
     /// Deserializes a string. If the string is empty, it's surfaced as None.
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
@@ -101,17 +101,6 @@ pub mod empty_as_null {
     {
         let to_deserialize = <Option<String>>::deserialize(deserializer)?;
         Ok(to_deserialize.filter(|s| !s.is_empty()))
-    }
-
-    /// Serializes a string. If the string is empty, it's serialized as a JSON null.
-    pub fn serialize<S>(to_serialize: &Option<String>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match to_serialize {
-            Some(s) if !s.is_empty() => String::serialize(s, serializer),
-            _ => serializer.serialize_str("null"),
-        }
     }
 }
 
@@ -200,12 +189,12 @@ mod tests {
     }
 
     mod empty_as_null_tests {
-        use crate::json::{from_json, to_json};
+        use crate::json::from_json;
         use serde::{Deserialize, Serialize};
 
         #[derive(Debug, PartialEq, Deserialize, Serialize)]
         struct TestEmptyAsNull {
-            #[serde(default, with = "crate::fmt::empty_as_null")]
+            #[serde(default, deserialize_with = "crate::fmt::empty_as_null::deserialize")]
             field: Option<String>,
         }
 
@@ -238,34 +227,6 @@ mod tests {
             let json_body = r#"{}"#;
             let result: TestEmptyAsNull = from_json(json_body)?;
             assert_eq!(result.field, None);
-            Ok(())
-        }
-
-        #[test]
-        fn test_serialize_none() -> crate::Result<()> {
-            let test = TestEmptyAsNull { field: None };
-            let json_body = to_json(&test)?;
-            assert_eq!(json_body, r#"{"field":"null"}"#);
-            Ok(())
-        }
-
-        #[test]
-        fn test_serialize_empty_string() -> crate::Result<()> {
-            let test = TestEmptyAsNull {
-                field: Some("".to_string()),
-            };
-            let json_body = to_json(&test)?;
-            assert_eq!(json_body, r#"{"field":"null"}"#);
-            Ok(())
-        }
-
-        #[test]
-        fn test_serialize_non_empty_string() -> crate::Result<()> {
-            let test = TestEmptyAsNull {
-                field: Some("value".to_string()),
-            };
-            let json_body = to_json(&test)?;
-            assert_eq!(json_body, r#"{"field":"value"}"#);
             Ok(())
         }
     }
