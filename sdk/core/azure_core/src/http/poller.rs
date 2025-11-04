@@ -180,7 +180,7 @@ pub enum PollerResult<M: StatusMonitor, N, F: Format = JsonFormat> {
         /// The HTTP response with the status monitor.
         response: Response<M, F>,
         /// The optional client-specified [`Duration`] to wait before polling again.
-        retry_after: Option<Duration>,
+        retry_after: Duration,
         /// The next link / continuation token.
         next: N,
     },
@@ -395,7 +395,7 @@ where
     /// let url = "https://example.com/my_operation".parse().unwrap();
     /// let mut req = Request::new(url, Method::Post);
     ///
-    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>, ctx, _options| {
+    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>, ctx, options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -425,7 +425,7 @@ where
     ///                 let operation_url = format!("https://example.com/operations/{}", result.id).parse()?;
     ///                 Ok(PollerResult::InProgress {
     ///                     response: resp,
-    ///                     retry_after: None,
+    ///                     retry_after: options.frequency,
     ///                     next: operation_url
     ///                 })
     ///             }
@@ -692,9 +692,8 @@ where
                 }) => {
                     // Note that test-proxy automatically adds a transform that zeroes an existing `after-retry` header during playback, so don't check at runtime:
                     // <https://github.com/Azure/azure-sdk-tools/blob/a80b559d7682891f36a491b73f52fcb679d40923/tools/test-proxy/Azure.Sdk.Tools.TestProxy/RecordingHandler.cs#L1175>
-                    let duration = retry_after.unwrap_or(poller_stream_state.options.frequency);
-                    tracing::trace!("retry poller in {}s", duration.whole_seconds());
-                    sleep(duration).await;
+                    tracing::trace!("retry poller in {}s", retry_after.whole_seconds());
+                    sleep(retry_after).await;
 
                     (Ok(response), State::InProgress(n))
                 }
@@ -940,7 +939,7 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         _ => Ok(PollerResult::Done { response }),
@@ -1025,7 +1024,7 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         _ => Ok(PollerResult::Done { response }),
@@ -1112,7 +1111,7 @@ mod tests {
                         match test_status.status() {
                             PollerStatus::InProgress => Ok(PollerResult::InProgress {
                                 response,
-                                retry_after: Some(Duration::ZERO),
+                                retry_after: Duration::ZERO,
                                 next: (),
                             }),
                             _ => Ok(PollerResult::Done { response }),
@@ -1199,7 +1198,7 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         PollerStatus::Succeeded => {
@@ -1305,7 +1304,7 @@ mod tests {
                     match operation_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         PollerStatus::Succeeded => {
@@ -1425,7 +1424,7 @@ mod tests {
                     match no_body_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         PollerStatus::Succeeded => {
@@ -1512,7 +1511,7 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         _ => Ok(PollerResult::Done { response }),
@@ -1599,7 +1598,7 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         PollerStatus::Succeeded => {
@@ -1708,7 +1707,7 @@ mod tests {
                     match self_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         PollerStatus::Succeeded => {
@@ -1821,7 +1820,7 @@ mod tests {
                     match self_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
+                            retry_after: Duration::ZERO,
                             next: (),
                         }),
                         PollerStatus::Succeeded => {
