@@ -10,15 +10,13 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{
-        request::{options::ContentType, Request},
-        response::Response,
-        Method, Url,
-    },
+    http::{response::Response, Url},
 };
 use serde::Serialize;
 use std::sync::Arc;
 
+use crate::cosmos_request::CosmosRequestBuilder;
+use crate::operation_context::OperationType;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 
@@ -61,6 +59,8 @@ impl CosmosClient {
                 options.client_options,
             ),
         })
+        // Initialize and warm-up database account, endpoint manager and caches.
+        // Self::initialize(client.clone()).await?;
     }
 
     /// Creates a new CosmosClient, using key authentication.
@@ -198,17 +198,17 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let url = self.pipeline.url(&self.databases_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options.throughput)?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&RequestBody { id })?;
+        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Databases);
+        let cosmos_request = builder
+            .headers(&options.throughput)
+            .json(&RequestBody { id })
+            .build()?;
 
         self.pipeline
             .send(
-                options.method_options.context,
-                &mut req,
+                cosmos_request,
                 self.databases_link.clone(),
+                options.method_options.context,
             )
             .await
     }

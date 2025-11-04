@@ -16,6 +16,7 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
+use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::{
     constants,
@@ -47,11 +48,11 @@ impl CosmosPipeline {
             vec![Arc::new(auth_policy)],
             None,
         );
-
+        let retry_handler = BackOffRetryHandler;
         CosmosPipeline {
             endpoint,
             pipeline,
-            retry_handler: BackOffRetryHandler,
+            retry_handler,
         }
     }
 
@@ -73,28 +74,31 @@ impl CosmosPipeline {
         // Clone pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
-
-        // Build a sender closure that forwards to the inner pipeline.send
-        let sender = move |req: &mut Request| {
-            let pipeline = pipeline.clone();
-            let ctx = ctx_owned.clone();
-            let mut req_clone = req.clone();
-            async move { pipeline.send(&ctx, &mut req_clone, None).await }
-        };
-
-        // Delegate to the retry handler, providing the sender callback
-        self.retry_handler.send(request, sender).await
+        pipeline.send(&ctx_owned, request, None).await
     }
 
     pub async fn send<T>(
         &self,
-        ctx: Context<'_>,
-        request: &mut Request,
+        mut cosmos_request: CosmosRequest,
         resource_link: ResourceLink,
+        context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        self.send_raw(ctx, request, resource_link)
-            .await
-            .map(Into::into)
+        cosmos_request.request_context.location_endpoint_to_route =
+            Some(resource_link.url(&self.endpoint));
+
+        // Prepare a callback delegate to invoke the http request.
+        let sender = move |req: &mut CosmosRequest| {
+            let ctx = context.clone();
+            let mut raw_req = req.clone().into_raw_request();
+            let url = resource_link.clone();
+            async move { self.send_raw(ctx, &mut raw_req, url).await }
+        };
+
+        // Delegate to the retry handler, providing the sender callback
+        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
+
+        // Convert RawResponse into typed Response<T>
+        res.map(Into::into)
     }
 
     pub fn send_query_request<T: DeserializeOwned + Send>(
@@ -168,7 +172,10 @@ impl CosmosPipeline {
 
         // Now we can read the offer itself
         let mut req = Request::new(offer_url, Method::Get);
-        self.send(context, &mut req, offer_link).await.map(Some)
+        self.send_raw(context, &mut req, offer_link)
+            .await
+            .map(Into::into)
+            .map(Some)
     }
 
     /// Helper function to update a throughput offer given a resource ID.
@@ -199,7 +206,9 @@ impl CosmosPipeline {
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&current_throughput)?;
 
-        self.send(context, &mut req, offer_link).await
+        self.send_raw(context, &mut req, offer_link)
+            .await
+            .map(Into::into)
     }
 }
 

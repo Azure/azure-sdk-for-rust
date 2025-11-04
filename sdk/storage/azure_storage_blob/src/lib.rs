@@ -5,10 +5,10 @@
 
 #![doc = include_str!("../README.md")]
 #![allow(dead_code)]
-#![allow(unused_imports)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod clients;
+#[allow(unused_imports)]
 mod generated;
 mod parsers;
 mod pipeline;

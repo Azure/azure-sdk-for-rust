@@ -126,7 +126,7 @@ impl Policy for RequestInstrumentationPolicy {
         let span = if let Some(parent_span) = ctx.value::<Arc<dyn Span>>() {
             // If a parent span exists, start a new span with the parent.
             tracer.start_span_with_parent(
-                method_str,
+                method_str.into(),
                 SpanKind::Client,
                 span_attributes,
                 parent_span.clone(),
@@ -134,7 +134,7 @@ impl Policy for RequestInstrumentationPolicy {
         } else {
             // If no parent span exists, start a new span with the "current" span (if any).
             // It is up to the tracer implementation to determine what "current" means.
-            tracer.start_span(method_str, SpanKind::Client, span_attributes)
+            tracer.start_span(method_str.into(), SpanKind::Client, span_attributes)
         };
 
         if span.is_recording() {
@@ -196,10 +196,12 @@ pub(crate) mod tests {
     use super::*;
     use crate::{
         http::{
-            headers::Headers, policies::TransportPolicy, BufResponse, Method, StatusCode, Transport,
+            headers::{HeaderName, Headers},
+            policies::TransportPolicy,
+            BufResponse, Method, StatusCode, Transport,
         },
         tracing::{AttributeValue, SpanStatus, TracerProvider},
-        Result,
+        Result, Uuid,
     };
     use azure_core_test::{
         http::MockHttpClient,
@@ -210,7 +212,6 @@ pub(crate) mod tests {
     };
     use futures::future::BoxFuture;
     use std::sync::Arc;
-    use typespec_client_core::http::headers::HeaderName;
 
     async fn run_instrumentation_test<C>(
         test_namespace: Option<&'static str>,
@@ -277,6 +278,8 @@ pub(crate) mod tests {
                     span_name: "GET",
                     status: SpanStatus::Unset,
                     kind: SpanKind::Client,
+                    span_id: Uuid::new_v4(),
+                    parent_id: None,
                     attributes: vec![
                         (
                             AZ_NAMESPACE_ATTRIBUTE,
@@ -363,6 +366,8 @@ pub(crate) mod tests {
                     span_name: "GET",
                     status: SpanStatus::Unset,
                     kind: SpanKind::Client,
+                    span_id: Uuid::new_v4(),
+                    parent_id: None,
                     attributes: vec![
                         (
                             AZ_CLIENT_REQUEST_ID_ATTRIBUTE,
@@ -417,6 +422,8 @@ pub(crate) mod tests {
                     span_name: "GET",
                     status: SpanStatus::Unset,
                     kind: SpanKind::Client,
+                    span_id: Uuid::new_v4(),
+                    parent_id: None,
                     attributes: vec![
                         (
                             HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
@@ -468,6 +475,8 @@ pub(crate) mod tests {
                         description: "".to_string(),
                     },
                     kind: SpanKind::Client,
+                    span_id: Uuid::new_v4(),
+                    parent_id: None,
                     attributes: vec![
                         (ERROR_TYPE_ATTRIBUTE, AttributeValue::from("404")),
                         (

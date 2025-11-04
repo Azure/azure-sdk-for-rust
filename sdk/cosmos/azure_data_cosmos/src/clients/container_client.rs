@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use crate::{
-    constants,
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
@@ -11,11 +10,9 @@ use crate::{
     ThroughputOptions,
 };
 
-use azure_core::http::{
-    request::{options::ContentType, Request},
-    response::Response,
-    Method,
-};
+use crate::cosmos_request::CosmosRequestBuilder;
+use crate::operation_context::OperationType;
+use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -67,10 +64,14 @@ impl ContainerClient {
         options: Option<ReadContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Get);
+        let cosmos_request =
+            CosmosRequestBuilder::new(OperationType::Read, ResourceType::Containers).build()?;
         self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+            .send(
+                cosmos_request,
+                self.link.clone(),
+                options.method_options.context,
+            )
             .await
     }
 
@@ -110,12 +111,14 @@ impl ContainerClient {
         options: Option<ReplaceContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Put);
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&properties)?;
+        let builder = CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Containers);
+        let cosmos_request = builder.json(&properties).build()?;
         self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+            .send(
+                cosmos_request,
+                self.link.clone(),
+                options.method_options.context,
+            )
             .await
     }
 
@@ -178,10 +181,14 @@ impl ContainerClient {
         options: Option<DeleteContainerOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Delete);
+        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Containers);
+        let cosmos_request = builder.build()?;
         self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+            .send(
+                cosmos_request,
+                self.link.clone(),
+                options.method_options.context,
+            )
             .await
     }
 
@@ -256,18 +263,19 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&item)?;
+        let options = options.clone().unwrap_or_default();
+        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Items);
+        let cosmos_request = builder
+            .headers(&options)
+            .json(&item)
+            .partition_key(partition_key.into())
+            .build()?;
+
         self.pipeline
             .send(
-                options.method_options.context,
-                &mut req,
+                cosmos_request,
                 self.items_link.clone(),
+                options.method_options.context,
             )
             .await
     }
@@ -344,16 +352,17 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Put);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&item)?;
+        let options = options.clone().unwrap_or_default();
+        let builder = CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Items);
+        let cosmos_request = builder
+            .headers(&options)
+            .json(&item)
+            .partition_key(partition_key.into())
+            .build()?;
+
         self.pipeline
-            .send(options.method_options.context, &mut req, link)
+            .send(cosmos_request, link, options.method_options.context)
             .await
     }
 
@@ -431,19 +440,19 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options)?;
-        req.insert_header(constants::IS_UPSERT, "true");
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&item)?;
+        let options = options.clone().unwrap_or_default();
+        let builder = CosmosRequestBuilder::new(OperationType::Upsert, ResourceType::Items);
+        let cosmos_request = builder
+            .headers(&options)
+            .json(&item)
+            .partition_key(partition_key.into())
+            .build()?;
+
         self.pipeline
             .send(
-                options.method_options.context,
-                &mut req,
+                cosmos_request,
                 self.items_link.clone(),
+                options.method_options.context,
             )
             .await
     }
@@ -490,12 +499,14 @@ impl ContainerClient {
         options.enable_content_response_on_write = true;
 
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Get);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
+        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::Items);
+        let cosmos_request = builder
+            .partition_key(partition_key.into())
+            .headers(&options)
+            .build()?;
+
         self.pipeline
-            .send(options.method_options.context, &mut req, link)
+            .send(cosmos_request, link, options.method_options.context)
             .await
     }
 
@@ -525,14 +536,17 @@ impl ContainerClient {
         item_id: &str,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Delete);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
+        let options = options.clone().unwrap_or_default();
+
+        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Items);
+        let cosmos_request = builder
+            .partition_key(partition_key.into())
+            .headers(&options)
+            .build()?;
+
         self.pipeline
-            .send(options.method_options.context, &mut req, link)
+            .send(cosmos_request, link, options.method_options.context)
             .await
     }
 
@@ -598,17 +612,17 @@ impl ContainerClient {
         patch: PatchDocument,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
-        let options = options.unwrap_or_default();
+        let options = options.clone().unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Patch);
-        req.insert_headers(&options)?;
-        req.insert_headers(&partition_key.into())?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&patch)?;
+        let builder = CosmosRequestBuilder::new(OperationType::Patch, ResourceType::Items);
+        let cosmos_request = builder
+            .partition_key(partition_key.into())
+            .headers(&options)
+            .json(&patch)
+            .build()?;
 
         self.pipeline
-            .send(options.method_options.context, &mut req, link)
+            .send(cosmos_request, link, options.method_options.context)
             .await
     }
 

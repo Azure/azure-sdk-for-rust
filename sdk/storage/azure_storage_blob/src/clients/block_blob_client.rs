@@ -4,16 +4,13 @@
 use crate::{
     generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult,
+        BlockBlobClientUploadBlobFromUrlResult,
     },
     models::{
-        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
-        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions, BlockList,
+        BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlockBlobClientOptions,
@@ -21,7 +18,7 @@ use crate::{
 use azure_core::{
     credentials::TokenCredential,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
+        policies::{BearerTokenAuthorizationPolicy, Policy},
         NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Bytes, Result,
@@ -62,7 +59,7 @@ impl GeneratedBlockBlobClient {
                     format!("{blob_url} must use https"),
                 ));
             }
-            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
