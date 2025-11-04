@@ -49,7 +49,7 @@ impl RetryPolicy for ExponentialRetryPolicy {
         retry_count >= self.max_retries || time_since_start >= self.max_elapsed
     }
 
-    fn get_retry_headers(&self) -> Option<&RetryHeaders> {
+    fn retry_headers(&self) -> Option<&RetryHeaders> {
         Some(&self.retry_headers)
     }
 

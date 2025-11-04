@@ -107,7 +107,7 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
 
     /// Get the headers that may indicate how long to wait before retrying.
     /// If `None` is returned, no headers will be checked.
-    fn get_retry_headers(&self) -> Option<&RetryHeaders>;
+    fn retry_headers(&self) -> Option<&RetryHeaders>;
 
     /// Get the status codes that should trigger retries. When the returned slice
     /// is empty, the policy retries these status codes:
@@ -196,7 +196,7 @@ where
                         return Ok(response);
                     }
 
-                    let retry_headers = self.get_retry_headers();
+                    let retry_headers = self.retry_headers();
                     // For a 429 response (TooManyRequests) or 503 (ServiceUnavailable),
                     // use any "retry-after" headers returned by the server to determine how long to wait before retrying.
                     // https://learn.microsoft.com/en-us/azure/architecture/best-practices/retry-service-specific#retry-usage-guidance
