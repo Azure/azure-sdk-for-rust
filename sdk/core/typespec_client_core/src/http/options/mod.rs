@@ -71,7 +71,7 @@ pub struct PipelineOptions {
     /// field doesn't apply to custom retry policies.
     ///
     /// When empty, the default retry status codes are used as
-    /// described by [`crate::http::policies::RetryPolicy::get_retry_status_codes`].
+    /// described by [`crate::http::policies::RetryPolicy::retry_status_codes`].
     pub retry_status_codes: Vec<StatusCode>,
 }
 
