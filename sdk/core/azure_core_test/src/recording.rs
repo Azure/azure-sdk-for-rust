@@ -220,7 +220,7 @@ impl Recording {
     /// ```
     /// # let recording = azure_core_test::Recording::with_seed();
     /// let dek: [u8; 32] = recording.random();
-    /// # assert_eq!(typespec_client_core::base64::encode(dek), "HumPRAN6RqKWf0YhFV2CAFWu/8L/pwh0LRzeam5VlGo=");
+    /// # assert_eq!(azure_core::base64::encode(dek), "HumPRAN6RqKWf0YhFV2CAFWu/8L/pwh0LRzeam5VlGo=");
     /// ```
     ///
     /// Generate a UUID.

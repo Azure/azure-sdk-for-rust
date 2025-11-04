@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
 - Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
 - Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
@@ -24,6 +25,8 @@
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed
+
+- `ItemIterator::into_pages()` now properly supports resuming from the current page until _after_ all items have been iterated.
 
 ### Other Changes
 
