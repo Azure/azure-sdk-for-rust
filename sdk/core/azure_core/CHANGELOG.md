@@ -16,6 +16,7 @@
 - Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
 - Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
+- Removed `credentials::DEFAULT_SCOPE_SUFFIX`.
 - Removed `CustomHeaders` policy.
 - Removed `ErrorKind::MockFramework`.
 - Removed `Poller::wait()` function. Call `await` on a `Poller` to wait for it to complete and, upon success, return the final model.
