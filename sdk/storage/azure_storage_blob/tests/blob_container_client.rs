@@ -409,6 +409,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     container_client.create_container(None).await?;
 
     // Set Access Policy w/ Policy Defined
+    let test_id: Option<String> = Some("testid".into());
     let access_policy = AccessPolicy {
         expiry: Some(format_datetime(
             OffsetDateTime::now_utc() + Duration::from_secs(10),
@@ -417,13 +418,22 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         start: Some(format_datetime(OffsetDateTime::now_utc())?),
     };
     let signed_identifier = SignedIdentifier {
-        access_policy: Some(access_policy),
-        id: Some("testid".into()),
+        access_policy: Some(access_policy.clone()),
+        id: test_id.clone(),
     };
 
     container_client
         .set_access_policy(vec![signed_identifier], None)
         .await?;
+
+    // Assert
+    let response = container_client.get_access_policy(None).await?;
+    let signed_identifiers = response.into_body()?;
+    let response_id = signed_identifiers[0].id.clone();
+    let response_access_policy = signed_identifiers[0].access_policy.clone();
+
+    println!("Response Access Policy: {:?}", response_access_policy);
+    println!("Response ID: {:?}", response_id);
 
     Ok(())
 }
