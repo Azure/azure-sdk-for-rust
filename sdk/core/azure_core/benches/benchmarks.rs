@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::http::{
-    headers::Headers, BufResponse, HttpClient, Method, Request, StatusCode, Url,
+    headers::Headers, AsyncRawResponse, HttpClient, Method, Request, StatusCode, Url,
 };
 use azure_core_test::http::MockHttpClient;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
@@ -72,7 +72,7 @@ fn http_transport_test(c: &mut Criterion) {
     // client to be used in the benchmark
     let mock_client = Arc::new(MockHttpClient::new(move |_| {
         async move {
-            Ok(BufResponse::from_bytes(
+            Ok(AsyncRawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 vec![],

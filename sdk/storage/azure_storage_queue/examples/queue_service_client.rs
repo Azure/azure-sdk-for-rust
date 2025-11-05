@@ -40,7 +40,7 @@ async fn set_and_get_properties(
     log_operation_result(&result, "get_properties");
 
     if let Ok(response) = result {
-        let properties = response.into_body()?;
+        let properties = response.into_model()?;
         println!("Queue Service Properties:");
         println!("Logging: {:#?}", properties.logging);
         println!("Hour Metrics: {:#?}", properties.hour_metrics);
@@ -80,7 +80,7 @@ async fn list_queues(queue_client: &QueueServiceClient) -> Result<(), Box<dyn st
             println!("Processing next page of queues...");
             match response_result {
                 Ok(response) => {
-                    let queue_list: ListQueuesResponse = response.into_body()?;
+                    let queue_list: ListQueuesResponse = response.into_model()?;
                     for queue in queue_list.queue_items {
                         println!("Queue: {}", queue.name.unwrap_or_default());
                         for (key, value) in queue.metadata.unwrap_or_default() {
@@ -108,7 +108,7 @@ async fn get_statistics(
     log_operation_result(&result, "get_statistics");
 
     if let Ok(response) = result {
-        let stats = response.into_body()?;
+        let stats = response.into_model()?;
         let geo_replication = stats.geo_replication.as_ref().unwrap();
         println!(
             "Geo-replication status: {}, Last sync time: {}",

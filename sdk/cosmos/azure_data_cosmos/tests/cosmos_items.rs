@@ -68,14 +68,14 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     let response = container_client
         .create_item("Partition1", &item, None)
         .await?;
-    let body = response.into_raw_body().into_string()?;
+    let body = response.into_body().into_string()?;
     assert_eq!("", body);
 
     // Try to read the item
     let read_item: TestItem = container_client
         .read_item("Partition1", "Item1", None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(item, read_item);
 
     // Replace the item
@@ -85,7 +85,7 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     let response = container_client
         .replace_item("Partition1", "Item1", &item, None)
         .await?;
-    let body = response.into_raw_body().into_string()?;
+    let body = response.into_body().into_string()?;
     assert_eq!("", body);
 
     // Update again, but this time ask for the response
@@ -102,7 +102,7 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
             }),
         )
         .await?
-        .into_raw_body()
+        .into_body()
         .json()?;
     assert_eq!(item, updated_item);
 
@@ -110,7 +110,7 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     let response = container_client
         .delete_item("Partition1", "Item1", None)
         .await?;
-    let body = response.into_raw_body().into_string()?;
+    let body = response.into_body().into_string()?;
     assert_eq!("", body);
 
     // Try to read the item again, expecting a 404
@@ -162,7 +162,7 @@ pub async fn item_create_content_response_on_write(
             }),
         )
         .await?
-        .into_raw_body()
+        .into_body()
         .json()?;
     assert_eq!(item, response_item);
 
@@ -193,7 +193,7 @@ pub async fn item_read_system_properties(context: TestContext) -> Result<(), Box
     let read_item: serde_json::Value = container_client
         .read_item("Partition1", "Item1", None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert!(
         read_item.get("_rid").is_some(),
         "expected _rid to be present"
@@ -230,7 +230,7 @@ pub async fn item_upsert_new(context: TestContext) -> Result<(), Box<dyn Error>>
     let read_item: TestItem = container_client
         .read_item("Partition1", "Item1", None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(item, read_item);
 
     account.cleanup().await?;
@@ -269,7 +269,7 @@ pub async fn item_upsert_existing(context: TestContext) -> Result<(), Box<dyn Er
             }),
         )
         .await?
-        .into_raw_body()
+        .into_body()
         .json()?;
     assert_eq!(item, updated_item);
 
@@ -306,7 +306,7 @@ pub async fn item_patch(context: TestContext) -> Result<(), Box<dyn Error>> {
     let patched_item: TestItem = container_client
         .read_item("Partition1", "Item1", None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!("Patched", patched_item.nested.nested_value);
     assert_eq!(52, patched_item.value);
 
@@ -322,7 +322,7 @@ pub async fn item_patch(context: TestContext) -> Result<(), Box<dyn Error>> {
             }),
         )
         .await?
-        .into_raw_body()
+        .into_body()
         .json()?;
     assert!(!response_item.bool_value);
 
@@ -359,7 +359,7 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
     let read_item: TestItem = container_client
         .read_item(PartitionKey::NULL, "Item1", None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(item, read_item);
 
     container_client
@@ -374,7 +374,7 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
     let read_item: TestItem = container_client
         .read_item(PartitionKey::NULL, "Item1", None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(10, read_item.value);
 
     container_client
@@ -654,7 +654,7 @@ pub async fn item_patch_if_match_etag(context: TestContext) -> Result<(), Box<dy
     let patched_item: TestItem = container_client
         .read_item("Partition1", "Item1", None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!("Patched", patched_item.nested.nested_value);
     assert_eq!(52, patched_item.value);

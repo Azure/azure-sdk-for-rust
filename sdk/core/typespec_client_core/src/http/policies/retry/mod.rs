@@ -256,7 +256,7 @@ mod test {
     use super::*;
     use crate::http::{
         headers::{Headers, RETRY_AFTER},
-        BufResponse, Context, ExponentialRetryOptions, FixedRetryOptions, Method, Request,
+        AsyncRawResponse, Context, ExponentialRetryOptions, FixedRetryOptions, Method, Request,
         RetryOptions, Url,
     };
     use ::time::macros::datetime;
@@ -278,7 +278,11 @@ mod test {
         async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
             let mut count = self.request_count.lock().unwrap();
             *count += 1;
-            Ok(BufResponse::from_bytes(self.status, Headers::new(), ""))
+            Ok(AsyncRawResponse::from_bytes(
+                self.status,
+                Headers::new(),
+                "",
+            ))
         }
     }
 

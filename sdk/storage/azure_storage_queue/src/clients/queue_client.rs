@@ -232,7 +232,7 @@ impl QueueClient {
     {
         let status = response.status();
         let headers = response.headers().clone();
-        let message_list = response.into_body()?;
+        let message_list = response.into_model()?;
 
         let messages = extract_fn(&message_list);
         let first_message = messages.into_iter().next().ok_or_else(|| {

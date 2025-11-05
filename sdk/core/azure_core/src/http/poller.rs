@@ -299,7 +299,7 @@ type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 /// let certificate = client
 ///     .create_certificate("my-cert", params.try_into()?, None)?
 ///     .await?
-///     .into_body()?;
+///     .into_model()?;
 /// # Ok(()) }
 /// ```
 ///
@@ -324,12 +324,12 @@ type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 ///     .create_certificate("my-cert", params.try_into()?, None)?;
 ///
 /// while let Some(status) = poller.try_next().await? {
-///     let status = status.into_body()?;
+///     let status = status.into_model()?;
 ///     println!("Status: {:?}", status.status);
 /// }
 ///
 /// // After the stream ends, await to get the final certificate.
-/// let certificate = poller.await?.into_body()?;
+/// let certificate = poller.await?.into_model()?;
 /// # Ok(()) }
 /// ```
 #[pin_project::pin_project]
@@ -747,7 +747,7 @@ mod tests {
     #[cfg(feature = "xml")]
     use crate::http::XmlFormat;
     use crate::http::{
-        headers::Headers, BufResponse, HttpClient, Method, NoFormat, RawResponse, Request,
+        headers::Headers, AsyncRawResponse, HttpClient, Method, NoFormat, RawResponse, Request,
     };
     use azure_core_test::http::MockHttpClient;
     use futures::{FutureExt as _, TryStreamExt as _};
@@ -807,14 +807,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded"}"#.to_vec(),
@@ -856,7 +856,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().unwrap();
+        let first_body = first_response.into_model().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -864,7 +864,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().unwrap();
+        let second_body = second_response.into_model().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Succeeded);
 
         // Third poll should return None (end of stream)
@@ -889,14 +889,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Failed status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Failed"}"#.to_vec(),
@@ -941,7 +941,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().unwrap();
+        let first_body = first_response.into_model().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -949,7 +949,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().unwrap();
+        let second_body = second_response.into_model().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Failed);
 
         // Third poll should return None (end of stream)
@@ -974,14 +974,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 200 OK with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 429 Too Many Requests
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::TooManyRequests,
                             Headers::new(),
                             vec![],
@@ -1064,14 +1064,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","id":"op1","name":"Operation completed successfully"}"#.to_vec(),
@@ -1132,7 +1132,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let output = response.into_body().unwrap();
+        let output = response.into_model().unwrap();
         assert_eq!(output.id.as_deref(), Some("op1"));
         assert_eq!(
             output.name.as_deref(),
@@ -1158,14 +1158,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call to operation URL returns InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Accepted,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else if *count == 2 {
                         // Second call to operation URL returns Succeeded with target URL
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","target":"https://example.com/resources/123"}"#.to_vec(),
@@ -1173,7 +1173,7 @@ mod tests {
                     } else {
                         // Third call fetches the final resource from target URL
                         assert_eq!(url, "https://example.com/resources/123");
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"id":"123","name":"Test Resource"}"#.to_vec(),
@@ -1252,7 +1252,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let resource = response.into_body().unwrap();
+        let resource = response.into_model().unwrap();
         assert_eq!(resource.id.as_deref(), Some("123"));
         assert_eq!(resource.name.as_deref(), Some("Test Resource"));
 
@@ -1288,14 +1288,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 202 Accepted with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Accepted,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded"}"#.to_vec(),
@@ -1352,7 +1352,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        // For operations with no response body, we don't need to call into_body()
+        // For operations with no response body, we don't need to call into_model()
         // The important thing is that the poller completed successfully and returned Response<()>
 
         // Verify both calls were made
@@ -1374,14 +1374,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             b"<XmlTestStatus><status>InProgress</status></XmlTestStatus>".to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             b"<XmlTestStatus><status>Succeeded</status></XmlTestStatus>".to_vec(),
@@ -1423,7 +1423,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().unwrap();
+        let first_body = first_response.into_model().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -1431,7 +1431,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().unwrap();
+        let second_body = second_response.into_model().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Succeeded);
 
         // Third poll should return None (end of stream)
@@ -1457,7 +1457,7 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             b"<XmlTestStatus><status>InProgress</status></XmlTestStatus>"
@@ -1466,7 +1466,7 @@ mod tests {
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result
                         // Note: The response contains both status and the final output fields
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             b"<XmlTestStatus><status>Succeeded</status><id>op1</id><name>Operation completed successfully</name></XmlTestStatus>"
@@ -1526,7 +1526,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let output = response.into_body().unwrap();
+        let output = response.into_model().unwrap();
         assert_eq!(output.id.as_deref(), Some("op1"));
         assert_eq!(
             output.name.as_deref(),
@@ -1568,14 +1568,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress","id":"op1"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result in the same object
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","id":"op1","result":"Operation completed successfully"}"#.to_vec(),
@@ -1637,7 +1637,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let output = response.into_body().unwrap();
+        let output = response.into_model().unwrap();
         assert_eq!(output.id.as_deref(), Some("op1"));
         assert_eq!(
             output.result.as_deref(),
@@ -1680,14 +1680,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress","id":"op1"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result in the same object
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","id":"op1","result":"Operation completed successfully"}"#.to_vec(),
@@ -1746,7 +1746,7 @@ mod tests {
         // Use as a stream to monitor progress
         let mut statuses = Vec::new();
         while let Some(status_response) = poller.try_next().await.unwrap() {
-            let status = status_response.into_body().unwrap();
+            let status = status_response.into_model().unwrap();
             statuses.push(status);
         }
 

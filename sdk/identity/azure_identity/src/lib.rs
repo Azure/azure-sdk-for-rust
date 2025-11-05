@@ -246,7 +246,7 @@ mod tests {
     use azure_core::{
         cloud::{CloudConfiguration, CustomConfiguration},
         error::ErrorKind,
-        http::{headers::Headers, BufResponse, Request, StatusCode},
+        http::{headers::Headers, AsyncRawResponse, Request, StatusCode},
         Bytes, Error, Result,
     };
     use std::{
@@ -343,8 +343,8 @@ mod tests {
         }
     }
 
-    pub fn token_response() -> BufResponse {
-        BufResponse::from_bytes(
+    pub fn token_response() -> AsyncRawResponse {
+        AsyncRawResponse::from_bytes(
             StatusCode::Ok,
             Headers::default(),
             Bytes::from(format!(
@@ -356,7 +356,7 @@ mod tests {
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
-        responses: Mutex<Vec<BufResponse>>,
+        responses: Mutex<Vec<AsyncRawResponse>>,
         on_request: Option<RequestCallback>,
     }
 
@@ -367,7 +367,7 @@ mod tests {
     }
 
     impl MockSts {
-        pub fn new(responses: Vec<BufResponse>, on_request: Option<RequestCallback>) -> Self {
+        pub fn new(responses: Vec<AsyncRawResponse>, on_request: Option<RequestCallback>) -> Self {
             Self {
                 responses: Mutex::new(responses),
                 on_request,
@@ -377,7 +377,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<BufResponse> {
+        async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {

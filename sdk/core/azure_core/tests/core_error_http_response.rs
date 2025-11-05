@@ -3,7 +3,7 @@
 
 use azure_core::{
     error::{ErrorKind, ErrorResponse},
-    http::{headers::Headers, BufResponse, ClientOptions, HttpClient, StatusCode, Transport},
+    http::{headers::Headers, AsyncRawResponse, ClientOptions, HttpClient, StatusCode, Transport},
     Bytes,
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -95,7 +95,7 @@ async fn deserialize_error_response() -> Result<(), Box<dyn std::error::Error>> 
 static TRANSPORT: LazyLock<Arc<dyn HttpClient>> = LazyLock::new(|| {
     Arc::new(MockHttpClient::new(|_| {
         async {
-            Ok(BufResponse::from_bytes(
+            Ok(AsyncRawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::new(),
                 Bytes::from_static(

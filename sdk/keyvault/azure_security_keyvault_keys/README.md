@@ -132,7 +132,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let key = client
         .create_key("key-name", body.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     println!(
         "Key Name: {:?}, Type: {:?}, Version: {:?}",
@@ -171,7 +171,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let key = client
         .get_key("key-name", None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     println!("Key: {:#?}", key.key);
 
@@ -206,7 +206,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .update_key_properties("key-name", key_update_parameters.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     Ok(())
 }
@@ -301,7 +301,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let key = client
         .create_key("key-name", body.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
     let key_version = key.resource_id()?.version;
 
     // Generate a symmetric data encryption key (DEK). You'd encrypt your data using this DEK.
@@ -323,7 +323,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }),
         )
         .await?
-        .into_body()?;
+        .into_model()?;
     assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
 
     // Unwrap the DEK.
@@ -338,7 +338,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }),
         )
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
 
@@ -368,7 +368,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_key("key-name".into(), None).await {
-        Ok(response) => println!("Key: {:#?}", response.into_body()?.key),
+        Ok(response) => println!("Key: {:#?}", response.into_model()?.key),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
 

@@ -191,7 +191,7 @@ pub(crate) mod tests {
     use azure_core::{
         http::{
             headers::{self, content_type, Headers},
-            Body, BufResponse, Method, Request, Transport,
+            AsyncRawResponse, Body, Method, Request, Transport,
         },
         Bytes,
     };
@@ -263,7 +263,7 @@ pub(crate) mod tests {
     async fn get_token_error() {
         let expected = "error description from the response";
         let mock = MockSts::new(
-            vec![BufResponse::from_bytes(
+            vec![AsyncRawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::default(),
                 Bytes::from(format!(

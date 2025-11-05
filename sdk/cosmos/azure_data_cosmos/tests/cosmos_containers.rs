@@ -47,7 +47,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
             }),
         )
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(&properties.id, &created_properties.id);
     assert_eq!(
@@ -102,7 +102,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     let update_response = container_client
         .replace(updated_properties, None)
         .await?
-        .into_body()?;
+        .into_model()?;
     let updated_indexing_policy = update_response.indexing_policy.unwrap();
     assert!(updated_indexing_policy.included_paths.is_empty());
     assert!(updated_indexing_policy.excluded_paths.is_empty());
@@ -116,7 +116,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
         .read_throughput(None)
         .await?
         .expect("throughput should be present")
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(Some(400), current_throughput.throughput());
 
@@ -124,7 +124,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     let throughput_response = container_client
         .replace_throughput(new_throughput, None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(Some(500), throughput_response.throughput());
 
     container_client.delete(None).await?;
@@ -176,14 +176,14 @@ pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dy
             }),
         )
         .await?
-        .into_body()?;
+        .into_model()?;
     let container_client = db_client.container_client(&properties.id);
 
     let current_throughput = container_client
         .read_throughput(None)
         .await?
         .expect("throughput should be present")
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(Some(500), current_throughput.throughput());
     assert_eq!(Some(5000), current_throughput.autoscale_maximum());
@@ -217,7 +217,7 @@ pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), 
     let created_properties = db_client
         .create_container(properties.clone(), None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(&properties.id, &created_properties.id);
     assert_eq!(

@@ -121,7 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let certificate = client
         .create_certificate("certificate-name", body.try_into()?, None)?
         .await?
-        .into_body()?;
+        .into_model()?;
 
     Ok(())
 }
@@ -153,7 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let certificate = client
         .get_certificate("certificate-name", Some(get_options))
         .await?
-        .into_body()?;
+        .into_model()?;
 
     println!(
         "Certificate thumbprint: {:?}",
@@ -198,7 +198,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
         )
         .await?
-        .into_body()?;
+        .into_model()?;
 
     Ok(())
 }
@@ -340,7 +340,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signature = key_client
         .sign("ec-signing-certificate", body.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     if let Some(signature) = signature.result.map(base64::encode_url_safe) {
         println!("Signature: {}", signature);
@@ -372,7 +372,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_certificate("certificate-name".into(), None).await {
-        Ok(response) => println!("Certificate: {:#?}", response.into_body()?.x509_thumbprint),
+        Ok(response) => println!("Certificate: {:#?}", response.into_model()?.x509_thumbprint),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
 

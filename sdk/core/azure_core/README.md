@@ -158,8 +158,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = client.get_secret("secret-name", None).await?;
 
     // Response<T> has two main accessors:
-    // 1. The `into_body()` function consumes self to deserialize into a model type
-    let secret = response.into_body()?;
+    // 1. The `into_model()` function consumes self to deserialize into a model type
+    let secret = response.into_model()?;
 
     // get response again because it was moved in above statement
     let response: Response<Secret> = client.get_secret("secret-name", None).await?;
@@ -199,7 +199,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_secret("secret-name", None).await {
-        Ok(secret) => println!("Secret: {:?}", secret.into_body()?.value),
+        Ok(secret) => println!("Secret: {:?}", secret.into_model()?.value),
         Err(e) => match e.kind() {
             ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
                 // handle not found error
@@ -276,7 +276,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // poll the pager until there are no more SecretListResults
     while let Some(secrets) = pager.try_next().await? {
-        let secrets = secrets.into_body()?.value;
+        let secrets = secrets.into_model()?.value;
         // loop through secrets in SecretsListResults
         for secret in secrets {
             // get the secret name from the ID
@@ -332,7 +332,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let certificate = client
         .create_certificate("certificate-name", body.try_into()?, None)?
         .await?
-        .into_body()?;
+        .into_model()?;
 
     Ok(())
 }
@@ -378,7 +378,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The Poller implements futures::Stream and automatically waits between polls.
     let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
     while let Some(operation) = poller.try_next().await? {
-        let operation = operation.into_body()?;
+        let operation = operation.into_model()?;
         match operation.status.as_deref().unwrap_or("unknown") {
             "inProgress" => continue,
             "completed" => {
@@ -528,7 +528,7 @@ ureq = { version = "3", default-features = false, features = [
 Then we need to implement `HttpClient` for another HTTP client like [`ureq`](https://docs.rs/ureq):
 
 ```rust no_run
-use azure_core::{error::{ErrorKind, ResultExt as _}, http::{HttpClient, BufResponse, Request}};
+use azure_core::{error::{ErrorKind, ResultExt as _}, http::{HttpClient, AsyncRawResponse, Request}};
 use ureq::tls::{TlsConfig, TlsProvider};
 
 #[derive(Debug)]
@@ -552,7 +552,7 @@ impl Default for Agent {
 
 #[async_trait::async_trait]
 impl HttpClient for Agent {
-    async fn execute_request(&self, request: &Request) -> azure_core::Result<BufResponse> {
+    async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         let request: ::http::request::Request<Vec<u8>> = todo!("convert our request into their request");
         let response = self
             .0
@@ -625,7 +625,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // get a secret
     let secret = client.get_secret("secret-name", None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     println!("{secret:#?}");
 

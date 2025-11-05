@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::http::{clients, policies::Policy, BufResponse, Context, HttpClient, Request};
+use crate::http::{clients, policies::Policy, AsyncRawResponse, Context, HttpClient, Request};
 use std::sync::Arc;
 use typespec::error::Result;
 
@@ -38,7 +38,7 @@ impl Transport {
     }
 
     /// Use these options to send a request.
-    pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<BufResponse> {
+    pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<AsyncRawResponse> {
         use TransportImpl as I;
         match &self.inner {
             I::HttpClient { http_client } => http_client.execute_request(request).await,

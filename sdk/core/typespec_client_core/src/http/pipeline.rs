@@ -5,7 +5,7 @@ use typespec::http::RawResponse;
 
 use crate::http::{
     policies::{Buffer, LoggingPolicy, Policy, TransportPolicy},
-    BufResponse, ClientOptions, Context, PipelineOptions, Request,
+    AsyncRawResponse, ClientOptions, Context, PipelineOptions, Request,
 };
 use std::sync::Arc;
 
@@ -21,7 +21,7 @@ use std::sync::Arc;
 ///    re-executed in case of retries.
 /// 5. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
 /// 6. The transport policy is executed. Transport policy is always the last policy and is the policy that
-///    actually constructs the [`BufResponse`] to be passed up the pipeline.
+///    actually constructs the [`AsyncRawResponse`] to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
@@ -118,13 +118,13 @@ impl Pipeline {
             .await
     }
 
-    /// Sends a [`Request`] through each configured [`Policy`] to get a [`BufResponse`] that is processed by each policy in reverse.
+    /// Sends a [`Request`] through each configured [`Policy`] to get a [`AsyncRawResponse`] that is processed by each policy in reverse.
     pub async fn stream(
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
         _options: Option<PipelineStreamOptions>,
-    ) -> crate::Result<BufResponse> {
+    ) -> crate::Result<AsyncRawResponse> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
@@ -137,8 +137,8 @@ mod tests {
     use crate::{
         error::{Error, ErrorKind},
         http::{
-            headers::Headers, policies::PolicyResult, BufResponse, FixedRetryOptions, JsonFormat,
-            Method, Response, RetryOptions, StatusCode, Transport,
+            headers::Headers, policies::PolicyResult, AsyncRawResponse, FixedRetryOptions,
+            JsonFormat, Method, Response, RetryOptions, StatusCode, Transport,
         },
         stream::BytesStream,
         Bytes,
@@ -170,7 +170,8 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                let response =
+                    AsyncRawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
                 Ok(std::future::ready(response).await)
             }
         }
@@ -189,7 +190,7 @@ mod tests {
             Ok(raw_response.into())
         }
 
-        let model = service_method().await.unwrap().into_body().unwrap();
+        let model = service_method().await.unwrap().into_model().unwrap();
 
         assert_eq!(1, model.foo);
         assert_eq!("baz", &model.bar);
@@ -230,7 +231,7 @@ mod tests {
     async fn send_retries_in_pipeline() {
         #[derive(Debug)]
         struct Responder {
-            responses: Mutex<VecDeque<BufResponse>>,
+            responses: Mutex<VecDeque<AsyncRawResponse>>,
         }
 
         impl Default for Responder {
@@ -241,12 +242,12 @@ mod tests {
 
                 Self {
                     responses: Mutex::new(VecDeque::from_iter([
-                        BufResponse::from_bytes(
+                        AsyncRawResponse::from_bytes(
                             StatusCode::TooManyRequests,
                             Headers::new(),
                             Vec::new(),
                         ),
-                        BufResponse::new(
+                        AsyncRawResponse::new(
                             StatusCode::Ok,
                             headers.clone(),
                             futures::stream::iter([
@@ -256,7 +257,7 @@ mod tests {
                             ])
                             .boxed(),
                         ),
-                        BufResponse::new(
+                        AsyncRawResponse::new(
                             StatusCode::Ok,
                             headers,
                             futures::stream::iter([
@@ -280,7 +281,7 @@ mod tests {
                 _next: &[Arc<dyn Policy>],
             ) -> PolicyResult {
                 let mut responses = self.responses.lock().await;
-                let response = responses.pop_front().expect("expected BufResponse");
+                let response = responses.pop_front().expect("expected AsyncRawResponse");
                 Ok(response)
             }
         }
@@ -315,7 +316,7 @@ mod tests {
         assert_eq!(per_try_count.count().await, 3);
         assert_eq!(per_call_count.count().await, 1);
 
-        let model = resp.into_body().expect("expected Model");
+        let model = resp.into_model().expect("expected Model");
         assert_eq!(per_try_count.count().await, 3);
         assert_eq!(per_call_count.count().await, 1);
 
@@ -327,7 +328,7 @@ mod tests {
     async fn stream_out_of_pipeline() {
         #[derive(Debug)]
         struct Responder {
-            responses: Mutex<VecDeque<BufResponse>>,
+            responses: Mutex<VecDeque<AsyncRawResponse>>,
         }
 
         impl Default for Responder {
@@ -338,12 +339,12 @@ mod tests {
 
                 Self {
                     responses: Mutex::new(VecDeque::from_iter([
-                        BufResponse::from_bytes(
+                        AsyncRawResponse::from_bytes(
                             StatusCode::TooManyRequests,
                             Headers::new(),
                             Vec::new(),
                         ),
-                        BufResponse::new(
+                        AsyncRawResponse::new(
                             StatusCode::Ok,
                             headers.clone(),
                             futures::stream::iter([
@@ -354,7 +355,7 @@ mod tests {
                             ])
                             .boxed(),
                         ),
-                        BufResponse::from_bytes(
+                        AsyncRawResponse::from_bytes(
                             StatusCode::ImATeapot,
                             Headers::new(),
                             r#"unexpected"#,
@@ -374,7 +375,7 @@ mod tests {
                 _next: &[Arc<dyn Policy>],
             ) -> PolicyResult {
                 let mut responses = self.responses.lock().await;
-                let response = responses.pop_front().expect("expected BufResponse");
+                let response = responses.pop_front().expect("expected AsyncRawResponse");
                 Ok(response)
             }
         }
@@ -386,7 +387,7 @@ mod tests {
         async fn service_method(
             per_call_count: Arc<Counter>,
             per_try_count: Arc<Counter>,
-        ) -> crate::Result<BufResponse> {
+        ) -> crate::Result<AsyncRawResponse> {
             let options = ClientOptions {
                 retry: RetryOptions::fixed(FixedRetryOptions {
                     delay: Duration::milliseconds(1),
@@ -404,7 +405,7 @@ mod tests {
 
         let resp = service_method(per_call_count.clone(), per_try_count.clone())
             .await
-            .expect("expected BufResponse");
+            .expect("expected AsyncRawResponse");
         assert_eq!(per_try_count.count().await, 2);
         assert_eq!(per_call_count.count().await, 1);
 

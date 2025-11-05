@@ -51,7 +51,7 @@ impl PatchCommand {
         match response {
             Err(e) if e.http_status() == Some(StatusCode::NotFound) => println!("Item not found!"),
             Ok(r) => {
-                let item: serde_json::Value = r.into_raw_body().json()?;
+                let item: serde_json::Value = r.into_body().json()?;
                 println!("Patched item:");
                 println!("{:#?}", item);
             }

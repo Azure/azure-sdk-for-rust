@@ -169,7 +169,7 @@ mod tests {
     use super::*;
     use crate::{tests::*, TSG_LINK_ERROR_TEXT};
     use azure_core::{
-        http::{headers::Headers, BufResponse, StatusCode, Transport},
+        http::{headers::Headers, AsyncRawResponse, StatusCode, Transport},
         Bytes, Result,
     };
     use std::vec;
@@ -221,7 +221,7 @@ mod tests {
     async fn get_token_error() {
         let description = "AADSTS7000215: Invalid client secret.";
         let sts = MockSts::new(
-            vec![BufResponse::from_bytes(
+            vec![AsyncRawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::default(),
                 Bytes::from(format!(

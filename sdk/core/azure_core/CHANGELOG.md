@@ -5,7 +5,9 @@
 ### Features Added
 
 - Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
-- Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
+- Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
+- Added `Response<T, F>::body(&self) -> &ResponseBody`.
+- Added `Response<T, F>::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
 - Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
 - Re-exported `serde_json::Value` as `azure_core::Value` ([#1687](https://github.com/Azure/azure-sdk-for-rust/issues/1687))
@@ -24,6 +26,9 @@
 - Removed `Poller::wait()` function. Call `await` on a `Poller` to wait for it to complete and, upon success, return the final model.
 - Removed `xml::read_xml_str()`.
 - Renamed `BearerTokenCredentialPolicy` to `BearerTokenAuthorizationPolicy`.
+- Renamed `BufResponse` to `AsyncRawResponse` so that `AsyncRawResponse` is to `RawResponse` as `AsyncIterator` is to `Iterator`.
+- Renamed `BufResponseBody` to `AsyncResponseBody` so that `AsyncResponseBody` is to `ResponseBody` as `AsyncIterator` is to `Iterator`.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 - Renamed `RetryPolicy::get_retry_headers()` to `RetryPolicy::retry_headers()`
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 

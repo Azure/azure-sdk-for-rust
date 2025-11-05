@@ -27,7 +27,7 @@ impl TransportPolicy {
     }
 }
 
-/// When present in [`Context`], signals to the `TransportPolicy` to buffer the entire [`BufResponse`](crate::http::BufResponse).
+/// When present in [`Context`], signals to the `TransportPolicy` to buffer the entire [`AsyncRawResponse`](crate::http::AsyncRawResponse).
 pub(crate) struct Buffer;
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
@@ -78,7 +78,7 @@ impl Header for EmptyContentLength {
 #[cfg(all(test, not(target_family = "wasm")))]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, BufResponse, StatusCode};
+    use crate::http::{headers::Headers, AsyncRawResponse, StatusCode};
 
     #[derive(Debug)]
     struct MockTransport;
@@ -91,7 +91,7 @@ mod tests {
             _request: &mut Request,
             _next: &[Arc<dyn Policy>],
         ) -> PolicyResult {
-            PolicyResult::Ok(BufResponse::from_bytes(
+            PolicyResult::Ok(AsyncRawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 Vec::new(),
