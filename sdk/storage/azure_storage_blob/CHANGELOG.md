@@ -14,6 +14,11 @@
 
 ### Breaking Changes
 
+- Changed the following options structs' `method_options` from `ClientMethodOptions` to `PagerOptions`:
+  - `BlobContainerClientListBlobFlatSegmentOptions`
+  - `BlobContainerClientListBlobHierarchySegmentOptions`
+  - `BlobServiceClientListContainersSegmentOptions`
+
 - Removed the `container_name()` and `blob_name()` accessors on relevant clients.
 - Removed the `endpoint` struct field on all clients, as this value is now returned directly from the underlying generated client.
 - Changed the `container_name` and `blob_name` parameters from owned `String` to `&str` reference on relevant client constructor methods (`new()`).

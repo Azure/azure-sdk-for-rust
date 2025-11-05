@@ -5,7 +5,7 @@
 
 use crate::{
     error::ErrorKind,
-    http::{headers::HeaderName, response::Response, DeserializeWith, Format, JsonFormat},
+    http::{headers::HeaderName, response::Response, Context, DeserializeWith, Format, JsonFormat},
 };
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
@@ -202,6 +202,13 @@ where
 /// ```
 pub type Pager<P, F = JsonFormat> = ItemIterator<Response<P, F>>;
 
+/// Options for configuring the behavior of a [`Pager`].
+#[derive(Clone, Debug, Default)]
+pub struct PagerOptions<'a> {
+    /// Context for HTTP requests made by the [`Pager`].
+    pub context: Context<'a>,
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>> + Send>;
 
@@ -307,7 +314,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>| {
+    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, ctx| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -326,7 +333,7 @@ impl<P: Page> ItemIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&Context::new(), &mut req, None)
+    ///           .send(&ctx, &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: ListItemsResult = json::from_json(&body)?;
@@ -339,7 +346,7 @@ impl<P: Page> ItemIterator<P> {
     ///             None => PagerResult::Done { response: resp }
     ///         })
     ///     }
-    /// });
+    /// }, None);
     /// ```
     ///
     /// To page results using headers:
@@ -362,7 +369,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |continuation| {
+    /// let pager = ItemIterator::from_callback(move |continuation, ctx| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
@@ -371,29 +378,31 @@ impl<P: Page> ItemIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&Context::new(), &mut req, None)
+    ///           .send(&ctx, &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
     ///     }
-    /// });
+    /// }, None);
     /// ```
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
+        options: Option<PagerOptions<'static>>,
     ) -> Self
     where
         <C as FromStr>::Err: std::error::Error,
     {
+        let options = options.unwrap_or_default();
         let next_token = Arc::new(Mutex::new(None::<String>));
-        let stream = iter_from_callback(make_request, next_token.clone());
+        let stream = iter_from_callback(make_request, options.context.clone(), next_token.clone());
 
         Self {
             stream: Box::pin(stream),
@@ -616,7 +625,7 @@ impl<P> PageIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = PageIterator::from_callback(move |next_link: PagerState<Url>| {
+    /// let pager = PageIterator::from_callback(move |next_link: PagerState<Url>, ctx| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -635,7 +644,7 @@ impl<P> PageIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&Context::new(), &mut req, None)
+    ///           .send(&ctx, &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: ListItemsResult = json::from_json(&body)?;
@@ -648,7 +657,7 @@ impl<P> PageIterator<P> {
     ///             None => PagerResult::Done { response: resp }
     ///         })
     ///     }
-    /// });
+    /// }, None);
     /// ```
     ///
     /// To page results using headers:
@@ -662,7 +671,7 @@ impl<P> PageIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = PageIterator::from_callback(move |continuation| {
+    /// let pager = PageIterator::from_callback(move |continuation, ctx| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
@@ -671,29 +680,35 @@ impl<P> PageIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&Context::new(), &mut req, None)
+    ///           .send(&ctx, &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-ms-continuation")))
     ///     }
-    /// });
+    /// }, None);
     /// ```
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
+        options: Option<PagerOptions<'static>>,
     ) -> Self
     where
         <C as FromStr>::Err: std::error::Error,
     {
+        let options = options.unwrap_or_default();
         let continuation_token = Arc::new(Mutex::new(None::<String>));
-        let stream = iter_from_callback(make_request, continuation_token.clone());
+        let stream = iter_from_callback(
+            make_request,
+            options.context.clone(),
+            continuation_token.clone(),
+        );
 
         Self {
             stream: Box::pin(stream),
@@ -793,13 +808,13 @@ impl<P> fmt::Debug for PageIterator<P> {
 }
 
 #[derive(Debug, Clone, Eq)]
-enum State<T> {
+enum State<C> {
     Init,
-    More(T),
+    More(C),
     Done,
 }
 
-impl<T> PartialEq for State<T> {
+impl<C> PartialEq for State<C> {
     fn eq(&self, other: &Self) -> bool {
         // Only needs to compare if both states are Init or Done; internally, we don't care about any other states.
         matches!(
@@ -809,97 +824,111 @@ impl<T> PartialEq for State<T> {
     }
 }
 
+#[derive(Debug)]
+struct StreamState<'a, C, F> {
+    state: State<C>,
+    make_request: F,
+    continuation_token: Arc<Mutex<Option<String>>>,
+    ctx: Context<'a>,
+}
+
 fn iter_from_callback<
     P,
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
     #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
     #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
 >(
     make_request: F,
+    ctx: Context<'static>,
     continuation_token: Arc<Mutex<Option<String>>>,
 ) -> impl Stream<Item = crate::Result<P>> + 'static
 where
     <C as FromStr>::Err: std::error::Error,
 {
     unfold(
-        // We flow the `make_request` callback and `continuation_token` through the state value so that we can avoid cloning.
-        (State::Init, make_request, continuation_token),
-        |(mut state, make_request, continuation_token)| async move {
+        StreamState {
+            state: State::Init,
+            make_request,
+            continuation_token,
+            ctx,
+        },
+        |mut stream_state| async move {
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
-            if state != State::Done {
-                state = match continuation_token.lock() {
+            if stream_state.state != State::Done {
+                let result = match stream_state.continuation_token.lock() {
                     Ok(next_token) => match next_token.as_deref() {
                         Some(n) => match n.parse() {
-                            Ok(s) => State::More(s),
-                            Err(err) => {
-                                return Some((
-                                    Err(crate::Error::with_message_fn(
-                                        ErrorKind::DataConversion,
-                                        || format!("invalid continuation token: {err}"),
-                                    )),
-                                    (State::Done, make_request, continuation_token.clone()),
-                                ))
-                            }
+                            Ok(s) => Ok(State::More(s)),
+                            Err(err) => Err(crate::Error::with_message_fn(
+                                ErrorKind::DataConversion,
+                                || format!("invalid continuation token: {err}"),
+                            )),
                         },
                         // Restart the pager if `next_token` is None indicating we resumed from before or within the first page.
-                        None => State::Init,
+                        None => Ok(State::Init),
                     },
-                    Err(err) => {
-                        return Some((
-                            Err(crate::Error::with_message_fn(ErrorKind::Other, || {
-                                format!("continuation token lock: {err}")
-                            })),
-                            (State::Done, make_request, continuation_token.clone()),
-                        ))
-                    }
+                    Err(err) => Err(crate::Error::with_message_fn(ErrorKind::Other, || {
+                        format!("continuation token lock: {err}")
+                    })),
                 };
+
+                match result {
+                    Ok(state) => stream_state.state = state,
+                    Err(err) => {
+                        stream_state.state = State::Done;
+                        return Some((Err(err), stream_state));
+                    }
+                }
             }
-            let result = match state {
+            let result = match stream_state.state {
                 State::Init => {
                     tracing::debug!("initial page request");
-                    make_request(PagerState::Initial).await
+                    (stream_state.make_request)(PagerState::Initial, stream_state.ctx.clone()).await
                 }
                 State::More(n) => {
                     tracing::debug!("subsequent page request to {:?}", AsRef::<str>::as_ref(&n));
-                    make_request(PagerState::More(n)).await
+                    (stream_state.make_request)(PagerState::More(n), stream_state.ctx.clone()).await
                 }
                 State::Done => {
                     tracing::debug!("done");
-                    // Set the continuation token to None now that we are done.
-                    if let Ok(mut token) = continuation_token.lock() {
+                    // Set the `continuation_token` to None now that we are done.
+                    if let Ok(mut token) = stream_state.continuation_token.lock() {
                         *token = None;
                     }
                     return None;
                 }
             };
             let (item, next_state) = match result {
-                Err(e) => return Some((Err(e), (State::Done, make_request, continuation_token))),
+                Err(e) => {
+                    stream_state.state = State::Done;
+                    return Some((Err(e), stream_state));
+                }
                 Ok(PagerResult::More {
                     response,
                     continuation: next_token,
                 }) => {
                     // Set the `continuation_token` to the next page.
-                    if let Ok(mut token) = continuation_token.lock() {
+                    if let Ok(mut token) = stream_state.continuation_token.lock() {
                         *token = Some(next_token.as_ref().into());
                     }
                     (Ok(response), State::More(next_token))
                 }
                 Ok(PagerResult::Done { response }) => {
                     // Set the `continuation_token` to None now that we are done.
-                    if let Ok(mut token) = continuation_token.lock() {
+                    if let Ok(mut token) = stream_state.continuation_token.lock() {
                         *token = None;
                     }
                     (Ok(response), State::Done)
                 }
             };
 
-            // Flow 'make_request' and `continuation_token` through to avoid cloning
-            Some((item, (next_state, make_request, continuation_token)))
+            stream_state.state = next_state;
+            Some((item, stream_state))
         },
     )
 }
@@ -911,7 +940,7 @@ mod tests {
         http::{
             headers::{HeaderName, HeaderValue},
             pager::{PageIterator, Pager, PagerResult, PagerState},
-            RawResponse, Response, StatusCode,
+            Context, RawResponse, Response, StatusCode,
         },
     };
     use async_trait::async_trait;
@@ -938,8 +967,8 @@ mod tests {
 
     #[tokio::test]
     async fn callback_item_pagination() {
-        let pager: Pager<Page> =
-            Pager::from_callback(|continuation: PagerState<String>| async move {
+        let pager: Pager<Page> = Pager::from_callback(
+            |continuation: PagerState<String>, _ctx| async move {
                 match continuation {
                     PagerState::Initial => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
@@ -983,15 +1012,17 @@ mod tests {
                         panic!("Unexpected continuation value")
                     }
                 }
-            });
+            },
+            None,
+        );
         let items: Vec<i32> = pager.try_collect().await.unwrap();
         assert_eq!(vec![1, 2, 3], items.as_slice())
     }
 
     #[tokio::test]
     async fn callback_item_pagination_error() {
-        let pager: Pager<Page> =
-            Pager::from_callback(|continuation: PagerState<String>| async move {
+        let pager: Pager<Page> = Pager::from_callback(
+            |continuation: PagerState<String>, _ctx| async move {
                 match continuation {
                     PagerState::Initial => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
@@ -1014,7 +1045,9 @@ mod tests {
                         panic!("Unexpected continuation value")
                     }
                 }
-            });
+            },
+            None,
+        );
         let pages: Vec<Result<(String, Page), crate::Error>> = pager
             .into_pages()
             .then(|r| async move {
@@ -1049,7 +1082,7 @@ mod tests {
     async fn page_iterator_with_continuation_token() {
         // Create the first PageIterator.
         let mut first_pager: PageIterator<Response<Page>> =
-            PageIterator::from_callback(make_three_page_callback());
+            PageIterator::from_callback(make_three_page_callback(), None);
 
         // Should start with no continuation_token.
         assert_eq!(first_pager.continuation_token(), None);
@@ -1073,7 +1106,7 @@ mod tests {
 
         // Create the second PageIterator.
         let mut second_pager: PageIterator<Response<Page>> =
-            PageIterator::from_callback(make_three_page_callback())
+            PageIterator::from_callback(make_three_page_callback(), None)
                 .with_continuation_token(continuation_token);
 
         // Should start with link to second page.
@@ -1113,7 +1146,7 @@ mod tests {
     #[tokio::test]
     async fn page_iterator_from_item_iterator_after_first_page() {
         // Create an ItemIterator and consume all items from first page.
-        let mut item_pager: Pager<Page> = Pager::from_callback(make_three_page_callback());
+        let mut item_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None);
 
         // Should start with no continuation_token.
         assert_eq!(item_pager.continuation_token(), None);
@@ -1167,7 +1200,7 @@ mod tests {
     #[tokio::test]
     async fn page_iterator_from_item_iterator_second_page_first_item() {
         // Create an ItemIterator and consume items up to first item of second page.
-        let mut item_pager: Pager<Page> = Pager::from_callback(make_three_page_callback());
+        let mut item_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None);
 
         // Should start with no continuation_token.
         assert_eq!(item_pager.continuation_token(), None);
@@ -1229,7 +1262,7 @@ mod tests {
     #[tokio::test]
     async fn item_iterator_with_continuation_token() {
         // Create the first ItemIterator.
-        let mut first_pager: Pager<Page> = Pager::from_callback(make_three_page_callback());
+        let mut first_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None);
 
         // Should start with no continuation_token.
         assert_eq!(first_pager.continuation_token(), None);
@@ -1255,7 +1288,7 @@ mod tests {
         assert_eq!(continuation_token, None);
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback())
+        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
             .with_continuation_token(continuation_token);
 
         // Should start with link to first page.
@@ -1280,7 +1313,7 @@ mod tests {
     #[tokio::test]
     async fn item_iterator_continuation_second_page_second_item() {
         // Create the first ItemIterator.
-        let mut first_pager: Pager<Page> = Pager::from_callback(make_three_page_callback());
+        let mut first_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None);
 
         // Should start with no continuation_token.
         assert_eq!(first_pager.continuation_token(), None);
@@ -1329,7 +1362,7 @@ mod tests {
         assert_eq!(continuation_token.as_deref(), Some("next-token-1"));
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback())
+        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
             .with_continuation_token(continuation_token);
 
         // When continuing with a continuation token, we should start over from the
@@ -1350,7 +1383,7 @@ mod tests {
     #[tokio::test]
     async fn item_iterator_continuation_after_first_page() {
         // Create the first ItemIterator.
-        let mut first_pager: Pager<Page> = Pager::from_callback(make_three_page_callback());
+        let mut first_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None);
 
         // Should start with no continuation_token.
         assert_eq!(first_pager.continuation_token(), None);
@@ -1382,7 +1415,7 @@ mod tests {
         assert_eq!(continuation_token, None);
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback())
+        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
             .with_continuation_token(continuation_token);
 
         // When continuing with a continuation token after finishing a page, we should
@@ -1424,8 +1457,8 @@ mod tests {
 
     #[tokio::test]
     async fn callback_item_pagination_from_str_error() {
-        let mut pager: Pager<Page> =
-            Pager::from_callback(|continuation: PagerState<ContinuationToken>| async move {
+        let mut pager: Pager<Page> = Pager::from_callback(
+            |continuation: PagerState<ContinuationToken>, _ctx| async move {
                 match continuation {
                     PagerState::Initial => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
@@ -1445,7 +1478,9 @@ mod tests {
                         panic!("Unexpected continuation value: {:?}", continuation)
                     }
                 }
-            });
+            },
+            None,
+        );
 
         // Get the first item from the first page.
         let first_item = pager.try_next().await.expect("expected first page");
@@ -1460,11 +1495,12 @@ mod tests {
     #[allow(clippy::type_complexity)]
     fn make_three_page_callback() -> impl Fn(
         PagerState<String>,
+        Context<'_>,
     ) -> Pin<
         Box<dyn Future<Output = crate::Result<PagerResult<Response<Page>, String>>> + Send>,
     > + Send
            + 'static {
-        |continuation: PagerState<String>| {
+        |continuation: PagerState<String>, _ctx| {
             Box::pin(async move {
                 match continuation.as_deref() {
                     PagerState::Initial => Ok(PagerResult::More {
