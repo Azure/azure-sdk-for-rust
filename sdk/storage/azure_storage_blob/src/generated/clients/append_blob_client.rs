@@ -169,9 +169,6 @@ impl AppendBlobClient {
         if let Some(max_size) = options.max_size {
             request.insert_header("x-ms-blob-condition-maxsize", max_size.to_string());
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
@@ -308,9 +305,6 @@ impl AppendBlobClient {
         }
         if let Some(max_size) = options.max_size {
             request.insert_header("x-ms-blob-condition-maxsize", max_size.to_string());
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-copy-source", source_url);
         if let Some(copy_source_authorization) = options.copy_source_authorization {
@@ -469,9 +463,6 @@ impl AppendBlobClient {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
         request.insert_header("x-ms-blob-type", "AppendBlob");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
                 "x-ms-encryption-algorithm",
@@ -599,9 +590,6 @@ impl AppendBlobClient {
         }
         if let Some(append_position) = options.append_position {
             request.insert_header("x-ms-blob-condition-appendpos", append_position.to_string());
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);

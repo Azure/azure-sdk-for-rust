@@ -15,7 +15,7 @@ use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name,
 };
-use futures::{StreamExt, TryStreamExt};
+use futures::StreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 use typespec_client_core::time::OffsetDateTime;
@@ -114,19 +114,6 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let mut list_blobs_response = container_client.list_blobs(None)?;
 
-    // let page = list_blobs_response.try_next().await?;
-    // let list_blob_segment_response = page.unwrap().into_body()?;
-    // let blob_list = list_blob_segment_response.segment.blob_items;
-    // for blob in blob_list {
-    //     let blob_name = blob.name.unwrap().content.unwrap();
-    //     let properties = blob.properties.unwrap();
-    //     let blob_type = properties.blob_type.unwrap();
-    //     let etag = properties.etag;
-    //     assert!(blob_names.contains(&blob_name));
-    //     assert_eq!(BlobType::BlockBlob, blob_type);
-    //     assert!(etag.is_some());
-    // }
-
     while let Some(blob_result) = list_blobs_response.next().await {
         let blob = blob_result?;
         let blob_name = blob.name.unwrap().content.unwrap();
@@ -142,116 +129,121 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// #[recorded::test]
-// async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-//     // Recording Setup
-//     let recording = ctx.recording();
-//     let container_client = get_container_client(recording, false).await?;
-//     let blob_names = [
-//         "testblob1".to_string(),
-//         "testblob2".to_string(),
-//         "testblob3".to_string(),
-//         "testblob4".to_string(),
-//     ];
+#[recorded::test]
+async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_names = [
+        "testblob1".to_string(),
+        "testblob2".to_string(),
+        "testblob3".to_string(),
+        "testblob4".to_string(),
+    ];
 
-//     container_client.create_container(None).await?;
-//     create_test_blob(
-//         &container_client.blob_client(&blob_names[0].clone()),
-//         None,
-//         None,
-//     )
-//     .await?;
-//     create_test_blob(
-//         &container_client.blob_client(&blob_names[1].clone()),
-//         None,
-//         None,
-//     )
-//     .await?;
-//     create_test_blob(
-//         &container_client.blob_client(&blob_names[2].clone()),
-//         None,
-//         None,
-//     )
-//     .await?;
-//     create_test_blob(
-//         &container_client.blob_client(&blob_names[3].clone()),
-//         None,
-//         None,
-//     )
-//     .await?;
+    container_client.create_container(None).await?;
+    create_test_blob(
+        &container_client.blob_client(&blob_names[0].clone()),
+        None,
+        None,
+    )
+    .await?;
+    create_test_blob(
+        &container_client.blob_client(&blob_names[1].clone()),
+        None,
+        None,
+    )
+    .await?;
+    create_test_blob(
+        &container_client.blob_client(&blob_names[2].clone()),
+        None,
+        None,
+    )
+    .await?;
+    create_test_blob(
+        &container_client.blob_client(&blob_names[3].clone()),
+        None,
+        None,
+    )
+    .await?;
 
-//     // Continuation Token with Token Provided
-//     let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
-//         maxresults: Some(2),
-//         ..Default::default()
-//     };
-//     let mut list_blobs_response = container_client.list_blobs(Some(list_blobs_options))?;
-//     let first_page = list_blobs_response.try_next().await?;
-//     let list_blob_segment_response = first_page.unwrap().into_body()?;
-//     let continuation_token = list_blob_segment_response.next_marker;
-//     let blob_list = list_blob_segment_response.segment.blob_items;
-//     assert_eq!(2, blob_list.len());
-//     for blob in blob_list {
-//         let blob_name = blob.name.unwrap().content.unwrap();
-//         let blob_type = blob.properties.unwrap().blob_type.unwrap();
-//         assert!(blob_names.contains(&blob_name));
-//         assert_eq!(BlobType::BlockBlob, blob_type);
-//     }
-//     let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
-//         marker: continuation_token,
-//         ..Default::default()
-//     };
-//     let mut list_blobs_response = container_client.list_blobs(Some(list_blobs_options.clone()))?;
-//     let second_page = list_blobs_response.try_next().await?;
-//     let list_blob_segment_response = second_page.unwrap().into_body()?;
-//     let blob_list = list_blob_segment_response.segment.blob_items;
-//     assert_eq!(2, blob_list.len());
-//     for blob in blob_list {
-//         let blob_name = blob.name.unwrap().content.unwrap();
-//         let blob_type = blob.properties.unwrap().blob_type.unwrap();
-//         assert!(blob_names.contains(&blob_name));
-//         assert_eq!(BlobType::BlockBlob, blob_type);
-//     }
+    // Continuation Token with Token Provided
+    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+        maxresults: Some(2),
+        ..Default::default()
+    };
+    let list_blobs_response = container_client.list_blobs(Some(list_blobs_options))?;
+    let mut pages = list_blobs_response.into_pages();
+    let first_page = pages.next().await.unwrap()?;
+    let list_blob_segment_response = first_page.into_body()?;
+    let continuation_token = list_blob_segment_response.next_marker;
+    let blob_list = list_blob_segment_response.segment.blob_items;
+    assert_eq!(2, blob_list.len());
+    for blob in blob_list {
+        let blob_name = blob.name.unwrap().content.unwrap();
+        let blob_type = blob.properties.unwrap().blob_type.unwrap();
+        assert!(blob_names.contains(&blob_name));
+        assert_eq!(BlobType::BlockBlob, blob_type);
+    }
 
-//     // Continuation Token, Automatic Paging
-//     let mut pager_response = container_client.list_blobs(Some(list_blobs_options))?;
-//     let mut page_count = 0;
+    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+        marker: continuation_token,
+        ..Default::default()
+    };
+    let list_blobs_response = container_client.list_blobs(Some(list_blobs_options.clone()))?;
+    let mut pages = list_blobs_response.into_pages();
+    let second_page = pages.next().await.unwrap()?;
+    let list_blob_segment_response = second_page.into_body()?;
+    let blob_list = list_blob_segment_response.segment.blob_items;
+    assert_eq!(2, blob_list.len());
+    for blob in blob_list {
+        let blob_name = blob.name.unwrap().content.unwrap();
+        let blob_type = blob.properties.unwrap().blob_type.unwrap();
+        assert!(blob_names.contains(&blob_name));
+        assert_eq!(BlobType::BlockBlob, blob_type);
+    }
 
-//     while let Some(page) = pager_response.next().await {
-//         page_count += 1;
-//         let current_page = page.unwrap().into_body()?;
-//         match page_count {
-//             1 => {
-//                 let blob_list = current_page.segment.blob_items;
-//                 assert_eq!(2, blob_list.len());
+    // Continuation Token, Automatic Paging
+    let list_blobs_response = container_client.list_blobs(Some(list_blobs_options))?;
+    let mut pages = list_blobs_response.into_pages();
+    let mut page_count = 0;
 
-//                 for blob in blob_list {
-//                     let blob_name = blob.name.unwrap().content.unwrap();
-//                     let blob_type = blob.properties.unwrap().blob_type.unwrap();
-//                     assert!(blob_names.contains(&blob_name));
-//                     assert_eq!(BlobType::BlockBlob, blob_type);
-//                 }
-//             }
-//             2 => {
-//                 let blob_list = current_page.segment.blob_items;
-//                 assert_eq!(2, blob_list.len());
+    while let Some(page_result) = pages.next().await {
+        page_count += 1;
+        let page = page_result?;
+        let current_page = page.into_body()?;
+        match page_count {
+            1 => {
+                let blob_list = current_page.segment.blob_items;
+                assert_eq!(2, blob_list.len());
 
-//                 for blob in blob_list {
-//                     let blob_name = blob.name.unwrap().content.unwrap();
-//                     let blob_type = blob.properties.unwrap().blob_type.unwrap();
-//                     assert!(blob_names.contains(&blob_name));
-//                     assert_eq!(BlobType::BlockBlob, blob_type);
-//                 }
-//             }
-//             _ => {
-//                 panic!("Unexpected page number reached.")
-//             }
-//         }
-//     }
+                for blob in blob_list {
+                    let blob_name = blob.name.unwrap().content.unwrap();
+                    let blob_type = blob.properties.unwrap().blob_type.unwrap();
+                    assert!(blob_names.contains(&blob_name));
+                    assert_eq!(BlobType::BlockBlob, blob_type);
+                }
+            }
+            2 => {
+                let blob_list = current_page.segment.blob_items;
+                assert_eq!(2, blob_list.len());
 
-//     container_client.delete_container(None).await?;
-//     Ok(())
-// }
+                for blob in blob_list {
+                    let blob_name = blob.name.unwrap().content.unwrap();
+                    let blob_type = blob.properties.unwrap().blob_type.unwrap();
+                    assert!(blob_names.contains(&blob_name));
+                    assert_eq!(BlobType::BlockBlob, blob_type);
+                }
+            }
+            _ => {
+                panic!("Unexpected page number reached.")
+            }
+        }
+    }
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {

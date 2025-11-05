@@ -188,9 +188,6 @@ impl BlockBlobClient {
         if let Some(blob_content_type) = options.blob_content_type {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
@@ -316,9 +313,6 @@ impl BlockBlobClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -437,9 +431,6 @@ impl BlockBlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
                 "x-ms-encryption-algorithm",
@@ -543,9 +534,6 @@ impl BlockBlobClient {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
@@ -662,9 +650,6 @@ impl BlockBlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-copy-source", source_url);
         if let Some(copy_source_authorization) = options.copy_source_authorization {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
@@ -833,9 +818,6 @@ impl BlockBlobClient {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
         request.insert_header("x-ms-blob-type", "BlockBlob");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
@@ -1012,9 +994,6 @@ impl BlockBlobClient {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
         request.insert_header("x-ms-blob-type", "BlockBlob");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-copy-source", copy_source);
         if let Some(copy_source_authorization) = options.copy_source_authorization {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
