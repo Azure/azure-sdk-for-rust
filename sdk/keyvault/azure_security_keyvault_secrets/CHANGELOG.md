@@ -6,6 +6,10 @@
 
 ### Breaking Changes
 
+- `SecretClientListDeletedSecretPropertiesOptions::method_options` is now `PagerOptions`.
+- `SecretClientListSecretPropertiesOptions::method_options` is now `PagerOptions`.
+- `SecretClientListSecretPropertiesVersionsOptions::method_options` is now `PagerOptions`.
+
 ### Bugs Fixed
 
 ### Other Changes

@@ -7,6 +7,10 @@
 ### Breaking Changes
 
 - `CertificateClient::create_certificate()` now returns a `Poller<CertificateOperation>`.
+- `CertificateClientListCertificatePropertiesOptions::method_options` is now `PagerOptions`.
+- `CertificateClientListCertificatePropertiesVersionsOptions::method_options` is now `PagerOptions`.
+- `CertificateClientListDeletedCertificatePropertiesOptions::method_options` is now `PagerOptions`.
+- `CertificateClientListIssuerPropertiesOptions::method_options` is now `PagerOptions`.
 - Removed `CertificateClient::begin_create_certificate()`.
 - Removed `CertificateClient::resume_create_certificate()`.
 - Removed `wait()` function from `Poller<CertificateOperation>`.

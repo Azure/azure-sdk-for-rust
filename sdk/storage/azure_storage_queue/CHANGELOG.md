@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Changed `QueueServiceClientListQueuesOptions::method_options` from `ClientMethodOptions` to `PagerOptions`
+
 ### Bugs Fixed
 
 ### Other Changes
@@ -14,4 +16,4 @@
 
 ### Features Added
 
-* Initial supported release.
+- Initial supported release.
