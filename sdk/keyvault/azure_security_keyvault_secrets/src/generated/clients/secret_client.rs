@@ -296,7 +296,7 @@ impl SecretClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getDeletedSecrets")]
     pub fn list_deleted_secret_properties(
-        &'_ self,
+        &self,
         options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
@@ -372,7 +372,7 @@ impl SecretClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getSecrets")]
     pub fn list_secret_properties(
-        &'_ self,
+        &self,
         options: Option<SecretClientListSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
@@ -448,7 +448,7 @@ impl SecretClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getSecretVersions")]
     pub fn list_secret_properties_versions(
-        &'_ self,
+        &self,
         secret_name: &str,
         options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {

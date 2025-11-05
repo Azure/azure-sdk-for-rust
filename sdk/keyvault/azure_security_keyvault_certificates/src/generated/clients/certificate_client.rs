@@ -668,7 +668,7 @@ impl CertificateClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getCertificates")]
     pub fn list_certificate_properties(
-        &'_ self,
+        &self,
         options: Option<CertificateClientListCertificatePropertiesOptions<'_>>,
     ) -> Result<Pager<ListCertificatePropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
@@ -749,7 +749,7 @@ impl CertificateClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getCertificateVersions")]
     pub fn list_certificate_properties_versions(
-        &'_ self,
+        &self,
         certificate_name: &str,
         options: Option<CertificateClientListCertificatePropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListCertificatePropertiesResult>> {
@@ -834,7 +834,7 @@ impl CertificateClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getDeletedCertificates")]
     pub fn list_deleted_certificate_properties(
-        &'_ self,
+        &self,
         options: Option<CertificateClientListDeletedCertificatePropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedCertificatePropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
@@ -914,7 +914,7 @@ impl CertificateClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getCertificateIssuers")]
     pub fn list_issuer_properties(
-        &'_ self,
+        &self,
         options: Option<CertificateClientListIssuerPropertiesOptions<'_>>,
     ) -> Result<Pager<ListIssuerPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();

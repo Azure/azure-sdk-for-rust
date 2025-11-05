@@ -670,7 +670,7 @@ impl KeyClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getDeletedKeys")]
     pub fn list_deleted_key_properties(
-        &'_ self,
+        &self,
         options: Option<KeyClientListDeletedKeyPropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedKeyPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
@@ -746,7 +746,7 @@ impl KeyClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getKeys")]
     pub fn list_key_properties(
-        &'_ self,
+        &self,
         options: Option<KeyClientListKeyPropertiesOptions<'_>>,
     ) -> Result<Pager<ListKeyPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
@@ -821,7 +821,7 @@ impl KeyClient {
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getKeyVersions")]
     pub fn list_key_properties_versions(
-        &'_ self,
+        &self,
         key_name: &str,
         options: Option<KeyClientListKeyPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListKeyPropertiesResult>> {

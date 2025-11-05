@@ -220,7 +220,7 @@ impl QueueServiceClient {
     /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.getQueues")]
     pub fn list_queues(
-        &'_ self,
+        &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
     ) -> Result<PageIterator<Response<ListQueuesResponse, XmlFormat>>> {
         let options = options.unwrap_or_default().into_owned();
