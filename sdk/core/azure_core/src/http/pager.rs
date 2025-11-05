@@ -608,21 +608,19 @@ impl<P> PageIterator<P> {
     /// }, None);
     /// ```
     pub fn from_callback<
-        'a,
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'a>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'a>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
-        options: Option<PagerOptions<'a>>,
+        options: Option<PagerOptions<'_>>,
     ) -> Self
     where
         <C as FromStr>::Err: fmt::Debug,
-        'a: 'static,
     {
         let options = options.unwrap_or_default();
         let continuation_token = Arc::new(Mutex::new(None::<String>));
@@ -631,7 +629,7 @@ impl<P> PageIterator<P> {
         let set_clone = continuation_token.clone();
         let stream = iter_from_callback(
             make_request,
-            options.context.clone(),
+            options.context.into_owned(),
             move || {
                 if let Ok(token_guard) = get_clone.lock() {
                     return token_guard
@@ -750,7 +748,7 @@ enum State<T> {
     Done,
 }
 
-struct PagerStreamState<'a, C, F, G, S> {
+struct StreamState<'a, C, F, G, S> {
     state: State<C>,
     make_request: F,
     get_next: G,
@@ -760,33 +758,29 @@ struct PagerStreamState<'a, C, F, G, S> {
 }
 
 fn iter_from_callback<
-    'a,
     P,
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
     #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'a>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] G: Fn() -> Option<C> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] S: Fn(Option<&str>) + Send + 'static,
     #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'a>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     #[cfg(target_arch = "wasm32")] G: Fn() -> Option<C> + 'static,
     #[cfg(target_arch = "wasm32")] S: Fn(Option<&str>) + 'static,
 >(
     make_request: F,
-    ctx: Context<'a>,
+    ctx: Context<'static>,
     get_next: G,
     set_next: S,
-) -> impl Stream<Item = crate::Result<P>> + 'static
-where
-    'a: 'static,
-{
+) -> impl Stream<Item = crate::Result<P>> + 'static {
     // Keep `ctx` alive within the stream's state so callers can safely capture it
     // (e.g., for tracing) without forcing non-'static borrows that trigger lifetime errors.
     unfold(
         // Flow `make_request`, `get_next`, `set_next`, and `ctx` through the state to avoid cloning.
-        PagerStreamState::<C, F, G, S> {
+        StreamState {
             state: State::Init,
             make_request,
             get_next,

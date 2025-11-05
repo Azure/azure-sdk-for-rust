@@ -12,7 +12,7 @@ use azure_core::{
         poller::{
             get_retry_after, Poller, PollerResult, PollerState, PollerStatus, StatusMonitor as _,
         },
-        Body, Context, Method, RawResponse, Request, RequestContent, Url,
+        Body, Method, RawResponse, Request, RequestContent, Url,
     },
     json, tracing, Result,
 };
@@ -73,12 +73,12 @@ impl CertificateClient {
     /// ```
     #[tracing::function("KeyVault.createCertificate")]
     pub fn create_certificate(
-        &'_ self,
+        &self,
         certificate_name: &str,
         parameters: RequestContent<CreateCertificateParameters>,
-        options: Option<CertificateClientCreateCertificateOptions<'_>>,
+        options: Option<CertificateClientCreateCertificateOptions>,
     ) -> Result<Poller<CertificateOperation>> {
-        let options = options.unwrap_or_default().into_owned();
+        let options = options.unwrap_or_default();
         let pipeline = self.pipeline.clone();
 
         let mut url = self.endpoint.clone();
@@ -90,11 +90,11 @@ impl CertificateClient {
 
         let api_version = self.api_version.clone();
         let certificate_name = certificate_name.to_owned();
+
         let parameters: Body = parameters.into();
 
-        //        let ctx = options.method_options.context;
         Ok(Poller::from_callback(
-            move |next_link: PollerState<Url>, ctx: Context, poller_options| {
+            move |next_link: PollerState<Url>, poller_options| {
                 let (mut request, next_link) = match next_link {
                     PollerState::More(next_link) => {
                         // Make sure the `api-version` is set appropriately.
@@ -130,6 +130,7 @@ impl CertificateClient {
 
                 let pipeline = pipeline.clone();
                 let api_version = api_version.clone();
+                let ctx = poller_options.context.clone();
                 async move {
                     let rsp = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
@@ -188,8 +189,7 @@ impl CertificateClient {
                     })
                 }
             },
-            Some(options.method_options),
-            Some(options.poller_options),
+            Some(options.method_options.into_owned()),
         ))
     }
 }
