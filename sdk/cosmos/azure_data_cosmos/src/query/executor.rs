@@ -35,7 +35,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         options: QueryOptions<'_>,
         query_engine: QueryEngineRef,
     ) -> azure_core::Result<Self> {
-        let items_link = container_link.feed(ResourceType::Items);
+        let items_link = container_link.feed(ResourceType::Documents);
         let context = options.method_options.context.into_owned();
         Ok(Self {
             http_pipeline,

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::sync::Arc;
 use crate::{
     clients::ContainerClient,
     models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
@@ -22,11 +23,11 @@ pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
     database_id: String,
-    pipeline: CosmosPipeline,
+    pipeline: Arc<CosmosPipeline>,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, database_id: &str) -> Self {
+    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);

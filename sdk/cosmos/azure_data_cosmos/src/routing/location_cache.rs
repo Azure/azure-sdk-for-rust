@@ -9,22 +9,10 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tracing::info;
+use crate::cosmos_request::CosmosRequest;
+use crate::models::{AccountProperties, AccountRegion};
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AccountRegion {
-    pub endpoint: String,
-    pub region: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AccountProperties {
-    pub database_account_endpoint: String,
-    pub read_regions: Vec<AccountRegion>,
-    pub write_regions: Vec<AccountRegion>,
-    pub enable_multiple_write_locations: bool,
-}
 
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum RequestOperation {
@@ -48,12 +36,12 @@ impl RequestOperation {
 #[derive(Clone, Default, Debug)]
 pub struct DatabaseAccountLocationsInfo {
     pub preferred_locations: Vec<String>,
-    account_write_locations: Vec<String>,
-    account_read_locations: Vec<String>,
-    account_write_endpoints_by_location: HashMap<String, String>,
-    account_read_endpoints_by_location: HashMap<String, String>,
-    write_endpoints: Vec<String>,
-    read_endpoints: Vec<String>,
+    pub account_write_locations: Vec<AccountRegion>,
+    pub account_read_locations: Vec<AccountRegion>,
+    pub account_write_endpoints_by_location: HashMap<String, String>,
+    pub(crate) account_read_endpoints_by_location: HashMap<String, String>,
+    pub write_endpoints: Vec<String>,
+    pub read_endpoints: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -89,10 +77,16 @@ impl LocationCache {
         self.locations_info.write_endpoints.clone()
     }
 
+    pub fn on_database_account_read(&mut self, account_properties: AccountProperties) {
+        let write_regions = account_properties.writable_locations;
+        let read_regions = account_properties.readable_locations;
+        let _= &self.update(write_regions, read_regions);
+    }
+
     pub fn update(
         &mut self,
-        write_locations: HashMap<String, String>,
-        read_locations: HashMap<String, String>,
+        write_locations: Vec<AccountRegion>,
+        read_locations: Vec<AccountRegion>,
     ) -> Result<(), &'static str> {
         // Separate write locations into appropriate hashmap and list
         if !write_locations.is_empty() {
@@ -169,6 +163,12 @@ impl LocationCache {
         operation: RequestOperation,
     ) -> String {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
+        // let location_index = request.request_context.location_index_to_route.unwrap_or_default(0);
+        //
+        // let operation = request.operation_type.is_read_only();
+        // if (!request.operation_type.is_read_only() && !self.can_use_multiple_write_locations()) {
+        //
+        // }
         if operation == RequestOperation::Write && !self.locations_info.write_endpoints.is_empty() {
             self.locations_info
                 .write_endpoints
@@ -188,7 +188,7 @@ impl LocationCache {
         }
     }
 
-    pub fn can_use_multiple_write_locations(&mut self) -> bool {
+    pub fn can_use_multiple_write_locations(&self) -> bool {
         !self.write_endpoints().is_empty()
     }
 
@@ -211,17 +211,15 @@ impl LocationCache {
 
     fn get_endpoints_by_location(
         &mut self,
-        locations: HashMap<String, String>,
-    ) -> (HashMap<String, String>, Vec<String>) {
+        locations: Vec<AccountRegion>,
+    ) -> (HashMap<String, String>, Vec<AccountRegion>) {
         // Separates locations into a hashmap and list
         let mut endpoints_by_location: HashMap<String, String> = HashMap::new();
-        let mut parsed_locations: Vec<String> = Vec::new();
+        let mut parsed_locations: Vec<AccountRegion> = Vec::new();
 
-        for (location, endpoint) in locations {
-            if !location.is_empty() {
-                endpoints_by_location.insert(location.clone(), endpoint.clone());
-                parsed_locations.push(location);
-            }
+        for location in locations {
+            endpoints_by_location.insert(location.name.clone(), location.database_account_endpoint.clone());
+            parsed_locations.push(location);
         }
 
         (endpoints_by_location, parsed_locations)
@@ -281,39 +279,39 @@ mod tests {
 
     fn create_test_data() -> (
         String,
-        HashMap<String, String>,
-        HashMap<String, String>,
+        Vec<AccountRegion>,
+        Vec<AccountRegion>,
         Vec<String>,
     ) {
         // Setting up test database account data
         let default_endpoint = "https://default.documents.example.com".to_string();
 
         let location_1 = AccountRegion {
-            endpoint: "https://location1.documents.example.com".to_string(),
-            region: "Location 1".to_string(),
+            database_account_endpoint: "https://location1.documents.example.com".to_string(),
+            name: "Location 1".to_string(),
         };
         let location_2 = AccountRegion {
-            endpoint: "https://location2.documents.example.com".to_string(),
-            region: "Location 2".to_string(),
+            database_account_endpoint: "https://location2.documents.example.com".to_string(),
+            name: "Location 2".to_string(),
         };
         let location_3 = AccountRegion {
-            endpoint: "https://location3.documents.example.com".to_string(),
-            region: "Location 3".to_string(),
+            database_account_endpoint: "https://location3.documents.example.com".to_string(),
+            name: "Location 3".to_string(),
         };
         let location_4 = AccountRegion {
-            endpoint: "https://location4.documents.example.com".to_string(),
-            region: "Location 4".to_string(),
+            database_account_endpoint: "https://location4.documents.example.com".to_string(),
+            name: "Location 4".to_string(),
         };
-        let write_locations = HashMap::from([
-            ("Location 1".to_string(), location_1.endpoint.clone()),
-            ("Location 2".to_string(), location_2.endpoint.clone()),
+        let write_locations = Vec::from([
+            location_1.clone(),
+            location_2.clone(),
         ]);
 
-        let read_locations = HashMap::from([
-            ("Location 1".to_string(), location_1.endpoint.clone()),
-            ("Location 2".to_string(), location_2.endpoint.clone()),
-            ("Location 3".to_string(), location_3.endpoint.clone()),
-            ("Location 4".to_string(), location_4.endpoint.clone()),
+        let read_locations = Vec::from([
+            location_1,
+            location_2,
+            location_3,
+            location_4,
         ]);
 
         let preferred_locations = vec!["Location 1".to_string(), "Location 2".to_string()];
@@ -357,6 +355,7 @@ mod tests {
             .account_write_locations
             .iter()
             .cloned()
+            .map(|account_region| account_region.name)
             .collect();
         let expected_account_write_locations: HashSet<String> = ["Location 1", "Location 2"]
             .iter()
@@ -373,6 +372,7 @@ mod tests {
             .account_read_locations
             .iter()
             .cloned()
+            .map(|account_region| account_region.name)
             .collect();
         let expected_account_read_locations: HashSet<String> =
             ["Location 1", "Location 2", "Location 3", "Location 4"]

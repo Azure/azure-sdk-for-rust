@@ -275,7 +275,7 @@ mod tests {
     use crate::{constants, PartitionKey};
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
-        let req = CosmosRequestBuilder::new(op, ResourceType::Items)
+        let req = CosmosRequestBuilder::new(op, ResourceType::Documents)
             .resource_id("dbs/Db/colls/Coll/docs/Doc")
             .partition_key(PartitionKey::from("pk"))
             .body(b"{\"id\":\"1\"}".to_vec())
@@ -292,13 +292,13 @@ mod tests {
     fn builder_equivalence_to_new() {
         let from_new = CosmosRequest::new(
             OperationType::Create,
-            ResourceType::Items,
+            ResourceType::Documents,
             Some("rid".into()),
             Some(PartitionKey::from("pk")),
             Some(b"{}".to_vec()),
             AuthorizationTokenType::Primary,
         );
-        let from_builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Items)
+        let from_builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Documents)
             .resource_id("rid")
             .partition_key(PartitionKey::from("pk"))
             .body(b"{}".to_vec())

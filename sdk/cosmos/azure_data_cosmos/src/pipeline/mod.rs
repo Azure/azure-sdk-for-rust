@@ -8,12 +8,10 @@ pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
     pager::PagerState,
     request::{options::ContentType, Request},
-    response::Response,
-    ClientOptions, Context, Method, RawResponse, RetryOptions,
+    response::Response, Context, Method, RawResponse,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use std::sync::Arc;
 use url::Url;
 
 use crate::cosmos_request::CosmosRequest;
@@ -36,18 +34,8 @@ pub struct CosmosPipeline {
 impl CosmosPipeline {
     pub fn new(
         endpoint: Url,
-        auth_policy: AuthorizationPolicy,
-        mut client_options: ClientOptions,
+        pipeline: azure_core::http::Pipeline,
     ) -> Self {
-        client_options.retry = RetryOptions::none();
-        let pipeline = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            client_options,
-            Vec::new(),
-            vec![Arc::new(auth_policy)],
-            None,
-        );
         let retry_handler = BackOffRetryHandler;
         CosmosPipeline {
             endpoint,
