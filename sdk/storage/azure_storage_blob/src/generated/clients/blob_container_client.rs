@@ -28,8 +28,8 @@ use azure_core::{
     http::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions,
-        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
+        Request, RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -161,9 +161,6 @@ impl BlobContainerClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-lease-action", "acquire");
         request.insert_header("x-ms-lease-duration", duration.to_string());
         if let Some(proposed_lease_id) = options.proposed_lease_id {
@@ -246,9 +243,6 @@ impl BlobContainerClient {
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-lease-action", "break");
         if let Some(break_period) = options.break_period {
@@ -336,9 +330,6 @@ impl BlobContainerClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-lease-action", "change");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
@@ -382,9 +373,6 @@ impl BlobContainerClient {
         request.insert_header("content-type", "application/xml");
         if let Some(access) = options.access {
             request.insert_header("x-ms-blob-public-access", access.to_string());
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
         }
         if let Some(default_encryption_scope) = options.default_encryption_scope {
             request.insert_header("x-ms-default-encryption-scope", default_encryption_scope);
@@ -443,9 +431,6 @@ impl BlobContainerClient {
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
@@ -512,9 +497,6 @@ impl BlobContainerClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -587,9 +569,6 @@ impl BlobContainerClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
@@ -664,9 +643,6 @@ impl BlobContainerClient {
         }
         let mut request = Request::new(url, Method::Get);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -745,9 +721,6 @@ impl BlobContainerClient {
         }
         let mut request = Request::new(url, Method::Get);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
@@ -800,7 +773,7 @@ impl BlobContainerClient {
     pub fn list_blob_flat_segment(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListBlobsFlatSegmentResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -836,7 +809,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(PageIterator::from_callback(
+        Ok(Pager::from_callback(
             move |marker: PagerState<String>, ctx| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
@@ -853,9 +826,6 @@ impl BlobContainerClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
                 request.insert_header("content-type", "application/xml");
-                if let Some(client_request_id) = &options.client_request_id {
-                    request.insert_header("x-ms-client-request-id", client_request_id);
-                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 async move {
@@ -924,7 +894,7 @@ impl BlobContainerClient {
         &self,
         delimiter: &str,
         options: Option<BlobContainerClientListBlobHierarchySegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListBlobsHierarchySegmentResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListBlobsHierarchySegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -963,7 +933,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(PageIterator::from_callback(
+        Ok(Pager::from_callback(
             move |marker: PagerState<String>, ctx| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
@@ -980,9 +950,6 @@ impl BlobContainerClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
                 request.insert_header("content-type", "application/xml");
-                if let Some(client_request_id) = &options.client_request_id {
-                    request.insert_header("x-ms-client-request-id", client_request_id);
-                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 async move {
@@ -1074,9 +1041,6 @@ impl BlobContainerClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
@@ -1143,9 +1107,6 @@ impl BlobContainerClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-source-container-name", source_container_name);
         if let Some(source_lease_id) = options.source_lease_id {
             request.insert_header("x-ms-source-lease-id", source_lease_id);
@@ -1230,9 +1191,6 @@ impl BlobContainerClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-lease-action", "renew");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
@@ -1297,9 +1255,6 @@ impl BlobContainerClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(deleted_container_name) = options.deleted_container_name {
             request.insert_header("x-ms-deleted-container-name", deleted_container_name);
         }
@@ -1388,9 +1343,6 @@ impl BlobContainerClient {
         if let Some(access) = options.access {
             request.insert_header("x-ms-blob-public-access", access.to_string());
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
@@ -1421,7 +1373,7 @@ impl BlobContainerClient {
     #[tracing::function("Storage.Blob.Container.setMetadata")]
     pub async fn set_metadata(
         &self,
-        metadata: HashMap<String, String>,
+        metadata: &HashMap<String, String>,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -1439,13 +1391,10 @@ impl BlobContainerClient {
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        for (k, v) in &metadata {
+        for (k, v) in metadata {
             request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);

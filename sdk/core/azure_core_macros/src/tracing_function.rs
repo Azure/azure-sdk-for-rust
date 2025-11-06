@@ -491,7 +491,7 @@ mod tests {
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = AsyncRawResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
@@ -559,7 +559,7 @@ mod tests {
                         let (status, headers, body) = rsp.deconstruct();
                         let bytes = body.collect().await?;
                         let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
-                        let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                        let rsp = AsyncRawResponse::from_bytes(status, headers, bytes).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,

@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // You can also deserialize into a model from a slow response.
-    let team = client::get_model().await?.into_body()?;
+    let team = client::get_model().await?.into_model()?;
     println!("{team:#?}");
 
     Ok(())
@@ -40,7 +40,7 @@ mod client {
     use std::{cmp::min, task::Poll, time::Duration};
     use tracing::debug;
     use typespec_client_core::{
-        http::{headers::Headers, response::AsyncResponse, BufResponse, Response, StatusCode},
+        http::{headers::Headers, response::AsyncResponse, AsyncRawResponse, Response, StatusCode},
         Bytes,
     };
 
@@ -66,7 +66,7 @@ mod client {
             bytes_read: 0,
         };
 
-        Ok(BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response)).into())
+        Ok(AsyncRawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response)).into())
     }
 
     #[tracing::instrument]
@@ -89,7 +89,7 @@ mod client {
             bytes_per_read: 64,
             bytes_read: 0,
         };
-        let stream = BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response));
+        let stream = AsyncRawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response));
         let buffered = stream.try_into_raw_response().await?;
 
         Ok(buffered.into())

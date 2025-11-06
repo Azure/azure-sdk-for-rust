@@ -4,7 +4,7 @@
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorResponse,
-    http::{headers::Headers, BufResponse, HttpClient, StatusCode, Transport},
+    http::{headers::Headers, AsyncRawResponse, HttpClient, StatusCode, Transport},
     json,
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient, ErrorKind};
@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn std::error::Error>> {
     let client = MockHttpClient::new(|_| {
         async move {
-            Ok(BufResponse::from_bytes(
+            Ok(AsyncRawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::new(),
                 r#"{

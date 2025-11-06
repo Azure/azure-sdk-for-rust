@@ -33,6 +33,7 @@ static EXEMPTIONS: &[(&str, &str)] = &[
         "azure_messaging_eventhubs_checkpointstore_blob",
         "opentelemetry-appender-tracing",
     ),
+    ("azure_data_cosmos_native", "cbindgen"),
 ];
 
 fn main() {

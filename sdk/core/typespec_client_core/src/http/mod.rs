@@ -24,7 +24,7 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{BufResponse, RawResponse, Response};
+pub use response::{AsyncRawResponse, RawResponse, Response};
 pub use sanitizer::*;
 
 // Re-export important types.

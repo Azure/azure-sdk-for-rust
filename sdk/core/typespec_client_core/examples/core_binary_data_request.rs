@@ -41,7 +41,7 @@ mod client {
     use tracing::debug;
     use typespec_client_core::{
         http::{
-            headers::Headers, response::AsyncResponse, Body, BufResponse, RequestContent,
+            headers::Headers, response::AsyncResponse, AsyncRawResponse, Body, RequestContent,
             StatusCode,
         },
         stream::BytesStream,
@@ -77,7 +77,7 @@ mod client {
         let content = String::from_utf8(content.into())?;
         println!("{content}");
 
-        Ok(BufResponse::new(
+        Ok(AsyncRawResponse::new(
             StatusCode::NoContent,
             Headers::new(),
             Box::pin(BytesStream::new_empty()),

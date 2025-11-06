@@ -23,6 +23,7 @@
 - Removed the `endpoint` struct field on all clients, as this value is now returned directly from the underlying generated client.
 - Changed the `container_name` and `blob_name` parameters from owned `String` to `&str` reference on relevant client constructor methods (`new()`).
 - The `credential` parameter is now `Optional` on `new()` client constructors, allowing for construction of public access clients.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 
 ### Bugs Fixed
 

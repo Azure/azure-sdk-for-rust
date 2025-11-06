@@ -64,7 +64,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     let certificate = client
         .create_certificate("certificate-roundtrip", body.try_into()?, None)?
         .await?
-        .into_body()?;
+        .into_model()?;
 
     // Get the latest version of the certificate we just created.
     let version = certificate.resource_id()?.version;
@@ -107,7 +107,7 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
                         None,
                     )?
                     .await?
-                    .into_body()?;
+                    .into_model()?;
                 Ok(())
             }
             .boxed()
@@ -162,7 +162,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     let certificate = client
         .create_certificate("update-properties", body.try_into()?, None)?
         .await?
-        .into_body()?;
+        .into_model()?;
 
     // Get the latest version of the certificate we just created.
     let certificate_version = certificate.resource_id()?.version;
@@ -186,7 +186,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(
         certificate.tags.expect("expected tags").get("test-name"),
@@ -356,7 +356,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let signature = key_client
         .sign(NAME, body.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert!(signature.result.is_some());
     // example: 6AIg-utePBdmCU-uGvpjh4uKb3UV0yvdWKNLSp-EivC4oavdqpfxmfMB9GsR6dBMM1Ekp8ZBrzUMaCvShXWyog
     // cspell:enable

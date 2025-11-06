@@ -33,7 +33,7 @@ use typespec_client_core::http::{
 ///    re-executed in case of retries.
 /// 5. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
 /// 6. The transport policy is executed. Transport policy is always the last policy and is the policy that
-///    actually constructs the [`BufResponse`](http::BufResponse) to be passed up the pipeline.
+///    actually constructs the [`AsyncRawResponse`](http::AsyncRawResponse) to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
@@ -212,7 +212,7 @@ impl Pipeline {
         }
     }
 
-    /// Sends a [`Request`](http::Request) through each configured [`Policy`] to get a [`BufResponse`](http::BufResponse) that is processed by each policy in reverse.
+    /// Sends a [`Request`](http::Request) through each configured [`Policy`] to get a [`AsyncRawResponse`](http::AsyncRawResponse) that is processed by each policy in reverse.
     ///
     /// # Arguments
     /// * `ctx` - The context for the `Request`.
@@ -229,7 +229,7 @@ impl Pipeline {
         ctx: &http::Context<'_>,
         request: &mut http::Request,
         options: Option<PipelineStreamOptions>,
-    ) -> crate::Result<http::BufResponse> {
+    ) -> crate::Result<http::AsyncRawResponse> {
         let (core_stream_options, stream_options) = options.unwrap_or_default().deconstruct();
         let result = self.0.stream(ctx, request, stream_options).await?;
         if !core_stream_options.skip_checks {
@@ -255,7 +255,7 @@ mod tests {
             headers::{self, HeaderName, Headers},
             policies::Policy,
             request::options::ClientRequestId,
-            BufResponse, ClientOptions, Context, Method, Request, StatusCode, Transport,
+            AsyncRawResponse, ClientOptions, Context, Method, Request, StatusCode, Transport,
             UserAgentOptions,
         },
         Bytes,
@@ -286,7 +286,7 @@ mod tests {
                     "Custom header value should match the client request ID"
                 );
 
-                Ok(BufResponse::from_bytes(
+                Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -344,7 +344,7 @@ mod tests {
                     "Default header value should match the client request ID"
                 );
 
-                Ok(BufResponse::from_bytes(
+                Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -398,7 +398,7 @@ mod tests {
                     user_agent
                 );
 
-                Ok(BufResponse::from_bytes(
+                Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -453,7 +453,7 @@ mod tests {
                     user_agent
                 );
 
-                Ok(BufResponse::from_bytes(
+                Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),

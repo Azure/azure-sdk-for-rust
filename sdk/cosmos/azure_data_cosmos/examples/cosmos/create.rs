@@ -97,7 +97,7 @@ impl CreateCommand {
                 println!("Created item successfully");
 
                 if show_updated {
-                    let created: serde_json::Value = response.into_raw_body().json()?;
+                    let created: serde_json::Value = response.into_body().json()?;
                     println!("Newly created item:");
                     println!("{:#?}", created);
                 }
@@ -115,7 +115,7 @@ impl CreateCommand {
                     ..Default::default()
                 });
 
-                let db = client.create_database(&id, options).await?.into_body()?;
+                let db = client.create_database(&id, options).await?.into_model()?;
                 println!("Created database:");
                 println!("{:#?}", db);
                 Ok(())
@@ -159,7 +159,7 @@ impl CreateCommand {
                     .database_client(&database)
                     .create_container(properties, options)
                     .await?
-                    .into_body()?;
+                    .into_model()?;
                 println!("Created container:");
                 println!("{:#?}", container);
                 Ok(())

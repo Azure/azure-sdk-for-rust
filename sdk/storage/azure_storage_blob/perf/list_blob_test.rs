@@ -107,9 +107,9 @@ impl PerfTest for ListBlobTest {
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // The actual performance test code
 
-        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
+        let mut iterator = self.client.get().unwrap().list_blobs(None)?.into_pages();
         while let Some(blob_segment) = iterator.try_next().await? {
-            let body = blob_segment.into_body()?;
+            let body = blob_segment.into_model()?;
             for blob in body.segment.blob_items.iter() {
                 std::hint::black_box(blob);
             }

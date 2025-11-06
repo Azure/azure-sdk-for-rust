@@ -85,7 +85,7 @@ async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
     let properties = queue_service_client
         .get_properties(None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     let response = queue_service_client
         .set_properties(properties.try_into()?, None)
@@ -116,13 +116,15 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
 
-    let mut page_iterator = queue_service_client.list_queues(Some(options))?;
+    let mut page_iterator = queue_service_client
+        .list_queues(Some(options))?
+        .into_pages();
     let mut all_queue_names = Vec::new();
 
     // Iterate through all pages
     while let Some(page) = page_iterator.next().await {
         let response = page?;
-        let queue_list = response.into_body()?;
+        let queue_list = response.into_model()?;
 
         //Collect queue names from this page
         for queue_item in &queue_list.queue_items {
@@ -158,7 +160,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
         "Expected status code 200, got {}",
         response.status(),
     );
-    let stats = response.into_body()?;
+    let stats = response.into_model()?;
     let geo_replication = stats.geo_replication.as_ref().unwrap();
     assert!(
         geo_replication.status.as_ref().unwrap() == &GeoReplicationStatusType::Live,

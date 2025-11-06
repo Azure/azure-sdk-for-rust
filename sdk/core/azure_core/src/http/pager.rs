@@ -147,7 +147,7 @@ where
     type Item = P::Item;
     type IntoIter = P::IntoIter;
     async fn into_items(self) -> crate::Result<Self::IntoIter> {
-        let page: P = self.into_body()?;
+        let page: P = self.into_model()?;
         page.into_items().await
     }
 }
@@ -197,7 +197,7 @@ where
 /// // Iterate each page of secrets using a PageIterator.
 /// let mut pager = client.list_secret_properties(None)?.into_pages();
 /// while let Some(page) = pager.try_next().await? {
-///     let page = page.into_body()?;
+///     let page = page.into_model()?;
 ///     for secret in page.value {
 ///         println!("{}", secret.resource_id()?.name);
 ///     }
@@ -265,7 +265,7 @@ type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>>>;
 /// // Iterate each page of secrets using a PageIterator.
 /// let mut pager = client.list_secret_properties(None)?.into_pages();
 /// while let Some(page) = pager.try_next().await? {
-///     let page = page.into_body()?;
+///     let page = page.into_model()?;
 ///     for secret in page.value {
 ///         println!("{}", secret.resource_id()?.name);
 ///     }
@@ -587,7 +587,7 @@ impl<P: Page> fmt::Debug for ItemIterator<P> {
 /// // Iterate each page of secrets using a PageIterator.
 /// let mut pager = client.list_secret_properties(None)?.into_pages();
 /// while let Some(page) = pager.try_next().await? {
-///     let page = page.into_body()?;
+///     let page = page.into_model()?;
 ///     for secret in page.value {
 ///         println!("{}", secret.resource_id()?.name);
 ///     }
@@ -765,7 +765,7 @@ impl<P> PageIterator<P> {
     ///     .with_continuation_token("continuation_token_from_another_pager".to_string());
     ///
     /// while let Some(secrets) = pager.try_next().await? {
-    ///     let secrets = secrets.into_body()?;
+    ///     let secrets = secrets.into_model()?;
     ///     for secret in secrets.value {
     ///         println!("{:?}", secret.id);
     ///     }
@@ -1096,7 +1096,7 @@ mod tests {
                     .headers()
                     .get_optional_string(&HeaderName::from_static("x-test-header"))
                     .unwrap();
-                let body = r.into_body()?;
+                let body = r.into_model()?;
                 Ok((header, body))
             })
             .collect()
@@ -1133,7 +1133,7 @@ mod tests {
             .await
             .expect("expected first page")
             .expect("expected successful first page")
-            .into_body()
+            .into_model()
             .expect("expected page");
         assert_eq!(first_page.page, Some(1));
         assert_eq!(first_page.items, vec![1, 2, 3]);
@@ -1161,7 +1161,7 @@ mod tests {
             .await
             .expect("expected second page")
             .expect("expected successful second page")
-            .into_body()
+            .into_model()
             .expect("expected page");
         assert_eq!(second_page.page, Some(2));
         assert_eq!(second_page.items, vec![4, 5, 6]);
@@ -1176,7 +1176,7 @@ mod tests {
             .await
             .expect("expected last page")
             .expect("expected successful last page")
-            .into_body()
+            .into_model()
             .expect("expected page");
         assert_eq!(last_page.page, None);
         assert_eq!(last_page.items, vec![7, 8, 9]);
@@ -1225,7 +1225,7 @@ mod tests {
             .await
             .expect("expected first page")
             .expect("expected successful first page")
-            .into_body()
+            .into_model()
             .expect("expected page");
         assert_eq!(first_page.page, Some(1));
         assert_eq!(first_page.items, vec![1, 2, 3]);
@@ -1287,7 +1287,7 @@ mod tests {
             .await
             .expect("expected second page")
             .expect("expected successful second page")
-            .into_body()
+            .into_model()
             .expect("expected page");
         assert_eq!(second_page.page, Some(2));
         assert_eq!(second_page.items, vec![4, 5, 6]);

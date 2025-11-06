@@ -12,7 +12,7 @@ use azure_core::{
         self,
         option::{deserialize, serialize},
     },
-    http::{headers::Headers, BufResponse, ClientOptions, Pipeline, StatusCode, Transport},
+    http::{headers::Headers, AsyncRawResponse, ClientOptions, Pipeline, StatusCode, Transport},
     time::{self, OffsetDateTime},
     Bytes,
 };
@@ -102,7 +102,7 @@ where
         async move {
             // Yield simulates an expected network call but kills performance by ~45%.
             tokio::task::yield_now().await;
-            Ok(BufResponse::from_bytes(
+            Ok(AsyncRawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 body,
