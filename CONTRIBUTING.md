@@ -44,7 +44,7 @@ Once changes are merged,
    cd sdk/keyvault/azure_security_keyvault_secrets
    ```
 
-2. Update `tsp-location.yaml` with the commit in the `Azure/azure-sdk-for-rust` repository.
+2. Update `tsp-location.yaml` with the commit in the `Azure/azure-rest-api-specs` repository.
 3. Run `tsp-client update`.
 
 ### Emitter updates
