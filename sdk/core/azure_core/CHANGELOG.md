@@ -8,6 +8,7 @@
 - Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
 - Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
+- Re-exported `serde_json::Value` as `azure_core::Value` ([#1687](https://github.com/Azure/azure-sdk-for-rust/issues/1687))
 
 ### Breaking Changes
 

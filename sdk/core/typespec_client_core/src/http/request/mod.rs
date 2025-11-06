@@ -7,18 +7,23 @@ pub mod options;
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::stream::SeekableStream;
+#[cfg(feature = "json")]
+use crate::{http::JsonFormat, json::to_json};
 use crate::{
     http::{
         headers::{AsHeaders, Header, HeaderName, HeaderValue, Headers},
-        JsonFormat, Method, Sanitizer, Url, DEFAULT_ALLOWED_QUERY_PARAMETERS,
+        Method, Sanitizer, Url, DEFAULT_ALLOWED_QUERY_PARAMETERS,
     },
-    json::to_json,
-    time::OffsetDateTime,
     Bytes,
 };
+#[cfg(any(feature = "json", feature = "xml"))]
+use crate::{time::OffsetDateTime, Value};
+#[cfg(any(feature = "json", feature = "xml"))]
 use serde::Serialize;
-use serde_json::Value;
-use std::{collections::HashMap, fmt, marker::PhantomData};
+#[cfg(any(feature = "json", feature = "xml"))]
+use std::collections::HashMap;
+use std::{fmt, marker::PhantomData};
+#[cfg(any(feature = "json", feature = "xml"))]
 use time::format_description::well_known::Rfc3339;
 
 /// An HTTP Body.
@@ -204,6 +209,7 @@ impl Request {
     }
 
     /// Sets request body JSON.
+    #[cfg(feature = "json")]
     pub fn set_json<T>(&mut self, data: &T) -> crate::Result<()>
     where
         T: ?Sized + Serialize,
@@ -252,9 +258,21 @@ impl fmt::Debug for Request {
 }
 
 /// The body content of a service client request.
+///
 /// This allows callers to pass a model to serialize or raw content to client methods.
+#[cfg(feature = "json")]
 #[derive(Clone, Debug)]
 pub struct RequestContent<T, F = JsonFormat> {
+    body: Body,
+    phantom: PhantomData<(T, F)>,
+}
+
+/// The body content of a service client request.
+///
+/// This allows callers to pass a model to serialize or raw content to client methods.
+#[cfg(not(feature = "json"))]
+#[derive(Clone, Debug)]
+pub struct RequestContent<T, F> {
     body: Body,
     phantom: PhantomData<(T, F)>,
 }
@@ -447,6 +465,7 @@ mod json {
     impl_try_from!(&str, String);
     impl_try_from!(i32, i64);
     impl_try_from!(f32, f64);
+    #[cfg(any(feature = "json", feature = "xml"))]
     impl_try_from!(Value);
 
     impl<T, F> TryFrom<Vec<OffsetDateTime>> for RequestContent<T, F> {
@@ -534,6 +553,7 @@ mod json {
         assert_eq!(actual.body(), &Body::from_static(br#"["hello",""]"#));
     }
 
+    #[cfg(any(feature = "json", feature = "xml"))]
     #[test]
     fn spector_vec_value() {
         let actual: RequestContent<Vec<Value>> = vec![
@@ -619,6 +639,7 @@ mod json {
         );
     }
 
+    #[cfg(any(feature = "json", feature = "xml"))]
     #[test]
     fn spector_dictionary_value() {
         let actual: RequestContent<BTreeMap<String, Value>> = BTreeMap::from_iter(vec![
