@@ -53,6 +53,7 @@
     "etag",
     "eventhub",
     "eventhubs",
+    "execdir",
     "headerless",
     "hmac",
     "iothub",
