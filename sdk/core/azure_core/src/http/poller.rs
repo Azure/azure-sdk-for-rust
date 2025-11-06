@@ -690,6 +690,19 @@ where
             };
             let (item, next_state) = match result {
                 Err(e) => {
+                    if poller_stream_state.added_span {
+                        if let Some(span) =
+                            poller_stream_state.options.context.value::<Arc<dyn Span>>()
+                        {
+                            // Mark the span as an error with an appropriate description.
+                            span.set_status(SpanStatus::Error {
+                                description: e.to_string(),
+                            });
+                            span.set_attribute("error.type", e.kind().to_string().into());
+                            span.end();
+                        }
+                    }
+
                     poller_stream_state.state = State::Done;
                     return Some((Err(e), poller_stream_state));
                 }
