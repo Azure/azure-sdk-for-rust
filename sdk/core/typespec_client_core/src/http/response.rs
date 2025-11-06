@@ -107,8 +107,8 @@ pub struct Response<T, F = JsonFormat> {
 /// Service client methods should return a `Response<SomeModel>` where `SomeModel` is the service-specific response type.
 /// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
 ///
-/// The type parameter `F` is a marker type that indicates the format of the data, defaulting to JSON.
-/// XML is supported, and `NoFormat` indicates a binary body or no body expected e.g., for HTTP 204.
+/// The type parameter `F` is a marker type that indicates the format of the data.
+/// JSON and XML is supported, and `NoFormat` indicates a binary body or no body expected e.g., for HTTP 204.
 ///
 /// Given a `Response<T, F>`, a user can deserialize the body formatted as type `F` into the intended body type `T` by calling [`Response::into_body`].
 /// However, because the type `T` is just a marker type, you can also access the raw [`ResponseBody`] using [`Response::into_raw_body`].
