@@ -36,7 +36,7 @@ async fn example_pager() -> Result<(), Box<dyn std::error::Error>> {
 /// This example demonstrates using a [`PageIterator`](azure_core::http::PageIterator) to list pages of secret properties from Key Vault.
 ///
 /// Some clients may return a `PageIterator` if there are no items to iterate or multiple items to iterate.
-/// The following example shows how you can also get a `PageIterator` from a [`Pager`] to iterate over pages instead of items.
+/// The following example shows how you can also get a `PageIterator` from a [`Pager`](azure_core::http::Pager) to iterate over pages instead of items.
 /// The pattern for iterating pages is otherwise the same:
 async fn example_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
     let mut options = SecretClientOptions::default();

@@ -8,7 +8,7 @@ use azure_security_keyvault_certificates::{
 use example::setup;
 use futures::TryStreamExt as _;
 
-/// This example demonstrates using a [`Poller`] to await a long-running operation (LRO) to create a certificate with the CertificateClient.
+/// This example demonstrates using a [`Poller`](azure_core::http::Poller) to await a long-running operation (LRO) to create a certificate with the CertificateClient.
 async fn example_poller() -> Result<(), Box<dyn std::error::Error>> {
     let mut options = CertificateClientOptions::default();
 
@@ -41,7 +41,7 @@ async fn example_poller() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// This example demonstrates using a [`Poller`] to manually poll status for a long-running operation (LRO) to create a certificate with the CertificateClient.
+/// This example demonstrates using a [`Poller`](azure_core::http::Poller) to manually poll status for a long-running operation (LRO) to create a certificate with the CertificateClient.
 ///
 /// If you want to manually poll status updates, you can use the `Poller` as a stream by calling [`try_next`](futures::TryStreamExt::try_next) on a mutable reference.
 /// The stream will end when the operation completes, and the final status contains information about the completed operation.
