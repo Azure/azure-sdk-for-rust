@@ -182,9 +182,6 @@ impl<'a> PollerOptions<'a> {
     /// Creates a new owned instance of `PollerOptions` so it can outlive the current scope.
     pub fn to_owned(&self) -> PollerOptions<'static> {
         PollerOptions {
-            // Note that into_owned() takes ownership of self, while to_owned() only borrows it.
-            // Since we need to return a wholely owned instance, we use into_owned() for context
-            // here after cloning the context (to create a new instance that can be owned).
             context: self.context.to_owned(),
             frequency: self.frequency,
         }
