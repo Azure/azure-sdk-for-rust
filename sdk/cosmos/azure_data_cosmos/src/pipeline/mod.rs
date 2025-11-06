@@ -22,6 +22,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     FeedPage, FeedPager, Query,
 };
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -35,8 +36,9 @@ impl CosmosPipeline {
     pub fn new(
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
+        global_endpoint_manager: GlobalEndpointManager
     ) -> Self {
-        let retry_handler = BackOffRetryHandler;
+        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
         CosmosPipeline {
             endpoint,
             pipeline,
@@ -68,17 +70,17 @@ impl CosmosPipeline {
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,
-        resource_link: ResourceLink,
+        // resource_link: ResourceLink,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        cosmos_request.request_context.location_endpoint_to_route =
-            Some(resource_link.url(&self.endpoint));
+        // cosmos_request.request_context.location_endpoint_to_route =
+        //     Some(resource_link.url(&self.endpoint));
 
         // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
             let ctx = context.clone();
+            let url = req.resource_link.clone();
             let mut raw_req = req.clone().into_raw_request();
-            let url = resource_link.clone();
             async move { self.send_raw(ctx, &mut raw_req, url).await }
         };
 

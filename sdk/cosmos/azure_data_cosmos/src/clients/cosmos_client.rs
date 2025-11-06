@@ -21,6 +21,7 @@ use azure_core::http::RetryOptions;
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
+    global_endpoint_manager: GlobalEndpointManager
 }
 
 impl CosmosClient {
@@ -50,7 +51,7 @@ impl CosmosClient {
         let mut client_options = options.client_options;
         client_options.retry = RetryOptions::none();
 
-        let pipeline = azure_core::http::Pipeline::new(
+        let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             client_options,
@@ -58,16 +59,20 @@ impl CosmosClient {
             vec![Arc::new(AuthorizationPolicy::from_token_credential(credential))],
             None,
         );
+
+        let global_endpoint_manager = GlobalEndpointManager::new(endpoint.parse()?, options.application_preferred_regions.unwrap(), pipeline_core.clone());
+        // global_endpoint_manager.initialize_account_properties_and_start_background_refresh();
+
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
-            pipeline,
+            pipeline_core,
+            global_endpoint_manager.clone()
         ));
-
-        let global_endpoint_manager = GlobalEndpointManager::new(endpoint.parse()?, options.application_preferred_regions.unwrap(), pipeline.clone());
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            global_endpoint_manager
         })
     }
 
@@ -97,7 +102,7 @@ impl CosmosClient {
         let mut client_options = options.client_options;
         client_options.retry = RetryOptions::none();
 
-        let pipeline = azure_core::http::Pipeline::new(
+        let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             client_options,
@@ -105,15 +110,20 @@ impl CosmosClient {
             vec![Arc::new(AuthorizationPolicy::from_shared_key(key))],
             None,
         );
+
+        let global_endpoint_manager = GlobalEndpointManager::new(endpoint.parse()?, options.application_preferred_regions.unwrap(), pipeline_core.clone());
+        // global_endpoint_manager.initialize_account_properties_and_start_background_refresh();
+
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
-            pipeline,
+            pipeline_core,
+            global_endpoint_manager.clone()
         ));
-        let global_endpoint_manager = GlobalEndpointManager::new(endpoint.parse()?, options.application_preferred_regions.unwrap(), pipeline.clone());
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            global_endpoint_manager
         })
     }
 
@@ -158,6 +168,11 @@ impl CosmosClient {
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
         &self.pipeline.endpoint
+    }
+
+    /// Gets the endpoint of the database account this client is connected to.
+    pub fn get_endpoint_manager(&self) -> &GlobalEndpointManager {
+        &self.global_endpoint_manager
     }
 
     /// Executes a query against databases in the account.
@@ -219,7 +234,7 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Databases);
+        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Databases, self.databases_link.clone());
         let cosmos_request = builder
             .headers(&options.throughput)
             .json(&RequestBody { id })
@@ -228,7 +243,6 @@ impl CosmosClient {
         self.pipeline
             .send(
                 cosmos_request,
-                self.databases_link.clone(),
                 options.method_options.context,
             )
             .await

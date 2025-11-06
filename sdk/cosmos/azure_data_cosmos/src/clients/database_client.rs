@@ -75,13 +75,12 @@ impl DatabaseClient {
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::Databases);
+        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::Databases, self.link.clone());
         let cosmos_request = builder.build();
 
         self.pipeline
             .send(
                 cosmos_request?,
-                self.link.clone(),
                 options.method_options.context,
             )
             .await
@@ -140,7 +139,7 @@ impl DatabaseClient {
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Containers);
+        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Containers, self.containers_link.clone());
         let cosmos_request = builder
             .headers(&options.throughput)
             .json(&properties)
@@ -149,7 +148,6 @@ impl DatabaseClient {
         self.pipeline
             .send(
                 cosmos_request,
-                self.containers_link.clone(),
                 options.method_options.context,
             )
             .await
@@ -166,12 +164,11 @@ impl DatabaseClient {
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Databases);
+        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Databases, self.link.clone());
         let cosmos_request = builder.build();
         self.pipeline
             .send(
                 cosmos_request.unwrap(),
-                self.link.clone(),
                 options.method_options.context,
             )
             .await

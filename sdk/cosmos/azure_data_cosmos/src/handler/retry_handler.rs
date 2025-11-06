@@ -6,6 +6,7 @@ use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetry
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -63,9 +64,12 @@ pub trait RetryHandler: Send + Sync {
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackOffRetryHandler;
+pub struct BackOffRetryHandler {
+    global_endpoint_manager: GlobalEndpointManager
+}
 
 impl BackOffRetryHandler {
+
     /// Returns the appropriate retry policy based on the request
     ///
     /// This method examines the underlying operation and resource types and determines
@@ -80,6 +84,14 @@ impl BackOffRetryHandler {
         // the request operation type and resource type and accordingly return the respective retry
         // policy.
         Box::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
+    }
+
+    pub fn new(
+        global_endpoint_manager: GlobalEndpointManager,
+    ) -> Self {
+        Self {
+            global_endpoint_manager,
+        }
     }
 }
 
@@ -106,6 +118,11 @@ impl RetryHandler for BackOffRetryHandler {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
         retry_policy.before_send_request(request);
+
+        // TODO: Need to remove this, and put this into Moka cache. Also, move this logic into retry policy.
+        self.global_endpoint_manager.refresh_location_async(true).await?;
+        let endpoint = self.global_endpoint_manager.resolve_service_endpoint(&request).parse()?;
+        request.request_context.location_endpoint_to_route = Some(request.resource_link.url(&endpoint));
 
         loop {
             // Invoke the provided sender callback instead of calling inner_send_async directly

@@ -3,7 +3,7 @@
 
 use crate::operation_context::OperationType;
 use crate::request_context::RequestContext;
-use crate::resource_context::ResourceType;
+use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{constants, PartitionKey};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue, Headers};
 use azure_core::http::{
@@ -42,6 +42,7 @@ pub struct PartitionKeyRangeIdentity {
 pub struct CosmosRequest {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
+    pub resource_link: ResourceLink,
     pub resource_id: Option<String>,
     pub database_name: Option<String>,
     pub collection_name: Option<String>,
@@ -68,6 +69,7 @@ impl CosmosRequest {
     fn new(
         operation_type: OperationType,
         resource_type: ResourceType,
+        resource_link: ResourceLink,
         resource_id: Option<String>,
         partition_key: Option<PartitionKey>,
         body: Option<Vec<u8>>,
@@ -76,6 +78,7 @@ impl CosmosRequest {
         Self {
             operation_type,
             resource_type,
+            resource_link,
             resource_id,
             database_name: None,
             collection_name: None,
@@ -162,6 +165,7 @@ impl CosmosRequest {
 pub struct CosmosRequestBuilder {
     operation_type: OperationType,
     resource_type: ResourceType,
+    pub resource_link: ResourceLink,
     partition_key: PartitionKey,
     resource_id: Option<String>,
     headers: Headers,
@@ -179,10 +183,11 @@ pub struct CosmosRequestBuilder {
 
 #[allow(dead_code)]
 impl CosmosRequestBuilder {
-    pub fn new(operation_type: OperationType, resource_type: ResourceType) -> CosmosRequestBuilder {
+    pub fn new(operation_type: OperationType, resource_type: ResourceType, resource_link: ResourceLink,) -> CosmosRequestBuilder {
         CosmosRequestBuilder {
             operation_type,
             resource_type,
+            resource_link,
             partition_key: PartitionKey::EMPTY,
             resource_id: None,
             body: Vec::new(),
@@ -249,6 +254,7 @@ impl CosmosRequestBuilder {
         let mut req = CosmosRequest::new(
             self.operation_type,
             self.resource_type,
+            self.resource_link,
             self.resource_id,
             Some(self.partition_key),
             Some(self.body),
@@ -275,7 +281,7 @@ mod tests {
     use crate::{constants, PartitionKey};
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
-        let req = CosmosRequestBuilder::new(op, ResourceType::Documents)
+        let req = CosmosRequestBuilder::new(op, ResourceType::Documents, ResourceLink::root(ResourceType::Documents))
             .resource_id("dbs/Db/colls/Coll/docs/Doc")
             .partition_key(PartitionKey::from("pk"))
             .body(b"{\"id\":\"1\"}".to_vec())
@@ -293,12 +299,13 @@ mod tests {
         let from_new = CosmosRequest::new(
             OperationType::Create,
             ResourceType::Documents,
+            ResourceLink::root(ResourceType::Documents),
             Some("rid".into()),
             Some(PartitionKey::from("pk")),
             Some(b"{}".to_vec()),
             AuthorizationTokenType::Primary,
         );
-        let from_builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Documents)
+        let from_builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Documents, ResourceLink::root(ResourceType::Documents))
             .resource_id("rid")
             .partition_key(PartitionKey::from("pk"))
             .body(b"{}".to_vec())
