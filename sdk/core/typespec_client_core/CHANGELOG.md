@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `Context::to_owned()` to create a static lifetime copy of an existing `Context`.
 - Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
 - Added `UrlExt::append_path()`.
 - Added module `fmt::empty_as_null` containing some serde helpers for empty/null string values.

@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `Context::to_owned()` to create a newly owned `Context` from an existing `Context`.
 - Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
 - Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
