@@ -16,7 +16,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        pager::{PagerOptions, PagerResult, PagerState},
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
