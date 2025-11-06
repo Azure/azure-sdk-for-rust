@@ -448,21 +448,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     assert_eq!(response_access_policy.clone().unwrap().start, start);
 
     // Clear Access Policy
-    let clear_access_policy = AccessPolicy {
-        expiry: None,
-        permission: None,
-        start: None,
-    };
-    let clear_signed_identifier = SignedIdentifier {
-        access_policy: Some(clear_access_policy),
-        id: None,
-    };
-    let clear_signed_identifiers = SignedIdentifiers {
-        items: Some(vec![clear_signed_identifier]),
-    };
-    container_client
-        .set_access_policy(RequestContent::try_from(clear_signed_identifiers)?, None)
-        .await?;
+    container_client.set_access_policy(None, None).await?; // Not possible right now, since container_acl is REQUIRED.
 
     // Assert
     let cleared_response = container_client.get_access_policy(None).await?;
