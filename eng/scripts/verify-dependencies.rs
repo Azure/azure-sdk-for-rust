@@ -19,6 +19,7 @@ use std::{
 
 static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core", "http"),
+    ("azure_core", "json-patch"),
     ("azure_core", "ureq"),
     ("azure_core_test", "dotenvy"),
     ("azure_canary", "serde"),

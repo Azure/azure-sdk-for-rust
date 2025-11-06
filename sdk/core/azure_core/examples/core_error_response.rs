@@ -2,20 +2,18 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    credentials::TokenCredential,
     error::ErrorResponse,
-    http::{headers::Headers, AsyncRawResponse, HttpClient, StatusCode, Transport},
+    http::{StatusCode, Transport},
     json,
 };
-use azure_core_test::{credentials::MockCredential, http::MockHttpClient, ErrorKind};
+use azure_core_test::ErrorKind;
 use azure_security_keyvault_secrets::{
     models::SetSecretParameters, SecretClient, SecretClientOptions,
 };
-use futures::FutureExt;
-use std::sync::Arc;
+use example::setup;
 
 /// This example demonstrates deserializing a standard Azure error response to get more details.
-async fn test_error_response() -> Result<(), Box<dyn std::error::Error>> {
+async fn example_error_response() -> Result<(), Box<dyn std::error::Error>> {
     let mut options = SecretClientOptions::default();
 
     // Ignore: this is only set up for testing.
@@ -80,22 +78,32 @@ async fn test_error_response() -> Result<(), Box<dyn std::error::Error>> {
 // ----- BEGIN TEST SETUP -----
 #[tokio::test]
 async fn test_core_error_response() -> Result<(), Box<dyn std::error::Error>> {
-    test_error_response().await
+    example_error_response().await
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    test_error_response().await
+    example_error_response().await
 }
 
-#[allow(clippy::type_complexity)]
-fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn std::error::Error>> {
-    let client = MockHttpClient::new(|_| {
-        async move {
-            Ok(AsyncRawResponse::from_bytes(
-                StatusCode::BadRequest,
-                Headers::new(),
-                r#"{
+mod example {
+    use azure_core::{
+        credentials::TokenCredential,
+        http::{headers::Headers, AsyncRawResponse, HttpClient, StatusCode},
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use futures::FutureExt;
+    use std::sync::Arc;
+
+    #[allow(clippy::type_complexity)]
+    pub fn setup(
+    ) -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn std::error::Error>> {
+        let client = MockHttpClient::new(|_| {
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::BadRequest,
+                    Headers::new(),
+                    r#"{
                     "error": {
                         "code": "BadParameter",
                         "message": "The request URI contains an invalid name: secret_name",
@@ -105,11 +113,12 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                         ]
                     }
                 }"#,
-            ))
-        }
-        .boxed()
-    });
+                ))
+            }
+            .boxed()
+        });
 
-    Ok((MockCredential::new()?, Arc::new(client)))
+        Ok((MockCredential::new()?, Arc::new(client)))
+    }
 }
 // ----- END TEST SETUP -----
