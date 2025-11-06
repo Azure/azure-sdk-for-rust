@@ -26,10 +26,10 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        pager::{PagerOptions, PagerResult, PagerState},
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions,
+        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -883,9 +883,7 @@ impl BlobContainerClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 
@@ -1012,9 +1010,7 @@ impl BlobContainerClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 

@@ -115,7 +115,9 @@ impl CosmosPipeline {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        let ctx = ctx.with_value(resource_link).into_owned();
+        let options = PagerOptions {
+            context: ctx.with_value(resource_link).into_owned(),
+        };
         Ok(FeedPager::from_callback(
             move |continuation, ctx| {
                 // Then we have to clone it again to pass it in to the async block.
@@ -123,6 +125,7 @@ impl CosmosPipeline {
                 // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
                 let pipeline = pipeline.clone();
                 let mut req = base_request.clone();
+                let ctx = ctx.clone();
                 async move {
                     if let PagerState::More(continuation) = continuation {
                         req.insert_header(constants::CONTINUATION, continuation);
@@ -134,7 +137,7 @@ impl CosmosPipeline {
                     Ok(page.into())
                 }
             },
-            Some(PagerOptions { context: ctx }),
+            Some(options),
         ))
     }
 

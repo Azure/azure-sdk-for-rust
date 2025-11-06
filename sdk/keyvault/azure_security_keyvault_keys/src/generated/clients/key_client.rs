@@ -25,7 +25,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        pager::{PagerOptions, PagerResult, PagerState},
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url,
@@ -731,9 +731,7 @@ impl KeyClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 
@@ -809,9 +807,7 @@ impl KeyClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 
@@ -895,9 +891,7 @@ impl KeyClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 

@@ -734,9 +734,7 @@ impl CertificateClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 
@@ -821,9 +819,7 @@ impl CertificateClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 
@@ -904,9 +900,7 @@ impl CertificateClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 
@@ -981,9 +975,7 @@ impl CertificateClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 

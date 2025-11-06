@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
 - Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
 - Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
@@ -28,6 +29,8 @@
 - Added `Context` field to `PollerOptions`. Client methods which return `Poller` objects should accept a `PollerOptions` in their `method_options` field instead of a `ClientMethodOptions`.
 
 ### Bugs Fixed
+
+- `ItemIterator::into_pages()` now properly supports resuming from the current page until _after_ all items have been iterated.
 
 ### Other Changes
 

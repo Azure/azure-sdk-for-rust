@@ -301,9 +301,7 @@ impl QueueServiceClient {
                     })
                 }
             },
-            Some(PagerOptions {
-                context: options.method_options.context.clone(),
-            }),
+            Some(options.method_options),
         ))
     }
 

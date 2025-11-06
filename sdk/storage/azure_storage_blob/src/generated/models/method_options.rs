@@ -9,7 +9,11 @@ use super::{
     ListBlobsIncludeItem, ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType,
     RehydratePriority,
 };
-use azure_core::{fmt::SafeDebug, http::ClientMethodOptions, time::OffsetDateTime};
+use azure_core::{
+    fmt::SafeDebug,
+    http::{pager::PagerOptions, ClientMethodOptions},
+    time::OffsetDateTime,
+};
 use std::collections::HashMap;
 
 /// Options to be passed to `AppendBlobClient::append_block()`
@@ -1333,7 +1337,7 @@ pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1350,7 +1354,7 @@ impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
+            method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
             },
             prefix: self.prefix,
@@ -1379,7 +1383,7 @@ pub struct BlobContainerClientListBlobHierarchySegmentOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1396,7 +1400,7 @@ impl BlobContainerClientListBlobHierarchySegmentOptions<'_> {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
+            method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
             },
             prefix: self.prefix,
@@ -1620,7 +1624,7 @@ pub struct BlobServiceClientListContainersSegmentOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1637,7 +1641,7 @@ impl BlobServiceClientListContainersSegmentOptions<'_> {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
+            method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
             },
             prefix: self.prefix,
