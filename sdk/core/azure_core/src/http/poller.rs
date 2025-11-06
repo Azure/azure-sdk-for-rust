@@ -178,6 +178,17 @@ impl<'a> PollerOptions<'a> {
             frequency: self.frequency,
         }
     }
+
+    /// Creates a new owned instance of `PollerOptions` so it can outlive the current scope.
+    pub fn to_owned(&self) -> PollerOptions<'static> {
+        PollerOptions {
+            // Note that into_owned() takes ownership of self, while to_owned() only borrows it.
+            // Since we need to return a wholely owned instance, we use into_owned() for context
+            // here after cloning the context (to create a new instance that can be owned).
+            context: self.context.clone().into_owned(),
+            frequency: self.frequency,
+        }
+    }
 }
 
 /// The result of fetching the status monitor from a [`Poller`], whether the long-running operation (LRO) is in progress or done.
