@@ -25,9 +25,14 @@ pub use crate::error::{Error, Result};
 pub use typespec::Bytes;
 pub use uuid::Uuid;
 
+#[cfg(any(feature = "json", feature = "xml"))]
+pub use serde_json::Value;
+
 pub use sleep::sleep;
 
 mod private {
+    #[allow(dead_code)]
     pub trait Sealed {}
+    #[cfg(feature = "http")]
     impl Sealed for crate::http::Url {}
 }

@@ -7,6 +7,7 @@
 - Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
 - Added `UrlExt::append_path()`.
 - Added module `fmt::empty_as_null` containing some serde helpers for empty/null string values.
+- Re-exported `serde_json::Value` as `typespec_client_core::Value` ([#1687](https://github.com/Azure/azure-sdk-for-rust/issues/1687))
 
 ### Breaking Changes
 

@@ -21,7 +21,7 @@ rand.workspace = true
 reqwest = { workspace = true, optional = true }
 rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, optional = true }
 time.workspace = true
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
@@ -65,7 +65,7 @@ debug = ["typespec_macros?/debug"]
 decimal = ["dep:rust_decimal"]
 derive = ["dep:typespec_macros"]
 http = ["typespec/http"]
-json = ["typespec/json"]
+json = ["dep:serde_json", "typespec/json"]
 reqwest = ["dep:reqwest"]
 reqwest_deflate = ["reqwest", "reqwest/deflate"]
 reqwest_gzip = ["reqwest", "reqwest/gzip"]
@@ -73,7 +73,7 @@ reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
 wasm_bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
-xml = ["typespec/xml"]
+xml = ["dep:serde_json", "typespec/xml"] # Uses serde_json::Value for `unknown` TypeSpec scalar.
 
 [[example]]
 name = "core_binary_data_request"

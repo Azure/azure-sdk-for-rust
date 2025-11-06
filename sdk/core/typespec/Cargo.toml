@@ -27,7 +27,7 @@ thiserror.workspace = true
 default = ["http", "json"]
 http = []
 json = ["dep:serde", "dep:serde_json"]
-xml = ["dep:quick-xml"]
+xml = ["dep:serde", "dep:quick-xml"]
 
 [package.metadata.docs.rs]
 all-features = true
