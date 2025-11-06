@@ -5,7 +5,7 @@
 
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, poller::PollerOptions, ClientMethodOptions},
+    http::{pager::PagerOptions, ClientMethodOptions},
 };
 
 /// Options to be passed to [`CertificateClient::backup_certificate()`](crate::generated::clients::CertificateClient::backup_certificate())

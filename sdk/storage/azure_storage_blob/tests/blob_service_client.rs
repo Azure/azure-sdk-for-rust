@@ -53,7 +53,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     }
 
     // Assert
-    let mut pager_response = service_client.list_containers(None)?;
+    let mut pager_response = service_client.list_containers(None)?.into_pages();
     while let Some(page) = pager_response.next().await {
         let current_page = page.unwrap().into_model()?;
         let container_list = current_page.container_items;
@@ -102,7 +102,9 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     };
 
     // Assert
-    let mut pager_response = service_client.list_containers(Some(list_containers_options))?;
+    let mut pager_response = service_client
+        .list_containers(Some(list_containers_options))?
+        .into_pages();
     let mut page_count = 0;
     while let Some(page) = pager_response.next().await {
         page_count += 1;

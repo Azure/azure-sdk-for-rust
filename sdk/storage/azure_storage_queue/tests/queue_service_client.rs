@@ -116,7 +116,9 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
 
-    let mut page_iterator = queue_service_client.list_queues(Some(options))?;
+    let mut page_iterator = queue_service_client
+        .list_queues(Some(options))?
+        .into_pages();
     let mut all_queue_names = Vec::new();
 
     // Iterate through all pages

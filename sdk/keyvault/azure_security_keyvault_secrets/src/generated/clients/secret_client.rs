@@ -22,7 +22,7 @@ use azure_core::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url,
+        Request, RequestContent, Response, Url, UrlExt,
     },
     json, tracing, Result,
 };
@@ -115,9 +115,9 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("secrets/{secret-name}/backup");
+        let mut path = String::from("/secrets/{secret-name}/backup");
         path = path.replace("{secret-name}", secret_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -162,9 +162,9 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("secrets/{secret-name}");
+        let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
@@ -209,9 +209,9 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("deletedsecrets/{secret-name}");
+        let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
@@ -255,13 +255,13 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("secrets/{secret-name}/{secret-version}");
+        let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
         path = match options.secret_version {
             Some(secret_version) => path.replace("{secret-version}", &secret_version),
             None => path.replace("{secret-version}", ""),
         };
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         if let Some(out_content_type) = options.out_content_type {
@@ -302,7 +302,7 @@ impl SecretClient {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
-        first_url = first_url.join("deletedsecrets")?;
+        first_url.append_path("/deletedsecrets");
         first_url
             .query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -378,7 +378,7 @@ impl SecretClient {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
-        first_url = first_url.join("secrets")?;
+        first_url.append_path("/secrets");
         first_url
             .query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -461,9 +461,9 @@ impl SecretClient {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
-        let mut path = String::from("secrets/{secret-name}/versions");
+        let mut path = String::from("/secrets/{secret-name}/versions");
         path = path.replace("{secret-name}", secret_name);
-        first_url = first_url.join(&path)?;
+        first_url.append_path(&path);
         first_url
             .query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -546,9 +546,9 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("deletedsecrets/{secret-name}");
+        let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
@@ -592,9 +592,9 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("deletedsecrets/{secret-name}/recover");
+        let mut path = String::from("/deletedsecrets/{secret-name}/recover");
         path = path.replace("{secret-name}", secret_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -632,7 +632,7 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url = url.join("secrets/restore")?;
+        url.append_path("/secrets/restore");
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -682,9 +682,9 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("secrets/{secret-name}");
+        let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Put);
@@ -733,13 +733,13 @@ impl SecretClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("secrets/{secret-name}/{secret-version}");
+        let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
         path = match options.secret_version {
             Some(secret_version) => path.replace("{secret-version}", &secret_version),
             None => path.replace("{secret-version}", ""),
         };
-        url = url.join(&path)?;
+        url.append_path(&path);
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Patch);

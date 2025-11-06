@@ -110,7 +110,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     )
     .await?;
 
-    let mut list_blobs_response = container_client.list_blobs(None)?;
+    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
 
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
@@ -172,7 +172,9 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         maxresults: Some(2),
         ..Default::default()
     };
-    let mut list_blobs_response = container_client.list_blobs(Some(list_blobs_options))?;
+    let mut list_blobs_response = container_client
+        .list_blobs(Some(list_blobs_options))?
+        .into_pages();
     let first_page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = first_page.unwrap().into_model()?;
     let continuation_token = list_blob_segment_response.next_marker;
@@ -188,7 +190,9 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         marker: continuation_token,
         ..Default::default()
     };
-    let mut list_blobs_response = container_client.list_blobs(Some(list_blobs_options.clone()))?;
+    let mut list_blobs_response = container_client
+        .list_blobs(Some(list_blobs_options.clone()))?
+        .into_pages();
     let second_page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = second_page.unwrap().into_model()?;
     let blob_list = list_blob_segment_response.segment.blob_items;
@@ -201,7 +205,9 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     }
 
     // Continuation Token, Automatic Paging
-    let mut pager_response = container_client.list_blobs(Some(list_blobs_options))?;
+    let mut pager_response = container_client
+        .list_blobs(Some(list_blobs_options))?
+        .into_pages();
     let mut page_count = 0;
 
     while let Some(page) = pager_response.next().await {
