@@ -8,7 +8,7 @@ use azure_storage_blob::models::{
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
-    SignedIdentifier,
+    SignedIdentifier, SignedIdentifiers,
 };
 use azure_storage_blob::{format_datetime, format_filter_expression};
 use azure_storage_blob_test::{
@@ -410,30 +410,69 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
 
     // Set Access Policy w/ Policy Defined
     let test_id: Option<String> = Some("testid".into());
+    let expiry = Some(format_datetime(
+        OffsetDateTime::now_utc() + Duration::from_secs(10),
+    )?);
+    let start = Some(format_datetime(OffsetDateTime::now_utc())?);
     let access_policy = AccessPolicy {
-        expiry: Some(format_datetime(
-            OffsetDateTime::now_utc() + Duration::from_secs(10),
-        )?),
+        expiry: expiry.clone(),
         permission: Some("rw".to_string()),
-        start: Some(format_datetime(OffsetDateTime::now_utc())?),
+        start: start.clone(),
     };
     let signed_identifier = SignedIdentifier {
         access_policy: Some(access_policy.clone()),
         id: test_id.clone(),
     };
-
+    let signed_identifiers = SignedIdentifiers {
+        items: Some(vec![signed_identifier]),
+    };
     container_client
-        .set_access_policy(vec![signed_identifier], None)
+        .set_access_policy(RequestContent::try_from(signed_identifiers)?, None)
         .await?;
 
     // Assert
     let response = container_client.get_access_policy(None).await?;
     let signed_identifiers = response.into_body()?;
-    let response_id = signed_identifiers[0].id.clone();
-    let response_access_policy = signed_identifiers[0].access_policy.clone();
+    let response_id = signed_identifiers.items.clone().unwrap()[0].id.clone();
+    let response_access_policy = signed_identifiers.items.clone().unwrap()[0]
+        .access_policy
+        .clone();
 
-    println!("Response Access Policy: {:?}", response_access_policy);
-    println!("Response ID: {:?}", response_id);
+    assert_eq!(signed_identifiers.items.clone().unwrap().len(), 1);
+    assert_eq!(response_id, test_id);
+    assert_eq!(
+        response_access_policy.clone().unwrap().permission,
+        access_policy.permission
+    );
+    assert_eq!(response_access_policy.clone().unwrap().expiry, expiry);
+    assert_eq!(response_access_policy.clone().unwrap().start, start);
+
+    // Clear Access Policy
+    let clear_access_policy = AccessPolicy {
+        expiry: None,
+        permission: None,
+        start: None,
+    };
+    let clear_signed_identifier = SignedIdentifier {
+        access_policy: Some(clear_access_policy),
+        id: None,
+    };
+    let clear_signed_identifiers = SignedIdentifiers {
+        items: Some(vec![clear_signed_identifier]),
+    };
+    container_client
+        .set_access_policy(RequestContent::try_from(clear_signed_identifiers)?, None)
+        .await?;
+
+    // Assert
+    let cleared_response = container_client.get_access_policy(None).await?;
+    let cleared_signed_identifiers = cleared_response.into_body()?;
+    let cleared_items = cleared_signed_identifiers.items.unwrap();
+
+    assert_eq!(cleared_items.len(), 1);
+    assert_eq!(cleared_items[0].id, None);
+    let cleared_access_policy = cleared_items[0].access_policy.clone();
+    println!("{:?}", cleared_access_policy);
 
     Ok(())
 }

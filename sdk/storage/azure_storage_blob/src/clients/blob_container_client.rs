@@ -16,12 +16,9 @@ use crate::{
         BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
         BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
-        SignedIdentifier,
+        SignedIdentifiers,
     },
-    models::{
-        extensions::format_signed_identifiers, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-        StorageErrorCode,
-    },
+    models::{FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode},
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
 };
@@ -30,7 +27,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pager, Pipeline, Response, StatusCode, Url, XmlFormat,
+        NoFormat, Pager, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     tracing, Result,
 };
@@ -380,12 +377,10 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_access_policy(
         &self,
-        container_acl: Vec<SignedIdentifier>,
+        container_acl: RequestContent<SignedIdentifiers, XmlFormat>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
-        self.client
-            .set_access_policy(format_signed_identifiers(container_acl)?, options)
-            .await
+        self.client.set_access_policy(container_acl, options).await
     }
 
     /// Gets the permissions for the specified container. The permissions indicate whether container data
@@ -397,7 +392,7 @@ impl BlobContainerClient {
     pub async fn get_access_policy(
         &self,
         options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<Vec<SignedIdentifier>, XmlFormat>> {
+    ) -> Result<Response<SignedIdentifiers, XmlFormat>> {
         self.client.get_access_policy(options).await
     }
 }

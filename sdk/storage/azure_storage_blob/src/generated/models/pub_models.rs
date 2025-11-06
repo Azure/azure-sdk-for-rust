@@ -1292,6 +1292,14 @@ pub struct SignedIdentifier {
     pub id: Option<String>,
 }
 
+/// Represents an array of signed identifiers
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct SignedIdentifiers {
+    /// The array of signed identifiers.
+    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SignedIdentifier>>,
+}
+
 /// The properties that enable an account to host a static website
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct StaticWebsite {
