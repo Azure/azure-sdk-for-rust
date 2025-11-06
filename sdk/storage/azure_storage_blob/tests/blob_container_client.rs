@@ -405,6 +405,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     // Recording Setup
 
     let recording = ctx.recording();
+    recording.set_matcher(Matcher::BodilessMatcher).await?;
     let container_client = get_container_client(recording, false).await?;
     container_client.create_container(None).await?;
 
@@ -448,17 +449,16 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     assert_eq!(response_access_policy.clone().unwrap().start, start);
 
     // Clear Access Policy
-    container_client.set_access_policy(None, None).await?; // Not possible right now, since container_acl is REQUIRED.
+    let cleared_signed_identifiers = SignedIdentifiers { items: None };
+
+    container_client
+        .set_access_policy(RequestContent::try_from(cleared_signed_identifiers)?, None)
+        .await?;
 
     // Assert
     let cleared_response = container_client.get_access_policy(None).await?;
     let cleared_signed_identifiers = cleared_response.into_body()?;
-    let cleared_items = cleared_signed_identifiers.items.unwrap();
-
-    assert_eq!(cleared_items.len(), 1);
-    assert_eq!(cleared_items[0].id, None);
-    let cleared_access_policy = cleared_items[0].access_policy.clone();
-    println!("{:?}", cleared_access_policy);
+    assert!(cleared_signed_identifiers.items.is_none());
 
     Ok(())
 }

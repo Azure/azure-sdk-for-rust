@@ -3,13 +3,8 @@
 
 use crate::models::{
     AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
-    BlockBlobClientUploadOptions, PageBlobClientCreateOptions, SignedIdentifier,
+    BlockBlobClientUploadOptions, PageBlobClientCreateOptions,
 };
-use azure_core::{
-    http::{RequestContent, XmlFormat},
-    xml::to_xml_with_root,
-};
-use serde::Serialize;
 use std::collections::HashMap;
 
 /// Augments the current options bag to only create if the Page blob does not already exist.
