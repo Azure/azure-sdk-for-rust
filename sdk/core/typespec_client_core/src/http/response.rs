@@ -3,9 +3,11 @@
 
 //! HTTP responses.
 
+#[cfg(feature = "json")]
+use crate::http::JsonFormat;
 use crate::{
     error::ErrorKind,
-    http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode},
+    http::{headers::Headers, DeserializeWith, Format, StatusCode},
     Bytes,
 };
 use futures::{Stream, StreamExt};
@@ -93,7 +95,25 @@ impl BufResponse {
 ///
 /// Given a `Response<T, F>`, a user can deserialize the body formatted as type `F` into the intended body type `T` by calling [`Response::into_body`].
 /// However, because the type `T` is just a marker type, you can also access the raw [`ResponseBody`] using [`Response::into_raw_body`].
+#[cfg(feature = "json")]
 pub struct Response<T, F = JsonFormat> {
+    raw: RawResponse,
+    phantom: PhantomData<(T, F)>,
+}
+
+/// A typed fully-buffered HTTP response.
+///
+/// The type parameter `T` is a marker type that indicates what the caller should expect to be able to deserialize the body into.
+/// Service client methods should return a `Response<SomeModel>` where `SomeModel` is the service-specific response type.
+/// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
+///
+/// The type parameter `F` is a marker type that indicates the format of the data.
+/// JSON and XML is supported, and `NoFormat` indicates a binary body or no body expected e.g., for HTTP 204.
+///
+/// Given a `Response<T, F>`, a user can deserialize the body formatted as type `F` into the intended body type `T` by calling [`Response::into_body`].
+/// However, because the type `T` is just a marker type, you can also access the raw [`ResponseBody`] using [`Response::into_raw_body`].
+#[cfg(not(feature = "json"))]
+pub struct Response<T, F> {
     raw: RawResponse,
     phantom: PhantomData<(T, F)>,
 }

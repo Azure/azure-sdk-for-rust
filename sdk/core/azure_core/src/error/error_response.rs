@@ -78,7 +78,7 @@ pub struct ErrorDetail {
 
     /// Additional properties that may be returned with the error.
     #[serde(flatten)]
-    pub additional_properties: HashMap<String, serde_json::Value>,
+    pub additional_properties: HashMap<String, crate::Value>,
 }
 
 /// Inner error information about an error returned from a service.

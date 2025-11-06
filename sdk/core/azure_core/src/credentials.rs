@@ -7,9 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug};
 use typespec_client_core::{fmt::SafeDebug, http::ClientMethodOptions, time::OffsetDateTime};
 
-/// Default Azure authorization scope.
-pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
-
 /// Represents a secret.
 ///
 /// The [`Debug`] implementation will not print the secret.

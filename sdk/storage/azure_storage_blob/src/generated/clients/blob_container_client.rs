@@ -28,8 +28,8 @@ use azure_core::{
     http::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, Pager, Pipeline, PipelineSendOptions,
+        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -809,50 +809,52 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(Pager::from_callback(move |marker: PagerState<String>| {
-            let mut url = first_url.clone();
-            if let PagerState::More(marker) = marker {
-                if url.query_pairs().any(|(name, _)| name.eq("marker")) {
-                    let mut new_url = url.clone();
-                    new_url
-                        .query_pairs_mut()
-                        .clear()
-                        .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
-                    url = new_url;
+        Ok(Pager::from_callback(
+            move |marker: PagerState<String>, ctx| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = marker {
+                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
+                        let mut new_url = url.clone();
+                        new_url
+                            .query_pairs_mut()
+                            .clear()
+                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
+                        url = new_url;
+                    }
+                    url.query_pairs_mut().append_pair("marker", &marker);
                 }
-                url.query_pairs_mut().append_pair("marker", &marker);
-            }
-            let mut request = Request::new(url, Method::Get);
-            request.insert_header("accept", "application/xml");
-            request.insert_header("content-type", "application/xml");
-            request.insert_header("x-ms-version", &version);
-            let ctx = options.method_options.context.clone();
-            let pipeline = pipeline.clone();
-            async move {
-                let rsp = pipeline
-                    .send(
-                        &ctx,
-                        &mut request,
-                        Some(PipelineSendOptions {
-                            check_success: CheckSuccessOptions {
-                                success_codes: &[200],
-                            },
-                            ..Default::default()
-                        }),
-                    )
-                    .await?;
-                let (status, headers, body) = rsp.deconstruct();
-                let res: ListBlobsFlatSegmentResponse = xml::from_xml(&body)?;
-                let rsp = RawResponse::from_bytes(status, headers, body).into();
-                Ok(match res.next_marker {
-                    Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
-                        response: rsp,
-                        continuation: next_marker,
-                    },
-                    _ => PagerResult::Done { response: rsp },
-                })
-            }
-        }))
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                request.insert_header("content-type", "application/xml");
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                async move {
+                    let rsp = pipeline
+                        .send(
+                            &ctx,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let res: ListBlobsFlatSegmentResponse = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: next_marker,
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                }
+            },
+            None,
+        ))
     }
 
     /// The List Blobs operation returns a list of the blobs under the specified container. A delimiter can be used to traverse
@@ -931,50 +933,52 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(Pager::from_callback(move |marker: PagerState<String>| {
-            let mut url = first_url.clone();
-            if let PagerState::More(marker) = marker {
-                if url.query_pairs().any(|(name, _)| name.eq("marker")) {
-                    let mut new_url = url.clone();
-                    new_url
-                        .query_pairs_mut()
-                        .clear()
-                        .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
-                    url = new_url;
+        Ok(Pager::from_callback(
+            move |marker: PagerState<String>, ctx| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = marker {
+                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
+                        let mut new_url = url.clone();
+                        new_url
+                            .query_pairs_mut()
+                            .clear()
+                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
+                        url = new_url;
+                    }
+                    url.query_pairs_mut().append_pair("marker", &marker);
                 }
-                url.query_pairs_mut().append_pair("marker", &marker);
-            }
-            let mut request = Request::new(url, Method::Get);
-            request.insert_header("accept", "application/xml");
-            request.insert_header("content-type", "application/xml");
-            request.insert_header("x-ms-version", &version);
-            let ctx = options.method_options.context.clone();
-            let pipeline = pipeline.clone();
-            async move {
-                let rsp = pipeline
-                    .send(
-                        &ctx,
-                        &mut request,
-                        Some(PipelineSendOptions {
-                            check_success: CheckSuccessOptions {
-                                success_codes: &[200],
-                            },
-                            ..Default::default()
-                        }),
-                    )
-                    .await?;
-                let (status, headers, body) = rsp.deconstruct();
-                let res: ListBlobsHierarchySegmentResponse = xml::from_xml(&body)?;
-                let rsp = RawResponse::from_bytes(status, headers, body).into();
-                Ok(match res.next_marker {
-                    Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
-                        response: rsp,
-                        continuation: next_marker,
-                    },
-                    _ => PagerResult::Done { response: rsp },
-                })
-            }
-        }))
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                request.insert_header("content-type", "application/xml");
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                async move {
+                    let rsp = pipeline
+                        .send(
+                            &ctx,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let res: ListBlobsHierarchySegmentResponse = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: next_marker,
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                }
+            },
+            None,
+        ))
     }
 
     /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a

@@ -6,6 +6,10 @@
 
 ### Breaking Changes
 
+- `KeyClientListDeletedKeyPropertiesOptions::method_options` is now `PagerOptions`.
+- `KeyClientListKeyPropertiesOptions::method_options` is now `PagerOptions`.
+- `KeyClientListKeyPropertiesVersionsOptions::method_options` is now `PagerOptions`.
+
 ### Bugs Fixed
 
 ### Other Changes

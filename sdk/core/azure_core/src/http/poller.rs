@@ -444,10 +444,10 @@ where
     /// }, None);
     /// ```
     pub fn from_callback<
-        #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] N: AsRef<str> + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] N: 'static,
+        #[cfg(target_arch = "wasm32")] N: AsRef<str> + 'static,
         #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
     >(
@@ -582,10 +582,10 @@ enum State<N> {
 fn create_poller_stream<
     M,
     F: Format,
-    #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] N: AsRef<str> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
-    #[cfg(target_arch = "wasm32")] N: 'static,
+    #[cfg(target_arch = "wasm32")] N: AsRef<str> + 'static,
     #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
 >(
@@ -617,9 +617,21 @@ where
         (State::Init, make_request, Some(target_tx)),
         move |(state, make_request, target_tx)| async move {
             let result = match state {
-                State::Init => make_request(PollerState::Initial).await,
-                State::InProgress(n) => make_request(PollerState::More(n)).await,
-                State::Done => return None,
+                State::Init => {
+                    tracing::debug!("initial operation request");
+                    make_request(PollerState::Initial).await
+                }
+                State::InProgress(n) => {
+                    tracing::debug!(
+                        "subsequent operation request to {:?}",
+                        AsRef::<str>::as_ref(&n)
+                    );
+                    make_request(PollerState::More(n)).await
+                }
+                State::Done => {
+                    tracing::debug!("done");
+                    return None;
+                }
             };
             let (item, next_state) = match result {
                 Err(e) => return Some((Err(e), (State::Done, make_request, target_tx))),
@@ -830,7 +842,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -915,7 +927,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -1001,7 +1013,7 @@ mod tests {
                             PollerStatus::InProgress => Ok(PollerResult::InProgress {
                                 response,
                                 retry_after: Some(Duration::ZERO),
-                                next: (),
+                                next: "",
                             }),
                             _ => Ok(PollerResult::Done { response }),
                         }
@@ -1087,7 +1099,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback to fetch the final resource
@@ -1192,7 +1204,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback to fetch the final resource
@@ -1311,7 +1323,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback
@@ -1397,7 +1409,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -1483,7 +1495,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback
@@ -1591,7 +1603,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // The final result is already in the status response itself
@@ -1703,7 +1715,7 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Some(Duration::ZERO),
-                            next: (),
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // The final result is already in the status response itself

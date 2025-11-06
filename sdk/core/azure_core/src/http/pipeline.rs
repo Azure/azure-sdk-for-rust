@@ -174,6 +174,7 @@ impl Pipeline {
             retry_headers: RetryHeaders {
                 retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
             },
+            ..PipelineOptions::default()
         });
 
         Self(http::Pipeline::new(

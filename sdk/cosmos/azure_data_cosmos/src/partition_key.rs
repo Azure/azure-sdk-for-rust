@@ -74,7 +74,7 @@ use crate::constants;
 /// let partition_key_1 = PartitionKey::from("simple_string");
 /// let partition_key_2 = PartitionKey::from(("parent", "child", 42));
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
 impl PartitionKey {

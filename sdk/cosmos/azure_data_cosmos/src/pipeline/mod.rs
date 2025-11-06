@@ -6,7 +6,7 @@ mod signature_target;
 
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
-    pager::PagerState,
+    pager::{PagerOptions, PagerState},
     request::{options::ContentType, Request},
     response::Response,
     ClientOptions, Context, Method, RawResponse, RetryOptions,
@@ -16,6 +16,7 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
+use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::{
     constants,
@@ -47,11 +48,11 @@ impl CosmosPipeline {
             vec![Arc::new(auth_policy)],
             None,
         );
-
+        let retry_handler = BackOffRetryHandler;
         CosmosPipeline {
             endpoint,
             pipeline,
-            retry_handler: BackOffRetryHandler,
+            retry_handler,
         }
     }
 
@@ -73,28 +74,31 @@ impl CosmosPipeline {
         // Clone pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
-
-        // Build a sender closure that forwards to the inner pipeline.send
-        let sender = move |req: &mut Request| {
-            let pipeline = pipeline.clone();
-            let ctx = ctx_owned.clone();
-            let mut req_clone = req.clone();
-            async move { pipeline.send(&ctx, &mut req_clone, None).await }
-        };
-
-        // Delegate to the retry handler, providing the sender callback
-        self.retry_handler.send(request, sender).await
+        pipeline.send(&ctx_owned, request, None).await
     }
 
     pub async fn send<T>(
         &self,
-        ctx: Context<'_>,
-        request: &mut Request,
+        mut cosmos_request: CosmosRequest,
         resource_link: ResourceLink,
+        context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        self.send_raw(ctx, request, resource_link)
-            .await
-            .map(Into::into)
+        cosmos_request.request_context.location_endpoint_to_route =
+            Some(resource_link.url(&self.endpoint));
+
+        // Prepare a callback delegate to invoke the http request.
+        let sender = move |req: &mut CosmosRequest| {
+            let ctx = context.clone();
+            let mut raw_req = req.clone().into_raw_request();
+            let url = resource_link.clone();
+            async move { self.send_raw(ctx, &mut raw_req, url).await }
+        };
+
+        // Delegate to the retry handler, providing the sender callback
+        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
+
+        // Convert RawResponse into typed Response<T>
+        res.map(Into::into)
     }
 
     pub fn send_query_request<T: DeserializeOwned + Send>(
@@ -111,25 +115,30 @@ impl CosmosPipeline {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        let ctx = ctx.with_value(resource_link).into_owned();
-        Ok(FeedPager::from_callback(move |continuation| {
-            // Then we have to clone it again to pass it in to the async block.
-            // This is because Pageable can't borrow any data, it has to own it all.
-            // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
-            let pipeline = pipeline.clone();
-            let mut req = base_request.clone();
-            let ctx = ctx.clone();
-            async move {
-                if let PagerState::More(continuation) = continuation {
-                    req.insert_header(constants::CONTINUATION, continuation);
+        let options = PagerOptions {
+            context: ctx.with_value(resource_link).into_owned(),
+        };
+        Ok(FeedPager::from_callback(
+            move |continuation, ctx| {
+                // Then we have to clone it again to pass it in to the async block.
+                // This is because Pageable can't borrow any data, it has to own it all.
+                // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
+                let pipeline = pipeline.clone();
+                let mut req = base_request.clone();
+                let ctx = ctx.clone();
+                async move {
+                    if let PagerState::More(continuation) = continuation {
+                        req.insert_header(constants::CONTINUATION, continuation);
+                    }
+
+                    let resp = pipeline.send(&ctx, &mut req, None).await?;
+                    let page = FeedPage::<T>::from_response(resp).await?;
+
+                    Ok(page.into())
                 }
-
-                let resp = pipeline.send(&ctx, &mut req, None).await?;
-                let page = FeedPage::<T>::from_response(resp).await?;
-
-                Ok(page.into())
-            }
-        }))
+            },
+            Some(options),
+        ))
     }
 
     /// Helper function to read a throughput offer given a resource ID.
@@ -168,7 +177,10 @@ impl CosmosPipeline {
 
         // Now we can read the offer itself
         let mut req = Request::new(offer_url, Method::Get);
-        self.send(context, &mut req, offer_link).await.map(Some)
+        self.send_raw(context, &mut req, offer_link)
+            .await
+            .map(Into::into)
+            .map(Some)
     }
 
     /// Helper function to update a throughput offer given a resource ID.
@@ -199,7 +211,9 @@ impl CosmosPipeline {
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&current_throughput)?;
 
-        self.send(context, &mut req, offer_link).await
+        self.send_raw(context, &mut req, offer_link)
+            .await
+            .map(Into::into)
     }
 }
 

@@ -4,9 +4,11 @@
 
 ### Features Added
 
+- Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
 - Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
 - Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
+- Re-exported `serde_json::Value` as `azure_core::Value` ([#1687](https://github.com/Azure/azure-sdk-for-rust/issues/1687))
 
 ### Breaking Changes
 
@@ -16,14 +18,18 @@
 - Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
 - Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
+- Removed `credentials::DEFAULT_SCOPE_SUFFIX`.
 - Removed `CustomHeaders` policy.
 - Removed `ErrorKind::MockFramework`.
 - Removed `Poller::wait()` function. Call `await` on a `Poller` to wait for it to complete and, upon success, return the final model.
 - Removed `xml::read_xml_str()`.
 - Renamed `BearerTokenCredentialPolicy` to `BearerTokenAuthorizationPolicy`.
+- Renamed `RetryPolicy::get_retry_headers()` to `RetryPolicy::retry_headers()`
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed
+
+- `ItemIterator::into_pages()` now properly supports resuming from the current page until _after_ all items have been iterated.
 
 ### Other Changes
 

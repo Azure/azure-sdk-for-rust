@@ -43,6 +43,7 @@ pub trait DeserializeWith<F: Format>: Sized {
 
 /// Implements [`DeserializeWith<JsonFormat>`] for an arbitrary type `D`
 /// that implements [`serde::de::DeserializeOwned`] by deserializing the response body to the specified type using [`serde_json`].
+#[cfg(feature = "json")]
 impl<D: DeserializeOwned> DeserializeWith<JsonFormat> for D {
     fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
         body.json()
@@ -55,9 +56,11 @@ impl<D: DeserializeOwned> DeserializeWith<JsonFormat> for D {
 /// This format supports deserializing response bodies to:
 /// * [`ResponseBody`] - The raw response body, without any deserialization.
 /// * Any value implementing [`serde::de::DeserializeOwned`] - Deserializes the response body to the specified type using JSON deserialization.
+#[cfg(feature = "json")]
 #[derive(Debug, Clone)]
 pub struct JsonFormat;
 
+#[cfg(feature = "json")]
 impl Format for JsonFormat {
     fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T> {
         crate::json::from_json(body)
