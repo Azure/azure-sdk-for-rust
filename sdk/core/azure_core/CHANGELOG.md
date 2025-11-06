@@ -12,10 +12,12 @@
 
 ### Breaking Changes
 
+- Added `Context` field to `PollerOptions`. Client methods which return `Poller` objects should accept a `PollerOptions` in their `method_options` field instead of a `ClientMethodOptions`.
 - Added `F: Format` type parameter to `Poller` and `PollerResult`.
 - Added `Format` associated type to `StatusMonitor`.
 - Added `Format::deserialize()` function to `Format` trait.
 - Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
+- Changed `PollerOptions::frequency` from `Option<Duration>` to `Duration`.
 - Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
 - Removed `credentials::DEFAULT_SCOPE_SUFFIX`.
@@ -26,8 +28,6 @@
 - Renamed `BearerTokenCredentialPolicy` to `BearerTokenAuthorizationPolicy`.
 - Renamed `RetryPolicy::get_retry_headers()` to `RetryPolicy::retry_headers()`
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
-- Changed `PollerOptions::frequency` from `Option<Duration>` to `Duration`.
-- Added `Context` field to `PollerOptions`. Client methods which return `Poller` objects should accept a `PollerOptions` in their `method_options` field instead of a `ClientMethodOptions`.
 
 ### Bugs Fixed
 
