@@ -30,8 +30,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(any(feature = "json", feature = "xml"))]
-use std::fmt::{self, Display};
+use std::fmt;
 use std::str::FromStr;
 
 /// HTTP request methods.
@@ -172,7 +171,7 @@ mod serde {
     }
 }
 
-impl Display for Method {
+impl fmt::Display for Method {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(AsRef::<str>::as_ref(self))
     }

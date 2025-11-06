@@ -79,15 +79,15 @@ criterion_main!(benchmarks);
 mod models {
     //! Copied from `azure_storage_blob::models`.
     //!
-    //! Model definitions remain intact but some unused fields are replaced with `serde_json::Value`
+    //! Model definitions remain intact but some unused fields are replaced with `azure_core::Value`
     //! because we still want to retain the same behavior and performance of the deserialization visitor.
 
     use azure_core::{
         error::{Error, ErrorKind},
         time::OffsetDateTime,
+        Value,
     };
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    use serde_json::Value;
     use std::{convert::Infallible, str::FromStr};
 
     /// An enumeration of blobs.
