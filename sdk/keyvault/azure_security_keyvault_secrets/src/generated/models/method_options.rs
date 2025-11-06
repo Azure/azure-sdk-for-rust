@@ -51,7 +51,7 @@ pub struct SecretClientListDeletedSecretPropertiesOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
-    /// Allows customization of the pager.
+    /// Allows customization of the method call.
     pub method_options: PagerOptions<'a>,
 }
 
@@ -73,7 +73,7 @@ pub struct SecretClientListSecretPropertiesOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
-    /// Allows customization of the pager.
+    /// Allows customization of the method call.
     pub method_options: PagerOptions<'a>,
 }
 
@@ -95,7 +95,7 @@ pub struct SecretClientListSecretPropertiesVersionsOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
-    /// Allows customization of the pager.
+    /// Allows customization of the method call.
     pub method_options: PagerOptions<'a>,
 }
 

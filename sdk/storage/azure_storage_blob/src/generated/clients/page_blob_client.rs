@@ -161,9 +161,6 @@ impl PageBlobClient {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         request.insert_header("range", range);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
                 "x-ms-encryption-algorithm",
@@ -295,9 +292,6 @@ impl PageBlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-copy-source", copy_source);
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
@@ -417,9 +411,6 @@ impl PageBlobClient {
             );
         }
         request.insert_header("x-ms-blob-type", "PageBlob");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
                 "x-ms-encryption-algorithm",
@@ -559,9 +550,6 @@ impl PageBlobClient {
         if let Some(range) = options.range {
             request.insert_header("range", range);
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -669,9 +657,6 @@ impl PageBlobClient {
         if let Some(range) = options.range {
             request.insert_header("range", range);
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -767,9 +752,6 @@ impl PageBlobClient {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         request.insert_header("x-ms-blob-content-length", blob_content_length.to_string());
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
                 "x-ms-encryption-algorithm",
@@ -883,9 +865,6 @@ impl PageBlobClient {
                 blob_sequence_number.to_string(),
             );
         }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -994,9 +973,6 @@ impl PageBlobClient {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         request.insert_header("range", range);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
@@ -1149,9 +1125,6 @@ impl PageBlobClient {
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-copy-source", source_url);
         if let Some(copy_source_authorization) = options.copy_source_authorization {

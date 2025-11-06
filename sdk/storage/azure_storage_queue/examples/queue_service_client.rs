@@ -75,7 +75,8 @@ async fn list_queues(queue_client: &QueueServiceClient) -> Result<(), Box<dyn st
     let result = queue_client.list_queues(Some(options));
     log_operation_result(&result, "list_queues_segment");
 
-    if let Ok(mut pager_response) = result {
+    if let Ok(pager_response) = result {
+        let mut pager_response = pager_response.into_pages();
         while let Some(response_result) = pager_response.next().await {
             println!("Processing next page of queues...");
             match response_result {

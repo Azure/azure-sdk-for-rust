@@ -25,7 +25,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, PageIterator, Pipeline, Response, StatusCode, Url, XmlFormat,
+        NoFormat, Pager, Pipeline, Response, StatusCode, Url, XmlFormat,
     },
     tracing, Result,
 };
@@ -192,7 +192,7 @@ impl BlobContainerClient {
         metadata: HashMap<String, String>,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(metadata, options).await
+        self.client.set_metadata(&metadata, options).await
     }
 
     /// Marks the specified container for deletion. The container and any blobs contained within are later deleted during garbage collection.
@@ -228,7 +228,7 @@ impl BlobContainerClient {
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListBlobsFlatSegmentResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
         self.client.list_blob_flat_segment(options)
     }
 

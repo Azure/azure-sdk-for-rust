@@ -260,7 +260,7 @@ impl BlobClient {
         metadata: HashMap<String, String>,
         options: Option<BlobClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(metadata, options).await
+        self.client.set_metadata(&metadata, options).await
     }
 
     /// Deletes the blob.

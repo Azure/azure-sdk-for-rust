@@ -123,7 +123,7 @@ impl QueueClient {
         metadata: HashMap<String, String>,
         options: Option<QueueClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(metadata, options).await
+        self.client.set_metadata(&metadata, options).await
     }
 
     /// Retrieves the metadata of the specified queue.

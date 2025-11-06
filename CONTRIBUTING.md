@@ -44,8 +44,26 @@ Once changes are merged,
    cd sdk/keyvault/azure_security_keyvault_secrets
    ```
 
-2. Update `tsp-location.yml` with the commit in the `Azure/azure-sdk-for-rust` repository.
+2. Update `tsp-location.yaml` with the commit in the `Azure/azure-sdk-for-rust` repository.
 3. Run `tsp-client update`.
+
+### Emitter updates
+
+If you require a change in the [emitter](https://github.com/Azure/typespec-rust), after a new version has been published:
+
+1. Update `eng/emitter-package.json` with the new version of `@azure-tools/typespec-rust`.
+2. Update any dependencies to match versions specified in the emitter's [package.json](https://github.com/Azure/typespec-rust/blob/main/packages/typespec-rust/package.json) file.
+3. Run `tsp-client update` in your crate directory or, to update all crates, run:
+
+   ```bash
+   # bash
+   find sdk -name tsp-location.yaml -execdir tsp-client update \;
+   ```
+
+   ```powershell
+   # powershell
+   Get-ChildItem sdk -Filter tsp-location.yaml -Recurse | ForEach-Object -Begin { Push-Location } -Process { Set-Location $_.DirectoryName; tsp-client update } -End { Pop-Location }
+   ```
 
 ## Coding
 
