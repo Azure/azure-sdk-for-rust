@@ -4,7 +4,6 @@
 
 ### Features Added
 
-- Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
 - Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
 - Added `Response<T, F>::body(&self) -> &ResponseBody`.
 - Added `Response<T, F>::to_raw_response()` function to create a `RawResponse` from cloned data.
