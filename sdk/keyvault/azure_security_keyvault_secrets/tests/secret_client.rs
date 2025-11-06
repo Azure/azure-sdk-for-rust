@@ -321,7 +321,7 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
                     None,
                 )
                 .await?
-                .into_body()?;
+                .into_model()?;
             assert_eq!(
                 secret.value,
                 Some(format!("secret-list-telemetry-value-{}", i))
@@ -420,7 +420,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                     None,
                 )
                 .await?
-                .into_body()?;
+                .into_model()?;
             assert_eq!(
                 secret.value,
                 Some(format!("secret-rehydrate-telemetry-value-{}", i))
@@ -451,7 +451,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                     .await?
                     .expect("expected at least one page");
                 {
-                    let secrets = first_page.into_body()?;
+                    let secrets = first_page.into_model()?;
                     for secret in secrets.value {
                         let _ = secret.resource_id()?;
                     }
@@ -467,7 +467,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                     .with_continuation_token(rehydration_token);
 
                 while let Some(secret_page) = rehydrated_pager.try_next().await? {
-                    let secrets = secret_page.into_body()?;
+                    let secrets = secret_page.into_model()?;
                     for secret in secrets.value {
                         let _ = secret.resource_id()?;
                     }
