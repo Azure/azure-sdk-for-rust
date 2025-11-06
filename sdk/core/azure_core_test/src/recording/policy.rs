@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use azure_core::{
     http::{
         policies::{Policy, PolicyResult},
-        BufResponse, Context, Request,
+        AsyncRawResponse, Context, Request,
     },
     test::RecordingMode,
 };
@@ -39,6 +39,6 @@ impl Policy for RecordingModePolicy {
         let (status, mut headers, body) = resp.deconstruct();
         headers.add(self.mode)?;
 
-        Ok(BufResponse::new(status, headers, Box::pin(body)))
+        Ok(AsyncRawResponse::new(status, headers, Box::pin(body)))
     }
 }

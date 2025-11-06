@@ -7,7 +7,7 @@ use azure_core::{
     http::{
         headers::Headers,
         policies::{Policy, PolicyResult},
-        BufResponse, Context, HttpClient, Method, Request, StatusCode, Transport,
+        AsyncRawResponse, Context, HttpClient, Method, Request, StatusCode, Transport,
     },
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -62,7 +62,7 @@ async fn test_remove_user_agent() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // We'll fetch a secret and let the mock client assert the User-Agent header was removed.
-    let secret = client.get_secret("my-secret", None).await?.into_body()?;
+    let secret = client.get_secret("my-secret", None).await?.into_model()?;
     assert_eq!(secret.value.as_deref(), Some("secret-value"));
 
     Ok(())
@@ -92,7 +92,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                     .any(|(name, _)| name.as_str().eq_ignore_ascii_case("user-agent")),
                 "user-agent header should be absent"
             );
-            Ok(BufResponse::from_bytes(
+            Ok(AsyncRawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"value":"secret-value"}"#,

@@ -171,7 +171,7 @@ mod tests {
         TSG_LINK_ERROR_TEXT,
     };
     use azure_core::http::headers::Headers;
-    use azure_core::http::{BufResponse, Method, Request, StatusCode, Transport, Url};
+    use azure_core::http::{AsyncRawResponse, Method, Request, StatusCode, Transport, Url};
     use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
     use azure_core_test::{http::MockHttpClient, recorded};
@@ -254,7 +254,7 @@ mod tests {
                         assert_eq!(actual.headers().get_str(k).unwrap(), v.as_str())
                     });
 
-                    Ok(BufResponse::from_bytes(
+                    Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::default(),
                         Bytes::from(response_format.replacen(
@@ -434,7 +434,7 @@ mod tests {
     async fn get_token_error() {
         let mock_client = MockHttpClient::new(|_| {
             async move {
-                Ok(BufResponse::from_bytes(
+                Ok(AsyncRawResponse::from_bytes(
                     StatusCode::BadRequest,
                     Headers::default(),
                     Bytes::new(),

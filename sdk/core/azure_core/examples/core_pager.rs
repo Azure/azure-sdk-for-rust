@@ -3,7 +3,7 @@
 
 use azure_core::{
     credentials::TokenCredential,
-    http::{headers::Headers, BufResponse, HttpClient, Method, StatusCode, Transport},
+    http::{headers::Headers, AsyncRawResponse, HttpClient, Method, StatusCode, Transport},
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
 use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
@@ -64,7 +64,7 @@ async fn test_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
     let mut pager = client.list_secret_properties(None)?.into_pages();
     let mut names = Vec::new();
     while let Some(page) = pager.try_next().await? {
-        let page = page.into_body()?;
+        let page = page.into_model()?;
         for secret in page.value {
             names.push(secret.resource_id()?.name);
         }
@@ -106,7 +106,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                 assert_eq!(request.method(), Method::Get);
                 assert_eq!(request.url().path(), "/secrets");
                 match idx {
-                    0 => Ok(BufResponse::from_bytes(
+                    0 => Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         // First page with continuation (nextLink)
@@ -116,7 +116,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                           ],
                           "nextLink":"https://my-vault.vault.azure.net/secrets?api-version=7.4&$skiptoken=page2"}"#,
                     )),
-                    1 => Ok(BufResponse::from_bytes(
+                    1 => Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         // Second (final) page without nextLink

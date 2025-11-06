@@ -115,7 +115,7 @@ impl PerfTest for GetSecrets {
             .unwrap()
             .get_secret(self.get_random_key_name(recording), None)
             .await?
-            .into_body()?;
+            .into_model()?;
         Ok(())
     }
 }

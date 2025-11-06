@@ -5,6 +5,8 @@
 ### Features Added
 
 - Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
+- Added `Response<T, F>::body(&self) -> &ResponseBody`.
+- Added `Response<T, F>::to_raw_response()` function to create a `RawResponse` from cloned data.
 - Added `UrlExt::append_path()`.
 - Added module `fmt::empty_as_null` containing some serde helpers for empty/null string values.
 - Re-exported `serde_json::Value` as `typespec_client_core::Value` ([#1687](https://github.com/Azure/azure-sdk-for-rust/issues/1687))
@@ -16,6 +18,9 @@
 - Removed `CustomHeaders` policy.
 - Removed `ErrorKind::MockFramework`.
 - Removed `xml::read_xml_str()`.
+- Renamed `BufResponse` to `AsyncRawResponse` so that `AsyncRawResponse` is to `RawResponse` as `AsyncIterator` is to `Iterator`.
+- Renamed `BufResponseBody` to `AsyncResponseBody` so that `AsyncResponseBody` is to `ResponseBody` as `AsyncIterator` is to `Iterator`.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed

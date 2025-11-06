@@ -228,7 +228,7 @@ mod tests {
     use super::*;
     use crate::{env::Env, TSG_LINK_ERROR_TEXT};
     use azure_core::{
-        http::{BufResponse, ClientOptions, Transport},
+        http::{AsyncRawResponse, ClientOptions, Transport},
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
@@ -265,7 +265,7 @@ mod tests {
             headers.insert(VSS_E2EID, "bar");
 
             async move {
-                Ok(BufResponse::from_bytes(
+                Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Forbidden,
                     headers,
                     Vec::new(),
@@ -326,7 +326,7 @@ mod tests {
                     headers.insert(MSEDGE_REF, "foo");
                     headers.insert(VSS_E2EID, "bar");
 
-                    return Ok(BufResponse::from_bytes(
+                    return Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         headers,
                         Bytes::from_static(br#"{"oidcToken":"baz"}"#),
@@ -334,7 +334,7 @@ mod tests {
                 }
 
                 if req.url().as_str() == "https://login.microsoftonline.com/a/oauth2/v2.0/token" {
-                    return Ok(BufResponse::from_bytes(
+                    return Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         Bytes::from_static(

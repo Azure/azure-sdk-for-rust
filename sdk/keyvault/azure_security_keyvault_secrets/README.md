@@ -78,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret: Secret = client
         .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     // Get version of created secret.
     let secret_version = secret.resource_id()?.version;
@@ -90,7 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ..Default::default()
         }))
         .await?
-        .into_body()?;
+        .into_model()?;
     println!("{:?}", secret.value);
 
     Ok(())
@@ -147,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret = client
         .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     println!(
         "Secret Name: {:?}, Value: {:?}, Version: {:?}",
@@ -185,7 +185,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret = client
         .get_secret("secret-name", None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     println!("Secret Value: {:?}", secret.value);
 
@@ -228,7 +228,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
         )
         .await?
-        .into_body()?;
+        .into_model()?;
 
     Ok(())
 }
@@ -310,7 +310,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_secret("secret-name", None).await {
-        Ok(response) => println!("Secret Value: {:?}", response.into_body()?.value),
+        Ok(response) => println!("Secret Value: {:?}", response.into_model()?.value),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
 

@@ -20,12 +20,12 @@ pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
     let properties = cosmos_client
         .create_database(&test_db_id, None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(&test_db_id, &properties.id);
 
     let db_client = cosmos_client.database_client(&test_db_id);
-    let read_properties = db_client.read(None).await?.into_body()?;
+    let read_properties = db_client.read(None).await?.into_model()?;
 
     assert_eq!(&test_db_id, &read_properties.id);
 
@@ -74,12 +74,12 @@ pub async fn database_with_offer_crud(context: TestContext) -> Result<(), Box<dy
             }),
         )
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(&test_db_id, &properties.id);
 
     let db_client = cosmos_client.database_client(&test_db_id);
-    let read_properties = db_client.read(None).await?.into_body()?;
+    let read_properties = db_client.read(None).await?.into_model()?;
     assert_eq!(&test_db_id, &read_properties.id);
 
     // Read and then replace throughput
@@ -87,7 +87,7 @@ pub async fn database_with_offer_crud(context: TestContext) -> Result<(), Box<dy
         .read_throughput(None)
         .await?
         .ok_or("expected a throughput offer")?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(Some(400), current_throughput.throughput());
     assert!(current_throughput.autoscale_increment().is_none());
     assert!(current_throughput.autoscale_maximum().is_none());
@@ -95,7 +95,7 @@ pub async fn database_with_offer_crud(context: TestContext) -> Result<(), Box<dy
     let new_throughput = db_client
         .replace_throughput(ThroughputProperties::manual(500), None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(Some(500), new_throughput.throughput());
     assert!(new_throughput.autoscale_increment().is_none());
     assert!(new_throughput.autoscale_maximum().is_none());

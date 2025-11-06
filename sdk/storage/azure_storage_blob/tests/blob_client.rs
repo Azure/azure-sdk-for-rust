@@ -455,7 +455,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     blob_client.set_tags(blob_tags.clone(), None).await?;
 
     // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body()?;
+    let response_tags = blob_client.get_tags(None).await?.into_model()?;
     let map: HashMap<String, String> = response_tags.try_into()?;
     assert_eq!(blob_tags, map);
 
@@ -463,7 +463,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     blob_client.set_tags(HashMap::new(), None).await?;
 
     // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body()?;
+    let response_tags = blob_client.get_tags(None).await?.into_model()?;
     let map: HashMap<String, String> = response_tags.try_into()?;
     assert_eq!(HashMap::new(), map);
 
@@ -617,7 +617,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Check name equality for all test cases
     let mut list_blobs_response = container_client.list_blobs(None)?;
     let page = list_blobs_response.try_next().await?;
-    let list_blob_segment_response = page.unwrap().into_body()?;
+    let list_blob_segment_response = page.unwrap().into_model()?;
     let blob_items = list_blob_segment_response.segment.blob_items;
 
     // Ensure we have the expected number of blobs

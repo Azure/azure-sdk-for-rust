@@ -141,7 +141,7 @@ impl Client {
             .await?
             .into();
         let recording_id = resp.headers().get_str(&RECORDING_ID)?.to_string();
-        let mut result: PlaybackStartResult = resp.into_body()?;
+        let mut result: PlaybackStartResult = resp.into_model()?;
         result.recording_id = recording_id;
         Ok(result)
     }

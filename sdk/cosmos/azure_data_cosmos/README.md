@@ -44,7 +44,7 @@ The following section provides several code snippets covering some of the most c
 
 In order to interact with the Azure Cosmos DB service, you'll need to create an instance of the `CosmosClient`. You need an endpoint URL and credentials to instantiate a client object.
 
-**Using Microsoft Entra ID**
+#### Using Microsoft Entra ID
 
 The example shown below use a `DeveloperToolsCredential`, which is appropriate for most local development environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
@@ -67,7 +67,7 @@ async fn example() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-**Using account keys**
+#### Using account keys
 
 Cosmos DB also supports account keys, though we strongly recommend using Entra ID authentication. To use account keys, you will need to enable the `key_auth` feature:
 
@@ -104,7 +104,7 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
     // Read an item
     let item_response = container.read_item("partition1", "1", None).await?;
-    let mut item: Item = item_response.into_body()?;
+    let mut item: Item = item_response.into_model()?;
 
     item.value = "3".into();
 

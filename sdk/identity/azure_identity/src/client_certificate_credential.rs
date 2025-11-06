@@ -313,7 +313,7 @@ mod tests {
         http::{
             headers::Headers,
             policies::{Policy, PolicyResult},
-            BufResponse, Context, StatusCode, Transport,
+            AsyncRawResponse, Context, StatusCode, Transport,
         },
         Bytes,
     };
@@ -475,7 +475,7 @@ mod tests {
     async fn get_token_error() {
         let description = "AADSTS7000215: Invalid client certificate.";
         let sts = MockSts::new(
-            vec![BufResponse::from_bytes(
+            vec![AsyncRawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::default(),
                 Bytes::from(format!(

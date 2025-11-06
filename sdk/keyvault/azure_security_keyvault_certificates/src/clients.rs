@@ -70,7 +70,7 @@ impl CertificateClient {
     /// let certificate = client
     ///     .create_certificate("certificate-name", body.try_into()?, None)?
     ///     .await?
-    ///     .into_body()?;
+    ///     .into_model()?;
     ///
     /// # Ok(()) }
     /// ```

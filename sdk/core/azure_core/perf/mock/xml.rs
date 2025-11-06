@@ -67,7 +67,7 @@ impl PerfTest for MockXmlTest {
             RawResponse::from_bytes(status, headers, body).into();
         let list: List = tokio::spawn(async move {
             tokio::task::yield_now().await;
-            response.into_body()
+            response.into_model()
         })
         .await
         .unwrap()?;

@@ -75,7 +75,7 @@ impl Policy for LoggingPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, BufResponse, Method, Request, StatusCode};
+    use crate::http::{headers::Headers, AsyncRawResponse, Method, Request, StatusCode};
     use futures::StreamExt;
     use url::Url;
 
@@ -200,7 +200,7 @@ mod tests {
             _request: &mut Request,
             _next: &[Arc<dyn Policy>],
         ) -> PolicyResult {
-            Ok(BufResponse::new(
+            Ok(AsyncRawResponse::new(
                 StatusCode::Ok,
                 Headers::new(),
                 futures::stream::empty::<Result<crate::Bytes, crate::Error>>().boxed(),

@@ -5,7 +5,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         headers::{Headers, RETRY_AFTER},
-        BufResponse, HttpClient, Method, StatusCode, Transport,
+        AsyncRawResponse, HttpClient, Method, StatusCode, Transport,
     },
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -41,7 +41,7 @@ async fn test_poller() -> Result<(), Box<dyn std::error::Error>> {
     let certificate = client
         .create_certificate("my-cert", params.try_into()?, None)?
         .await?
-        .into_body()?;
+        .into_model()?;
     assert_eq!(
         certificate.id,
         Some("https://my-vault.vault.azure.net/certificates/my-cert/version".into())
@@ -79,7 +79,7 @@ async fn test_poller_stream() -> Result<(), Box<dyn std::error::Error>> {
     // Manually poll status updates until completion
     let mut final_status = None;
     while let Some(status) = poller.try_next().await? {
-        let status = status.into_body()?;
+        let status = status.into_model()?;
         assert!(status.error.is_none());
         final_status = Some(status);
     }
@@ -132,7 +132,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                         assert_eq!(request.url().path(), "/certificates/my-cert/create");
                         let mut headers = Headers::new();
                         headers.insert(RETRY_AFTER, "0");
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             headers,
                             r#"{"id":"https://my-vault.vault.azure.net/certificates/my-cert/pending","status":"inProgress"}"#,
@@ -142,7 +142,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                         // Polling GET for status
                         assert_eq!(request.method(), Method::Get);
                         assert_eq!(request.url().path(), "/certificates/my-cert/pending");
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             r#"{"id":"https://my-vault.vault.azure.net/certificates/my-cert/pending","status":"completed","target":"https://my-vault.vault.azure.net/certificates/my-cert"}"#,
@@ -152,7 +152,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                         // Final GET for the target
                         assert_eq!(request.method(), Method::Get);
                         assert_eq!(request.url().path(), "/certificates/my-cert");
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             r#"{"id":"https://my-vault.vault.azure.net/certificates/my-cert/version","cer":"dGVzdA=="}"#,

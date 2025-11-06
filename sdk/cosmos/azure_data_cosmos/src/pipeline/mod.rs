@@ -199,7 +199,7 @@ impl CosmosPipeline {
             .read_throughput_offer(context.clone(), resource_id)
             .await?;
         let mut current_throughput = match response {
-            Some(r) => r.into_body()?,
+            Some(r) => r.into_model()?,
             None => Default::default(),
         };
         current_throughput.offer = throughput.offer;

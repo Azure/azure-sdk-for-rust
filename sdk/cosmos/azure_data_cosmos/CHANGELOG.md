@@ -2,9 +2,13 @@
 
 ## 0.30.0 (Unreleased)
 
-### Features Added 
+### Features Added
 
 - Added Regions to pass preferred regions through Cosmos Client Options. ([#3274](https://github.com/Azure/azure-sdk-for-rust/pull/3274))
+
+### Breaking Changes
+
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 
 ## 0.29.0 (Unreleased)
 

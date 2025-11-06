@@ -234,7 +234,7 @@ impl CheckpointStore for BlobCheckpointStore {
         };
 
         while let Some(blob) = blobs.try_next().await? {
-            let blob_body = blob.into_body()?;
+            let blob_body = blob.into_model()?;
             debug!("Blob body: {blob_body:?}, {:?}", blob_body.container_name);
             for blob in blob_body.segment.blob_items.iter() {
                 let mut checkpoint = checkpoint.clone();
@@ -303,7 +303,7 @@ impl CheckpointStore for BlobCheckpointStore {
         };
 
         while let Some(blob) = blobs.try_next().await? {
-            let blob_body = blob.into_body()?;
+            let blob_body = blob.into_model()?;
             debug!("Blob body: {blob_body:?}, {:?}", blob_body.container_name);
             for blob in blob_body.segment.blob_items.iter() {
                 let mut ownership = ownership.clone();

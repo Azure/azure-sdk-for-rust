@@ -9,6 +9,7 @@
 - `KeyClientListDeletedKeyPropertiesOptions::method_options` is now `PagerOptions`.
 - `KeyClientListKeyPropertiesOptions::method_options` is now `PagerOptions`.
 - `KeyClientListKeyPropertiesVersionsOptions::method_options` is now `PagerOptions`.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 
 ### Bugs Fixed
 

@@ -14,6 +14,7 @@
 - Removed `CertificateClient::begin_create_certificate()`.
 - Removed `CertificateClient::resume_create_certificate()`.
 - Removed `wait()` function from `Poller<CertificateOperation>`.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 
 ### Bugs Fixed
 
