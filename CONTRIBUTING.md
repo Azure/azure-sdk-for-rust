@@ -49,7 +49,7 @@ Once changes are merged,
 
 ### Emitter updates
 
-If you require a change in the [emitter](https://github.com/Azure/typespec-rust), after a new version has been published:
+If you require a change in the emitter, after a new version has been published:
 
 1. Update `eng/emitter-package.json` with the new version of `@azure-tools/typespec-rust`.
 2. Update any dependencies to match versions specified in the emitter's [package.json](https://github.com/Azure/typespec-rust/blob/main/packages/typespec-rust/package.json) file.
