@@ -9,6 +9,7 @@ mod enums_serde;
 mod header_traits;
 mod method_options;
 mod models_impl;
+mod models_serde;
 mod pub_models;
 mod xml_helpers;
 pub use enums::*;
