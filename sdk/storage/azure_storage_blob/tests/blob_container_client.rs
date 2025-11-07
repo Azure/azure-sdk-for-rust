@@ -3,13 +3,14 @@
 
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, Matcher, TestContext, TestMode};
-use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
-    AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
+    AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
+    SignedIdentifier, SignedIdentifiers,
 };
+use azure_storage_blob::{format_datetime, format_filter_expression};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name,
@@ -17,6 +18,7 @@ use azure_storage_blob_test::{
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
+use typespec_client_core::time::OffsetDateTime;
 
 #[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -398,5 +400,68 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
     );
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+
+    let recording = ctx.recording();
+    recording.set_matcher(Matcher::BodilessMatcher).await?;
+    let container_client = get_container_client(recording, false).await?;
+    container_client.create_container(None).await?;
+
+    // Set Access Policy w/ Policy Defined
+    let test_id: Option<String> = Some("testid".into());
+    let expiry = Some(format_datetime(
+        OffsetDateTime::now_utc() + Duration::from_secs(10),
+    )?);
+    let start = Some(format_datetime(OffsetDateTime::now_utc())?);
+    let access_policy = AccessPolicy {
+        expiry: expiry.clone(),
+        permission: Some("rw".to_string()),
+        start: start.clone(),
+    };
+    let signed_identifier = SignedIdentifier {
+        access_policy: Some(access_policy.clone()),
+        id: test_id.clone(),
+    };
+    let signed_identifiers = SignedIdentifiers {
+        items: Some(vec![signed_identifier]),
+    };
+    container_client
+        .set_access_policy(RequestContent::try_from(signed_identifiers)?, None)
+        .await?;
+
+    // Assert
+    let response = container_client.get_access_policy(None).await?;
+    let signed_identifiers = response.into_model()?;
+    let response_id = signed_identifiers.items.clone().unwrap()[0].id.clone();
+    let response_access_policy = signed_identifiers.items.clone().unwrap()[0]
+        .access_policy
+        .clone();
+
+    assert_eq!(signed_identifiers.items.clone().unwrap().len(), 1);
+    assert_eq!(response_id, test_id);
+    assert_eq!(
+        response_access_policy.clone().unwrap().permission,
+        access_policy.permission
+    );
+    assert_eq!(response_access_policy.clone().unwrap().expiry, expiry);
+    assert_eq!(response_access_policy.clone().unwrap().start, start);
+
+    // Clear Access Policy
+    let cleared_signed_identifiers = SignedIdentifiers { items: None };
+
+    container_client
+        .set_access_policy(RequestContent::try_from(cleared_signed_identifiers)?, None)
+        .await?;
+
+    // Assert
+    let cleared_response = container_client.get_access_policy(None).await?;
+    let cleared_signed_identifiers = cleared_response.into_model()?;
+    assert!(cleared_signed_identifiers.items.is_none());
+
     Ok(())
 }

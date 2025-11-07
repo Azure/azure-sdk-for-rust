@@ -26,26 +26,16 @@ use std::collections::HashMap;
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct AccessPolicy {
     /// The date-time the policy expires.
-    #[serde(
-        default,
-        rename = "Expiry",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub expiry: Option<OffsetDateTime>,
+    #[serde(rename = "Expiry", skip_serializing_if = "Option::is_none")]
+    pub expiry: Option<String>,
 
     /// The permissions for acl the policy.
     #[serde(rename = "Permission", skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 
     /// The date-time the policy is active.
-    #[serde(
-        default,
-        rename = "Start",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub start: Option<OffsetDateTime>,
+    #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
 }
 
 /// Contains results for `AppendBlobClient::append_block_from_url()`
@@ -1300,6 +1290,14 @@ pub struct SignedIdentifier {
     /// The unique ID for the signed identifier.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+
+/// Represents an array of signed identifiers
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct SignedIdentifiers {
+    /// The array of signed identifiers.
+    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SignedIdentifier>>,
 }
 
 /// The properties that enable an account to host a static website
