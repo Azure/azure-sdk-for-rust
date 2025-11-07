@@ -1,20 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{
-    credentials::TokenCredential,
-    http::{headers::Headers, AsyncRawResponse, HttpClient, Method, StatusCode, Transport},
-};
-use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
-use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
-use futures::{FutureExt, TryStreamExt};
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
-};
+use azure_core::http::Transport;
+use azure_security_keyvault_secrets::{ResourceExt as _, SecretClient, SecretClientOptions};
+use example::setup;
+use futures::TryStreamExt as _;
 
-/// This example demonstrates using a [`Pager`] to list secret properties from Key Vault.
-async fn test_pager() -> Result<(), Box<dyn std::error::Error>> {
+/// This example demonstrates using a [`Pager`](azure_core::http::Pager) to list secret properties from Key Vault.
+async fn example_pager() -> Result<(), Box<dyn std::error::Error>> {
     let mut options = SecretClientOptions::default();
 
     // Ignore: this is only set up for testing.
@@ -40,12 +33,12 @@ async fn test_pager() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// This example demonstrates using a [`PageIterator`] to list pages of secret properties from Key Vault.
+/// This example demonstrates using a [`PageIterator`](azure_core::http::PageIterator) to list pages of secret properties from Key Vault.
 ///
 /// Some clients may return a `PageIterator` if there are no items to iterate or multiple items to iterate.
-/// The following example shows how you can also get a `PageIterator` from a [`Pager`] to iterate over pages instead of items.
+/// The following example shows how you can also get a `PageIterator` from a [`Pager`](azure_core::http::Pager) to iterate over pages instead of items.
 /// The pattern for iterating pages is otherwise the same:
-async fn test_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
+async fn example_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
     let mut options = SecretClientOptions::default();
 
     // Ignore: this is only set up for testing.
@@ -77,31 +70,44 @@ async fn test_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
 // ----- BEGIN TEST SETUP -----
 #[tokio::test]
 async fn test_core_pager() -> Result<(), Box<dyn std::error::Error>> {
-    test_pager().await
+    example_pager().await
 }
 
 #[tokio::test]
 async fn test_core_page_iterator() -> Result<(), Box<dyn std::error::Error>> {
-    test_page_iterator().await
+    example_page_iterator().await
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    test_pager().await?;
-    test_page_iterator().await?;
+    example_pager().await?;
+    example_page_iterator().await?;
 
     Ok(())
 }
 
-#[allow(clippy::type_complexity)]
-fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn std::error::Error>> {
-    let credential: Arc<dyn TokenCredential> = MockCredential::new()?;
-    let calls = Arc::new(AtomicUsize::new(0));
-    let transport = {
-        let calls = calls.clone();
-        MockHttpClient::new(move |request| {
+mod example {
+    use azure_core::{
+        credentials::TokenCredential,
+        http::{headers::Headers, AsyncRawResponse, HttpClient, Method, StatusCode},
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use futures::FutureExt;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+
+    #[allow(clippy::type_complexity)]
+    pub fn setup(
+    ) -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn std::error::Error>> {
+        let credential: Arc<dyn TokenCredential> = MockCredential::new()?;
+        let calls = Arc::new(AtomicUsize::new(0));
+        let transport = {
             let calls = calls.clone();
-            async move {
+            MockHttpClient::new(move |request| {
+                let calls = calls.clone();
+                async move {
                 let idx = calls.fetch_add(1, Ordering::SeqCst);
                 assert_eq!(request.method(), Method::Get);
                 assert_eq!(request.url().path(), "/secrets");
@@ -126,8 +132,9 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                 }
             }
             .boxed()
-        })
-    };
-    Ok((credential, Arc::new(transport)))
+            })
+        };
+        Ok((credential, Arc::new(transport)))
+    }
 }
 // ----- END TEST SETUP -----
