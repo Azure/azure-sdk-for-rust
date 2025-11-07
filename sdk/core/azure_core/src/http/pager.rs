@@ -866,7 +866,6 @@ where
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
 
-            tracing::trace!("current stream state: {:?}", stream_state.added_span);
             if stream_state.state != State::Done {
                 let result = match stream_state.continuation_token.lock() {
                     Ok(next_token) => match next_token.as_deref() {
@@ -899,7 +898,6 @@ where
                     // At the very start of polling, create a span for the entire request, and attach it to the context
                     let span = create_public_api_span(&stream_state.ctx, None, None);
                     if let Some(ref s) = span {
-                        tracing::trace!("initial page request, adding span");
                         stream_state.added_span = true;
                         stream_state.ctx = stream_state.ctx.with_value(s.clone());
                     }
@@ -949,24 +947,19 @@ where
                     if let Ok(mut token) = stream_state.continuation_token.lock() {
                         *token = None;
                     }
-                    tracing::trace!("final page received, finalizing span if added");
                     // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
                     // otherwise it is the responsibility of the caller to end their span.
                     if stream_state.added_span {
-                        tracing::trace!("final page received, finalizing span if present");
                         if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
                             // P is unconstrained, so it's not possible to retrieve the status code for now.
 
                             span.end();
                         }
-                    } else {
-                        tracing::trace!("final page received, no span added");
                     }
                     (Ok(response), State::Done)
                 }
             };
 
-            tracing::trace!("Returning Stream State: {:?}", stream_state.added_span);
             stream_state.state = next_state;
             Some((item, stream_state))
         },
