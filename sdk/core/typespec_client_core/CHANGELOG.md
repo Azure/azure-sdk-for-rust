@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `Context::to_owned()` to create a static lifetime copy of an existing `Context`.
 - Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
 - Added `Response<T, F>::body(&self) -> &ResponseBody`.
 - Added `Response<T, F>::to_raw_response()` function to create a `RawResponse` from cloned data.

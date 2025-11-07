@@ -290,3 +290,241 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
 
     Ok(())
 }
+
+#[recorded::test]
+async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
+    use azure_core_test::tracing::ExpectedRestApiSpan;
+
+    const SECRET_COUNT: usize = 50;
+
+    let recording = ctx.recording();
+
+    {
+        let secret_client = {
+            let mut options = SecretClientOptions::default();
+            recording.instrument(&mut options.client_options);
+            SecretClient::new(
+                recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+                recording.credential(),
+                Some(options),
+            )
+        }?;
+        for i in 0..SECRET_COUNT {
+            let secret = secret_client
+                .set_secret(
+                    &format!("secret-list-telemetry-{}", i),
+                    SetSecretParameters {
+                        value: Some(format!("secret-list-telemetry-value-{}", i)),
+                        ..Default::default()
+                    }
+                    .try_into()?,
+                    None,
+                )
+                .await?
+                .into_model()?;
+            assert_eq!(
+                secret.value,
+                Some(format!("secret-list-telemetry-value-{}", i))
+            );
+        }
+    }
+    // Verify that the distributed tracing traces generated from the API call below match the expected traces.
+    let validate_result = azure_core_test::tracing::assert_instrumentation_information(
+        |tracer_provider| {
+            let mut options = SecretClientOptions::default();
+            recording.instrument(&mut options.client_options);
+            options.client_options.instrumentation = InstrumentationOptions {
+                tracer_provider: Some(tracer_provider),
+            };
+            SecretClient::new(
+                recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+                recording.credential(),
+                Some(options),
+            )
+        },
+        |client: SecretClient| {
+            Box::pin(async move {
+                let mut secrets = client.list_secret_properties(None)?;
+                while let Some(secret) = secrets.try_next().await? {
+                    let _ = secret.resource_id()?;
+                }
+
+                Ok(())
+            })
+        },
+        ExpectedInstrumentation {
+            package_name: recording.var("CARGO_PKG_NAME", None),
+            package_version: recording.var("CARGO_PKG_VERSION", None),
+            package_namespace: Some("KeyVault"),
+            api_calls: vec![ExpectedApiInformation {
+                api_name: Some("KeyVault.getSecrets"),
+                api_children: vec![
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+        },
+    )
+    .await;
+
+    validate_result
+}
+
+#[recorded::test]
+#[ignore = "Test does not currently work because instrumentation of PageIterators doesn't quite work."]
+async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()> {
+    use azure_core_test::tracing::ExpectedRestApiSpan;
+
+    const SECRET_COUNT: usize = 50;
+
+    let recording = ctx.recording();
+
+    {
+        let secret_client = {
+            let mut options = SecretClientOptions::default();
+            recording.instrument(&mut options.client_options);
+            SecretClient::new(
+                recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+                recording.credential(),
+                Some(options),
+            )
+        }?;
+        for i in 0..SECRET_COUNT {
+            let secret = secret_client
+                .set_secret(
+                    &format!("secret-rehydrate-telemetry-{}", i),
+                    SetSecretParameters {
+                        value: Some(format!("secret-rehydrate-telemetry-value-{}", i)),
+                        ..Default::default()
+                    }
+                    .try_into()?,
+                    None,
+                )
+                .await?
+                .into_model()?;
+            assert_eq!(
+                secret.value,
+                Some(format!("secret-rehydrate-telemetry-value-{}", i))
+            );
+        }
+    }
+    // Verify that the distributed tracing traces generated from the API call below match the expected traces.
+    let validate_result = azure_core_test::tracing::assert_instrumentation_information(
+        |tracer_provider| {
+            let mut options = SecretClientOptions::default();
+            recording.instrument(&mut options.client_options);
+            options.client_options.instrumentation = InstrumentationOptions {
+                tracer_provider: Some(tracer_provider),
+            };
+            SecretClient::new(
+                recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+                recording.credential(),
+                Some(options),
+            )
+        },
+        |client: SecretClient| {
+            Box::pin(async move {
+                let mut first_pager = client.list_secret_properties(None)?.into_pages();
+
+                // Prime the iteration.
+                let first_page = first_pager
+                    .try_next()
+                    .await?
+                    .expect("expected at least one page");
+                {
+                    let secrets = first_page.into_model()?;
+                    for secret in secrets.value {
+                        let _ = secret.resource_id()?;
+                    }
+                }
+
+                let rehydration_token = first_pager
+                    .continuation_token()
+                    .expect("expected continuation token to be created after first page");
+
+                let mut rehydrated_pager = client
+                    .list_secret_properties(None)?
+                    .into_pages()
+                    .with_continuation_token(rehydration_token);
+
+                while let Some(secret_page) = rehydrated_pager.try_next().await? {
+                    let secrets = secret_page.into_model()?;
+                    for secret in secrets.value {
+                        let _ = secret.resource_id()?;
+                    }
+                }
+
+                Ok(())
+            })
+        },
+        ExpectedInstrumentation {
+            package_name: recording.var("CARGO_PKG_NAME", None),
+            package_version: recording.var("CARGO_PKG_VERSION", None),
+            package_namespace: Some("KeyVault"),
+            api_calls: vec![
+                ExpectedApiInformation {
+                    api_name: Some("KeyVault.getSecrets"),
+                    api_children: vec![ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+                ExpectedApiInformation {
+                    api_name: Some("KeyVault.getSecrets"),
+                    api_children: vec![ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+                ExpectedApiInformation {
+                    api_name: Some("KeyVault.getSecrets"),
+                    api_children: vec![ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+                ExpectedApiInformation {
+                    api_name: Some("KeyVault.getSecrets"),
+                    api_children: vec![ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+                ExpectedApiInformation {
+                    api_name: Some("KeyVault.getSecrets"),
+                    api_children: vec![ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+            ],
+        },
+    )
+    .await;
+
+    validate_result
+}
