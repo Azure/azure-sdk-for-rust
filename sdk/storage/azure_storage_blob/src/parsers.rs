@@ -5,6 +5,8 @@ use azure_core::{error::ErrorKind, Error};
 use std::collections::HashMap;
 use time::{format_description::FormatItem, macros::format_description, OffsetDateTime, UtcOffset};
 
+use crate::models::{AccessPolicy, SignedIdentifier, SignedIdentifiers};
+
 static RFC3339_7: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:7]Z");
 
@@ -64,9 +66,10 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
     Ok(format_expression.join(" and "))
 }
 
-/// Takes in a OffsetDateTime and converts to RFC3339-like string with exactly 7 decimal precision and converted to UTC.
+/// Takes a OffsetDateTime and converts to RFC3339-like string with exactly 7 decimal precision and converted to UTC.
 ///
 /// # Arguments
+///
 /// * `datetime` - OffsetDateTime to format.
 pub fn format_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
     let utc = datetime.to_offset(UtcOffset::UTC);
@@ -75,5 +78,30 @@ pub fn format_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
             ErrorKind::DataConversion,
             format!("Failed to format datetime: {}", e),
         )
+    })
+}
+
+/// Takes a HashMap<String, AccessPolicy> where the key is the policy ID and the value is the AccessPolicy and converts it to SignedIdentifiers.
+///
+/// # Arguments
+///
+/// * `policies` - A HashMap where keys are policy identifiers and values are AccessPolicy objects.
+pub fn format_signed_identifiers(
+    policies: HashMap<String, AccessPolicy>,
+) -> Result<SignedIdentifiers, Error> {
+    if policies.is_empty() {
+        return Ok(SignedIdentifiers { items: None });
+    }
+
+    let signed_identifiers: Vec<SignedIdentifier> = policies
+        .into_iter()
+        .map(|(id, access_policy)| SignedIdentifier {
+            id: Some(id),
+            access_policy: Some(access_policy),
+        })
+        .collect();
+
+    Ok(SignedIdentifiers {
+        items: Some(signed_identifiers),
     })
 }

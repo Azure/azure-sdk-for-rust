@@ -373,7 +373,7 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_acl` - The access control list for the container.
+    /// * `container_acl` - The access control list for the container. See [`format_signed_identifiers()`](crate::format_signed_identifiers) for help with the expected format.
     /// * `options` - Optional configuration for the request.
     pub async fn set_access_policy(
         &self,

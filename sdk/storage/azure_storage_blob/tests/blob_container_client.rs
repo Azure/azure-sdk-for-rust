@@ -10,7 +10,7 @@ use azure_storage_blob::models::{
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
     SignedIdentifier, SignedIdentifiers,
 };
-use azure_storage_blob::{format_datetime, format_filter_expression};
+use azure_storage_blob::{format_datetime, format_filter_expression, format_signed_identifiers};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name,
@@ -406,7 +406,6 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
 #[recorded::test]
 async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
-
     let recording = ctx.recording();
     recording.set_matcher(Matcher::BodilessMatcher).await?;
     let container_client = get_container_client(recording, false).await?;
@@ -441,7 +440,6 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     let response_access_policy = signed_identifiers.items.clone().unwrap()[0]
         .access_policy
         .clone();
-
     assert_eq!(signed_identifiers.items.clone().unwrap().len(), 1);
     assert_eq!(response_id, test_id);
     assert_eq!(
@@ -451,11 +449,58 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     assert_eq!(response_access_policy.clone().unwrap().expiry, expiry);
     assert_eq!(response_access_policy.clone().unwrap().start, start);
 
-    // Clear Access Policy
-    let cleared_signed_identifiers = SignedIdentifiers { items: None };
-
+    // Set Access Policy w/ Multiple Policy Defined
+    let expiry = Some(format_datetime(
+        OffsetDateTime::now_utc() + Duration::from_secs(10),
+    )?);
+    let start = Some(format_datetime(OffsetDateTime::now_utc())?);
+    let test_id_1: Option<String> = Some("testid_1".into());
+    let test_id_2: Option<String> = Some("testid_2".into());
+    let access_policy_1 = AccessPolicy {
+        expiry: expiry.clone(),
+        permission: Some("rw".to_string()),
+        start: start.clone(),
+    };
+    let access_policy_2 = AccessPolicy {
+        expiry: expiry.clone(),
+        permission: Some("cd".to_string()),
+        start: start.clone(),
+    };
+    let policies: HashMap<String, AccessPolicy> = HashMap::from([
+        (test_id_1.clone().unwrap(), access_policy_1.clone()),
+        (test_id_2.clone().unwrap(), access_policy_2.clone()),
+    ]);
     container_client
-        .set_access_policy(RequestContent::try_from(cleared_signed_identifiers)?, None)
+        .set_access_policy(
+            RequestContent::try_from(format_signed_identifiers(policies)?)?,
+            None,
+        )
+        .await?;
+
+    // Assert
+    let response = container_client.get_access_policy(None).await?;
+    let signed_identifiers = response.into_model()?;
+    let mut ids = Vec::new();
+    let mut permissions = Vec::new();
+    for signed_identifier in signed_identifiers.items.as_ref().unwrap() {
+        ids.push(signed_identifier.id.clone());
+        if let Some(access_policy) = &signed_identifier.access_policy {
+            permissions.push(access_policy.permission.clone());
+        }
+    }
+    assert_eq!(ids.len(), 2);
+    assert_eq!(permissions.len(), 2);
+    assert!(ids.contains(&test_id_1));
+    assert!(ids.contains(&test_id_2));
+    assert!(permissions.contains(&access_policy_1.permission));
+    assert!(permissions.contains(&access_policy_2.permission));
+
+    // Clear Access Policy
+    container_client
+        .set_access_policy(
+            RequestContent::try_from(format_signed_identifiers(HashMap::new())?)?,
+            None,
+        )
         .await?;
 
     // Assert
