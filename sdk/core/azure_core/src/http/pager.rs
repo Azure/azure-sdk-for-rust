@@ -811,7 +811,7 @@ impl<P> fmt::Debug for PageIterator<P> {
     }
 }
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Clone, Eq)]
 enum State<C>
 where
     C: AsRef<str>,
@@ -821,15 +821,15 @@ where
     Done,
 }
 
-impl<C> AsRef<str> for State<C>
+impl<C> fmt::Debug for State<C>
 where
     C: AsRef<str>,
 {
-    fn as_ref(&self) -> &str {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            State::Init => "Init",
-            State::More(c) => c.as_ref(),
-            State::Done => "Done",
+            State::Init => write!(f, "State::Init"),
+            State::More(c) => write!(f, "State::More({})", c.as_ref()),
+            State::Done => write!(f, "State::Done"),
         }
     }
 }
