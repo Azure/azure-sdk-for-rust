@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- A `get_token()` error motivated by an HTTP response carries that response. See the [troubleshooting guide](https://aka.ms/azsdk/rust/identity/troubleshoot#find-relevant-information-in-errors) for example code showing how to access the response.
+- A `get_token()` error caused by an HTTP response carries that response. See the [troubleshooting guide](http://aka.ms/azsdk/rust/identity/troubleshoot#find-relevant-information-in-errors) for example code showing how to access the response.
 
 ### Breaking Changes
 
