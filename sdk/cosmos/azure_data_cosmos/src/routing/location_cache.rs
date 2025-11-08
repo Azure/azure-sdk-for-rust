@@ -164,7 +164,7 @@ impl LocationCache {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
         let location_index = request.request_context.location_index_to_route.unwrap_or(0) as usize;
         let mut location_endpoint_to_route = self.default_endpoint.clone();
-        if !request.request_context.use_preferred_locations.unwrap_or_default()
+        if !request.request_context.use_preferred_locations.unwrap_or(true)
             || (!request.operation_type.is_read_only() && !self.can_use_multiple_write_locations()) {
             let location_info = &self.locations_info;
             if (location_info.account_write_locations.len() > 0) {
@@ -180,28 +180,12 @@ impl LocationCache {
             else {
                 endpoints =  self.write_endpoints();
             }
-            location_endpoint_to_route = endpoints[location_index % endpoints.len()].clone();
+            if (endpoints.len() > 0) {
+                location_endpoint_to_route = endpoints[location_index % endpoints.len()].clone();
+            }
         }
         
         location_endpoint_to_route
-        //
-        // if operation == RequestOperation::Write && !self.locations_info.write_endpoints.is_empty() {
-        //     self.locations_info
-        //         .write_endpoints
-        //         .get(location_index)
-        //         .cloned()
-        //         .unwrap_or_else(|| self.default_endpoint.clone())
-        // } else if operation == RequestOperation::Read
-        //     && !self.locations_info.read_endpoints.is_empty()
-        // {
-        //     self.locations_info
-        //         .read_endpoints
-        //         .get(location_index)
-        //         .cloned()
-        //         .unwrap_or_else(|| self.default_endpoint.clone())
-        // } else {
-        //     self.default_endpoint.clone()
-        // }
     }
 
     pub fn can_use_multiple_write_locations(&self) -> bool {

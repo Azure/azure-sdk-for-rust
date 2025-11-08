@@ -6,6 +6,7 @@
 pub enum OperationType {
     Create,
     Read,
+    ReadFeed,
     Replace,
     Delete,
     Upsert,

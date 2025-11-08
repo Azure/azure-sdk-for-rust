@@ -37,7 +37,7 @@ pub struct PartitionKeyRangeIdentity {
 /// It collects operation intent (create/read/query/etc.), resource routing
 /// information, partition key, optional item-level options and flags that
 /// influence retry or gateway behaviors.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(dead_code)]
 pub struct CosmosRequest {
     pub operation_type: OperationType,
@@ -100,6 +100,19 @@ impl CosmosRequest {
         }
     }
 
+    pub fn is_read_only_request(&self) -> bool {
+        match self.operation_type {
+            OperationType::Read
+            | OperationType::ReadFeed
+            | OperationType::Head
+            | OperationType::HeadFeed
+            | OperationType::Query
+            | OperationType::SqlQuery
+            | OperationType::QueryPlan => true,
+            _ => false,
+        }
+    }
+
     /// Maps the logical `OperationType` to its corresponding HTTP verb.
     pub fn http_method(&self) -> Method {
         match self.operation_type {
@@ -111,6 +124,7 @@ impl CosmosRequest {
             | OperationType::QueryPlan => Method::Post,
             OperationType::Delete => Method::Delete,
             OperationType::Read => Method::Get,
+            OperationType::ReadFeed => Method::Get,
             OperationType::Replace => Method::Put,
             OperationType::Patch => Method::Patch,
             OperationType::Head | OperationType::HeadFeed => Method::Head,

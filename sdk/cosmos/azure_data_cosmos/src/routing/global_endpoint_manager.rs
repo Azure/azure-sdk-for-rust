@@ -3,11 +3,13 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use azure_core::time::Duration;
 use azure_core::Error;
 use azure_core::http::{Pipeline, Response};
 use crate::cosmos_request::{CosmosRequest, CosmosRequestBuilder};
-use crate::models::{AccountProperties, AccountRegion};
+use crate::models::AccountProperties;
+use moka::future::Cache;
 use crate::operation_context::OperationType;
 use crate::ReadDatabaseOptions;
 use crate::resource_context::{ResourceLink, ResourceType};
@@ -25,6 +27,7 @@ pub struct GlobalEndpointManager {
     is_account_refresh_in_progress: bool,
     is_background_account_refresh_active: bool,
     pipeline: Pipeline,
+    account_properties_cache: Cache<&'static str, AccountProperties>,
 }
 
 impl GlobalEndpointManager {
@@ -36,28 +39,39 @@ impl GlobalEndpointManager {
     ///   a real scheduling implementation is added.
     /// - Account refresh/background flags start as `false`.
     pub fn new(default_endpoint: String, preferred_locations: Vec<String>, pipeline: Pipeline) -> Self {
-    let location_cache = Arc::new(Mutex::new(LocationCache::new(default_endpoint.clone(), preferred_locations.clone())));
-        let endpoint = default_endpoint.parse().unwrap();
-        Self {
-            default_endpoint: endpoint,
+        let location_cache = Arc::new(Mutex::new(LocationCache::new(default_endpoint.clone(), preferred_locations.clone())));
+        let account_properties_cache = Cache::builder()
+            .max_capacity(1)
+            .time_to_live(std::time::Duration::from_secs(600))
+            .build();
+
+        let mut endpoint_manager = Self {
+            default_endpoint,
             preferred_locations,
             location_cache,
-            // Placeholder durations; can be tuned once refresh logic is implemented.
             min_time_between_account_refresh: Duration::seconds(30),
             background_refresh_location_time_interval: Duration::seconds(5),
             is_account_refresh_in_progress: false,
             is_background_account_refresh_active: false,
-            pipeline
-        }
+            pipeline,
+            account_properties_cache,
+        };
+
+        // endpoint_manager.initialize_account_properties_and_start_background_refresh();
+        endpoint_manager
     }
 
-    fn read_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().read_endpoints() }
+    pub fn get_hub_uri(&self) -> String {
+        self.default_endpoint.clone()
+    }
+    
+    pub fn read_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().read_endpoints() }
 
-    fn account_read_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().read_endpoints() }
+    pub fn account_read_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().read_endpoints() }
 
-    fn write_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().write_endpoints() }
+    pub fn write_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().write_endpoints() }
 
-    fn preferred_location_count(&self) -> i32 { self.location_cache.lock().unwrap().locations_info.preferred_locations.len() as i32 }
+    pub fn preferred_location_count(&self) -> i32 { self.location_cache.lock().unwrap().locations_info.preferred_locations.len() as i32 }
 
     // TODO: Implementation Pending.
     pub(crate) fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
@@ -65,13 +79,13 @@ impl GlobalEndpointManager {
         self.location_cache.lock().unwrap().resolve_service_endpoint(request)
     }
 
-    fn get_location(&self, _endpoint: &String) -> Option<String> { unimplemented!("GetLocation not implemented yet") }
+    pub fn get_location(&self, _endpoint: &String) -> Option<String> { unimplemented!("GetLocation not implemented yet") }
 
-    fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Read) }
+    pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Read) }
 
-    fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Write) }
+    pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Write) }
 
-    fn can_use_multiple_write_locations(&self, _request: &CosmosRequest) -> bool {
+    pub fn can_use_multiple_write_locations(&self, _request: &CosmosRequest) -> bool {
         self.location_cache.lock().unwrap().can_use_multiple_write_locations()
     }
 
@@ -92,22 +106,27 @@ impl GlobalEndpointManager {
         // Spawn periodic refresh task on the shared async runtime.
         let _bg_task = get_async_runtime().spawn(Box::pin(async move {
             // One-off initial refresh attempt (errors logged but ignored).
-            if let Err(e) = cloned.refresh_location_async(false).await {
+            if let Err(e) = cloned.refresh_location_async(true).await {
                 // For now we just trace to stderr; real implementation may use structured logging.
                 eprintln!("cosmos: background location refresh failed (initial): {e}");
             }
             loop {
                 // Sleep for the configured interval between refreshes.
                 get_async_runtime().sleep(interval).await;
-                if let Err(e) = cloned.refresh_location_async(false).await {
+                if let Err(e) = cloned.refresh_location_async(true).await {
                     eprintln!("cosmos: background location refresh failed: {e}");
                 }
             }
         }));
     }
 
-    pub async fn refresh_location_async<'a>(&self, _force_refresh: bool) -> Result<(), Error> {
-        // Fetch latest account properties
+    pub async fn refresh_location_async<'a>(&self, force_refresh: bool) -> Result<(), Error> {
+        // Try cache first unless forced.
+        if !force_refresh && self.account_properties_cache.contains_key(&"account") {
+                return Ok(());
+        }
+
+        // Fetch latest account properties from service
         let account_properties = self
             .get_database_account(Some(ReadDatabaseOptions {
                 ..Default::default()
@@ -115,12 +134,12 @@ impl GlobalEndpointManager {
             .await?
             .into_body()?;
 
-        // Update the location cache using full AccountRegion vectors
+        // Populate moka cache and update location cache
+        self.account_properties_cache.insert("account", account_properties.clone()).await;
         {
             let mut cache = self.location_cache.lock().unwrap();
-            cache.on_database_account_read(account_properties.clone());
+            cache.on_database_account_read(account_properties);
         }
-
         Ok(())
     }
 
@@ -128,7 +147,7 @@ impl GlobalEndpointManager {
 
     fn get_available_read_endpoints_by_location(&self) -> HashMap<String, String> { self.location_cache.lock().unwrap().locations_info.account_read_endpoints_by_location.clone() }
 
-    fn can_support_multiple_write_locations(&self, resource_type: ResourceType, _operation_type: OperationType) -> bool {
+    pub(crate) fn can_support_multiple_write_locations(&self, resource_type: ResourceType, _operation_type: OperationType) -> bool {
         let cache = self.location_cache.lock().unwrap();
         cache.can_use_multiple_write_locations()
             && cache.write_endpoints().iter().count() > 1

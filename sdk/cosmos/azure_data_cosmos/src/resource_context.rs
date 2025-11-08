@@ -37,6 +37,16 @@ impl ResourceType {
             ResourceType::Offers => "offers",
         }
     }
+
+    pub fn is_meta_data(self) -> bool {
+        matches!(
+            self,
+            ResourceType::Databases
+                | ResourceType::DatabaseAccount
+                | ResourceType::Containers
+                | ResourceType::PartitionKeyRanges
+        )
+    }
 }
 
 /// Represents a "resource link" defining a sub-resource in Azure Cosmos DB

@@ -3,6 +3,7 @@
 
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
+use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
@@ -78,12 +79,17 @@ impl BackOffRetryHandler {
     /// * `request` - The HTTP request to analyze
     pub fn retry_policy_for_request(
         &self,
-        _request: &CosmosRequest,
-    ) -> Box<ResourceThrottleRetryPolicy> {
+        request: &CosmosRequest,
+    ) -> Box<dyn RetryPolicy> {
         // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
         // the request operation type and resource type and accordingly return the respective retry
         // policy.
-        Box::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
+        if request.resource_type.is_meta_data() {
+            Box::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
+        }
+        else {
+            Box::new(ClientRetryPolicy::new(10, 200, 10, self.global_endpoint_manager.clone()))
+        }
     }
 
     pub fn new(
@@ -117,12 +123,13 @@ impl RetryHandler for BackOffRetryHandler {
     {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
+        // TODO: Need to remove this, and put this into Moka cache. Also, move this logic into retry policy.
+        self.global_endpoint_manager.refresh_location_async(false).await?;
         retry_policy.before_send_request(request);
 
-        // TODO: Need to remove this, and put this into Moka cache. Also, move this logic into retry policy.
-        self.global_endpoint_manager.refresh_location_async(true).await?;
-        let endpoint = self.global_endpoint_manager.resolve_service_endpoint(&request).parse()?;
-        request.request_context.location_endpoint_to_route = Some(request.resource_link.url(&endpoint));
+
+        // let endpoint = self.global_endpoint_manager.resolve_service_endpoint(&request).parse()?;
+        // request.request_context.location_endpoint_to_route = Some(request.resource_link.url(&endpoint));
 
         loop {
             // Invoke the provided sender callback instead of calling inner_send_async directly
