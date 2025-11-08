@@ -65,10 +65,10 @@ impl TracerProvider for MockTracingProvider {
 /// Mock Tracer - used for testing distributed tracing without involving a specific tracing implementation.
 #[derive(Debug)]
 pub struct MockTracer {
-    pub namespace: Option<&'static str>,
-    pub package_name: &'static str,
-    pub package_version: Option<&'static str>,
-    pub spans: Mutex<Vec<Arc<MockSpan>>>,
+    namespace: Option<&'static str>,
+    package_name: &'static str,
+    package_version: Option<&'static str>,
+    spans: Mutex<Vec<Arc<MockSpanInner>>>,
 }
 
 impl Tracer for MockTracer {
@@ -83,9 +83,14 @@ impl Tracer for MockTracer {
         attributes: Vec<Attribute>,
         parent: Arc<dyn crate::tracing::Span>,
     ) -> Arc<dyn crate::tracing::Span> {
-        let span = Arc::new(MockSpan::new(name, kind, attributes.clone(), Some(parent)));
+        let span = Arc::new(MockSpanInner::new(
+            name,
+            kind,
+            attributes.clone(),
+            Some(parent),
+        ));
         self.spans.lock().unwrap().push(span.clone());
-        span
+        Arc::new(MockSpan { inner: span })
     }
 
     fn start_span(
@@ -101,15 +106,15 @@ impl Tracer for MockTracer {
                 value: attr.value.clone(),
             })
             .collect();
-        let span = Arc::new(MockSpan::new(name, kind, attributes, None));
+        let span = Arc::new(MockSpanInner::new(name, kind, attributes, None));
         self.spans.lock().unwrap().push(span.clone());
-        span
+        Arc::new(MockSpan { inner: span })
     }
 }
 
 /// Mock span for testing purposes.
 #[derive(Debug)]
-pub struct MockSpan {
+struct MockSpanInner {
     pub name: Cow<'static, str>,
     pub kind: SpanKind,
     pub parent: Option<[u8; 8]>,
@@ -118,7 +123,7 @@ pub struct MockSpan {
     pub state: Mutex<SpanStatus>,
     pub is_open: Mutex<bool>,
 }
-impl MockSpan {
+impl MockSpanInner {
     fn new<C>(
         name: C,
         kind: SpanKind,
@@ -144,9 +149,22 @@ impl MockSpan {
             is_open: Mutex::new(true),
         }
     }
+
+    fn is_open(&self) -> bool {
+        let is_open = self.is_open.lock().unwrap();
+        *is_open
+    }
 }
 
-impl Span for MockSpan {
+impl AsAny for MockSpanInner {
+    fn as_any(&self) -> &dyn std::any::Any {
+        // Convert to an object that doesn't expose the lifetime parameter
+        // We're essentially erasing the lifetime here to satisfy the static requirement
+        self as &dyn std::any::Any
+    }
+}
+
+impl Span for MockSpanInner {
     fn set_attribute(&self, key: &'static str, value: AttributeValue) {
         eprintln!("{}: Setting attribute {}: {:?}", self.name, key, value);
         let mut attributes = self.attributes.lock().unwrap();
@@ -195,11 +213,58 @@ impl Span for MockSpan {
     }
 }
 
+pub struct MockSpan {
+    inner: Arc<MockSpanInner>,
+}
+
+impl Drop for MockSpan {
+    fn drop(&mut self) {
+        if self.inner.is_open() {
+            eprintln!("Warning: Dropping open span: {}", self.inner.name);
+            self.inner.end();
+        }
+    }
+}
+
 impl AsAny for MockSpan {
     fn as_any(&self) -> &dyn std::any::Any {
         // Convert to an object that doesn't expose the lifetime parameter
         // We're essentially erasing the lifetime here to satisfy the static requirement
         self as &dyn std::any::Any
+    }
+}
+
+impl Span for MockSpan {
+    fn set_attribute(&self, key: &'static str, value: AttributeValue) {
+        self.inner.set_attribute(key, value);
+    }
+
+    fn set_status(&self, status: crate::tracing::SpanStatus) {
+        self.inner.set_status(status);
+    }
+
+    fn end(&self) {
+        self.inner.end();
+    }
+
+    fn is_recording(&self) -> bool {
+        self.inner.is_recording()
+    }
+
+    fn span_id(&self) -> [u8; 8] {
+        self.inner.span_id()
+    }
+
+    fn record_error(&self, error: &dyn std::error::Error) {
+        self.inner.record_error(error);
+    }
+
+    fn set_current(&self, context: &Context) -> Box<dyn SpanGuard> {
+        self.inner.set_current(context)
+    }
+
+    fn propagate_headers(&self, request: &mut Request) {
+        self.inner.propagate_headers(request);
     }
 }
 
@@ -293,7 +358,7 @@ pub struct ExpectedSpanInformation<'a> {
 }
 
 fn check_span_information(
-    span: &Arc<MockSpan>,
+    span: &Arc<MockSpanInner>,
     expected: &ExpectedSpanInformation<'_>,
     parent_span_map: &HashMap<Uuid, [u8; 8]>,
 ) {

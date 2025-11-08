@@ -391,10 +391,10 @@ impl<P: Page> ItemIterator<P> {
     /// ```
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + fmt::Debug + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
+        #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + fmt::Debug + 'static,
         #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
@@ -693,10 +693,10 @@ impl<P> PageIterator<P> {
     /// ```
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + fmt::Debug + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
+        #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + fmt::Debug + 'static,
         #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
@@ -812,13 +812,19 @@ impl<P> fmt::Debug for PageIterator<P> {
 }
 
 #[derive(Debug, Clone, Eq)]
-enum State<C> {
+enum State<C>
+where
+    C: fmt::Debug,
+{
     Init,
     More(C),
     Done,
 }
 
-impl<C> PartialEq for State<C> {
+impl<C> PartialEq for State<C>
+where
+    C: fmt::Debug,
+{
     fn eq(&self, other: &Self) -> bool {
         // Only needs to compare if both states are Init or Done; internally, we don't care about any other states.
         matches!(
@@ -829,7 +835,10 @@ impl<C> PartialEq for State<C> {
 }
 
 #[derive(Debug)]
-struct StreamState<'a, C, F> {
+struct StreamState<'a, C, F>
+where
+    C: fmt::Debug,
+{
     state: State<C>,
     make_request: F,
     continuation_token: Arc<Mutex<Option<String>>>,
@@ -840,10 +849,10 @@ struct StreamState<'a, C, F> {
 fn iter_from_callback<
     P,
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-    #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + fmt::Debug + FromStr + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
-    #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
+    #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + fmt::Debug + 'static,
     #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
 >(
@@ -870,7 +879,24 @@ where
                 let result = match stream_state.continuation_token.lock() {
                     Ok(next_token) => match next_token.as_deref() {
                         Some(n) => match n.parse() {
-                            Ok(s) => Ok(State::More(s)),
+                            Ok(s) => {
+                                // When resuming from a continuation token, create a span for the entire request, and attach it to the context.
+                                if stream_state.state == State::Init {
+                                    tracing::debug!(
+                                        "resuming pager from continuation token: {:?}",
+                                        n
+                                    );
+
+                                    // At the very start of polling, create a span for the entire request, and attach it to the context
+                                    let span =
+                                        create_public_api_span(&stream_state.ctx, None, None);
+                                    if let Some(ref s) = span {
+                                        stream_state.added_span = true;
+                                        stream_state.ctx = stream_state.ctx.with_value(s.clone());
+                                    }
+                                }
+                                Ok(State::More(s))
+                            }
                             Err(err) => Err(crate::Error::with_message_fn(
                                 ErrorKind::DataConversion,
                                 || format!("invalid continuation token: {err}"),
