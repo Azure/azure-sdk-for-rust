@@ -508,7 +508,6 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
 }
 
 #[recorded::test]
-//#[ignore = "Test does not currently work because instrumentation of PageIterators doesn't quite work."]
 async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()> {
     use azure_core_test::tracing::ExpectedRestApiSpan;
 
