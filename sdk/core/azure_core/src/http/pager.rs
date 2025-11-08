@@ -878,7 +878,7 @@ where
 {
     unfold(
         StreamState {
-            state: State::<C>::Init,
+            state: State::Init,
             make_request,
             continuation_token,
             ctx,
@@ -887,7 +887,6 @@ where
         |mut stream_state| async move {
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
-            tracing::trace!("pager state: {}", AsRef::<str>::as_ref(&stream_state.state));
 
             if stream_state.state != State::Done {
                 let result = match stream_state.continuation_token.lock() {
