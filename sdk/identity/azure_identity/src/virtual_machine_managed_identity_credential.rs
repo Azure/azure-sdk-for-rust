@@ -3,10 +3,13 @@
 
 use crate::env::Env;
 use crate::{ImdsId, ImdsManagedIdentityCredential};
-use azure_core::http::ClientOptions;
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
-    http::{headers::HeaderName, Url},
+    http::{
+        headers::HeaderName, ClientOptions, ExponentialRetryOptions, PipelineOptions, RetryOptions,
+        StatusCode, Url,
+    },
+    time::Duration,
 };
 use std::sync::Arc;
 
@@ -27,6 +30,37 @@ impl VirtualMachineManagedIdentityCredential {
         env: Env,
     ) -> azure_core::Result<Arc<Self>> {
         let endpoint = Url::parse(ENDPOINT).unwrap(); // valid url constant
+        let pipeline_options = Some(PipelineOptions {
+            // https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/how-to-use-vm-token#error-handling
+            retry_status_codes: Vec::from([
+                StatusCode::NotFound,
+                StatusCode::Gone,
+                StatusCode::TooManyRequests,
+                StatusCode::InternalServerError,
+                StatusCode::NotImplemented,
+                StatusCode::BadGateway,
+                StatusCode::ServiceUnavailable,
+                StatusCode::GatewayTimeout,
+                StatusCode::HttpVersionNotSupported,
+                StatusCode::VariantAlsoNegotiates,
+                StatusCode::InsufficientStorage,
+                StatusCode::LoopDetected,
+                StatusCode::NotExtended,
+                StatusCode::NetworkAuthenticationRequired,
+            ]),
+            ..Default::default()
+        });
+        // these settings approximate the recommendations at
+        // https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/how-to-use-vm-token#retry-guidance
+        let client_options = ClientOptions {
+            retry: RetryOptions::exponential(ExponentialRetryOptions {
+                initial_delay: Duration::milliseconds(1340),
+                max_retries: 6,
+                max_total_elapsed: Duration::seconds(72),
+                ..Default::default()
+            }),
+            ..client_options
+        };
         Ok(Arc::new(Self {
             credential: ImdsManagedIdentityCredential::new(
                 endpoint,
@@ -35,6 +69,7 @@ impl VirtualMachineManagedIdentityCredential {
                 SECRET_ENV,
                 id,
                 client_options,
+                pipeline_options,
                 env,
             ),
         }))

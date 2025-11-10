@@ -17,6 +17,7 @@
 ### Bugs Fixed
 
 - `ClientCertificateCredential::get_token()` returned an error when given multiple scopes
+- `ManagedIdentityCredential` didn't follow IMDS retry guidance
 
 ### Other Changes
 

@@ -6,7 +6,7 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     http::{
-        headers::HeaderName, request::Request, ClientOptions, Method, Pipeline,
+        headers::HeaderName, request::Request, ClientOptions, Method, Pipeline, PipelineOptions,
         PipelineSendOptions, StatusCode, Url,
     },
     json::from_json,
@@ -62,6 +62,7 @@ pub(crate) struct ImdsManagedIdentityCredential {
 }
 
 impl ImdsManagedIdentityCredential {
+    #[allow(clippy::too_many_arguments, reason = "private API")]
     pub fn new(
         endpoint: Url,
         api_version: &str,
@@ -69,6 +70,7 @@ impl ImdsManagedIdentityCredential {
         secret_env: &str,
         id: ImdsId,
         client_options: ClientOptions,
+        pipeline_options: Option<PipelineOptions>,
         env: Env,
     ) -> Self {
         let pipeline = Pipeline::new(
@@ -77,7 +79,7 @@ impl ImdsManagedIdentityCredential {
             client_options,
             Vec::default(),
             Vec::default(),
-            None,
+            pipeline_options,
         );
         Self {
             pipeline,
