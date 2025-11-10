@@ -131,7 +131,7 @@ impl TokenCredential for AzureDeveloperCliCredential {
         }
         shell_exec::<AzdTokenResponse>(self.executor.clone(), &self.env, &command)
             .await
-            .map_err(authentication_error::<Self>)
+            .map_err(|err| authentication_error(stringify!(AzureDeveloperCliCredential), err))
     }
 }
 

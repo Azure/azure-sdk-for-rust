@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    authentication_error, deserialize, env::Env, get_authority_host, validate_not_empty,
-    validate_tenant_id, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
+    authentication_error, env::Env, get_authority_host, validate_not_empty, validate_tenant_id,
+    TokenCache,
 };
 use azure_core::{
     base64,
@@ -12,9 +12,9 @@ use azure_core::{
     http::{
         headers::{self, content_type},
         request::Request,
-        ClientOptions, Method, Pipeline, PipelineSendOptions, StatusCode, Url,
+        ClientOptions, Method, Pipeline, PipelineSendOptions, Url,
     },
-    time::{Duration, OffsetDateTime},
+    time::OffsetDateTime,
     Uuid,
 };
 
@@ -207,26 +207,7 @@ impl ClientCertificateCredential {
             )
             .await?;
 
-        match rsp.status() {
-            StatusCode::Ok => {
-                let response: EntraIdTokenResponse =
-                    deserialize(stringify!(ClientCertificateCredential), rsp)?;
-                Ok(AccessToken::new(
-                    response.access_token,
-                    OffsetDateTime::now_utc() + Duration::seconds(response.expires_in),
-                ))
-            }
-            _ => {
-                let error_response: EntraIdErrorResponse =
-                    deserialize(stringify!(ClientCertificateCredential), rsp)?;
-                let message = if error_response.error_description.is_empty() {
-                    "authentication failed".to_string()
-                } else {
-                    error_response.error_description.clone()
-                };
-                Err(Error::with_message(ErrorKind::Credential, message))
-            }
-        }
+        crate::handle_entra_response(rsp)
     }
 }
 
@@ -299,21 +280,19 @@ impl TokenCredential for ClientCertificateCredential {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
-            .map_err(authentication_error::<Self>)
+            .map_err(|err| authentication_error(stringify!(ClientCertificateCredential), err))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        client_assertion_credential::tests::is_valid_request, tests::*, TSG_LINK_ERROR_TEXT,
-    };
+    use crate::{client_assertion_credential::tests::is_valid_request, tests::*};
     use azure_core::{
         http::{
             headers::Headers,
             policies::{Policy, PolicyResult},
-            AsyncRawResponse, Context, StatusCode, Transport,
+            AsyncRawResponse, Context, RawResponse, StatusCode, Transport,
         },
         Bytes,
     };
@@ -473,15 +452,15 @@ mod tests {
 
     #[tokio::test]
     async fn get_token_error() {
-        let description = "AADSTS7000215: Invalid client certificate.";
+        let body = Bytes::from(
+            r#"{"error":"invalid_client","error_description":"AADSTS7000215: Invalid client certificate.","error_codes":[7000215],"timestamp":"2025-04-04 21:10:04Z","trace_id":"...","correlation_id":"...","error_uri":"https://login.microsoftonline.com/error?code=7000215"}"#,
+        );
+        let expected_status = StatusCode::BadRequest;
+        let headers = Headers::default();
+        let expected_response =
+            RawResponse::from_bytes(expected_status, headers.clone(), body.clone());
         let sts = MockSts::new(
-            vec![AsyncRawResponse::from_bytes(
-                StatusCode::BadRequest,
-                Headers::default(),
-                Bytes::from(format!(
-                    r#"{{"error":"invalid_client","error_description":"{description}","error_codes":[7000215],"timestamp":"2025-04-04 21:10:04Z","trace_id":"...","correlation_id":"...","error_uri":"https://login.microsoftonline.com/error?code=7000215"}}"#,
-                )),
-            )],
+            vec![AsyncRawResponse::from_bytes(expected_status, headers, body)],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
                 None,
@@ -506,16 +485,26 @@ mod tests {
             .await
             .expect_err("expected error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
-        assert!(
-            err.to_string().contains(description),
-            "expected error description from the response, got '{}'",
-            err
+        assert_eq!(
+            "ClientCertificateCredential authentication failed. AADSTS7000215: Invalid client certificate.\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#client-cert",
+            err.to_string(),
         );
-        assert!(
-            err.to_string()
-                .contains(&format!("{TSG_LINK_ERROR_TEXT}#client-cert")),
-            "expected error to contain a link to the troubleshooting guide, got '{err}'",
-        );
+        match err
+            .downcast_ref::<azure_core::Error>()
+            .expect("returned error should wrap an azure_core::Error")
+            .kind()
+        {
+            ErrorKind::HttpResponse {
+                error_code: Some(error_code),
+                raw_response: Some(response),
+                status,
+            } => {
+                assert_eq!("7000215", error_code);
+                assert_eq!(&expected_response, response.as_ref());
+                assert_eq!(expected_status, *status);
+            }
+            err => panic!("unexpected {:?}", err),
+        };
     }
 
     #[tokio::test]
