@@ -163,16 +163,15 @@ impl ClientAssertion for Client {
         let status = resp.status();
         if status != StatusCode::Ok {
             let err_headers: ErrorHeaders = resp.headers().get()?;
-            let message = format!(
-                "{status} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"
-            );
             return Err(azure_core::Error::with_message(
                 ErrorKind::HttpResponse {
                     status,
                     error_code: Some(status.canonical_reason().to_string()),
                     raw_response: Some(Box::new(resp)),
                 },
-                message,
+                format!(
+                "{status} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"
+            ),
             ));
         }
 
