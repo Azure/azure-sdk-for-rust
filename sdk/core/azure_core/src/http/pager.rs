@@ -7,7 +7,7 @@ use crate::{
     error::ErrorKind,
     http::{
         headers::HeaderName, policies::create_public_api_span, response::Response, Context,
-        DeserializeWith, Format, JsonFormat, Sanitizer, Url,
+        DeserializeWith, Format, JsonFormat,
     },
     tracing::{Span, SpanStatus},
 };
@@ -22,7 +22,6 @@ use std::{
     sync::{Arc, Mutex},
     task,
 };
-use typespec_client_core::http::DEFAULT_ALLOWED_QUERY_PARAMETERS;
 
 /// Represents the state of a [`Pager`] or [`PageIterator`].
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -829,17 +828,10 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             State::Init => write!(f, "State::Init"),
-            State::More(c) => {
-                let continuation = if let Ok(url) = Url::parse(c.as_ref()) {
-                    url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS).to_string()
-                } else {
-                    c.as_ref().to_string()
-                };
-
-                f.debug_struct("State::More")
-                    .field("continuation", &continuation)
-                    .finish()
-            }
+            State::More(c) => f
+                .debug_struct("State::More")
+                .field("continuation", &c.as_ref())
+                .finish(),
             State::Done => write!(f, "State::Done"),
         }
     }
@@ -896,10 +888,21 @@ where
             added_span: false,
         },
         |mut stream_state| async move {
+            // When in the "Init" state, we are either starting fresh or resuming from a continuation token. In either case,
+            // attach a span to the context for the entire paging operation.
+            if stream_state.state == State::Init {
+                tracing::debug!("establish a public API span for new pager.");
+
+                // At the very start of polling, create a span for the entire request, and attach it to the context
+                let span = create_public_api_span(&stream_state.ctx, None, None);
+                if let Some(ref s) = span {
+                    stream_state.added_span = true;
+                    stream_state.ctx = stream_state.ctx.with_value(s.clone());
+                }
+            }
+
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
-            tracing::trace!("current stream state: {:?}", stream_state.state);
-
             if stream_state.state != State::Done {
                 let result = match stream_state.continuation_token.lock() {
                     Ok(next_token) => match next_token.as_deref() {
@@ -918,18 +921,6 @@ where
                     })),
                 };
 
-                // When resuming from a continuation token, create a span for the entire request, and attach it to the context.
-                if result.is_ok() && stream_state.state == State::Init {
-                    tracing::debug!("resuming pager from continuation token, re-establish public API span for new pager.");
-
-                    // At the very start of polling, create a span for the entire request, and attach it to the context
-                    let span = create_public_api_span(&stream_state.ctx, None, None);
-                    if let Some(ref s) = span {
-                        stream_state.added_span = true;
-                        stream_state.ctx = stream_state.ctx.with_value(s.clone());
-                    }
-                }
-
                 match result {
                     Ok(state) => stream_state.state = state,
                     Err(err) => {
@@ -941,12 +932,6 @@ where
             let result = match stream_state.state {
                 State::Init => {
                     tracing::debug!("initial page request");
-                    // At the very start of polling, create a span for the entire request, and attach it to the context
-                    let span = create_public_api_span(&stream_state.ctx, None, None);
-                    if let Some(ref s) = span {
-                        stream_state.added_span = true;
-                        stream_state.ctx = stream_state.ctx.with_value(s.clone());
-                    }
                     (stream_state.make_request)(PagerState::Initial, stream_state.ctx.clone()).await
                 }
                 State::More(n) => {
