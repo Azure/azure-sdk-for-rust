@@ -1,8 +1,6 @@
 # Release History
 
-## 0.8.0 (Unreleased)
-
-### Features Added
+## 0.8.0 (2025-11-10)
 
 ### Breaking Changes
 
@@ -16,10 +14,6 @@
 - Removed `CertificateClient::resume_create_certificate()`.
 - Removed `wait()` function from `Poller<CertificateOperation>`.
 - Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.7.0 (2025-10-07)
 

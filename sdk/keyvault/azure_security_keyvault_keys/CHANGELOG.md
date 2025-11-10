@@ -1,8 +1,6 @@
 # Release History
 
-## 0.9.0 (Unreleased)
-
-### Features Added
+## 0.9.0 (2025-11-10)
 
 ### Breaking Changes
 
@@ -10,10 +8,6 @@
 - `KeyClientListKeyPropertiesOptions::method_options` is now `PagerOptions`.
 - `KeyClientListKeyPropertiesVersionsOptions::method_options` is now `PagerOptions`.
 - Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.8.0 (2025-10-07)
 
