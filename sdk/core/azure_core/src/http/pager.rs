@@ -7,13 +7,14 @@ use crate::{
     error::ErrorKind,
     http::{
         headers::HeaderName, policies::create_public_api_span, response::Response, Context,
-        DeserializeWith, Format, JsonFormat,
+        DeserializeWith, Format, JsonFormat, Sanitizer, Url,
     },
     tracing::{Span, SpanStatus},
 };
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
 use std::{
+    collections::HashSet,
     fmt,
     future::Future,
     ops::Deref,
@@ -828,7 +829,17 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             State::Init => write!(f, "State::Init"),
-            State::More(c) => write!(f, "State::More({})", c.as_ref()),
+            State::More(c) => {
+                let continuation = if let Ok(url) = Url::parse(c.as_ref()) {
+                    url.sanitize(&HashSet::new()).to_string()
+                } else {
+                    c.as_ref().to_string()
+                };
+
+                f.debug_struct("State::More")
+                    .field("continuation", &continuation)
+                    .finish()
+            }
             State::Done => write!(f, "State::Done"),
         }
     }
