@@ -247,7 +247,6 @@ mod tests {
     };
     use futures::future::BoxFuture;
     use std::sync::Arc;
-    use typespec_client_core::http::LoggingOptions;
 
     // Test just the public API instrumentation policy without request instrumentation.
     async fn run_public_api_instrumentation_test<C>(
@@ -322,10 +321,8 @@ mod tests {
         let transport =
             TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
 
-        let request_instrumentation_policy = RequestInstrumentationPolicy::new(
-            Some(mock_tracer.clone()),
-            &LoggingOptions::default(),
-        );
+        let request_instrumentation_policy =
+            RequestInstrumentationPolicy::new(Some(mock_tracer.clone()));
 
         let next: Vec<Arc<dyn Policy>> = vec![
             Arc::new(request_instrumentation_policy),
