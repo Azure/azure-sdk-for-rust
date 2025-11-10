@@ -165,44 +165,23 @@ const TSG_LINK_ERROR_TEXT: &str =
 
 /// Map an error from a credential's get_token() method to an ErrorKind::Credential error, appending
 /// a link to the troubleshooting guide entry for that credential, if it has one.
-fn authentication_error<T>(err: azure_core::Error) -> azure_core::Error {
-    let type_name = std::any::type_name::<T>();
-    // remove generic parameters; we want only the credential name
-    let type_name = type_name.split('<').next().unwrap_or(type_name);
-    let short_name = type_name.rsplit("::").next().unwrap_or(type_name); // cspell:ignore rsplit
-
-    let (wrap_inner_error, link_fragment) = match short_name {
-        stringify!(AzureCliCredential) => (false, "#azure-cli"),
-        stringify!(AzureDeveloperCliCredential) => (false, "#azd"),
-        stringify!(AzurePipelinesCredential) => (true, "#apc"),
-        stringify!(ClientCertificateCredential) => (false, "#client-cert"),
-        stringify!(ClientSecretCredential) => (false, "#client-secret"),
-        stringify!(ManagedIdentityCredential) => (false, "#managed-id"),
-        stringify!(WorkloadIdentityCredential) => (true, "#workload"),
-        _ => (false, ""),
+fn authentication_error(credential_name: &str, err: Error) -> Error {
+    let link_fragment = match credential_name {
+        stringify!(AzureCliCredential) => "#azure-cli",
+        stringify!(AzureDeveloperCliCredential) => "#azd",
+        stringify!(AzurePipelinesCredential) => "#apc",
+        stringify!(ClientCertificateCredential) => "#client-cert",
+        stringify!(ClientSecretCredential) => "#client-secret",
+        stringify!(ManagedIdentityCredential) => "#managed-id",
+        stringify!(WorkloadIdentityCredential) => "#workload",
+        _ => "",
     };
-
-    let mut details = err.to_string();
-    if wrap_inner_error {
-        // details is e.g. "ClientAssertionCredential authentication failed. <more details>".
-        // We want only the "<more details>" part because we want to return an error like
-        // "OtherCredential authentication failed. <more details>".
-        const FAILED_STR: &str = " authentication failed. ";
-        if let Some(index) = details.find(FAILED_STR) {
-            details.drain(..index + FAILED_STR.len());
-        }
-    }
-    let mut message = format!("{short_name} authentication failed. {details}");
+    let mut message = format!("{credential_name} authentication failed. {err}");
     if !link_fragment.is_empty() {
         message.push_str(TSG_LINK_ERROR_TEXT);
         message.push_str(link_fragment);
     }
-    if wrap_inner_error {
-        let inner = err.into_inner().unwrap_or_else(|e| Box::new(e));
-        azure_core::Error::with_error(ErrorKind::Credential, inner, message)
-    } else {
-        azure_core::Error::with_error(ErrorKind::Credential, err, message)
-    }
+    Error::with_error(ErrorKind::Credential, err, message)
 }
 
 #[test]

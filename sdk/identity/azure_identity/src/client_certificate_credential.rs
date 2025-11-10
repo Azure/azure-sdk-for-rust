@@ -280,7 +280,7 @@ impl TokenCredential for ClientCertificateCredential {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
-            .map_err(authentication_error::<Self>)
+            .map_err(|err| authentication_error(stringify!(ClientCertificateCredential), err))
     }
 }
 

@@ -108,7 +108,7 @@ impl TokenCredential for ManagedIdentityCredential {
         self.credential
             .get_token(scopes, options)
             .await
-            .map_err(authentication_error::<Self>)
+            .map_err(|err| authentication_error(stringify!(ManagedIdentityCredential), err))
     }
 }
 

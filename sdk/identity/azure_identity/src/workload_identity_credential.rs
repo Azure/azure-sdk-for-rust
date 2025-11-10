@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{authentication_error, env::Env};
+use crate::env::Env;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -86,6 +86,7 @@ impl WorkloadIdentityCredential {
                 tenant_id,
                 client_id,
                 Token::new(path)?,
+                stringify!(WorkloadIdentityCredential),
                 Some(options.credential_options),
             )?,
         )))
@@ -106,10 +107,7 @@ impl TokenCredential for WorkloadIdentityCredential {
                 "no scopes specified",
             ));
         }
-        self.0
-            .get_token(scopes, options)
-            .await
-            .map_err(authentication_error::<Self>)
+        self.0.get_token(scopes, options).await
     }
 }
 

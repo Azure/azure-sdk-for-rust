@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    authentication_error, env::Env, ClientAssertion, ClientAssertionCredential,
-    ClientAssertionCredentialOptions,
+    env::Env, ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -109,6 +108,7 @@ impl AzurePipelinesCredential {
             tenant_id,
             client_id,
             client,
+            stringify!(AzurePipelinesCredential),
             Some(options.credential_options),
         )?;
 
@@ -124,10 +124,7 @@ impl TokenCredential for AzurePipelinesCredential {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
-        self.0
-            .get_token(scopes, options)
-            .await
-            .map_err(authentication_error::<Self>)
+        self.0.get_token(scopes, options).await
     }
 }
 

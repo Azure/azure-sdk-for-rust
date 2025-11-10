@@ -18,6 +18,7 @@ const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-be
 /// Enables authentication of a Microsoft Entra service principal using a signed client assertion.
 #[derive(Debug)]
 pub struct ClientAssertionCredential<C> {
+    name: &'static str,
     client_id: String,
     endpoint: Url,
     assertion: C,
@@ -61,7 +62,11 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         options: Option<ClientAssertionCredentialOptions>,
     ) -> azure_core::Result<Arc<Self>> {
         Ok(Arc::new(Self::new_exclusive(
-            tenant_id, client_id, assertion, options,
+            tenant_id,
+            client_id,
+            assertion,
+            stringify!(ClientAssertionCredential),
+            options,
         )?))
     }
 
@@ -72,6 +77,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         tenant_id: String,
         client_id: String,
         assertion: C,
+        name: &'static str,
         options: Option<ClientAssertionCredentialOptions>,
     ) -> azure_core::Result<Self> {
         validate_tenant_id(&tenant_id)?;
@@ -92,6 +98,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             None,
         );
         Ok(Self {
+            name,
             client_id,
             assertion,
             endpoint,
@@ -152,7 +159,7 @@ impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
-            .map_err(crate::authentication_error::<ClientAssertionCredential<C>>)
+            .map_err(|err| crate::authentication_error(self.name, err))
     }
 }
 
