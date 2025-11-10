@@ -26,7 +26,7 @@ pub struct VirtualMachineManagedIdentityCredential {
 impl VirtualMachineManagedIdentityCredential {
     pub fn new(
         id: ImdsId,
-        mut client_options: ClientOptions,
+        client_options: ClientOptions,
         env: Env,
     ) -> azure_core::Result<Arc<Self>> {
         let endpoint = Url::parse(ENDPOINT).unwrap(); // valid url constant
@@ -52,12 +52,15 @@ impl VirtualMachineManagedIdentityCredential {
         });
         // these settings approximate the recommendations at
         // https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/how-to-use-vm-token#retry-guidance
-        client_options.retry = RetryOptions::exponential(ExponentialRetryOptions {
-            initial_delay: Duration::milliseconds(1340),
-            max_retries: 6,
-            max_total_elapsed: Duration::seconds(72),
-            ..Default::default()
-        });
+        let client_options = ClientOptions {
+            retry: RetryOptions::exponential(ExponentialRetryOptions {
+                initial_delay: Duration::milliseconds(1340),
+                max_retries: 6,
+                max_total_elapsed: Duration::seconds(72),
+                ..Default::default()
+            }),
+            ..client_options
+        };
         Ok(Arc::new(Self {
             credential: ImdsManagedIdentityCredential::new(
                 endpoint,
