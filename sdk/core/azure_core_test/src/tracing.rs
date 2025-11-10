@@ -470,8 +470,14 @@ impl Default for ExpectedRestApiSpan {
 #[derive(Debug, Default, Clone)]
 pub struct ExpectedInstrumentation {
     /// The package name for the service client.
+    ///
+    /// **NOTE**: Make sure that the package name comes from `env!("CARGO_PKG_NAME")` to ensure that this continues to work
+    /// if test recordings were created with a previous version of the package.
     pub package_name: String,
     /// The package version for the service client.
+    ///
+    /// **NOTE**: Make sure that the package name comes from `env!("CARGO_PKG_VERSION")` to ensure that this continues to work
+    /// if test recordings were created with a previous version of the package.
     pub package_version: String,
     /// The namespace for the service client.
     pub package_namespace: Option<&'static str>,
@@ -501,6 +507,7 @@ pub struct ExpectedInstrumentation {
 ///
 /// The `test_api` call may issue multiple service client calls, if it does, this function will verify that all expected spans were created. The caller of the `test_instrumentation_for_api` call
 /// should make sure to include all expected APIs in the call.
+///
 ///
 pub async fn assert_instrumentation_information<C, FnInit, FnTest, T>(
     create_client: FnInit,
