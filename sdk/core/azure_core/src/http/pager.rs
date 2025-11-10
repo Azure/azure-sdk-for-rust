@@ -14,7 +14,6 @@ use crate::{
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
 use std::{
-    collections::HashSet,
     fmt,
     future::Future,
     ops::Deref,
@@ -23,6 +22,7 @@ use std::{
     sync::{Arc, Mutex},
     task,
 };
+use typespec_client_core::http::DEFAULT_ALLOWED_QUERY_PARAMETERS;
 
 /// Represents the state of a [`Pager`] or [`PageIterator`].
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -831,7 +831,7 @@ where
             State::Init => write!(f, "State::Init"),
             State::More(c) => {
                 let continuation = if let Ok(url) = Url::parse(c.as_ref()) {
-                    url.sanitize(&HashSet::new()).to_string()
+                    url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS).to_string()
                 } else {
                     c.as_ref().to_string()
                 };
@@ -898,6 +898,7 @@ where
         |mut stream_state| async move {
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
+            tracing::trace!("current stream state: {:?}", stream_state.state);
 
             if stream_state.state != State::Done {
                 let result = match stream_state.continuation_token.lock() {
