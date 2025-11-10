@@ -41,28 +41,28 @@ rust-version = "1.85"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/core/typespec"
-version = "0.10.0"
+version = "0.10.1"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/core/typespec_client_core"
-version = "0.9.0"
+version = "0.9.1"
 
 [workspace.dependencies.typespec_macros]
-version = "0.9.0"
+version = "0.9.1"
 path = "sdk/core/typespec_macros"
 
 [workspace.dependencies.azure_core]
 default-features = false
-version = "0.30.0"
+version = "0.30.1"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_macros]
-version = "0.4.0"
+version = "0.4.1"
 path = "sdk/core/azure_core_macros"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.9.0"
+version = "0.9.1"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_messaging_eventhubs]

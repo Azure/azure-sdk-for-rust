@@ -1,6 +1,6 @@
 [package]
 name = "azure_core_macros"
-version = "0.4.0"
+version = "0.4.1"
 description = "Procedural macros for client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
