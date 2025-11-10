@@ -1,6 +1,6 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.30.0 (2025-11-11)
 
 ### Features Added
 
@@ -16,10 +16,8 @@
 
 ### Bugs Fixed
 
-- `ClientCertificateCredential::get_token()` returned an error when given multiple scopes
-- `ManagedIdentityCredential` didn't follow IMDS retry guidance
-
-### Other Changes
+- `ClientCertificateCredential::get_token()` returned an error when given multiple scopes.
+- `ManagedIdentityCredential` didn't follow IMDS retry guidance.
 
 ## 0.29.0 (2025-10-08)
 
