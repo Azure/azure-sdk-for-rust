@@ -24,6 +24,7 @@ use crate::generated::{
         BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
     },
 };
+use crate::pipeline::SasQueryPolicy;
 use azure_core::{
     base64::encode,
     credentials::TokenCredential,

@@ -74,6 +74,41 @@ impl BlobContainerClient {
         })
     }
 
+    /// Creates a new BlobContainerClient using SAS-only authentication.
+    ///
+    /// The `endpoint` must include a valid SAS query string; no Entra ID token is requested.
+    /// The pipeline is constructed without a bearer-token policy.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    ///   with a SAS query string appended.
+    /// * `container_name` - The name of the container.
+    /// * `options` - Optional configuration for the client.
+    pub fn new_sas(
+        endpoint: &str,
+        container_name: String,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+
+        // Ensure storage-specific headers are applied on each call, same as in `new`.
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        // Construct generated client without bearer token auth (SAS-only).
+        let client =
+            GeneratedBlobContainerClient::new_sas(endpoint, container_name.clone(), Some(options))?;
+
+        Ok(Self {
+            endpoint: endpoint.parse()?,
+            client,
+        })
+    }
+
     /// Returns a new instance of BlobClient.
     ///
     /// # Arguments

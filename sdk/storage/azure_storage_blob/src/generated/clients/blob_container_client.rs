@@ -24,6 +24,7 @@ use crate::generated::{
         SignedIdentifier,
     },
 };
+use crate::pipeline::SasQueryPolicy;
 use azure_core::{
     async_runtime::get_async_runtime,
     credentials::TokenCredential,
@@ -96,6 +97,58 @@ impl BlobContainerClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
+            ),
+        })
+    }
+
+    /// Creates a new BlobContainerClient using SAS-only authentication.
+    ///
+    /// This constructor does not add a bearer token credential policy to the pipeline.
+    /// The provided `endpoint` must include a valid SAS query string which will be
+    /// used by the service to authorize requests.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example:
+    ///   `https://myaccount.blob.core.windows.net/` with a SAS query appended.
+    /// * `container_name` - The name of the container.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.Container")]
+    pub fn new_sas(
+        endpoint: &str,
+        container_name: String,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+        let endpoint = Url::parse(endpoint)?;
+        if !endpoint.scheme().starts_with("http") {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{endpoint} must use http(s)"),
+            ));
+        }
+
+        // Build per-call policies and ensure SAS query is present on every request.
+        let mut per_call: Vec<Arc<dyn Policy>> = Vec::new();
+        if let Some(q) = endpoint.query() {
+            let sas = SasQueryPolicy::from_query_str(q);
+            if !sas.is_empty() {
+                per_call.push(Arc::new(sas));
+            }
+        }
+
+        // Build a pipeline without a BearerTokenCredentialPolicy; SAS on the URL is used for auth.
+        Ok(Self {
+            container_name,
+            endpoint,
+            version: options.version.clone(),
+            pipeline: Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options,
+                per_call,
+                Vec::new(), // no bearer auth policy for SAS-only
                 None,
             ),
         })
@@ -699,7 +752,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// Returns a new instance of BlobClient.
+    /// Returns a new instance of BlobClient that shares this client's endpoint, pipeline (including SAS policy), and API version.
     ///
     /// # Arguments
     ///
