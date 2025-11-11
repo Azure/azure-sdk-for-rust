@@ -124,7 +124,7 @@ impl UrlExt for Url {
 
     fn set_query_pair(&mut self, key: &str, value: &str) -> &mut Self {
         // Fast path: if the key doesn't exist, just append it
-        if self.query_pairs().all(|(k, _)| k != key) {
+        if !self.query_pairs().any(|(k, _)| k == key) {
             self.query_pairs_mut().append_pair(key, value);
             return self;
         }
