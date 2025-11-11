@@ -158,7 +158,7 @@ if (!(Test-Path $OutputDirectory)) {
 }
 
 # Get all text files in the test results directory
-$textFiles = Get-ChildItem -Path $TestResultsDirectory -Filter "*.txt" -File
+$textFiles = @(Get-ChildItem -Path $TestResultsDirectory -Filter "*.txt" -File)
 
 if ($textFiles.Count -eq 0) {
   Write-Warning "No text files found in $TestResultsDirectory"
