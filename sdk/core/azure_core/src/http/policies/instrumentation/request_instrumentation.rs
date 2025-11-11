@@ -276,7 +276,7 @@ pub(crate) mod tests {
                         (
                             URL_FULL_ATTRIBUTE,
                             AttributeValue::from(
-                                "http://example.com/path?query=REDACTED&api-version=2024-01-01",
+                                "http://example.com/path?query=value&api-version=2024-01-01",
                             ),
                         ),
                     ],
