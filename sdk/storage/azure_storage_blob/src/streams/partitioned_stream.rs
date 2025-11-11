@@ -1,0 +1,187 @@
+use std::{
+    mem,
+    pin::{pin, Pin},
+    task::Poll,
+};
+
+use azure_core::stream::SeekableStream;
+use bytes::Bytes;
+use futures::{ready, stream::FusedStream, AsyncRead, Stream};
+
+type AzureResult<T> = azure_core::Result<T>;
+
+pub(crate) struct PartitionedStream {
+    inner: Box<dyn SeekableStream>,
+    buf: Vec<u8>,
+    partition_len: usize,
+    buf_offset: usize,
+    total_read: usize,
+    inner_complete: bool,
+}
+
+impl PartitionedStream {
+    pub(crate) fn new(inner: Box<dyn SeekableStream>, partition_len: usize) -> Self {
+        assert!(partition_len > 0);
+        Self {
+            buf: vec![0u8; std::cmp::min(partition_len, inner.len())],
+            inner,
+            partition_len,
+            buf_offset: 0,
+            total_read: 0,
+            inner_complete: false,
+        }
+    }
+
+    fn take(&mut self) -> Vec<u8> {
+        let mut ret = mem::replace(
+            &mut self.buf,
+            vec![0u8; std::cmp::min(self.partition_len, self.inner.len() - self.total_read)],
+        );
+        ret.truncate(self.buf_offset);
+        self.buf_offset = 0;
+        ret
+    }
+}
+
+impl Stream for PartitionedStream {
+    type Item = AzureResult<Bytes>;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
+        let this = self.get_mut();
+
+        loop {
+            if this.inner_complete || this.buf_offset >= this.buf.len() {
+                let ret = this.take();
+                return if ret.is_empty() {
+                    Poll::Ready(None)
+                } else {
+                    Poll::Ready(Some(Ok(Bytes::from(ret))))
+                };
+            } else {
+                match ready!(pin!(&mut this.inner).poll_read(cx, &mut this.buf[this.buf_offset..]))
+                {
+                    Ok(bytes_read) => {
+                        this.buf_offset += bytes_read;
+                        this.total_read += bytes_read;
+                        this.inner_complete = bytes_read == 0;
+                    }
+                    Err(e) => {
+                        return Poll::Ready(Some(Err(e.into())));
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl FusedStream for PartitionedStream {
+    fn is_terminated(&self) -> bool {
+        self.inner_complete && self.buf.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use azure_core::stream::BytesStream;
+    use futures::TryStreamExt;
+
+    use super::*;
+
+    fn get_random_data(len: usize) -> Vec<u8> {
+        let mut data: Vec<u8> = vec![0; len];
+        rand::fill(&mut data[..]);
+        data
+    }
+
+    #[tokio::test]
+    async fn partitions_exact_multiple() -> AzureResult<()> {
+        for part_count in [2usize, 3, 11, 16] {
+            for part_len in [1024usize, 1000, 9999, 1] {
+                let data = get_random_data(part_len * part_count);
+                let stream =
+                    PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+
+                let parts: Vec<_> = stream.try_collect().await?;
+
+                assert_eq!(parts.len(), part_count);
+                for (i, bytes) in parts.iter().enumerate() {
+                    assert_eq!(bytes.len(), part_len);
+                    assert_eq!(bytes[..], data[i * part_len..i * part_len + part_len]);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn partitions_leftover_multiple() -> AzureResult<()> {
+        for part_count in [2usize, 3, 11, 16] {
+            for part_len in [1024usize, 1000, 9999] {
+                for dangling_len in [part_len / 2, 100, 128, 99] {
+                    let data = get_random_data(part_len * (part_count - 1) + dangling_len);
+                    let stream =
+                        PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+
+                    let parts: Vec<_> = stream.try_collect().await?;
+
+                    assert_eq!(parts.len(), part_count);
+                    for (i, bytes) in parts[..parts.len()].iter().enumerate() {
+                        if i == parts.len() - 1 {
+                            assert_eq!(bytes.len(), dangling_len);
+                            assert_eq!(bytes[..], data[i * part_len..]);
+                        } else {
+                            assert_eq!(bytes.len(), part_len);
+                            assert_eq!(bytes[..], data[i * part_len..i * part_len + part_len]);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn partitions_exactly_one() -> AzureResult<()> {
+        for len in [1024usize, 1000, 9999, 1] {
+            let data = get_random_data(len);
+            let mut stream = PartitionedStream::new(Box::new(BytesStream::new(data.clone())), len);
+
+            let single_partition = stream.try_next().await?.unwrap();
+
+            assert!(stream.try_next().await?.is_none());
+            assert_eq!(single_partition[..], data[..]);
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn partitions_less_than_one() -> AzureResult<()> {
+        let part_len = 99999usize;
+        for len in [1024usize, 1000, 9999, 1] {
+            let data = get_random_data(len);
+            let mut stream =
+                PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+
+            let single_partition = stream.try_next().await?.unwrap();
+
+            assert!(stream.try_next().await?.is_none());
+            assert_eq!(single_partition[..], data[..]);
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn partitions_none() -> AzureResult<()> {
+        for part_len in [1024usize, 1000, 9999, 1] {
+            let data = get_random_data(0);
+            let mut stream =
+                PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+
+            assert!(stream.try_next().await?.is_none());
+        }
+        Ok(())
+    }
+}
