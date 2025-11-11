@@ -476,7 +476,7 @@ pub struct ExpectedInstrumentation {
     pub package_name: String,
     /// The package version for the service client.
     ///
-    /// **NOTE**: Make sure that the package name comes from `env!("CARGO_PKG_VERSION")` to ensure that this continues to work
+    /// **NOTE**: Make sure that the package version comes from `env!("CARGO_PKG_VERSION")` to ensure that this continues to work
     /// if test recordings were created with a previous version of the package.
     pub package_version: String,
     /// The namespace for the service client.

@@ -270,7 +270,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
             // Don't use `recording.var` here in case the recording was made with a different package version.
             package_name: env!("CARGO_PKG_NAME").into(),
 
-            // Don't use `recording.var` here in case the recording was made with a different package version
+            // Don't use `recording.var` here in case the recording was made with a different package version.
             package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
             api_calls: vec![
@@ -350,7 +350,7 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
                 let mut secrets = client.list_secret_properties(None)?;
                 while let Some(secret) = secrets.try_next().await? {
                     let _ = secret.resource_id()?;
-                    println!("Found secret: {}", secret.resource_id()?.name);
+
                 }
 
                 Ok(())
@@ -358,7 +358,7 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
         },
         ExpectedInstrumentation {
             package_name: recording.var("CARGO_PKG_NAME", None),
-            // Don't use `recording.var` here in case the recording was made with a different package version
+            // Don't use `recording.var` here in case the recording was made with a different package version.
             package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
             api_calls: vec![ExpectedApiInformation {
@@ -467,7 +467,7 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
             })
         },
         ExpectedInstrumentation {
-            // Don't use `recording.var` here in case the recording was made with a different package version
+            // Don't use `recording.var` here in case the recording was made with a different package version.
             package_name: env!("CARGO_PKG_NAME").into(),
             package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
@@ -600,7 +600,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
             })
         },
         ExpectedInstrumentation {
-            // Don't use `recording.var` here in case the recording was made with a different package version
+            // Don't use `recording.var` here in case the recording was made with a different package version.
             package_name: env!("CARGO_PKG_NAME").into(),
             package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
