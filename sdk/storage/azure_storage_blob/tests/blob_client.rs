@@ -644,3 +644,8 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     Ok(())
 }
+
+#[recorded::test(live)]
+async fn test_live_test(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    return Err("FAILURE".into());
+}
