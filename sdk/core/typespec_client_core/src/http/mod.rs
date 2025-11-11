@@ -130,13 +130,17 @@ impl UrlExt for Url {
         }
 
         // Slow path: key exists, so we need to remove old values and add the new one
-        let mut new_url = self.clone();
-        new_url
-            .query_pairs_mut()
+        // Convert to owned strings to break the borrow on self
+        let pairs: Vec<(String, String)> = self
+            .query_pairs()
+            .filter(|(k, _)| k != key)
+            .map(|(k, v)| (k.into_owned(), v.into_owned()))
+            .collect();
+
+        self.query_pairs_mut()
             .clear()
-            .extend_pairs(self.query_pairs().filter(|(k, _)| k != key))
+            .extend_pairs(pairs)
             .append_pair(key, value);
-        *self = new_url;
 
         self
     }
