@@ -161,7 +161,7 @@ impl TokenCredential for AzureCliCredential {
 
         shell_exec::<CliTokenResponse>(self.executor.clone(), &self.env, &command)
             .await
-            .map_err(authentication_error::<Self>)
+            .map_err(|err| authentication_error(stringify!(AzureCliCredential), err))
     }
 }
 

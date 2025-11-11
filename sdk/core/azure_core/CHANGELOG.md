@@ -1,6 +1,22 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.31.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.30.1 (2025-11-09)
+
+### Other Changes
+
+- Increment version for re-release following a fix to publishing.
+
+## 0.30.0 (2025-11-07)
 
 ### Features Added
 
@@ -38,8 +54,6 @@
 ### Bugs Fixed
 
 - `ItemIterator::into_pages()` now properly supports resuming from the current page until _after_ all items have been iterated.
-
-### Other Changes
 
 ## 0.29.1 (2025-10-06)
 

@@ -1,16 +1,28 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
 
 ### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.9.1 (2025-11-09)
+
+### Other Changes
+
+- Increment version for re-release following a fix to publishing.
+
+## 0.9.0 (2025-11-07)
 
 ### Breaking Changes
 
 - All AMQP APIs now return an `azure_core_amqp::AmqpError` instead of an `azure_core::Error`.
 - Several `azure_core_amqp::error::AmqpErrorKind` enumerations have been removed because they are no longer needed.
 - Modified several errors which previously used `azure_core::Error::with_message` to use `azure_core_amqp::AmqpError::with_message`, changing their underlying type.
-
-### Bugs Fixed
 
 ### Other Changes
 

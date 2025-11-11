@@ -1,6 +1,22 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.9.1 (2025-11-09)
+
+### Other Changes
+
+- Increment version for re-release following a fix to publishing.
+
+## 0.9.0 (2025-11-07)
 
 ### Features Added
 
@@ -23,10 +39,6 @@
 - Renamed `BufResponseBody` to `AsyncResponseBody` so that `AsyncResponseBody` is to `ResponseBody` as `AsyncIterator` is to `Iterator`.
 - Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.8.1 (2025-10-06)
 

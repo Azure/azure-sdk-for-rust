@@ -357,8 +357,8 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
             })
         },
         ExpectedInstrumentation {
+            package_name: recording.var("CARGO_PKG_NAME", None),
             // Don't use `recording.var` here in case the recording was made with a different package version
-            package_name: env!("CARGO_PKG_NAME").into(),
             package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
             api_calls: vec![ExpectedApiInformation {
