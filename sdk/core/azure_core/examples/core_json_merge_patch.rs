@@ -3,6 +3,7 @@
 
 use azure_core::{http::Transport, Value};
 use example::{setup, ExampleClient, ExampleClientOptions};
+use include_file::include_markdown;
 
 /// This example demonstrates deserializing a standard Azure error response to get more details.
 async fn example_json_merge_patch() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,22 +17,11 @@ async fn example_json_merge_patch() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = ExampleClient::new("https://api.contoso.com", Some(options))?;
 
+    println!("{}", env!("CARGO_MANIFEST_DIR"));
+
     // Azure SDK for Rust does not implement support for JSON merge patch directly,
     // but does allow you to de/serialize your own models including a generic JSON `Value`.
-    let mut resource: Value = client.get_resource("foo", None).await?.body().json()?;
-
-    // Change the description and update tags.
-    resource["description"] = "an updated foo".into();
-    if let Some(tags) = resource["tags"].as_object_mut() {
-        tags["test"] = true.into();
-        tags.insert("version".into(), 1.into());
-    }
-
-    // Update the resource and assert expected properties.
-    let resource = client
-        .update_resource("foo", resource.try_into()?, None)
-        .await?
-        .into_model()?;
+    include_markdown!("README.md", "json_merge_patch");
 
     assert_eq!(resource.id.as_deref(), Some("foo"));
     assert_eq!(resource.description.as_deref(), Some("an updated foo"));
