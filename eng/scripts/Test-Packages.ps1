@@ -10,10 +10,10 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . "$PSScriptRoot/../common/scripts/common.ps1"
 
-# Helper function to parse cargo test JSON output and extract test results
+# Helper function to parse cargo test plain text output and extract test results
 function Parse-TestResults {
   param(
-    [string]$JsonFile
+    [string]$OutputFile
   )
   
   $testResults = @{
@@ -21,29 +21,49 @@ function Parse-TestResults {
     Failed = 0
     Ignored = 0
     FailedTests = @()
+    TestSuiteName = ""
   }
   
-  if (!(Test-Path $JsonFile)) {
+  if (!(Test-Path $OutputFile)) {
     return $testResults
   }
   
-  # Parse each JSON line (cargo outputs newline-delimited JSON)
-  Get-Content $JsonFile | ForEach-Object {
-    try {
-      $line = $_ | ConvertFrom-Json -ErrorAction SilentlyContinue
-      if ($line.reason -eq "test") {
-        switch ($line.event) {
-          "ok" { $testResults.Passed++ }
-          "failed" { 
-            $testResults.Failed++
-            $testResults.FailedTests += $line.name
-          }
-          "ignored" { $testResults.Ignored++ }
+  # Parse cargo test output
+  $content = Get-Content $OutputFile
+  
+  foreach ($line in $content) {
+    # Extract test suite name from "Running" line
+    if ($line -match 'Running (unittests|tests).*\(([^)]+)\)') {
+      $testResults.TestSuiteName = [System.IO.Path]::GetFileNameWithoutExtension($Matches[2])
+    }
+    
+    # Parse individual test results
+    if ($line -match '^test (.+) \.\.\. (ok|FAILED|ignored)') {
+      $testName = $Matches[1].Trim()
+      $status = $Matches[2]
+      
+      switch ($status) {
+        "ok" { $testResults.Passed++ }
+        "FAILED" { 
+          $testResults.Failed++
+          $testResults.FailedTests += $testName
         }
+        "ignored" { $testResults.Ignored++ }
       }
     }
-    catch {
-      # Ignore lines that aren't valid JSON
+    
+    # Parse summary line
+    if ($line -match 'test result: \w+\. (\d+) passed; (\d+) failed; (\d+) ignored') {
+      # Verify our counts match
+      $summaryPassed = [int]$Matches[1]
+      $summaryFailed = [int]$Matches[2]
+      $summaryIgnored = [int]$Matches[3]
+      
+      if ($summaryPassed -ne $testResults.Passed -or 
+          $summaryFailed -ne $testResults.Failed -or 
+          $summaryIgnored -ne $testResults.Ignored) {
+        Write-Warning "Test count mismatch in summary line"
+      }
     }
   }
   
@@ -83,13 +103,12 @@ function Invoke-CargoTest {
   )
   
   if ($InCI) {
-    # In CI mode, capture JSON output
-    $cargoCommand = "$Command --message-format=json"
-    Write-Host "Running: $cargoCommand"
+    # In CI mode, capture plain text output for later conversion to JUnit XML
+    Write-Host "Running: $Command"
     Write-Host "Output will be captured to: $OutputFile"
     
     # Run the command and capture both stdout and stderr
-    $output = & { Invoke-Expression $cargoCommand 2>&1 }
+    $output = & { Invoke-Expression $Command 2>&1 }
     $exitCode = $LASTEXITCODE
     
     # Write output to file
@@ -176,14 +195,14 @@ foreach ($package in $packagesToTest) {
     $sanitizedPackageName = $package.Name -replace '[^a-zA-Z0-9_-]', '_'
     
     if ($CI) {
-      $docTestOutput = Join-Path $testResultsDir "$sanitizedPackageName-doctest-$timestamp.json"
-      $allTargetsTestOutput = Join-Path $testResultsDir "$sanitizedPackageName-alltargets-$timestamp.json"
+      $docTestOutput = Join-Path $testResultsDir "$sanitizedPackageName-doctest-$timestamp.txt"
+      $allTargetsTestOutput = Join-Path $testResultsDir "$sanitizedPackageName-alltargets-$timestamp.txt"
     }
 
     # Run doc tests
     if ($CI) {
       $exitCode = Invoke-CargoTest -Command "cargo test --doc --no-fail-fast" -OutputFile $docTestOutput -InCI $true
-      $docTestResults = Parse-TestResults -JsonFile $docTestOutput
+      $docTestResults = Parse-TestResults -OutputFile $docTestOutput
       Write-TestSummary -TestResults $docTestResults -PackageName "$($package.Name) (doc tests)"
       if ($exitCode -ne 0) { $hasFailures = $true }
       $allTestResults += @{ Package = $package.Name; Type = "doc"; Results = $docTestResults }
@@ -196,7 +215,7 @@ foreach ($package in $packagesToTest) {
     # Run all-targets tests
     if ($CI) {
       $exitCode = Invoke-CargoTest -Command "cargo test --all-targets --no-fail-fast" -OutputFile $allTargetsTestOutput -InCI $true
-      $allTargetsTestResults = Parse-TestResults -JsonFile $allTargetsTestOutput
+      $allTargetsTestResults = Parse-TestResults -OutputFile $allTargetsTestOutput
       Write-TestSummary -TestResults $allTargetsTestResults -PackageName "$($package.Name) (all targets)"
       if ($exitCode -ne 0) { $hasFailures = $true }
       $allTestResults += @{ Package = $package.Name; Type = "all-targets"; Results = $allTargetsTestResults }
