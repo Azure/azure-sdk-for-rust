@@ -332,12 +332,13 @@ impl ClientRetryPolicy {
     }
 }
 
-
 #[async_trait]
 impl RetryPolicy for ClientRetryPolicy {
 
-    fn before_send_request(&mut self, request: &mut CosmosRequest) {
+    async fn before_send_request(&mut self, request: &mut CosmosRequest) {
 
+        // TODO: Need to remove this, and put this into Moka cache. Also, move this logic into retry policy.
+        let _stat = self.global_endpoint_manager.refresh_location_async(false).await;
         self.is_read_request = request.is_read_only_request();
         self.can_use_multiple_write_locations = self.global_endpoint_manager.can_use_multiple_write_locations(request);
 
@@ -364,7 +365,6 @@ impl RetryPolicy for ClientRetryPolicy {
 
         if let Some(ref endpoint) = self.location_endpoint {
             request.request_context.route_to_location_endpoint(request.resource_link.url(&Url::parse(endpoint).unwrap()));
-            // request.request_context.location_endpoint_to_route = Some(request.resource_link.url(&endpoint));
         }
     }
 

@@ -123,9 +123,7 @@ impl RetryHandler for BackOffRetryHandler {
     {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
-        // TODO: Need to remove this, and put this into Moka cache. Also, move this logic into retry policy.
-        self.global_endpoint_manager.refresh_location_async(false).await?;
-        retry_policy.before_send_request(request);
+        retry_policy.before_send_request(request).await;
 
 
         // let endpoint = self.global_endpoint_manager.resolve_service_endpoint(&request).parse()?;

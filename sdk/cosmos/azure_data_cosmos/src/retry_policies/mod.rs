@@ -50,7 +50,7 @@ pub trait RetryPolicy: Send + Sync {
     /// This method is invoked immediately before each request is sent (including retries).
     /// # Arguments
     /// * `request` - Mutable reference to the HTTP request being sent
-    fn before_send_request(&mut self, _request: &mut CosmosRequest) {}
+    async fn before_send_request(&mut self, _request: &mut CosmosRequest) {}
 
     /// Determines whether an HTTP request should be retried based on the response or error
     ///
