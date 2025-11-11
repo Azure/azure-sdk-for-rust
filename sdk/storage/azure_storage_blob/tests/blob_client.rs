@@ -17,7 +17,9 @@ use azure_storage_blob::{
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, use_storage_account, StorageAccount,
+};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
@@ -641,6 +643,41 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     }
 
     container_client.delete_container(None).await?;
+
+    Ok(())
+}
+
+#[recorded::test(playback)]
+async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    use_storage_account(StorageAccount::Versioned);
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Set Legal Hold
+    blob_client.set_legal_hold(true, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(legal_hold.unwrap());
+
+    // Attempt Operation While Legal Hold Active
+    let response = blob_client.delete(None).await;
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Remove Legal Hold
+    blob_client.set_legal_hold(false, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(!legal_hold.unwrap());
+
+    blob_client.delete(None).await?;
 
     Ok(())
 }
