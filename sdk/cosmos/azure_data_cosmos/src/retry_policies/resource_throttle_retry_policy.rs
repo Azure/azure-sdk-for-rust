@@ -121,7 +121,7 @@ impl ResourceThrottleRetryPolicy {
     /// # Note
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the error context.
-    fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
+    pub fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
         // Check if the error has an HTTP status code and if it's a valid throttle status
         // Early return for invalid or missing status codes
         if err.http_status() == Some(StatusCode::TooManyRequests) {
@@ -148,7 +148,7 @@ impl ResourceThrottleRetryPolicy {
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the response headers to respect
     /// server-suggested retry delays.
-    fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
+    pub fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
         if response.status() == StatusCode::TooManyRequests {
             // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
             return self.should_retry_with_backoff(Some(Duration::milliseconds(500)));
