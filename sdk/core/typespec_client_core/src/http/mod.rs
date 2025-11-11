@@ -76,6 +76,23 @@ pub trait UrlExt: crate::private::Sealed {
     /// assert_eq!(url.as_str(), "https://contoso.com/foo/bar?a=1");
     /// ```
     fn append_path(&mut self, path: impl AsRef<str>);
+
+    /// Sets a query parameter, overwriting any existing value with the same key.
+    ///
+    /// This method removes any existing parameter with the same name before adding the new one.
+    /// Returns `&mut Self` to allow chaining.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use typespec_client_core::http::{Url, UrlExt as _};
+    ///
+    /// let mut url: Url = "https://contoso.com?a=1&b=2".parse().unwrap();
+    /// url.set_query_pair("a", "new_value")
+    ///    .set_query_pair("c", "3");
+    /// assert_eq!(url.as_str(), "https://contoso.com/?b=2&a=new_value&c=3");
+    /// ```
+    fn set_query_pair(&mut self, key: &str, value: &str) -> &mut Self;
 }
 
 impl UrlExt for Url {
@@ -103,6 +120,25 @@ impl UrlExt for Url {
         debug_assert_eq!(new_path.capacity(), new_len);
 
         self.set_path(&new_path);
+    }
+
+    fn set_query_pair(&mut self, key: &str, value: &str) -> &mut Self {
+        // Fast path: if the key doesn't exist, just append it
+        if self.query_pairs().all(|(k, _)| k != key) {
+            self.query_pairs_mut().append_pair(key, value);
+            return self;
+        }
+
+        // Slow path: key exists, so we need to remove old values and add the new one
+        let mut new_url = self.clone();
+        new_url
+            .query_pairs_mut()
+            .clear()
+            .extend_pairs(self.query_pairs().filter(|(k, _)| k != key))
+            .append_pair(key, value);
+        *self = new_url;
+
+        self
     }
 }
 
@@ -207,5 +243,56 @@ mod test {
         url = Url::parse("https://www.microsoft.com/foo/?q=q").unwrap();
         url.append_path("");
         assert_eq!(url.as_str(), "https://www.microsoft.com/foo/?q=q");
+    }
+
+    #[test]
+    fn test_set_query_pair_empty_query() {
+        let mut url = Url::parse("https://contoso.com").unwrap();
+        url.set_query_pair("a", "1");
+        assert_eq!(url.as_str(), "https://contoso.com/?a=1");
+    }
+
+    #[test]
+    fn test_set_query_pair_new_parameter() {
+        let mut url = Url::parse("https://contoso.com?b=2").unwrap();
+        url.set_query_pair("a", "1");
+        assert_eq!(url.as_str(), "https://contoso.com/?b=2&a=1");
+    }
+
+    #[test]
+    fn test_set_query_pair_overwrite_existing() {
+        let mut url = Url::parse("https://contoso.com?a=1&b=2").unwrap();
+        url.set_query_pair("a", "new_value");
+        assert_eq!(url.as_str(), "https://contoso.com/?b=2&a=new_value");
+    }
+
+    #[test]
+    fn test_set_query_pair_overwrite_duplicate() {
+        let mut url = Url::parse("https://contoso.com?a=1&b=2&a=3").unwrap();
+        url.set_query_pair("a", "new_value");
+        assert_eq!(url.as_str(), "https://contoso.com/?b=2&a=new_value");
+    }
+
+    #[test]
+    fn test_set_query_pair_preserves_order() {
+        let mut url = Url::parse("https://contoso.com?x=1&a=old&y=2&z=3").unwrap();
+        url.set_query_pair("a", "new");
+        assert_eq!(url.as_str(), "https://contoso.com/?x=1&y=2&z=3&a=new");
+    }
+
+    #[test]
+    fn test_set_query_pair_with_special_chars() {
+        let mut url = Url::parse("https://contoso.com?a=old").unwrap();
+        url.set_query_pair("a", "hello world");
+        assert_eq!(url.as_str(), "https://contoso.com/?a=hello+world");
+    }
+
+    #[test]
+    fn test_set_query_pair_chaining() {
+        let mut url = Url::parse("https://contoso.com?a=1&b=2").unwrap();
+        url.set_query_pair("a", "new")
+            .set_query_pair("c", "3")
+            .set_query_pair("b", "updated");
+        assert_eq!(url.as_str(), "https://contoso.com/?a=new&c=3&b=updated");
     }
 }
