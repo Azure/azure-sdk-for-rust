@@ -188,7 +188,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "0.30.1"
+version = "0.31.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -221,7 +221,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_macros"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -312,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.29.0"
+version = "0.30.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -340,7 +340,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.30.0"
+version = "0.31.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -365,7 +365,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -388,7 +388,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -438,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -457,7 +457,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -477,7 +477,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -502,7 +502,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -535,7 +535,7 @@ version = "0.1.0"
 
 [[package]]
 name = "azure_storage_queue"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -3225,7 +3225,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "typespec"
-version = "0.10.1"
+version = "0.11.0"
 dependencies = [
  "base64",
  "bytes",
@@ -3239,7 +3239,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -3267,7 +3267,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",
