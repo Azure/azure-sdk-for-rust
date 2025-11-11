@@ -444,6 +444,27 @@ let client = SecretClient::new(
 
 See the [example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_remove_user_agent.rs) for a full sample implementation.
 
+### JSON Merge Patch
+
+Azure SDK for Rust does not explicitly support [JSON merge patch](https://www.rfc-editor.org/rfc/rfc7386), but it does allow you to update the payload accordingly and send it back to the service.
+
+```rust ignore json_merge_patch
+let mut resource: azure_core::Value = client.get_resource("foo", None).await?.body().json()?;
+
+// Change the description and update tags.
+resource["description"] = "an updated foo".into();
+if let Some(tags) = resource["tags"].as_object_mut() {
+    tags["test"] = true.into();
+    tags.insert("version".into(), 1.into());
+}
+
+// Update the resource and assert expected properties.
+let resource = client
+    .update_resource("foo", resource.try_into()?, None)
+    .await?
+    .into_model()?;
+```
+
 ### Replacing the HTTP client
 
 Though `azure_core` uses [`reqwest`] for its default HTTP client, you can replace it with either a customized `reqwest::Client` or an entirely different HTTP client.
