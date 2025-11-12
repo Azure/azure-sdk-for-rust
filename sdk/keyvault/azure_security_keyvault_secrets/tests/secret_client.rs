@@ -350,7 +350,6 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
                 let mut secrets = client.list_secret_properties(None)?;
                 while let Some(secret) = secrets.try_next().await? {
                     let _ = secret.resource_id()?;
-
                 }
 
                 Ok(())
