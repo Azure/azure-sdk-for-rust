@@ -9,6 +9,7 @@ use azure_core::error::ErrorKind;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::http::headers::{HeaderName, Headers};
 use azure_core::time::Duration;
+use crate::constants::{SubStatusCode, SUB_STATUS};
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -231,11 +232,11 @@ impl ClientRetryPolicy {
     async fn should_retry_internal_async(
         &mut self,
         status_code: Option<StatusCode>,
-        sub_status_code: Option<u32>,
+        sub_status_code: Option<SubStatusCode>,
     ) -> Option<RetryResult> {
 
         // Forbidden - Write forbidden (403.3)
-        if status_code == Some(StatusCode::Forbidden) && sub_status_code == Some(3) {
+        if status_code == Some(StatusCode::Forbidden) && sub_status_code == Some(SubStatusCode::WriteForbidden) {
 
             // TODO: Add Logic For Per Partition Automatic Failover.
             return Some(self.should_retry_on_endpoint_failure_async(
@@ -253,7 +254,7 @@ impl ClientRetryPolicy {
         }
 
         // Read Session Not Available (404.1022)
-        if status_code == Some(StatusCode::NotFound) && sub_status_code == Some(1002) {
+        if status_code == Some(StatusCode::NotFound) && sub_status_code == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE) {
             return Some(self.should_retry_on_session_not_available(self.cosmos_request.clone()));
         }
 
@@ -264,7 +265,7 @@ impl ClientRetryPolicy {
 
         // Internal server error (500) or Gone - Lease not found (410)
         if (status_code == Some(StatusCode::InternalServerError) && self.is_read_request)
-            || (status_code == Some(StatusCode::Gone) && sub_status_code == Some(1022))
+            || (status_code == Some(StatusCode::Gone) && sub_status_code == Some(SubStatusCode::LeaseNotFound))
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
@@ -297,7 +298,11 @@ impl ClientRetryPolicy {
     /// the `x-ms-retry-after-ms` header from the error context.
     async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
         let status_code = err.http_status();
-        let sub_status_code = ClientRetryPolicy::extract_headers(err).unwrap().get_as(&HeaderName::from("x-ms-substatus")).ok();
+        // Safely extract and parse sub-status code header. Any failure leaves it as None.
+        let sub_status_code = ClientRetryPolicy::extract_headers(err)
+            .and_then(|h| h.get_as(&SUB_STATUS).ok())
+            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok());
+
         if let Some(result) = self.should_retry_internal_async(status_code, sub_status_code).await {
             return result;
         }
@@ -323,7 +328,11 @@ impl ClientRetryPolicy {
     /// server-suggested retry delays.
     async fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
         let status_code = response.status();
-        let sub_status_code = response.headers().get_as(&HeaderName::from("x-ms-substatus")).ok();
+        let sub_status_code = response.headers()
+            .get_as(&SUB_STATUS)
+            .ok()
+            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok());
+
         if let Some(result) = self.should_retry_internal_async(Some(status_code), sub_status_code).await {
             return result;
         }

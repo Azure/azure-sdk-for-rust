@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::thread;
 use azure_core::time::Duration;
 use azure_core::Error;
 use azure_core::http::{Pipeline, Response};
