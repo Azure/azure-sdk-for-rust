@@ -676,7 +676,11 @@ async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     let response_mode: BlobImmutabilityPolicyMode = test_immutability_policy_mode.into();
     assert_eq!(response_mode, mode.unwrap());
-    assert_eq!(test_expiry_time, expires_on);
+    // Need to ignore nanoseconds due to Service truncation
+    assert_eq!(
+        test_expiry_time.map(|dt| dt.replace_nanosecond(0).unwrap()),
+        expires_on
+    );
 
     // Delete Immutability Policy
     blob_client.delete_immutability_policy(None).await?;
