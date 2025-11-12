@@ -319,9 +319,9 @@ impl FromStr for BlobImmutabilityPolicyMode {
     type Err = Error;
     fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
         Ok(match s {
-            "Locked" => BlobImmutabilityPolicyMode::Locked,
-            "Mutable" => BlobImmutabilityPolicyMode::Mutable,
-            "Unlocked" => BlobImmutabilityPolicyMode::Unlocked,
+            "locked" => BlobImmutabilityPolicyMode::Locked,
+            "mutable" => BlobImmutabilityPolicyMode::Mutable,
+            "unlocked" => BlobImmutabilityPolicyMode::Unlocked,
             _ => {
                 return Err(Error::with_message_fn(ErrorKind::DataConversion, || {
                     format!("unknown variant of BlobImmutabilityPolicyMode found: \"{s}\"")
@@ -334,9 +334,9 @@ impl FromStr for BlobImmutabilityPolicyMode {
 impl AsRef<str> for BlobImmutabilityPolicyMode {
     fn as_ref(&self) -> &str {
         match self {
-            BlobImmutabilityPolicyMode::Locked => "Locked",
-            BlobImmutabilityPolicyMode::Mutable => "Mutable",
-            BlobImmutabilityPolicyMode::Unlocked => "Unlocked",
+            BlobImmutabilityPolicyMode::Locked => "locked",
+            BlobImmutabilityPolicyMode::Mutable => "mutable",
+            BlobImmutabilityPolicyMode::Unlocked => "unlocked",
         }
     }
 }
@@ -344,9 +344,9 @@ impl AsRef<str> for BlobImmutabilityPolicyMode {
 impl Display for BlobImmutabilityPolicyMode {
     fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
         match self {
-            BlobImmutabilityPolicyMode::Locked => Display::fmt("Locked", f),
-            BlobImmutabilityPolicyMode::Mutable => Display::fmt("Mutable", f),
-            BlobImmutabilityPolicyMode::Unlocked => Display::fmt("Unlocked", f),
+            BlobImmutabilityPolicyMode::Locked => Display::fmt("locked", f),
+            BlobImmutabilityPolicyMode::Mutable => Display::fmt("mutable", f),
+            BlobImmutabilityPolicyMode::Unlocked => Display::fmt("unlocked", f),
         }
     }
 }
@@ -644,8 +644,8 @@ impl FromStr for ImmutabilityPolicyMode {
     type Err = Error;
     fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
         Ok(match s {
-            "Locked" => ImmutabilityPolicyMode::Locked,
-            "Unlocked" => ImmutabilityPolicyMode::Unlocked,
+            "locked" => ImmutabilityPolicyMode::Locked,
+            "unlocked" => ImmutabilityPolicyMode::Unlocked,
             _ => {
                 return Err(Error::with_message_fn(ErrorKind::DataConversion, || {
                     format!("unknown variant of ImmutabilityPolicyMode found: \"{s}\"")
@@ -658,8 +658,8 @@ impl FromStr for ImmutabilityPolicyMode {
 impl AsRef<str> for ImmutabilityPolicyMode {
     fn as_ref(&self) -> &str {
         match self {
-            ImmutabilityPolicyMode::Locked => "Locked",
-            ImmutabilityPolicyMode::Unlocked => "Unlocked",
+            ImmutabilityPolicyMode::Locked => "locked",
+            ImmutabilityPolicyMode::Unlocked => "unlocked",
         }
     }
 }
@@ -667,8 +667,8 @@ impl AsRef<str> for ImmutabilityPolicyMode {
 impl Display for ImmutabilityPolicyMode {
     fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
         match self {
-            ImmutabilityPolicyMode::Locked => Display::fmt("Locked", f),
-            ImmutabilityPolicyMode::Unlocked => Display::fmt("Unlocked", f),
+            ImmutabilityPolicyMode::Locked => Display::fmt("locked", f),
+            ImmutabilityPolicyMode::Unlocked => Display::fmt("unlocked", f),
         }
     }
 }

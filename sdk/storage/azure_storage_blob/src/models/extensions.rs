@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
-    BlockBlobClientUploadOptions, PageBlobClientCreateOptions,
+    AppendBlobClientCreateOptions, BlobImmutabilityPolicyMode, BlobTag, BlobTags,
+    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions, ImmutabilityPolicyMode,
+    PageBlobClientCreateOptions,
 };
 use std::collections::HashMap;
 
@@ -105,6 +106,16 @@ impl From<HashMap<String, String>> for BlobTags {
             .collect();
         BlobTags {
             blob_tag_set: Some(blob_tags),
+        }
+    }
+}
+
+// Converts a `ImmutabilityPolicyMode` into an `BlobImmutabilityPolicyMode`.
+impl From<ImmutabilityPolicyMode> for BlobImmutabilityPolicyMode {
+    fn from(mode: ImmutabilityPolicyMode) -> Self {
+        match mode {
+            ImmutabilityPolicyMode::Locked => BlobImmutabilityPolicyMode::Locked,
+            ImmutabilityPolicyMode::Unlocked => BlobImmutabilityPolicyMode::Unlocked,
         }
     }
 }

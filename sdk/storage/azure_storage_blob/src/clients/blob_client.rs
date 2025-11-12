@@ -8,16 +8,19 @@ use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDownloadResult,
+        BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+        BlobClientSetImmutabilityPolicyResult, BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
-        BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
+        BlobClientChangeLeaseOptions, BlobClientDeleteImmutabilityPolicyOptions,
+        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
+        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
+        BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+        BlobClientSetTierOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -435,5 +438,29 @@ impl BlobClient {
             },
             Err(e) => Err(e),
         }
+    }
+
+    /// Sets the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_immutability_policy(
+        &self,
+        options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
+        self.client.set_immutability_policy(options).await
+    }
+
+    /// Deletes the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn delete_immutability_policy(
+        &self,
+        options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
+        self.client.delete_immutability_policy(options).await
     }
 }

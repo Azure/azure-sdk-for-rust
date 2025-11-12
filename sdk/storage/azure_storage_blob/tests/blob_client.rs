@@ -3,6 +3,7 @@
 
 use azure_core::{
     http::{ClientOptions, RequestContent, StatusCode},
+    time::OffsetDateTime,
     Bytes,
 };
 use azure_core_test::{recorded, Matcher, TestContext};
@@ -12,8 +13,10 @@ use azure_storage_blob::{
         BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
         BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientUploadOptions, LeaseState,
+        BlobImmutabilityPolicyMode, BlockBlobClientUploadOptions, ImmutabilityPolicyMode,
+        LeaseState,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
@@ -641,6 +644,49 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     }
 
     container_client.delete_container(None).await?;
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    //TODO: Point to versioning account, add datetimes to recording variables
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client, None, None).await?;
+    let test_expiry_time = Some(OffsetDateTime::now_utc() + Duration::from_secs(300));
+    let test_immutability_policy_mode = ImmutabilityPolicyMode::Unlocked;
+
+    // Set Immutability Policy
+    let immutability_policy_options = BlobClientSetImmutabilityPolicyOptions {
+        immutability_policy_expiry: test_expiry_time.clone(),
+        immutability_policy_mode: Some(test_immutability_policy_mode),
+        ..Default::default()
+    };
+    let response = blob_client
+        .set_immutability_policy(Some(immutability_policy_options))
+        .await?;
+
+    // Assert
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+
+    let response_mode: BlobImmutabilityPolicyMode = test_immutability_policy_mode.into();
+    assert_eq!(response_mode, mode.unwrap());
+    assert_eq!(test_expiry_time, expires_on);
+
+    // Delete Immutability Policy
+    blob_client.delete_immutability_policy(None).await?;
+    let response = blob_client.get_properties(None).await?;
+
+    // Assert
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+    assert!(mode.is_none());
+    assert!(expires_on.is_none());
 
     Ok(())
 }
