@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use url::Url;
 use azure_core::error::ErrorKind;
 use azure_core::http::{RawResponse, StatusCode};
-use azure_core::http::headers::{HeaderName, Headers};
+use azure_core::http::headers::Headers;
 use azure_core::time::Duration;
 use crate::constants::{SubStatusCode, SUB_STATUS};
 use crate::cosmos_request::CosmosRequest;
@@ -39,16 +39,8 @@ struct RetryContext {
 /// ```
 #[derive(Debug)]
 pub struct ClientRetryPolicy {
-    max_attempt_count: usize,
-    backoff_delay_factor: u32,
-    max_wait_time: Duration,
-    current_attempt_count: usize,
-    cumulative_retry_delay: usize,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
     enable_endpoint_discovery: bool,
-    is_thin_client_enabled: bool,
-
-    // Mutable state
     failover_retry_count: i32,
     session_token_retry_count: i32,
     service_unavailable_retry_count: i32,
@@ -77,20 +69,11 @@ impl ClientRetryPolicy {
     /// let policy = ResourceThrottleRetryPolicy::new(5, 120, 3);
     /// ```
     pub fn new(
-        max_attempt_count: usize,
-        max_wait_time_secs: i64,
-        backoff_delay_factor: u32,
         global_endpoint_manager: GlobalEndpointManager,
     ) -> Self {
         Self {
-            max_attempt_count,
-            backoff_delay_factor,
-            max_wait_time: Duration::seconds(max_wait_time_secs),
-            current_attempt_count: 0,
-            cumulative_retry_delay: 0,
             global_endpoint_manager: Arc::new(global_endpoint_manager),
             enable_endpoint_discovery: false,
-            is_thin_client_enabled: false,
             failover_retry_count: 0,
             session_token_retry_count: 0,
             service_unavailable_retry_count: 0,
@@ -120,9 +103,9 @@ impl ClientRetryPolicy {
             let endpoints = self.global_endpoint_manager.preferred_locations.clone();
 
             if self.session_token_retry_count > endpoints.len() as i32 {
-                // When use multiple write locations is true and the request has been tried
-                // on all locations, then don't retry the request
-                return RetryResult::DoNotRetry;
+
+                // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
+                RetryResult::DoNotRetry
             } else {
                 self.retry_context = Some(RetryContext {
                     retry_location_index: self.session_token_retry_count,
@@ -130,13 +113,13 @@ impl ClientRetryPolicy {
                     route_to_hub: false,
                 });
 
-                return RetryResult::Retry {after: Duration::ZERO};
+                RetryResult::Retry {after: Duration::ZERO}
             }
         } else {
             if self.session_token_retry_count > 1 {
                 // When cannot use multiple write locations, then don't retry the request if
                 // we have already tried this request on the write location
-                return RetryResult::DoNotRetry;
+                RetryResult::DoNotRetry
             } else {
                 self.retry_context = Some(RetryContext {
                     retry_location_index: 0,
@@ -144,7 +127,7 @@ impl ClientRetryPolicy {
                     route_to_hub: false,
                 });
 
-                return RetryResult::Retry {after: Duration::ZERO};
+                RetryResult::Retry {after: Duration::ZERO}
             }
         }
     }
@@ -186,7 +169,7 @@ impl ClientRetryPolicy {
             Duration::milliseconds(RETRY_INTERVAL_MS)
         };
 
-        let res = self.global_endpoint_manager.refresh_location_async(force_refresh).await;
+        let _refresh_cache_result = self.global_endpoint_manager.refresh_location_async(force_refresh).await;
         let retry_location_index = if retry_on_preferred_locations {
             0
         } else {
@@ -346,7 +329,6 @@ impl RetryPolicy for ClientRetryPolicy {
 
     async fn before_send_request(&mut self, request: &mut CosmosRequest) {
 
-        // TODO: Need to remove this, and put this into Moka cache. Also, move this logic into retry policy.
         let _stat = self.global_endpoint_manager.refresh_location_async(false).await;
         self.is_read_request = request.is_read_only_request();
         self.can_use_multiple_write_locations = self.global_endpoint_manager.can_use_multiple_write_locations(request);

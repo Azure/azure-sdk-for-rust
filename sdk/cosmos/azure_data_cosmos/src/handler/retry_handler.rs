@@ -81,14 +81,13 @@ impl BackOffRetryHandler {
         &self,
         request: &CosmosRequest,
     ) -> Box<dyn RetryPolicy> {
-        // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
-        // the request operation type and resource type and accordingly return the respective retry
-        // policy.
+        // For metadata requests, at the moment always return ResourceThrottleRetryPolicy. Future implementation should
+        // return separate retry policies for metadata reads.
         if request.resource_type.is_meta_data() {
             Box::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
         }
         else {
-            Box::new(ClientRetryPolicy::new(10, 200, 10, self.global_endpoint_manager.clone()))
+            Box::new(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
         }
     }
 
@@ -124,10 +123,6 @@ impl RetryHandler for BackOffRetryHandler {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
         retry_policy.before_send_request(request).await;
-
-
-        // let endpoint = self.global_endpoint_manager.resolve_service_endpoint(&request).parse()?;
-        // request.request_context.location_endpoint_to_route = Some(request.resource_link.url(&endpoint));
 
         loop {
             // Invoke the provided sender callback instead of calling inner_send_async directly

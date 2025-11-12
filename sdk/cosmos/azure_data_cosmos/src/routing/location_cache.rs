@@ -167,20 +167,20 @@ impl LocationCache {
         if !request.request_context.use_preferred_locations.unwrap_or(true)
             || (!request.operation_type.is_read_only() && !self.can_use_multiple_write_locations()) {
             let location_info = &self.locations_info;
-            if (location_info.account_write_locations.len() > 0) {
+            if location_info.account_write_locations.len() > 0 {
                 let idx = std::cmp::min(location_index % 2, location_info.account_write_locations.len() - 1);
                 location_endpoint_to_route = location_info.account_write_locations[idx].database_account_endpoint.clone();
             }
         }
         else {
             let endpoints;
-            if (request.operation_type.is_read_only()) {
+            if request.operation_type.is_read_only() {
                 endpoints =  self.read_endpoints();
             }
             else {
                 endpoints =  self.write_endpoints();
             }
-            if (endpoints.len() > 0) {
+            if endpoints.len() > 0 {
                 location_endpoint_to_route = endpoints[location_index % endpoints.len()].clone();
             }
         }

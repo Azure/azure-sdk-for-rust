@@ -10,6 +10,7 @@ use crate::cosmos_request::{CosmosRequest, CosmosRequestBuilder};
 use crate::models::AccountProperties;
 use moka::future::Cache;
 use crate::operation_context::OperationType;
+use crate::constants::ACCOUNT_PROPERTIES_KEY;
 use crate::ReadDatabaseOptions;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::location_cache::{LocationCache, RequestOperation};
@@ -17,13 +18,10 @@ use azure_core::{async_runtime::get_async_runtime};
 
 #[derive(Debug, Clone)]
 pub struct GlobalEndpointManager {
-    // Placeholder fields; real implementation will likely store caches, preferences, etc.
     default_endpoint: String,
     pub preferred_locations: Vec<String>,
     location_cache: Arc<Mutex<LocationCache>>,
-    min_time_between_account_refresh: Duration,
     background_refresh_location_time_interval: Duration,
-    is_account_refresh_in_progress: bool,
     is_background_account_refresh_active: bool,
     pipeline: Pipeline,
     account_properties_cache: Cache<&'static str, AccountProperties>,
@@ -48,9 +46,7 @@ impl GlobalEndpointManager {
             default_endpoint,
             preferred_locations,
             location_cache,
-            min_time_between_account_refresh: Duration::seconds(30),
             background_refresh_location_time_interval: Duration::seconds(5),
-            is_account_refresh_in_progress: false,
             is_background_account_refresh_active: false,
             pipeline,
             account_properties_cache,
@@ -121,12 +117,11 @@ impl GlobalEndpointManager {
     pub async fn refresh_location_async(&self, force_refresh: bool) -> Result<(), Error> {
         // If force_refresh is true, invalidate the cache to ensure a fresh fetch
         if force_refresh {
-            self.account_properties_cache.invalidate(&"account").await;
+            self.account_properties_cache.invalidate(&ACCOUNT_PROPERTIES_KEY).await;
         }
         
-        // Try cache first unless forced; fetch and cache account properties
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        let _account_prop = self.account_properties_cache.try_get_with(&"account", async {
+        let _account_prop = self.account_properties_cache.try_get_with(&ACCOUNT_PROPERTIES_KEY, async {
             // Fetch latest account properties from service
             let account_properties = self.get_database_account(Some(ReadDatabaseOptions {
                 ..Default::default()
@@ -146,7 +141,7 @@ impl GlobalEndpointManager {
         Ok(())
     }
 
-    fn get_available_write_endpoints_by_location(&self) -> (HashMap<String, String>) { self.location_cache.lock().unwrap().locations_info.account_write_endpoints_by_location.clone() }
+    fn get_available_write_endpoints_by_location(&self) -> HashMap<String, String> { self.location_cache.lock().unwrap().locations_info.account_write_endpoints_by_location.clone() }
 
     fn get_available_read_endpoints_by_location(&self) -> HashMap<String, String> { self.location_cache.lock().unwrap().locations_info.account_read_endpoints_by_location.clone() }
 

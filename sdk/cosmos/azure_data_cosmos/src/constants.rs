@@ -42,6 +42,8 @@ pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("applicatio
 
 pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=minimal");
 
+pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
+
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[non_exhaustive]
