@@ -125,6 +125,9 @@ jobs:
 
           Write-Host "./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'"
           ./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+
+          Write-Host "Last exit code: $LASTEXITCODE";
+          exit $LASTEXITCODE
         workingDirectory: $(Build.SourcesDirectory)
   - ${{ else }}:
     - task: Powershell@2
