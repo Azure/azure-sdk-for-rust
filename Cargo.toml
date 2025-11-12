@@ -109,6 +109,7 @@ futures = "0.3"
 getrandom = { version = "0.3" }
 gloo-timers = { version = "0.3" }
 hmac = { version = "0.12" }
+include-file = "0.4.0"
 litemap = "0.7.4"
 openssl = { version = "0.10.72" }
 opentelemetry = { version = "0.30", features = ["trace"] }
