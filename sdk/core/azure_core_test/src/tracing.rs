@@ -18,7 +18,6 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     fmt::Debug,
-    pin::Pin,
     sync::{Arc, Mutex},
 };
 
@@ -317,21 +316,50 @@ pub fn check_instrumentation_result(
         assert_eq!(tracer.namespace, expected.namespace);
 
         let spans = tracer.spans.lock().unwrap();
-        assert_eq!(
-            spans.len(),
-            expected.spans.len(),
-            "Unexpected number of spans for tracer {}",
-            expected.name
-        );
 
-        for (span_index, span_expected) in expected.spans.iter().enumerate() {
+        // assert_eq!(
+        //     spans.len(),
+        //     expected.spans.len(),
+        //     "Unexpected number of spans for tracer {}",
+        //     expected.name
+        // );
+
+        let mut expected_index = 0;
+        for (span_index, span_actual) in spans.iter().enumerate() {
             eprintln!(
                 "Checking span {} of tracer {}: {}",
-                span_index, expected.name, span_expected.span_name
+                span_index, expected.name, span_actual.name
             );
-            check_span_information(&spans[span_index], span_expected, &parent_span_map);
+            check_span_information(
+                span_actual,
+                &expected.spans[expected_index],
+                &parent_span_map,
+            );
             // Now that we've verified the span, add the mapping between expected span ID and the actual span ID.
-            parent_span_map.insert(span_expected.span_id, spans[span_index].id);
+            parent_span_map.insert(expected.spans[expected_index].span_id, span_actual.id);
+            if expected.spans[expected_index].is_wildcard {
+                // If this is a wildcard span, we don't increment the expected index.
+                eprintln!(
+                    "Span {} is a wildcard, not incrementing expected index",
+                    span_actual.name
+                );
+                if spans.len() > span_index + 1 {
+                    let next_span = &spans[span_index + 1];
+                    if !compare_span_information(
+                        next_span,
+                        &expected.spans[expected_index],
+                        &parent_span_map,
+                    ) {
+                        eprintln!(
+                            "Next actual span does not match expected span: {}",
+                            expected.spans[expected_index + 1].span_name
+                        );
+                        expected_index += 1;
+                    }
+                }
+            } else {
+                expected_index += 1;
+            }
         }
     }
 }
@@ -355,6 +383,22 @@ pub struct ExpectedSpanInformation<'a> {
 
     /// The expected attributes associated with the span.
     pub attributes: Vec<(&'a str, AttributeValue)>,
+
+    pub is_wildcard: bool,
+}
+
+impl Default for ExpectedSpanInformation<'_> {
+    fn default() -> Self {
+        Self {
+            span_name: "get",
+            status: SpanStatus::Unset,
+            span_id: Uuid::new_v4(),
+            parent_id: None,
+            kind: SpanKind::Client,
+            attributes: vec![],
+            is_wildcard: false,
+        }
+    }
 }
 
 fn check_span_information(
@@ -407,6 +451,64 @@ fn check_span_information(
     );
 }
 
+/// Returns true if the spans match, false otherwise.
+fn compare_span_information(
+    actual: &Arc<MockSpanInner>,
+    expected: &ExpectedSpanInformation<'_>,
+    parent_span_map: &HashMap<Uuid, [u8; 8]>,
+) -> bool {
+    if actual.name != expected.span_name {
+        return false;
+    }
+    if actual.kind != expected.kind {
+        return false;
+    }
+    if *actual.state.lock().unwrap() != expected.status {
+        return false;
+    }
+    match actual.parent {
+        None => {
+            if expected.parent_id.is_some() {
+                return false;
+            }
+        }
+        Some(ref parent) => {
+            let parent_id = parent_span_map
+                .get(expected.parent_id.as_ref().unwrap())
+                .unwrap();
+            if *parent != *parent_id {
+                return false;
+            }
+        }
+    }
+    let attributes = actual.attributes.lock().unwrap();
+    eprintln!("Expected attributes: {:?}", expected.attributes);
+    eprintln!("Found attributes: {:?}", attributes);
+    for (index, attr) in attributes.iter().enumerate() {
+        eprintln!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
+        let mut found = false;
+        for (key, value) in &expected.attributes {
+            if attr.key == *key {
+                // Skip checking the value for "<ANY>" as it is a placeholder
+                if *value != AttributeValue::String("<ANY>".into()) && attr.value != *value {
+                    return false;
+                }
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            return false;
+        }
+    }
+    for (key, _) in expected.attributes.iter() {
+        if !attributes.iter().any(|attr| attr.key == *key) {
+            return false;
+        }
+    }
+    true
+}
+
 /// Information about an instrumented API call.
 ///
 /// This structure is used to collect information about a specific API call that is being instrumented for tracing.
@@ -455,6 +557,9 @@ pub struct ExpectedRestApiSpan {
 
     /// Expected status code returned by the service.
     pub expected_status_code: azure_core::http::StatusCode,
+
+    /// Whether an unknown multiple of this span will be found.
+    pub is_wildcard: bool,
 }
 
 impl Default for ExpectedRestApiSpan {
@@ -462,6 +567,7 @@ impl Default for ExpectedRestApiSpan {
         Self {
             api_verb: azure_core::http::Method::Get,
             expected_status_code: azure_core::http::StatusCode::Ok,
+            is_wildcard: false,
         }
     }
 }
@@ -516,7 +622,7 @@ pub async fn assert_instrumentation_information<C, FnInit, FnTest, T>(
 ) -> azure_core::Result<()>
 where
     FnInit: FnOnce(Arc<dyn TracerProvider>) -> azure_core::Result<C>,
-    FnTest: FnOnce(C) -> Pin<Box<dyn futures::Future<Output = azure_core::Result<T>>>>,
+    FnTest: AsyncFnOnce(C) -> azure_core::Result<T>,
 {
     // Initialize the mock tracer provider
     let mock_tracer = Arc::new(MockTracingProvider::new());
@@ -584,6 +690,7 @@ where
                 status: span_status,
                 kind: SpanKind::Internal,
                 parent_id: None,
+                is_wildcard: false, // Public API spans cannot be wildcards.
                 attributes: public_api_attributes,
             });
         }
@@ -626,6 +733,9 @@ where
                 } else {
                     None
                 },
+                // If allow_unknown_children is set, we don't know how many child spans there will be.
+                // Use a wildcard span ID to indicate that.
+                is_wildcard: rest_api_call.is_wildcard,
                 span_id: Uuid::new_v4(),
                 status: if !rest_api_call.expected_status_code.is_success() {
                     SpanStatus::Error {

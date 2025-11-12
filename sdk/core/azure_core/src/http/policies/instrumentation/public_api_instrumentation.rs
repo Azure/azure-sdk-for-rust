@@ -555,8 +555,7 @@ mod tests {
                     status: SpanStatus::Unset,
                     kind: SpanKind::Internal,
                     span_id: Uuid::new_v4(),
-                    parent_id: None,
-                    attributes: vec![],
+                    ..Default::default()
                 }],
             }],
         )
@@ -599,9 +598,9 @@ mod tests {
                     span_name: "MyClient.MyApi",
                     status: SpanStatus::Unset,
                     span_id: Uuid::new_v4(),
-                    parent_id: None,
                     kind: SpanKind::Internal,
                     attributes: vec![(AZ_NAMESPACE_ATTRIBUTE, "test namespace".into())],
+                    ..Default::default()
                 }],
             }],
         );
@@ -652,6 +651,7 @@ mod tests {
                         (AZ_NAMESPACE_ATTRIBUTE, "test namespace".into()),
                         (ERROR_TYPE_ATTRIBUTE, "500".into()),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -701,6 +701,7 @@ mod tests {
                             (AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into()),
                             ("az.fake_attribute", "attribute value".into()),
                         ],
+                        ..Default::default()
                     },
                     ExpectedSpanInformation {
                         span_name: "PUT",
@@ -716,6 +717,7 @@ mod tests {
                             ("server.port", 80.into()),
                             ("http.response.status_code", 200.into()),
                         ],
+                        ..Default::default()
                     },
                 ],
             }],

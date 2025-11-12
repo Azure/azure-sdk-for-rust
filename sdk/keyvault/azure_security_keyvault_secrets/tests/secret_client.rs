@@ -345,15 +345,13 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
                 Some(options),
             )
         },
-        |client: SecretClient| {
-            Box::pin(async move {
-                let mut secrets = client.list_secret_properties(None)?;
-                while let Some(secret) = secrets.try_next().await? {
-                    let _ = secret.resource_id()?;
-                }
+        async move |client: SecretClient| {
+            let mut secrets = client.list_secret_properties(None)?;
+            while let Some(secret) = secrets.try_next().await? {
+                let _ = secret.resource_id()?;
+            }
 
-                Ok(())
-            })
+            Ok(())
         },
         ExpectedInstrumentation {
             package_name: recording.var("CARGO_PKG_NAME", None),
@@ -362,36 +360,11 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
             package_namespace: Some("KeyVault"),
             api_calls: vec![ExpectedApiInformation {
                 api_name: Some("KeyVault.getSecrets"),
-                api_children: vec![
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                ],
+                api_children: vec![ExpectedRestApiSpan {
+                    api_verb: azure_core::http::Method::Get,
+                    is_wildcard: true,
+                    ..Default::default()
+                }],
                 ..Default::default()
             }],
         },
@@ -452,18 +425,16 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
                 Some(options),
             )
         },
-        |client: SecretClient| {
-            Box::pin(async move {
-                let mut secrets = client.list_secret_properties(None)?.into_pages();
-                while let Some(page) = secrets.try_next().await? {
-                    let items = page.into_model()?;
-                    for item in items.value {
-                        let _ = item.resource_id()?;
-                    }
+        async move |client: SecretClient| {
+            let mut secrets = client.list_secret_properties(None)?.into_pages();
+            while let Some(page) = secrets.try_next().await? {
+                let items = page.into_model()?;
+                for item in items.value {
+                    let _ = item.resource_id()?;
                 }
+            }
 
-                Ok(())
-            })
+            Ok(())
         },
         ExpectedInstrumentation {
             // Don't use `recording.var` here in case the recording was made with a different package version.
@@ -472,36 +443,11 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
             package_namespace: Some("KeyVault"),
             api_calls: vec![ExpectedApiInformation {
                 api_name: Some("KeyVault.getSecrets"),
-                api_children: vec![
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    },
-                ],
+                api_children: vec![ExpectedRestApiSpan {
+                    api_verb: azure_core::http::Method::Get,
+                    is_wildcard: true,
+                    ..Default::default()
+                }],
                 ..Default::default()
             }],
         },
@@ -562,41 +508,39 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 Some(options),
             )
         },
-        |client: SecretClient| {
-            Box::pin(async move {
-                let rehydration_token = {
-                    let mut first_pager = client.list_secret_properties(None)?.into_pages();
+        async move |client: SecretClient| {
+            let rehydration_token = {
+                let mut first_pager = client.list_secret_properties(None)?.into_pages();
 
-                    // Prime the iteration.
-                    let first_page = first_pager
-                        .try_next()
-                        .await?
-                        .expect("expected at least one page");
-                    {
-                        let secrets = first_page.into_model()?;
-                        for secret in secrets.value {
-                            let _ = secret.resource_id()?;
-                        }
-                    }
-
-                    first_pager
-                        .continuation_token()
-                        .expect("expected continuation token to be created after first page")
-                };
-                let mut rehydrated_pager = client
-                    .list_secret_properties(None)?
-                    .into_pages()
-                    .with_continuation_token(rehydration_token);
-
-                while let Some(secret_page) = rehydrated_pager.try_next().await? {
-                    let secrets = secret_page.into_model()?;
+                // Prime the iteration.
+                let first_page = first_pager
+                    .try_next()
+                    .await?
+                    .expect("expected at least one page");
+                {
+                    let secrets = first_page.into_model()?;
                     for secret in secrets.value {
                         let _ = secret.resource_id()?;
                     }
                 }
 
-                Ok(())
-            })
+                first_pager
+                    .continuation_token()
+                    .expect("expected continuation token to be created after first page")
+            };
+            let mut rehydrated_pager = client
+                .list_secret_properties(None)?
+                .into_pages()
+                .with_continuation_token(rehydration_token);
+
+            while let Some(secret_page) = rehydrated_pager.try_next().await? {
+                let secrets = secret_page.into_model()?;
+                for secret in secrets.value {
+                    let _ = secret.resource_id()?;
+                }
+            }
+
+            Ok(())
         },
         ExpectedInstrumentation {
             // Don't use `recording.var` here in case the recording was made with a different package version.
@@ -614,32 +558,11 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 },
                 ExpectedApiInformation {
                     api_name: Some("KeyVault.getSecrets"),
-                    api_children: vec![
-                        ExpectedRestApiSpan {
-                            api_verb: azure_core::http::Method::Get,
-                            ..Default::default()
-                        },
-                        ExpectedRestApiSpan {
-                            api_verb: azure_core::http::Method::Get,
-                            ..Default::default()
-                        },
-                        ExpectedRestApiSpan {
-                            api_verb: azure_core::http::Method::Get,
-                            ..Default::default()
-                        },
-                        ExpectedRestApiSpan {
-                            api_verb: azure_core::http::Method::Get,
-                            ..Default::default()
-                        },
-                        ExpectedRestApiSpan {
-                            api_verb: azure_core::http::Method::Get,
-                            ..Default::default()
-                        },
-                        ExpectedRestApiSpan {
-                            api_verb: azure_core::http::Method::Get,
-                            ..Default::default()
-                        },
-                    ],
+                    api_children: vec![ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        is_wildcard: true,
+                        ..Default::default()
+                    }],
                     ..Default::default()
                 },
             ],

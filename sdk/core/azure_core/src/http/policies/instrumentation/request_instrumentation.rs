@@ -302,6 +302,7 @@ pub(crate) mod tests {
                             ),
                         ),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -388,6 +389,7 @@ pub(crate) mod tests {
                             AttributeValue::from("https://example.com/client_request_id"),
                         ),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -433,6 +435,7 @@ pub(crate) mod tests {
                         (SERVER_ADDRESS_ATTRIBUTE, AttributeValue::from("host")),
                         (SERVER_PORT_ATTRIBUTE, AttributeValue::from(8080)),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -502,6 +505,7 @@ pub(crate) mod tests {
                             AttributeValue::from("https://microsoft.com/request_failed.htm"),
                         ),
                     ],
+                    ..Default::default()
                 }],
             }],
         );

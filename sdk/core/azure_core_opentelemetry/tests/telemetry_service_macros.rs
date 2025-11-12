@@ -685,10 +685,7 @@ mod tests {
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
-            |client| {
-                let client = client;
-                Box::pin(async move { client.get("get", None).await })
-            },
+            async move |client| client.get("get", None).await,
             ExpectedInstrumentation {
                 package_name,
                 package_version,
@@ -710,10 +707,7 @@ mod tests {
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
-            |client| {
-                let client = client;
-                Box::pin(async move { client.get_with_function_tracing("get", None).await })
-            },
+            async move |client| client.get_with_function_tracing("get", None).await,
             ExpectedInstrumentation {
                 package_name,
                 package_version,
@@ -741,10 +735,7 @@ mod tests {
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
-            |client| {
-                let client = client;
-                Box::pin(async move { client.get_with_function_tracing("index.htm", None).await })
-            },
+            async move |client| client.get_with_function_tracing("index.htm", None).await,
             ExpectedInstrumentation {
                 package_name,
                 package_version,
