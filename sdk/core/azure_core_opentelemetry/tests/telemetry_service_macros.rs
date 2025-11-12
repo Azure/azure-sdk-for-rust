@@ -703,7 +703,7 @@ mod tests {
 
     #[recorded::test()]
     async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
-        let package_name = env!("CARGO_PKG_NAME").to_string();
+        let package_name = ctx.recording().var("CARGO_PKG_NAME", None).to_string();
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
@@ -731,7 +731,7 @@ mod tests {
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
         use azure_core_test::tracing::ExpectedRestApiSpan;
 
-        let package_name = env!("CARGO_PKG_NAME").to_string();
+        let package_name = ctx.recording().var("CARGO_PKG_NAME", None).to_string();
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),

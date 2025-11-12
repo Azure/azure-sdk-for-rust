@@ -267,8 +267,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
             })
         },
         ExpectedInstrumentation {
-            // Don't use `recording.var` here in case the recording was made with a different package version.
-            package_name: env!("CARGO_PKG_NAME").into(),
+            package_name: recording.var("CARGO_PKG_NAME", None),
 
             // Don't use `recording.var` here in case the recording was made with a different package version.
             package_version: env!("CARGO_PKG_VERSION").into(),
@@ -437,8 +436,8 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
             Ok(())
         },
         ExpectedInstrumentation {
+            package_name: recording.var("CARGO_PKG_NAME", None),
             // Don't use `recording.var` here in case the recording was made with a different package version.
-            package_name: env!("CARGO_PKG_NAME").into(),
             package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
             api_calls: vec![ExpectedApiInformation {
@@ -543,8 +542,8 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
             Ok(())
         },
         ExpectedInstrumentation {
+            package_name: recording.var("CARGO_PKG_NAME", None),
             // Don't use `recording.var` here in case the recording was made with a different package version.
-            package_name: env!("CARGO_PKG_NAME").into(),
             package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
             api_calls: vec![
