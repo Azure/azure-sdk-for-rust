@@ -44,7 +44,7 @@ impl GlobalEndpointManager {
             .time_to_live(std::time::Duration::from_secs(600))
             .build();
 
-        let mut endpoint_manager = Self {
+        let endpoint_manager = Self {
             default_endpoint,
             preferred_locations,
             location_cache,
@@ -72,7 +72,6 @@ impl GlobalEndpointManager {
 
     pub fn preferred_location_count(&self) -> i32 { self.location_cache.lock().unwrap().locations_info.preferred_locations.len() as i32 }
 
-    // TODO: Implementation Pending.
     pub(crate) fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
 
         self.location_cache.lock().unwrap().resolve_service_endpoint(request)
@@ -119,26 +118,31 @@ impl GlobalEndpointManager {
         }));
     }
 
-    pub async fn refresh_location_async<'a>(&self, force_refresh: bool) -> Result<(), Error> {
-        // Try cache first unless forced.
-        if !force_refresh && self.account_properties_cache.contains_key(&"account") {
-                return Ok(());
+    pub async fn refresh_location_async(&self, force_refresh: bool) -> Result<(), Error> {
+        // If force_refresh is true, invalidate the cache to ensure a fresh fetch
+        if force_refresh {
+            self.account_properties_cache.invalidate(&"account").await;
         }
-
-        // Fetch latest account properties from service
-        let account_properties = self
-            .get_database_account(Some(ReadDatabaseOptions {
+        
+        // Try cache first unless forced; fetch and cache account properties
+        // When TTL expires or cache is invalidated, the async block executes and updates location cache
+        let _account_prop = self.account_properties_cache.try_get_with(&"account", async {
+            // Fetch latest account properties from service
+            let account_properties = self.get_database_account(Some(ReadDatabaseOptions {
                 ..Default::default()
             }))
             .await?
             .into_body()?;
-
-        // Populate moka cache and update location cache
-        self.account_properties_cache.insert("account", account_properties.clone()).await;
-        {
-            let mut cache = self.location_cache.lock().unwrap();
-            cache.on_database_account_read(account_properties);
-        }
+            
+            // Update location cache with the fetched account properties (only on fresh fetch)
+            {
+                let mut cache = self.location_cache.lock().unwrap();
+                cache.on_database_account_read(account_properties.clone());
+            }
+            
+            Ok(account_properties)
+        }).await.map_err(|e: Arc<Error>| Error::with_message(azure_core::error::ErrorKind::Other, format!("Failed to fetch account properties: {}", e)))?;
+        
         Ok(())
     }
 
