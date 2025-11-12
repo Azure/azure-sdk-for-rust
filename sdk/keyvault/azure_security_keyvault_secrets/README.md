@@ -113,7 +113,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The following section provides several code snippets using the `SecretClient`, covering some of the most common Azure Key Vault secrets service related tasks:
+The following section provides several code snippets using a `SecretClient` like we instantiated above, covering some of the most common Azure Key Vault secrets service related tasks:
 
 * [Create a secret](#create-a-secret)
 * [Retrieve a secret](#retrieve-a-secret)
@@ -125,166 +125,98 @@ The following section provides several code snippets using the `SecretClient`, c
 
 `set_secret` creates a Key Vault secret to be stored in the Azure Key Vault. If a secret with the same name already exists, then a new version of the secret is created.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{models::SetSecretParameters, ResourceExt, SecretClient};
+```rust ignore create_secret
+use azure_security_keyvault_secrets::{models::SetSecretParameters, ResourceExt};
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+// Create a new secret using the secret client.
+let secret_set_parameters = SetSecretParameters {
+    value: Some("secret-value".into()),
+    ..Default::default()
+};
 
-    // Create a new secret using the secret client.
-    let secret_set_parameters = SetSecretParameters {
-        value: Some("secret-value".into()),
-        ..Default::default()
-    };
+let secret = client
+    .set_secret("secret-name", secret_set_parameters.try_into()?, None)
+    .await?
+    .into_model()?;
 
-    let secret = client
-        .set_secret("secret-name", secret_set_parameters.try_into()?, None)
-        .await?
-        .into_model()?;
-
-    println!(
-        "Secret Name: {:?}, Value: {:?}, Version: {:?}",
-        secret.resource_id()?.name,
-        secret.value,
-        secret.resource_id()?.version
-    );
-
-    Ok(())
-}
+println!(
+    "Secret Name: {:?}, Value: {:?}, Version: {:?}",
+    secret.resource_id()?.name,
+    secret.value,
+    secret.resource_id()?.version
+);
 ```
 
 ### Retrieve a secret
 
 `get_secret` retrieves a secret previously stored in the Azure Key Vault. Setting the `secret-version` to an empty string will return the latest version.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{SecretClient, models::SecretClientGetSecretOptions};
+```rust ignore get_secret
+use azure_security_keyvault_secrets::models::SecretClientGetSecretOptions;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+// Retrieve a secret using the secret client.
+let get_options = SecretClientGetSecretOptions {
+    secret_version: Some("secret-version".to_string()),
+    ..Default::default()
+};
+let secret = client
+    .get_secret("secret-name", None)
+    .await?
+    .into_model()?;
 
-    // Retrieve a secret using the secret client.
-    let get_options = SecretClientGetSecretOptions {
-        secret_version: Some("secret-version".to_string()),
-        ..Default::default()
-    };
-    let secret = client
-        .get_secret("secret-name", None)
-        .await?
-        .into_model()?;
-
-    println!("Secret Value: {:?}", secret.value);
-
-    Ok(())
-}
+println!("Secret Value: {:?}", secret.value);
 ```
 
 ### Update an existing secret
 
 `update_secret_properties` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{models::UpdateSecretPropertiesParameters, SecretClient};
+```rust ignore update_secret
+use azure_security_keyvault_secrets::models::UpdateSecretPropertiesParameters;
 use std::collections::HashMap;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
+// Update a secret using the secret client.
+let secret_update_parameters = UpdateSecretPropertiesParameters {
+    content_type: Some("text/plain".into()),
+    tags: Some(HashMap::from_iter(vec![(
+        "tag-name".into(),
+        "tag-value".into(),
+    )])),
+    ..Default::default()
+};
+
+client
+    .update_secret_properties(
+        "secret-name",
+        secret_update_parameters.try_into()?,
         None,
-    )?;
-
-    // Update a secret using the secret client.
-    let secret_update_parameters = UpdateSecretPropertiesParameters {
-        content_type: Some("text/plain".into()),
-        tags: Some(HashMap::from_iter(vec![(
-            "tag-name".into(),
-            "tag-value".into(),
-        )])),
-        ..Default::default()
-    };
-
-    client
-        .update_secret_properties(
-            "secret-name",
-            secret_update_parameters.try_into()?,
-            None,
-        )
-        .await?
-        .into_model()?;
-
-    Ok(())
-}
+    )
+    .await?
+    .into_model()?;
 ```
 
 ### Delete a secret
 
 `delete_secret` will tell Key Vault to delete a secret but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_secret` on the returned `DeletedSecret.id`.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::SecretClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Delete a secret using the secret client.
-    client.delete_secret("secret-name", None).await?;
-
-    Ok(())
-}
+```rust ignore delete_secret
+// Delete a secret using the secret client.
+client.delete_secret("secret-name", None).await?;
 ```
 
 ### List secrets
 
 This example lists all the secrets in the specified Azure Key Vault. The value is not returned when listing all secrets. You will need to call `SecretClient::get_secret` to retrieve the value.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
+```rust ignore list_secrets
+use azure_security_keyvault_secrets::ResourceExt;
 use futures::TryStreamExt;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a new secret client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    let mut pager = client.list_secret_properties(None)?.into_stream();
-    while let Some(secret) = pager.try_next().await? {
-        // Get the secret name from the ID.
-        let name = secret.resource_id()?.name;
-        println!("Found Secret with Name: {}", name);
-    }
-
-    Ok(())
+let mut pager = client.list_secret_properties(None)?.into_stream();
+while let Some(secret) = pager.try_next().await? {
+    // Get the secret name from the ID.
+    let name = secret.resource_id()?.name;
+    println!("Found Secret with Name: {}", name);
 }
 ```
 
@@ -296,25 +228,10 @@ When you interact with the Azure Key Vault secrets client library using the Rust
 
 For example, if you try to retrieve a secret that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::SecretClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://<my-vault>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    match client.get_secret("secret-name", None).await {
-        Ok(response) => println!("Secret Value: {:?}", response.into_model()?.value),
-        Err(err) => println!("Error: {:#?}", err.into_inner()?),
-    }
-
-    Ok(())
+```rust ignore errors
+match client.get_secret("secret-name", None).await {
+    Ok(response) => println!("Secret Value: {:?}", response.into_model()?.value),
+    Err(err) => println!("Error: {:#?}", err.into_inner()?),
 }
 ```
 

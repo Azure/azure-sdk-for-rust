@@ -31,6 +31,7 @@ azure_core_test = { workspace = true, features = [
 ] }
 azure_identity.workspace = true
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
+include-file.workspace = true
 rand.workspace = true
 tokio.workspace = true
 
