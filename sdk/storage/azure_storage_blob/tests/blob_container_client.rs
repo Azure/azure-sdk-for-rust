@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::http::{RequestContent, StatusCode};
-use azure_core_test::{recorded, Matcher, TestContext, TestMode};
+use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
@@ -411,16 +411,31 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     let container_client = get_container_client(recording, false).await?;
     container_client.create_container(None).await?;
 
+    let expiry_1 = recording.var(
+        "expiry_1",
+        Some(VarOptions {
+            default_value: format_datetime(OffsetDateTime::now_utc() + Duration::from_secs(10))
+                .ok()
+                .map(Into::into),
+            ..Default::default()
+        }),
+    );
+    let start_1 = recording.var(
+        "start_1",
+        Some(VarOptions {
+            default_value: format_datetime(OffsetDateTime::now_utc())
+                .ok()
+                .map(Into::into),
+            ..Default::default()
+        }),
+    );
+
     // Set Access Policy w/ Policy Defined
     let test_id: Option<String> = Some("testid".into());
-    let expiry = Some(format_datetime(
-        OffsetDateTime::now_utc() + Duration::from_secs(10),
-    )?);
-    let start = Some(format_datetime(OffsetDateTime::now_utc())?);
     let access_policy = AccessPolicy {
-        expiry: expiry.clone(),
+        expiry: Some(expiry_1.clone()),
         permission: Some("rw".to_string()),
-        start: start.clone(),
+        start: Some(start_1.clone()),
     };
     let signed_identifier = SignedIdentifier {
         access_policy: Some(access_policy.clone()),
@@ -446,25 +461,42 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         response_access_policy.clone().unwrap().permission,
         access_policy.permission
     );
-    assert_eq!(response_access_policy.clone().unwrap().expiry, expiry);
-    assert_eq!(response_access_policy.clone().unwrap().start, start);
+    assert_eq!(
+        response_access_policy.clone().unwrap().expiry,
+        Some(expiry_1)
+    );
+    assert_eq!(response_access_policy.clone().unwrap().start, Some(start_1));
 
     // Set Access Policy w/ Multiple Policy Defined
-    let expiry = Some(format_datetime(
-        OffsetDateTime::now_utc() + Duration::from_secs(10),
-    )?);
-    let start = Some(format_datetime(OffsetDateTime::now_utc())?);
+    let expiry_2 = recording.var(
+        "expiry_2",
+        Some(VarOptions {
+            default_value: format_datetime(OffsetDateTime::now_utc() + Duration::from_secs(10))
+                .ok()
+                .map(Into::into),
+            ..Default::default()
+        }),
+    );
+    let start_2 = recording.var(
+        "start_2",
+        Some(VarOptions {
+            default_value: format_datetime(OffsetDateTime::now_utc())
+                .ok()
+                .map(Into::into),
+            ..Default::default()
+        }),
+    );
     let test_id_1: Option<String> = Some("testid_1".into());
     let test_id_2: Option<String> = Some("testid_2".into());
     let access_policy_1 = AccessPolicy {
-        expiry: expiry.clone(),
+        expiry: Some(expiry_2.clone()),
         permission: Some("rw".to_string()),
-        start: start.clone(),
+        start: Some(start_2.clone()),
     };
     let access_policy_2 = AccessPolicy {
-        expiry: expiry.clone(),
+        expiry: Some(expiry_2),
         permission: Some("cd".to_string()),
-        start: start.clone(),
+        start: Some(start_2),
     };
     let policies: HashMap<String, AccessPolicy> = HashMap::from([
         (test_id_1.clone().unwrap(), access_policy_1.clone()),
