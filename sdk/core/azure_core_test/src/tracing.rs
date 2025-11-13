@@ -317,12 +317,15 @@ pub fn check_instrumentation_result(
 
         let spans = tracer.spans.lock().unwrap();
 
-        // assert_eq!(
-        //     spans.len(),
-        //     expected.spans.len(),
-        //     "Unexpected number of spans for tracer {}",
-        //     expected.name
-        // );
+        // Check span lengths if there are no wildcard spans.
+        if !expected.spans.iter().any(|s| s.is_wildcard) {
+            assert_eq!(
+                spans.len(),
+                expected.spans.len(),
+                "Unexpected number of spans for tracer {}",
+                expected.name
+            );
+        }
 
         let mut expected_index = 0;
         for (span_index, span_actual) in spans.iter().enumerate() {
@@ -352,15 +355,25 @@ pub fn check_instrumentation_result(
                     ) {
                         eprintln!(
                             "Next actual span does not match expected span: {}",
-                            expected.spans[expected_index + 1].span_name
+                            expected.spans[expected_index].span_name
                         );
                         expected_index += 1;
                     }
+                } else {
+                    // At the very end, bump the expected index past the wildcard entry.
+                    // This ensures that we consume all the expected spans.
+                    expected_index += 1;
                 }
             } else {
                 expected_index += 1;
             }
         }
+        assert_eq!(
+            expected_index,
+            expected.spans.len(),
+            "Not all expected spans were found for tracer {}",
+            expected.name
+        );
     }
 }
 

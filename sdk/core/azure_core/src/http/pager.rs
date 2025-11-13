@@ -827,12 +827,9 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            State::Init => write!(f, "State::Init"),
-            State::More(c) => f
-                .debug_struct("State::More")
-                .field("continuation", &c.as_ref())
-                .finish(),
-            State::Done => write!(f, "State::Done"),
+            State::Init => write!(f, "Init"),
+            State::More(c) => f.debug_tuple("More").field(&c.as_ref()).finish(),
+            State::Done => write!(f, "Done"),
         }
     }
 }
