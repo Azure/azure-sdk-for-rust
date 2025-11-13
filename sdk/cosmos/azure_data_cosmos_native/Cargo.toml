@@ -14,7 +14,15 @@ name = "azurecosmos"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-azure_data_cosmos = { path = "../azure_data_cosmos" }
+futures.workspace = true
+tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "macros"] }
+serde_json = { workspace = true, features = ["raw_value"] }
+azure_core.workspace = true
+azure_data_cosmos = { path = "../azure_data_cosmos", features = [ "key_auth", "preview_query_engine" ] }
+
+[features]
+default = ["tokio"]
+tokio = ["dep:tokio"]
 
 [build-dependencies]
 cbindgen = "0.29.0"

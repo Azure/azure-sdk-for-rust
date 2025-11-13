@@ -36,9 +36,13 @@ fn main() {
             "\n// Specifies the version of cosmosclient this header file was generated from.\n// This should match the version of libcosmosclient you are referencing.\n#define COSMOSCLIENT_H_VERSION \"{}\"",
             env!("CARGO_PKG_VERSION")
         ))
+        .with_style(cbindgen::Style::Both)
+        .rename_item("CosmosClientHandle", "CosmosClient")
+        .rename_item("DatabaseClientHandle", "DatabaseClient")
+        .rename_item("ContainerClientHandle", "ContainerClient")
         .with_cpp_compat(true)
         .with_header(header)
         .generate()
         .expect("unable to generate bindings")
-        .write_to_file("include/cosmosclient.h");
+        .write_to_file("include/azurecosmos.h");
 }
