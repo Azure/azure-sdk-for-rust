@@ -19,10 +19,12 @@ FetchContent_MakeAvailable(Corrosion)
 corrosion_import_crate(
     MANIFEST_PATH ./Cargo.toml
     CRATETYPES staticlib cdylib
+    PROFILE dev
 )
 
 set(TEST_FILES
-    ./c_tests/version.c)
+    ./c_tests/version.c
+    ./c_tests/item_crud.c)
 
 foreach(test_file ${TEST_FILES})
     get_filename_component(test_name ${test_file} NAME_WE)

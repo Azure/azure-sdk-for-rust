@@ -19,10 +19,14 @@ tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "mac
 serde_json = { workspace = true, features = ["raw_value"] }
 azure_core.workspace = true
 azure_data_cosmos = { path = "../azure_data_cosmos", features = [ "key_auth", "preview_query_engine" ] }
+tracing.workspace = true
+tracing-subscriber = { workspace = true, optional = true, features = ["fmt", "env-filter"] }
 
 [features]
-default = ["tokio"]
+default = ["tokio", "reqwest", "tracing"]
 tokio = ["dep:tokio"]
+reqwest = ["azure_core/reqwest"]
+tracing = ["dep:tracing-subscriber"]
 
 [build-dependencies]
 cbindgen = "0.29.0"

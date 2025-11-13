@@ -3,10 +3,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../include/cosmosclient.h"
+#include "../include/azurecosmos.h"
 
 int main() {
-    const char *version = cosmosclient_version();
+    const char *version = cosmos_version();
     const char *header_version = COSMOSCLIENT_H_VERSION;
     printf("Cosmos Client Version: %s\n", version);
     printf("Header Version: %s\n", header_version);
