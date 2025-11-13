@@ -24,3 +24,10 @@ macro_rules! c_str {
         }
     };
 }
+
+#[macro_export]
+macro_rules! block_on {
+    ($async_expr:expr) => {
+        $crate::blocking::block_on($async_expr)
+    };
+}
