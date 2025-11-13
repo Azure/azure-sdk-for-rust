@@ -121,7 +121,8 @@ impl CosmosRequest {
             | OperationType::Query
             | OperationType::SqlQuery
             | OperationType::Batch
-            | OperationType::QueryPlan => Method::Post,
+            | OperationType::QueryPlan
+            | OperationType:: Execute => Method::Post,
             OperationType::Delete => Method::Delete,
             OperationType::Read => Method::Get,
             OperationType::ReadFeed => Method::Get,

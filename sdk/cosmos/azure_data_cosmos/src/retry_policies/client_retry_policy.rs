@@ -1,19 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::sync::{Arc, Mutex};
-use super::{RetryPolicy, RetryResult};
+use std::sync::Arc;
 use async_trait::async_trait;
 use url::Url;
-use azure_core::error::ErrorKind;
 use azure_core::http::{RawResponse, StatusCode};
-use azure_core::http::headers::Headers;
 use azure_core::time::Duration;
-use crate::constants::{SubStatusCode, SUB_STATUS};
+use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
-use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::retry_policies::get_substatus_code_from_error;
+use super::{RetryPolicy, RetryResult, get_substatus_code_from_response, get_substatus_code_from_error, resource_throttle_retry_policy::ResourceThrottleRetryPolicy};
 
 const RETRY_INTERVAL_MS: i64 = 1000;
 const MAX_RETRY_COUNT: i32 = 120;
@@ -50,7 +46,7 @@ pub struct ClientRetryPolicy {
     is_multi_master_write_request: bool,
     location_endpoint: Option<String>,
     retry_context: Option<RetryContext>,
-    cosmos_request: Option<Arc<Mutex<CosmosRequest>>>,
+    cosmos_request: Option<CosmosRequest>,
     throttling_retry: ResourceThrottleRetryPolicy,
 }
 
@@ -74,7 +70,7 @@ impl ClientRetryPolicy {
     ) -> Self {
         Self {
             global_endpoint_manager: Arc::new(global_endpoint_manager),
-            enable_endpoint_discovery: false,
+            enable_endpoint_discovery: true,
             failover_retry_count: 0,
             session_token_retry_count: 0,
             service_unavailable_retry_count: 0,
@@ -90,19 +86,17 @@ impl ClientRetryPolicy {
 
     fn should_retry_on_session_not_available(
         &mut self,
-        cosmos_request: Option<Arc<Mutex<CosmosRequest>>>
+        cosmos_request: Option<CosmosRequest>
     ) -> RetryResult {
         self.session_token_retry_count += 1;
 
+        // If endpoint discovery is disabled, the request cannot be retried anywhere else
         if !self.enable_endpoint_discovery {
-            // If endpoint discovery is disabled, the request cannot be retried anywhere else
             return RetryResult::DoNotRetry;
         }
 
         if self.can_use_multiple_write_locations {
-            // TODO: Update this to .get_applicable_endpoints(cosmos_request)
-            let endpoints = self.global_endpoint_manager.preferred_locations.clone();
-
+            let endpoints = self.global_endpoint_manager.get_applicable_endpoints(&cosmos_request.unwrap());
             if self.session_token_retry_count > endpoints.len() as i32 {
 
                 // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
@@ -193,9 +187,8 @@ impl ClientRetryPolicy {
             return RetryResult::DoNotRetry;
         }
 
-        if !self.can_use_multiple_write_locations && !self.is_read_request
-            // && !self.partition_key_range_location_cache.is_partition_level_automatic_failover_enabled() // Add PPAF Support
-        {
+        // automatic failover support needed to be plugged in.
+        if !self.can_use_multiple_write_locations && !self.is_read_request {
             return RetryResult::DoNotRetry;
         }
 
@@ -213,7 +206,7 @@ impl ClientRetryPolicy {
         RetryResult::Retry { after: Duration::ZERO }
     }
 
-    async fn should_retry_internal_async(
+    async fn should_retry_on_http_status(
         &mut self,
         status_code: StatusCode,
         sub_status_code: SubStatusCode,
@@ -221,8 +214,7 @@ impl ClientRetryPolicy {
 
         // Forbidden - Write forbidden (403.3)
         if status_code == StatusCode::Forbidden && sub_status_code == SubStatusCode::WriteForbidden {
-
-            // TODO: Add Logic For Per Partition Automatic Failover.
+            // automatic failover support needed to be plugged in here.
             return Some(self.should_retry_on_endpoint_failure_async(
                 false,
                 false,
@@ -230,11 +222,6 @@ impl ClientRetryPolicy {
                 false,
                 false,
             ).await);
-        }
-
-        // Request timeout (408)
-        if status_code ==  StatusCode::RequestTimeout {
-            // TODO: Handle Request Timeout.
         }
 
         // Read Session Not Available (404.1022)
@@ -274,8 +261,9 @@ impl ClientRetryPolicy {
     /// the `x-ms-retry-after-ms` header from the error context.
     async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
         let status_code = err.http_status().unwrap();
-        let sub_status_code = get_substatus_code_from_error(err).unwrap();
-        if let Some(result) = self.should_retry_internal_async(status_code.clone(), sub_status_code.clone()).await {
+        let sub_status_code = get_substatus_code_from_error(err);
+
+        if let Some(result) = self.should_retry_on_http_status(status_code.clone(), sub_status_code.clone()).await {
             return result;
         }
 
@@ -300,13 +288,9 @@ impl ClientRetryPolicy {
     /// server-suggested retry delays.
     async fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
         let status_code = response.status();
-        let sub_status_code = response.headers()
-            .get_as(&SUB_STATUS)
-            .ok()
-            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
-            .unwrap();
+        let sub_status_code = get_substatus_code_from_response(&response.clone());
 
-        if let Some(result) = self.should_retry_internal_async(status_code, sub_status_code).await {
+        if let Some(result) = self.should_retry_on_http_status(status_code, sub_status_code).await {
             return result;
         }
 
@@ -319,6 +303,7 @@ impl RetryPolicy for ClientRetryPolicy {
 
     async fn before_send_request(&mut self, request: &mut CosmosRequest) {
 
+        self.cosmos_request = Some(request.clone());
         let _stat = self.global_endpoint_manager.refresh_location_async(false).await;
         self.is_read_request = request.is_read_only_request();
         self.can_use_multiple_write_locations = self.global_endpoint_manager.can_use_multiple_write_locations(request);

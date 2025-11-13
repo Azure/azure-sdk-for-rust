@@ -73,14 +73,14 @@ impl GlobalEndpointManager {
         self.location_cache.lock().unwrap().resolve_service_endpoint(request)
     }
 
-    pub fn get_location(&self, _endpoint: &String) -> Option<String> { unimplemented!("GetLocation not implemented yet") }
+    pub fn get_applicable_endpoints(&self, request: &CosmosRequest) -> Vec<String> { self.location_cache.lock().unwrap().get_applicable_endpoints(request) }
 
     pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Read) }
 
     pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Write) }
 
-    pub fn can_use_multiple_write_locations(&self, _request: &CosmosRequest) -> bool {
-        self.location_cache.lock().unwrap().can_use_multiple_write_locations()
+    pub fn can_use_multiple_write_locations(&self, request: &CosmosRequest) -> bool {
+        !request.is_read_only_request() && self.can_support_multiple_write_locations(request.resource_type, request.operation_type)
     }
 
     pub fn initialize_account_properties_and_start_background_refresh(&mut self) {
@@ -141,15 +141,15 @@ impl GlobalEndpointManager {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn get_available_write_endpoints_by_location(&self) -> HashMap<String, String> { self.location_cache.lock().unwrap().locations_info.account_write_endpoints_by_location.clone() }
 
+    #[allow(dead_code)]
     fn get_available_read_endpoints_by_location(&self) -> HashMap<String, String> { self.location_cache.lock().unwrap().locations_info.account_read_endpoints_by_location.clone() }
 
-    pub(crate) fn can_support_multiple_write_locations(&self, resource_type: ResourceType, _operation_type: OperationType) -> bool {
+    pub(crate) fn can_support_multiple_write_locations(&self, resource_type: ResourceType, operation_type: OperationType) -> bool {
         let cache = self.location_cache.lock().unwrap();
-        cache.can_use_multiple_write_locations()
-            && cache.write_endpoints().iter().count() > 1
-            && resource_type == ResourceType::Documents
+        cache.can_use_multiple_write_locations() && (resource_type == ResourceType::Documents || (resource_type == ResourceType::StoredProcedures && operation_type == OperationType::Execute))
     }
 
     /// Retrieves the Cosmos DB account ("database account") properties.

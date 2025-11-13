@@ -3,16 +3,15 @@
 
 use std::cmp::max;
 use std::sync::Arc;
-use super::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
 use tracing::trace;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
-use crate::constants::{SubStatusCode, SUB_STATUS};
+use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::retry_policies::get_substatus_code_from_error;
+use super::{RetryPolicy, RetryResult, get_substatus_code_from_response, get_substatus_code_from_error};
 
 /// Retry policy for handling resource throttling (429 TooManyRequests) errors
 ///
@@ -100,10 +99,10 @@ impl MetadataRequestRetryPolicy {
     pub async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
 
         let status_code = err.http_status().unwrap();
-        let sub_status_code = get_substatus_code_from_error(err).unwrap();
+        let sub_status_code = get_substatus_code_from_error(err);
 
         let retry_result = self.should_retry_with_status_code(status_code,  sub_status_code);
-        if (retry_result.is_retry()) {
+        if retry_result.is_retry() {
             return retry_result;
         }
 
@@ -129,14 +128,10 @@ impl MetadataRequestRetryPolicy {
     pub async fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
 
         let status_code = response.status();
-        let sub_status_code = response.headers()
-            .get_as(&SUB_STATUS)
-            .ok()
-            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
-            .unwrap();
+        let sub_status_code = get_substatus_code_from_response(&response.clone());
 
         let retry_result = self.should_retry_with_status_code(status_code,  sub_status_code);
-        if (retry_result.is_retry()) {
+        if retry_result.is_retry() {
             return retry_result;
         }
 

@@ -189,7 +189,16 @@ impl LocationCache {
     }
 
     pub fn can_use_multiple_write_locations(&self) -> bool {
-        !self.write_endpoints().is_empty()
+        !self.write_endpoints().is_empty() && self.write_endpoints().iter().len() > 1
+    }
+
+    pub fn get_applicable_endpoints(&mut self, _request: &CosmosRequest) -> Vec<String> {
+
+        self.get_preferred_available_endpoints(
+            &self.locations_info.account_read_endpoints_by_location,
+            RequestOperation::Read,
+            &self.default_endpoint,
+        )
     }
 
     fn refresh_endpoints(&mut self) {
