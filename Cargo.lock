@@ -1634,9 +1634,9 @@ dependencies = [
 
 [[package]]
 name = "include-file"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f134d94825032d15a87baf75e1311282cedf961cc09f1df65b37b643edb51228"
+checksum = "3b82360a1cfc38a30a967d4e1b58745ff9258c9326772293402d88d6dd201229"
 dependencies = [
  "proc-macro2",
  "syn 2.0.110",

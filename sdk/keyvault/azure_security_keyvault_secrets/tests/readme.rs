@@ -26,46 +26,34 @@ async fn readme(ctx: TestContext) -> Result<()> {
     )?;
 
     // Each macro invocation is in its own block to prevent errors with duplicate imports.
-    {
-        println!("Create a secret");
-        include_markdown!("README.md", "create_secret");
-    }
+    println!("Create a secret");
+    include_markdown!("README.md", "create_secret", scope);
 
-    {
-        println!("Get a secret");
-        include_markdown!("README.md", "get_secret");
-    }
+    println!("Get a secret");
+    include_markdown!("README.md", "get_secret", scope);
 
-    {
-        println!("Update a secret");
-        include_markdown!("README.md", "update_secret");
-    }
+    println!("Update a secret");
+    include_markdown!("README.md", "update_secret", scope);
 
-    {
-        println!("List secrets");
-        include_markdown!("README.md", "list_secrets");
-    }
+    println!("List secrets");
+    include_markdown!("README.md", "list_secrets", scope);
 
-    {
-        println!("Handle errors");
-        include_markdown!("README.md", "errors");
-    }
+    println!("Handle errors");
+    include_markdown!("README.md", "errors", scope);
 
-    {
-        println!("Delete a secret");
-        include_markdown!("README.md", "delete_secret");
+    println!("Delete a secret");
+    include_markdown!("README.md", "delete_secret", scope);
 
-        // Make sure the secret gets purged (may not take immediate effect).
-        println!("Purge a secret");
-        for _ in 0..5 {
-            match client.purge_deleted_secret("secret-name", None).await {
-                Ok(_) => break,
-                Err(err) if matches!(err.kind(), ErrorKind::HttpResponse { status, .. } if *status == StatusCode::Conflict) =>
-                {
-                    azure_core::sleep(Duration::seconds(1)).await;
-                }
-                Err(err) => return Err(err),
+    // Make sure the secret gets purged (may not take immediate effect).
+    println!("Purge a secret");
+    for _ in 0..5 {
+        match client.purge_deleted_secret("secret-name", None).await {
+            Ok(_) => break,
+            Err(err) if matches!(err.kind(), ErrorKind::HttpResponse { status, .. } if *status == StatusCode::Conflict) =>
+            {
+                azure_core::sleep(Duration::seconds(1)).await;
             }
+            Err(err) => return Err(err),
         }
     }
 
