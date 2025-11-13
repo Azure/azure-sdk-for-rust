@@ -3,11 +3,15 @@
 
 pub mod resource_throttle_retry_policy;
 pub mod client_retry_policy;
+pub mod metadata_request_retry_policy;
 
 use crate::cosmos_request::CosmosRequest;
 use async_trait::async_trait;
+use azure_core::error::ErrorKind;
+use azure_core::http::headers::Headers;
 use azure_core::http::RawResponse;
 use azure_core::time::Duration;
+use crate::constants::{SubStatusCode, SUB_STATUS};
 
 /// Result of a retry policy decision
 ///
@@ -67,4 +71,16 @@ pub trait RetryPolicy: Send + Sync {
     ///
     /// A `RetryResult` indicating the retry decision.
     async fn should_retry(&mut self, response: &azure_core::Result<RawResponse>) -> RetryResult;
+}
+
+fn get_substatus_code_from_error(err: &azure_core::Error) -> Option<SubStatusCode> {
+    if let ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
+        raw_response
+            .as_ref()
+            .map(|r| r.headers())
+            .and_then(|h| h.get_as(&SUB_STATUS).ok())
+            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
+    } else {
+        Some(SubStatusCode::Unknown)
+    }
 }

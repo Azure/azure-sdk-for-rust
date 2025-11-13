@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::cosmos_request::CosmosRequest;
-use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
+use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
@@ -81,10 +81,8 @@ impl BackOffRetryHandler {
         &self,
         request: &CosmosRequest,
     ) -> Box<dyn RetryPolicy> {
-        // For metadata requests, at the moment always return ResourceThrottleRetryPolicy. Future implementation should
-        // return separate retry policies for metadata reads.
         if request.resource_type.is_meta_data() {
-            Box::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
+            Box::new(MetadataRequestRetryPolicy::new(self.global_endpoint_manager.clone()))
         }
         else {
             Box::new(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
@@ -122,9 +120,9 @@ impl RetryHandler for BackOffRetryHandler {
     {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
-        retry_policy.before_send_request(request).await;
 
         loop {
+            retry_policy.before_send_request(request).await;
             // Invoke the provided sender callback instead of calling inner_send_async directly
             let result = sender(request).await;
             let retry_result = retry_policy.should_retry(&result).await;

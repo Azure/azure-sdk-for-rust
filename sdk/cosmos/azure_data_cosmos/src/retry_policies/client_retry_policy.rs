@@ -13,6 +13,7 @@ use crate::constants::{SubStatusCode, SUB_STATUS};
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::retry_policies::get_substatus_code_from_error;
 
 const RETRY_INTERVAL_MS: i64 = 1000;
 const MAX_RETRY_COUNT: i32 = 120;
@@ -214,54 +215,46 @@ impl ClientRetryPolicy {
 
     async fn should_retry_internal_async(
         &mut self,
-        status_code: Option<StatusCode>,
-        sub_status_code: Option<SubStatusCode>,
+        status_code: StatusCode,
+        sub_status_code: SubStatusCode,
     ) -> Option<RetryResult> {
 
         // Forbidden - Write forbidden (403.3)
-        if status_code == Some(StatusCode::Forbidden) && sub_status_code == Some(SubStatusCode::WriteForbidden) {
+        if status_code == StatusCode::Forbidden && sub_status_code == SubStatusCode::WriteForbidden {
 
             // TODO: Add Logic For Per Partition Automatic Failover.
             return Some(self.should_retry_on_endpoint_failure_async(
-                false, // is_read_request
-                false, // mark_both_read_and_write_as_unavailable
-                true,  // force_refresh
-                false, // retry_on_preferred_locations
-                false, // overwrite_endpoint_discovery
+                false,
+                false,
+                true,
+                false,
+                false,
             ).await);
         }
 
         // Request timeout (408)
-        if status_code ==  Some(StatusCode::RequestTimeout) {
+        if status_code ==  StatusCode::RequestTimeout {
             // TODO: Handle Request Timeout.
         }
 
         // Read Session Not Available (404.1022)
-        if status_code == Some(StatusCode::NotFound) && sub_status_code == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE) {
+        if status_code == StatusCode::NotFound && sub_status_code == SubStatusCode::READ_SESSION_NOT_AVAILABLE {
             return Some(self.should_retry_on_session_not_available(self.cosmos_request.clone()));
         }
 
         // Service unavailable (503)
-        if status_code == Some(StatusCode::ServiceUnavailable) {
+        if status_code == StatusCode::ServiceUnavailable {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
 
         // Internal server error (500) or Gone - Lease not found (410)
-        if (status_code == Some(StatusCode::InternalServerError) && self.is_read_request)
-            || (status_code == Some(StatusCode::Gone) && sub_status_code == Some(SubStatusCode::LeaseNotFound))
+        if (status_code == StatusCode::InternalServerError && self.is_read_request)
+            || (status_code == StatusCode::Gone && sub_status_code == SubStatusCode::LeaseNotFound)
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
 
         None
-    }
-
-    fn extract_headers(err: &azure_core::Error) -> Option<&Headers> {
-        if let ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
-            raw_response.as_ref().map(|r| r.headers())
-        } else {
-            None
-        }
     }
 
     /// Determines whether to retry an operation that failed with an exception
@@ -280,13 +273,9 @@ impl ClientRetryPolicy {
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the error context.
     async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
-        let status_code = err.http_status();
-        // Safely extract and parse sub-status code header. Any failure leaves it as None.
-        let sub_status_code = ClientRetryPolicy::extract_headers(err)
-            .and_then(|h| h.get_as(&SUB_STATUS).ok())
-            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok());
-
-        if let Some(result) = self.should_retry_internal_async(status_code, sub_status_code).await {
+        let status_code = err.http_status().unwrap();
+        let sub_status_code = get_substatus_code_from_error(err).unwrap();
+        if let Some(result) = self.should_retry_internal_async(status_code.clone(), sub_status_code.clone()).await {
             return result;
         }
 
@@ -314,9 +303,10 @@ impl ClientRetryPolicy {
         let sub_status_code = response.headers()
             .get_as(&SUB_STATUS)
             .ok()
-            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok());
+            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
+            .unwrap();
 
-        if let Some(result) = self.should_retry_internal_async(Some(status_code), sub_status_code).await {
+        if let Some(result) = self.should_retry_internal_async(status_code, sub_status_code).await {
             return result;
         }
 
@@ -349,6 +339,7 @@ impl RetryPolicy for ClientRetryPolicy {
             } else {
                 req_ctx.route_to_location_index(ctx.retry_location_index, ctx.retry_request_on_preferred_locations);
             }
+            request.request_context = req_ctx;
         }
 
         // Resolve the endpoint for the request
