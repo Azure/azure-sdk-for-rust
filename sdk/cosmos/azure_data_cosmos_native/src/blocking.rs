@@ -9,7 +9,10 @@ pub fn block_on<F>(future: F) -> F::Output
 where
     F: Future,
 {
-    let runtime = RUNTIME.get_or_init(|| Runtime::new().expect("Failed to create Tokio runtime"));
+    let runtime = RUNTIME.get_or_init(|| {
+        tracing::trace!("Initializing blocking Tokio runtime");
+        Runtime::new().expect("Failed to create Tokio runtime")
+    });
     runtime.block_on(future)
 }
 
