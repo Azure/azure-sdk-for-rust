@@ -7,13 +7,11 @@ use azure_core::{
     time::Duration,
 };
 use azure_core_test::{recorded, TestContext, TestMode};
-use azure_security_keyvault_secrets::SecretClient;
+use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 use include_file::include_markdown;
 
 #[recorded::test]
 async fn readme(ctx: TestContext) -> Result<()> {
-    use azure_security_keyvault_secrets::SecretClientOptions;
-
     let recording = ctx.recording();
 
     let mut options = SecretClientOptions::default();

@@ -77,6 +77,33 @@ Use the `az keyvault security-domain download` command to download the security 
 az keyvault security-domain download --hsm-name <your-key-vault-name> --sd-wrapping-keys ./certs/cert_0.cer ./certs/cert_1.cer ./certs/cert_2.cer --sd-quorum 2 --security-domain-file ContosoHSM-SD.json
 ```
 
+### Instantiate a client
+
+```rust no_run
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_keys::KeyClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new key client
+    let credential = DeveloperToolsCredential::new(None)?;
+    let client = KeyClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Get a key using the key client.
+    let key = client
+        .get_key("key-name", None)
+        .await?
+        .into_model()?;
+    println!("JWT: {:?}", key.key);
+
+    Ok(())
+}
+```
+
 ## Key concepts
 
 ### Key
@@ -93,7 +120,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The following section provides several code snippets using a `KeyClient` like we instantiated above, covering some of the most common Azure Key Vault keys service related tasks:
+The following section provides several code snippets using a `KeyClient` like we [instantiated above](#instantiate-a-client):
 
 * [Create a key](#create-a-key)
 * [Retrieve a key](#retrieve-a-key)
