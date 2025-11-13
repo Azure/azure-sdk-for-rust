@@ -25,7 +25,7 @@ use azure_security_keyvault_keys::{
     KeyClient, KeyClientOptions,
 };
 use azure_security_keyvault_test::Retry;
-use futures::{FutureExt, TryStreamExt};
+use futures::TryStreamExt;
 use openssl::sha::sha256;
 use std::{collections::HashMap, sync::LazyLock};
 
@@ -93,24 +93,21 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
             )?;
             Ok(client)
         },
-        |client| {
-            async move {
-                // Create a self-signed certificate.
-                let body = CreateCertificateParameters {
-                    certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
-                    ..Default::default()
-                };
-                let _certificate = client
-                    .create_certificate(
-                        "certificate-validate-instrumentation",
-                        body.try_into()?,
-                        None,
-                    )?
-                    .await?
-                    .into_model()?;
-                Ok(())
-            }
-            .boxed()
+        async move |client| {
+            // Create a self-signed certificate.
+            let body = CreateCertificateParameters {
+                certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
+                ..Default::default()
+            };
+            let _certificate = client
+                .create_certificate(
+                    "certificate-validate-instrumentation",
+                    body.try_into()?,
+                    None,
+                )?
+                .await?
+                .into_model()?;
+            Ok(())
         },
         ExpectedInstrumentation {
             package_name: recording.var("CARGO_PKG_NAME", None),
@@ -122,14 +119,12 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
                     ExpectedRestApiSpan {
                         api_verb: Method::Post,
                         expected_status_code: StatusCode::Accepted,
+                        is_wildcard: false,
                     },
                     ExpectedRestApiSpan {
                         api_verb: Method::Get,
                         expected_status_code: StatusCode::Ok,
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: Method::Get,
-                        expected_status_code: StatusCode::Ok,
+                        is_wildcard: true,
                     },
                 ],
                 ..Default::default()

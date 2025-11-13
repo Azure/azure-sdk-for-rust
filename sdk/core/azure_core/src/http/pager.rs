@@ -811,14 +811,33 @@ impl<P> fmt::Debug for PageIterator<P> {
     }
 }
 
-#[derive(Debug, Clone, Eq)]
-enum State<C> {
+#[derive(Clone, Eq)]
+enum State<C>
+where
+    C: AsRef<str>,
+{
     Init,
     More(C),
     Done,
 }
 
-impl<C> PartialEq for State<C> {
+impl<C> fmt::Debug for State<C>
+where
+    C: AsRef<str>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            State::Init => write!(f, "Init"),
+            State::More(c) => f.debug_tuple("More").field(&c.as_ref()).finish(),
+            State::Done => write!(f, "Done"),
+        }
+    }
+}
+
+impl<C> PartialEq for State<C>
+where
+    C: AsRef<str>,
+{
     fn eq(&self, other: &Self) -> bool {
         // Only needs to compare if both states are Init or Done; internally, we don't care about any other states.
         matches!(
@@ -829,7 +848,10 @@ impl<C> PartialEq for State<C> {
 }
 
 #[derive(Debug)]
-struct StreamState<'a, C, F> {
+struct StreamState<'a, C, F>
+where
+    C: AsRef<str>,
+{
     state: State<C>,
     make_request: F,
     continuation_token: Arc<Mutex<Option<String>>>,
@@ -863,9 +885,21 @@ where
             added_span: false,
         },
         |mut stream_state| async move {
+            // When in the "Init" state, we are either starting fresh or resuming from a continuation token. In either case,
+            // attach a span to the context for the entire paging operation.
+            if stream_state.state == State::Init {
+                tracing::debug!("establish a public API span for new pager.");
+
+                // At the very start of polling, create a span for the entire request, and attach it to the context
+                let span = create_public_api_span(&stream_state.ctx, None, None);
+                if let Some(ref s) = span {
+                    stream_state.added_span = true;
+                    stream_state.ctx = stream_state.ctx.with_value(s.clone());
+                }
+            }
+
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
-
             if stream_state.state != State::Done {
                 let result = match stream_state.continuation_token.lock() {
                     Ok(next_token) => match next_token.as_deref() {
@@ -895,12 +929,6 @@ where
             let result = match stream_state.state {
                 State::Init => {
                     tracing::debug!("initial page request");
-                    // At the very start of polling, create a span for the entire request, and attach it to the context
-                    let span = create_public_api_span(&stream_state.ctx, None, None);
-                    if let Some(ref s) = span {
-                        stream_state.added_span = true;
-                        stream_state.ctx = stream_state.ctx.with_value(s.clone());
-                    }
                     (stream_state.make_request)(PagerState::Initial, stream_state.ctx.clone()).await
                 }
                 State::More(n) => {
