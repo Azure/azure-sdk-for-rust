@@ -7,13 +7,12 @@ use azure_core::{
     time::Duration,
 };
 use azure_core_test::{recorded, TestContext, TestMode};
-use azure_security_keyvault_certificates::CertificateClient;
+use azure_security_keyvault_certificates::{CertificateClient, CertificateClientOptions};
+use azure_security_keyvault_keys::{KeyClient, KeyClientOptions};
 use include_file::include_markdown;
 
 #[recorded::test]
 async fn readme(ctx: TestContext) -> Result<()> {
-    use azure_security_keyvault_certificates::CertificateClientOptions;
-
     let recording = ctx.recording();
 
     let mut options = CertificateClientOptions::default();
@@ -23,6 +22,15 @@ async fn readme(ctx: TestContext) -> Result<()> {
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
         recording.credential(),
         Some(options),
+    )?;
+
+    let mut key_options = KeyClientOptions::default();
+    recording.instrument(&mut key_options.client_options);
+
+    let key_client = KeyClient::new(
+        client.endpoint().as_str(),
+        recording.credential(),
+        Some(key_options),
     )?;
 
     // Each macro invocation is in its own block to prevent errors with duplicate imports.

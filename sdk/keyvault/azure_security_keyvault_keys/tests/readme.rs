@@ -7,13 +7,11 @@ use azure_core::{
     time::Duration,
 };
 use azure_core_test::{recorded, TestContext, TestMode};
-use azure_security_keyvault_keys::KeyClient;
+use azure_security_keyvault_keys::{KeyClient, KeyClientOptions};
 use include_file::include_markdown;
 
 #[recorded::test]
 async fn readme(ctx: TestContext) -> Result<()> {
-    use azure_security_keyvault_keys::KeyClientOptions;
-
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
@@ -39,6 +37,7 @@ async fn readme(ctx: TestContext) -> Result<()> {
     include_markdown!("README.md", "list_keys", scope);
 
     println!("Encrypt and decrypt");
+    rand::seed(recording.random());
     include_markdown!("README.md", "encrypt_decrypt", scope);
 
     println!("Handle errors");
@@ -62,4 +61,31 @@ async fn readme(ctx: TestContext) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Override `use rand::random` import in README.md to use recorded seed.
+mod rand {
+    // cspell:ignore Seedable
+    #![allow(static_mut_refs)]
+    use rand::{
+        distr::{Distribution, StandardUniform},
+        Rng, SeedableRng,
+    };
+    use rand_chacha::ChaCha20Rng;
+    use std::sync::OnceLock;
+
+    static mut RNG: OnceLock<ChaCha20Rng> = OnceLock::new();
+
+    pub fn random<T>() -> T
+    where
+        StandardUniform: Distribution<T>,
+    {
+        unsafe { RNG.get_mut().expect("expected ChaCha20 rng").random() }
+    }
+
+    pub fn seed(seed: [u8; 32]) {
+        unsafe {
+            RNG.set(ChaCha20Rng::from_seed(seed)).expect("set seed");
+        }
+    }
 }

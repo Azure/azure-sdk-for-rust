@@ -50,14 +50,11 @@ az login
 
 Instantiate a `DeveloperToolsCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
-### Set and Get a Secret
+### Instantiate a client
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{
-    models::{Secret, SecretClientGetSecretOptions, SetSecretParameters},
-    ResourceExt, SecretClient,
-};
+use azure_security_keyvault_secrets::SecretClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -69,29 +66,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    // Create a new secret using the secret client.
-    let secret_set_parameters = SetSecretParameters {
-        value: Some("secret-value".into()),
-        ..Default::default()
-    };
-
-    let secret: Secret = client
-        .set_secret("secret-name", secret_set_parameters.try_into()?, None)
+    // Get a secret using the secret client.
+    let secret = client
+        .get_secret("secret-name", None)
         .await?
         .into_model()?;
-
-    // Get version of created secret.
-    let secret_version = secret.resource_id()?.version;
-
-    // Retrieve a secret using the secret client.
-    let secret: Secret = client
-        .get_secret("secret-name", Some(SecretClientGetSecretOptions {
-            secret_version,
-            ..Default::default()
-        }))
-        .await?
-        .into_model()?;
-    println!("{:?}", secret.value);
+    println!("Secret: {:?}", secret.value);
 
     Ok(())
 }
@@ -113,7 +93,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The following section provides several code snippets using a `SecretClient` like we instantiated above, covering some of the most common Azure Key Vault secrets service related tasks:
+The following section provides several code snippets using a `SecretClient` like we [instantiated above](#instantiate-a-client):
 
 * [Create a secret](#create-a-secret)
 * [Retrieve a secret](#retrieve-a-secret)

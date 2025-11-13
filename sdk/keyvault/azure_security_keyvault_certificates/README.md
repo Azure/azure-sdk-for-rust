@@ -50,6 +50,37 @@ az login
 
 Instantiate a `DeveloperToolsCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
+### Instantiate a client
+
+```rust no_run
+use azure_core::base64;
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_certificates::CertificateClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new certificate client
+    let credential = DeveloperToolsCredential::new(None)?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Get a certificate using the certificate client.
+    let certificate = client
+        .get_certificate("certificate-name", None)
+        .await?
+        .into_model()?;
+    println!(
+        "Thumbprint: {:?}",
+        certificate.x509_thumbprint.map(base64::encode_url_safe)
+    );
+
+    Ok(())
+}
+```
+
 ## Key concepts
 
 ### Certificate
@@ -66,7 +97,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The following section provides several code snippets using a `CertificateClient` like we instantiated above, covering some of the most common Azure Key Vault certificates service related tasks:
+The following section provides several code snippets using a `CertificateClient` like we [instantiated above](#instantiate-a-client):
 
 * [Create a certificate](#create-a-certificate)
 * [Retrieve a certificate](#retrieve-a-certificate)
@@ -204,12 +235,10 @@ use azure_security_keyvault_certificates::{
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},
-    KeyClient,
 };
 use openssl::sha::sha256;
 
-// Use test data to sign.
-let plaintext = "test data to sign";
+let plaintext = "plaintext";
 
 // Create an EC certificate policy for signing.
 let policy = CertificatePolicy {
@@ -244,12 +273,7 @@ client
 // Hash the plaintext to be signed.
 let digest = sha256(plaintext.as_bytes()).to_vec();
 
-// Create a KeyClient using the certificate to sign the digest.
-let key_client = KeyClient::new(
-    client.endpoint().as_str(),
-    recording.credential(),
-    None,
-)?;
+// Use a KeyClient using the certificate to sign the digest.
 let body = SignParameters {
     algorithm: Some(SignatureAlgorithm::Es256),
     value: Some(digest),
