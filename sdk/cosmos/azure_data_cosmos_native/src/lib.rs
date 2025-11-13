@@ -28,3 +28,18 @@ const VERSION: &CStr = c_str!(env!("CARGO_PKG_VERSION"));
 pub extern "C" fn cosmos_version() -> *const c_char {
     VERSION.as_ptr()
 }
+
+/// Installs tracing listeners that output to stdout/stderr based on the `COSMOS_LOG` environment variable.
+///
+/// Just calling this function isn't sufficient to get logging output. You must also set the `COSMOS_LOG` environment variable
+/// to specify the desired log level and targets. See <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html>
+/// for details on the syntax for this variable.
+#[no_mangle]
+#[cfg(feature = "tracing")]
+pub extern "C" fn cosmos_enable_tracing() {
+    use tracing_subscriber::EnvFilter;
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_env("COSMOS_LOG"))
+        .init();
+}
