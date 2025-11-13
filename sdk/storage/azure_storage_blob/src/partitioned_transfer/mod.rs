@@ -84,6 +84,8 @@ mod tests {
 
         let (sender, receiver) = channel();
 
+        // setup a series of operations that send a unique number to a channel
+        // we can then assert the expected numbers made it to the channel at expected times
         let ops = (0..num_ops).map(|i| {
             let s = sender.clone();
             Ok(async move || {
@@ -104,9 +106,9 @@ mod tests {
         match race {
             future::Either::Left(_) => panic!("Wrong future won the race."),
             future::Either::Right((_, run_all_fut)) => {
-                let mut nums: Vec<_> = receiver.try_iter().collect();
-                nums.sort();
-                assert_eq!(nums, (0..parallel).collect::<Vec<_>>());
+                let mut items: Vec<_> = receiver.try_iter().collect();
+                items.sort();
+                assert_eq!(items, (0..parallel).collect::<Vec<_>>());
 
                 run_all_fut.await?;
                 assert_eq!(receiver.try_iter().collect::<Vec<_>>().len(), 1);
