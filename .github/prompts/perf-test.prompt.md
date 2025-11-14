@@ -1,3 +1,4 @@
+````prompt
 ---
 mode: "agent"
 description: "Generate a new performance test"
@@ -54,3 +55,4 @@ For each new perf test:
 
 -   Client constructors should already return a `Result<Arc<Self>>` so call `expect("expected new client")` on the return.
 -   Always pass `None` for the options parameter on a client constructor.
+````
