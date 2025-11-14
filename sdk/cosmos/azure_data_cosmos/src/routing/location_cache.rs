@@ -5,12 +5,12 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::{AccountProperties, AccountRegion};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::{
     collections::HashMap,
     sync::RwLock,
     time::{Duration, SystemTime},
 };
-use std::borrow::Cow;
 use tracing::info;
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
@@ -288,12 +288,17 @@ impl LocationCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::HashSet, vec};
     use crate::cosmos_request::CosmosRequestBuilder;
     use crate::operation_context::OperationType;
     use crate::resource_context::{ResourceLink, ResourceType};
+    use std::{collections::HashSet, vec};
 
-    fn create_test_data() -> (String, Vec<AccountRegion>, Vec<AccountRegion>, Vec<Cow<'static, str>>) {
+    fn create_test_data() -> (
+        String,
+        Vec<AccountRegion>,
+        Vec<AccountRegion>,
+        Vec<Cow<'static, str>>,
+    ) {
         // Setting up test database account data
         let default_endpoint = "https://default.documents.example.com".to_string();
 
@@ -317,10 +322,8 @@ mod tests {
 
         let read_locations = Vec::from([location_1, location_2, location_3, location_4]);
 
-        let preferred_locations: Vec<Cow<'static, str>> = vec![
-            Cow::Borrowed("Location 1"),
-            Cow::Borrowed("Location 2"),
-        ];
+        let preferred_locations: Vec<Cow<'static, str>> =
+            vec![Cow::Borrowed("Location 1"), Cow::Borrowed("Location 2")];
 
         (
             default_endpoint,
@@ -502,10 +505,7 @@ mod tests {
             ResourceLink::root(ResourceType::Documents),
         );
 
-        let cosmos_request = builder
-            .build()
-            .ok()
-            .unwrap();
+        let cosmos_request = builder.build().ok().unwrap();
 
         assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
 
@@ -537,10 +537,7 @@ mod tests {
             ResourceLink::root(ResourceType::Documents),
         );
 
-        let cosmos_request = builder
-            .build()
-            .ok()
-            .unwrap();
+        let cosmos_request = builder.build().ok().unwrap();
 
         assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
 
@@ -630,10 +627,7 @@ mod tests {
             ResourceLink::root(ResourceType::Documents),
         );
 
-        let cosmos_request = builder
-            .build()
-            .ok()
-            .unwrap();
+        let cosmos_request = builder.build().ok().unwrap();
 
         // resolve service endpoint
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);

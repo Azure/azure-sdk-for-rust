@@ -1,7 +1,6 @@
 //! Concrete (yet unimplemented) GlobalEndpointManager.
 //! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
-use std::borrow::Cow;
 use crate::constants::ACCOUNT_PROPERTIES_KEY;
 use crate::cosmos_request::{CosmosRequest, CosmosRequestBuilder};
 use crate::models::AccountProperties;
@@ -12,6 +11,7 @@ use crate::ReadDatabaseOptions;
 use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
 use moka::future::Cache;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::borrow::Cow;
 use crate::constants;
 use crate::models::ThroughputProperties;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use azure_core::time::Duration;
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::Infallible;
 use std::fmt;
