@@ -1,15 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::sync::Arc;
-use async_trait::async_trait;
-use url::Url;
-use azure_core::http::{RawResponse, StatusCode};
-use azure_core::time::Duration;
+use super::{
+    get_substatus_code_from_error, get_substatus_code_from_response,
+    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryPolicy, RetryResult,
+};
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use super::{RetryPolicy, RetryResult, get_substatus_code_from_response, get_substatus_code_from_error, resource_throttle_retry_policy::ResourceThrottleRetryPolicy};
+use async_trait::async_trait;
+use azure_core::http::{RawResponse, StatusCode};
+use azure_core::time::Duration;
+use std::sync::Arc;
+use url::Url;
 
 const RETRY_INTERVAL_MS: i64 = 1000;
 const MAX_RETRY_COUNT: i32 = 120;
@@ -65,9 +68,7 @@ impl ClientRetryPolicy {
     /// // Create a policy with 5 retries, 120 second max wait, and backoff factor of 3
     /// let policy = ResourceThrottleRetryPolicy::new(5, 120, 3);
     /// ```
-    pub fn new(
-        global_endpoint_manager: GlobalEndpointManager,
-    ) -> Self {
+    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
         Self {
             global_endpoint_manager: Arc::new(global_endpoint_manager),
             enable_endpoint_discovery: true,
@@ -80,13 +81,13 @@ impl ClientRetryPolicy {
             location_endpoint: None,
             retry_context: None,
             cosmos_request: None,
-            throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10)
+            throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10),
         }
     }
 
     fn should_retry_on_session_not_available(
         &mut self,
-        cosmos_request: Option<CosmosRequest>
+        cosmos_request: Option<CosmosRequest>,
     ) -> RetryResult {
         self.session_token_retry_count += 1;
 
@@ -96,9 +97,10 @@ impl ClientRetryPolicy {
         }
 
         if self.can_use_multiple_write_locations {
-            let endpoints = self.global_endpoint_manager.get_applicable_endpoints(&cosmos_request.unwrap());
+            let endpoints = self
+                .global_endpoint_manager
+                .get_applicable_endpoints(&cosmos_request.unwrap());
             if self.session_token_retry_count > endpoints.len() as i32 {
-
                 // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
                 RetryResult::DoNotRetry
             } else {
@@ -108,7 +110,9 @@ impl ClientRetryPolicy {
                     route_to_hub: false,
                 });
 
-                RetryResult::Retry {after: Duration::ZERO}
+                RetryResult::Retry {
+                    after: Duration::ZERO,
+                }
             }
         } else if self.session_token_retry_count > 1 {
             // When cannot use multiple write locations, then don't retry the request if
@@ -121,7 +125,9 @@ impl ClientRetryPolicy {
                 route_to_hub: false,
             });
 
-            RetryResult::Retry {after: Duration::ZERO}
+            RetryResult::Retry {
+                after: Duration::ZERO,
+            }
         }
     }
 
@@ -144,10 +150,12 @@ impl ClientRetryPolicy {
         if let Some(ref endpoint) = self.location_endpoint {
             if !overwrite_endpoint_discovery {
                 if is_read_request || mark_both_read_and_write_as_unavailable {
-                    self.global_endpoint_manager.mark_endpoint_unavailable_for_read(endpoint);
+                    self.global_endpoint_manager
+                        .mark_endpoint_unavailable_for_read(endpoint);
                 }
                 if !is_read_request || mark_both_read_and_write_as_unavailable {
-                    self.global_endpoint_manager.mark_endpoint_unavailable_for_write(endpoint);
+                    self.global_endpoint_manager
+                        .mark_endpoint_unavailable_for_write(endpoint);
                 }
             }
         }
@@ -162,7 +170,10 @@ impl ClientRetryPolicy {
             Duration::milliseconds(RETRY_INTERVAL_MS)
         };
 
-        let _refresh_cache_result = self.global_endpoint_manager.refresh_location_async(force_refresh).await;
+        let _refresh_cache_result = self
+            .global_endpoint_manager
+            .refresh_location_async(force_refresh)
+            .await;
         let retry_location_index = if retry_on_preferred_locations {
             0
         } else {
@@ -201,7 +212,9 @@ impl ClientRetryPolicy {
             route_to_hub: false,
         });
 
-        RetryResult::Retry { after: Duration::ZERO }
+        RetryResult::Retry {
+            after: Duration::ZERO,
+        }
     }
 
     async fn should_retry_on_http_status(
@@ -209,21 +222,20 @@ impl ClientRetryPolicy {
         status_code: StatusCode,
         sub_status_code: SubStatusCode,
     ) -> Option<RetryResult> {
-
         // Forbidden - Write forbidden (403.3)
-        if status_code == StatusCode::Forbidden && sub_status_code == SubStatusCode::WriteForbidden {
+        if status_code == StatusCode::Forbidden && sub_status_code == SubStatusCode::WriteForbidden
+        {
             // automatic failover support needed to be plugged in here.
-            return Some(self.should_retry_on_endpoint_failure_async(
-                false,
-                false,
-                true,
-                false,
-                false,
-            ).await);
+            return Some(
+                self.should_retry_on_endpoint_failure_async(false, false, true, false, false)
+                    .await,
+            );
         }
 
         // Read Session Not Available (404.1022)
-        if status_code == StatusCode::NotFound && sub_status_code == SubStatusCode::READ_SESSION_NOT_AVAILABLE {
+        if status_code == StatusCode::NotFound
+            && sub_status_code == SubStatusCode::READ_SESSION_NOT_AVAILABLE
+        {
             return Some(self.should_retry_on_session_not_available(self.cosmos_request.clone()));
         }
 
@@ -261,7 +273,10 @@ impl ClientRetryPolicy {
         let status_code = err.http_status().unwrap();
         let sub_status_code = get_substatus_code_from_error(err);
 
-        if let Some(result) = self.should_retry_on_http_status(status_code, sub_status_code).await {
+        if let Some(result) = self
+            .should_retry_on_http_status(status_code, sub_status_code)
+            .await
+        {
             return result;
         }
 
@@ -288,7 +303,10 @@ impl ClientRetryPolicy {
         let status_code = response.status();
         let sub_status_code = get_substatus_code_from_response(&response.clone());
 
-        if let Some(result) = self.should_retry_on_http_status(status_code, sub_status_code).await {
+        if let Some(result) = self
+            .should_retry_on_http_status(status_code, sub_status_code)
+            .await
+        {
             return result;
         }
 
@@ -298,19 +316,24 @@ impl ClientRetryPolicy {
 
 #[async_trait]
 impl RetryPolicy for ClientRetryPolicy {
-
     async fn before_send_request(&mut self, request: &mut CosmosRequest) {
-
         self.cosmos_request = Some(request.clone());
-        let _stat = self.global_endpoint_manager.refresh_location_async(false).await;
+        let _stat = self
+            .global_endpoint_manager
+            .refresh_location_async(false)
+            .await;
         self.is_read_request = request.is_read_only_request();
-        self.can_use_multiple_write_locations = self.global_endpoint_manager.can_use_multiple_write_locations(request);
+        self.can_use_multiple_write_locations = self
+            .global_endpoint_manager
+            .can_use_multiple_write_locations(request);
 
         self.is_multi_master_write_request = !self.is_read_request
-            && self.global_endpoint_manager.can_support_multiple_write_locations(
-            request.resource_type,
-            request.operation_type,
-        );
+            && self
+                .global_endpoint_manager
+                .can_support_multiple_write_locations(
+                    request.resource_type,
+                    request.operation_type,
+                );
 
         // Clear previous location-based routing directive
         request.request_context.clear_route_to_location();
@@ -318,18 +341,30 @@ impl RetryPolicy for ClientRetryPolicy {
         if let Some(ref ctx) = self.retry_context {
             let mut req_ctx = request.request_context.clone();
             if ctx.route_to_hub {
-                req_ctx.route_to_location_endpoint(request.resource_link.url(&Url::parse(&self.global_endpoint_manager.get_hub_uri()).unwrap()));
+                req_ctx.route_to_location_endpoint(
+                    request
+                        .resource_link
+                        .url(&Url::parse(&self.global_endpoint_manager.get_hub_uri()).unwrap()),
+                );
             } else {
-                req_ctx.route_to_location_index(ctx.retry_location_index, ctx.retry_request_on_preferred_locations);
+                req_ctx.route_to_location_index(
+                    ctx.retry_location_index,
+                    ctx.retry_request_on_preferred_locations,
+                );
             }
             request.request_context = req_ctx;
         }
 
         // Resolve the endpoint for the request
-        self.location_endpoint = Some(self.global_endpoint_manager.resolve_service_endpoint(request));
+        self.location_endpoint = Some(
+            self.global_endpoint_manager
+                .resolve_service_endpoint(request),
+        );
 
         if let Some(ref endpoint) = self.location_endpoint {
-            request.request_context.route_to_location_endpoint(request.resource_link.url(&Url::parse(endpoint).unwrap()));
+            request.request_context.route_to_location_endpoint(
+                request.resource_link.url(&Url::parse(endpoint).unwrap()),
+            );
         }
     }
 

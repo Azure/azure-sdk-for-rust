@@ -8,7 +8,8 @@ pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
     pager::PagerState,
     request::{options::ContentType, Request},
-    response::Response, Context, Method, RawResponse,
+    response::Response,
+    Context, Method, RawResponse,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -16,13 +17,13 @@ use url::Url;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
     constants,
     models::ThroughputProperties,
     resource_context::{ResourceLink, ResourceType},
     FeedPage, FeedPager, Query,
 };
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -36,7 +37,7 @@ impl CosmosPipeline {
     pub fn new(
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
-        global_endpoint_manager: GlobalEndpointManager
+        global_endpoint_manager: GlobalEndpointManager,
     ) -> Self {
         let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
         CosmosPipeline {

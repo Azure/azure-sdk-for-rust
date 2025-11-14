@@ -101,13 +101,16 @@ impl CosmosRequest {
     }
 
     pub fn is_read_only_request(&self) -> bool {
-        matches!(self.operation_type,OperationType::Read
-            | OperationType::ReadFeed
-            | OperationType::Head
-            | OperationType::HeadFeed
-            | OperationType::Query
-            | OperationType::SqlQuery
-            | OperationType::QueryPlan)
+        matches!(
+            self.operation_type,
+            OperationType::Read
+                | OperationType::ReadFeed
+                | OperationType::Head
+                | OperationType::HeadFeed
+                | OperationType::Query
+                | OperationType::SqlQuery
+                | OperationType::QueryPlan
+        )
     }
 
     /// Maps the logical `OperationType` to its corresponding HTTP verb.
@@ -119,7 +122,7 @@ impl CosmosRequest {
             | OperationType::SqlQuery
             | OperationType::Batch
             | OperationType::QueryPlan
-            | OperationType:: Execute => Method::Post,
+            | OperationType::Execute => Method::Post,
             OperationType::Delete => Method::Delete,
             OperationType::Read => Method::Get,
             OperationType::ReadFeed => Method::Get,
@@ -195,7 +198,11 @@ pub struct CosmosRequestBuilder {
 
 #[allow(dead_code)]
 impl CosmosRequestBuilder {
-    pub fn new(operation_type: OperationType, resource_type: ResourceType, resource_link: ResourceLink,) -> CosmosRequestBuilder {
+    pub fn new(
+        operation_type: OperationType,
+        resource_type: ResourceType,
+        resource_link: ResourceLink,
+    ) -> CosmosRequestBuilder {
         CosmosRequestBuilder {
             operation_type,
             resource_type,
@@ -293,11 +300,15 @@ mod tests {
     use crate::{constants, PartitionKey};
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
-        let req = CosmosRequestBuilder::new(op, ResourceType::Documents, ResourceLink::root(ResourceType::Documents))
-            .resource_id("dbs/Db/colls/Coll/docs/Doc")
-            .partition_key(PartitionKey::from("pk"))
-            .body(b"{\"id\":\"1\"}".to_vec())
-            .build();
+        let req = CosmosRequestBuilder::new(
+            op,
+            ResourceType::Documents,
+            ResourceLink::root(ResourceType::Documents),
+        )
+        .resource_id("dbs/Db/colls/Coll/docs/Doc")
+        .partition_key(PartitionKey::from("pk"))
+        .body(b"{\"id\":\"1\"}".to_vec())
+        .build();
 
         let mut req = req.unwrap();
         // Provide a routing endpoint expected by to_raw_request()
@@ -317,11 +328,15 @@ mod tests {
             Some(b"{}".to_vec()),
             AuthorizationTokenType::Primary,
         );
-        let from_builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Documents, ResourceLink::root(ResourceType::Documents))
-            .resource_id("rid")
-            .partition_key(PartitionKey::from("pk"))
-            .body(b"{}".to_vec())
-            .build();
+        let from_builder = CosmosRequestBuilder::new(
+            OperationType::Create,
+            ResourceType::Documents,
+            ResourceLink::root(ResourceType::Documents),
+        )
+        .resource_id("rid")
+        .partition_key(PartitionKey::from("pk"))
+        .body(b"{}".to_vec())
+        .build();
 
         let builder_request = from_builder.unwrap();
 

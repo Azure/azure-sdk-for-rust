@@ -1,20 +1,20 @@
 //! Concrete (yet unimplemented) GlobalEndpointManager.
 //! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use azure_core::time::Duration;
-use azure_core::Error;
-use azure_core::http::{Pipeline, Response};
+use crate::constants::ACCOUNT_PROPERTIES_KEY;
 use crate::cosmos_request::{CosmosRequest, CosmosRequestBuilder};
 use crate::models::AccountProperties;
-use moka::future::Cache;
 use crate::operation_context::OperationType;
-use crate::constants::ACCOUNT_PROPERTIES_KEY;
-use crate::ReadDatabaseOptions;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::location_cache::{LocationCache, RequestOperation};
-use azure_core::{async_runtime::get_async_runtime};
+use crate::ReadDatabaseOptions;
+use azure_core::async_runtime::get_async_runtime;
+use azure_core::http::{Pipeline, Response};
+use azure_core::time::Duration;
+use azure_core::Error;
+use moka::future::Cache;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 pub struct GlobalEndpointManager {
@@ -35,14 +35,19 @@ impl GlobalEndpointManager {
     /// - We use simple fixed intervals for background refresh placeholders until
     ///   a real scheduling implementation is added.
     /// - Account refresh/background flags start as `false`.
-    pub fn new(default_endpoint: String, preferred_locations: Vec<String>, pipeline: Pipeline) -> Self {
-        let location_cache = Arc::new(Mutex::new(LocationCache::new(default_endpoint.clone(), preferred_locations.clone())));
+    pub fn new(
+        default_endpoint: String,
+        preferred_locations: Vec<String>,
+        pipeline: Pipeline,
+    ) -> Self {
+        let location_cache = Arc::new(Mutex::new(LocationCache::new(
+            default_endpoint.clone(),
+            preferred_locations.clone(),
+        )));
         let account_properties_cache = Cache::builder()
             .max_capacity(1)
             .time_to_live(std::time::Duration::from_secs(600))
             .build();
-
-        
 
         // endpoint_manager.initialize_account_properties_and_start_background_refresh();
         Self {
@@ -59,32 +64,63 @@ impl GlobalEndpointManager {
     pub fn get_hub_uri(&self) -> String {
         self.default_endpoint.clone()
     }
-    
-    pub fn read_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().read_endpoints() }
 
-    pub fn account_read_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().read_endpoints() }
-
-    pub fn write_endpoints(&self) -> Vec<String> { self.location_cache.lock().unwrap().write_endpoints() }
-
-    pub fn preferred_location_count(&self) -> i32 { self.location_cache.lock().unwrap().locations_info.preferred_locations.len() as i32 }
-
-    pub(crate) fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
-
-        self.location_cache.lock().unwrap().resolve_service_endpoint(request)
+    pub fn read_endpoints(&self) -> Vec<String> {
+        self.location_cache.lock().unwrap().read_endpoints()
     }
 
-    pub fn get_applicable_endpoints(&self, request: &CosmosRequest) -> Vec<String> { self.location_cache.lock().unwrap().get_applicable_endpoints(request) }
+    pub fn account_read_endpoints(&self) -> Vec<String> {
+        self.location_cache.lock().unwrap().read_endpoints()
+    }
 
-    pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(endpoint, RequestOperation::Read) }
+    pub fn write_endpoints(&self) -> Vec<String> {
+        self.location_cache.lock().unwrap().write_endpoints()
+    }
 
-    pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(endpoint, RequestOperation::Write) }
+    pub fn preferred_location_count(&self) -> i32 {
+        self.location_cache
+            .lock()
+            .unwrap()
+            .locations_info
+            .preferred_locations
+            .len() as i32
+    }
+
+    pub(crate) fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
+        self.location_cache
+            .lock()
+            .unwrap()
+            .resolve_service_endpoint(request)
+    }
+
+    pub fn get_applicable_endpoints(&self, request: &CosmosRequest) -> Vec<String> {
+        self.location_cache
+            .lock()
+            .unwrap()
+            .get_applicable_endpoints(request)
+    }
+
+    pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) {
+        self.location_cache
+            .lock()
+            .unwrap()
+            .mark_endpoint_unavailable(endpoint, RequestOperation::Read)
+    }
+
+    pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) {
+        self.location_cache
+            .lock()
+            .unwrap()
+            .mark_endpoint_unavailable(endpoint, RequestOperation::Write)
+    }
 
     pub fn can_use_multiple_write_locations(&self, request: &CosmosRequest) -> bool {
-        !request.is_read_only_request() && self.can_support_multiple_write_locations(request.resource_type, request.operation_type)
+        !request.is_read_only_request()
+            && self
+                .can_support_multiple_write_locations(request.resource_type, request.operation_type)
     }
 
     pub fn initialize_account_properties_and_start_background_refresh(&mut self) {
-
         // If a background refresh is already active we do nothing.
         if self.is_background_account_refresh_active {
             return;
@@ -117,39 +153,72 @@ impl GlobalEndpointManager {
     pub async fn refresh_location_async(&self, force_refresh: bool) -> Result<(), Error> {
         // If force_refresh is true, invalidate the cache to ensure a fresh fetch
         if force_refresh {
-            self.account_properties_cache.invalidate(&ACCOUNT_PROPERTIES_KEY).await;
+            self.account_properties_cache
+                .invalidate(&ACCOUNT_PROPERTIES_KEY)
+                .await;
         }
-        
+
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        let _account_prop = self.account_properties_cache.try_get_with(ACCOUNT_PROPERTIES_KEY, async {
-            // Fetch latest account properties from service
-            let account_properties = self.get_database_account(Some(ReadDatabaseOptions {
-                ..Default::default()
-            }))
-            .await?
-            .into_body()?;
-            
-            // Update location cache with the fetched account properties (only on fresh fetch)
-            {
-                let mut cache = self.location_cache.lock().unwrap();
-                cache.on_database_account_read(account_properties.clone());
-            }
-            
-            Ok(account_properties)
-        }).await.map_err(|e: Arc<Error>| Error::with_message(azure_core::error::ErrorKind::Other, format!("Failed to fetch account properties: {}", e)))?;
-        
+        let _account_prop = self
+            .account_properties_cache
+            .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
+                // Fetch latest account properties from service
+                let account_properties = self
+                    .get_database_account(Some(ReadDatabaseOptions {
+                        ..Default::default()
+                    }))
+                    .await?
+                    .into_body()?;
+
+                // Update location cache with the fetched account properties (only on fresh fetch)
+                {
+                    let mut cache = self.location_cache.lock().unwrap();
+                    cache.on_database_account_read(account_properties.clone());
+                }
+
+                Ok(account_properties)
+            })
+            .await
+            .map_err(|e: Arc<Error>| {
+                Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("Failed to fetch account properties: {}", e),
+                )
+            })?;
+
         Ok(())
     }
 
     #[allow(dead_code)]
-    fn get_available_write_endpoints_by_location(&self) -> HashMap<String, String> { self.location_cache.lock().unwrap().locations_info.account_write_endpoints_by_location.clone() }
+    fn get_available_write_endpoints_by_location(&self) -> HashMap<String, String> {
+        self.location_cache
+            .lock()
+            .unwrap()
+            .locations_info
+            .account_write_endpoints_by_location
+            .clone()
+    }
 
     #[allow(dead_code)]
-    fn get_available_read_endpoints_by_location(&self) -> HashMap<String, String> { self.location_cache.lock().unwrap().locations_info.account_read_endpoints_by_location.clone() }
+    fn get_available_read_endpoints_by_location(&self) -> HashMap<String, String> {
+        self.location_cache
+            .lock()
+            .unwrap()
+            .locations_info
+            .account_read_endpoints_by_location
+            .clone()
+    }
 
-    pub(crate) fn can_support_multiple_write_locations(&self, resource_type: ResourceType, operation_type: OperationType) -> bool {
+    pub(crate) fn can_support_multiple_write_locations(
+        &self,
+        resource_type: ResourceType,
+        operation_type: OperationType,
+    ) -> bool {
         let cache = self.location_cache.lock().unwrap();
-        cache.can_use_multiple_write_locations() && (resource_type == ResourceType::Documents || (resource_type == ResourceType::StoredProcedures && operation_type == OperationType::Execute))
+        cache.can_use_multiple_write_locations()
+            && (resource_type == ResourceType::Documents
+                || (resource_type == ResourceType::StoredProcedures
+                    && operation_type == OperationType::Execute))
     }
 
     /// Retrieves the Cosmos DB account ("database account") properties.
@@ -164,17 +233,26 @@ impl GlobalEndpointManager {
     ) -> azure_core::Result<Response<AccountProperties>> {
         let options = options.unwrap_or_default();
         let resource_link = ResourceLink::root(ResourceType::DatabaseAccount);
-        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::DatabaseAccount, resource_link.clone());
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::DatabaseAccount,
+            resource_link.clone(),
+        );
         let mut cosmos_request = builder.build()?;
-        let endpoint = self.location_cache.lock().unwrap().resolve_service_endpoint(&cosmos_request).parse()?;
+        let endpoint = self
+            .location_cache
+            .lock()
+            .unwrap()
+            .resolve_service_endpoint(&cosmos_request)
+            .parse()?;
         cosmos_request.request_context.location_endpoint_to_route = Some(endpoint);
-        let ctx_owned = options.method_options.context.with_value(resource_link).into_owned();
+        let ctx_owned = options
+            .method_options
+            .context
+            .with_value(resource_link)
+            .into_owned();
         self.pipeline
-            .send(
-                &ctx_owned,
-                &mut cosmos_request.into_raw_request(),
-                None,
-            )
+            .send(&ctx_owned, &mut cosmos_request.into_raw_request(), None)
             .await
             .map(Into::into)
     }

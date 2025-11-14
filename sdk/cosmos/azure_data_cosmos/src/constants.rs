@@ -48,14 +48,13 @@ pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[non_exhaustive]
 pub enum SubStatusCode {
-
     Unknown = 0,
     TooManyRequests = 429,
 
     // 400: Bad Request Substatus
     PartitionKeyMismatch = 1001,
     CrossPartitionQueryNotServable = 1004,
-    ScriptCompileError = 0xFFFF,    // From ExecuteStoredProcedure.
+    ScriptCompileError = 0xFFFF, // From ExecuteStoredProcedure.
     AnotherOfferReplaceOperationIsInProgress = 3205,
     HttpListenerException = 1101,
 
@@ -144,11 +143,13 @@ pub enum SubStatusCode {
 }
 
 impl SubStatusCode {
-    pub const CONFIGURATION_NAME_NOT_FOUND: SubStatusCode = SubStatusCode::CrossPartitionQueryNotServable;
+    pub const CONFIGURATION_NAME_NOT_FOUND: SubStatusCode =
+        SubStatusCode::CrossPartitionQueryNotServable;
     pub const READ_SESSION_NOT_AVAILABLE: SubStatusCode = SubStatusCode::PartitionKeyRangeGone;
     pub const PROVISION_LIMIT_REACHED: SubStatusCode = SubStatusCode::ConfigurationPropertyNotFound;
     pub const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = SubStatusCode::CompletingSplit;
-    pub const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode = SubStatusCode::CompletingPartitionMigration;
+    pub const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode =
+        SubStatusCode::CompletingPartitionMigration;
 }
 
 impl TryFrom<u16> for SubStatusCode {

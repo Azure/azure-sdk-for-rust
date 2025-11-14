@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::cosmos_request::CosmosRequest;
-use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
+use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -66,32 +66,27 @@ pub trait RetryHandler: Send + Sync {
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
 pub struct BackOffRetryHandler {
-    global_endpoint_manager: GlobalEndpointManager
+    global_endpoint_manager: GlobalEndpointManager,
 }
 
 impl BackOffRetryHandler {
-
     /// Returns the appropriate retry policy based on the request
     ///
     /// This method examines the underlying operation and resource types and determines
     /// retry policy should be used for this specific request.
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn retry_policy_for_request(
-        &self,
-        request: &CosmosRequest,
-    ) -> Box<dyn RetryPolicy> {
+    pub fn retry_policy_for_request(&self, request: &CosmosRequest) -> Box<dyn RetryPolicy> {
         if request.resource_type.is_meta_data() {
-            Box::new(MetadataRequestRetryPolicy::new(self.global_endpoint_manager.clone()))
-        }
-        else {
+            Box::new(MetadataRequestRetryPolicy::new(
+                self.global_endpoint_manager.clone(),
+            ))
+        } else {
             Box::new(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
         }
     }
 
-    pub fn new(
-        global_endpoint_manager: GlobalEndpointManager,
-    ) -> Self {
+    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
         Self {
             global_endpoint_manager,
         }

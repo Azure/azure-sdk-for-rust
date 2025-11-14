@@ -1,7 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{clients::DatabaseClient, models::DatabaseProperties, pipeline::{AuthorizationPolicy, CosmosPipeline}, resource_context::{ResourceLink, ResourceType}, CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions};
+use crate::{
+    clients::DatabaseClient,
+    models::DatabaseProperties,
+    pipeline::{AuthorizationPolicy, CosmosPipeline},
+    resource_context::{ResourceLink, ResourceType},
+    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
+};
 use azure_core::{
     credentials::TokenCredential,
     http::{response::Response, Url},
@@ -9,9 +15,9 @@ use azure_core::{
 use serde::Serialize;
 use std::sync::Arc;
 
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::cosmos_request::CosmosRequestBuilder;
 use crate::operation_context::OperationType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 use azure_core::http::RetryOptions;
@@ -21,7 +27,7 @@ use azure_core::http::RetryOptions;
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
-    global_endpoint_manager: GlobalEndpointManager
+    global_endpoint_manager: GlobalEndpointManager,
 }
 
 impl CosmosClient {
@@ -56,23 +62,29 @@ impl CosmosClient {
             option_env!("CARGO_PKG_VERSION"),
             client_options,
             Vec::new(),
-            vec![Arc::new(AuthorizationPolicy::from_token_credential(credential))],
+            vec![Arc::new(AuthorizationPolicy::from_token_credential(
+                credential,
+            ))],
             None,
         );
 
-        let global_endpoint_manager = GlobalEndpointManager::new(endpoint.parse()?, options.application_preferred_regions.unwrap(), pipeline_core.clone());
+        let global_endpoint_manager = GlobalEndpointManager::new(
+            endpoint.parse()?,
+            options.application_preferred_regions.unwrap(),
+            pipeline_core.clone(),
+        );
         // global_endpoint_manager.initialize_account_properties_and_start_background_refresh();
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
             pipeline_core,
-            global_endpoint_manager.clone()
+            global_endpoint_manager.clone(),
         ));
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            global_endpoint_manager
+            global_endpoint_manager,
         })
     }
 
@@ -111,19 +123,23 @@ impl CosmosClient {
             None,
         );
 
-        let global_endpoint_manager = GlobalEndpointManager::new(endpoint.parse()?, options.application_preferred_regions.unwrap(), pipeline_core.clone());
+        let global_endpoint_manager = GlobalEndpointManager::new(
+            endpoint.parse()?,
+            options.application_preferred_regions.unwrap(),
+            pipeline_core.clone(),
+        );
         // global_endpoint_manager.initialize_account_properties_and_start_background_refresh();
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
             pipeline_core,
-            global_endpoint_manager.clone()
+            global_endpoint_manager.clone(),
         ));
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            global_endpoint_manager
+            global_endpoint_manager,
         })
     }
 
@@ -234,17 +250,18 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Databases, self.databases_link.clone());
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Create,
+            ResourceType::Databases,
+            self.databases_link.clone(),
+        );
         let cosmos_request = builder
             .headers(&options.throughput)
             .json(&RequestBody { id })
             .build()?;
 
         self.pipeline
-            .send(
-                cosmos_request,
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 }

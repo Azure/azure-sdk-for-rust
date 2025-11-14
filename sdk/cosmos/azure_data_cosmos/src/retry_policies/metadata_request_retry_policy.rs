@@ -1,17 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::cmp::max;
-use std::sync::Arc;
-use async_trait::async_trait;
-use tracing::trace;
-use azure_core::http::{RawResponse, StatusCode};
-use azure_core::time::Duration;
+use super::{
+    get_substatus_code_from_error, get_substatus_code_from_response, RetryPolicy, RetryResult,
+};
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use super::{RetryPolicy, RetryResult, get_substatus_code_from_response, get_substatus_code_from_error};
+use async_trait::async_trait;
+use azure_core::http::{RawResponse, StatusCode};
+use azure_core::time::Duration;
+use std::cmp::max;
+use std::sync::Arc;
+use tracing::trace;
 
 /// Retry policy for handling resource throttling (429 TooManyRequests) errors
 ///
@@ -69,15 +71,16 @@ impl MetadataRequestRetryPolicy {
     /// // Create a policy with 5 retries, 120 second max wait, and backoff factor of 3
     /// let policy = ResourceThrottleRetryPolicy::new(5, 120, 3);
     /// ```
-    pub fn new(
-        global_endpoint_manager: GlobalEndpointManager,
-    ) -> Self {
+    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
         Self {
             global_endpoint_manager: Arc::from(global_endpoint_manager.clone()),
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
             max_unavailable_endpoint_retry_count: 1,
             retry_context: None,
-            unavailable_endpoint_retry_count: max(global_endpoint_manager.preferred_locations.len() as i32, 1)
+            unavailable_endpoint_retry_count: max(
+                global_endpoint_manager.preferred_locations.len() as i32,
+                1,
+            ),
         }
     }
 
@@ -97,11 +100,10 @@ impl MetadataRequestRetryPolicy {
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the error context.
     pub async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
-
         let status_code = err.http_status().unwrap();
         let sub_status_code = get_substatus_code_from_error(err);
 
-        let retry_result = self.should_retry_with_status_code(status_code,  sub_status_code);
+        let retry_result = self.should_retry_with_status_code(status_code, sub_status_code);
         if retry_result.is_retry() {
             return retry_result;
         }
@@ -126,11 +128,10 @@ impl MetadataRequestRetryPolicy {
     /// the `x-ms-retry-after-ms` header from the response headers to respect
     /// server-suggested retry delays.
     pub async fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
-
         let status_code = response.status();
         let sub_status_code = get_substatus_code_from_response(&response.clone());
 
-        let retry_result = self.should_retry_with_status_code(status_code,  sub_status_code);
+        let retry_result = self.should_retry_with_status_code(status_code, sub_status_code);
         if retry_result.is_retry() {
             return retry_result;
         }
@@ -138,14 +139,23 @@ impl MetadataRequestRetryPolicy {
         self.throttling_retry_policy.should_retry_response(response)
     }
 
-    fn should_retry_with_status_code(&mut self, status_code: StatusCode, sub_status_code: SubStatusCode) -> RetryResult {        // Check for retryable status codes
+    fn should_retry_with_status_code(
+        &mut self,
+        status_code: StatusCode,
+        sub_status_code: SubStatusCode,
+    ) -> RetryResult {
+        // Check for retryable status codes
         if (status_code == StatusCode::ServiceUnavailable
             || status_code == StatusCode::InternalServerError
             || (status_code == StatusCode::Gone && sub_status_code == SubStatusCode::LeaseNotFound)
-            || (status_code == StatusCode::Forbidden && sub_status_code == SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND))
-            && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read() {
-                return RetryResult::Retry { after: Duration::ZERO };
-            }
+            || (status_code == StatusCode::Forbidden
+                && sub_status_code == SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND))
+            && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
+        {
+            return RetryResult::Retry {
+                after: Duration::ZERO,
+            };
+        }
 
         RetryResult::DoNotRetry
     }
@@ -190,19 +200,26 @@ impl RetryPolicy for MetadataRequestRetryPolicy {
     ///
     /// * `request` - The request being sent to the service
     async fn before_send_request(&mut self, request: &mut CosmosRequest) {
-
-        let _stat = self.global_endpoint_manager.refresh_location_async(false).await;
+        let _stat = self
+            .global_endpoint_manager
+            .refresh_location_async(false)
+            .await;
 
         // Clear the previous location-based routing directive
         request.request_context.clear_route_to_location();
 
         if let Some(ref ctx) = self.retry_context {
             let mut req_ctx = request.request_context.clone();
-            req_ctx.route_to_location_index(ctx.retry_location_index, ctx.retry_request_on_preferred_locations);
+            req_ctx.route_to_location_index(
+                ctx.retry_location_index,
+                ctx.retry_request_on_preferred_locations,
+            );
             request.request_context = req_ctx;
         }
 
-        let metadata_location_endpoint = self.global_endpoint_manager.resolve_service_endpoint(request);
+        let metadata_location_endpoint = self
+            .global_endpoint_manager
+            .resolve_service_endpoint(request);
 
         trace!(
             "MetadataRequestThrottleRetryPolicy: Routing the metadata request to: {:?} for operation type: {:?} and resource type: {:?}.",
@@ -211,7 +228,9 @@ impl RetryPolicy for MetadataRequestRetryPolicy {
             request.resource_type
         );
 
-        request.request_context.route_to_location_endpoint(metadata_location_endpoint.parse().unwrap());
+        request
+            .request_context
+            .route_to_location_endpoint(metadata_location_endpoint.parse().unwrap());
     }
 
     /// Determines whether an HTTP request should be retried based on the response or error

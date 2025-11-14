@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
+use crate::cosmos_request::CosmosRequest;
+use crate::models::{AccountProperties, AccountRegion};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -9,8 +11,6 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tracing::info;
-use crate::cosmos_request::CosmosRequest;
-use crate::models::{AccountProperties, AccountRegion};
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
 
@@ -80,7 +80,7 @@ impl LocationCache {
     pub fn on_database_account_read(&mut self, account_properties: AccountProperties) {
         let write_regions = account_properties.writable_locations;
         let read_regions = account_properties.readable_locations;
-        let _= &self.update(write_regions, read_regions);
+        let _ = &self.update(write_regions, read_regions);
     }
 
     pub fn update(
@@ -157,26 +157,27 @@ impl LocationCache {
         }
     }
 
-    pub fn resolve_service_endpoint(
-        &self,
-        request: &CosmosRequest
-    ) -> String {
+    pub fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
         let location_index = request.request_context.location_index_to_route.unwrap_or(0) as usize;
         let mut location_endpoint_to_route = self.default_endpoint.clone();
-        if !request.request_context.use_preferred_locations.unwrap_or(true)
-            || (!request.operation_type.is_read_only() && !self.can_use_multiple_write_locations()) {
+        if !request
+            .request_context
+            .use_preferred_locations
+            .unwrap_or(true)
+            || (!request.operation_type.is_read_only() && !self.can_use_multiple_write_locations())
+        {
             let location_info = &self.locations_info;
             if !location_info.account_write_locations.is_empty() {
                 let idx = (location_index) % location_info.account_write_locations.len();
-                location_endpoint_to_route = location_info.account_write_locations[idx].database_account_endpoint.clone();
+                location_endpoint_to_route = location_info.account_write_locations[idx]
+                    .database_account_endpoint
+                    .clone();
             }
-        }
-        else {
+        } else {
             let endpoints = if request.operation_type.is_read_only() {
                 self.read_endpoints()
-            }
-            else {
+            } else {
                 self.write_endpoints()
             };
 
@@ -184,7 +185,7 @@ impl LocationCache {
                 location_endpoint_to_route = endpoints[location_index % endpoints.len()].clone();
             }
         }
-        
+
         location_endpoint_to_route
     }
 
@@ -193,7 +194,6 @@ impl LocationCache {
     }
 
     pub fn get_applicable_endpoints(&mut self, _request: &CosmosRequest) -> Vec<String> {
-
         self.get_preferred_available_endpoints(
             &self.locations_info.account_read_endpoints_by_location,
             RequestOperation::Read,
@@ -227,7 +227,10 @@ impl LocationCache {
         let mut parsed_locations: Vec<AccountRegion> = Vec::new();
 
         for location in locations {
-            endpoints_by_location.insert(location.name.clone(), location.database_account_endpoint.clone());
+            endpoints_by_location.insert(
+                location.name.clone(),
+                location.database_account_endpoint.clone(),
+            );
             parsed_locations.push(location);
         }
 
@@ -286,12 +289,7 @@ mod tests {
     use super::*;
     use std::{collections::HashSet, vec};
 
-    fn create_test_data() -> (
-        String,
-        Vec<AccountRegion>,
-        Vec<AccountRegion>,
-        Vec<String>,
-    ) {
+    fn create_test_data() -> (String, Vec<AccountRegion>, Vec<AccountRegion>, Vec<String>) {
         // Setting up test database account data
         let default_endpoint = "https://default.documents.example.com".to_string();
 
@@ -311,17 +309,9 @@ mod tests {
             database_account_endpoint: "https://location4.documents.example.com".to_string(),
             name: "Location 4".to_string(),
         };
-        let write_locations = Vec::from([
-            location_1.clone(),
-            location_2.clone(),
-        ]);
+        let write_locations = Vec::from([location_1.clone(), location_2.clone()]);
 
-        let read_locations = Vec::from([
-            location_1,
-            location_2,
-            location_3,
-            location_4,
-        ]);
+        let read_locations = Vec::from([location_1, location_2, location_3, location_4]);
 
         let preferred_locations = vec!["Location 1".to_string(), "Location 2".to_string()];
 

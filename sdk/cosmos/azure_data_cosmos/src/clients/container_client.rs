@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::sync::Arc;
 use crate::{
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
@@ -10,6 +9,7 @@ use crate::{
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
     ThroughputOptions,
 };
+use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequestBuilder;
 use crate::operation_context::OperationType;
@@ -65,13 +65,14 @@ impl ContainerClient {
         options: Option<ReadContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let cosmos_request =
-            CosmosRequestBuilder::new(OperationType::Read, ResourceType::Containers, self.link.clone()).build()?;
+        let cosmos_request = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::Containers,
+            self.link.clone(),
+        )
+        .build()?;
         self.pipeline
-            .send(
-                cosmos_request,
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -111,13 +112,14 @@ impl ContainerClient {
         options: Option<ReplaceContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Containers, self.link.clone());
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Replace,
+            ResourceType::Containers,
+            self.link.clone(),
+        );
         let cosmos_request = builder.json(&properties).build()?;
         self.pipeline
-            .send(
-                cosmos_request,
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -180,13 +182,14 @@ impl ContainerClient {
         options: Option<DeleteContainerOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Containers, self.link.clone());
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Delete,
+            ResourceType::Containers,
+            self.link.clone(),
+        );
         let cosmos_request = builder.build()?;
         self.pipeline
-            .send(
-                cosmos_request,
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -262,7 +265,11 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Documents, self.items_link.clone());
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Create,
+            ResourceType::Documents,
+            self.items_link.clone(),
+        );
         let cosmos_request = builder
             .headers(&options)
             .json(&item)
@@ -270,10 +277,7 @@ impl ContainerClient {
             .build()?;
 
         self.pipeline
-            .send(
-                cosmos_request,
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -351,7 +355,8 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Documents, link);
+        let builder =
+            CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Documents, link);
         let cosmos_request = builder
             .headers(&options)
             .json(&item)
@@ -438,7 +443,11 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Upsert, ResourceType::Documents, self.items_link.clone());
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Upsert,
+            ResourceType::Documents,
+            self.items_link.clone(),
+        );
         let cosmos_request = builder
             .headers(&options)
             .json(&item)
@@ -446,10 +455,7 @@ impl ContainerClient {
             .build()?;
 
         self.pipeline
-            .send(
-                cosmos_request,
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -535,7 +541,8 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
 
-        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Documents, link);
+        let builder =
+            CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Documents, link);
         let cosmos_request = builder
             .partition_key(partition_key.into())
             .headers(&options)
@@ -610,7 +617,8 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let builder = CosmosRequestBuilder::new(OperationType::Patch, ResourceType::Documents, link);
+        let builder =
+            CosmosRequestBuilder::new(OperationType::Patch, ResourceType::Documents, link);
         let cosmos_request = builder
             .partition_key(partition_key.into())
             .headers(&options)

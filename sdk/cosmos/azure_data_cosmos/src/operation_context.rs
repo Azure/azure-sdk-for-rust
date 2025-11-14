@@ -17,7 +17,7 @@ pub enum OperationType {
     Patch,
     Head,
     HeadFeed,
-    Execute
+    Execute,
 }
 
 impl OperationType {

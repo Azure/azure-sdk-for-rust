@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub mod resource_throttle_retry_policy;
 pub mod client_retry_policy;
 pub mod metadata_request_retry_policy;
+pub mod resource_throttle_retry_policy;
 
+use crate::constants::{SubStatusCode, SUB_STATUS};
 use crate::cosmos_request::CosmosRequest;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::RawResponse;
 use azure_core::time::Duration;
-use crate::constants::{SubStatusCode, SUB_STATUS};
 
 /// Result of a retry policy decision
 ///
@@ -85,7 +85,8 @@ fn get_substatus_code_from_error(err: &azure_core::Error) -> SubStatusCode {
 }
 
 fn get_substatus_code_from_response(response: &RawResponse) -> SubStatusCode {
-    response.headers()
+    response
+        .headers()
         .get_as(&SUB_STATUS)
         .ok()
         .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
