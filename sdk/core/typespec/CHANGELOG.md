@@ -1,8 +1,22 @@
 # Release History
 
-## 0.10.0 (Unreleased)
+## 0.11.0 (Unreleased)
 
 ### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.10.1 (2025-11-09)
+
+### Other Changes
+
+- Increment version for re-release following a fix to publishing.
+
+## 0.10.0 (2025-11-07)
 
 ### Breaking Changes
 
@@ -10,10 +24,6 @@
 - Removed `ErrorKind::MockFramework`.
 - Removed `xml::read_xml_str()`.
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.9.1 (2025-10-06)
 

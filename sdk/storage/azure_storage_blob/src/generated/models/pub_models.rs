@@ -17,9 +17,9 @@ use azure_core::{
     base64::option::{deserialize, serialize},
     fmt::SafeDebug,
     time::OffsetDateTime,
+    Value,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 
 /// Represents an access policy.

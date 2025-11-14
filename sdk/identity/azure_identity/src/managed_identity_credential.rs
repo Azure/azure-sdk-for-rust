@@ -100,15 +100,15 @@ impl TokenCredential for ManagedIdentityCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
-            return Err(azure_core::Error::with_message_fn(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Credential,
-                || "ManagedIdentityCredential requires exactly one scope".to_string(),
+                "ManagedIdentityCredential requires exactly one scope".to_string(),
             ));
         }
         self.credential
             .get_token(scopes, options)
             .await
-            .map_err(authentication_error::<Self>)
+            .map_err(|err| authentication_error(stringify!(ManagedIdentityCredential), err))
     }
 }
 
@@ -168,12 +168,13 @@ mod tests {
     use crate::{
         env::Env,
         tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES},
-        TSG_LINK_ERROR_TEXT,
     };
-    use azure_core::http::headers::Headers;
-    use azure_core::http::{AsyncRawResponse, Method, Request, StatusCode, Transport, Url};
+    use azure_core::http::{
+        AsyncRawResponse, Method, RawResponse, Request, StatusCode, Transport, Url,
+    };
     use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
+    use azure_core::{error::ErrorKind, http::headers::Headers};
     use azure_core_test::{http::MockHttpClient, recorded};
     use futures::FutureExt;
     use std::env;
@@ -205,6 +206,68 @@ mod tests {
         assert_eq!(StatusCode::Ok, status, "Test app responded with '{body}'");
 
         Ok(())
+    }
+
+    async fn run_error_response_test(source: ManagedIdentitySource) {
+        let expected_status = StatusCode::ImATeapot;
+        let headers = Headers::default();
+        let content: &str = "is a teapot";
+        let body = Bytes::copy_from_slice(content.as_bytes());
+        let expected_response =
+            RawResponse::from_bytes(expected_status, headers.clone(), body.clone());
+        let mock_headers = headers.clone();
+        let mock_body = body.clone();
+        let mock_client = MockHttpClient::new(move |_| {
+            let headers = mock_headers.clone();
+            let body = mock_body.clone();
+            async move { Ok(AsyncRawResponse::from_bytes(expected_status, headers, body)) }.boxed()
+        });
+        let test_env = match source {
+            ManagedIdentitySource::Imds => Env::from(&[][..]),
+            ManagedIdentitySource::AppService => Env::from(
+                &[
+                    (
+                        IDENTITY_ENDPOINT,
+                        "http://localhost/metadata/identity/oauth2/token",
+                    ),
+                    (IDENTITY_HEADER, "secret"),
+                ][..],
+            ),
+            other => panic!("unsupported managed identity source {:?}", other),
+        };
+        let options = ManagedIdentityCredentialOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::new(Arc::new(mock_client))),
+                ..Default::default()
+            },
+            env: test_env,
+            ..Default::default()
+        };
+        let credential = ManagedIdentityCredential::new(Some(options)).expect("credential");
+        let err = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect_err("expected error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            "ManagedIdentityCredential authentication failed. The request failed: is a teapot\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#managed-id",
+            err.to_string(),
+        );
+        match err
+            .downcast_ref::<azure_core::Error>()
+            .expect("returned error should wrap an azure_core::Error")
+            .kind()
+        {
+            ErrorKind::HttpResponse {
+                error_code: None,
+                raw_response: Some(response),
+                status,
+            } => {
+                assert_eq!(response.as_ref(), &expected_response);
+                assert_eq!(expected_status, *status);
+            }
+            err => panic!("unexpected {:?}", err),
+        };
     }
 
     async fn run_supported_source_test(
@@ -378,6 +441,11 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn app_service_error_response() {
+        run_error_response_test(ManagedIdentitySource::AppService).await
+    }
+
+    #[tokio::test]
     async fn app_service_object_id() {
         run_app_service_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ObjectId("expected object ID".to_string())),
@@ -427,44 +495,6 @@ mod tests {
         run_unsupported_source_test(
             Env::from(&[(MSI_ENDPOINT, "http://localhost")][..]),
             ManagedIdentitySource::CloudShell,
-        );
-    }
-
-    #[tokio::test]
-    async fn get_token_error() {
-        let mock_client = MockHttpClient::new(|_| {
-            async move {
-                Ok(AsyncRawResponse::from_bytes(
-                    StatusCode::BadRequest,
-                    Headers::default(),
-                    Bytes::new(),
-                ))
-            }
-            .boxed()
-        });
-        let options = ManagedIdentityCredentialOptions {
-            client_options: ClientOptions {
-                transport: Some(Transport::new(Arc::new(mock_client))),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        let credential = ManagedIdentityCredential::new(Some(options)).expect("credential");
-        let err = credential
-            .get_token(LIVE_TEST_SCOPES, None)
-            .await
-            .expect_err("expected error");
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::Credential
-        ));
-        assert!(err
-            .to_string()
-            .contains("the requested identity has not been assigned to this resource"));
-        assert!(
-            err.to_string()
-                .contains(&format!("{TSG_LINK_ERROR_TEXT}#managed-id")),
-            "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }
 
@@ -535,6 +565,11 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    #[tokio::test]
+    async fn imds_error_response() {
+        run_error_response_test(ManagedIdentitySource::Imds).await
     }
 
     #[tokio::test]

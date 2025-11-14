@@ -50,6 +50,37 @@ az login
 
 Instantiate a `DeveloperToolsCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
+### Instantiate a client
+
+```rust no_run
+use azure_core::base64;
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_certificates::CertificateClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new certificate client
+    let credential = DeveloperToolsCredential::new(None)?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Get a certificate using the certificate client.
+    let certificate = client
+        .get_certificate("certificate-name", None)
+        .await?
+        .into_model()?;
+    println!(
+        "Thumbprint: {:?}",
+        certificate.x509_thumbprint.map(base64::encode_url_safe)
+    );
+
+    Ok(())
+}
+```
+
 ## Key concepts
 
 ### Certificate
@@ -66,7 +97,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The following section provides several code snippets using the `CertificateClient`, covering some of the most common Azure Key Vault certificates service related tasks:
+The following section provides several code snippets using a `CertificateClient` like we [instantiated above](#instantiate-a-client):
 
 * [Create a certificate](#create-a-certificate)
 * [Retrieve a certificate](#retrieve-a-certificate)
@@ -83,48 +114,34 @@ Before we can create a new certificate, though, we need to define a certificate 
 `create_certificate` returns a `Poller<CertificateOperation>`, which implements both `std::future::IntoFuture` and `futures::Stream`.
 You can `await` the `Poller` to get the final result - a `Certificate` - or asynchronously iterate over each status update.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{
-    CertificateClient,
-    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
+```rust ignore create_certificate
+use azure_security_keyvault_certificates::models::{
+    CertificatePolicy, CreateCertificateParameters, IssuerParameters, X509CertificateProperties,
 };
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Create a self-signed certificate.
-    let policy = CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
+// Create a self-signed certificate.
+let policy = CertificatePolicy {
+    x509_certificate_properties: Some(X509CertificateProperties {
+        subject: Some("CN=DefaultPolicy".into()),
         ..Default::default()
-    };
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(policy),
+    }),
+    issuer_parameters: Some(IssuerParameters {
+        name: Some("Self".into()),
         ..Default::default()
-    };
+    }),
+    ..Default::default()
+};
+let body = CreateCertificateParameters {
+    certificate_policy: Some(policy),
+    ..Default::default()
+};
 
-    // Wait for the certificate operation to complete.
-    // The Poller implements futures::Stream and automatically waits between polls.
-    let certificate = client
-        .create_certificate("certificate-name", body.try_into()?, None)?
-        .await?
-        .into_model()?;
-
-    Ok(())
-}
+// Wait for the certificate operation to complete.
+// The Poller implements futures::Stream and automatically waits between polls.
+let certificate = client
+    .create_certificate("certificate-name", body.try_into()?, None)?
+    .await?
+    .into_model()?;
 ```
 
 ### Retrieve a certificate
@@ -132,36 +149,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `get_certificate` retrieves a certificate that was created or even still in progress in Key Vault.
 Setting the `certificate-version` to an empty string will return the latest version.
 
-```rust no_run
+```rust ignore get_certificate
 use azure_core::base64;
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{CertificateClient, models::CertificateClientGetCertificateOptions};
+use azure_security_keyvault_certificates::models::CertificateClientGetCertificateOptions;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+let get_options = CertificateClientGetCertificateOptions{
+    certificate_version: Some("certificate-version".to_string()),
+    ..Default::default()
+};
+let certificate = client
+    .get_certificate("certificate-name", Some(get_options))
+    .await?
+    .into_model()?;
 
-    let get_options = CertificateClientGetCertificateOptions{
-        certificate_version: Some("certificate-version".to_string()),
-        ..Default::default()
-    };
-    let certificate = client
-        .get_certificate("certificate-name", Some(get_options))
-        .await?
-        .into_model()?;
-
-    println!(
-        "Certificate thumbprint: {:?}",
-        certificate.x509_thumbprint.map(base64::encode)
-    );
-
-    Ok(())
-}
+println!(
+    "Certificate thumbprint: {:?}",
+    certificate.x509_thumbprint.map(base64::encode)
+);
 ```
 
 ### Update an existing certificate
@@ -169,39 +173,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `update_certificate_properties` updates a certificate previously stored in the Azure Key Vault.
 Only the attributes of the certificate are updated. To regenerate the certificate, call `CertificateClient::create_certificate` on a certificate with the same name.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{
-    models::UpdateCertificatePropertiesParameters, CertificateClient,
-};
+```rust ignore update_certificate
+use azure_security_keyvault_certificates::models::UpdateCertificatePropertiesParameters;
 use std::collections::HashMap;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
+// Update a certificate using the certificate client.
+let certificate_update_parameters = UpdateCertificatePropertiesParameters {
+    tags: Some(HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())])),
+    ..Default::default()
+};
+
+client
+    .update_certificate_properties(
+        "certificate-name",
+        certificate_update_parameters.try_into()?,
         None,
-    )?;
-
-    // Update a certificate using the certificate client.
-    let certificate_update_parameters = UpdateCertificatePropertiesParameters {
-        tags: Some(HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())])),
-        ..Default::default()
-    };
-
-    client
-        .update_certificate_properties(
-            "certificate-name",
-            certificate_update_parameters.try_into()?,
-            None,
-        )
-        .await?
-        .into_model()?;
-
-    Ok(())
-}
+    )
+    .await?
+    .into_model()?;
 ```
 
 ### Delete a certificate
@@ -209,53 +198,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `delete_certificate` will tell Key Vault to delete a certificate but it is not deleted immediately.
 It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_certificate` on the returned `DeletedCertificate.id`.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::CertificateClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Delete a certificate using the certificate client.
-    client.delete_certificate("certificate-name", None).await?;
-
-    Ok(())
-}
+```rust ignore delete_certificate
+// Delete a certificate using the certificate client.
+client.delete_certificate("certificate-name", None).await?;
 ```
 
 ### List certificates
 
 This example lists all the certificates in the specified Azure Key Vault.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{CertificateClient, ResourceExt};
+```rust ignore list_certificates
+use azure_security_keyvault_certificates::ResourceExt;
 use futures::TryStreamExt;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a new certificate client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    let mut pager = client.list_certificate_properties(None)?.into_stream();
-    while let Some(certificate) = pager.try_next().await? {
-        // Get the certificate name from the ID.
-        let name = certificate.resource_id()?.name;
-        println!("Found Certificate with Name: {}", name);
-    }
-
-    Ok(())
+let mut pager = client.list_certificate_properties(None)?.into_stream();
+while let Some(certificate) = pager.try_next().await? {
+    // Get the certificate name from the ID.
+    let name = certificate.resource_id()?.name;
+    println!("Found Certificate with Name: {}", name);
 }
 ```
 
@@ -264,89 +224,68 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 You can use a `KeyClient` to perform key operations on a certificate created with a `CertificateClient`.
 The following example shows how to sign data using an EC certificate key.
 
-```rust no_run
+```rust ignore key_operations
 use azure_core::base64;
-use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
     models::{
-        CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
-        KeyType, KeyUsageType, X509CertificateProperties,
+        CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters,
+        KeyProperties, KeyType, KeyUsageType, X509CertificateProperties,
     },
-    CertificateClient, ResourceExt, ResourceId,
+    ResourceExt, ResourceId,
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},
-    KeyClient,
 };
 use openssl::sha::sha256;
-use std::{env, time::Duration};
-use tokio::time::sleep;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Pass data to sign as the first argument.
-    let plaintext = env::args().nth(1).ok_or("plaintext required")?;
+let plaintext = "plaintext";
 
-    let certificate_client = CertificateClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        DeveloperToolsCredential::new(None)?,
-        None,
-    )?;
-
-    // Create an EC certificate policy for signing.
-    let policy = CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            key_usage: Some(vec![KeyUsageType::DigitalSignature]),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
-        key_properties: Some(KeyProperties {
-            key_type: Some(KeyType::Ec),
-            curve: Some(CurveName::P256),
-            ..Default::default()
-        }),
+// Create an EC certificate policy for signing.
+let policy = CertificatePolicy {
+    x509_certificate_properties: Some(X509CertificateProperties {
+        subject: Some("CN=DefaultPolicy".into()),
+        key_usage: Some(vec![KeyUsageType::DigitalSignature]),
         ..Default::default()
-    };
-
-    // Create a self-signed certificate.
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(policy),
+    }),
+    issuer_parameters: Some(IssuerParameters {
+        name: Some("Self".into()),
         ..Default::default()
-    };
+    }),
+    key_properties: Some(KeyProperties {
+        key_type: Some(KeyType::Ec),
+        curve: Some(CurveName::P256),
+        ..Default::default()
+    }),
+    ..Default::default()
+};
 
-    // Wait for the certificate operation to complete.
-    certificate_client
-        .create_certificate("ec-signing-certificate", body.try_into()?, None)?
-        .await?;
+// Create a self-signed certificate.
+let body = CreateCertificateParameters {
+    certificate_policy: Some(policy),
+    ..Default::default()
+};
 
-    // Hash the plaintext to be signed.
-    let digest = sha256(plaintext.as_bytes()).to_vec();
+// Wait for the certificate operation to complete.
+client
+    .create_certificate("ec-signing-certificate", body.try_into()?, None)?
+    .await?;
 
-    // Create a KeyClient using the certificate to sign the digest.
-    let key_client = KeyClient::new(
-        certificate_client.endpoint().as_str(),
-        DeveloperToolsCredential::new(None)?,
-        None,
-    )?;
-    let body = SignParameters {
-        algorithm: Some(SignatureAlgorithm::Es256),
-        value: Some(digest),
-    };
+// Hash the plaintext to be signed.
+let digest = sha256(plaintext.as_bytes()).to_vec();
 
-    let signature = key_client
-        .sign("ec-signing-certificate", body.try_into()?, None)
-        .await?
-        .into_model()?;
+// Use a KeyClient using the certificate to sign the digest.
+let body = SignParameters {
+    algorithm: Some(SignatureAlgorithm::Es256),
+    value: Some(digest),
+};
 
-    if let Some(signature) = signature.result.map(base64::encode_url_safe) {
-        println!("Signature: {}", signature);
-    }
+let signature = key_client
+    .sign("ec-signing-certificate", body.try_into()?, None)
+    .await?
+    .into_model()?;
 
-    Ok(())
+if let Some(signature) = signature.result.map(base64::encode_url_safe) {
+    println!("Signature: {}", signature);
 }
 ```
 
@@ -358,25 +297,10 @@ When you interact with the Azure Key Vault certificates client library using the
 
 For example, if you try to retrieve a key that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::CertificateClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://<my-vault>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    match client.get_certificate("certificate-name".into(), None).await {
-        Ok(response) => println!("Certificate: {:#?}", response.into_model()?.x509_thumbprint),
-        Err(err) => println!("Error: {:#?}", err.into_inner()?),
-    }
-
-    Ok(())
+```rust ignore errors
+match client.get_certificate("certificate-name".into(), None).await {
+    Ok(response) => println!("Certificate: {:#?}", response.into_model()?.x509_thumbprint),
+    Err(err) => println!("Error: {:#?}", err.into_inner()?),
 }
 ```
 

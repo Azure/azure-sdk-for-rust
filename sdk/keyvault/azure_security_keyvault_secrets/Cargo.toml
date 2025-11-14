@@ -1,6 +1,6 @@
 [package]
 name = "azure_security_keyvault_secrets"
-version = "0.9.0"
+version = "0.10.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault Secrets"
 readme = "README.md"
 authors.workspace = true
@@ -31,6 +31,7 @@ azure_core_test = { workspace = true, features = [
 ] }
 azure_identity.workspace = true
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
+include-file.workspace = true
 rand.workspace = true
 tokio.workspace = true
 

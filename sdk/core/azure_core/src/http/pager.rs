@@ -5,7 +5,11 @@
 
 use crate::{
     error::ErrorKind,
-    http::{headers::HeaderName, response::Response, Context, DeserializeWith, Format, JsonFormat},
+    http::{
+        headers::HeaderName, policies::create_public_api_span, response::Response, Context,
+        DeserializeWith, Format, JsonFormat,
+    },
+    tracing::{Span, SpanStatus},
 };
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
@@ -314,7 +318,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, ctx| {
+    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, ctx: Context| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -807,14 +811,33 @@ impl<P> fmt::Debug for PageIterator<P> {
     }
 }
 
-#[derive(Debug, Clone, Eq)]
-enum State<C> {
+#[derive(Clone, Eq)]
+enum State<C>
+where
+    C: AsRef<str>,
+{
     Init,
     More(C),
     Done,
 }
 
-impl<C> PartialEq for State<C> {
+impl<C> fmt::Debug for State<C>
+where
+    C: AsRef<str>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            State::Init => write!(f, "Init"),
+            State::More(c) => f.debug_tuple("More").field(&c.as_ref()).finish(),
+            State::Done => write!(f, "Done"),
+        }
+    }
+}
+
+impl<C> PartialEq for State<C>
+where
+    C: AsRef<str>,
+{
     fn eq(&self, other: &Self) -> bool {
         // Only needs to compare if both states are Init or Done; internally, we don't care about any other states.
         matches!(
@@ -825,11 +848,15 @@ impl<C> PartialEq for State<C> {
 }
 
 #[derive(Debug)]
-struct StreamState<'a, C, F> {
+struct StreamState<'a, C, F>
+where
+    C: AsRef<str>,
+{
     state: State<C>,
     make_request: F,
     continuation_token: Arc<Mutex<Option<String>>>,
     ctx: Context<'a>,
+    added_span: bool,
 }
 
 fn iter_from_callback<
@@ -855,8 +882,22 @@ where
             make_request,
             continuation_token,
             ctx,
+            added_span: false,
         },
         |mut stream_state| async move {
+            // When in the "Init" state, we are either starting fresh or resuming from a continuation token. In either case,
+            // attach a span to the context for the entire paging operation.
+            if stream_state.state == State::Init {
+                tracing::debug!("establish a public API span for new pager.");
+
+                // At the very start of polling, create a span for the entire request, and attach it to the context
+                let span = create_public_api_span(&stream_state.ctx, None, None);
+                if let Some(ref s) = span {
+                    stream_state.added_span = true;
+                    stream_state.ctx = stream_state.ctx.with_value(s.clone());
+                }
+            }
+
             // Get the `continuation_token` to pick up where we left off, or None for the initial page,
             // but don't override the terminal `State::Done`.
             if stream_state.state != State::Done {
@@ -905,6 +946,17 @@ where
             };
             let (item, next_state) = match result {
                 Err(e) => {
+                    if stream_state.added_span {
+                        if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
+                            // Mark the span as an error with an appropriate description.
+                            span.set_status(SpanStatus::Error {
+                                description: e.to_string(),
+                            });
+                            span.set_attribute("error.type", e.kind().to_string().into());
+                            span.end();
+                        }
+                    }
+
                     stream_state.state = State::Done;
                     return Some((Err(e), stream_state));
                 }
@@ -922,6 +974,15 @@ where
                     // Set the `continuation_token` to None now that we are done.
                     if let Ok(mut token) = stream_state.continuation_token.lock() {
                         *token = None;
+                    }
+                    // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
+                    // otherwise it is the responsibility of the caller to end their span.
+                    if stream_state.added_span {
+                        if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
+                            // P is unconstrained, so it's not possible to retrieve the status code for now.
+
+                            span.end();
+                        }
                     }
                     (Ok(response), State::Done)
                 }

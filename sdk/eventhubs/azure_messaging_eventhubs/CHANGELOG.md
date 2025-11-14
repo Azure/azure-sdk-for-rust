@@ -1,16 +1,22 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
 
 ### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.9.0 (2025-11-11)
 
 ### Breaking Changes
 
 - All Event Hubs APIs now return an `azure_messaging_eventhubs::EventHubError` instead of an `azure_core::Error`.
 - Several `azure_messaging_eventhubs::error::ErrorKind` enumerations have been removed because they are no longer needed.
 - Modified several errors which previously used `azure_core::Error::with_message` to use `azure_messaging_eventhubs::EventHubsError::with_message`, changing their underlying type.
-
-### Bugs Fixed
 
 ### Other Changes
 

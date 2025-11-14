@@ -1,9 +1,26 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.31.0 (Unreleased)
 
 ### Features Added
 
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.30.1 (2025-11-09)
+
+### Other Changes
+
+- Increment version for re-release following a fix to publishing.
+
+## 0.30.0 (2025-11-07)
+
+### Features Added
+
+- Added `Context::to_owned()` to create a newly owned `Context` from an existing `Context`.
 - Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
 - Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
 - Added `Response<T, F>::body(&self) -> &ResponseBody`.
@@ -14,10 +31,12 @@
 
 ### Breaking Changes
 
+- Added `Context` field to `PollerOptions`. Client methods which return `Poller` objects should accept a `PollerOptions` in their `method_options` field instead of a `ClientMethodOptions`.
 - Added `F: Format` type parameter to `Poller` and `PollerResult`.
 - Added `Format` associated type to `StatusMonitor`.
 - Added `Format::deserialize()` function to `Format` trait.
 - Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
+- Changed `PollerOptions::frequency` from `Option<Duration>` to `Duration`.
 - Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
 - Removed `credentials::DEFAULT_SCOPE_SUFFIX`.
@@ -35,8 +54,6 @@
 ### Bugs Fixed
 
 - `ItemIterator::into_pages()` now properly supports resuming from the current page until _after_ all items have been iterated.
-
-### Other Changes
 
 ## 0.29.1 (2025-10-06)
 

@@ -123,6 +123,20 @@ impl<'a> Context<'a> {
         }
     }
 
+    /// Transforms this [`Context`] into a new [`Context`] that owns the underlying data, cloning it if necessary.
+    ///
+    /// Clone the underlying data in the [`Context`] and return it in a new owned [`Context`].
+    #[must_use]
+    pub fn to_owned(&self) -> Context<'static> {
+        let type_map = match &self.type_map {
+            Cow::Owned(o) => o.clone(),
+            Cow::Borrowed(o) => (*o).clone(),
+        };
+        Context {
+            type_map: Cow::Owned(type_map),
+        }
+    }
+
     /// Returns a new `Context` that borrows the type map of the given `context`.
     ///
     /// Once you [`Context::insert`] entities the type map is copied.

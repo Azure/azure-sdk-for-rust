@@ -9,15 +9,12 @@ use azure_core::{
     error::ErrorKind,
     http::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
-        policies::create_public_api_span,
         poller::{
             get_retry_after, Poller, PollerResult, PollerState, PollerStatus, StatusMonitor as _,
         },
         Body, Method, RawResponse, Request, RequestContent, Url,
     },
-    json,
-    tracing::{self, SpanStatus},
-    Result,
+    json, tracing, Result,
 };
 
 impl CertificateClient {
@@ -81,7 +78,7 @@ impl CertificateClient {
         parameters: RequestContent<CreateCertificateParameters>,
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
     ) -> Result<Poller<CertificateOperation>> {
-        let options = options.unwrap_or_default().into_owned();
+        let options = options.unwrap_or_default();
         let pipeline = self.pipeline.clone();
 
         let mut url = self.endpoint.clone();
@@ -93,16 +90,11 @@ impl CertificateClient {
 
         let api_version = self.api_version.clone();
         let certificate_name = certificate_name.to_owned();
+
         let parameters: Body = parameters.into();
 
-        let mut ctx = options.method_options.context;
-        let span = create_public_api_span(&ctx, None, None);
-        if let Some(ref s) = span {
-            ctx = ctx.with_value(s.clone());
-        }
-
         Ok(Poller::from_callback(
-            move |next_link: PollerState<Url>| {
+            move |next_link: PollerState<Url>, poller_options| {
                 let (mut request, next_link) = match next_link {
                     PollerState::More(next_link) => {
                         // Make sure the `api-version` is set appropriately.
@@ -138,15 +130,14 @@ impl CertificateClient {
 
                 let pipeline = pipeline.clone();
                 let api_version = api_version.clone();
-                let ctx = ctx.clone();
-                let span = span.clone();
+                let ctx = poller_options.context.clone();
                 async move {
                     let rsp = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
                         &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
-                        &options.poller_options,
+                        &poller_options,
                     );
                     let res: CertificateOperation = json::from_json(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
@@ -189,24 +180,6 @@ impl CertificateClient {
                                         let rsp: RawResponse =
                                             pipeline.send(&ctx, &mut request, None).await?;
                                         let (status, headers, body) = rsp.deconstruct();
-                                        if let Some(span) = span {
-                                            // 5xx status codes SHOULD set status to Error.
-                                            // The description should not be set because it can be inferred from "http.response.status_code".
-                                            if status.is_server_error() {
-                                                span.set_status(SpanStatus::Error {
-                                                    description: "".to_string(),
-                                                });
-                                            }
-                                            if status.is_client_error() || status.is_server_error()
-                                            {
-                                                span.set_attribute(
-                                                    "error.type",
-                                                    status.to_string().into(),
-                                                );
-                                            }
-
-                                            span.end();
-                                        }
                                         Ok(RawResponse::from_bytes(status, headers, body).into())
                                     })
                                 }),
@@ -216,7 +189,7 @@ impl CertificateClient {
                     })
                 }
             },
-            None,
+            Some(options.method_options.into_owned()),
         ))
     }
 }

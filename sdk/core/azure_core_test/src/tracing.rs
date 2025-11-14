@@ -18,7 +18,6 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     fmt::Debug,
-    pin::Pin,
     sync::{Arc, Mutex},
 };
 
@@ -65,10 +64,10 @@ impl TracerProvider for MockTracingProvider {
 /// Mock Tracer - used for testing distributed tracing without involving a specific tracing implementation.
 #[derive(Debug)]
 pub struct MockTracer {
-    pub namespace: Option<&'static str>,
-    pub package_name: &'static str,
-    pub package_version: Option<&'static str>,
-    pub spans: Mutex<Vec<Arc<MockSpan>>>,
+    namespace: Option<&'static str>,
+    package_name: &'static str,
+    package_version: Option<&'static str>,
+    spans: Mutex<Vec<Arc<MockSpanInner>>>,
 }
 
 impl Tracer for MockTracer {
@@ -83,9 +82,14 @@ impl Tracer for MockTracer {
         attributes: Vec<Attribute>,
         parent: Arc<dyn crate::tracing::Span>,
     ) -> Arc<dyn crate::tracing::Span> {
-        let span = Arc::new(MockSpan::new(name, kind, attributes.clone(), Some(parent)));
+        let span = Arc::new(MockSpanInner::new(
+            name,
+            kind,
+            attributes.clone(),
+            Some(parent),
+        ));
         self.spans.lock().unwrap().push(span.clone());
-        span
+        Arc::new(MockSpan { inner: span })
     }
 
     fn start_span(
@@ -101,15 +105,15 @@ impl Tracer for MockTracer {
                 value: attr.value.clone(),
             })
             .collect();
-        let span = Arc::new(MockSpan::new(name, kind, attributes, None));
+        let span = Arc::new(MockSpanInner::new(name, kind, attributes, None));
         self.spans.lock().unwrap().push(span.clone());
-        span
+        Arc::new(MockSpan { inner: span })
     }
 }
 
 /// Mock span for testing purposes.
 #[derive(Debug)]
-pub struct MockSpan {
+struct MockSpanInner {
     pub name: Cow<'static, str>,
     pub kind: SpanKind,
     pub parent: Option<[u8; 8]>,
@@ -118,7 +122,7 @@ pub struct MockSpan {
     pub state: Mutex<SpanStatus>,
     pub is_open: Mutex<bool>,
 }
-impl MockSpan {
+impl MockSpanInner {
     fn new<C>(
         name: C,
         kind: SpanKind,
@@ -144,9 +148,22 @@ impl MockSpan {
             is_open: Mutex::new(true),
         }
     }
+
+    fn is_open(&self) -> bool {
+        let is_open = self.is_open.lock().unwrap();
+        *is_open
+    }
 }
 
-impl Span for MockSpan {
+impl AsAny for MockSpanInner {
+    fn as_any(&self) -> &dyn std::any::Any {
+        // Convert to an object that doesn't expose the lifetime parameter
+        // We're essentially erasing the lifetime here to satisfy the static requirement
+        self as &dyn std::any::Any
+    }
+}
+
+impl Span for MockSpanInner {
     fn set_attribute(&self, key: &'static str, value: AttributeValue) {
         eprintln!("{}: Setting attribute {}: {:?}", self.name, key, value);
         let mut attributes = self.attributes.lock().unwrap();
@@ -195,11 +212,58 @@ impl Span for MockSpan {
     }
 }
 
+pub struct MockSpan {
+    inner: Arc<MockSpanInner>,
+}
+
+impl Drop for MockSpan {
+    fn drop(&mut self) {
+        if self.inner.is_open() {
+            eprintln!("Warning: Dropping open span: {}", self.inner.name);
+            self.inner.end();
+        }
+    }
+}
+
 impl AsAny for MockSpan {
     fn as_any(&self) -> &dyn std::any::Any {
         // Convert to an object that doesn't expose the lifetime parameter
         // We're essentially erasing the lifetime here to satisfy the static requirement
         self as &dyn std::any::Any
+    }
+}
+
+impl Span for MockSpan {
+    fn set_attribute(&self, key: &'static str, value: AttributeValue) {
+        self.inner.set_attribute(key, value);
+    }
+
+    fn set_status(&self, status: crate::tracing::SpanStatus) {
+        self.inner.set_status(status);
+    }
+
+    fn end(&self) {
+        self.inner.end();
+    }
+
+    fn is_recording(&self) -> bool {
+        self.inner.is_recording()
+    }
+
+    fn span_id(&self) -> [u8; 8] {
+        self.inner.span_id()
+    }
+
+    fn record_error(&self, error: &dyn std::error::Error) {
+        self.inner.record_error(error);
+    }
+
+    fn set_current(&self, context: &Context) -> Box<dyn SpanGuard> {
+        self.inner.set_current(context)
+    }
+
+    fn propagate_headers(&self, request: &mut Request) {
+        self.inner.propagate_headers(request);
     }
 }
 
@@ -252,22 +316,64 @@ pub fn check_instrumentation_result(
         assert_eq!(tracer.namespace, expected.namespace);
 
         let spans = tracer.spans.lock().unwrap();
-        assert_eq!(
-            spans.len(),
-            expected.spans.len(),
-            "Unexpected number of spans for tracer {}",
-            expected.name
-        );
 
-        for (span_index, span_expected) in expected.spans.iter().enumerate() {
+        // Check span lengths if there are no wildcard spans.
+        if !expected.spans.iter().any(|s| s.is_wildcard) {
+            assert_eq!(
+                spans.len(),
+                expected.spans.len(),
+                "Unexpected number of spans for tracer {}",
+                expected.name
+            );
+        }
+
+        let mut expected_index = 0;
+        for (span_index, span_actual) in spans.iter().enumerate() {
             eprintln!(
                 "Checking span {} of tracer {}: {}",
-                span_index, expected.name, span_expected.span_name
+                span_index, expected.name, span_actual.name
             );
-            check_span_information(&spans[span_index], span_expected, &parent_span_map);
+            check_span_information(
+                span_actual,
+                &expected.spans[expected_index],
+                &parent_span_map,
+            );
             // Now that we've verified the span, add the mapping between expected span ID and the actual span ID.
-            parent_span_map.insert(span_expected.span_id, spans[span_index].id);
+            parent_span_map.insert(expected.spans[expected_index].span_id, span_actual.id);
+            if expected.spans[expected_index].is_wildcard {
+                // If this is a wildcard span, we don't increment the expected index.
+                eprintln!(
+                    "Span {} is a wildcard, not incrementing expected index",
+                    span_actual.name
+                );
+                if spans.len() > span_index + 1 {
+                    let next_span = &spans[span_index + 1];
+                    if !compare_span_information(
+                        next_span,
+                        &expected.spans[expected_index],
+                        &parent_span_map,
+                    ) {
+                        eprintln!(
+                            "Next actual span does not match expected span: {}",
+                            expected.spans[expected_index].span_name
+                        );
+                        expected_index += 1;
+                    }
+                } else {
+                    // At the very end, bump the expected index past the wildcard entry.
+                    // This ensures that we consume all the expected spans.
+                    expected_index += 1;
+                }
+            } else {
+                expected_index += 1;
+            }
         }
+        assert_eq!(
+            expected_index,
+            expected.spans.len(),
+            "Not all expected spans were found for tracer {}",
+            expected.name
+        );
     }
 }
 
@@ -290,10 +396,26 @@ pub struct ExpectedSpanInformation<'a> {
 
     /// The expected attributes associated with the span.
     pub attributes: Vec<(&'a str, AttributeValue)>,
+
+    pub is_wildcard: bool,
+}
+
+impl Default for ExpectedSpanInformation<'_> {
+    fn default() -> Self {
+        Self {
+            span_name: "get",
+            status: SpanStatus::Unset,
+            span_id: Uuid::new_v4(),
+            parent_id: None,
+            kind: SpanKind::Client,
+            attributes: vec![],
+            is_wildcard: false,
+        }
+    }
 }
 
 fn check_span_information(
-    span: &Arc<MockSpan>,
+    span: &Arc<MockSpanInner>,
     expected: &ExpectedSpanInformation<'_>,
     parent_span_map: &HashMap<Uuid, [u8; 8]>,
 ) {
@@ -334,6 +456,70 @@ fn check_span_information(
             panic!("Expected attribute not found: {} = {:?}", key, value);
         }
     }
+    // Finally, ensure the span has been closed (`end()` was called).
+    assert!(
+        !*span.is_open.lock().unwrap(),
+        "Span {} was not ended",
+        span.name
+    );
+}
+
+/// Returns true if the spans match, false otherwise.
+fn compare_span_information(
+    actual: &Arc<MockSpanInner>,
+    expected: &ExpectedSpanInformation<'_>,
+    parent_span_map: &HashMap<Uuid, [u8; 8]>,
+) -> bool {
+    if actual.name != expected.span_name {
+        return false;
+    }
+    if actual.kind != expected.kind {
+        return false;
+    }
+    if *actual.state.lock().unwrap() != expected.status {
+        return false;
+    }
+    match actual.parent {
+        None => {
+            if expected.parent_id.is_some() {
+                return false;
+            }
+        }
+        Some(ref parent) => {
+            let parent_id = parent_span_map
+                .get(expected.parent_id.as_ref().unwrap())
+                .unwrap();
+            if *parent != *parent_id {
+                return false;
+            }
+        }
+    }
+    let attributes = actual.attributes.lock().unwrap();
+    eprintln!("Expected attributes: {:?}", expected.attributes);
+    eprintln!("Found attributes: {:?}", attributes);
+    for (index, attr) in attributes.iter().enumerate() {
+        eprintln!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
+        let mut found = false;
+        for (key, value) in &expected.attributes {
+            if attr.key == *key {
+                // Skip checking the value for "<ANY>" as it is a placeholder
+                if *value != AttributeValue::String("<ANY>".into()) && attr.value != *value {
+                    return false;
+                }
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            return false;
+        }
+    }
+    for (key, _) in expected.attributes.iter() {
+        if !attributes.iter().any(|attr| attr.key == *key) {
+            return false;
+        }
+    }
+    true
 }
 
 /// Information about an instrumented API call.
@@ -384,6 +570,9 @@ pub struct ExpectedRestApiSpan {
 
     /// Expected status code returned by the service.
     pub expected_status_code: azure_core::http::StatusCode,
+
+    /// Whether an unknown multiple of this span will be found.
+    pub is_wildcard: bool,
 }
 
 impl Default for ExpectedRestApiSpan {
@@ -391,6 +580,7 @@ impl Default for ExpectedRestApiSpan {
         Self {
             api_verb: azure_core::http::Method::Get,
             expected_status_code: azure_core::http::StatusCode::Ok,
+            is_wildcard: false,
         }
     }
 }
@@ -399,8 +589,14 @@ impl Default for ExpectedRestApiSpan {
 #[derive(Debug, Default, Clone)]
 pub struct ExpectedInstrumentation {
     /// The package name for the service client.
+    ///
+    /// **NOTE**: Make sure that the package name comes from `env!("CARGO_PKG_NAME")` to ensure that this continues to work
+    /// if test recordings were created with a previous version of the package.
     pub package_name: String,
     /// The package version for the service client.
+    ///
+    /// **NOTE**: Make sure that the package version comes from `env!("CARGO_PKG_VERSION")` to ensure that this continues to work
+    /// if test recordings were created with a previous version of the package.
     pub package_version: String,
     /// The namespace for the service client.
     pub package_namespace: Option<&'static str>,
@@ -431,6 +627,7 @@ pub struct ExpectedInstrumentation {
 /// The `test_api` call may issue multiple service client calls, if it does, this function will verify that all expected spans were created. The caller of the `test_instrumentation_for_api` call
 /// should make sure to include all expected APIs in the call.
 ///
+///
 pub async fn assert_instrumentation_information<C, FnInit, FnTest, T>(
     create_client: FnInit,
     test_api: FnTest,
@@ -438,7 +635,7 @@ pub async fn assert_instrumentation_information<C, FnInit, FnTest, T>(
 ) -> azure_core::Result<()>
 where
     FnInit: FnOnce(Arc<dyn TracerProvider>) -> azure_core::Result<C>,
-    FnTest: FnOnce(C) -> Pin<Box<dyn futures::Future<Output = azure_core::Result<T>>>>,
+    FnTest: AsyncFnOnce(C) -> azure_core::Result<T>,
 {
     // Initialize the mock tracer provider
     let mock_tracer = Arc::new(MockTracingProvider::new());
@@ -506,6 +703,7 @@ where
                 status: span_status,
                 kind: SpanKind::Internal,
                 parent_id: None,
+                is_wildcard: false, // Public API spans cannot be wildcards.
                 attributes: public_api_attributes,
             });
         }
@@ -548,6 +746,9 @@ where
                 } else {
                     None
                 },
+                // If allow_unknown_children is set, we don't know how many child spans there will be.
+                // Use a wildcard span ID to indicate that.
+                is_wildcard: rest_api_call.is_wildcard,
                 span_id: Uuid::new_v4(),
                 status: if !rest_api_call.expected_status_code.is_success() {
                     SpanStatus::Error {

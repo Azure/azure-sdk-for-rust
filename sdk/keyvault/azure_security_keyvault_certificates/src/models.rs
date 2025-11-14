@@ -6,7 +6,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         poller::{PollerOptions, PollerStatus, StatusMonitor},
-        ClientMethodOptions, JsonFormat, RequestContent,
+        JsonFormat, RequestContent,
     },
     json,
 };
@@ -26,20 +26,16 @@ impl StatusMonitor for CertificateOperation {
 /// Options to be passed to [`CertificateClient::create_certificate()`](crate::clients::CertificateClient::create_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientCreateCertificateOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
     /// Allows customization of the [`Poller`](azure_core::http::poller::Poller).
-    pub poller_options: PollerOptions,
+    pub method_options: PollerOptions<'a>,
 }
 
-impl CertificateClientCreateCertificateOptions<'_> {
+impl<'a> CertificateClientCreateCertificateOptions<'a> {
+    /// Converts these options into an owned form so they can be used in `'static` contexts.
+    #[must_use]
     pub fn into_owned(self) -> CertificateClientCreateCertificateOptions<'static> {
         CertificateClientCreateCertificateOptions {
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-            poller_options: self.poller_options,
+            method_options: self.method_options.into_owned(),
         }
     }
 }
