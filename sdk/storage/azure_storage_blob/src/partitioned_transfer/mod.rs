@@ -16,7 +16,10 @@ where
 {
     let parallel = parallel.get();
 
-    let first_op = ops_queue.try_next().await?.ok_or_else(|| todo!())?;
+    let first_op = match ops_queue.try_next().await? {
+        Some(item) => item,
+        None => return Ok(()),
+    };
 
     let mut get_next_completed_op_future = future::select_all(vec![Box::pin(first_op())]);
     let mut get_next_queue_op_future = ops_queue.try_next();
@@ -50,13 +53,20 @@ where
                 }
             }
             // a running op completed first
-            future::Either::Right(((Ok(_res), _, remaining_running_ops), next_op_fut)) => {
-                get_next_queue_op_future = next_op_fut;
-                get_next_completed_op_future = if remaining_running_ops.is_empty() {
-                    todo!("handle no remaining ops but op queue hasn't completed")
+            future::Either::Right(((Ok(_), _, remaining_running_ops), next_op_fut)) => {
+                // select panics on empty iter, so we can't race in this case.
+                // forcibly wait for next op in queue and handle it before continuing.
+                if remaining_running_ops.is_empty() {
+                    let next_op = match next_op_fut.await? {
+                        Some(item) => item,
+                        None => return Ok(()),
+                    };
+                    get_next_queue_op_future = ops_queue.try_next();
+                    get_next_completed_op_future = future::select_all(vec![Box::pin(next_op())]);
                 } else {
-                    future::select_all(remaining_running_ops)
-                };
+                    get_next_queue_op_future = next_op_fut;
+                    get_next_completed_op_future = future::select_all(remaining_running_ops);
+                }
             }
         }
     }
@@ -72,8 +82,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use futures::{ready, FutureExt};
+
     use super::*;
-    use std::{sync::mpsc::channel, time::Duration};
+    use std::{pin::Pin, sync::mpsc::channel, task::Poll, time::Duration};
 
     #[tokio::test]
     async fn limit_ops() -> AzureResult<()> {
@@ -116,5 +128,69 @@ mod tests {
         }
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn slow_stream() -> AzureResult<()> {
+        let parallel = 10;
+        let num_ops = 5;
+        let op_time_millis = 10;
+        let stream_time_millis = op_time_millis + 10;
+        // setup a series of operations that send a unique number to a channel
+        // we can then assert the expected numbers made it to the channel at expected times
+        let ops = (0..num_ops).map(|_| {
+            Ok(async move || {
+                tokio::time::sleep(Duration::from_millis(op_time_millis)).await;
+                AzureResult::<()>::Ok(())
+            })
+        });
+
+        run_all_with_concurrency_limit(
+            SlowStream::new(ops, Duration::from_millis(stream_time_millis)),
+            NonZero::new(parallel).unwrap(),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn empty_ops() -> AzureResult<()> {
+        let parallel = 4usize;
+
+        // not possible to manually type what we need
+        // make a vec with a concrete element and then remove it to get the desired typing
+        let op = || future::ready::<Result<(), azure_core::Error>>(Ok(()));
+        let mut ops = vec![Ok(op)];
+        ops.pop();
+
+        run_all_with_concurrency_limit(futures::stream::iter(ops), NonZero::new(parallel).unwrap())
+            .await
+    }
+
+    struct SlowStream<Iter> {
+        sleep: Pin<Box<tokio::time::Sleep>>,
+        interval: Duration,
+        iter: Iter,
+    }
+    impl<Iter> SlowStream<Iter> {
+        fn new(iter: Iter, interval: Duration) -> Self {
+            Self {
+                sleep: Box::pin(tokio::time::sleep(interval)),
+                interval,
+                iter,
+            }
+        }
+    }
+    impl<Iter: Iterator + Unpin> Stream for SlowStream<Iter> {
+        type Item = Iter::Item;
+
+        fn poll_next(
+            self: std::pin::Pin<&mut Self>,
+            cx: &mut std::task::Context<'_>,
+        ) -> std::task::Poll<Option<Self::Item>> {
+            let this = self.get_mut();
+            ready!(this.sleep.poll_unpin(cx));
+            this.sleep = Box::pin(tokio::time::sleep(this.interval));
+            Poll::Ready(this.iter.next())
+        }
     }
 }
