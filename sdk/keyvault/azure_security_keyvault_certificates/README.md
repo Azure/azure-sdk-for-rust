@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a new certificate client
     let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
