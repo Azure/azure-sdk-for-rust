@@ -6,7 +6,6 @@
 
 //! Constants defining HTTP headers and other values relevant to Azure Cosmos DB APIs.
 
-// (Unused import removed)
 use azure_core::http::{
     headers::{HeaderName, HeaderValue},
     request::options::ContentType,

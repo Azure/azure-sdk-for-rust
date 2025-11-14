@@ -71,12 +71,8 @@ impl CosmosPipeline {
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,
-        // resource_link: ResourceLink,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        // cosmos_request.request_context.location_endpoint_to_route =
-        //     Some(resource_link.url(&self.endpoint));
-
         // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
             let ctx = context.clone();
