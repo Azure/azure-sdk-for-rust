@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added support for `set_access_policy` to `BlobContainerClient`.
+- Added support for `get_access_policy` to `BlobContainerClient`.
+
 ### Breaking Changes
 
 ### Bugs Fixed
