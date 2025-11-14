@@ -17,9 +17,7 @@ use azure_storage_blob::{
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
-use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, use_storage_account, StorageAccount,
-};
+use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
@@ -651,7 +649,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    use_storage_account(StorageAccount::Versioned);
     let container_client = get_container_client(recording, false).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     container_client.create_container(None).await?;

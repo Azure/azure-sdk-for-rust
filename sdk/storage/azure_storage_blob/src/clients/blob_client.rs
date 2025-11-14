@@ -9,8 +9,7 @@ use crate::{
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlobClientSetLegalHoldResult,
-        BlockBlobClientUploadResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
@@ -448,7 +447,7 @@ impl BlobClient {
         &self,
         legal_hold: bool,
         options: Option<BlobClientSetLegalHoldOptions<'_>>,
-    ) -> Result<Response<BlobClientSetLegalHoldResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_legal_hold(legal_hold, options).await
     }
 }
