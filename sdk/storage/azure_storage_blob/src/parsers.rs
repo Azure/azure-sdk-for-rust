@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{error::ErrorKind, Error};
 use std::collections::HashMap;
+use std::io::{Error, ErrorKind};
 use time::{format_description::FormatItem, macros::format_description, OffsetDateTime, UtcOffset};
-
-use crate::models::{AccessPolicy, SignedIdentifier, SignedIdentifiers};
 
 static RFC3339_7: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:7]Z");
@@ -22,7 +20,7 @@ static RFC3339_7: &[FormatItem<'_>] =
 pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     if offset % 512 != 0 {
         return Err(Error::new(
-            ErrorKind::DataConversion,
+            ErrorKind::InvalidInput,
             format!(
                 "provided offset {} is not aligned to a 512-byte boundary.",
                 offset
@@ -31,7 +29,7 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     }
     if length % 512 != 0 {
         return Err(Error::new(
-            ErrorKind::DataConversion,
+            ErrorKind::InvalidInput,
             format!(
                 "provided length {} is not aligned to a 512-byte boundary.",
                 offset
@@ -53,7 +51,7 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
 pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String, Error> {
     if tags.is_empty() {
         return Err(Error::new(
-            ErrorKind::DataConversion,
+            ErrorKind::InvalidInput,
             "Tags HashMap cannot be empty.".to_string(),
         ));
     }
@@ -75,33 +73,8 @@ pub fn format_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
     let utc = datetime.to_offset(UtcOffset::UTC);
     utc.format(RFC3339_7).map_err(|e| {
         Error::new(
-            ErrorKind::DataConversion,
+            ErrorKind::InvalidInput,
             format!("Failed to format datetime: {}", e),
         )
-    })
-}
-
-/// Takes a HashMap<String, AccessPolicy> where the key is the policy ID and the value is the AccessPolicy and converts it to SignedIdentifiers.
-///
-/// # Arguments
-///
-/// * `policies` - A HashMap where keys are policy identifiers and values are AccessPolicy objects.
-pub fn format_signed_identifiers(
-    policies: HashMap<String, AccessPolicy>,
-) -> Result<SignedIdentifiers, Error> {
-    if policies.is_empty() {
-        return Ok(SignedIdentifiers { items: None });
-    }
-
-    let signed_identifiers: Vec<SignedIdentifier> = policies
-        .into_iter()
-        .map(|(id, access_policy)| SignedIdentifier {
-            id: Some(id),
-            access_policy: Some(access_policy),
-        })
-        .collect();
-
-    Ok(SignedIdentifiers {
-        items: Some(signed_identifiers),
     })
 }

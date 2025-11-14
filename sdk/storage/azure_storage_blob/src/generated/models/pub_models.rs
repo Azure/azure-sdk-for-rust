@@ -193,10 +193,6 @@ pub struct BlobContainerClientRenewLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRestoreResult;
 
-/// Contains results for `BlobContainerClient::set_access_policy()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientSetAccessPolicyResult;
-
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]

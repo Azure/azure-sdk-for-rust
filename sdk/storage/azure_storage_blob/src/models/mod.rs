@@ -46,7 +46,6 @@ pub use crate::generated::models::{
     BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
     BlobContainerClientRenewLeaseResultHeaders, BlobContainerClientRestoreResult,
     BlobContainerClientRestoreResultHeaders, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetAccessPolicyResultHeaders,
     BlobContainerClientSetMetadataOptions, BlobCopySourceTags, BlobDeleteType, BlobExpiryOptions,
     BlobFlatListSegment, BlobImmutabilityPolicyMode, BlobItemInternal, BlobMetadata, BlobName,
     BlobPropertiesInternal, BlobServiceClientFindBlobsByTagsOptions,
