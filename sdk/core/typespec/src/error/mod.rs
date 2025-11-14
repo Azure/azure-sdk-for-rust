@@ -304,11 +304,7 @@ impl Display for Error {
             Repr::Simple(kind) => std::fmt::Display::fmt(&kind, f),
             Repr::SimpleMessage(_, message) => f.write_str(message),
             Repr::Custom(Custom { error, .. }) => std::fmt::Display::fmt(&error, f),
-            Repr::CustomMessage(Custom { error, .. }, message) => {
-                f.write_str(message)?;
-                f.write_str(": ")?;
-                std::fmt::Display::fmt(&error, f)
-            }
+            Repr::CustomMessage(_, message) => f.write_str(message),
         }
     }
 }
