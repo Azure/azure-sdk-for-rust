@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::borrow::Cow;
 use crate::constants;
 use crate::models::ThroughputProperties;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
@@ -17,7 +18,7 @@ pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
     pub application_name: Option<String>,
     pub application_region: Option<String>,
-    pub application_preferred_regions: Option<Vec<String>>,
+    pub application_preferred_regions: Vec<Cow<'static, str>>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     pub consistency_level: Option<ConsistencyLevel>,
     pub request_timeout: Option<Duration>,

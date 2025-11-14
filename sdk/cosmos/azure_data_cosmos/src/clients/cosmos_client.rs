@@ -27,7 +27,6 @@ use azure_core::http::RetryOptions;
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
-    global_endpoint_manager: GlobalEndpointManager,
 }
 
 impl CosmosClient {
@@ -70,21 +69,19 @@ impl CosmosClient {
 
         let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.parse()?,
-            options.application_preferred_regions.unwrap(),
+            options.application_preferred_regions,
             pipeline_core.clone(),
         );
-        // global_endpoint_manager.initialize_account_properties_and_start_background_refresh();
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
             pipeline_core,
-            global_endpoint_manager.clone(),
+            global_endpoint_manager,
         ));
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            global_endpoint_manager,
         })
     }
 
@@ -125,10 +122,9 @@ impl CosmosClient {
 
         let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.parse()?,
-            options.application_preferred_regions.unwrap(),
+            options.application_preferred_regions,
             pipeline_core.clone(),
         );
-        // global_endpoint_manager.initialize_account_properties_and_start_background_refresh();
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
@@ -139,7 +135,6 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            global_endpoint_manager,
         })
     }
 
@@ -184,11 +179,6 @@ impl CosmosClient {
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
         &self.pipeline.endpoint
-    }
-
-    /// Gets the endpoint of the database account this client is connected to.
-    pub fn get_endpoint_manager(&self) -> &GlobalEndpointManager {
-        &self.global_endpoint_manager
     }
 
     /// Executes a query against databases in the account.

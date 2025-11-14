@@ -78,7 +78,7 @@ impl MetadataRequestRetryPolicy {
             max_unavailable_endpoint_retry_count: 1,
             retry_context: None,
             unavailable_endpoint_retry_count: max(
-                global_endpoint_manager.preferred_locations.len() as i32,
+                global_endpoint_manager.preferred_location_count(),
                 1,
             ),
         }

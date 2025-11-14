@@ -10,6 +10,7 @@ use std::{
     sync::RwLock,
     time::{Duration, SystemTime},
 };
+use std::borrow::Cow;
 use tracing::info;
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
@@ -35,7 +36,7 @@ impl RequestOperation {
 
 #[derive(Clone, Default, Debug)]
 pub struct DatabaseAccountLocationsInfo {
-    pub preferred_locations: Vec<String>,
+    pub preferred_locations: Vec<Cow<'static, str>>,
     pub account_write_locations: Vec<AccountRegion>,
     pub account_read_locations: Vec<AccountRegion>,
     pub account_write_endpoints_by_location: HashMap<String, String>,
@@ -58,7 +59,7 @@ pub struct LocationCache {
 }
 
 impl LocationCache {
-    pub fn new(default_endpoint: String, preferred_locations: Vec<String>) -> Self {
+    pub fn new(default_endpoint: String, preferred_locations: Vec<Cow<'static, str>>) -> Self {
         Self {
             default_endpoint,
             locations_info: DatabaseAccountLocationsInfo {
@@ -248,7 +249,7 @@ impl LocationCache {
 
         for location in &self.locations_info.preferred_locations {
             // Checks if preferred location exists in endpoints_by_location
-            if let Some(endpoint) = endpoints_by_location.get(location) {
+            if let Some(endpoint) = endpoints_by_location.get(location.as_ref()) {
                 // Check if endpoint is available, if not add to unavailable_endpoints
                 // If it is then add to endpoints
                 if !self.is_endpoint_unavailable(endpoint, request) {
@@ -292,7 +293,7 @@ mod tests {
     use crate::operation_context::OperationType;
     use crate::resource_context::{ResourceLink, ResourceType};
 
-    fn create_test_data() -> (String, Vec<AccountRegion>, Vec<AccountRegion>, Vec<String>) {
+    fn create_test_data() -> (String, Vec<AccountRegion>, Vec<AccountRegion>, Vec<Cow<'static, str>>) {
         // Setting up test database account data
         let default_endpoint = "https://default.documents.example.com".to_string();
 
@@ -316,7 +317,10 @@ mod tests {
 
         let read_locations = Vec::from([location_1, location_2, location_3, location_4]);
 
-        let preferred_locations = vec!["Location 1".to_string(), "Location 2".to_string()];
+        let preferred_locations: Vec<Cow<'static, str>> = vec![
+            Cow::Borrowed("Location 1"),
+            Cow::Borrowed("Location 2"),
+        ];
 
         (
             default_endpoint,
@@ -528,7 +532,7 @@ mod tests {
         );
 
         let builder = CosmosRequestBuilder::new(
-            OperationType::Read,
+            OperationType::Create,
             ResourceType::Documents,
             ResourceLink::root(ResourceType::Documents),
         );

@@ -1,6 +1,7 @@
 //! Concrete (yet unimplemented) GlobalEndpointManager.
 //! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
+use std::borrow::Cow;
 use crate::constants::ACCOUNT_PROPERTIES_KEY;
 use crate::cosmos_request::{CosmosRequest, CosmosRequestBuilder};
 use crate::models::AccountProperties;
@@ -8,9 +9,7 @@ use crate::operation_context::OperationType;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::location_cache::{LocationCache, RequestOperation};
 use crate::ReadDatabaseOptions;
-use azure_core::async_runtime::get_async_runtime;
 use azure_core::http::{Pipeline, Response};
-use azure_core::time::Duration;
 use azure_core::Error;
 use moka::future::Cache;
 use std::collections::HashMap;
@@ -19,10 +18,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Debug, Clone)]
 pub struct GlobalEndpointManager {
     default_endpoint: String,
-    pub preferred_locations: Vec<String>,
     location_cache: Arc<Mutex<LocationCache>>,
-    background_refresh_location_time_interval: Duration,
-    is_background_account_refresh_active: bool,
     pipeline: Pipeline,
     account_properties_cache: Cache<&'static str, AccountProperties>,
 }
@@ -37,7 +33,7 @@ impl GlobalEndpointManager {
     /// - Account refresh/background flags start as `false`.
     pub fn new(
         default_endpoint: String,
-        preferred_locations: Vec<String>,
+        preferred_locations: Vec<Cow<'static, str>>,
         pipeline: Pipeline,
     ) -> Self {
         let location_cache = Arc::new(Mutex::new(LocationCache::new(
@@ -49,13 +45,9 @@ impl GlobalEndpointManager {
             .time_to_live(std::time::Duration::from_secs(600))
             .build();
 
-        // endpoint_manager.initialize_account_properties_and_start_background_refresh();
         Self {
             default_endpoint,
-            preferred_locations,
             location_cache,
-            background_refresh_location_time_interval: Duration::seconds(5),
-            is_background_account_refresh_active: false,
             pipeline,
             account_properties_cache,
         }
@@ -65,14 +57,17 @@ impl GlobalEndpointManager {
         self.default_endpoint.clone()
     }
 
+    #[allow(dead_code)]
     pub fn read_endpoints(&self) -> Vec<String> {
         self.location_cache.lock().unwrap().read_endpoints()
     }
 
+    #[allow(dead_code)]
     pub fn account_read_endpoints(&self) -> Vec<String> {
         self.location_cache.lock().unwrap().read_endpoints()
     }
 
+    #[allow(dead_code)]
     pub fn write_endpoints(&self) -> Vec<String> {
         self.location_cache.lock().unwrap().write_endpoints()
     }
@@ -118,36 +113,6 @@ impl GlobalEndpointManager {
         !request.is_read_only_request()
             && self
                 .can_support_multiple_write_locations(request.resource_type, request.operation_type)
-    }
-
-    pub fn initialize_account_properties_and_start_background_refresh(&mut self) {
-        // If a background refresh is already active we do nothing.
-        if self.is_background_account_refresh_active {
-            return;
-        }
-
-        // Mark background refresh active so we don't spawn duplicate tasks.
-        self.is_background_account_refresh_active = true;
-
-        // Clone what we need inside the async task.
-        let cloned = self.clone();
-        let interval = self.background_refresh_location_time_interval;
-
-        // Spawn periodic refresh task on the shared async runtime.
-        let _bg_task = get_async_runtime().spawn(Box::pin(async move {
-            // One-off initial refresh attempt (errors logged but ignored).
-            if let Err(e) = cloned.refresh_location_async(true).await {
-                // For now we just trace to stderr; real implementation may use structured logging.
-                eprintln!("cosmos: background location refresh failed (initial): {e}");
-            }
-            loop {
-                // Sleep for the configured interval between refreshes.
-                get_async_runtime().sleep(interval).await;
-                if let Err(e) = cloned.refresh_location_async(true).await {
-                    eprintln!("cosmos: background location refresh failed: {e}");
-                }
-            }
-        }));
     }
 
     pub async fn refresh_location_async(&self, force_refresh: bool) -> Result<(), Error> {
