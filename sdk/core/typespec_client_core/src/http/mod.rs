@@ -261,7 +261,7 @@ impl<'a> QueryBuilder<'a> {
     }
 
     /// Applies all the query parameter changes to the URL.
-    pub fn build(self) {
+    pub fn build(&mut self) {
         if self.values.is_empty() {
             return;
         }
@@ -283,7 +283,7 @@ impl<'a> QueryBuilder<'a> {
         }
 
         // Then, apply our changes (set operations overwrite, append operations add)
-        for (key, values) in self.values {
+        for (key, values) in self.values.drain(..) {
             if let Some((_, vals)) = final_values.iter_mut().find(|(k, _)| k == &key) {
                 // For set operations, we already cleared and replaced
                 // For append operations, we add to existing values
@@ -497,5 +497,21 @@ mod test {
             .append_key_only("verbose");
         builder.build();
         assert_eq!(url.as_str(), "https://contoso.com/?debug&a=1&verbose");
+    }
+
+    #[test]
+    fn test_query_builder_multiple_builds() {
+        let mut url = Url::parse("https://contoso.com").unwrap();
+
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "1");
+        builder.build();
+
+        builder.set_pair("b", "2");
+        builder.build();
+
+        // Calling build() again without changes does nothing
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=1&b=2");
     }
 }
