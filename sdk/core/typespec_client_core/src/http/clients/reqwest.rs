@@ -58,10 +58,7 @@ impl HttpClient for ::reqwest::Client {
             "performing request {method} '{}' with `reqwest`",
             url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS)
         );
-        let rsp = self
-            .execute(reqwest_request)
-            .await
-            .with_context(ErrorKind::Io, "failed to execute `reqwest` request")?;
+        let rsp = self.execute(reqwest_request).await.unwrap();
 
         let status = rsp.status();
         let headers = to_headers(rsp.headers());
