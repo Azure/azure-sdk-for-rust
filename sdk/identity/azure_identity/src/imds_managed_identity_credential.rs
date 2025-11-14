@@ -6,7 +6,7 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     http::{
-        headers::HeaderName, request::Request, ClientOptions, Method, Pipeline,
+        headers::HeaderName, request::Request, ClientOptions, Method, Pipeline, PipelineOptions,
         PipelineSendOptions, StatusCode, Url,
     },
     json::from_json,
@@ -62,6 +62,7 @@ pub(crate) struct ImdsManagedIdentityCredential {
 }
 
 impl ImdsManagedIdentityCredential {
+    #[allow(clippy::too_many_arguments, reason = "private API")]
     pub fn new(
         endpoint: Url,
         api_version: &str,
@@ -69,6 +70,7 @@ impl ImdsManagedIdentityCredential {
         secret_env: &str,
         id: ImdsId,
         client_options: ClientOptions,
+        pipeline_options: Option<PipelineOptions>,
         env: Env,
     ) -> Self {
         let pipeline = Pipeline::new(
@@ -77,7 +79,7 @@ impl ImdsManagedIdentityCredential {
             client_options,
             Vec::default(),
             Vec::default(),
-            None,
+            pipeline_options,
         );
         Self {
             pipeline,
@@ -136,28 +138,28 @@ impl ImdsManagedIdentityCredential {
             )
             .await?;
 
-        if !rsp.status().is_success() {
-            match rsp.status() {
+        let status = rsp.status();
+        if !status.is_success() {
+            let message = match status {
                 StatusCode::BadRequest => {
-                    return Err(Error::with_message(
-                        ErrorKind::Credential,
-                        "the requested identity has not been assigned to this resource",
-                    ))
+                    "The requested identity has not been assigned to this resource".to_string()
                 }
                 StatusCode::BadGateway | StatusCode::GatewayTimeout => {
-                    return Err(Error::with_message(
-                        ErrorKind::Credential,
-                        "the request failed due to a gateway error",
-                    ))
+                    "The request failed due to a gateway error".to_string()
                 }
                 _ => {
                     let body = String::from_utf8_lossy(rsp.body());
-                    return Err(Error::with_message(
-                        ErrorKind::Credential,
-                        format!("the request failed: {body}"),
-                    ));
+                    format!("The request failed: {body}")
                 }
-            }
+            };
+            return Err(Error::new(
+                ErrorKind::HttpResponse {
+                    error_code: None,
+                    raw_response: Some(Box::new(rsp)),
+                    status,
+                },
+                message,
+            ));
         }
 
         let token_response: MsiTokenResponse = from_json(rsp.into_body())?;

@@ -28,7 +28,7 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
         .await?;
 
     // Assert
-    let blob_service_properties = response.into_body()?;
+    let blob_service_properties = response.into_model()?;
     let hour_metrics = blob_service_properties.hour_metrics;
     assert!(hour_metrics.is_some());
     Ok(())
@@ -53,9 +53,9 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     }
 
     // Assert
-    let mut pager_response = service_client.list_containers(None)?;
+    let mut pager_response = service_client.list_containers(None)?.into_pages();
     while let Some(page) = pager_response.next().await {
-        let current_page = page.unwrap().into_body()?;
+        let current_page = page.unwrap().into_model()?;
         let container_list = current_page.container_items;
         for container in container_list {
             let container_name = container.name.unwrap();
@@ -102,11 +102,13 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     };
 
     // Assert
-    let mut pager_response = service_client.list_containers(Some(list_containers_options))?;
+    let mut pager_response = service_client
+        .list_containers(Some(list_containers_options))?
+        .into_pages();
     let mut page_count = 0;
     while let Some(page) = pager_response.next().await {
         page_count += 1;
-        let current_page = page.unwrap().into_body()?;
+        let current_page = page.unwrap().into_model()?;
         let container_list = current_page.container_items;
         for container in container_list {
             let container_name = container.name.unwrap();
@@ -148,7 +150,7 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
 
     // Assert
     let response = service_client.get_properties(None).await?;
-    let blob_service_properties = response.into_body()?;
+    let blob_service_properties = response.into_model()?;
     let default_service_version = blob_service_properties.default_service_version;
     assert_eq!("2022-11-02".to_string(), default_service_version.unwrap());
     Ok(())
@@ -220,7 +222,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let response = service_client
         .find_blobs_by_tags("\"foo\"='bar'", None)
         .await?;
-    let filter_blob_segment = response.into_body()?;
+    let filter_blob_segment = response.into_model()?;
     let blobs = filter_blob_segment.blobs.unwrap();
     assert!(
         blobs
@@ -233,7 +235,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let response = service_client
         .find_blobs_by_tags("\"fizz\"='buzz'", None)
         .await?;
-    let filter_blob_segment = response.into_body()?;
+    let filter_blob_segment = response.into_model()?;
     let blobs = filter_blob_segment.blobs.unwrap();
     assert!(
         blobs
@@ -246,7 +248,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let response = service_client
         .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)
         .await?;
-    let filter_blob_segment = response.into_body()?;
+    let filter_blob_segment = response.into_model()?;
     let blobs = filter_blob_segment.blobs.unwrap();
     assert!(
         blobs

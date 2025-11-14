@@ -111,7 +111,7 @@ impl PerfTest for CreateKey {
                 None,
             )
             .await?
-            .into_body()?;
+            .into_model()?;
         Ok(())
     }
 }

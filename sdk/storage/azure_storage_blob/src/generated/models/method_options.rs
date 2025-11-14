@@ -9,7 +9,11 @@ use super::{
     ListBlobsIncludeItem, ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType,
     RehydratePriority,
 };
-use azure_core::{fmt::SafeDebug, http::ClientMethodOptions, time::OffsetDateTime};
+use azure_core::{
+    fmt::SafeDebug,
+    http::{pager::PagerOptions, ClientMethodOptions},
+    time::OffsetDateTime,
+};
 use std::collections::HashMap;
 
 /// Options to be passed to `AppendBlobClient::append_block()`
@@ -19,9 +23,6 @@ pub struct AppendBlobClientAppendBlockOptions<'a> {
     /// Append Block will succeed only if the append position is equal to this number. If it is not, the request will fail with
     /// the AppendPositionConditionNotMet error (HTTP status code 412 - Precondition Failed).
     pub append_position: Option<i64>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
@@ -91,9 +92,6 @@ pub struct AppendBlobClientAppendBlockFromUrlOptions<'a> {
     /// Append Block will succeed only if the append position is equal to this number. If it is not, the request will fail with
     /// the AppendPositionConditionNotMet error (HTTP status code 412 - Precondition Failed).
     pub append_position: Option<i64>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source.
     pub copy_source_authorization: Option<String>,
@@ -202,9 +200,6 @@ pub struct AppendBlobClientCreateOptions<'a> {
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -267,9 +262,6 @@ pub struct AppendBlobClientSealOptions<'a> {
     /// the AppendPositionConditionNotMet error (HTTP status code 412 - Precondition Failed).
     pub append_position: Option<i64>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -295,9 +287,6 @@ pub struct AppendBlobClientSealOptions<'a> {
 /// Options to be passed to `BlobClient::abort_copy_from_url()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientAbortCopyFromUrlOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
 
@@ -311,9 +300,6 @@ pub struct BlobClientAbortCopyFromUrlOptions<'a> {
 /// Options to be passed to `BlobClient::acquire_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientAcquireLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -349,9 +335,6 @@ pub struct BlobClientBreakLeaseOptions<'a> {
     /// the remaining lease period elapses, and an infinite lease breaks immediately.
     pub break_period: Option<i32>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -377,9 +360,6 @@ pub struct BlobClientBreakLeaseOptions<'a> {
 /// Options to be passed to `BlobClient::change_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientChangeLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -407,9 +387,6 @@ pub struct BlobClientChangeLeaseOptions<'a> {
 pub struct BlobClientCopyFromUrlOptions<'a> {
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source.
     pub copy_source_authorization: Option<String>,
@@ -482,9 +459,6 @@ pub struct BlobClientCopyFromUrlOptions<'a> {
 /// Options to be passed to `BlobClient::create_snapshot()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientCreateSnapshotOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -536,9 +510,6 @@ pub struct BlobClientDeleteOptions<'a> {
     /// Optional. Only possible value is 'permanent', which specifies to permanently delete a blob if blob soft delete is enabled.
     pub blob_delete_type: Option<BlobDeleteType>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Required if the blob has associated snapshots. Specify one of the following two options: include: Delete the base blob
     /// and all of its snapshots. only: Delete only the blob's snapshots and not the blob itself
     pub delete_snapshots: Option<DeleteSnapshotsOptionType>,
@@ -579,9 +550,6 @@ pub struct BlobClientDeleteOptions<'a> {
 /// Options to be passed to `BlobClient::delete_immutability_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientDeleteImmutabilityPolicyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -600,9 +568,6 @@ pub struct BlobClientDeleteImmutabilityPolicyOptions<'a> {
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientDownloadOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -667,9 +632,6 @@ pub struct BlobClientDownloadOptions<'a> {
 /// Options to be passed to `BlobClient::get_account_info()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientGetAccountInfoOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -680,9 +642,6 @@ pub struct BlobClientGetAccountInfoOptions<'a> {
 /// Options to be passed to `BlobClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientGetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -732,9 +691,6 @@ pub struct BlobClientGetPropertiesOptions<'a> {
 /// Options to be passed to `BlobClient::get_tags()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientGetTagsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
 
@@ -759,9 +715,6 @@ pub struct BlobClientGetTagsOptions<'a> {
 /// Options to be passed to `BlobClient::release_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientReleaseLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -787,9 +740,6 @@ pub struct BlobClientReleaseLeaseOptions<'a> {
 /// Options to be passed to `BlobClient::renew_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientRenewLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -815,9 +765,6 @@ pub struct BlobClientRenewLeaseOptions<'a> {
 /// Options to be passed to `BlobClient::set_expiry()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetExpiryOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// The time this blob will expire.
     pub expires_on: Option<OffsetDateTime>,
 
@@ -831,9 +778,6 @@ pub struct BlobClientSetExpiryOptions<'a> {
 /// Options to be passed to `BlobClient::set_immutability_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetImmutabilityPolicyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
     pub if_unmodified_since: Option<OffsetDateTime>,
 
@@ -861,9 +805,6 @@ pub struct BlobClientSetImmutabilityPolicyOptions<'a> {
 /// Options to be passed to `BlobClient::set_legal_hold()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetLegalHoldOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -882,9 +823,6 @@ pub struct BlobClientSetLegalHoldOptions<'a> {
 /// Options to be passed to `BlobClient::set_metadata()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetMetadataOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -953,9 +891,6 @@ pub struct BlobClientSetPropertiesOptions<'a> {
     /// Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request.
     pub blob_content_type: Option<String>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -984,9 +919,6 @@ pub struct BlobClientSetPropertiesOptions<'a> {
 /// Options to be passed to `BlobClient::set_tags()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetTagsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
 
@@ -1014,9 +946,6 @@ pub struct BlobClientSetTagsOptions<'a> {
 /// Options to be passed to `BlobClient::set_tier()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetTierOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
 
@@ -1047,9 +976,6 @@ pub struct BlobClientSetTierOptions<'a> {
 pub struct BlobClientStartCopyFromUrlOptions<'a> {
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
@@ -1116,9 +1042,6 @@ pub struct BlobClientStartCopyFromUrlOptions<'a> {
 /// Options to be passed to `BlobClient::undelete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientUndeleteOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1129,9 +1052,6 @@ pub struct BlobClientUndeleteOptions<'a> {
 /// Options to be passed to `BlobContainerClient::acquire_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientAcquireLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
@@ -1158,9 +1078,6 @@ pub struct BlobContainerClientBreakLeaseOptions<'a> {
     /// the remaining lease period elapses, and an infinite lease breaks immediately.
     pub break_period: Option<i32>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
@@ -1177,9 +1094,6 @@ pub struct BlobContainerClientBreakLeaseOptions<'a> {
 /// Options to be passed to `BlobContainerClient::change_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientChangeLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
@@ -1198,9 +1112,6 @@ pub struct BlobContainerClientChangeLeaseOptions<'a> {
 pub struct BlobContainerClientCreateOptions<'a> {
     /// The public access setting for the container.
     pub access: Option<PublicAccessType>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// Optional. Version 2019-07-07 and later. Specifies the default encryption scope to set on the container and use for all
     /// future writes.
@@ -1223,9 +1134,6 @@ pub struct BlobContainerClientCreateOptions<'a> {
 /// Options to be passed to `BlobContainerClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientDeleteOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
@@ -1245,9 +1153,6 @@ pub struct BlobContainerClientDeleteOptions<'a> {
 /// Options to be passed to `BlobContainerClient::find_blobs_by_tags()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Include this parameter to specify one or more datasets to include in the response.
     pub include: Option<Vec<FilterBlobsIncludeItem>>,
 
@@ -1271,9 +1176,6 @@ pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
 /// Options to be passed to `BlobContainerClient::get_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
 
@@ -1287,9 +1189,6 @@ pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
 /// Options to be passed to `BlobContainerClient::get_account_info()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientGetAccountInfoOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1300,9 +1199,6 @@ pub struct BlobContainerClientGetAccountInfoOptions<'a> {
 /// Options to be passed to `BlobContainerClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientGetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
 
@@ -1316,9 +1212,6 @@ pub struct BlobContainerClientGetPropertiesOptions<'a> {
 /// Options to be passed to `BlobContainerClient::list_blob_flat_segment()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Include this parameter to specify one or more datasets to include in the response.
     pub include: Option<Vec<ListBlobsIncludeItem>>,
 
@@ -1333,7 +1226,7 @@ pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1346,11 +1239,10 @@ impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
     /// Transforms this [`BlobContainerClientListBlobFlatSegmentOptions`] into a new `BlobContainerClientListBlobFlatSegmentOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> BlobContainerClientListBlobFlatSegmentOptions<'static> {
         BlobContainerClientListBlobFlatSegmentOptions {
-            client_request_id: self.client_request_id,
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
+            method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
             },
             prefix: self.prefix,
@@ -1362,9 +1254,6 @@ impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
 /// Options to be passed to `BlobContainerClient::list_blob_hierarchy_segment()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobHierarchySegmentOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Include this parameter to specify one or more datasets to include in the response.
     pub include: Option<Vec<ListBlobsIncludeItem>>,
 
@@ -1379,7 +1268,7 @@ pub struct BlobContainerClientListBlobHierarchySegmentOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1392,11 +1281,10 @@ impl BlobContainerClientListBlobHierarchySegmentOptions<'_> {
     /// Transforms this [`BlobContainerClientListBlobHierarchySegmentOptions`] into a new `BlobContainerClientListBlobHierarchySegmentOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> BlobContainerClientListBlobHierarchySegmentOptions<'static> {
         BlobContainerClientListBlobHierarchySegmentOptions {
-            client_request_id: self.client_request_id,
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
+            method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
             },
             prefix: self.prefix,
@@ -1408,9 +1296,6 @@ impl BlobContainerClientListBlobHierarchySegmentOptions<'_> {
 /// Options to be passed to `BlobContainerClient::release_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientReleaseLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
@@ -1427,9 +1312,6 @@ pub struct BlobContainerClientReleaseLeaseOptions<'a> {
 /// Options to be passed to `BlobContainerClient::rename()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientRenameOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1443,9 +1325,6 @@ pub struct BlobContainerClientRenameOptions<'a> {
 /// Options to be passed to `BlobContainerClient::renew_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientRenewLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
@@ -1462,9 +1341,6 @@ pub struct BlobContainerClientRenewLeaseOptions<'a> {
 /// Options to be passed to `BlobContainerClient::restore()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientRestoreOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-12-12 and later. Specifies the name of the deleted container to restore.
     pub deleted_container_name: Option<String>,
 
@@ -1483,9 +1359,6 @@ pub struct BlobContainerClientRestoreOptions<'a> {
 pub struct BlobContainerClientSetAccessPolicyOptions<'a> {
     /// The public access setting for the container.
     pub access: Option<PublicAccessType>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
@@ -1506,9 +1379,6 @@ pub struct BlobContainerClientSetAccessPolicyOptions<'a> {
 /// Options to be passed to `BlobContainerClient::set_metadata()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientSetMetadataOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
@@ -1525,9 +1395,6 @@ pub struct BlobContainerClientSetMetadataOptions<'a> {
 /// Options to be passed to `BlobServiceClient::find_blobs_by_tags()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Include this parameter to specify one or more datasets to include in the response.
     pub include: Option<Vec<FilterBlobsIncludeItem>>,
 
@@ -1551,9 +1418,6 @@ pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
 /// Options to be passed to `BlobServiceClient::get_account_info()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1564,9 +1428,6 @@ pub struct BlobServiceClientGetAccountInfoOptions<'a> {
 /// Options to be passed to `BlobServiceClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientGetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1577,9 +1438,6 @@ pub struct BlobServiceClientGetPropertiesOptions<'a> {
 /// Options to be passed to `BlobServiceClient::get_statistics()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientGetStatisticsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1590,9 +1448,6 @@ pub struct BlobServiceClientGetStatisticsOptions<'a> {
 /// Options to be passed to `BlobServiceClient::get_user_delegation_key()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1603,9 +1458,6 @@ pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
 /// Options to be passed to `BlobServiceClient::list_containers_segment()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientListContainersSegmentOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Include this parameter to specify that the container's metadata be returned as part of the response body.
     pub include: Option<Vec<ListContainersIncludeType>>,
 
@@ -1620,7 +1472,7 @@ pub struct BlobServiceClientListContainersSegmentOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1633,11 +1485,10 @@ impl BlobServiceClientListContainersSegmentOptions<'_> {
     /// Transforms this [`BlobServiceClientListContainersSegmentOptions`] into a new `BlobServiceClientListContainersSegmentOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> BlobServiceClientListContainersSegmentOptions<'static> {
         BlobServiceClientListContainersSegmentOptions {
-            client_request_id: self.client_request_id,
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
+            method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
             },
             prefix: self.prefix,
@@ -1649,9 +1500,6 @@ impl BlobServiceClientListContainersSegmentOptions<'_> {
 /// Options to be passed to `BlobServiceClient::set_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientSetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1687,9 +1535,6 @@ pub struct BlockBlobClientCommitBlockListOptions<'a> {
 
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
@@ -1758,9 +1603,6 @@ pub struct BlockBlobClientCommitBlockListOptions<'a> {
 /// Options to be passed to `BlockBlobClient::get_block_list()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientGetBlockListOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
 
@@ -1781,9 +1623,6 @@ pub struct BlockBlobClientGetBlockListOptions<'a> {
 /// Options to be passed to `BlockBlobClient::query()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientQueryOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -1829,9 +1668,6 @@ pub struct BlockBlobClientQueryOptions<'a> {
 /// Options to be passed to `BlockBlobClient::stage_block()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientStageBlockOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -1876,9 +1712,6 @@ pub struct BlockBlobClientStageBlockOptions<'a> {
 /// Options to be passed to `BlockBlobClient::stage_block_from_url()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientStageBlockFromUrlOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source.
     pub copy_source_authorization: Option<String>,
 
@@ -1961,9 +1794,6 @@ pub struct BlockBlobClientUploadOptions<'a> {
 
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
@@ -2065,9 +1895,6 @@ pub struct BlockBlobClientUploadBlobFromUrlOptions<'a> {
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source.
     pub copy_source_authorization: Option<String>,
 
@@ -2153,9 +1980,6 @@ pub struct BlockBlobClientUploadBlobFromUrlOptions<'a> {
 /// Options to be passed to `PageBlobClient::clear_pages()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientClearPagesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -2210,9 +2034,6 @@ pub struct PageBlobClientClearPagesOptions<'a> {
 /// Options to be passed to `PageBlobClient::copy_incremental()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientCopyIncrementalOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -2267,9 +2088,6 @@ pub struct PageBlobClientCreateOptions<'a> {
 
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
 
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
@@ -2331,9 +2149,6 @@ pub struct PageBlobClientCreateOptions<'a> {
 /// Options to be passed to `PageBlobClient::get_page_ranges()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientGetPageRangesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -2379,9 +2194,6 @@ pub struct PageBlobClientGetPageRangesOptions<'a> {
 /// Options to be passed to `PageBlobClient::get_page_ranges_diff()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientGetPageRangesDiffOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -2437,9 +2249,6 @@ pub struct PageBlobClientGetPageRangesDiffOptions<'a> {
 /// Options to be passed to `PageBlobClient::resize()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientResizeOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -2489,9 +2298,6 @@ pub struct PageBlobClientSetSequenceNumberOptions<'a> {
     /// of the sequence number must be between 0 and 2^63 - 1.
     pub blob_sequence_number: Option<i64>,
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -2520,9 +2326,6 @@ pub struct PageBlobClientSetSequenceNumberOptions<'a> {
 /// Options to be passed to `PageBlobClient::upload_pages()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientUploadPagesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -2591,9 +2394,6 @@ pub struct PageBlobClientUploadPagesOptions<'a> {
 /// Options to be passed to `PageBlobClient::upload_pages_from_url()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientUploadPagesFromUrlOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source.
     pub copy_source_authorization: Option<String>,
 

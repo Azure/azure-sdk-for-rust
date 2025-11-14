@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::http::Url;
 use std::borrow::Cow;
 
 /// An array of homogeneous attribute values.
@@ -72,6 +73,18 @@ impl From<String> for AttributeValue {
 
 impl From<&str> for AttributeValue {
     fn from(value: &str) -> Self {
+        AttributeValue::String(value.to_string())
+    }
+}
+
+impl From<Url> for AttributeValue {
+    fn from(value: Url) -> Self {
+        AttributeValue::String(value.to_string())
+    }
+}
+
+impl From<&Url> for AttributeValue {
+    fn from(value: &Url) -> Self {
         AttributeValue::String(value.to_string())
     }
 }

@@ -67,7 +67,7 @@ impl DatabaseClient {
     /// # let database_client: DatabaseClient = panic!("this is a non-running example");
     /// let response = database_client.read(None)
     ///     .await?
-    ///     .into_body()?;
+    ///     .into_model()?;
     /// # }
     /// ```
     pub async fn read(
@@ -190,7 +190,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body()?;
+        let db = self.read(None).await?.into_model()?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -214,7 +214,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body()?;
+        let db = self.read(None).await?.into_model()?;
         let resource_id = db
             .system_properties
             .resource_id

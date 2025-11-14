@@ -59,7 +59,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_list = block_blob_client
         .get_block_list(BlockListType::All, None)
         .await?
-        .into_body()?;
+        .into_model()?;
 
     // Assert
     assert!(block_list.committed_blocks.is_none());
@@ -87,7 +87,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_list = block_blob_client
         .get_block_list(BlockListType::All, None)
         .await?
-        .into_body()?;
+        .into_model()?;
     let response = blob_client.download(None).await?;
 
     // Assert

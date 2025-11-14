@@ -77,6 +77,33 @@ Use the `az keyvault security-domain download` command to download the security 
 az keyvault security-domain download --hsm-name <your-key-vault-name> --sd-wrapping-keys ./certs/cert_0.cer ./certs/cert_1.cer ./certs/cert_2.cer --sd-quorum 2 --security-domain-file ContosoHSM-SD.json
 ```
 
+### Instantiate a client
+
+```rust no_run
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_keys::KeyClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new key client
+    let credential = DeveloperToolsCredential::new(None)?;
+    let client = KeyClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Get a key using the key client.
+    let key = client
+        .get_key("key-name", None)
+        .await?
+        .into_model()?;
+    println!("JWT: {:?}", key.key);
+
+    Ok(())
+}
+```
+
 ## Key concepts
 
 ### Key
@@ -93,7 +120,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The following section provides several code snippets using the `KeyClient`, covering some of the most common Azure Key Vault keys service related tasks:
+The following section provides several code snippets using a `KeyClient` like we [instantiated above](#instantiate-a-client):
 
 * [Create a key](#create-a-key)
 * [Retrieve a key](#retrieve-a-key)
@@ -106,163 +133,94 @@ The following section provides several code snippets using the `KeyClient`, cove
 
 `create_key` creates a Key Vault key to be stored in the Azure Key Vault. If a key with the same name already exists, then a new version of the key is created.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
+```rust ignore create_key
 use azure_security_keyvault_keys::{
-    models::{Key, CreateKeyParameters, CurveName, KeyType},
-    ResourceExt, KeyClient,
+    models::{CreateKeyParameters, CurveName, KeyType},
+    ResourceExt,
 };
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = KeyClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+// Create an EC key.
+let body = CreateKeyParameters {
+    kty: Some(KeyType::Ec),
+    curve: Some(CurveName::P256),
+    ..Default::default()
+};
 
-    // Create an EC key.
-    let body = CreateKeyParameters {
-        kty: Some(KeyType::Ec),
-        curve: Some(CurveName::P256),
-        ..Default::default()
-    };
+let key = client
+    .create_key("key-name", body.try_into()?, None)
+    .await?
+    .into_model()?;
 
-    let key = client
-        .create_key("key-name", body.try_into()?, None)
-        .await?
-        .into_body()?;
-
-    println!(
-        "Key Name: {:?}, Type: {:?}, Version: {:?}",
-        key.resource_id()?.name,
-        key.key.as_ref().map(|k| k.kty.as_ref()),
-        key.resource_id()?.version,
-    );
-
-    Ok(())
-}
+println!(
+    "Key Name: {:?}, Type: {:?}, Version: {:?}",
+    key.resource_id()?.name,
+    key.key.as_ref().map(|k| k.kty.as_ref()),
+    key.resource_id()?.version,
+);
 ```
 
 ### Retrieve a key
 
 `get_key` retrieves a public key (or only metadata for symmetric keys) previously stored in the Azure Key Vault. Setting the `key-version` to an empty string will return the latest version.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_keys::{KeyClient, models::KeyClientGetKeyOptions};
+```rust ignore get_key
+use azure_security_keyvault_keys::models::KeyClientGetKeyOptions;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = KeyClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+// Retrieve a public key as a JWK using the key client.
+let key_options = KeyClientGetKeyOptions {
+    key_version: Some("key-version".to_string()),
+    ..Default::default()
+};
+let key = client
+    .get_key("key-name", None)
+    .await?
+    .into_model()?;
 
-    // Retrieve a public key as a JWK using the key client.
-
-    let key_options = KeyClientGetKeyOptions {
-        key_version: Some("key-version".to_string()),
-        ..Default::default()
-    };
-    let key = client
-        .get_key("key-name", None)
-        .await?
-        .into_body()?;
-
-    println!("Key: {:#?}", key.key);
-
-    Ok(())
-}
+println!("Key: {:#?}", key.key);
 ```
 
 ### Update an existing key
 
 `update_key_properties` updates a key previously stored in the Azure Key Vault. Only the attributes of the key are updated. To update the value, call `KeyClient::create_key` on a key with the same name.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_keys::{models::UpdateKeyPropertiesParameters, KeyClient};
+```rust ignore update_key
+use azure_security_keyvault_keys::models::UpdateKeyPropertiesParameters;
 use std::collections::HashMap;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = KeyClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+// Update a key using the key client.
+let key_update_parameters = UpdateKeyPropertiesParameters {
+    tags: Some(HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())])),
+    ..Default::default()
+};
 
-    // Update a key using the key client.
-    let key_update_parameters = UpdateKeyPropertiesParameters {
-        tags: Some(HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())])),
-        ..Default::default()
-    };
-
-    client
-        .update_key_properties("key-name", key_update_parameters.try_into()?, None)
-        .await?
-        .into_body()?;
-
-    Ok(())
-}
+client
+    .update_key_properties("key-name", key_update_parameters.try_into()?, None)
+    .await?
+    .into_model()?;
 ```
 
 ### Delete a key
 
 `delete_key` will tell Key Vault to delete a key but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_key` on the returned `DeletedKey.id`.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_keys::KeyClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = KeyClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Delete a key using the key client.
-    client.delete_key("key-name", None).await?;
-
-    Ok(())
-}
+```rust ignore delete_key
+// Delete a key using the key client.
+client.delete_key("key-name", None).await?;
 ```
 
 ### List keys
 
 This example lists all the keys in the specified Azure Key Vault.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_keys::{KeyClient, ResourceExt};
+```rust ignore list_keys
+use azure_security_keyvault_keys::ResourceExt;
 use futures::TryStreamExt;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a new key client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = KeyClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    let mut pager = client.list_key_properties(None)?.into_stream();
-    while let Some(key) = pager.try_next().await? {
-        // Get the key name from the ID.
-        let name = key.resource_id()?.name;
-        println!("Found Key with Name: {}", name);
-    }
-
-    Ok(())
+let mut pager = client.list_key_properties(None)?.into_stream();
+while let Some(key) = pager.try_next().await? {
+    // Get the key name from the ID.
+    let name = key.resource_id()?.name;
+    println!("Found Key with Name: {}", name);
 }
 ```
 
@@ -271,79 +229,67 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 You can create an asymmetric key in Azure Key Vault (Managed HSM also supports AES symmetric key encryption) and encrypt or decrypt data
 without the private key ever leaving the HSM.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
+```rust ignore encrypt_decrypt
 use azure_security_keyvault_keys::{
     models::{
-        CreateKeyParameters, KeyClientWrapKeyOptions, KeyClientUnwrapKeyOptions,
-        KeyOperationParameters, EncryptionAlgorithm, KeyType,
+        CreateKeyParameters, EncryptionAlgorithm, KeyClientUnwrapKeyOptions,
+        KeyClientWrapKeyOptions, KeyOperationParameters, KeyType,
     },
-    ResourceExt, KeyClient,
+    ResourceExt,
 };
 use rand::random;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = KeyClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+// Create a key encryption key (KEK) using RSA.
+let body = CreateKeyParameters {
+    kty: Some(KeyType::Rsa),
+    key_size: Some(2048),
+    ..Default::default()
+};
 
-    // Create a key encryption key (KEK) using RSA.
-    let body = CreateKeyParameters {
-        kty: Some(KeyType::Rsa),
-        key_size: Some(2048),
-        ..Default::default()
-    };
+let key = client
+    .create_key("key-name", body.try_into()?, None)
+    .await?
+    .into_model()?;
+let key_version = key.resource_id()?.version;
 
-    let key = client
-        .create_key("key-name", body.try_into()?, None)
-        .await?
-        .into_body()?;
-    let key_version = key.resource_id()?.version;
+// Generate a symmetric data encryption key (DEK). You'd encrypt your data using this DEK.
+let dek = random::<u32>().to_le_bytes().to_vec();
 
-    // Generate a symmetric data encryption key (DEK). You'd encrypt your data using this DEK.
-    let dek = random::<u32>().to_le_bytes().to_vec();
+// Wrap the DEK. You'd store the wrapped DEK along with your encrypted data.
+let mut parameters = KeyOperationParameters {
+    algorithm: Some(EncryptionAlgorithm::RsaOaep256),
+    value: Some(dek.clone()),
+    ..Default::default()
+};
+let wrapped = client
+    .wrap_key(
+        "key-name",
+        parameters.clone().try_into()?,
+        Some(KeyClientWrapKeyOptions {
+            key_version: key_version.clone(),
+            ..Default::default()
+        }),
+    )
+    .await?
+    .into_model()?;
 
-    // Wrap the DEK. You'd store the wrapped DEK along with your encrypted data.
-    let mut parameters = KeyOperationParameters {
-        algorithm: Some(EncryptionAlgorithm::RsaOaep256),
-        value: Some(dek.clone()),
-        ..Default::default()
-    };
-    let wrapped = client
-        .wrap_key(
-            "key-name",
-            parameters.clone().try_into()?,
-            Some(KeyClientWrapKeyOptions {
-                key_version: key_version.clone(),
-                ..Default::default()
-            }),
-        )
-        .await?
-        .into_body()?;
-    assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
+assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
 
-    // Unwrap the DEK.
-    parameters.value = wrapped.result;
-    let unwrapped = client
-        .unwrap_key(
-            "key-name",
-            parameters.try_into()?,
-            Some(KeyClientUnwrapKeyOptions {
-                key_version,
-                ..Default::default()
-            }),
-        )
-        .await?
-        .into_body()?;
+// Unwrap the DEK.
+parameters.value = wrapped.result;
+let unwrapped = client
+    .unwrap_key(
+        "key-name",
+        parameters.try_into()?,
+        Some(KeyClientUnwrapKeyOptions {
+            key_version,
+            ..Default::default()
+        }),
+    )
+    .await?
+    .into_model()?;
 
-    assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
-
-    Ok(())
-}
+assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
 ```
 
 ## Troubleshooting
@@ -354,25 +300,10 @@ When you interact with the Azure Key Vault keys client library using the Rust SD
 
 For example, if you try to retrieve a key that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_keys::KeyClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = KeyClient::new(
-        "https://<my-vault>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    match client.get_key("key-name".into(), None).await {
-        Ok(response) => println!("Key: {:#?}", response.into_body()?.key),
-        Err(err) => println!("Error: {:#?}", err.into_inner()?),
-    }
-
-    Ok(())
+```rust ignore errors
+match client.get_key("key-name".into(), None).await {
+    Ok(response) => println!("Key: {:#?}", response.into_model()?.key),
+    Err(err) => println!("Error: {:#?}", err.into_inner()?),
 }
 ```
 

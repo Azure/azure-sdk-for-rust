@@ -1,8 +1,20 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.31.0 (Unreleased)
 
 ### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.30.0 (2025-11-11)
+
+### Features Added
+
+- A `get_token()` error caused by an HTTP response carries that response. See the [troubleshooting guide](https://aka.ms/azsdk/rust/identity/troubleshoot#find-relevant-information-in-errors) for example code showing how to access the response.
 
 ### Breaking Changes
 
@@ -14,9 +26,8 @@
 
 ### Bugs Fixed
 
-- `ClientCertificateCredential::get_token()` returned an error when given multiple scopes
-
-### Other Changes
+- `ClientCertificateCredential::get_token()` returned an error when given multiple scopes.
+- `ManagedIdentityCredential` didn't follow IMDS retry guidance.
 
 ## 0.29.0 (2025-10-08)
 

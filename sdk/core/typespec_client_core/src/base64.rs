@@ -335,10 +335,10 @@ pub mod option {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        decode, decode_url_safe, deserialize, deserialize_url_safe, encode, encode_url_safe,
-        option, serialize, serialize_url_safe,
-    };
+    use super::{decode, decode_url_safe, encode, encode_url_safe};
+    #[cfg(feature = "json")]
+    use super::{deserialize, deserialize_url_safe, option, serialize, serialize_url_safe};
+    #[cfg(feature = "json")]
     use serde::{Deserialize, Serialize};
 
     #[test]
@@ -397,12 +397,14 @@ mod tests {
         assert_eq!(decode_url_safe(encode_url_safe(data)).unwrap(), data);
     }
 
+    #[cfg(feature = "json")]
     #[derive(Serialize, Deserialize)]
     struct TestStruct {
         #[serde(serialize_with = "serialize", deserialize_with = "deserialize")]
         data: Vec<u8>,
     }
 
+    #[cfg(feature = "json")]
     #[test]
     fn serde_standard() {
         let original = TestStruct {
@@ -414,6 +416,7 @@ mod tests {
         assert_eq!(deserialized.data, original.data);
     }
 
+    #[cfg(feature = "json")]
     #[derive(Serialize, Deserialize)]
     struct TestStructUrlSafe {
         #[serde(
@@ -423,6 +426,7 @@ mod tests {
         data: Vec<u8>,
     }
 
+    #[cfg(feature = "json")]
     #[test]
     fn serde_url_safe() {
         let original = TestStructUrlSafe {
@@ -434,6 +438,7 @@ mod tests {
         assert_eq!(deserialized.data, original.data);
     }
 
+    #[cfg(feature = "json")]
     #[derive(Serialize, Deserialize)]
     struct TestOptionalStruct {
         #[serde(
@@ -443,6 +448,7 @@ mod tests {
         data: Option<Vec<u8>>,
     }
 
+    #[cfg(feature = "json")]
     #[test]
     fn serde_option_some() {
         let original = TestOptionalStruct {
@@ -454,6 +460,7 @@ mod tests {
         assert_eq!(deserialized.data, original.data);
     }
 
+    #[cfg(feature = "json")]
     #[test]
     fn serde_option_none() {
         let original = TestOptionalStruct { data: None };
@@ -463,6 +470,7 @@ mod tests {
         assert_eq!(deserialized.data, None);
     }
 
+    #[cfg(feature = "json")]
     #[derive(Serialize, Deserialize)]
     struct TestOptionalStructUrlSafe {
         #[serde(
@@ -472,6 +480,7 @@ mod tests {
         data: Option<Vec<u8>>,
     }
 
+    #[cfg(feature = "json")]
     #[test]
     fn serde_option_url_safe_some() {
         let original = TestOptionalStructUrlSafe {
@@ -483,6 +492,7 @@ mod tests {
         assert_eq!(deserialized.data, original.data);
     }
 
+    #[cfg(feature = "json")]
     #[test]
     fn serde_option_url_safe_none() {
         let original = TestOptionalStructUrlSafe { data: None };

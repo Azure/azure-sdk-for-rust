@@ -1,6 +1,6 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,18 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.9.1 (2025-11-09)
+
+### Other Changes
+
+- Increment version for re-release following a fix to publishing.
+
+## 0.9.0 (2025-11-07)
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.8.1 (2025-10-06)
 

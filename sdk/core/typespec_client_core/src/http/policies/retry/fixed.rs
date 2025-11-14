@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{http::policies::RetryHeaders, time::Duration};
+use crate::{
+    http::{policies::RetryHeaders, StatusCode},
+    time::Duration,
+};
 
 /// Retry policy with a fixed back-off.
 ///
@@ -15,6 +18,7 @@ pub(crate) struct FixedRetryPolicy {
     max_retries: u32,
     max_elapsed: Duration,
     retry_headers: RetryHeaders,
+    retry_status_codes: Vec<StatusCode>,
 }
 
 impl FixedRetryPolicy {
@@ -23,12 +27,14 @@ impl FixedRetryPolicy {
         max_retries: u32,
         max_elapsed: Duration,
         retry_headers: RetryHeaders,
+        retry_status_codes: Vec<StatusCode>,
     ) -> Self {
         Self {
             delay: delay.max(Duration::milliseconds(10)),
             max_retries,
             max_elapsed,
             retry_headers,
+            retry_status_codes,
         }
     }
 }
@@ -38,8 +44,12 @@ impl super::RetryPolicy for FixedRetryPolicy {
         retry_count >= self.max_retries || time_since_start >= self.max_elapsed
     }
 
-    fn get_retry_headers(&self) -> Option<&RetryHeaders> {
+    fn retry_headers(&self) -> Option<&RetryHeaders> {
         Some(&self.retry_headers)
+    }
+
+    fn retry_status_codes(&self) -> &[StatusCode] {
+        &self.retry_status_codes
     }
 
     fn sleep_duration(&self, _retry_count: u32) -> Duration {

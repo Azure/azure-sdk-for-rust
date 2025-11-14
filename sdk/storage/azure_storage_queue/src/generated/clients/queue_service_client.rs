@@ -18,7 +18,7 @@ use azure_core::{
     http::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Result,
@@ -92,7 +92,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.getProperties")]
     pub async fn get_properties(
         &self,
@@ -111,9 +111,6 @@ impl QueueServiceClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -151,7 +148,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
     ///
@@ -193,9 +190,6 @@ impl QueueServiceClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -217,12 +211,12 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.getQueues")]
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListQueuesResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListQueuesResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -254,8 +248,8 @@ impl QueueServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(PageIterator::from_callback(
-            move |marker: PagerState<String>| {
+        Ok(Pager::from_callback(
+            move |marker: PagerState<String>, ctx| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
@@ -271,11 +265,7 @@ impl QueueServiceClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
                 request.insert_header("content-type", "application/xml");
-                if let Some(client_request_id) = &options.client_request_id {
-                    request.insert_header("x-ms-client-request-id", client_request_id);
-                }
                 request.insert_header("x-ms-version", &version);
-                let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
                     let rsp = pipeline
@@ -302,6 +292,7 @@ impl QueueServiceClient {
                     })
                 }
             },
+            Some(options.method_options),
         ))
     }
 
@@ -311,7 +302,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `queue_service_properties` - The storage service properties to set.
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.setProperties")]
     pub async fn set_properties(
         &self,
@@ -330,9 +321,6 @@ impl QueueServiceClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_service_properties);
         let rsp = self

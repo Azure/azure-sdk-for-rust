@@ -1,6 +1,16 @@
 # Release History
 
-## 0.7.0 (Unreleased)
+## 0.8.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.7.0 (2025-11-11)
 
 ### Features Added
 
@@ -14,10 +24,16 @@
 
 ### Breaking Changes
 
+- Changed the following options structs' `method_options` from `ClientMethodOptions` to `PagerOptions`:
+  - `BlobContainerClientListBlobFlatSegmentOptions`
+  - `BlobContainerClientListBlobHierarchySegmentOptions`
+  - `BlobServiceClientListContainersSegmentOptions`
+
 - Removed the `container_name()` and `blob_name()` accessors on relevant clients.
 - Removed the `endpoint` struct field on all clients, as this value is now returned directly from the underlying generated client.
 - Changed the `container_name` and `blob_name` parameters from owned `String` to `&str` reference on relevant client constructor methods (`new()`).
 - The `credential` parameter is now `Optional` on `new()` client constructors, allowing for construction of public access clients.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 
 ### Bugs Fixed
 

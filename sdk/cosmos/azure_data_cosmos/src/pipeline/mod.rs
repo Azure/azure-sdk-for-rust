@@ -6,7 +6,7 @@ mod signature_target;
 
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
-    pager::PagerState,
+    pager::{PagerOptions, PagerState},
     request::{options::ContentType, Request},
     response::Response,
     Context, Method, RawResponse,
@@ -102,25 +102,30 @@ impl CosmosPipeline {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        let ctx = ctx.with_value(resource_link).into_owned();
-        Ok(FeedPager::from_callback(move |continuation| {
-            // Then we have to clone it again to pass it in to the async block.
-            // This is because Pageable can't borrow any data, it has to own it all.
-            // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
-            let pipeline = pipeline.clone();
-            let mut req = base_request.clone();
-            let ctx = ctx.clone();
-            async move {
-                if let PagerState::More(continuation) = continuation {
-                    req.insert_header(constants::CONTINUATION, continuation);
+        let options = PagerOptions {
+            context: ctx.with_value(resource_link).into_owned(),
+        };
+        Ok(FeedPager::from_callback(
+            move |continuation, ctx| {
+                // Then we have to clone it again to pass it in to the async block.
+                // This is because Pageable can't borrow any data, it has to own it all.
+                // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
+                let pipeline = pipeline.clone();
+                let mut req = base_request.clone();
+                let ctx = ctx.clone();
+                async move {
+                    if let PagerState::More(continuation) = continuation {
+                        req.insert_header(constants::CONTINUATION, continuation);
+                    }
+
+                    let resp = pipeline.send(&ctx, &mut req, None).await?;
+                    let page = FeedPage::<T>::from_response(resp).await?;
+
+                    Ok(page.into())
                 }
-
-                let resp = pipeline.send(&ctx, &mut req, None).await?;
-                let page = FeedPage::<T>::from_response(resp).await?;
-
-                Ok(page.into())
-            }
-        }))
+            },
+            Some(options),
+        ))
     }
 
     /// Helper function to read a throughput offer given a resource ID.
@@ -181,7 +186,7 @@ impl CosmosPipeline {
             .read_throughput_offer(context.clone(), resource_id)
             .await?;
         let mut current_throughput = match response {
-            Some(r) => r.into_body()?,
+            Some(r) => r.into_model()?,
             None => Default::default(),
         };
         current_throughput.offer = throughput.offer;

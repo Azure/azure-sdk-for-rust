@@ -19,6 +19,7 @@ use std::{
 
 static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core", "http"),
+    ("azure_core", "json-patch"),
     ("azure_core", "ureq"),
     ("azure_core_test", "dotenvy"),
     ("azure_canary", "serde"),
@@ -33,6 +34,7 @@ static EXEMPTIONS: &[(&str, &str)] = &[
         "azure_messaging_eventhubs_checkpointstore_blob",
         "opentelemetry-appender-tracing",
     ),
+    ("azure_data_cosmos_native", "cbindgen"),
 ];
 
 fn main() {

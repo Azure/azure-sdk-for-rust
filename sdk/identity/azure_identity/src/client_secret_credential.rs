@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    authentication_error, deserialize, get_authority_host, EntraIdErrorResponse,
-    EntraIdTokenResponse, TokenCache,
-};
+use crate::{authentication_error, get_authority_host, TokenCache};
 use azure_core::credentials::TokenRequestOptions;
-use azure_core::http::{PipelineSendOptions, StatusCode};
+use azure_core::http::PipelineSendOptions;
 use azure_core::Result;
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
@@ -15,13 +12,10 @@ use azure_core::{
         headers::{self, content_type},
         ClientOptions, Method, Pipeline, Request, Url,
     },
-    time::{Duration, OffsetDateTime},
     Error,
 };
 use std::{str, sync::Arc};
 use url::form_urlencoded;
-
-const CLIENT_SECRET_CREDENTIAL: &str = "ClientSecretCredential";
 
 /// Options for constructing a new [`ClientSecretCredential`].
 #[derive(Debug, Default)]
@@ -117,29 +111,7 @@ impl ClientSecretCredential {
             )
             .await?;
 
-        match res.status() {
-            StatusCode::Ok => {
-                let token_response: EntraIdTokenResponse =
-                    deserialize(CLIENT_SECRET_CREDENTIAL, res)?;
-                Ok(AccessToken::new(
-                    token_response.access_token,
-                    OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
-                ))
-            }
-            _ => {
-                let error_response: EntraIdErrorResponse =
-                    deserialize(CLIENT_SECRET_CREDENTIAL, res)?;
-                let message = if error_response.error_description.is_empty() {
-                    format!("{} authentication failed.", CLIENT_SECRET_CREDENTIAL)
-                } else {
-                    format!(
-                        "{} authentication failed. {}",
-                        CLIENT_SECRET_CREDENTIAL, error_response.error_description
-                    )
-                };
-                Err(Error::with_message(ErrorKind::Credential, message))
-            }
-        }
+        crate::handle_entra_response(res)
     }
 }
 
@@ -160,19 +132,20 @@ impl TokenCredential for ClientSecretCredential {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
-            .map_err(authentication_error::<Self>)
+            .map_err(|err| authentication_error(stringify!(ClientSecretCredential), err))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{tests::*, TSG_LINK_ERROR_TEXT};
+    use crate::tests::*;
     use azure_core::{
-        http::{headers::Headers, BufResponse, StatusCode, Transport},
+        http::{headers::Headers, AsyncRawResponse, RawResponse, StatusCode, Transport},
         Bytes, Result,
     };
     use std::vec;
+    use time::OffsetDateTime;
 
     const FAKE_SECRET: &str = "fake secret";
 
@@ -219,16 +192,16 @@ mod tests {
 
     #[tokio::test]
     async fn get_token_error() {
-        let description = "AADSTS7000215: Invalid client secret.";
+        let body = Bytes::from(
+            r#"{"error":"invalid_client","error_description":"AADSTS7000215: Invalid client secret.","error_codes":[7000215],"timestamp":"2025-04-04 21:10:04Z","trace_id":"...","correlation_id":"...","error_uri":"https://login.microsoftonline.com/error?code=7000215"}"#,
+        );
+        let expected_status = StatusCode::BadRequest;
+        let mut headers = Headers::default();
+        headers.insert("key", "value");
+        let expected_response =
+            RawResponse::from_bytes(expected_status, headers.clone(), body.clone());
         let sts = MockSts::new(
-            vec![BufResponse::from_bytes(
-                StatusCode::BadRequest,
-                Headers::default(),
-                Bytes::from(format!(
-                    r#"{{"error":"invalid_client","error_description":"{}","error_codes":[7000215],"timestamp":"2025-04-04 21:10:04Z","trace_id":"...","correlation_id":"...","error_uri":"https://login.microsoftonline.com/error?code=7000215"}}"#,
-                    description
-                )),
-            )],
+            vec![AsyncRawResponse::from_bytes(expected_status, headers, body)],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
             ))),
@@ -251,16 +224,26 @@ mod tests {
             .await
             .expect_err("expected error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
-        assert!(
-            err.to_string().contains(description),
-            "expected error description from the response, got '{}'",
-            err
+        assert_eq!(
+            "ClientSecretCredential authentication failed. AADSTS7000215: Invalid client secret.\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#client-secret",
+            err.to_string(),
         );
-        assert!(
-            err.to_string()
-                .contains(&format!("{TSG_LINK_ERROR_TEXT}#client-secret")),
-            "expected error to contain a link to the troubleshooting guide, got '{err}'",
-        );
+        match err
+            .downcast_ref::<azure_core::Error>()
+            .expect("returned error should wrap an azure_core::Error")
+            .kind()
+        {
+            ErrorKind::HttpResponse {
+                error_code: Some(error_code),
+                raw_response: Some(response),
+                status,
+            } => {
+                assert_eq!("7000215", error_code);
+                assert_eq!(&expected_response, response.as_ref());
+                assert_eq!(expected_status, *status);
+            }
+            err => panic!("unexpected {:?}", err),
+        };
     }
 
     #[tokio::test]

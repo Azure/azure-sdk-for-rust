@@ -5,7 +5,7 @@
 
 use crate::{
     error::{Error, ErrorKind},
-    http::{headers::ERROR_CODE, BufResponse, RawResponse, StatusCode},
+    http::{headers::ERROR_CODE, AsyncRawResponse, RawResponse, StatusCode},
 };
 use serde::Deserialize;
 use std::{collections::HashMap, future::Future, str};
@@ -78,7 +78,7 @@ pub struct ErrorDetail {
 
     /// Additional properties that may be returned with the error.
     #[serde(flatten)]
-    pub additional_properties: HashMap<String, serde_json::Value>,
+    pub additional_properties: HashMap<String, crate::Value>,
 }
 
 /// Inner error information about an error returned from a service.
@@ -110,7 +110,7 @@ struct ErrorDetailsInternal<'a> {
 
 /// Represents a response from which we can get a [`StatusCode`] and collect into a [`RawResponse`].
 ///
-/// This is intended for internal use only and implemented only by [`BufResponse`] and [`RawResponse`].
+/// This is intended for internal use only and implemented only by [`AsyncRawResponse`] and [`RawResponse`].
 pub trait Response: crate::private::Sealed {
     /// Get the [`StatusCode`] from the response.
     fn status(&self) -> StatusCode;
@@ -119,10 +119,10 @@ pub trait Response: crate::private::Sealed {
     fn try_into_raw_response(self) -> impl Future<Output = crate::Result<RawResponse>>;
 }
 
-impl crate::private::Sealed for BufResponse {}
+impl crate::private::Sealed for AsyncRawResponse {}
 impl crate::private::Sealed for RawResponse {}
 
-impl Response for BufResponse {
+impl Response for AsyncRawResponse {
     fn status(&self) -> StatusCode {
         self.status()
     }
@@ -254,7 +254,7 @@ mod tests {
     async fn matching_against_http_error() {
         let mut headers = Headers::new();
         headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
-        let response = BufResponse::from_bytes(
+        let response = AsyncRawResponse::from_bytes(
             StatusCode::ImATeapot,
             headers,
             Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
@@ -277,7 +277,7 @@ mod tests {
     async fn matching_against_custom_http_error_empty_set() {
         let mut headers = Headers::new();
         headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
-        let response = BufResponse::from_bytes(
+        let response = AsyncRawResponse::from_bytes(
             StatusCode::ImATeapot,
             headers,
             Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
@@ -302,7 +302,7 @@ mod tests {
     async fn matching_against_custom_http_error_in_set() {
         let mut headers = Headers::new();
         headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
-        let response = BufResponse::from_bytes(
+        let response = AsyncRawResponse::from_bytes(
             StatusCode::ImATeapot,
             headers,
             Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
@@ -322,7 +322,7 @@ mod tests {
     async fn matching_against_custom_http_error_in_set_success_should_fail() {
         let mut headers = Headers::new();
         headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
-        let response = BufResponse::from_bytes(
+        let response = AsyncRawResponse::from_bytes(
             StatusCode::Ok,
             headers,
             Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
@@ -352,7 +352,7 @@ mod tests {
     async fn matching_against_http_error_no_body() {
         let mut headers = Headers::new();
         headers.insert(headers::ERROR_CODE, "testError".to_string());
-        let response = BufResponse::from_bytes(StatusCode::ImATeapot, headers, Bytes::new());
+        let response = AsyncRawResponse::from_bytes(StatusCode::ImATeapot, headers, Bytes::new());
 
         let err = check_success(response, None).await.unwrap_err();
         let kind = err.kind();
@@ -371,7 +371,7 @@ mod tests {
     async fn matching_against_http_error_invalid_body() {
         let mut headers = Headers::new();
         headers.insert(headers::ERROR_CODE, "testError".to_string());
-        let response = BufResponse::from_bytes(
+        let response = AsyncRawResponse::from_bytes(
             StatusCode::ImATeapot,
             headers,
             Bytes::from_static(br#"{"json": "error"}"#),
@@ -443,7 +443,7 @@ mod tests {
                 .expect_err("expected an error because there is no raw_response");
         }
         {
-            let buf_response = BufResponse::from_bytes(
+            let buf_response = AsyncRawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::new(),
                 Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey"},"key":"foo"}}"#),
@@ -467,7 +467,7 @@ mod tests {
     #[tokio::test]
     async fn convert_buf_response_to_error_response() -> crate::Result<()> {
         {
-            let buf_response = BufResponse::from_bytes(
+            let buf_response = AsyncRawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::new(),
                 Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey"},"key":"foo"}}"#),

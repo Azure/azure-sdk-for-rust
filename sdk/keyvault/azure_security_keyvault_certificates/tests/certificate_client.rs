@@ -25,7 +25,7 @@ use azure_security_keyvault_keys::{
     KeyClient, KeyClientOptions,
 };
 use azure_security_keyvault_test::Retry;
-use futures::{FutureExt, TryStreamExt};
+use futures::TryStreamExt;
 use openssl::sha::sha256;
 use std::{collections::HashMap, sync::LazyLock};
 
@@ -64,7 +64,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     let certificate = client
         .create_certificate("certificate-roundtrip", body.try_into()?, None)?
         .await?
-        .into_body()?;
+        .into_model()?;
 
     // Get the latest version of the certificate we just created.
     let version = certificate.resource_id()?.version;
@@ -93,43 +93,38 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
             )?;
             Ok(client)
         },
-        |client| {
-            async move {
-                // Create a self-signed certificate.
-                let body = CreateCertificateParameters {
-                    certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
-                    ..Default::default()
-                };
-                let _certificate = client
-                    .create_certificate(
-                        "certificate-validate-instrumentation",
-                        body.try_into()?,
-                        None,
-                    )?
-                    .await?
-                    .into_body()?;
-                Ok(())
-            }
-            .boxed()
+        async move |client| {
+            // Create a self-signed certificate.
+            let body = CreateCertificateParameters {
+                certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
+                ..Default::default()
+            };
+            let _certificate = client
+                .create_certificate(
+                    "certificate-validate-instrumentation",
+                    body.try_into()?,
+                    None,
+                )?
+                .await?
+                .into_model()?;
+            Ok(())
         },
         ExpectedInstrumentation {
             package_name: recording.var("CARGO_PKG_NAME", None),
             package_namespace: Some("KeyVault"),
-            package_version: recording.var("CARGO_PKG_VERSION", None),
+            package_version: env!("CARGO_PKG_VERSION").into(),
             api_calls: vec![ExpectedApiInformation {
                 api_name: Some("KeyVault.createCertificate"),
                 api_children: vec![
                     ExpectedRestApiSpan {
                         api_verb: Method::Post,
                         expected_status_code: StatusCode::Accepted,
+                        is_wildcard: false,
                     },
                     ExpectedRestApiSpan {
                         api_verb: Method::Get,
                         expected_status_code: StatusCode::Ok,
-                    },
-                    ExpectedRestApiSpan {
-                        api_verb: Method::Get,
-                        expected_status_code: StatusCode::Ok,
+                        is_wildcard: true,
                     },
                 ],
                 ..Default::default()
@@ -162,7 +157,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     let certificate = client
         .create_certificate("update-properties", body.try_into()?, None)?
         .await?
-        .into_body()?;
+        .into_model()?;
 
     // Get the latest version of the certificate we just created.
     let certificate_version = certificate.resource_id()?.version;
@@ -186,7 +181,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()?;
+        .into_model()?;
 
     assert_eq!(
         certificate.tags.expect("expected tags").get("test-name"),
@@ -356,7 +351,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let signature = key_client
         .sign(NAME, body.try_into()?, None)
         .await?
-        .into_body()?;
+        .into_model()?;
     assert!(signature.result.is_some());
     // example: 6AIg-utePBdmCU-uGvpjh4uKb3UV0yvdWKNLSp-EivC4oavdqpfxmfMB9GsR6dBMM1Ekp8ZBrzUMaCvShXWyog
     // cspell:enable

@@ -18,7 +18,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, PageIterator, Pipeline, RequestContent, Response, Url, XmlFormat,
+        NoFormat, Pager, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Result,
 };
@@ -151,7 +151,7 @@ impl BlobServiceClient {
     pub fn list_containers(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
         self.client.list_containers_segment(options)
     }
 

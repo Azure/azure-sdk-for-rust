@@ -20,6 +20,7 @@ vcpkg_installed/
 
 # Editor user customizations.
 .vscode/launch.json
+.vscode/mcp.json
 .idea/
 
 # Editor temp files.

@@ -18,7 +18,7 @@ use azure_core::{
     http::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Result,
@@ -129,9 +129,6 @@ impl BlobServiceClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -203,9 +200,6 @@ impl BlobServiceClient {
         }
         let mut request = Request::new(url, Method::Get);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -247,9 +241,6 @@ impl BlobServiceClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -314,9 +305,6 @@ impl BlobServiceClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -382,9 +370,6 @@ impl BlobServiceClient {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(key_info);
         let rsp = self
@@ -412,7 +397,7 @@ impl BlobServiceClient {
     pub fn list_containers_segment(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -444,8 +429,8 @@ impl BlobServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(PageIterator::from_callback(
-            move |marker: PagerState<String>| {
+        Ok(Pager::from_callback(
+            move |marker: PagerState<String>, ctx| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
@@ -461,11 +446,7 @@ impl BlobServiceClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
                 request.insert_header("content-type", "application/xml");
-                if let Some(client_request_id) = &options.client_request_id {
-                    request.insert_header("x-ms-client-request-id", client_request_id);
-                }
                 request.insert_header("x-ms-version", &version);
-                let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
                     let rsp = pipeline
@@ -492,6 +473,7 @@ impl BlobServiceClient {
                     })
                 }
             },
+            Some(options.method_options),
         ))
     }
 
@@ -520,9 +502,6 @@ impl BlobServiceClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(storage_service_properties);
         let rsp = self
