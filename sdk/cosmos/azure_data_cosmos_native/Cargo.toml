@@ -23,9 +23,10 @@ tracing.workspace = true
 tracing-subscriber = { workspace = true, optional = true, features = ["fmt", "env-filter"] }
 
 [features]
-default = ["tokio", "reqwest", "tracing"]
+default = ["tokio", "reqwest", "reqwest_native_tls", "tracing"]
 tokio = ["dep:tokio"]
 reqwest = ["azure_core/reqwest"]
+reqwest_native_tls = ["azure_core/reqwest_native_tls"]
 tracing = ["dep:tracing-subscriber"]
 
 [build-dependencies]

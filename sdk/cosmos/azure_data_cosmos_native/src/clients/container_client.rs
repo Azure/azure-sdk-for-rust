@@ -87,6 +87,7 @@ fn upsert_item_inner(
 ) -> Result<(), CosmosError> {
     let raw_value: Box<RawValue> = serde_json::from_str(json_str)?;
     let pk = partition_key.to_string();
+    tracing::trace!(raw_value = %raw_value.get(), pk = %pk, "Upserting item");
     block_on(container.upsert_item(pk, raw_value, None))?;
     Ok(())
 }
