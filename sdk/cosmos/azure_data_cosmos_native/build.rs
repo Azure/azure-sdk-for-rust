@@ -3,6 +3,8 @@
 
 // cSpell:ignore SOURCEVERSION, SOURCEBRANCH, BUILDID, BUILDNUMBER, COSMOSCLIENT, cosmosclient, libcosmosclient, cbindgen
 
+use std::collections::HashMap;
+
 fn main() {
     let build_id = format!(
         "$Id: {}, Version: {}, Commit: {}, Branch: {}, Build ID: {}, Build Number: {}, Timestamp: {}$",
@@ -28,20 +30,46 @@ fn main() {
     .to_string();
     header.push_str(&format!("// Build identifier: {}\n", build_id));
 
+    let config = cbindgen::Config {
+        language: cbindgen::Language::C,
+        header: Some(header),
+        after_includes: Some(
+            "\n// Specifies the version of cosmosclient this header file was generated from.\n// This should match the version of libcosmosclient you are referencing.\n#define COSMOSCLIENT_H_VERSION \"".to_string()
+                + env!("CARGO_PKG_VERSION")
+                + "\"",
+        ),
+        cpp_compat: true,
+        parse: cbindgen::ParseConfig {
+            parse_deps: true,
+            include: Some(vec!["azure_data_cosmos".into()]),
+            ..Default::default()
+        },
+        style: cbindgen::Style::Both,
+        enumeration: cbindgen::EnumConfig {
+            rename_variants: cbindgen::RenameRule::QualifiedScreamingSnakeCase,
+            ..Default::default()
+        },
+        documentation_length: cbindgen::DocumentationLength::Full,
+        documentation_style: cbindgen::DocumentationStyle::Doxy,
+        export: cbindgen::ExportConfig {
+            prefix: Some("cosmos_".into()),
+            exclude: vec!["PartitionKeyValue".into()],
+            rename: HashMap::from([
+                ("CosmosError".into(), "error".into()),
+                ("CosmosErrorCode".into(), "error_code".into()),
+                ("CosmosClient".into(), "client".into()),
+                ("DatabaseClient".into(), "database_client".into()),
+                ("ContainerClient".into(), "container_client".into()),
+            ]),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
     let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     cbindgen::Builder::new()
         .with_crate(crate_dir)
-        .with_language(cbindgen::Language::C)
-        .with_after_include(format!(
-            "\n// Specifies the version of cosmosclient this header file was generated from.\n// This should match the version of libcosmosclient you are referencing.\n#define COSMOSCLIENT_H_VERSION \"{}\"",
-            env!("CARGO_PKG_VERSION")
-        ))
-        .with_style(cbindgen::Style::Both)
-        .rename_item("CosmosClientHandle", "CosmosClient")
-        .rename_item("DatabaseClientHandle", "DatabaseClient")
-        .rename_item("ContainerClientHandle", "ContainerClient")
-        .with_cpp_compat(true)
-        .with_header(header)
+        .with_config(config)
         .generate()
         .expect("unable to generate bindings")
         .write_to_file("include/azurecosmos.h");
