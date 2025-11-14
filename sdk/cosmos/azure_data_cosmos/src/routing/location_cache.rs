@@ -288,6 +288,9 @@ impl LocationCache {
 mod tests {
     use super::*;
     use std::{collections::HashSet, vec};
+    use crate::cosmos_request::CosmosRequestBuilder;
+    use crate::operation_context::OperationType;
+    use crate::resource_context::{ResourceLink, ResourceType};
 
     fn create_test_data() -> (String, Vec<AccountRegion>, Vec<AccountRegion>, Vec<String>) {
         // Setting up test database account data
@@ -469,139 +472,172 @@ mod tests {
             vec!["https://location1.documents.example.com".to_string()]
         );
     }
-    //
-    // #[test]
-    // fn mark_read_endpoint_unavailable() {
-    //     // set up test cache
-    //     let mut cache = create_test_location_cache();
-    //
-    //     // mark location 1 as unavailable endpoint for read operation
-    //     let unavailable_endpoint = "https://location1.documents.example.com";
-    //     let operation = RequestOperation::Read;
-    //     cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
-    //
-    //     // check that endpoint is last option in read endpoints and it is in the location unavailability info map
-    //     assert_eq!(
-    //         cache.locations_info.read_endpoints,
-    //         vec![
-    //             "https://location2.documents.example.com".to_string(),
-    //             unavailable_endpoint.to_string()
-    //         ]
-    //     );
-    //
-    //     assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
-    //
-    //     assert_eq!(
-    //         cache.resolve_service_endpoint(0, RequestOperation::Read),
-    //         "https://location2.documents.example.com".to_string()
-    //     );
-    // }
-    //
-    // #[test]
-    // fn mark_write_endpoint_unavailable() {
-    //     // set up test cache
-    //     let mut cache = create_test_location_cache();
-    //
-    //     // mark location 1 as unavailable endpoint for write operation
-    //     let unavailable_endpoint = "https://location1.documents.example.com";
-    //     let operation = RequestOperation::Write;
-    //     cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
-    //
-    //     // check that endpoint is last option in write endpoints and it is in the location unavailability info map
-    //     assert_eq!(
-    //         cache.locations_info.write_endpoints.last(),
-    //         Some(&unavailable_endpoint.to_string())
-    //     );
-    //
-    //     assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
-    //
-    //     assert_eq!(
-    //         cache.resolve_service_endpoint(0, RequestOperation::Write),
-    //         "https://location2.documents.example.com".to_string()
-    //     );
-    // }
-    //
-    // #[test]
-    // fn mark_same_endpoint_unavailable() {
-    //     // set up test cache
-    //     let mut cache = create_test_location_cache();
-    //
-    //     let endpoint1 = "https://location1.documents.example.com";
-    //
-    //     cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
-    //     cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
-    //
-    //     let before_marked_unavailable_time = SystemTime::now() - Duration::from_secs(10);
-    //
-    //     {
-    //         let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
-    //         if let Some(info) = unavailability_map.get_mut(endpoint1) {
-    //             info.last_check_time = before_marked_unavailable_time;
-    //         }
-    //     }
-    //
-    //     cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
-    //     cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
-    //
-    //     assert!(
-    //         cache
-    //             .location_unavailability_info_map
-    //             .read()
-    //             .unwrap()
-    //             .get(endpoint1)
-    //             .map(|info| info.last_check_time)
-    //             > Some(before_marked_unavailable_time)
-    //     );
-    //
-    //     assert_eq!(
-    //         cache
-    //             .location_unavailability_info_map
-    //             .read()
-    //             .unwrap()
-    //             .get(endpoint1)
-    //             .map(|info| info.unavailable_operation),
-    //         Some(RequestOperation::All)
-    //     );
-    // }
-    //
-    // #[test]
-    // fn refresh_stale_endpoints() {
-    //     // create test cache
-    //     let mut cache = create_test_location_cache();
-    //
-    //     // mark endpoint 1 and endpoint 2 as unavailable
-    //     let endpoint1 = "https://location1.documents.example.com";
-    //     let endpoint2 = "https://location2.documents.example.com";
-    //     cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
-    //     cache.mark_endpoint_unavailable(endpoint2, RequestOperation::Read);
-    //
-    //     // simulate stale entry
-    //     {
-    //         let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
-    //         if let Some(info) = unavailability_map.get_mut(endpoint1) {
-    //             info.last_check_time = SystemTime::now() - Duration::from_secs(500);
-    //         }
-    //     }
-    //
-    //     // refresh stale endpoints
-    //     cache.refresh_stale_endpoints();
-    //
-    //     // check that endpoint 1 is marked as available again
-    //     assert!(!cache.is_endpoint_unavailable(endpoint1, RequestOperation::Read));
-    // }
-    //
-    // #[test]
-    // fn resolve_service_endpoint() {
-    //     // create test cache
-    //     let cache = create_test_location_cache();
-    //
-    //     // resolve service endpoint
-    //     let endpoint = cache.resolve_service_endpoint(0, RequestOperation::Read);
-    //     assert_eq!(
-    //         endpoint,
-    //         "https://location1.documents.example.com".to_string()
-    //     );
-    // }
+
+    #[test]
+    fn mark_read_endpoint_unavailable() {
+        // set up test cache
+        let mut cache = create_test_location_cache();
+
+        // mark location 1 as unavailable endpoint for read operation
+        let unavailable_endpoint = "https://location1.documents.example.com";
+        let operation = RequestOperation::Read;
+        cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
+
+        // check that endpoint is last option in read endpoints and it is in the location unavailability info map
+        assert_eq!(
+            cache.locations_info.read_endpoints,
+            vec![
+                "https://location2.documents.example.com".to_string(),
+                unavailable_endpoint.to_string()
+            ]
+        );
+
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::Documents,
+            ResourceLink::root(ResourceType::Documents),
+        );
+
+        let cosmos_request = builder
+            .build()
+            .ok()
+            .unwrap();
+
+        assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
+
+        assert_eq!(
+            cache.resolve_service_endpoint(&cosmos_request),
+            "https://location2.documents.example.com".to_string()
+        );
+    }
+
+    #[test]
+    fn mark_write_endpoint_unavailable() {
+        // set up test cache
+        let mut cache = create_test_location_cache();
+
+        // mark location 1 as unavailable endpoint for write operation
+        let unavailable_endpoint = "https://location1.documents.example.com";
+        let operation = RequestOperation::Write;
+        cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
+
+        // check that endpoint is last option in write endpoints, and it is in the location unavailability info map
+        assert_eq!(
+            cache.locations_info.write_endpoints.last(),
+            Some(&unavailable_endpoint.to_string())
+        );
+
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::Documents,
+            ResourceLink::root(ResourceType::Documents),
+        );
+
+        let cosmos_request = builder
+            .build()
+            .ok()
+            .unwrap();
+
+        assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
+
+        assert_eq!(
+            cache.resolve_service_endpoint(&cosmos_request),
+            "https://location2.documents.example.com".to_string()
+        );
+    }
+
+    #[test]
+    fn mark_same_endpoint_unavailable() {
+        // set up test cache
+        let mut cache = create_test_location_cache();
+
+        let endpoint1 = "https://location1.documents.example.com";
+
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
+
+        let before_marked_unavailable_time = SystemTime::now() - Duration::from_secs(10);
+
+        {
+            let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
+            if let Some(info) = unavailability_map.get_mut(endpoint1) {
+                info.last_check_time = before_marked_unavailable_time;
+            }
+        }
+
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
+
+        assert!(
+            cache
+                .location_unavailability_info_map
+                .read()
+                .unwrap()
+                .get(endpoint1)
+                .map(|info| info.last_check_time)
+                > Some(before_marked_unavailable_time)
+        );
+
+        assert_eq!(
+            cache
+                .location_unavailability_info_map
+                .read()
+                .unwrap()
+                .get(endpoint1)
+                .map(|info| info.unavailable_operation),
+            Some(RequestOperation::All)
+        );
+    }
+
+    #[test]
+    fn refresh_stale_endpoints() {
+        // create test cache
+        let mut cache = create_test_location_cache();
+
+        // mark endpoint 1 and endpoint 2 as unavailable
+        let endpoint1 = "https://location1.documents.example.com";
+        let endpoint2 = "https://location2.documents.example.com";
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(endpoint2, RequestOperation::Read);
+
+        // simulate stale entry
+        {
+            let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
+            if let Some(info) = unavailability_map.get_mut(endpoint1) {
+                info.last_check_time = SystemTime::now() - Duration::from_secs(500);
+            }
+        }
+
+        // refresh stale endpoints
+        cache.refresh_stale_endpoints();
+
+        // check that endpoint 1 is marked as available again
+        assert!(!cache.is_endpoint_unavailable(endpoint1, RequestOperation::Read));
+    }
+
+    #[test]
+    fn resolve_service_endpoint() {
+        // create test cache
+        let cache = create_test_location_cache();
+
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::Documents,
+            ResourceLink::root(ResourceType::Documents),
+        );
+
+        let cosmos_request = builder
+            .build()
+            .ok()
+            .unwrap();
+
+        // resolve service endpoint
+        let endpoint = cache.resolve_service_endpoint(&cosmos_request);
+        assert_eq!(
+            endpoint,
+            "https://location1.documents.example.com".to_string()
+        );
+    }
     //
     // #[test]
     // fn resolve_service_endpoint_second_location() {
