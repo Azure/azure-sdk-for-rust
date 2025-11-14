@@ -9,7 +9,6 @@ use futures::TryStreamExt;
 use crate::blocking::block_on;
 use crate::error::{self, marshal_result, CosmosError, CosmosErrorCode};
 use crate::string::{parse_cstr, safe_cstring_into_raw};
-use crate::{CosmosClientHandle, DatabaseClientHandle};
 
 fn create_client_inner(
     endpoint_str: &str,
@@ -29,17 +28,17 @@ fn create_client_inner(
 /// # Arguments
 /// * `endpoint` - The Cosmos DB account endpoint, as a nul-terminated C string.
 /// * `key` - The Cosmos DB account key, as a nul-terminated C string
-/// * `out_client` - Output parameter that will receive a pointer to the created CosmosClientHandle.
+/// * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 ///
 /// # Returns
 /// * Returns [`CosmosErrorCode::Success`] on success.
 /// * Returns [`CosmosErrorCode::InvalidArgument`] if any input pointer is null or if the input strings are invalid.
 #[no_mangle]
-pub extern "C" fn cosmos_client_create(
+pub extern "C" fn cosmos_client_create_with_key(
     endpoint: *const c_char,
     key: *const c_char,
-    out_client: *mut *mut CosmosClientHandle,
+    out_client: *mut *mut CosmosClient,
     out_error: *mut CosmosError,
 ) -> CosmosErrorCode {
     if endpoint.is_null() || key.is_null() || out_client.is_null() || out_error.is_null() {
@@ -72,16 +71,16 @@ pub extern "C" fn cosmos_client_create(
         create_client_inner(endpoint_str, key_str),
         out_error,
         |handle| unsafe {
-            *out_client = CosmosClientHandle::wrap_ptr(handle);
+            *out_client = Box::into_raw(handle);
         },
     )
 }
 
 /// Releases the memory associated with a [`CosmosClient`].
 #[no_mangle]
-pub extern "C" fn cosmos_client_free(client: *mut CosmosClientHandle) {
+pub extern "C" fn cosmos_client_free(client: *mut CosmosClient) {
     if !client.is_null() {
-        unsafe { CosmosClientHandle::free_ptr(client) }
+        unsafe { drop(Box::from_raw(client)) }
     }
 }
 
@@ -102,16 +101,16 @@ fn database_client_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_client_database_client(
-    client: *const CosmosClientHandle,
+    client: *const CosmosClient,
     database_id: *const c_char,
-    out_database: *mut *mut DatabaseClientHandle,
+    out_database: *mut *mut DatabaseClient,
     out_error: *mut CosmosError,
 ) -> CosmosErrorCode {
     if client.is_null() || database_id.is_null() || out_database.is_null() || out_error.is_null() {
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let client_handle = unsafe { CosmosClientHandle::unwrap_ptr(client) };
+    let client_handle = unsafe { &*client };
 
     let database_id_str = match parse_cstr(database_id, error::CSTR_INVALID_DATABASE_ID) {
         Ok(s) => s,
@@ -128,7 +127,7 @@ pub extern "C" fn cosmos_client_database_client(
         database_client_inner(client_handle, database_id_str),
         out_error,
         |db_handle| unsafe {
-            *out_database = DatabaseClientHandle::wrap_ptr(db_handle);
+            *out_database = Box::into_raw(db_handle);
         },
     )
 }
@@ -154,7 +153,7 @@ fn query_databases_inner(client: &CosmosClient, query_str: &str) -> Result<Strin
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_client_query_databases(
-    client: *const CosmosClientHandle,
+    client: *const CosmosClient,
     query: *const c_char,
     out_json: *mut *mut c_char,
     out_error: *mut CosmosError,
@@ -163,7 +162,7 @@ pub extern "C" fn cosmos_client_query_databases(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let client_handle = unsafe { CosmosClientHandle::unwrap_ptr(client) };
+    let client_handle = unsafe { &*client };
 
     let query_str = match parse_cstr(query, error::CSTR_INVALID_QUERY) {
         Ok(s) => s,
@@ -205,16 +204,16 @@ fn create_database_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_client_create_database(
-    client: *const CosmosClientHandle,
+    client: *const CosmosClient,
     database_id: *const c_char,
     out_database: *mut *mut DatabaseClient,
     out_error: *mut CosmosError,
 ) -> CosmosErrorCode {
-    if client.is_null() || database_id.is_null() || out_database.is_null() || out_error.is_null() {
+    if client.is_null() || database_id.is_null() || out_database.is_null() {
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let client_handle = unsafe { CosmosClientHandle::unwrap_ptr(client) };
+    let client_handle = unsafe { &*client };
 
     let database_id_str = match parse_cstr(database_id, error::CSTR_INVALID_DATABASE_ID) {
         Ok(s) => s,
@@ -250,11 +249,15 @@ mod tests {
         let endpoint = CString::new("https://test.documents.azure.com")
             .expect("test string should not contain NUL");
         let key = CString::new("test-key").expect("test string should not contain NUL");
-        let mut client_ptr: *mut CosmosClientHandle = ptr::null_mut();
+        let mut client_ptr: *mut CosmosClient = ptr::null_mut();
         let mut error = CosmosError::success();
 
-        let result =
-            cosmos_client_create(endpoint.as_ptr(), key.as_ptr(), &mut client_ptr, &mut error);
+        let result = cosmos_client_create_with_key(
+            endpoint.as_ptr(),
+            key.as_ptr(),
+            &mut client_ptr,
+            &mut error,
+        );
 
         assert_eq!(result, CosmosErrorCode::Success);
         assert!(!client_ptr.is_null());
@@ -265,10 +268,11 @@ mod tests {
 
     #[test]
     fn test_cosmos_client_create_null_params() {
-        let mut client_ptr: *mut CosmosClientHandle = ptr::null_mut();
+        let mut client_ptr: *mut CosmosClient = ptr::null_mut();
         let mut error = CosmosError::success();
 
-        let result = cosmos_client_create(ptr::null(), ptr::null(), &mut client_ptr, &mut error);
+        let result =
+            cosmos_client_create_with_key(ptr::null(), ptr::null(), &mut client_ptr, &mut error);
 
         assert_eq!(result, CosmosErrorCode::InvalidArgument);
         assert!(client_ptr.is_null());
@@ -281,11 +285,11 @@ mod tests {
         let key = CString::new("test-key").expect("test string should not contain NUL");
         let db_id = CString::new("test-db").expect("test string should not contain NUL");
 
-        let mut client_ptr: *mut CosmosClientHandle = ptr::null_mut();
-        let mut db_ptr: *mut DatabaseClientHandle = ptr::null_mut();
+        let mut client_ptr: *mut CosmosClient = ptr::null_mut();
+        let mut db_ptr: *mut DatabaseClient = ptr::null_mut();
         let mut error = CosmosError::success();
 
-        cosmos_client_create(
+        cosmos_client_create_with_key(
             endpoint.as_ptr(),
             key.as_ptr(),
             &raw mut client_ptr,
