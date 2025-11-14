@@ -168,7 +168,8 @@ impl GlobalEndpointManager {
                         ..Default::default()
                     }))
                     .await?
-                    .into_body()?;
+                    .into_body()
+                    .unwrap();
 
                 // Update location cache with the fetched account properties (only on fresh fetch)
                 {

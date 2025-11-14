@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 
@@ -10,7 +11,7 @@ use crate::{
 };
 
 pub struct QueryExecutor<T: DeserializeOwned> {
-    http_pipeline: CosmosPipeline,
+    http_pipeline: Arc<CosmosPipeline>,
     container_link: ResourceLink,
     items_link: ResourceLink,
     context: Context<'static>,
@@ -29,7 +30,7 @@ pub struct QueryExecutor<T: DeserializeOwned> {
 
 impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub fn new(
-        http_pipeline: CosmosPipeline,
+        http_pipeline: Arc<CosmosPipeline>,
         container_link: ResourceLink,
         query: Query,
         options: QueryOptions<'_>,
