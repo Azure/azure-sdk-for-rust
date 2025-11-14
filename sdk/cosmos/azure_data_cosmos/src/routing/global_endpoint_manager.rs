@@ -128,12 +128,13 @@ impl GlobalEndpointManager {
             .account_properties_cache
             .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
                 // Fetch latest account properties from service
-                let account_properties = self
+                let account_properties: AccountProperties = self
                     .get_database_account(Some(ReadDatabaseOptions {
                         ..Default::default()
                     }))
                     .await?
-                    .into_body()?;
+                    .into_body()
+                    .json()?;
 
                 // Update location cache with the fetched account properties (only on fresh fetch)
                 {
