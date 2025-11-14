@@ -8,12 +8,12 @@ use serde_json::value::RawValue;
 use crate::blocking::block_on;
 use crate::error::{self, marshal_result, CosmosError, CosmosErrorCode};
 use crate::string::{parse_cstr, safe_cstring_into_raw};
-use crate::ContainerClientHandle;
 
+/// Releases the memory associated with a [`ContainerClient`].
 #[no_mangle]
-pub extern "C" fn cosmos_container_free(container: *mut ContainerClientHandle) {
+pub extern "C" fn cosmos_container_free(container: *mut ContainerClient) {
     if !container.is_null() {
-        unsafe { ContainerClientHandle::free_ptr(container) }
+        unsafe { drop(Box::from_raw(container)) }
     }
 }
 
@@ -39,7 +39,7 @@ fn create_item_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_container_create_item(
-    container: *const ContainerClientHandle,
+    container: *const ContainerClient,
     partition_key: *const c_char,
     json_data: *const c_char,
     out_error: *mut CosmosError,
@@ -49,7 +49,7 @@ pub extern "C" fn cosmos_container_create_item(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let container_handle = unsafe { ContainerClientHandle::unwrap_ptr(container) };
+    let container_handle = unsafe { &*container };
 
     let partition_key_str = match parse_cstr(partition_key, error::CSTR_INVALID_PARTITION_KEY) {
         Ok(s) => s,
@@ -87,7 +87,6 @@ fn upsert_item_inner(
 ) -> Result<(), CosmosError> {
     let raw_value: Box<RawValue> = serde_json::from_str(json_str)?;
     let pk = partition_key.to_string();
-    tracing::trace!(raw_value = %raw_value.get(), pk = %pk, "Upserting item");
     block_on(container.upsert_item(pk, raw_value, None))?;
     Ok(())
 }
@@ -101,7 +100,7 @@ fn upsert_item_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_container_upsert_item(
-    container: *const ContainerClientHandle,
+    container: *const ContainerClient,
     partition_key: *const c_char,
     json_data: *const c_char,
     out_error: *mut CosmosError,
@@ -111,7 +110,7 @@ pub extern "C" fn cosmos_container_upsert_item(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let container_handle = unsafe { ContainerClientHandle::unwrap_ptr(container) };
+    let container_handle = unsafe { &*container };
 
     let partition_key_str = match parse_cstr(partition_key, error::CSTR_INVALID_PARTITION_KEY) {
         Ok(s) => s,
@@ -165,7 +164,7 @@ fn read_item_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_container_read_item(
-    container: *const ContainerClientHandle,
+    container: *const ContainerClient,
     partition_key: *const c_char,
     item_id: *const c_char,
     out_json: *mut *mut c_char,
@@ -180,7 +179,7 @@ pub extern "C" fn cosmos_container_read_item(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let container_handle = unsafe { ContainerClientHandle::unwrap_ptr(container) };
+    let container_handle = unsafe { &*container };
 
     let partition_key_str = match parse_cstr(partition_key, error::CSTR_INVALID_PARTITION_KEY) {
         Ok(s) => s,
@@ -235,7 +234,7 @@ fn replace_item_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails
 #[no_mangle]
 pub extern "C" fn cosmos_container_replace_item(
-    container: *const ContainerClientHandle,
+    container: *const ContainerClient,
     partition_key: *const c_char,
     item_id: *const c_char,
     json_data: *const c_char,
@@ -250,7 +249,7 @@ pub extern "C" fn cosmos_container_replace_item(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let container_handle = unsafe { ContainerClientHandle::unwrap_ptr(container) };
+    let container_handle = unsafe { &*container };
 
     let partition_key_str = match parse_cstr(partition_key, error::CSTR_INVALID_PARTITION_KEY) {
         Ok(s) => s,
@@ -311,7 +310,7 @@ fn delete_item_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails
 #[no_mangle]
 pub extern "C" fn cosmos_container_delete_item(
-    container: *const ContainerClientHandle,
+    container: *const ContainerClient,
     partition_key: *const c_char,
     item_id: *const c_char,
     out_error: *mut CosmosError,
@@ -320,7 +319,7 @@ pub extern "C" fn cosmos_container_delete_item(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let container_handle = unsafe { ContainerClientHandle::unwrap_ptr(container) };
+    let container_handle = unsafe { &*container };
 
     let partition_key_str = match parse_cstr(partition_key, error::CSTR_INVALID_PARTITION_KEY) {
         Ok(s) => s,
@@ -366,7 +365,7 @@ fn read_container_inner(container: &ContainerClient) -> Result<String, CosmosErr
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_container_read(
-    container: *const ContainerClientHandle,
+    container: *const ContainerClient,
     out_json: *mut *mut c_char,
     out_error: *mut CosmosError,
 ) -> CosmosErrorCode {
@@ -374,7 +373,7 @@ pub extern "C" fn cosmos_container_read(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let container_handle = unsafe { ContainerClientHandle::unwrap_ptr(container) };
+    let container_handle = unsafe { &*container };
 
     marshal_result(
         read_container_inner(container_handle),
@@ -417,7 +416,7 @@ fn query_items_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_container_query_items(
-    container: *const ContainerClientHandle,
+    container: *const ContainerClient,
     query: *const c_char,
     partition_key: *const c_char,
     out_json: *mut *mut c_char,
@@ -427,7 +426,7 @@ pub extern "C" fn cosmos_container_query_items(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let container_handle = unsafe { ContainerClientHandle::unwrap_ptr(container) };
+    let container_handle = unsafe { &*container };
 
     let query_str = match parse_cstr(query, error::CSTR_INVALID_QUERY) {
         Ok(s) => s,

@@ -8,13 +8,12 @@ use futures::TryStreamExt;
 use crate::blocking::block_on;
 use crate::error::{self, marshal_result, CosmosError, CosmosErrorCode};
 use crate::string::{parse_cstr, safe_cstring_into_raw};
-use crate::{ContainerClientHandle, DatabaseClientHandle};
 
 /// Releases the memory associated with a [`DatabaseClient`].
 #[no_mangle]
-pub extern "C" fn cosmos_database_free(database: *mut DatabaseClientHandle) {
+pub extern "C" fn cosmos_database_free(database: *mut DatabaseClient) {
     if !database.is_null() {
-        unsafe { DatabaseClientHandle::free_ptr(database) }
+        unsafe { drop(Box::from_raw(database)) }
     }
 }
 
@@ -23,7 +22,7 @@ fn container_client_inner(
     container_id_str: &str,
 ) -> Result<Box<ContainerClient>, CosmosError> {
     let container_client = database.container_client(container_id_str);
-    Ok(Box::new(container_client.into()))
+    Ok(Box::new(container_client))
 }
 
 /// Retrieves a pointer to a [`ContainerClient`] for the specified container ID within the given database.
@@ -35,9 +34,9 @@ fn container_client_inner(
 /// * `out_error` - Output parameter that will receive error information if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_database_container_client(
-    database: *const DatabaseClientHandle,
+    database: *const DatabaseClient,
     container_id: *const c_char,
-    out_container: *mut *mut ContainerClientHandle,
+    out_container: *mut *mut ContainerClient,
     out_error: *mut CosmosError,
 ) -> CosmosErrorCode {
     if database.is_null()
@@ -48,7 +47,7 @@ pub extern "C" fn cosmos_database_container_client(
         return CosmosErrorCode::InvalidArgument;
     }
 
-    let database_handle = unsafe { DatabaseClientHandle::unwrap_ptr(database) };
+    let database_handle = unsafe { &*database };
 
     let container_id_str = match parse_cstr(container_id, error::CSTR_INVALID_CONTAINER_ID) {
         Ok(s) => s,
@@ -65,7 +64,7 @@ pub extern "C" fn cosmos_database_container_client(
         container_client_inner(database_handle, container_id_str),
         out_error,
         |container_handle| unsafe {
-            *out_container = ContainerClientHandle::wrap_ptr(container_handle);
+            *out_container = Box::into_raw(container_handle);
         },
     )
 }
@@ -268,9 +267,11 @@ pub extern "C" fn cosmos_database_query_containers(
 
 #[cfg(test)]
 mod tests {
+    use azure_data_cosmos::CosmosClient;
+
     use crate::{
-        cosmos_client_create, cosmos_client_database_client, cosmos_client_free,
-        cosmos_container_free, ContainerClientHandle, CosmosClientHandle,
+        cosmos_client_create_with_key, cosmos_client_database_client, cosmos_client_free,
+        cosmos_container_free,
     };
 
     use super::*;
@@ -278,7 +279,7 @@ mod tests {
 
     #[test]
     fn test_database_container_client_null_params() {
-        let mut container_ptr: *mut ContainerClientHandle = ptr::null_mut();
+        let mut container_ptr: *mut ContainerClient = ptr::null_mut();
         let mut error = CosmosError::success();
 
         let result = cosmos_database_container_client(
@@ -334,7 +335,7 @@ mod tests {
         error = CosmosError::success();
 
         // Test with valid database but null container_id
-        // Note: We can't create a real DatabaseClientHandle without Azure SDK setup,
+        // Note: We can't create a real DatabaseClient without Azure SDK setup,
         // so we test the null parameter validation only
         let result = cosmos_database_create_container(
             ptr::null(),
@@ -367,12 +368,12 @@ mod tests {
         let key = CString::new("test-key").expect("test string should not contain NUL");
         let db_id = CString::new("test-db").expect("test string should not contain NUL");
 
-        let mut client_ptr: *mut CosmosClientHandle = ptr::null_mut();
-        let mut db_ptr: *mut DatabaseClientHandle = ptr::null_mut();
-        let mut container_ptr: *mut ContainerClientHandle = ptr::null_mut();
+        let mut client_ptr: *mut CosmosClient = ptr::null_mut();
+        let mut db_ptr: *mut DatabaseClient = ptr::null_mut();
+        let mut container_ptr: *mut ContainerClient = ptr::null_mut();
         let mut error = CosmosError::success();
 
-        cosmos_client_create(endpoint.as_ptr(), key.as_ptr(), &mut client_ptr, &mut error);
+        cosmos_client_create_with_key(endpoint.as_ptr(), key.as_ptr(), &mut client_ptr, &mut error);
         assert!(!client_ptr.is_null());
 
         cosmos_client_database_client(client_ptr, db_id.as_ptr(), &mut db_ptr, &mut error);
