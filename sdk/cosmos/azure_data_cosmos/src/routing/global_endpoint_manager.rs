@@ -129,9 +129,7 @@ impl GlobalEndpointManager {
             .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
                 // Fetch latest account properties from service
                 let account_properties: AccountProperties = self
-                    .get_database_account(Some(ReadDatabaseOptions {
-                        ..Default::default()
-                    }))
+                    .get_database_account()
                     .await?
                     .into_body()
                     .json()?;
@@ -195,9 +193,10 @@ impl GlobalEndpointManager {
     ///   cancellation).
     async fn get_database_account(
         &self,
-        options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<AccountProperties>> {
-        let options = options.unwrap_or_default();
+        let options = ReadDatabaseOptions {
+            ..Default::default()
+        };
         let resource_link = ResourceLink::root(ResourceType::DatabaseAccount);
         let builder = CosmosRequestBuilder::new(
             OperationType::Read,

@@ -113,7 +113,7 @@ impl LocationCache {
     }
 
     pub fn mark_endpoint_unavailable(&mut self, endpoint: &str, operation: RequestOperation) {
-        let now = std::time::SystemTime::now();
+        let now = SystemTime::now();
 
         {
             let mut location_unavailability_info_map =
@@ -636,31 +636,27 @@ mod tests {
             "https://location1.documents.example.com".to_string()
         );
     }
-    //
-    // #[test]
-    // fn resolve_service_endpoint_second_location() {
-    //     // create test cache
-    //     let cache = create_test_location_cache();
-    //
-    //     // resolve service endpoint for second location
-    //     let endpoint = cache.resolve_service_endpoint(1, RequestOperation::Read);
-    //     assert_eq!(
-    //         endpoint,
-    //         "https://location2.documents.example.com".to_string()
-    //     );
-    // }
-    //
-    // #[test]
-    // fn resolve_service_endpoint_default() {
-    //     let cache = create_test_location_cache();
-    //
-    //     let endpoint = cache.resolve_service_endpoint(
-    //         cache.locations_info.read_endpoints.len() + 1,
-    //         RequestOperation::Read,
-    //     );
-    //     assert_eq!(
-    //         endpoint,
-    //         "https://default.documents.example.com".to_string()
-    //     );
-    // }
+
+    #[test]
+    fn resolve_service_endpoint_second_location() {
+        // create test cache
+        let endpoint1 = "https://location1.documents.example.com";
+        let mut cache = create_test_location_cache();
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
+
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::Documents,
+            ResourceLink::root(ResourceType::Documents),
+        );
+
+        let cosmos_request = builder.build().ok().unwrap();
+
+        // resolve service endpoint for second location
+        let endpoint = cache.resolve_service_endpoint(&cosmos_request);
+        assert_eq!(
+            endpoint,
+            "https://location2.documents.example.com".to_string()
+        );
+    }
 }
