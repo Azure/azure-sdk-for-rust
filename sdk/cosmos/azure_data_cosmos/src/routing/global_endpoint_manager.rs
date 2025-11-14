@@ -42,7 +42,10 @@ impl GlobalEndpointManager {
             .time_to_live(std::time::Duration::from_secs(600))
             .build();
 
-        let endpoint_manager = Self {
+        
+
+        // endpoint_manager.initialize_account_properties_and_start_background_refresh();
+        Self {
             default_endpoint,
             preferred_locations,
             location_cache,
@@ -50,10 +53,7 @@ impl GlobalEndpointManager {
             is_background_account_refresh_active: false,
             pipeline,
             account_properties_cache,
-        };
-
-        // endpoint_manager.initialize_account_properties_and_start_background_refresh();
-        endpoint_manager
+        }
     }
 
     pub fn get_hub_uri(&self) -> String {
@@ -75,9 +75,9 @@ impl GlobalEndpointManager {
 
     pub fn get_applicable_endpoints(&self, request: &CosmosRequest) -> Vec<String> { self.location_cache.lock().unwrap().get_applicable_endpoints(request) }
 
-    pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Read) }
+    pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(endpoint, RequestOperation::Read) }
 
-    pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(&endpoint, RequestOperation::Write) }
+    pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) { self.location_cache.lock().unwrap().mark_endpoint_unavailable(endpoint, RequestOperation::Write) }
 
     pub fn can_use_multiple_write_locations(&self, request: &CosmosRequest) -> bool {
         !request.is_read_only_request() && self.can_support_multiple_write_locations(request.resource_type, request.operation_type)
@@ -121,7 +121,7 @@ impl GlobalEndpointManager {
         }
         
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        let _account_prop = self.account_properties_cache.try_get_with(&ACCOUNT_PROPERTIES_KEY, async {
+        let _account_prop = self.account_properties_cache.try_get_with(ACCOUNT_PROPERTIES_KEY, async {
             // Fetch latest account properties from service
             let account_properties = self.get_database_account(Some(ReadDatabaseOptions {
                 ..Default::default()

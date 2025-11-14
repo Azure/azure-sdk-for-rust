@@ -101,16 +101,13 @@ impl CosmosRequest {
     }
 
     pub fn is_read_only_request(&self) -> bool {
-        match self.operation_type {
-            OperationType::Read
+        matches!(self.operation_type,OperationType::Read
             | OperationType::ReadFeed
             | OperationType::Head
             | OperationType::HeadFeed
             | OperationType::Query
             | OperationType::SqlQuery
-            | OperationType::QueryPlan => true,
-            _ => false,
-        }
+            | OperationType::QueryPlan)
     }
 
     /// Maps the logical `OperationType` to its corresponding HTTP verb.

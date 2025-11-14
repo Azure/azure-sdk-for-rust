@@ -110,20 +110,18 @@ impl ClientRetryPolicy {
 
                 RetryResult::Retry {after: Duration::ZERO}
             }
+        } else if self.session_token_retry_count > 1 {
+            // When cannot use multiple write locations, then don't retry the request if
+            // we have already tried this request on the write location
+            RetryResult::DoNotRetry
         } else {
-            if self.session_token_retry_count > 1 {
-                // When cannot use multiple write locations, then don't retry the request if
-                // we have already tried this request on the write location
-                RetryResult::DoNotRetry
-            } else {
-                self.retry_context = Some(RetryContext {
-                    retry_location_index: 0,
-                    retry_request_on_preferred_locations: false,
-                    route_to_hub: false,
-                });
+            self.retry_context = Some(RetryContext {
+                retry_location_index: 0,
+                retry_request_on_preferred_locations: false,
+                route_to_hub: false,
+            });
 
-                RetryResult::Retry {after: Duration::ZERO}
-            }
+            RetryResult::Retry {after: Duration::ZERO}
         }
     }
 
@@ -263,7 +261,7 @@ impl ClientRetryPolicy {
         let status_code = err.http_status().unwrap();
         let sub_status_code = get_substatus_code_from_error(err);
 
-        if let Some(result) = self.should_retry_on_http_status(status_code.clone(), sub_status_code.clone()).await {
+        if let Some(result) = self.should_retry_on_http_status(status_code, sub_status_code).await {
             return result;
         }
 
