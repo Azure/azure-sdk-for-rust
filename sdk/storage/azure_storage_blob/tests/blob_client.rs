@@ -644,3 +644,37 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     Ok(())
 }
+
+#[recorded::test(playback)]
+async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Set Legal Hold
+    blob_client.set_legal_hold(true, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(legal_hold.unwrap());
+
+    // Attempt Operation While Legal Hold Active
+    let response = blob_client.delete(None).await;
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Remove Legal Hold
+    blob_client.set_legal_hold(false, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(!legal_hold.unwrap());
+
+    blob_client.delete(None).await?;
+
+    Ok(())
+}
