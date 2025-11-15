@@ -69,7 +69,7 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
 /// # Arguments
 ///
 /// * `datetime` - OffsetDateTime to format.
-pub fn format_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
+pub fn format_storage_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
     let utc = datetime.to_offset(UtcOffset::UTC);
     utc.format(RFC3339_7).map_err(|e| {
         Error::new(

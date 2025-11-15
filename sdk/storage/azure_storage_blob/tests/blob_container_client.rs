@@ -10,7 +10,7 @@ use azure_storage_blob::models::{
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
     SignedIdentifiers,
 };
-use azure_storage_blob::{format_datetime, format_filter_expression};
+use azure_storage_blob::{format_filter_expression, format_storage_datetime};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name,
@@ -415,16 +415,18 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     let expiry = recording.var(
         "expiry",
         Some(VarOptions {
-            default_value: format_datetime(OffsetDateTime::now_utc() + Duration::from_secs(10))
-                .ok()
-                .map(Into::into),
+            default_value: format_storage_datetime(
+                OffsetDateTime::now_utc() + Duration::from_secs(10),
+            )
+            .ok()
+            .map(Into::into),
             ..Default::default()
         }),
     );
     let start = recording.var(
         "start",
         Some(VarOptions {
-            default_value: format_datetime(OffsetDateTime::now_utc())
+            default_value: format_storage_datetime(OffsetDateTime::now_utc())
                 .ok()
                 .map(Into::into),
             ..Default::default()

@@ -378,27 +378,25 @@ impl BlobContainerClient {
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust, no_run
     /// use std::collections::HashMap;
     /// use azure_core::{http::RequestContent, Result};
-    /// use azure_storage_blob::{BlobContainerClient, models::{AccessPolicy, SignedIdentifiers}};
+    /// use azure_storage_blob::{format_storage_datetime, models::{AccessPolicy, SignedIdentifiers}};
+    /// use typespec_client_core::time::OffsetDateTime;
+    /// use std::time::Duration;
     ///
-    /// async fn example() -> Result<()> {
-    ///     let container_client = BlobContainerClient::new(
-    ///         "https://storageaccount.blob.core.windows.net/",
-    ///         "some_container_name",
-    ///         None,
-    ///         None,
-    ///     )?;
-    ///
+    /// fn example() -> Result<()> {
     ///     let mut policies = HashMap::new();
     ///     policies.insert("some_policy_id".to_string(), AccessPolicy {
-    ///         start: Some("2035-01-01T00:00:00Z".to_string()),
-    ///         expiry: Some("2035-12-31T00:00:00Z".to_string()),
+    ///         start: Some(format_storage_datetime(OffsetDateTime::now_utc())?),
+    ///         expiry: Some(format_storage_datetime(OffsetDateTime::now_utc() + Duration::from_secs(10))?),
     ///         permission: Some("rwd".to_string()),
     ///     });
     ///
-    ///     container_client.set_access_policy(RequestContent::try_from(SignedIdentifiers::from(policies))?, None).await?;
+    ///     let _request_content = RequestContent::try_from(SignedIdentifiers::from(policies))?;
+    ///
+    ///     // container_client.set_access_policy(request_content, None).await?; // RequestContent is ready to be used here
+    ///
     ///     Ok(())
     /// }
     /// ```

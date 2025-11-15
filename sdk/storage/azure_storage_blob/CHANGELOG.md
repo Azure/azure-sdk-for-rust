@@ -9,6 +9,8 @@
 
 ### Breaking Changes
 
+- Changed conversion implementation from `BlobTags` to `HashMap<String, String>` from `TryFrom` to `From`.
+
 ### Bugs Fixed
 
 ### Other Changes
