@@ -378,27 +378,20 @@ impl BlobContainerClient {
     ///
     /// # Example
     ///
-    /// ```rust, no_run
-    /// use std::collections::HashMap;
-    /// use azure_core::{http::RequestContent, Result};
+    /// ```rust, ignore
+    /// use azure_core::http::RequestContent;
     /// use azure_storage_blob::{format_storage_datetime, models::{AccessPolicy, SignedIdentifiers}};
     /// use typespec_client_core::time::OffsetDateTime;
-    /// use std::time::Duration;
     ///
-    /// fn example() -> Result<()> {
-    ///     let mut policies = HashMap::new();
-    ///     policies.insert("some_policy_id".to_string(), AccessPolicy {
-    ///         start: Some(format_storage_datetime(OffsetDateTime::now_utc())?),
-    ///         expiry: Some(format_storage_datetime(OffsetDateTime::now_utc() + Duration::from_secs(10))?),
-    ///         permission: Some("rwd".to_string()),
-    ///     });
+    /// let mut policies = HashMap::new();
+    /// policies.insert("some_policy_id".to_string(), AccessPolicy {
+    ///     start: Some(format_storage_datetime(OffsetDateTime::now_utc())?),
+    ///     expiry: Some(format_storage_datetime(OffsetDateTime::now_utc() + Duration::from_secs(10))?),
+    ///     permission: Some("rwd".to_string()),
+    /// });
     ///
-    ///     let _request_content = RequestContent::try_from(SignedIdentifiers::from(policies))?;
-    ///
-    ///     // container_client.set_access_policy(request_content, None).await?; // RequestContent is ready to be used here
-    ///
-    ///     Ok(())
-    /// }
+    /// let request_content = RequestContent::try_from(SignedIdentifiers::from(policies))?;
+    /// container_client.set_access_policy(request_content, None).await?;
     /// ```
     pub async fn set_access_policy(
         &self,
