@@ -5,12 +5,11 @@
 
 use super::{
     AccessTier, AccountKind, ArchiveStatus, BlobCopySourceTags, BlobDeleteType, BlobExpiryOptions,
-    BlobImmutabilityPolicyMode, BlobType, BlockListType, CopyStatus, DeleteSnapshotsOptionType,
-    EncryptionAlgorithmType, FileShareTokenIntent, FilterBlobsIncludeItem,
-    GeoReplicationStatusType, ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
-    ListBlobsIncludeItem, ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType,
-    QueryRequestType, QueryType, RehydratePriority, SequenceNumberActionType, SkuName,
-    StorageErrorCode,
+    BlobType, BlockListType, CopyStatus, DeleteSnapshotsOptionType, EncryptionAlgorithmType,
+    FileShareTokenIntent, FilterBlobsIncludeItem, GeoReplicationStatusType, ImmutabilityPolicyMode,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsIncludeItem, ListContainersIncludeType,
+    PremiumPageBlobAccessTier, PublicAccessType, QueryRequestType, QueryType, RehydratePriority,
+    SequenceNumberActionType, SkuName, StorageErrorCode,
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -120,25 +119,6 @@ impl<'de> Deserialize<'de> for BlobExpiryOptions {
 }
 
 impl Serialize for BlobExpiryOptions {
-    fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        s.serialize_str(self.as_ref())
-    }
-}
-
-impl<'de> Deserialize<'de> for BlobImmutabilityPolicyMode {
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        s.parse().map_err(serde::de::Error::custom)
-    }
-}
-
-impl Serialize for BlobImmutabilityPolicyMode {
     fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
