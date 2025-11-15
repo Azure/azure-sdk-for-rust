@@ -44,7 +44,6 @@ pub use crate::generated::models::{
     BlobContainerClientRenameResultHeaders, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientRenewLeaseResultHeaders,
     BlobContainerClientRestoreResult, BlobContainerClientRestoreResultHeaders,
-    BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetAccessPolicyResultHeaders,
     BlobContainerClientSetMetadataOptions, BlobCopySourceTags, BlobDeleteType, BlobExpiryOptions,
     BlobFlatListSegment, BlobImmutabilityPolicyMode, BlobItemInternal, BlobMetadata, BlobName,
     BlobPropertiesInternal, BlobServiceClientFindBlobsByTagsOptions,
@@ -80,5 +79,5 @@ pub use crate::generated::models::{
     PageListHeaders, PremiumPageBlobAccessTier, PublicAccessType, QueryRequestType, QueryType,
     RehydratePriority, RetentionPolicy, SequenceNumberActionType, SignedIdentifier, SkuName,
     StaticWebsite, StorageErrorCode, StorageServiceStats, StorageServiceStatsHeaders,
-    UserDelegationKey, UserDelegationKeyHeaders, VecSignedIdentifierHeaders,
+    UserDelegationKey, UserDelegationKeyHeaders,
 };
