@@ -76,6 +76,26 @@ pub trait UrlExt: crate::private::Sealed {
     /// assert_eq!(url.as_str(), "https://contoso.com/foo/bar?a=1");
     /// ```
     fn append_path(&mut self, path: impl AsRef<str>);
+
+    /// Returns a query builder for setting query parameters.
+    ///
+    /// The builder allows setting multiple query parameters, overwriting any existing values
+    /// with the same key. Call `build()` to apply the changes to the URL.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use typespec_client_core::http::{Url, UrlExt as _};
+    ///
+    /// let mut url: Url = "https://contoso.com?a=1&b=2".parse().unwrap();
+    /// url.query_builder()
+    ///     .set_pair("a", "new_value")
+    ///     .set_pair("c", "3")
+    ///     .build();
+    /// // BTreeMap orders alphabetically
+    /// assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2&c=3");
+    /// ```
+    fn query_builder(&mut self) -> QueryBuilder<'_>;
 }
 
 impl UrlExt for Url {
@@ -103,6 +123,174 @@ impl UrlExt for Url {
         debug_assert_eq!(new_path.capacity(), new_len);
 
         self.set_path(&new_path);
+    }
+
+    fn query_builder(&mut self) -> QueryBuilder<'_> {
+        QueryBuilder::new(self)
+    }
+}
+
+/// A builder for setting query parameters on a URL.
+///
+/// This builder allows you to set multiple query parameters, overwriting any existing
+/// values with the same key. Call [`build()`](QueryBuilder::build) to apply the changes.
+pub struct QueryBuilder<'a> {
+    url: &'a mut Url,
+    values: std::collections::BTreeMap<std::borrow::Cow<'a, str>, Vec<std::borrow::Cow<'a, str>>>,
+    dirty: bool,
+}
+
+impl<'a> QueryBuilder<'a> {
+    fn new(url: &'a mut Url) -> Self {
+        let mut values = std::collections::BTreeMap::new();
+
+        // Parse existing query params into values
+        for (key, value) in url.query_pairs() {
+            values
+                .entry(key.into_owned().into())
+                .or_insert_with(Vec::new)
+                .push(value.into_owned().into());
+        }
+
+        Self {
+            url,
+            values,
+            dirty: false,
+        }
+    }
+
+    /// Appends a key without a value to the URL query string.
+    ///
+    /// This is useful for boolean flags or markers in query strings that don't require a value.
+    ///
+    /// Returns `&mut Self` to allow chaining multiple calls.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use typespec_client_core::http::{Url, UrlExt as _};
+    ///
+    /// let mut url: Url = "https://contoso.com".parse().unwrap();
+    /// url.query_builder()
+    ///     .append_key_only("debug")
+    ///     .append_pair("a", "1")
+    ///     .build();
+    /// assert_eq!(url.as_str(), "https://contoso.com/?a=1&debug");
+    /// ```
+    pub fn append_key_only(&mut self, key: impl Into<std::borrow::Cow<'a, str>>) -> &mut Self {
+        let key = key.into();
+
+        if let Some(vals) = self.values.get_mut(&key) {
+            vals.push("".into());
+        } else {
+            self.values.insert(key, vec!["".into()]);
+        }
+
+        self.dirty = true;
+        self
+    }
+
+    /// Appends a query parameter to the URL.
+    ///
+    /// If the key already exists, this adds an additional value for that key (allowing duplicates).
+    /// Use [`set_pair`](Self::set_pair) to overwrite existing values instead.
+    ///
+    /// Both key and value accept types that can be converted to `Cow<'a, str>`, which includes
+    /// `&'a str`, `String`, and `Cow<'a, str>`. This avoids unnecessary allocations when using
+    /// string literals.
+    ///
+    /// Returns `&mut Self` to allow chaining multiple calls.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use typespec_client_core::http::{Url, UrlExt as _};
+    ///
+    /// let mut url: Url = "https://contoso.com?a=1".parse().unwrap();
+    /// url.query_builder()
+    ///     .append_pair("a", "2")
+    ///     .append_pair("b", "3")
+    ///     .build();
+    /// assert_eq!(url.as_str(), "https://contoso.com/?a=1&a=2&b=3");
+    /// ```
+    pub fn append_pair(
+        &mut self,
+        key: impl Into<std::borrow::Cow<'a, str>>,
+        value: impl Into<std::borrow::Cow<'a, str>>,
+    ) -> &mut Self {
+        let key = key.into();
+        let value = value.into();
+
+        if let Some(vals) = self.values.get_mut(&key) {
+            vals.push(value);
+        } else {
+            self.values.insert(key, vec![value]);
+        }
+
+        self.dirty = true;
+        self
+    }
+
+    /// Sets a query parameter, overwriting any existing value with the same key.
+    ///
+    /// If the key already exists, all existing values for that key are replaced with the new value.
+    /// If the key doesn't exist, it's added to the end of the query parameters.
+    /// Use [`append_pair`](Self::append_pair) to add additional values without replacing existing ones.
+    ///
+    /// Both key and value accept types that can be converted to `Cow<'a, str>`, which includes
+    /// `&'a str`, `String`, and `Cow<'a, str>`. This avoids unnecessary allocations when using
+    /// string literals.
+    ///
+    /// Returns `&mut Self` to allow chaining multiple calls.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use typespec_client_core::http::{Url, UrlExt as _};
+    ///
+    /// let mut url: Url = "https://contoso.com?a=1&b=2".parse().unwrap();
+    /// url.query_builder()
+    ///     .set_pair("a", "new_value")
+    ///     .set_pair("c", "3")
+    ///     .build();
+    /// assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2&c=3");
+    /// ```
+    pub fn set_pair(
+        &mut self,
+        key: impl Into<std::borrow::Cow<'a, str>>,
+        value: impl Into<std::borrow::Cow<'a, str>>,
+    ) -> &mut Self {
+        let key = key.into();
+        let value = value.into();
+
+        // Replace existing values (taking ownership)
+        self.values.insert(key, vec![value]);
+
+        self.dirty = true;
+        self
+    }
+
+    /// Applies all the query parameter changes to the URL.
+    pub fn build(&mut self) {
+        if !self.dirty {
+            return;
+        }
+
+        // Rebuild the query string with all values from the BTreeMap
+        self.url.query_pairs_mut().clear();
+
+        let mut serializer = self.url.query_pairs_mut();
+        for (key, values) in &self.values {
+            for value in values {
+                if value.is_empty() {
+                    serializer.append_key_only(key);
+                } else {
+                    serializer.append_pair(key, value);
+                }
+            }
+        }
+
+        self.dirty = false;
     }
 }
 
@@ -207,5 +395,111 @@ mod test {
         url = Url::parse("https://www.microsoft.com/foo/?q=q").unwrap();
         url.append_path("");
         assert_eq!(url.as_str(), "https://www.microsoft.com/foo/?q=q");
+    }
+
+    #[test]
+    fn test_query_builder_empty_query() {
+        let mut url = Url::parse("https://contoso.com").unwrap();
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "1");
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=1");
+    }
+
+    #[test]
+    fn test_query_builder_new_parameter() {
+        let mut url = Url::parse("https://contoso.com?b=2").unwrap();
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "1");
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=1&b=2");
+    }
+
+    #[test]
+    fn test_query_builder_overwrite_existing() {
+        let mut url = Url::parse("https://contoso.com?a=1&b=2").unwrap();
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "new_value");
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2");
+    }
+
+    #[test]
+    fn test_query_builder_overwrite_duplicate() {
+        let mut url = Url::parse("https://contoso.com?a=1&b=2&a=3").unwrap();
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "new_value");
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2");
+    }
+
+    #[test]
+    fn test_query_builder_preserves_order() {
+        let mut url = Url::parse("https://contoso.com?x=1&a=old&y=2&z=3").unwrap();
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "new");
+        builder.build();
+        // BTreeMap orders alphabetically: a, x, y, z
+        assert_eq!(url.as_str(), "https://contoso.com/?a=new&x=1&y=2&z=3");
+    }
+
+    #[test]
+    fn test_query_builder_with_special_chars() {
+        let mut url = Url::parse("https://contoso.com?a=old").unwrap();
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "hello world");
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=hello+world");
+    }
+
+    #[test]
+    fn test_query_builder_multiple_sets() {
+        let mut url = Url::parse("https://contoso.com?a=1&b=2").unwrap();
+        let mut builder = url.query_builder();
+        builder
+            .set_pair("a", "new")
+            .set_pair("c", "3")
+            .set_pair("b", "updated");
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=new&b=updated&c=3");
+    }
+
+    #[test]
+    fn test_query_builder_with_numeric_value() {
+        let mut url = Url::parse("https://contoso.com").unwrap();
+        let mut builder = url.query_builder();
+        builder.set_pair("foo", 1.to_string()).set_pair("bar", "2");
+        builder.build();
+        // BTreeMap orders alphabetically: bar, foo
+        assert_eq!(url.as_str(), "https://contoso.com/?bar=2&foo=1");
+    }
+
+    #[test]
+    fn test_query_builder_append_key_only() {
+        let mut url = Url::parse("https://contoso.com").unwrap();
+        let mut builder = url.query_builder();
+        builder
+            .append_key_only("debug")
+            .append_pair("a", "1")
+            .append_key_only("verbose");
+        builder.build();
+        // BTreeMap orders alphabetically: a, debug, verbose
+        assert_eq!(url.as_str(), "https://contoso.com/?a=1&debug&verbose");
+    }
+
+    #[test]
+    fn test_query_builder_multiple_builds() {
+        let mut url = Url::parse("https://contoso.com").unwrap();
+
+        let mut builder = url.query_builder();
+        builder.set_pair("a", "1");
+        builder.build();
+
+        builder.set_pair("b", "2");
+        builder.build();
+
+        // Calling build() again without changes does nothing
+        builder.build();
+        assert_eq!(url.as_str(), "https://contoso.com/?a=1&b=2");
     }
 }
