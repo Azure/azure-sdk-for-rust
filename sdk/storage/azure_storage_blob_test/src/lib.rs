@@ -11,6 +11,46 @@ use azure_storage_blob::{
     BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
     BlobServiceClientOptions,
 };
+use std::cell::RefCell;
+
+/// Specifies which storage account to use for testing.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum StorageAccount {
+    /// The standard storage account (AZURE_STORAGE_ACCOUNT_NAME)
+    Standard,
+    /// The versioned storage account (VERSIONED_AZURE_STORAGE_ACCOUNT_NAME)
+    Versioned,
+}
+
+// Will use standard Storage account by default.
+thread_local! {
+    static STORAGE_ACCOUNT: RefCell<StorageAccount> = const { RefCell::new(StorageAccount::Standard) };
+}
+
+/// Sets the storage account to use for all subsequent test helper function calls in this thread.
+///
+/// # Arguments
+///
+/// * `account` - The storage account type enum variant to use.
+///
+/// # Example
+///
+/// ```rust
+/// // At the beginning of your test
+/// use_storage_account(StorageAccount::Versioned);
+///
+/// // All subsequent calls will use the versioned storage account
+/// let service_client = get_blob_service_client(recording)?;
+/// let container_client = get_container_client(recording, true).await?;
+/// ```
+pub fn use_storage_account(account: StorageAccount) {
+    STORAGE_ACCOUNT.with(|a| *a.borrow_mut() = account);
+}
+
+/// Gets the currently configured storage account for this thread.
+fn get_current_storage_account() -> StorageAccount {
+    STORAGE_ACCOUNT.with(|a| *a.borrow())
+}
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
 ///
@@ -20,9 +60,15 @@ use azure_storage_blob::{
 pub fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
+
+    let account_name_var = match get_current_storage_account() {
+        StorageAccount::Standard => "AZURE_STORAGE_ACCOUNT_NAME",
+        StorageAccount::Versioned => "VERSIONED_AZURE_STORAGE_ACCOUNT_NAME",
+    };
+
     let endpoint = format!(
         "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+        recording.var(account_name_var, None).as_str()
     );
 
     (client_options, endpoint)

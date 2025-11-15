@@ -8,10 +8,8 @@ use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientDeleteImmutabilityPolicyResult, BlobClientDownloadResult,
-        BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlobClientSetImmutabilityPolicyResult, BlockBlobClientUploadResult,
+        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
@@ -32,6 +30,7 @@ use azure_core::{
         policies::{BearerTokenAuthorizationPolicy, Policy},
         AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
+    time::OffsetDateTime,
     tracing, Bytes, Result,
 };
 use std::collections::HashMap;
@@ -447,9 +446,12 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_immutability_policy(
         &self,
+        immutability_policy_expiry: &OffsetDateTime,
         options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
-        self.client.set_immutability_policy(options).await
+    ) -> Result<Response<(), NoFormat>> {
+        self.client
+            .set_immutability_policy(immutability_policy_expiry, options)
+            .await
     }
 
     /// Deletes the immutability policy on the blob.
@@ -460,7 +462,7 @@ impl BlobClient {
     pub async fn delete_immutability_policy(
         &self,
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.delete_immutability_policy(options).await
     }
 }

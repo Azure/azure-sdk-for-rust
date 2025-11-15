@@ -9,16 +9,16 @@ use crate::generated::models::{
     BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
     BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
     BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyOptions,
-    BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions, BlobClientDownloadOptions,
-    BlobClientDownloadResult, BlobClientGetAccountInfoOptions, BlobClientGetAccountInfoResult,
+    BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientDownloadResult,
+    BlobClientGetAccountInfoOptions, BlobClientGetAccountInfoResult,
     BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult, BlobClientGetTagsOptions,
     BlobClientReleaseLeaseOptions, BlobClientReleaseLeaseResult, BlobClientRenewLeaseOptions,
     BlobClientRenewLeaseResult, BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
-    BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
-    BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-    BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions,
-    BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
+    BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
+    BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
+    BlobClientSetTagsOptions, BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
+    BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
+    BlobExpiryOptions, BlobTags,
 };
 use azure_core::{
     base64::encode,
@@ -30,7 +30,7 @@ use azure_core::{
         AsyncResponse, ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions,
         PipelineStreamOptions, Request, RequestContent, Response, Url, XmlFormat,
     },
-    time::to_rfc7231,
+    time::{to_rfc7231, OffsetDateTime},
     tracing, Result,
 };
 use std::{collections::HashMap, sync::Arc};
@@ -791,34 +791,11 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientDeleteImmutabilityPolicyResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteImmutabilityPolicyResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientDeleteImmutabilityPolicyResultHeaders::date) - Date
-    ///
-    /// [`BlobClientDeleteImmutabilityPolicyResultHeaders`]: crate::generated::models::BlobClientDeleteImmutabilityPolicyResultHeaders
     #[tracing::function("Storage.Blob.Blob.deleteImmutabilityPolicy")]
     pub async fn delete_immutability_policy(
         &self,
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -1553,43 +1530,14 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `immutability_policy_expiry` - Specifies the date time when the blobs immutability policy is set to expire.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientSetImmutabilityPolicyResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientSetImmutabilityPolicyResult, BlobClientSetImmutabilityPolicyResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientSetImmutabilityPolicyResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     if let Some(immutability_policy_mode) = response.immutability_policy_mode()? {
-    ///         println!("x-ms-immutability-policy-mode: {:?}", immutability_policy_mode);
-    ///     }
-    ///     if let Some(immutability_policy_expires_on) = response.immutability_policy_expires_on()? {
-    ///         println!("x-ms-immutability-policy-until-date: {:?}", immutability_policy_expires_on);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::date) - Date
-    /// * [`immutability_policy_mode`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::immutability_policy_mode) - x-ms-immutability-policy-mode
-    /// * [`immutability_policy_expires_on`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::immutability_policy_expires_on) - x-ms-immutability-policy-until-date
-    ///
-    /// [`BlobClientSetImmutabilityPolicyResultHeaders`]: crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders
     #[tracing::function("Storage.Blob.Blob.setImmutabilityPolicy")]
     pub async fn set_immutability_policy(
         &self,
+        immutability_policy_expiry: &OffsetDateTime,
         options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -1616,12 +1564,10 @@ impl BlobClient {
                 immutability_policy_mode.to_string(),
             );
         }
-        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
-            request.insert_header(
-                "x-ms-immutability-policy-until-date",
-                to_rfc7231(&immutability_policy_expiry),
-            );
-        }
+        request.insert_header(
+            "x-ms-immutability-policy-until-date",
+            to_rfc7231(immutability_policy_expiry),
+        );
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
