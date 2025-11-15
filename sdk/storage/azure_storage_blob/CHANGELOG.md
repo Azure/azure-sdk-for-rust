@@ -4,7 +4,12 @@
 
 ### Features Added
 
+- Added support for `set_access_policy` to `BlobContainerClient`.
+- Added support for `get_access_policy` to `BlobContainerClient`.
+
 ### Breaking Changes
+
+- Changed conversion implementation from `BlobTags` to `HashMap<String, String>` from `TryFrom` to `From`.
 
 ### Bugs Fixed
 
