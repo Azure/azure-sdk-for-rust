@@ -1,9 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+pub mod client_retry_policy;
+pub mod metadata_request_retry_policy;
 pub mod resource_throttle_retry_policy;
+
+use crate::constants::{SubStatusCode, SUB_STATUS};
 use crate::cosmos_request::CosmosRequest;
 use async_trait::async_trait;
+use azure_core::error::ErrorKind;
 use azure_core::http::RawResponse;
 use azure_core::time::Duration;
 
@@ -48,7 +53,7 @@ pub trait RetryPolicy: Send + Sync {
     /// This method is invoked immediately before each request is sent (including retries).
     /// # Arguments
     /// * `request` - Mutable reference to the HTTP request being sent
-    fn before_send_request(&self, _request: &mut CosmosRequest) {}
+    async fn before_send_request(&mut self, _request: &mut CosmosRequest) {}
 
     /// Determines whether an HTTP request should be retried based on the response or error
     ///
@@ -65,4 +70,25 @@ pub trait RetryPolicy: Send + Sync {
     ///
     /// A `RetryResult` indicating the retry decision.
     async fn should_retry(&mut self, response: &azure_core::Result<RawResponse>) -> RetryResult;
+}
+
+fn get_substatus_code_from_error(err: &azure_core::Error) -> SubStatusCode {
+    if let ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
+        raw_response
+            .as_ref()
+            .and_then(|r| r.headers().get_as(&SUB_STATUS).ok())
+            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
+            .unwrap_or(SubStatusCode::Unknown)
+    } else {
+        SubStatusCode::Unknown
+    }
+}
+
+fn get_substatus_code_from_response(response: &RawResponse) -> SubStatusCode {
+    response
+        .headers()
+        .get_as(&SUB_STATUS)
+        .ok()
+        .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
+        .unwrap_or(SubStatusCode::Unknown)
 }

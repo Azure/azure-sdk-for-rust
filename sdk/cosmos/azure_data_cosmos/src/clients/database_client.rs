@@ -10,6 +10,7 @@ use crate::{
     CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
     ThroughputOptions,
 };
+use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequestBuilder;
 use crate::operation_context::OperationType;
@@ -22,11 +23,11 @@ pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
     database_id: String,
-    pipeline: CosmosPipeline,
+    pipeline: Arc<CosmosPipeline>,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, database_id: &str) -> Self {
+    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
@@ -74,15 +75,15 @@ impl DatabaseClient {
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::Databases);
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::Databases,
+            self.link.clone(),
+        );
         let cosmos_request = builder.build();
 
         self.pipeline
-            .send(
-                cosmos_request?,
-                self.link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request?, options.method_options.context)
             .await
     }
 
@@ -139,18 +140,18 @@ impl DatabaseClient {
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Containers);
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Create,
+            ResourceType::Containers,
+            self.containers_link.clone(),
+        );
         let cosmos_request = builder
             .headers(&options.throughput)
             .json(&properties)
             .build()?;
 
         self.pipeline
-            .send(
-                cosmos_request,
-                self.containers_link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -165,14 +166,14 @@ impl DatabaseClient {
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Databases);
+        let builder = CosmosRequestBuilder::new(
+            OperationType::Delete,
+            ResourceType::Databases,
+            self.link.clone(),
+        );
         let cosmos_request = builder.build();
         self.pipeline
-            .send(
-                cosmos_request.unwrap(),
-                self.link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request.unwrap(), options.method_options.context)
             .await
     }
 

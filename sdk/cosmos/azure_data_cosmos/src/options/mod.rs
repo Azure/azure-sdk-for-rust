@@ -6,6 +6,7 @@ use crate::models::ThroughputProperties;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use azure_core::time::Duration;
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::Infallible;
 use std::fmt;
@@ -17,7 +18,7 @@ pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
     pub application_name: Option<String>,
     pub application_region: Option<String>,
-    pub application_preferred_regions: Option<Vec<String>>,
+    pub application_preferred_regions: Vec<Cow<'static, str>>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     pub consistency_level: Option<ConsistencyLevel>,
     pub request_timeout: Option<Duration>,

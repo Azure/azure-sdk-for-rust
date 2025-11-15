@@ -6,6 +6,7 @@
 pub enum OperationType {
     Create,
     Read,
+    ReadFeed,
     Replace,
     Delete,
     Upsert,
@@ -16,6 +17,7 @@ pub enum OperationType {
     Patch,
     Head,
     HeadFeed,
+    Execute,
 }
 
 impl OperationType {

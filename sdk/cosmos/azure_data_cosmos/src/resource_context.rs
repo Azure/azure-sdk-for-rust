@@ -11,7 +11,7 @@ pub enum ResourceType {
     Databases,
     DatabaseAccount,
     Containers,
-    Items,
+    Documents,
     StoredProcedures,
     Users,
     Permissions,
@@ -27,7 +27,7 @@ impl ResourceType {
             ResourceType::Databases => "dbs",
             ResourceType::DatabaseAccount => "",
             ResourceType::Containers => "colls",
-            ResourceType::Items => "docs",
+            ResourceType::Documents => "docs",
             ResourceType::StoredProcedures => "sprocs",
             ResourceType::Users => "users",
             ResourceType::Permissions => "permissions",
@@ -36,6 +36,16 @@ impl ResourceType {
             ResourceType::Triggers => "triggers",
             ResourceType::Offers => "offers",
         }
+    }
+
+    pub fn is_meta_data(self) -> bool {
+        matches!(
+            self,
+            ResourceType::Databases
+                | ResourceType::DatabaseAccount
+                | ResourceType::Containers
+                | ResourceType::PartitionKeyRanges
+        )
     }
 }
 

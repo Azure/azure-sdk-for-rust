@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::cosmos_request::CosmosRequest;
-use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
+use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
+use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
 
@@ -63,7 +65,9 @@ pub trait RetryHandler: Send + Sync {
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackOffRetryHandler;
+pub struct BackOffRetryHandler {
+    global_endpoint_manager: GlobalEndpointManager,
+}
 
 impl BackOffRetryHandler {
     /// Returns the appropriate retry policy based on the request
@@ -72,14 +76,20 @@ impl BackOffRetryHandler {
     /// retry policy should be used for this specific request.
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn retry_policy_for_request(
-        &self,
-        _request: &CosmosRequest,
-    ) -> Box<ResourceThrottleRetryPolicy> {
-        // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
-        // the request operation type and resource type and accordingly return the respective retry
-        // policy.
-        Box::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
+    pub fn retry_policy_for_request(&self, request: &CosmosRequest) -> Box<dyn RetryPolicy> {
+        if request.resource_type.is_meta_data() {
+            Box::new(MetadataRequestRetryPolicy::new(
+                self.global_endpoint_manager.clone(),
+            ))
+        } else {
+            Box::new(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
+        }
+    }
+
+    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
+        Self {
+            global_endpoint_manager,
+        }
     }
 }
 
@@ -105,9 +115,9 @@ impl RetryHandler for BackOffRetryHandler {
     {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
-        retry_policy.before_send_request(request);
 
         loop {
+            retry_policy.before_send_request(request).await;
             // Invoke the provided sender callback instead of calling inner_send_async directly
             let result = sender(request).await;
             let retry_result = retry_policy.should_retry(&result).await;
