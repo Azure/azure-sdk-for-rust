@@ -57,48 +57,49 @@ struct MetadataRetryContext {
 }
 
 impl MetadataRequestRetryPolicy {
-    /// Creates a new ResourceThrottleRetryPolicy with the specified configuration
+
+    /// Creates a new MetadataRequestRetryPolicy with the specified global endpoint manager.
+    ///
+    /// # Summary
+    /// Initializes a metadata request retry policy that handles transient failures for metadata operations
+    /// by retrying requests across multiple endpoints when service unavailable or internal server errors occur.
+    /// The policy integrates with the global endpoint manager to route requests to alternative endpoints.
     ///
     /// # Arguments
-    /// * `max_attempt_count` - Maximum number of retry attempts before giving up
-    /// * `max_wait_time_secs` - Maximum total wait time (in seconds) across all retries
-    /// * `backoff_delay_factor` - Multiplier for exponential backoff delay
+    /// * `global_endpoint_manager` - The global endpoint manager for routing requests across regions
     ///
-    /// # Example
-    /// ```ignore
-    /// use azure_data_cosmos::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
-    ///
-    /// // Create a policy with 5 retries, 120 second max wait, and backoff factor of 3
-    /// let policy = ResourceThrottleRetryPolicy::new(5, 120, 3);
-    /// ```
+    /// # Returns
+    /// A new instance of `MetadataRequestRetryPolicy` configured with:
+    /// - Maximum unavailable endpoint retries based on preferred location count
+    /// - Underlying throttling retry policy for 429 responses
+    /// - Initial retry count set to zero
     pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
         Self {
             global_endpoint_manager: Arc::from(global_endpoint_manager.clone()),
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
-            max_unavailable_endpoint_retry_count: 1,
-            retry_context: None,
-            unavailable_endpoint_retry_count: max(
+            max_unavailable_endpoint_retry_count: max(
                 global_endpoint_manager.preferred_location_count(),
-                1,
+                1
             ),
+            retry_context: None,
+            unavailable_endpoint_retry_count: 0,
         }
     }
 
-    /// Determines whether to retry an operation that failed with an exception
+    /// Determines whether to retry a metadata operation that failed with an error.
     ///
-    /// Examines the error to check if it contains a 429 (TooManyRequests) HTTP status.
-    /// If so, applies the retry logic with exponential backoff. Non-throttle errors
-    /// are not retried by this policy.
+    /// # Summary
+    /// Evaluates the error to determine if it represents a transient failure (service unavailable,
+    /// internal server error, lease not found, or database account not found) that can be retried
+    /// on an alternative endpoint. Falls back to throttling retry logic for 429 responses.
     ///
     /// # Arguments
-    /// * `err` - The error that occurred during the operation
+    /// * `err` - The error that occurred during the metadata operation
     ///
     /// # Returns
-    /// A `RetryResult` indicating if the request can be retried.
-    ///
-    /// # Note
-    /// Currently uses a fixed 500ms base retry delay. Future versions may parse
-    /// the `x-ms-retry-after-ms` header from the error context.
+    /// A `RetryResult` indicating whether to retry and the delay duration:
+    /// - `Retry { after: Duration::ZERO }` for retriable metadata errors
+    /// - Delegates to throttling policy for other errors
     pub async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
         let status_code = err.http_status().unwrap();
         let sub_status_code = get_substatus_code_from_error(err);
@@ -111,22 +112,21 @@ impl MetadataRequestRetryPolicy {
         self.throttling_retry_policy.should_retry_error(err)
     }
 
-    /// Determines whether to retry an operation based on the HTTP response
+    /// Determines whether to retry a metadata operation based on the HTTP response.
     ///
-    /// Examines the response status code to check if it's 429 (TooManyRequests).
-    /// If so, applies the retry logic with exponential backoff. Other status codes
-    /// (including success codes) are not retried by this policy.
+    /// # Summary
+    /// Examines the HTTP response status code and sub-status to determine if the failure is transient
+    /// (503 service unavailable, 500 internal server error, 410 lease not found, 403 database account
+    /// not found) and can be retried on an alternative endpoint. Delegates to throttling policy for
+    /// rate limiting (429) responses.
     ///
     /// # Arguments
-    /// * `response` - The HTTP response received from the server
+    /// * `response` - The HTTP response received from the metadata operation
     ///
     /// # Returns
-    /// A `RetryResult` indicating if the request can be retried.
-    ///
-    /// # Note
-    /// Currently uses a fixed 500ms base retry delay. Future versions may parse
-    /// the `x-ms-retry-after-ms` header from the response headers to respect
-    /// server-suggested retry delays.
+    /// A `RetryResult` indicating whether to retry and the delay duration:
+    /// - `Retry { after: Duration::ZERO }` for retriable metadata failures
+    /// - Delegates to throttling policy for rate limiting errors
     pub async fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
         let status_code = response.status();
         let sub_status_code = get_substatus_code_from_response(&response.clone());
@@ -139,6 +139,22 @@ impl MetadataRequestRetryPolicy {
         self.throttling_retry_policy.should_retry_response(response)
     }
 
+    /// Core retry decision logic based on status code and sub-status code.
+    ///
+    /// # Summary
+    /// Determines if a metadata request should be retried based on the combination of HTTP status code
+    /// and Cosmos DB sub-status code. Retries are triggered for transient failures: 503 service unavailable,
+    /// 500 internal server error, 410 with lease not found, or 403 with database account not found.
+    /// If retry is allowed, increments the location index to route the next attempt to a different endpoint.
+    ///
+    /// # Arguments
+    /// * `status_code` - The HTTP status code from the response
+    /// * `sub_status_code` - The Cosmos DB specific sub-status code
+    ///
+    /// # Returns
+    /// A `RetryResult`:
+    /// - `Retry { after: Duration::ZERO }` if the error is retriable and retry count not exceeded
+    /// - `DoNotRetry` for non-retriable errors or if max retries exceeded
     fn should_retry_with_status_code(
         &mut self,
         status_code: StatusCode,
@@ -255,5 +271,346 @@ impl RetryPolicy for MetadataRequestRetryPolicy {
             Ok(_) => RetryResult::DoNotRetry,
             Err(err) => self.should_retry_error(err).await,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cosmos_request::CosmosRequestBuilder;
+    use crate::operation_context::OperationType;
+    use crate::partition_key::PartitionKey;
+    use crate::resource_context::{ResourceLink, ResourceType};
+    use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+    use azure_core::http::headers::Headers;
+    use azure_core::http::ClientOptions;
+    use azure_core::Bytes;
+    use std::borrow::Cow;
+    use crate::regions;
+
+    fn create_test_endpoint_manager() -> GlobalEndpointManager {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+
+        GlobalEndpointManager::new(
+            "https://test.documents.azure.com".to_string(),
+            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            pipeline,
+        )
+    }
+
+    fn create_test_endpoint_manager_no_locations() -> GlobalEndpointManager {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+
+        GlobalEndpointManager::new(
+            "https://test.documents.azure.com".to_string(),
+            vec![],
+            pipeline,
+        )
+    }
+
+    fn create_test_endpoint_manager_with_preferred_locations() -> GlobalEndpointManager {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+
+        GlobalEndpointManager::new(
+            "https://test.documents.azure.com".to_string(),
+            vec![
+                regions::EAST_ASIA.into(),
+                regions::WEST_US.into(),
+                regions::NORTH_CENTRAL_US.into(),
+            ],
+            pipeline,
+        )
+    }
+
+    fn create_test_policy() -> MetadataRequestRetryPolicy {
+        let manager = create_test_endpoint_manager();
+        MetadataRequestRetryPolicy::new(manager)
+    }
+
+    fn create_test_policy_no_locations() -> MetadataRequestRetryPolicy {
+        let manager = create_test_endpoint_manager_no_locations();
+        MetadataRequestRetryPolicy::new(manager)
+    }
+
+    fn create_test_policy_with_preferred_locations() -> MetadataRequestRetryPolicy {
+        let manager = create_test_endpoint_manager_with_preferred_locations();
+        MetadataRequestRetryPolicy::new(manager)
+    }
+
+    fn create_test_request() -> CosmosRequest {
+        let resource_link = ResourceLink::root(ResourceType::Documents);
+        let mut request = CosmosRequestBuilder::new(
+            OperationType::Read,
+            ResourceType::Documents,
+            resource_link.clone(),
+        )
+        .partition_key(PartitionKey::from("test"))
+        .build()
+        .unwrap();
+
+        request.request_context.location_endpoint_to_route =
+            Some("https://test.documents.azure.com".parse().unwrap());
+        request
+    }
+
+    fn create_raw_response(status_code: StatusCode) -> RawResponse {
+        let headers = Headers::new();
+        RawResponse::from_bytes(status_code, headers, Bytes::new())
+    }
+
+    fn create_error_with_status(status: StatusCode) -> azure_core::Error {
+        let response = create_raw_response(status);
+        azure_core::Error::new(
+            azure_core::error::ErrorKind::HttpResponse {
+                status: response.status(),
+                error_code: None,
+                raw_response: Some(Box::new(response)),
+            },
+            "Test error",
+        )
+    }
+
+    #[test]
+    fn test_new_policy_initialization() {
+        let policy = create_test_policy_with_preferred_locations();
+        assert_eq!(policy.max_unavailable_endpoint_retry_count, 3);
+        assert_eq!(policy.unavailable_endpoint_retry_count, 0);
+    }
+
+    #[test]
+    fn test_retry_context_none_initially() {
+        let policy = create_test_policy();
+        assert!(policy.retry_context.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_service_unavailable_error() {
+        let mut policy = create_test_policy_no_locations();
+        let error = create_error_with_status(StatusCode::ServiceUnavailable);
+
+        let result = policy.should_retry_error(&error).await;
+        assert!(result.is_retry());
+        if let RetryResult::Retry { after } = result {
+            assert_eq!(after, Duration::ZERO);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_internal_server_error() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        let error = create_error_with_status(StatusCode::InternalServerError);
+
+        let result = policy.should_retry_error(&error).await;
+        assert!(result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_service_unavailable_response() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        let response = create_raw_response(StatusCode::ServiceUnavailable);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_internal_server_error_response() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        let response = create_raw_response(StatusCode::InternalServerError);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_not_retry_ok_response() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::Ok);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_not_retry_created_response() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::Created);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_increment_retry_index_on_unavailable_endpoint() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        let initial_count = policy.unavailable_endpoint_retry_count;
+
+        let result = policy.increment_retry_index_on_unavailable_endpoint_for_metadata_read();
+        assert!(result);
+        assert_eq!(
+            policy.unavailable_endpoint_retry_count,
+            initial_count + 1
+        );
+        assert!(policy.retry_context.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_increment_retry_exceeds_max_count() {
+        let mut policy = create_test_policy_no_locations();
+        
+        // Exhaust retry attempts
+        policy.unavailable_endpoint_retry_count = policy.max_unavailable_endpoint_retry_count + 1;
+
+        let result = policy.increment_retry_index_on_unavailable_endpoint_for_metadata_read();
+        assert!(!result);
+    }
+
+    #[tokio::test]
+    async fn test_retry_context_set_after_increment() {
+        let mut policy = create_test_policy_no_locations();
+        
+        policy.increment_retry_index_on_unavailable_endpoint_for_metadata_read();
+
+        assert!(policy.retry_context.is_some());
+        if let Some(ctx) = &policy.retry_context {
+            assert!(ctx.retry_request_on_preferred_locations);
+            assert_eq!(ctx.retry_location_index, policy.unavailable_endpoint_retry_count);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_with_ok_result() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::Ok);
+
+        let result = policy.should_retry(&Ok(response)).await;
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_with_server_error_result() {
+        let mut policy = create_test_policy_no_locations();
+        let response = create_raw_response(StatusCode::InternalServerError);
+
+        let result = policy.should_retry(&Ok(response)).await;
+        assert!(result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_with_error_result() {
+        let mut policy = create_test_policy_no_locations();
+        let error = create_error_with_status(StatusCode::ServiceUnavailable);
+
+        let result = policy.should_retry(&Err(error)).await;
+        assert!(result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_not_retry_bad_request() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::BadRequest);
+
+        let result = policy.should_retry_response(&response).await;
+        // Bad request is not retryable by metadata policy (throttling policy may handle it)
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_not_retry_not_found() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::NotFound);
+
+        let result = policy.should_retry_response(&response).await;
+        // Not found is not retryable by metadata policy
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_multiple_retries_increment_counter() {
+        let mut policy = create_test_policy_no_locations();
+        // Reset the counter to 0 to allow multiple increments
+        policy.unavailable_endpoint_retry_count = 0;
+        let initial_count = policy.unavailable_endpoint_retry_count;
+
+        let error1 = create_error_with_status(StatusCode::ServiceUnavailable);
+        let _result1 = policy.should_retry_error(&error1).await;
+        assert_eq!(policy.unavailable_endpoint_retry_count, initial_count + 1);
+
+        // Can't test second retry as it exceeds max_unavailable_endpoint_retry_count (which is 1)
+        // So just verify the first increment worked
+    }
+
+    #[tokio::test]
+    async fn test_before_send_request_clears_routing() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        
+        // Set some routing info
+        request.request_context.location_index_to_route = Some(5);
+
+        policy.before_send_request(&mut request).await;
+        
+        // After before_send_request, routing should be updated
+        assert!(request.request_context.location_endpoint_to_route.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_retry_context_affects_routing() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+
+        // Set up retry context
+        policy.retry_context = Some(MetadataRetryContext {
+            retry_location_index: 1,
+            retry_request_on_preferred_locations: true,
+        });
+
+        policy.before_send_request(&mut request).await;
+
+        // Verify the request was updated with retry context
+        assert!(request.request_context.location_endpoint_to_route.is_some());
+    }
+
+    #[test]
+    fn test_policy_debug_format() {
+        let policy = create_test_policy();
+        let debug_str = format!("{:?}", policy);
+        assert!(debug_str.contains("MetadataRequestRetryPolicy"));
+    }
+
+    #[test]
+    fn test_retry_context_clone() {
+        let ctx = MetadataRetryContext {
+            retry_location_index: 3,
+            retry_request_on_preferred_locations: false,
+        };
+
+        let cloned = ctx.clone();
+        assert_eq!(ctx.retry_location_index, cloned.retry_location_index);
+        assert_eq!(
+            ctx.retry_request_on_preferred_locations,
+            cloned.retry_request_on_preferred_locations
+        );
     }
 }

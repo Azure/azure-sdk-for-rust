@@ -222,3 +222,230 @@ impl GlobalEndpointManager {
             .map(Into::into)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::partition_key::PartitionKey;
+
+    fn create_test_pipeline() -> Pipeline {
+        Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::http::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
+    }
+
+    fn create_test_manager() -> GlobalEndpointManager {
+        GlobalEndpointManager::new(
+            "https://test.documents.azure.com".to_string(),
+            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            create_test_pipeline(),
+        )
+    }
+
+    fn create_test_request(operation_type: OperationType) -> CosmosRequest {
+        let resource_link = ResourceLink::root(ResourceType::Documents);
+        let mut request = CosmosRequestBuilder::new(
+            operation_type,
+            ResourceType::Documents,
+            resource_link.clone(),
+        )
+        .partition_key(PartitionKey::from("test"))
+        .build()
+        .unwrap();
+
+        request.request_context.location_endpoint_to_route =
+            Some("https://test.documents.azure.com".parse().unwrap());
+        request
+    }
+
+    #[test]
+    fn test_new_manager_initialization() {
+        let manager = create_test_manager();
+        assert_eq!(
+            manager.get_hub_uri(),
+            "https://test.documents.azure.com".to_string()
+        );
+        assert_eq!(manager.preferred_location_count(), 2);
+    }
+
+    #[test]
+    fn test_get_hub_uri() {
+        let manager = create_test_manager();
+        let hub_uri = manager.get_hub_uri();
+        assert_eq!(hub_uri, "https://test.documents.azure.com");
+    }
+
+    #[test]
+    fn test_preferred_location_count() {
+        let manager = GlobalEndpointManager::new(
+            "https://test.documents.azure.com".to_string(),
+            vec![
+                Cow::Borrowed("West US"),
+                Cow::Borrowed("East US"),
+                Cow::Borrowed("North Europe"),
+            ],
+            create_test_pipeline(),
+        );
+        assert_eq!(manager.preferred_location_count(), 3);
+    }
+
+    #[test]
+    fn test_preferred_location_count_empty() {
+        let manager = GlobalEndpointManager::new(
+            "https://test.documents.azure.com".to_string(),
+            vec![],
+            create_test_pipeline(),
+        );
+        assert_eq!(manager.preferred_location_count(), 0);
+    }
+
+    #[test]
+    fn test_resolve_service_endpoint_returns_default() {
+        let manager = create_test_manager();
+        let request = create_test_request(OperationType::Read);
+        let endpoint = manager.resolve_service_endpoint(&request);
+        // Should return default endpoint initially
+        assert!(!endpoint.is_empty());
+    }
+
+    #[test]
+    fn test_read_endpoints_initial_state() {
+        let manager = create_test_manager();
+        let endpoints = manager.read_endpoints();
+        // Initial state may be empty until account properties are loaded
+        // Just verify it returns a valid vector and doesn't panic
+        let _ = endpoints.len();
+    }
+
+    #[test]
+    fn test_write_endpoints_initial_state() {
+        let manager = create_test_manager();
+        let endpoints = manager.write_endpoints();
+        // Initial state may be empty until account properties are loaded
+        // Just verify it returns a valid vector and doesn't panic
+        let _ = endpoints.len();
+    }
+
+    #[test]
+    fn test_mark_endpoint_unavailable_for_read() {
+        let manager = create_test_manager();
+        let endpoint = "https://test.documents.azure.com";
+        
+        // This should not panic
+        manager.mark_endpoint_unavailable_for_read(endpoint);
+        
+        // The endpoint should still be in the system but marked unavailable
+        let read_endpoints = manager.read_endpoints();
+        assert!(!read_endpoints.is_empty());
+    }
+
+    #[test]
+    fn test_mark_endpoint_unavailable_for_write() {
+        let manager = create_test_manager();
+        let endpoint = "https://test.documents.azure.com";
+        
+        // This should not panic
+        manager.mark_endpoint_unavailable_for_write(endpoint);
+        
+        // The endpoint should still be in the system but marked unavailable
+        let write_endpoints = manager.write_endpoints();
+        assert!(!write_endpoints.is_empty());
+    }
+
+    #[test]
+    fn test_can_use_multiple_write_locations_for_read_request() {
+        let manager = create_test_manager();
+        let request = create_test_request(OperationType::Read);
+        
+        // Read requests should not use multiple write locations
+        assert!(!manager.can_use_multiple_write_locations(&request));
+    }
+
+    #[test]
+    fn test_can_use_multiple_write_locations_for_write_request() {
+        let manager = create_test_manager();
+        let request = create_test_request(OperationType::Create);
+        
+        // Whether this returns true or false depends on account configuration
+        // Just verify it doesn't panic
+        let _ = manager.can_use_multiple_write_locations(&request);
+    }
+
+    #[test]
+    fn test_can_support_multiple_write_locations_for_documents() {
+        let manager = create_test_manager();
+        
+        // Documents should potentially support multiple write locations
+        // The actual result depends on account configuration
+        let _ = manager.can_support_multiple_write_locations(
+            ResourceType::Documents,
+            OperationType::Create,
+        );
+    }
+
+    #[test]
+    fn test_can_support_multiple_write_locations_for_stored_procedures() {
+        let manager = create_test_manager();
+        
+        // Stored procedures with Execute operation should potentially support multiple write locations
+        let _ = manager.can_support_multiple_write_locations(
+            ResourceType::StoredProcedures,
+            OperationType::Execute,
+        );
+    }
+
+    #[test]
+    fn test_can_support_multiple_write_locations_for_databases() {
+        let manager = create_test_manager();
+        
+        // Database operations should not support multiple write locations
+        let result = manager.can_support_multiple_write_locations(
+            ResourceType::Databases,
+            OperationType::Create,
+        );
+        
+        // Databases don't support multi-write
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_get_applicable_endpoints() {
+        let manager = create_test_manager();
+        let request = create_test_request(OperationType::Read);
+        
+        let endpoints = manager.get_applicable_endpoints(&request);
+        assert!(!endpoints.is_empty());
+    }
+
+    #[test]
+    fn test_account_read_endpoints() {
+        let manager = create_test_manager();
+        let endpoints = manager.account_read_endpoints();
+        
+        // Should return the same as read_endpoints
+        assert_eq!(endpoints, manager.read_endpoints());
+    }
+
+    #[test]
+    fn test_get_available_write_endpoints_by_location() {
+        let manager = create_test_manager();
+        let endpoints_map = manager.get_available_write_endpoints_by_location();
+        
+        // Should not panic and return a valid map
+        let _ = endpoints_map.len();
+    }
+
+    #[test]
+    fn test_get_available_read_endpoints_by_location() {
+        let manager = create_test_manager();
+        let endpoints_map = manager.get_available_read_endpoints_by_location();
+        
+        // Should not panic and return a valid map
+        let _ = endpoints_map.len();
+    }
+}

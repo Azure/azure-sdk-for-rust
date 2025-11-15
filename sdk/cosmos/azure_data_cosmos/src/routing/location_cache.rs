@@ -195,6 +195,7 @@ impl LocationCache {
     }
 
     pub fn get_applicable_endpoints(&mut self, _request: &CosmosRequest) -> Vec<String> {
+        //TODO: Fix this.
         self.get_preferred_available_endpoints(
             &self.locations_info.account_read_endpoints_by_location,
             RequestOperation::Read,
