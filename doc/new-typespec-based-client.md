@@ -163,7 +163,7 @@ tsp-client init https://github.com/Azure/azure-rest-api-specs/blob/fc08a74c8fd3b
 If using a local clone of azure-rest-api-specs for development:
 
 ```bash
-tsp-client init --tsp-config /path/to/azure-res-api-specs/...
+tsp-client init --tsp-config /path/to/azure-rest-api-specs/...
 ```
 
 This will:
