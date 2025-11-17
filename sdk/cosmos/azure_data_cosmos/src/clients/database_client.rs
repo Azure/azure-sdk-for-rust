@@ -12,7 +12,7 @@ use crate::{
 };
 use std::sync::Arc;
 
-use crate::cosmos_request::CosmosRequestBuilder;
+use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use azure_core::http::response::Response;
 
@@ -75,11 +75,7 @@ impl DatabaseClient {
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(
-            OperationType::Read,
-            ResourceType::Databases,
-            self.link.clone(),
-        );
+        let builder = CosmosRequest::builder(OperationType::Read, self.link.clone());
         let cosmos_request = builder.build();
 
         self.pipeline
@@ -140,11 +136,7 @@ impl DatabaseClient {
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(
-            OperationType::Create,
-            ResourceType::Containers,
-            self.containers_link.clone(),
-        );
+        let builder = CosmosRequest::builder(OperationType::Create, self.containers_link.clone());
         let cosmos_request = builder
             .headers(&options.throughput)
             .json(&properties)
@@ -166,11 +158,7 @@ impl DatabaseClient {
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(
-            OperationType::Delete,
-            ResourceType::Databases,
-            self.link.clone(),
-        );
+        let builder = CosmosRequest::builder(OperationType::Delete, self.link.clone());
         let cosmos_request = builder.build();
         self.pipeline
             .send(cosmos_request.unwrap(), options.method_options.context)

@@ -15,7 +15,7 @@ use azure_core::{
 use serde::Serialize;
 use std::sync::Arc;
 
-use crate::cosmos_request::CosmosRequestBuilder;
+use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
@@ -240,11 +240,7 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let builder = CosmosRequestBuilder::new(
-            OperationType::Create,
-            ResourceType::Databases,
-            self.databases_link.clone(),
-        );
+        let builder = CosmosRequest::builder(OperationType::Create, self.databases_link.clone());
         let cosmos_request = builder
             .headers(&options.throughput)
             .json(&RequestBody { id })

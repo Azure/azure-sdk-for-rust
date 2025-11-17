@@ -497,7 +497,6 @@ impl RetryPolicy for ClientRetryPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cosmos_request::CosmosRequestBuilder;
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
     use crate::regions;
@@ -580,26 +579,18 @@ mod tests {
 
     fn create_test_request() -> CosmosRequest {
         let resource_link = ResourceLink::root(ResourceType::Documents);
-        CosmosRequestBuilder::new(
-            OperationType::Read,
-            ResourceType::Documents,
-            resource_link.clone(),
-        )
-        .partition_key(PartitionKey::from("test"))
-        .build()
-        .unwrap()
+        CosmosRequest::builder(OperationType::Read, resource_link.clone())
+            .partition_key(PartitionKey::from("test"))
+            .build()
+            .unwrap()
     }
 
     fn create_write_request() -> CosmosRequest {
         let resource_link = ResourceLink::root(ResourceType::Documents);
-        CosmosRequestBuilder::new(
-            OperationType::Create,
-            ResourceType::Documents,
-            resource_link.clone(),
-        )
-        .partition_key(PartitionKey::from("test"))
-        .build()
-        .unwrap()
+        CosmosRequest::builder(OperationType::Create, resource_link.clone())
+            .partition_key(PartitionKey::from("test"))
+            .build()
+            .unwrap()
     }
 
     fn create_raw_response(status_code: StatusCode) -> RawResponse {
@@ -607,10 +598,7 @@ mod tests {
         RawResponse::from_bytes(status_code, headers, Bytes::new())
     }
 
-    fn create_raw_response_with_substatus(
-        status_code: StatusCode,
-        substatus: u32,
-    ) -> RawResponse {
+    fn create_raw_response_with_substatus(status_code: StatusCode, substatus: u32) -> RawResponse {
         let mut headers = Headers::new();
         headers.insert("x-ms-substatus", substatus.to_string());
         RawResponse::from_bytes(status_code, headers, Bytes::new())
@@ -728,7 +716,8 @@ mod tests {
     async fn test_should_retry_gone_with_lease_not_found() {
         let mut policy = create_test_policy_with_preferred_locations();
         policy.is_read_request = true;
-        let error = create_error_with_substatus(StatusCode::Gone, SubStatusCode::LeaseNotFound as u32);
+        let error =
+            create_error_with_substatus(StatusCode::Gone, SubStatusCode::LeaseNotFound as u32);
 
         let result = policy.should_retry_error(&error).await;
 
@@ -746,7 +735,10 @@ mod tests {
         let mut policy = create_test_policy();
         policy.is_read_request = false;
         policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
-        let error = create_error_with_substatus(StatusCode::Forbidden, SubStatusCode::WriteForbidden as u32);
+        let error = create_error_with_substatus(
+            StatusCode::Forbidden,
+            SubStatusCode::WriteForbidden as u32,
+        );
 
         let result = policy.should_retry_error(&error).await;
 

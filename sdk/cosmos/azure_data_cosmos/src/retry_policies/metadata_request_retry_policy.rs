@@ -265,7 +265,6 @@ impl RetryPolicy for MetadataRequestRetryPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cosmos_request::CosmosRequestBuilder;
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
     use crate::regions;
@@ -348,14 +347,10 @@ mod tests {
 
     fn create_test_request() -> CosmosRequest {
         let resource_link = ResourceLink::root(ResourceType::Documents);
-        let mut request = CosmosRequestBuilder::new(
-            OperationType::Read,
-            ResourceType::Documents,
-            resource_link.clone(),
-        )
-        .partition_key(PartitionKey::from("test"))
-        .build()
-        .unwrap();
+        let mut request = CosmosRequest::builder(OperationType::Read, resource_link.clone())
+            .partition_key(PartitionKey::from("test"))
+            .build()
+            .unwrap();
 
         request.request_context.location_endpoint_to_route =
             Some("https://test.documents.azure.com".parse().unwrap());

@@ -289,7 +289,6 @@ impl LocationCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cosmos_request::CosmosRequestBuilder;
     use crate::operation_context::OperationType;
     use crate::resource_context::{ResourceLink, ResourceType};
     use std::{collections::HashSet, vec};
@@ -500,9 +499,8 @@ mod tests {
             ]
         );
 
-        let builder = CosmosRequestBuilder::new(
+        let builder = CosmosRequest::builder(
             OperationType::Read,
-            ResourceType::Documents,
             ResourceLink::root(ResourceType::Documents),
         );
 
@@ -532,9 +530,8 @@ mod tests {
             Some(&unavailable_endpoint.to_string())
         );
 
-        let builder = CosmosRequestBuilder::new(
+        let builder = CosmosRequest::builder(
             OperationType::Create,
-            ResourceType::Documents,
             ResourceLink::root(ResourceType::Documents),
         );
 
@@ -622,9 +619,8 @@ mod tests {
         // create test cache
         let cache = create_test_location_cache();
 
-        let builder = CosmosRequestBuilder::new(
+        let builder = CosmosRequest::builder(
             OperationType::Read,
-            ResourceType::Documents,
             ResourceLink::root(ResourceType::Documents),
         );
 
@@ -645,9 +641,8 @@ mod tests {
         let mut cache = create_test_location_cache();
         cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
 
-        let builder = CosmosRequestBuilder::new(
+        let builder = CosmosRequest::builder(
             OperationType::Read,
-            ResourceType::Documents,
             ResourceLink::root(ResourceType::Documents),
         );
 

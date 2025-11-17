@@ -77,7 +77,7 @@ fn get_substatus_code_from_error(err: &azure_core::Error) -> SubStatusCode {
         raw_response
             .as_ref()
             .and_then(|r| r.headers().get_as(&SUB_STATUS).ok())
-            .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
+            .and_then(|raw: u32| SubStatusCode::try_from(raw).ok())
             .unwrap_or(SubStatusCode::Unknown)
     } else {
         SubStatusCode::Unknown
@@ -89,6 +89,6 @@ fn get_substatus_code_from_response(response: &RawResponse) -> SubStatusCode {
         .headers()
         .get_as(&SUB_STATUS)
         .ok()
-        .and_then(|raw: u16| SubStatusCode::try_from(raw).ok())
+        .and_then(|raw: u32| SubStatusCode::try_from(raw).ok())
         .unwrap_or(SubStatusCode::Unknown)
 }

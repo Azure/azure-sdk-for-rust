@@ -43,7 +43,6 @@ pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
-#[repr(u16)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[non_exhaustive]
 pub enum SubStatusCode {
@@ -149,12 +148,23 @@ impl SubStatusCode {
     pub const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = SubStatusCode::CompletingSplit;
     pub const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode =
         SubStatusCode::CompletingPartitionMigration;
+
+    /// Attempts to create a `SubStatusCode` from a header string.
+    /// Returns `None` if parsing fails or code is unknown.
+    pub fn from_header_value(s: &str) -> Option<Self> {
+        let raw = s.trim();
+        if let Ok(v) = raw.parse::<u32>() {
+            SubStatusCode::try_from(v).ok()
+        } else {
+            None
+        }
+    }
 }
 
-impl TryFrom<u16> for SubStatusCode {
+impl TryFrom<u32> for SubStatusCode {
     type Error = (); // Unknown code
 
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
         use SubStatusCode::*;
         let code = match value {
             0 => Unknown,
@@ -230,29 +240,5 @@ impl TryFrom<u16> for SubStatusCode {
             _ => return Err(()),
         };
         Ok(code)
-    }
-}
-
-impl TryFrom<u32> for SubStatusCode {
-    type Error = (); // Unknown code
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        if value <= u16::MAX as u32 {
-            SubStatusCode::try_from(value as u16)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl SubStatusCode {
-    /// Attempts to create a `SubStatusCode` from a header string.
-    /// Returns `None` if parsing fails or code is unknown.
-    pub fn from_header_value(s: &str) -> Option<Self> {
-        let raw = s.trim();
-        if let Ok(v) = raw.parse::<u32>() {
-            SubStatusCode::try_from(v).ok()
-        } else {
-            None
-        }
     }
 }

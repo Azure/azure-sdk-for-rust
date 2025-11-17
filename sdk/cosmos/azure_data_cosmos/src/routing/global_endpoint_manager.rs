@@ -2,7 +2,7 @@
 //! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
 use crate::constants::ACCOUNT_PROPERTIES_KEY;
-use crate::cosmos_request::{CosmosRequest, CosmosRequestBuilder};
+use crate::cosmos_request::CosmosRequest;
 use crate::models::AccountProperties;
 use crate::operation_context::OperationType;
 use crate::resource_context::{ResourceLink, ResourceType};
@@ -193,11 +193,7 @@ impl GlobalEndpointManager {
             ..Default::default()
         };
         let resource_link = ResourceLink::root(ResourceType::DatabaseAccount);
-        let builder = CosmosRequestBuilder::new(
-            OperationType::Read,
-            ResourceType::DatabaseAccount,
-            resource_link.clone(),
-        );
+        let builder = CosmosRequest::builder(OperationType::Read, resource_link.clone());
         let mut cosmos_request = builder.build()?;
         let endpoint = self
             .location_cache
@@ -244,14 +240,10 @@ mod tests {
 
     fn create_test_request(operation_type: OperationType) -> CosmosRequest {
         let resource_link = ResourceLink::root(ResourceType::Documents);
-        let mut request = CosmosRequestBuilder::new(
-            operation_type,
-            ResourceType::Documents,
-            resource_link.clone(),
-        )
-        .partition_key(PartitionKey::from("test"))
-        .build()
-        .unwrap();
+        let mut request = CosmosRequest::builder(operation_type, resource_link.clone())
+            .partition_key(PartitionKey::from("test"))
+            .build()
+            .unwrap();
 
         request.request_context.location_endpoint_to_route =
             Some("https://test.documents.azure.com".parse().unwrap());

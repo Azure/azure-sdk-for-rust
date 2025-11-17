@@ -64,72 +64,94 @@ pub struct CosmosRequest {
 }
 
 impl CosmosRequest {
-    /// Creates a new `CosmosRequest` with core operation metadata and optional
-    /// body.
-    fn new(
-        operation_type: OperationType,
-        resource_type: ResourceType,
-        resource_link: ResourceLink,
-        resource_id: Option<String>,
-        partition_key: Option<PartitionKey>,
-        body: Option<Vec<u8>>,
-        authorization_token_type: AuthorizationTokenType,
-    ) -> Self {
+    pub fn builder(operation_type: OperationType, resource_link: ResourceLink) -> Self {
+        let resource_type = resource_link.resource_type();
         Self {
             operation_type,
             resource_type,
             resource_link,
-            resource_id,
+            resource_id: None,
             database_name: None,
             collection_name: None,
             document_name: None,
-            partition_key,
+            partition_key: Some(PartitionKey::EMPTY),
             is_feed: false,
             use_gateway_mode: false,
             force_name_cache_refresh: false,
             force_partition_key_range_refresh: false,
             force_collection_routing_map_refresh: false,
-            request_authorization_token_type: authorization_token_type,
+            request_authorization_token_type: AuthorizationTokenType::Primary,
             partition_key_range_identity: None,
             request_context: RequestContext::default(),
             headers: Headers::new(),
-            body,
+            body: Some(Vec::new()),
             query_string: None,
             continuation: None,
             entity_id: None,
         }
     }
 
-    pub fn is_read_only_request(&self) -> bool {
-        matches!(
-            self.operation_type,
-            OperationType::Read
-                | OperationType::ReadFeed
-                | OperationType::Head
-                | OperationType::HeadFeed
-                | OperationType::Query
-                | OperationType::SqlQuery
-                | OperationType::QueryPlan
-        )
+    #[allow(dead_code)]
+    pub fn resource_id(mut self, rid: impl Into<String>) -> Self {
+        self.resource_id = Some(rid.into());
+        self
     }
 
-    /// Maps the logical `OperationType` to its corresponding HTTP verb.
-    pub fn http_method(&self) -> Method {
-        match self.operation_type {
-            OperationType::Create
-            | OperationType::Upsert
-            | OperationType::Query
-            | OperationType::SqlQuery
-            | OperationType::Batch
-            | OperationType::QueryPlan
-            | OperationType::Execute => Method::Post,
-            OperationType::Delete => Method::Delete,
-            OperationType::Read => Method::Get,
-            OperationType::ReadFeed => Method::Get,
-            OperationType::Replace => Method::Put,
-            OperationType::Patch => Method::Patch,
-            OperationType::Head | OperationType::HeadFeed => Method::Head,
+    pub fn headers<T: AsHeaders>(mut self, headers: &T) -> Self {
+        // Collect all headers exposed by the `AsHeaders` implementation.
+        // If conversion fails we silently ignore (the caller can always add
+        // individual headers via `header()`).
+        if let Ok(iter) = headers.as_headers() {
+            for (name, value) in iter {
+                self.headers.insert(name, value);
+            }
         }
+        self
+    }
+
+    #[allow(dead_code)]
+    pub fn header<K, V>(mut self, key: K, value: V) -> Self
+    where
+        K: Into<HeaderName>,
+        V: Into<HeaderValue>,
+    {
+        self.headers.insert(key, value);
+        self
+    }
+
+    pub fn body(mut self, body: Vec<u8>) -> Self {
+        self.body = Some(body);
+        self
+    }
+
+    pub fn json<T: Serialize>(self, value: T) -> Self {
+        self.body(serde_json::to_vec(&value).unwrap())
+    }
+
+    #[allow(dead_code)]
+    pub fn authorization_token_type(mut self, ty: AuthorizationTokenType) -> Self {
+        self.request_authorization_token_type = ty;
+        self
+    }
+
+    pub fn partition_key(mut self, pk: PartitionKey) -> Self {
+        self.partition_key = Some(pk);
+        self
+    }
+
+    /// Finish construction and return the immutable `CosmosRequest`.
+    pub fn build(self) -> azure_core::Result<CosmosRequest> {
+        Ok(self)
+    }
+
+    /// Determines if the given operation type is read only.
+    pub fn is_read_only_request(&self) -> bool {
+        self.operation_type.is_read_only()
+    }
+
+    /// Gets the corresponding http method for the given `OperationType`.
+    pub fn http_method(&self) -> Method {
+        self.operation_type.http_method()
     }
 
     /// Converts this `CosmosRequest` into a concrete `azure_core::http::Request`.
@@ -173,125 +195,6 @@ impl CosmosRequest {
     }
 }
 
-/// Builder for `CosmosRequest` allowing fluent configuration while keeping
-/// the original `new` constructor for backward compatibility.
-#[derive(Clone)]
-#[allow(dead_code)]
-pub struct CosmosRequestBuilder {
-    operation_type: OperationType,
-    resource_type: ResourceType,
-    pub resource_link: ResourceLink,
-    partition_key: PartitionKey,
-    resource_id: Option<String>,
-    headers: Headers,
-    body: Vec<u8>,
-    authorization_token_type: AuthorizationTokenType,
-    continuation: Option<String>,
-    entity_id: Option<String>,
-    // Flags
-    is_feed: bool,
-    use_gateway_mode: bool,
-    force_name_cache_refresh: bool,
-    force_partition_key_range_refresh: bool,
-    force_collection_routing_map_refresh: bool,
-}
-
-#[allow(dead_code)]
-impl CosmosRequestBuilder {
-    pub fn new(
-        operation_type: OperationType,
-        resource_type: ResourceType,
-        resource_link: ResourceLink,
-    ) -> CosmosRequestBuilder {
-        CosmosRequestBuilder {
-            operation_type,
-            resource_type,
-            resource_link,
-            partition_key: PartitionKey::EMPTY,
-            resource_id: None,
-            body: Vec::new(),
-            authorization_token_type: AuthorizationTokenType::Primary,
-            headers: Headers::new(),
-            continuation: None,
-            entity_id: None,
-            is_feed: false,
-            use_gateway_mode: false,
-            force_name_cache_refresh: false,
-            force_partition_key_range_refresh: false,
-            force_collection_routing_map_refresh: false,
-        }
-    }
-
-    pub fn resource_id(mut self, rid: impl Into<String>) -> Self {
-        self.resource_id = Some(rid.into());
-        self
-    }
-
-    pub fn headers<T: AsHeaders>(mut self, headers: &T) -> Self {
-        // Collect all headers exposed by the `AsHeaders` implementation.
-        // If conversion fails we silently ignore (the caller can always add
-        // individual headers via `header()`).
-        if let Ok(iter) = headers.as_headers() {
-            for (name, value) in iter {
-                self.headers.insert(name, value);
-            }
-        }
-        self
-    }
-
-    pub fn header<K, V>(mut self, key: K, value: V) -> Self
-    where
-        K: Into<HeaderName>,
-        V: Into<HeaderValue>,
-    {
-        self.headers.insert(key, value);
-        self
-    }
-
-    pub fn body(mut self, body: Vec<u8>) -> Self {
-        self.body = body;
-        self
-    }
-
-    pub fn json<T: Serialize>(mut self, value: T) -> Self {
-        self.body = serde_json::to_vec(&value).unwrap();
-        self
-    }
-
-    pub fn authorization_token_type(mut self, ty: AuthorizationTokenType) -> Self {
-        self.authorization_token_type = ty;
-        self
-    }
-
-    pub fn partition_key(mut self, pk: PartitionKey) -> Self {
-        self.partition_key = pk;
-        self
-    }
-
-    /// Finish construction and return the immutable `CosmosRequest`.
-    pub fn build(self) -> azure_core::Result<CosmosRequest> {
-        let mut req = CosmosRequest::new(
-            self.operation_type,
-            self.resource_type,
-            self.resource_link,
-            self.resource_id,
-            Some(self.partition_key),
-            Some(self.body),
-            self.authorization_token_type,
-        );
-        req.is_feed = self.is_feed;
-        req.headers = self.headers;
-        req.use_gateway_mode = self.use_gateway_mode;
-        req.force_name_cache_refresh = self.force_name_cache_refresh;
-        req.force_partition_key_range_refresh = self.force_partition_key_range_refresh;
-        req.force_collection_routing_map_refresh = self.force_collection_routing_map_refresh;
-        req.continuation = self.continuation;
-        req.entity_id = self.entity_id;
-
-        Ok(req)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -300,15 +203,12 @@ mod tests {
     use crate::{constants, PartitionKey};
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
-        let req = CosmosRequestBuilder::new(
-            op,
-            ResourceType::Documents,
-            ResourceLink::root(ResourceType::Documents),
-        )
-        .resource_id("dbs/Db/colls/Coll/docs/Doc")
-        .partition_key(PartitionKey::from("pk"))
-        .body(b"{\"id\":\"1\"}".to_vec())
-        .build();
+        let req = CosmosRequest::builder(op, ResourceLink::root(ResourceType::Documents))
+            .resource_id("dbs/Db/colls/Coll/docs/Doc")
+            .authorization_token_type(AuthorizationTokenType::Primary)
+            .partition_key(PartitionKey::from("pk"))
+            .body(b"{\"id\":\"1\"}".to_vec())
+            .build();
 
         let mut req = req.unwrap();
         // Provide a routing endpoint expected by to_raw_request()
@@ -319,18 +219,8 @@ mod tests {
 
     #[test]
     fn builder_equivalence_to_new() {
-        let from_new = CosmosRequest::new(
+        let from_builder = CosmosRequest::builder(
             OperationType::Create,
-            ResourceType::Documents,
-            ResourceLink::root(ResourceType::Documents),
-            Some("rid".into()),
-            Some(PartitionKey::from("pk")),
-            Some(b"{}".to_vec()),
-            AuthorizationTokenType::Primary,
-        );
-        let from_builder = CosmosRequestBuilder::new(
-            OperationType::Create,
-            ResourceType::Documents,
             ResourceLink::root(ResourceType::Documents),
         )
         .resource_id("rid")
@@ -340,9 +230,9 @@ mod tests {
 
         let builder_request = from_builder.unwrap();
 
-        assert_eq!(from_new.operation_type, builder_request.operation_type);
-        assert_eq!(from_new.resource_type, builder_request.resource_type);
-        assert_eq!(from_new.body, builder_request.body);
+        assert_eq!(OperationType::Create, builder_request.operation_type);
+        assert_eq!(ResourceType::Documents, builder_request.resource_type);
+        assert_eq!(Some(b"{}".to_vec()), builder_request.body);
     }
 
     #[test]
