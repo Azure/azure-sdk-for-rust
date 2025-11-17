@@ -57,7 +57,6 @@ struct MetadataRetryContext {
 }
 
 impl MetadataRequestRetryPolicy {
-
     /// Creates a new MetadataRequestRetryPolicy with the specified global endpoint manager.
     ///
     /// # Summary
@@ -79,7 +78,7 @@ impl MetadataRequestRetryPolicy {
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
             max_unavailable_endpoint_retry_count: max(
                 global_endpoint_manager.preferred_location_count(),
-                1
+                1,
             ),
             retry_context: None,
             unavailable_endpoint_retry_count: 0,
@@ -280,13 +279,13 @@ mod tests {
     use crate::cosmos_request::CosmosRequestBuilder;
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
+    use crate::regions;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
     use std::borrow::Cow;
-    use crate::regions;
 
     fn create_test_endpoint_manager() -> GlobalEndpointManager {
         let pipeline = azure_core::http::Pipeline::new(
@@ -468,17 +467,14 @@ mod tests {
 
         let result = policy.increment_retry_index_on_unavailable_endpoint_for_metadata_read();
         assert!(result);
-        assert_eq!(
-            policy.unavailable_endpoint_retry_count,
-            initial_count + 1
-        );
+        assert_eq!(policy.unavailable_endpoint_retry_count, initial_count + 1);
         assert!(policy.retry_context.is_some());
     }
 
     #[tokio::test]
     async fn test_increment_retry_exceeds_max_count() {
         let mut policy = create_test_policy_no_locations();
-        
+
         // Exhaust retry attempts
         policy.unavailable_endpoint_retry_count = policy.max_unavailable_endpoint_retry_count + 1;
 
@@ -489,13 +485,16 @@ mod tests {
     #[tokio::test]
     async fn test_retry_context_set_after_increment() {
         let mut policy = create_test_policy_no_locations();
-        
+
         policy.increment_retry_index_on_unavailable_endpoint_for_metadata_read();
 
         assert!(policy.retry_context.is_some());
         if let Some(ctx) = &policy.retry_context {
             assert!(ctx.retry_request_on_preferred_locations);
-            assert_eq!(ctx.retry_location_index, policy.unavailable_endpoint_retry_count);
+            assert_eq!(
+                ctx.retry_location_index,
+                policy.unavailable_endpoint_retry_count
+            );
         }
     }
 
@@ -565,12 +564,12 @@ mod tests {
     async fn test_before_send_request_clears_routing() {
         let mut policy = create_test_policy();
         let mut request = create_test_request();
-        
+
         // Set some routing info
         request.request_context.location_index_to_route = Some(5);
 
         policy.before_send_request(&mut request).await;
-        
+
         // After before_send_request, routing should be updated
         assert!(request.request_context.location_endpoint_to_route.is_some());
     }

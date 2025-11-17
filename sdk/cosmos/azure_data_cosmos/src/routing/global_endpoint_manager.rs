@@ -128,11 +128,8 @@ impl GlobalEndpointManager {
             .account_properties_cache
             .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
                 // Fetch latest account properties from service
-                let account_properties: AccountProperties = self
-                    .get_database_account()
-                    .await?
-                    .into_body()
-                    .json()?;
+                let account_properties: AccountProperties =
+                    self.get_database_account().await?.into_body().json()?;
 
                 // Update location cache with the fetched account properties (only on fresh fetch)
                 {
@@ -191,9 +188,7 @@ impl GlobalEndpointManager {
     /// * `options` - Optional request options (currently unused for custom
     ///   headers, but the context can carry per-call metadata for tracing or
     ///   cancellation).
-    async fn get_database_account(
-        &self,
-    ) -> azure_core::Result<Response<AccountProperties>> {
+    async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
         let options = ReadDatabaseOptions {
             ..Default::default()
         };
@@ -335,10 +330,10 @@ mod tests {
     fn test_mark_endpoint_unavailable_for_read() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com";
-        
+
         // This should not panic
         manager.mark_endpoint_unavailable_for_read(endpoint);
-        
+
         // The endpoint should still be in the system but marked unavailable
         let read_endpoints = manager.read_endpoints();
         assert!(!read_endpoints.is_empty());
@@ -348,10 +343,10 @@ mod tests {
     fn test_mark_endpoint_unavailable_for_write() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com";
-        
+
         // This should not panic
         manager.mark_endpoint_unavailable_for_write(endpoint);
-        
+
         // The endpoint should still be in the system but marked unavailable
         let write_endpoints = manager.write_endpoints();
         assert!(!write_endpoints.is_empty());
@@ -361,7 +356,7 @@ mod tests {
     fn test_can_use_multiple_write_locations_for_read_request() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Read);
-        
+
         // Read requests should not use multiple write locations
         assert!(!manager.can_use_multiple_write_locations(&request));
     }
@@ -370,7 +365,7 @@ mod tests {
     fn test_can_use_multiple_write_locations_for_write_request() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Create);
-        
+
         // Whether this returns true or false depends on account configuration
         // Just verify it doesn't panic
         let _ = manager.can_use_multiple_write_locations(&request);
@@ -379,19 +374,17 @@ mod tests {
     #[test]
     fn test_can_support_multiple_write_locations_for_documents() {
         let manager = create_test_manager();
-        
+
         // Documents should potentially support multiple write locations
         // The actual result depends on account configuration
-        let _ = manager.can_support_multiple_write_locations(
-            ResourceType::Documents,
-            OperationType::Create,
-        );
+        let _ = manager
+            .can_support_multiple_write_locations(ResourceType::Documents, OperationType::Create);
     }
 
     #[test]
     fn test_can_support_multiple_write_locations_for_stored_procedures() {
         let manager = create_test_manager();
-        
+
         // Stored procedures with Execute operation should potentially support multiple write locations
         let _ = manager.can_support_multiple_write_locations(
             ResourceType::StoredProcedures,
@@ -402,13 +395,11 @@ mod tests {
     #[test]
     fn test_can_support_multiple_write_locations_for_databases() {
         let manager = create_test_manager();
-        
+
         // Database operations should not support multiple write locations
-        let result = manager.can_support_multiple_write_locations(
-            ResourceType::Databases,
-            OperationType::Create,
-        );
-        
+        let result = manager
+            .can_support_multiple_write_locations(ResourceType::Databases, OperationType::Create);
+
         // Databases don't support multi-write
         assert!(!result);
     }
@@ -417,7 +408,7 @@ mod tests {
     fn test_get_applicable_endpoints() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Read);
-        
+
         let endpoints = manager.get_applicable_endpoints(&request);
         assert!(!endpoints.is_empty());
     }
@@ -426,7 +417,7 @@ mod tests {
     fn test_account_read_endpoints() {
         let manager = create_test_manager();
         let endpoints = manager.account_read_endpoints();
-        
+
         // Should return the same as read_endpoints
         assert_eq!(endpoints, manager.read_endpoints());
     }
@@ -435,7 +426,7 @@ mod tests {
     fn test_get_available_write_endpoints_by_location() {
         let manager = create_test_manager();
         let endpoints_map = manager.get_available_write_endpoints_by_location();
-        
+
         // Should not panic and return a valid map
         let _ = endpoints_map.len();
     }
@@ -444,7 +435,7 @@ mod tests {
     fn test_get_available_read_endpoints_by_location() {
         let manager = create_test_manager();
         let endpoints_map = manager.get_available_read_endpoints_by_location();
-        
+
         // Should not panic and return a valid map
         let _ = endpoints_map.len();
     }
