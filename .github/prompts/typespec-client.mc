@@ -21,27 +21,15 @@ Use this prompt when someone needs an end-to-end recipe for producing a new Rust
 2. Prerequisites (call them out explicitly):
 	- Node.js 20+, npm, and pnpm (to mirror the JS quickstart prereqs).
 	- Rust toolchain from `rustup` matching the repo’s `rust-toolchain.toml` (currently 1.85).
-	- `tsp-client` dependencies installed once via `npm ci --prefix eng/common/tsp-client` at the repo root.
-	- Optional: `cargo binstall cargo-nextest` if tests will leverage nextest.
+	- `tsp-client` dependencies installed globally via `npm install -g @azure-tools/typespec-client-generator-cli`
+        - Optional: Install tsp-client locally via `npm ci --prefix eng/common/tsp-client` at the repo root.
 3. Mention the `TypeSpec Discussion` and `DPG` Teams channels for help.
 4. Confirm that the service and crate naming (namespace) has already been approved by the Azure SDK Architecture Board.
 
 ## 2. Lay out the SDK workspace
 
-1. Fork/clone `azure-sdk-for-rust`, then create `sdk/${input:serviceDirectory}/${input:crateName}`. Align `${input:serviceDirectory}` with the REST spec directory (service) and `${input:crateName}` with the approved namespace.
-2. Inside the new crate:
-	- Let `tsp-client init` scaffold the crate’s `Cargo.toml`, README, and sample layout directly into `sdk/${input:serviceDirectory}/${input:crateName}`. After it runs, review the generated metadata (`package`, `authors`, `keywords`, license headers) and adjust as needed.
-	- Add `tsp-location.yaml` alongside `Cargo.toml` pointing at `${input:specRepoRef}`:
-
-	  ```yaml
-	  directory: specification/${input:serviceDirectory}
-	  commit: <commit-sha>
-	  repo: Azure/azure-rest-api-specs
-	  ```
-
-	- Ensure `Cargo.toml` uses workspace-managed dependencies (`azure_core.workspace = true`, etc.).
-3. Before you run `tsp-client init`, open the repo-root `Cargo.toml` and add `sdk/${input:serviceDirectory}/${input:crateName}` to the `[workspace]` `members` list so the new crate participates in builds immediately.
-4. Remind the user that generated code must *not* be edited manually—customizations belong in `client.tsp`.
+1. Fork/clone `azure-sdk-for-rust`.
+2. Before you run `tsp-client init`, open the repo-root `Cargo.toml` and add `sdk/${input:serviceDirectory}/${input:crateName}` to the `[workspace]` `members` list so the new crate participates in builds immediately.
 
 ## 3. Prepare your TypeSpec inputs
 
@@ -51,16 +39,16 @@ Use this prompt when someone needs an end-to-end recipe for producing a new Rust
 	- `tspconfig.yaml` configured with the Rust emitter, for example:
 
 	  ```yaml
-	  emit: ["@azure-tools/typespec-rust"]
 	  options:
 	    "@azure-tools/typespec-rust":
 	      emitter-output-dir: "{project-root}/sdk/${input:serviceDirectory}/${input:crateName}"
-	      namespace: "${input:crateName}"
-	      package-version: "1.0.0-beta.1"
+	      crate-name: "${input:crateName}"
+	      crate-version: "0.1.0"
 	  ```
 
 2. Highlight that `client.tsp` is where they apply decorators such as `@client`, `@operationGroup`, and `@@clientName`, mirroring the customization table from the knowledge article.
 3. If the repo does not yet include `client.tsp`, guide them to create it following `eng/common/knowledge/customizing-client-tsp.md`.
+4. Remind the user that generated code must *not* be edited manually—customizations belong in `client.tsp`.
 
 ## 4. Generate the Rust crate with `tsp-client`
 
