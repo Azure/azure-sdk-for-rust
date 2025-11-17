@@ -15,18 +15,7 @@ use std::cmp::max;
 use std::sync::Arc;
 use tracing::trace;
 
-/// Retry policy for handling resource throttling (429 TooManyRequests) errors
-///
-/// This policy implements exponential backoff for 429 status codes, respecting both
-/// maximum retry attempts and cumulative wait time limits. It's designed to handle
-/// Azure Cosmos DB throttling scenarios where the service limits request rates.
-/// # Example
-/// ```ignore
-/// use azure_data_cosmos::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
-///
-/// // Create a policy with 3 max retries, 100 second max wait, and backoff factor of 2
-/// let policy = ResourceThrottleRetryPolicy::new(3, 100, 2);
-/// ```
+/// Retry policy for handling metadata request failures.
 #[derive(Debug)]
 pub struct MetadataRequestRetryPolicy {
     /// An instance of GlobalEndpointManager.
