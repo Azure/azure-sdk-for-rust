@@ -92,8 +92,10 @@ pub trait UrlExt: crate::private::Sealed {
     ///     .set_pair("a", "new_value")
     ///     .set_pair("c", "3")
     ///     .build();
-    /// // BTreeMap orders alphabetically
-    /// assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2&c=3");
+    /// let params: Vec<_> = url.query_pairs().collect();
+    /// assert!(params.contains(&("a".into(), "new_value".into())));
+    /// assert!(params.contains(&("b".into(), "2".into())));
+    /// assert!(params.contains(&("c".into(), "3".into())));
     /// ```
     fn query_builder(&mut self) -> QueryBuilder<'_>;
 }
@@ -136,13 +138,13 @@ impl UrlExt for Url {
 /// values with the same key. Call [`build()`](QueryBuilder::build) to apply the changes.
 pub struct QueryBuilder<'a> {
     url: &'a mut Url,
-    values: std::collections::BTreeMap<std::borrow::Cow<'a, str>, Vec<std::borrow::Cow<'a, str>>>,
+    values: std::collections::HashMap<std::borrow::Cow<'a, str>, Vec<std::borrow::Cow<'a, str>>>,
     dirty: bool,
 }
 
 impl<'a> QueryBuilder<'a> {
     fn new(url: &'a mut Url) -> Self {
-        let mut values = std::collections::BTreeMap::new();
+        let mut values = std::collections::HashMap::new();
 
         // Parse existing query params into values
         for (key, value) in url.query_pairs() {
@@ -175,7 +177,9 @@ impl<'a> QueryBuilder<'a> {
     ///     .append_key_only("debug")
     ///     .append_pair("a", "1")
     ///     .build();
-    /// assert_eq!(url.as_str(), "https://contoso.com/?a=1&debug");
+    /// let params: Vec<_> = url.query_pairs().collect();
+    /// assert!(params.contains(&("debug".into(), "".into())));
+    /// assert!(params.contains(&("a".into(), "1".into())));
     /// ```
     pub fn append_key_only(&mut self, key: impl Into<std::borrow::Cow<'a, str>>) -> &mut Self {
         let key = key.into();
@@ -211,7 +215,10 @@ impl<'a> QueryBuilder<'a> {
     ///     .append_pair("a", "2")
     ///     .append_pair("b", "3")
     ///     .build();
-    /// assert_eq!(url.as_str(), "https://contoso.com/?a=1&a=2&b=3");
+    /// let params: Vec<_> = url.query_pairs().collect();
+    /// assert!(params.contains(&("a".into(), "1".into())));
+    /// assert!(params.contains(&("a".into(), "2".into())));
+    /// assert!(params.contains(&("b".into(), "3".into())));
     /// ```
     pub fn append_pair(
         &mut self,
@@ -253,7 +260,10 @@ impl<'a> QueryBuilder<'a> {
     ///     .set_pair("a", "new_value")
     ///     .set_pair("c", "3")
     ///     .build();
-    /// assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2&c=3");
+    /// let params: Vec<_> = url.query_pairs().collect();
+    /// assert!(params.contains(&("a".into(), "new_value".into())));
+    /// assert!(params.contains(&("b".into(), "2".into())));
+    /// assert!(params.contains(&("c".into(), "3".into())));
     /// ```
     pub fn set_pair(
         &mut self,
@@ -276,7 +286,7 @@ impl<'a> QueryBuilder<'a> {
             return;
         }
 
-        // Rebuild the query string with all values from the BTreeMap
+        // Rebuild the query string with all values from the HashMap
         self.url.query_pairs_mut().clear();
 
         let mut serializer = self.url.query_pairs_mut();
@@ -421,7 +431,10 @@ mod test {
         let mut builder = url.query_builder();
         builder.set_pair("a", "new_value");
         builder.build();
-        assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2");
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("a".into(), "new_value".into())));
+        assert!(params.contains(&("b".into(), "2".into())));
+        assert_eq!(params.len(), 2);
     }
 
     #[test]
@@ -430,17 +443,26 @@ mod test {
         let mut builder = url.query_builder();
         builder.set_pair("a", "new_value");
         builder.build();
-        assert_eq!(url.as_str(), "https://contoso.com/?a=new_value&b=2");
+
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("a".into(), "new_value".into())));
+        assert!(params.contains(&("b".into(), "2".into())));
+        assert_eq!(params.len(), 2);
     }
 
     #[test]
-    fn test_query_builder_preserves_order() {
+    fn test_query_builder_with_hashmap() {
         let mut url = Url::parse("https://contoso.com?x=1&a=old&y=2&z=3").unwrap();
         let mut builder = url.query_builder();
         builder.set_pair("a", "new");
         builder.build();
-        // BTreeMap orders alphabetically: a, x, y, z
-        assert_eq!(url.as_str(), "https://contoso.com/?a=new&x=1&y=2&z=3");
+
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("a".into(), "new".into())));
+        assert!(params.contains(&("x".into(), "1".into())));
+        assert!(params.contains(&("y".into(), "2".into())));
+        assert!(params.contains(&("z".into(), "3".into())));
+        assert_eq!(params.len(), 4);
     }
 
     #[test]
@@ -461,7 +483,11 @@ mod test {
             .set_pair("c", "3")
             .set_pair("b", "updated");
         builder.build();
-        assert_eq!(url.as_str(), "https://contoso.com/?a=new&b=updated&c=3");
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("a".into(), "new".into())));
+        assert!(params.contains(&("b".into(), "updated".into())));
+        assert!(params.contains(&("c".into(), "3".into())));
+        assert_eq!(params.len(), 3);
     }
 
     #[test]
@@ -470,8 +496,10 @@ mod test {
         let mut builder = url.query_builder();
         builder.set_pair("foo", 1.to_string()).set_pair("bar", "2");
         builder.build();
-        // BTreeMap orders alphabetically: bar, foo
-        assert_eq!(url.as_str(), "https://contoso.com/?bar=2&foo=1");
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("bar".into(), "2".into())));
+        assert!(params.contains(&("foo".into(), "1".into())));
+        assert_eq!(params.len(), 2);
     }
 
     #[test]
@@ -483,8 +511,12 @@ mod test {
             .append_pair("a", "1")
             .append_key_only("verbose");
         builder.build();
-        // BTreeMap orders alphabetically: a, debug, verbose
-        assert_eq!(url.as_str(), "https://contoso.com/?a=1&debug&verbose");
+
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("a".into(), "1".into())));
+        assert!(params.contains(&("debug".into(), "".into())));
+        assert!(params.contains(&("verbose".into(), "".into())));
+        assert_eq!(params.len(), 3);
     }
 
     #[test]
@@ -500,6 +532,9 @@ mod test {
 
         // Calling build() again without changes does nothing
         builder.build();
-        assert_eq!(url.as_str(), "https://contoso.com/?a=1&b=2");
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("a".into(), "1".into())));
+        assert!(params.contains(&("b".into(), "2".into())));
+        assert_eq!(params.len(), 2);
     }
 }
