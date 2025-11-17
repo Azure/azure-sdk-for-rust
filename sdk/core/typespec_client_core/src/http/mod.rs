@@ -27,6 +27,9 @@ pub use request::{Body, Request, RequestContent};
 pub use response::{AsyncRawResponse, RawResponse, Response};
 pub use sanitizer::*;
 
+use std::borrow::Cow;
+use std::collections::HashMap;
+
 // Re-export important types.
 pub use typespec::http::StatusCode;
 pub use url::Url;
@@ -138,13 +141,13 @@ impl UrlExt for Url {
 /// values with the same key. Call [`build()`](QueryBuilder::build) to apply the changes.
 pub struct QueryBuilder<'a> {
     url: &'a mut Url,
-    values: std::collections::HashMap<std::borrow::Cow<'a, str>, Vec<std::borrow::Cow<'a, str>>>,
+    values: HashMap<Cow<'a, str>, Vec<Cow<'a, str>>>,
     dirty: bool,
 }
 
 impl<'a> QueryBuilder<'a> {
     fn new(url: &'a mut Url) -> Self {
-        let mut values = std::collections::HashMap::new();
+        let mut values = HashMap::new();
 
         // Parse existing query params into values
         for (key, value) in url.query_pairs() {
@@ -181,7 +184,7 @@ impl<'a> QueryBuilder<'a> {
     /// assert!(params.contains(&("debug".into(), "".into())));
     /// assert!(params.contains(&("a".into(), "1".into())));
     /// ```
-    pub fn append_key_only(&mut self, key: impl Into<std::borrow::Cow<'a, str>>) -> &mut Self {
+    pub fn append_key_only(&mut self, key: impl Into<Cow<'a, str>>) -> &mut Self {
         let key = key.into();
 
         if let Some(vals) = self.values.get_mut(&key) {
@@ -222,8 +225,8 @@ impl<'a> QueryBuilder<'a> {
     /// ```
     pub fn append_pair(
         &mut self,
-        key: impl Into<std::borrow::Cow<'a, str>>,
-        value: impl Into<std::borrow::Cow<'a, str>>,
+        key: impl Into<Cow<'a, str>>,
+        value: impl Into<Cow<'a, str>>,
     ) -> &mut Self {
         let key = key.into();
         let value = value.into();
@@ -267,8 +270,8 @@ impl<'a> QueryBuilder<'a> {
     /// ```
     pub fn set_pair(
         &mut self,
-        key: impl Into<std::borrow::Cow<'a, str>>,
-        value: impl Into<std::borrow::Cow<'a, str>>,
+        key: impl Into<Cow<'a, str>>,
+        value: impl Into<Cow<'a, str>>,
     ) -> &mut Self {
         let key = key.into();
         let value = value.into();
@@ -422,7 +425,10 @@ mod test {
         let mut builder = url.query_builder();
         builder.set_pair("a", "1");
         builder.build();
-        assert_eq!(url.as_str(), "https://contoso.com/?a=1&b=2");
+        let params: Vec<_> = url.query_pairs().collect();
+        assert!(params.contains(&("a".into(), "1".into())));
+        assert!(params.contains(&("b".into(), "2".into())));
+        assert_eq!(params.len(), 2);
     }
 
     #[test]
