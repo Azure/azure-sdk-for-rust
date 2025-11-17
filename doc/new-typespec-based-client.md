@@ -293,7 +293,7 @@ pub use clients::{CertificateClient, CertificateClientOptions};
 pub use resource::*;
 ```
 
-### Step 4.4: Create src/clients.rs
+### Step 4.2: Create src/clients.rs
 
 Create `src/clients.rs` to re-export generated clients and add custom methods:
 
