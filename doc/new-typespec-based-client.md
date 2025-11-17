@@ -905,4 +905,3 @@ Before submitting your SDK for review:
 - [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)
 - [Contributing Guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md)
 - [Azure REST API Specs Repository](https://github.com/Azure/azure-rest-api-specs)
-- [TypeSpec Rust Emitter](https://github.com/Azure/typespec-rust)
