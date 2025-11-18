@@ -145,7 +145,7 @@ impl std::fmt::Display for Error {
             self.code
         )?;
         if let Some(detail) = &self.detail {
-            write!(f, ": {}", detail.to_string())?;
+            write!(f, ": {}", detail)?;
         }
         Ok(())
     }
