@@ -27,7 +27,7 @@ pub use request::{Body, Request, RequestContent};
 pub use response::{AsyncRawResponse, RawResponse, Response};
 pub use sanitizer::*;
 
-use std::borrow::Cow;
+use std::borrow::Cow::{self, Borrowed, Owned};
 use std::collections::HashMap;
 
 // Re-export important types.
@@ -152,9 +152,9 @@ impl<'a> QueryBuilder<'a> {
         // Parse existing query params into values
         for (key, value) in url.query_pairs() {
             values
-                .entry(key.into_owned().into())
+                .entry(Owned(key.into_owned()))
                 .or_insert_with(Vec::new)
-                .push(value.into_owned().into());
+                .push(Owned(value.into_owned()));
         }
 
         Self {
@@ -188,9 +188,9 @@ impl<'a> QueryBuilder<'a> {
         let key = key.into();
 
         if let Some(vals) = self.values.get_mut(&key) {
-            vals.push("".into());
+            vals.push(Borrowed(""));
         } else {
-            self.values.insert(key, vec!["".into()]);
+            self.values.insert(key, vec![Borrowed("")]);
         }
 
         self.dirty = true;
@@ -276,7 +276,7 @@ impl<'a> QueryBuilder<'a> {
         let key = key.into();
         let value = value.into();
 
-        // Replace existing values (taking ownership)
+        // Replace existing values
         self.values.insert(key, vec![value]);
 
         self.dirty = true;
