@@ -9,6 +9,7 @@ use serde_json::value::RawValue;
 use crate::context::CallContext;
 use crate::error::{self, CosmosErrorCode, Error};
 use crate::string::parse_cstr;
+use crate::unwrap_required_ptr;
 
 /// Releases the memory associated with a [`ContainerClient`].
 #[no_mangle]
@@ -33,7 +34,7 @@ pub extern "C" fn cosmos_container_create_item(
     json_data: *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
-        let container = unsafe { &*container };
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
         let partition_key =
             parse_cstr(partition_key, error::messages::INVALID_PARTITION_KEY)?.to_string();
         let json = parse_cstr(json_data, error::messages::INVALID_JSON)?.to_string();
@@ -60,7 +61,7 @@ pub extern "C" fn cosmos_container_upsert_item(
     json_data: *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
-        let container = unsafe { &*container };
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
         let partition_key =
             parse_cstr(partition_key, error::messages::INVALID_PARTITION_KEY)?.to_string();
         let json = parse_cstr(json_data, error::messages::INVALID_JSON)?.to_string();
@@ -89,7 +90,7 @@ pub extern "C" fn cosmos_container_read_item(
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
-        let container = unsafe { &*container };
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
         let partition_key =
             parse_cstr(partition_key, error::messages::INVALID_PARTITION_KEY)?.to_string();
         let item_id = parse_cstr(item_id, error::messages::INVALID_ITEM_ID)?;
@@ -121,7 +122,7 @@ pub extern "C" fn cosmos_container_replace_item(
     json_data: *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
-        let container = unsafe { &*container };
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
         let partition_key =
             parse_cstr(partition_key, error::messages::INVALID_PARTITION_KEY)?.to_string();
         let item_id = parse_cstr(item_id, error::messages::INVALID_ITEM_ID)?;
@@ -149,7 +150,7 @@ pub extern "C" fn cosmos_container_delete_item(
     item_id: *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
-        let container = unsafe { &*container };
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
         let partition_key =
             parse_cstr(partition_key, error::messages::INVALID_PARTITION_KEY)?.to_string();
         let item_id = parse_cstr(item_id, error::messages::INVALID_ITEM_ID)?;
@@ -173,7 +174,7 @@ pub extern "C" fn cosmos_container_read(
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
-        let container = unsafe { &*container };
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
         let response = container.read(None).await?;
         let body = response.into_body().into_string()?;
         Ok(CString::new(body)?)
@@ -197,7 +198,7 @@ pub extern "C" fn cosmos_container_query_items(
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
-        let container = unsafe { &*container };
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
         let query = Query::from(parse_cstr(query, error::messages::INVALID_QUERY)?);
 
         let partition_key = if partition_key.is_null() {
