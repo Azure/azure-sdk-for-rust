@@ -8,7 +8,7 @@ use std::collections::HashMap;
 fn main() {
     let build_id = format!(
         "$Id: {}, Version: {}, Commit: {}, Branch: {}, Build ID: {}, Build Number: {}, Timestamp: {}$",
-        env!("CARGO_PKG_NAME"),
+        "azurecosmos",
         env!("CARGO_PKG_VERSION"),
         option_env!("BUILD_SOURCEVERSION").unwrap_or("unknown"),
         option_env!("BUILD_SOURCEBRANCH").unwrap_or("unknown"),
