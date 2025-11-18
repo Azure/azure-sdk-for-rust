@@ -225,16 +225,18 @@ macro_rules! context {
     };
 }
 
-/// Marker trait that indicates that a type can be converted into a pointer type for FFI output parameters.
+/// Trait for converting Rust types into raw pointers for FFI.
 pub trait IntoRaw {
     type Output;
 
+    /// Consumes the value and returns a raw pointer.
     fn into_raw(self) -> Self::Output;
 }
 
 impl<T> IntoRaw for Box<T> {
     type Output = *mut T;
 
+    /// Converts a Box<T> into a `*mut T` using [`Box::into_raw`].
     fn into_raw(self) -> *mut T {
         let pointer = Box::into_raw(self);
         tracing::trace!(
@@ -249,6 +251,7 @@ impl<T> IntoRaw for Box<T> {
 impl IntoRaw for std::ffi::CString {
     type Output = *const std::ffi::c_char;
 
+    /// Converts a CString into a `*const c_char` using [`CString::into_raw`](std::ffi::CString::into_raw).
     fn into_raw(self) -> *const std::ffi::c_char {
         let pointer = self.into_raw();
         tracing::trace!(?pointer, "converting CString to raw pointer",);
