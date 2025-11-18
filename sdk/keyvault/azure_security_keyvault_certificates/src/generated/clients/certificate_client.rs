@@ -690,7 +690,7 @@ impl CertificateClient {
         }
         let api_version = self.api_version.clone();
         Ok(Pager::from_callback(
-            move |next_link: PagerState<Url>, options| {
+            move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
                         let qp = next_link
@@ -712,7 +712,7 @@ impl CertificateClient {
                 async move {
                     let rsp = pipeline
                         .send(
-                            &options.context,
+                            &pager_options.context,
                             &mut request,
                             Some(PipelineSendOptions {
                                 check_success: CheckSuccessOptions {
@@ -775,7 +775,7 @@ impl CertificateClient {
         }
         let api_version = self.api_version.clone();
         Ok(Pager::from_callback(
-            move |next_link: PagerState<Url>, options| {
+            move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
                         let qp = next_link
@@ -797,7 +797,7 @@ impl CertificateClient {
                 async move {
                     let rsp = pipeline
                         .send(
-                            &options.context,
+                            &pager_options.context,
                             &mut request,
                             Some(PipelineSendOptions {
                                 check_success: CheckSuccessOptions {
@@ -856,7 +856,7 @@ impl CertificateClient {
         }
         let api_version = self.api_version.clone();
         Ok(Pager::from_callback(
-            move |next_link: PagerState<Url>, options| {
+            move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
                         let qp = next_link
@@ -878,7 +878,7 @@ impl CertificateClient {
                 async move {
                     let rsp = pipeline
                         .send(
-                            &options.context,
+                            &pager_options.context,
                             &mut request,
                             Some(PipelineSendOptions {
                                 check_success: CheckSuccessOptions {
@@ -931,7 +931,7 @@ impl CertificateClient {
         }
         let api_version = self.api_version.clone();
         Ok(Pager::from_callback(
-            move |next_link: PagerState<Url>, options| {
+            move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
                         let qp = next_link
@@ -953,7 +953,7 @@ impl CertificateClient {
                 async move {
                     let rsp = pipeline
                         .send(
-                            &options.context,
+                            &pager_options.context,
                             &mut request,
                             Some(PipelineSendOptions {
                                 check_success: CheckSuccessOptions {
