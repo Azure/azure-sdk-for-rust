@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! This module provides runtime abstractions and implementations for different async runtimes.
 //! When compiling the C library, a feature is used to select which runtime implementation to include.
 //! Currently, only the Tokio runtime is supported.

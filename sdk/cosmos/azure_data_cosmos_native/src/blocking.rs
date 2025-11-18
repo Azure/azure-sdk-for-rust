@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::{future::Future, sync::OnceLock};
 use tokio::runtime::Runtime;
 
