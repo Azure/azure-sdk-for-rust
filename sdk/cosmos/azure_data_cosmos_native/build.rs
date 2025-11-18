@@ -55,6 +55,8 @@ fn main() {
             prefix: Some("cosmos_".into()),
             exclude: vec!["PartitionKeyValue".into()],
             rename: HashMap::from([
+                ("RuntimeContext".into(), "runtime_context".into()),
+                ("CallContext".into(), "call_context".into()),
                 ("CosmosError".into(), "error".into()),
                 ("CosmosErrorCode".into(), "error_code".into()),
                 ("CosmosClient".into(), "client".into()),

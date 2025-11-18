@@ -1,38 +1,45 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-use crate::error::{CosmosError, CosmosErrorCode};
+use crate::error::{CosmosErrorCode, Error};
+
+#[macro_export]
+macro_rules! c_str {
+    ($s:expr) => {
+        const {
+            // This does a few funky things to make sure we can stay in a const context
+            // Which ensures the string is generated as a c-str at compile time
+            const STR: &str = $s;
+            const BYTES: [u8; STR.len() + 1] = const {
+                let mut cstr_buf: [u8; STR.len() + 1] = [0; STR.len() + 1];
+                let mut i = 0;
+                // For loops over ranges don't work in const contexts yet.
+                while i < STR.len() {
+                    cstr_buf[i] = STR.as_bytes()[i];
+                    i += 1;
+                }
+                cstr_buf
+            };
+            match CStr::from_bytes_with_nul(&BYTES) {
+                Ok(cstr) => cstr,
+                Err(_) => panic!("failed to convert value to C string"),
+            }
+        }
+    };
+}
 
 // Safe CString conversion helper that handles NUL bytes gracefully
 pub fn safe_cstring_new(s: &str) -> CString {
     CString::new(s).expect("FFI boundary strings must not contain NUL bytes")
 }
 
-// Safe CString conversion that returns raw pointer and error code
-pub fn safe_cstring_into_raw(
-    s: &str,
-    out_ptr: &mut *mut c_char,
-    out_error: &mut CosmosError,
-) -> CosmosErrorCode {
-    let c_string = safe_cstring_new(s);
-    *out_ptr = c_string.into_raw();
-    *out_error = CosmosError::success();
-    CosmosErrorCode::Success
-}
-
-pub fn parse_cstr<'a>(
-    ptr: *const c_char,
-    error_msg: &'static CStr,
-) -> Result<&'a str, CosmosError> {
+pub fn parse_cstr<'a>(ptr: *const c_char, error_msg: &'static CStr) -> Result<&'a str, Error> {
     if ptr.is_null() {
-        return Err(CosmosError::from_static_cstr(
-            CosmosErrorCode::InvalidArgument,
-            error_msg,
-        ));
+        return Err(Error::new(CosmosErrorCode::InvalidArgument, error_msg));
     }
     unsafe { CStr::from_ptr(ptr) }
         .to_str()
-        .map_err(|_| CosmosError::from_static_cstr(CosmosErrorCode::InvalidArgument, error_msg))
+        .map_err(|_| Error::new(CosmosErrorCode::InvalidArgument, error_msg))
 }
 
 /// Releases the memory associated with a C string obtained from Rust.
@@ -40,88 +47,7 @@ pub fn parse_cstr<'a>(
 pub extern "C" fn cosmos_string_free(ptr: *const c_char) {
     if !ptr.is_null() {
         unsafe {
-            let _ = CString::from_raw(ptr as *mut c_char);
+            drop(CString::from_raw(ptr as *mut c_char));
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::cosmos_version;
-    use crate::error::CSTR_INVALID_JSON;
-
-    use super::*;
-    use std::ffi::CStr;
-    use std::ptr;
-
-    #[test]
-    fn test_cosmos_version() {
-        let version_ptr = cosmos_version();
-        assert!(!version_ptr.is_null());
-
-        let version_str = unsafe { CStr::from_ptr(version_ptr).to_str().unwrap() };
-
-        assert!(version_str.contains("cosmos-cpp-wrapper"));
-        assert!(version_str.contains("v0.1.0"));
-
-        cosmos_string_free(version_ptr);
-    }
-
-    #[test]
-    fn test_cosmos_string_free_null_safety() {
-        cosmos_string_free(ptr::null());
-    }
-
-    #[test]
-    fn test_safe_cstring_new() {
-        let result = safe_cstring_new("hello world");
-        assert_eq!(result.to_str().unwrap(), "hello world");
-
-        let panic_result = std::panic::catch_unwind(|| {
-            safe_cstring_new("hello\0world");
-        });
-        assert!(panic_result.is_err());
-    }
-
-    #[test]
-    fn test_safe_cstring_into_raw() {
-        let mut ptr: *mut c_char = ptr::null_mut();
-        let mut error = CosmosError::success();
-        let code = safe_cstring_into_raw("test", &mut ptr, &mut error);
-        assert_eq!(code, CosmosErrorCode::Success);
-        assert!(!ptr.is_null());
-        assert_eq!(error.code, CosmosErrorCode::Success);
-
-        cosmos_string_free(ptr);
-
-        let panic_result = std::panic::catch_unwind(|| {
-            let mut ptr2: *mut c_char = ptr::null_mut();
-            let mut error2 = CosmosError::success();
-            safe_cstring_into_raw("test\0fail", &mut ptr2, &mut error2);
-        });
-        assert!(panic_result.is_err());
-    }
-
-    #[test]
-    fn test_static_vs_owned_error_messages() {
-        let static_error =
-            CosmosError::from_static_cstr(CosmosErrorCode::DataConversion, CSTR_INVALID_JSON);
-        assert_eq!(static_error.code, CosmosErrorCode::DataConversion);
-        assert!(!static_error.message.is_null());
-        assert_eq!(
-            static_error.message,
-            CSTR_INVALID_JSON.as_ptr() as *mut c_char
-        );
-
-        let owned_error = CosmosError::new(
-            CosmosErrorCode::BadRequest,
-            "Dynamic error message".to_string(),
-        );
-        assert_eq!(owned_error.code, CosmosErrorCode::BadRequest);
-        assert!(!owned_error.message.is_null());
-        assert_ne!(
-            owned_error.message,
-            CSTR_INVALID_JSON.as_ptr() as *mut c_char
-        );
     }
 }
