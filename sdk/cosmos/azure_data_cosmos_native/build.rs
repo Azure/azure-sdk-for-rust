@@ -28,7 +28,8 @@ fn main() {
 // cSpell: disable
 "
     .to_string();
-    header.push_str(&format!("// Build identifier: {}\n", build_id));
+
+    // TODO: Append the build identifier to the header during a release build
 
     let config = cbindgen::Config {
         language: cbindgen::Language::C,
