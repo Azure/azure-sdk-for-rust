@@ -456,7 +456,7 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     let endpoint = format!(
         "https://{}.queue.core.windows.net/",
         recording
-            .var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME", None)
+            .var("AZURE_STORAGE_ACCOUNT_NAME", None)
             .as_str()
     );
 
