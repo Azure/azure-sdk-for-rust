@@ -3,12 +3,11 @@
 
 use super::{
     get_substatus_code_from_error, get_substatus_code_from_response,
-    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryPolicy, RetryResult,
+    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
 };
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use async_trait::async_trait;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::sync::Arc;
@@ -402,9 +401,7 @@ impl ClientRetryPolicy {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl RetryPolicy for ClientRetryPolicy {
+impl ClientRetryPolicy {
     /// Prepares a request before it is sent, configuring routing and endpoint selection.
     ///
     /// # Summary
@@ -417,7 +414,7 @@ impl RetryPolicy for ClientRetryPolicy {
     ///
     /// # Arguments
     /// * `request` - The mutable request to configure before sending
-    async fn before_send_request(&mut self, request: &mut CosmosRequest) {
+    pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
         self.cosmos_request = Some(request.clone());
         let _stat = self
             .global_endpoint_manager
@@ -486,7 +483,10 @@ impl RetryPolicy for ClientRetryPolicy {
     /// A `RetryResult`:
     /// - `Retry { after: Duration }` if the request should be retried with specified delay
     /// - `DoNotRetry` for successful responses or non-retriable failures
-    async fn should_retry(&mut self, response: &azure_core::Result<RawResponse>) -> RetryResult {
+    pub(crate) async fn should_retry(
+        &mut self,
+        response: &azure_core::Result<RawResponse>,
+    ) -> RetryResult {
         match response {
             Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
                 self.should_retry_response(resp).await

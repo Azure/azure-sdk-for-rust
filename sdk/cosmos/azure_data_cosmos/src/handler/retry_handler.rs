@@ -73,16 +73,24 @@ impl BackOffRetryHandler {
     /// Returns the appropriate retry policy based on the request
     ///
     /// This method examines the underlying operation and resource types and determines
-    /// retry policy should be used for this specific request.
+    /// which retry policy should be used for this specific request. Metadata operations
+    /// use the MetadataRequestRetryPolicy, while data plane operations use the
+    /// ClientRetryPolicy.
+    ///
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn retry_policy_for_request(&self, request: &CosmosRequest) -> Box<dyn RetryPolicy> {
+    ///
+    /// # Returns
+    /// A `RetryPolicy` enum variant appropriate for the request type
+    pub fn retry_policy_for_request(&self, request: &CosmosRequest) -> RetryPolicy {
         if request.resource_type.is_meta_data() {
-            Box::new(MetadataRequestRetryPolicy::new(
+            RetryPolicy::Metadata(Box::new(MetadataRequestRetryPolicy::new(
                 self.global_endpoint_manager.clone(),
-            ))
+            )))
         } else {
-            Box::new(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
+            RetryPolicy::Client(Box::new(ClientRetryPolicy::new(
+                self.global_endpoint_manager.clone(),
+            )))
         }
     }
 

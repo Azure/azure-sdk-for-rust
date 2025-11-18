@@ -1,14 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{
-    get_substatus_code_from_error, get_substatus_code_from_response, RetryPolicy, RetryResult,
-};
+use super::{get_substatus_code_from_error, get_substatus_code_from_response, RetryResult};
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use async_trait::async_trait;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::cmp::max;
@@ -196,16 +193,14 @@ impl MetadataRequestRetryPolicy {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl RetryPolicy for MetadataRequestRetryPolicy {
+impl MetadataRequestRetryPolicy {
     /// Method that is called before a request is sent to allow the retry policy implementation
     /// to modify the state of the request.
     ///
     /// # Arguments
     ///
     /// * `request` - The request being sent to the service
-    async fn before_send_request(&mut self, request: &mut CosmosRequest) {
+    pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
         let _stat = self
             .global_endpoint_manager
             .refresh_location_async(false)
@@ -253,7 +248,10 @@ impl RetryPolicy for MetadataRequestRetryPolicy {
     /// # Returns
     ///
     /// A `RetryResult` indicating the retry decision.
-    async fn should_retry(&mut self, response: &azure_core::Result<RawResponse>) -> RetryResult {
+    pub(crate) async fn should_retry(
+        &mut self,
+        response: &azure_core::Result<RawResponse>,
+    ) -> RetryResult {
         match response {
             Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
                 self.should_retry_response(resp).await
