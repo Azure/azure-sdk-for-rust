@@ -7,21 +7,17 @@ pub mod messages {
 
     pub static OPERATION_SUCCEEDED: &CStr = c"Operation completed successfully";
     pub static NULL_OUTPUT_POINTER: &CStr = c"Output pointer is null";
-
-    pub static CSTR_NUL_BYTES_ERROR: &CStr = c"String contains NUL bytes";
-    pub static CSTR_INVALID_CHARS_ERROR: &CStr = c"Error message contains invalid characters";
-    pub static CSTR_UNKNOWN_ERROR: &CStr = c"Unknown error";
     pub static INVALID_JSON: &CStr = c"Invalid JSON data";
-    pub static CSTR_CLIENT_CREATION_FAILED: &CStr = c"Failed to create Azure Cosmos client";
-
     pub static INVALID_ENDPOINT: &CStr = c"Invalid endpoint string";
     pub static INVALID_KEY: &CStr = c"Invalid key string";
     pub static INVALID_DATABASE_ID: &CStr = c"Invalid database ID string";
     pub static INVALID_CONTAINER_ID: &CStr = c"Invalid container ID string";
     pub static INVALID_PARTITION_KEY: &CStr = c"Invalid partition key string";
     pub static INVALID_ITEM_ID: &CStr = c"Invalid item ID string";
-    pub static CSTR_INVALID_JSON_DATA: &CStr = c"Invalid JSON data string";
     pub static INVALID_QUERY: &CStr = c"Invalid query string";
+    pub static INVALID_CLIENT_POINTER: &CStr = c"Invalid client pointer";
+    pub static INVALID_DATABASE_POINTER: &CStr = c"Invalid database client pointer";
+    pub static INVALID_CONTAINER_POINTER: &CStr = c"Invalid container client pointer";
 }
 
 #[repr(i32)]

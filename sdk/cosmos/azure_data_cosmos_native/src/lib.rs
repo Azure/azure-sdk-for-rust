@@ -16,6 +16,33 @@ pub mod runtime;
 
 pub use clients::*;
 
+/// Helper function to safely unwrap a required pointer, returning an error if it's null.
+///
+/// # Arguments
+/// * `ptr` - The pointer to check and dereference.
+/// * `msg` - A static error message to use if the pointer is null.
+///
+/// # Returns
+/// * `Ok(&T)` if the pointer is non-null.
+/// * `Err(Error)` with code `InvalidArgument` if the pointer is null.
+///
+/// # Safety
+/// This function assumes that if the pointer is non-null, it points to a valid `T`.
+/// The caller must ensure the pointer was created properly and has not been freed.
+pub fn unwrap_required_ptr<'a, T>(
+    ptr: *const T,
+    msg: &'static CStr,
+) -> Result<&'a T, error::Error> {
+    if ptr.is_null() {
+        Err(error::Error::new(
+            error::CosmosErrorCode::InvalidArgument,
+            msg,
+        ))
+    } else {
+        Ok(unsafe { &*ptr })
+    }
+}
+
 // We just want this value to be present as a string in the compiled binary.
 // But in order to prevent the compiler from optimizing it away, we expose it as a non-mangled static variable.
 /// cbindgen:ignore

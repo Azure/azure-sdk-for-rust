@@ -10,6 +10,7 @@ use futures::TryStreamExt;
 use crate::context::CallContext;
 use crate::error::{self, CosmosErrorCode, Error};
 use crate::string::parse_cstr;
+use crate::unwrap_required_ptr;
 
 /// Creates a new CosmosClient and returns a pointer to it via the out parameter.
 ///
@@ -61,7 +62,7 @@ pub extern "C" fn cosmos_client_database_client(
     out_database: *mut *mut DatabaseClient,
 ) -> CosmosErrorCode {
     context!(ctx).run_sync_with_output(out_database, || {
-        let client = unsafe { &*client };
+        let client = unwrap_required_ptr(client, error::messages::INVALID_CLIENT_POINTER)?;
         let database_id = parse_cstr(database_id, error::messages::INVALID_DATABASE_ID)?;
         let database_client = client.database_client(database_id);
         Ok(Box::new(database_client))
@@ -83,7 +84,7 @@ pub extern "C" fn cosmos_client_query_databases(
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
-        let client = unsafe { &*client };
+        let client = unwrap_required_ptr(client, error::messages::INVALID_CLIENT_POINTER)?;
         let query_str = parse_cstr(query, error::messages::INVALID_QUERY)?;
 
         let cosmos_query = Query::from(query_str);
@@ -117,7 +118,7 @@ pub extern "C" fn cosmos_client_create_database(
     out_database: *mut *mut DatabaseClient,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_database, async {
-        let client = unsafe { &*client };
+        let client = unwrap_required_ptr(client, error::messages::INVALID_CLIENT_POINTER)?;
 
         let database_id = parse_cstr(database_id, error::messages::INVALID_DATABASE_ID)?;
         client.create_database(database_id, None).await?;
