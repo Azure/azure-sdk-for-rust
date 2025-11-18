@@ -9,7 +9,6 @@ use std::ffi::{c_char, CStr};
 pub mod string;
 #[macro_use]
 pub mod context;
-pub mod blocking;
 pub mod clients;
 pub mod error;
 pub mod options;
