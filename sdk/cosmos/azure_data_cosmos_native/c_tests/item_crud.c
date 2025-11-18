@@ -12,6 +12,17 @@
 #define PARTITION_KEY_VALUE "test-partition"
 #define PARTITION_KEY_PATH "/partitionKey"
 
+void display_error(const cosmos_error *error) {
+    printf("Error Code: %d\n", error->code);
+    if (error->message) {
+        printf("Error Message: %s\n", error->message);
+    }
+    if (error->detail) {
+        printf("Error Details: %s\n", error->detail);
+        cosmos_string_free(error->detail);
+    }
+}
+
 int main() {
     cosmos_enable_tracing();
 
@@ -35,28 +46,36 @@ int main() {
     printf("Database: %s\n", database_name);
     printf("Container: test-container\n");
 
-    cosmos_error error = {0};
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    if (!runtime) {
+        printf("Failed to create runtime context\n");
+        return 1;
+    }
+    cosmos_call_context ctx;
+    ctx.runtime_context = runtime;
+    ctx.include_error_details = true;
+
     cosmos_client *client = NULL;
     cosmos_database_client *database = NULL;
     cosmos_container_client *container = NULL;
-    char *read_json = NULL;
+    const char *read_json = NULL;
     int result = 0;
     int database_created = 0;
     int container_created = 0;
 
     // Create Cosmos client
-    cosmos_error_code code = cosmos_client_create_with_key(endpoint, key, &client, &error);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
-        printf("Failed to create Cosmos client: %s (code: %d)\n", error.message, error.code);
+        display_error(&ctx.error);
         result = 1;
         goto cleanup;
     }
     printf("✓ Created Cosmos client\n");
 
     // Create database
-    code = cosmos_client_create_database(client, database_name, &database, &error);
+    code = cosmos_client_create_database(&ctx, client, database_name, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
-        printf("Failed to create database: %s (code: %d)\n", error.message, error.code);
+        display_error(&ctx.error);
         result = 1;
         goto cleanup;
     }
@@ -64,9 +83,9 @@ int main() {
     printf("✓ Created database: %s\n", database_name);
 
     // Create container with partition key
-    code = cosmos_database_create_container(database, "test-container", PARTITION_KEY_PATH, &container, &error);
+    code = cosmos_database_create_container(&ctx, database, "test-container", PARTITION_KEY_PATH, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
-        printf("Failed to create container: %s (code: %d)\n", error.message, error.code);
+        display_error(&ctx.error);
         result = 1;
         goto cleanup;
     }
@@ -82,18 +101,18 @@ int main() {
     printf("Upserting document: %s\n", json_data);
 
     // Upsert the item
-    code = cosmos_container_upsert_item(container, PARTITION_KEY_VALUE, json_data, &error);
+    code = cosmos_container_upsert_item(&ctx, container, PARTITION_KEY_VALUE, json_data);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
-        printf("Failed to upsert item: %s (code: %d)\n", error.message, error.code);
+        display_error(&ctx.error);
         result = 1;
         goto cleanup;
     }
     printf("✓ Upserted item successfully\n");
 
     // Read the item back
-    code = cosmos_container_read_item(container, PARTITION_KEY_VALUE, ITEM_ID, &read_json, &error);
+    code = cosmos_container_read_item(&ctx, container, PARTITION_KEY_VALUE, ITEM_ID, &read_json);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
-        printf("Failed to read item: %s (code: %d)\n", error.message, error.code);
+        display_error(&ctx.error);
         result = 1;
         goto cleanup;
     }
@@ -127,10 +146,9 @@ cleanup:
     // Delete database (this will also delete the container)
     if (database && database_created) {
         printf("Deleting database: %s\n", database_name);
-        cosmos_error delete_error = {0};
-        cosmos_error_code delete_code = cosmos_database_delete(database, &delete_error);
+        cosmos_error_code delete_code = cosmos_database_delete(&ctx, database);
         if (delete_code != COSMOS_ERROR_CODE_SUCCESS) {
-            printf("Failed to delete database: %s (code: %d)\n", delete_error.message, delete_error.code);
+            display_error(&ctx.error);
         } else {
             printf("✓ Deleted database successfully\n");
         }
@@ -144,9 +162,6 @@ cleanup:
     }
     if (client) {
         cosmos_client_free(client);
-    }
-    if (error.message) {
-        cosmos_error_free(&error);
     }
 
     return result;

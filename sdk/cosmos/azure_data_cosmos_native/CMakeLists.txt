@@ -1,7 +1,8 @@
 # cSpell:ignore cosmosctest CRATETYPES endforeach
 
-project(cosmosctest C)
 cmake_minimum_required(VERSION 4.1)
+
+project(cosmosctest C)
 
 # CMake automatically uses this option, but we should define it.
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
@@ -18,7 +19,6 @@ FetchContent_MakeAvailable(Corrosion)
 
 corrosion_import_crate(
     MANIFEST_PATH ./Cargo.toml
-    CRATETYPES staticlib cdylib
     PROFILE dev
 )
 
