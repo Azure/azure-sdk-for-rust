@@ -24,11 +24,15 @@ Before you begin, ensure you have the following installed:
 
 1. **Rust toolchain** (version 1.85 or later)
 
+To install the rustup tool, follow the [rust-lang install instructions](https://rust-lang.org/tools/install)
+
    ```bash
    rustup toolchain install 1.85
    ```
 
 1. **Node.js 20+** and **npm**
+
+To install node initially, follow the [node installation instructions](https://nodejs.org/en/download)
 
    ```bash
    node --version  # Should be 20.x or later
@@ -49,6 +53,8 @@ npm ci --prefix eng/common/tsp-client
 ```
 
 1. **Azure CLI** (for testing and resource provisioning)
+
+To install the Azure CLI, follow the  [Azure CLI install documentation](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest)
 
    ```bash
    az --version
@@ -148,7 +154,7 @@ members = [
 
 ### Step 2.2: Generate Initial Code with tsp-client init
 
-From your enlistment directory, run:
+From your azure-sdk-for-rust root directory, run:
 
 ```bash
 tsp-client init https://github.com/Azure/azure-rest-api-specs/blob/<commit>/specification/<service>/<path-to-tspconfig.yaml file>
@@ -249,15 +255,19 @@ A partially generated client wraps the generated code with custom implementation
 
 ### Step 4.1: Follow the steps in Part 3 to create the initial service client
 
-Update `src/lib.rs` to selectively exports generated code and custom implementations:
+Update `src/lib.rs` to selectively exports generated code and custom implementations.
+
+The lib.rs defines the public API surface for your crate, the example here hides the generated code module and publicly defines the replacement custom implementation.
 
 ```rust
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// Import the `README.md` file as a part of the crate's module level documentation.
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+// Create the public `clients` module. This is where the hand written client functions will live.
 pub mod clients;
 #[allow(
     unused_imports,
@@ -291,6 +301,7 @@ mod resource;
 
 pub use clients::{CertificateClient, CertificateClientOptions};
 pub use resource::*;
+use crate::models::{/* custom types */};    // Adding custom types is covered in step 4.5.
 ```
 
 ### Step 4.2: Create src/clients.rs
@@ -863,10 +874,9 @@ repo: Azure/azure-rest-api-specs
 
 ### Step 8.2: Regenerate Code
 
-From your crate directory:
+From the azure-sdk-for-rust repo root directory:
 
 ```bash
-cd sdk/<service-dir>/<crate-name>
 tsp-client update
 ```
 
