@@ -6,12 +6,13 @@
 use std::ffi::{c_char, CStr};
 
 #[macro_use]
-mod macros;
-
+pub mod string;
+#[macro_use]
+pub mod context;
 pub mod blocking;
 pub mod clients;
 pub mod error;
-pub mod string;
+pub mod runtime;
 
 pub use clients::*;
 
