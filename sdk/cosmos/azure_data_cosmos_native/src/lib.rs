@@ -12,6 +12,7 @@ pub mod context;
 pub mod blocking;
 pub mod clients;
 pub mod error;
+pub mod options;
 pub mod runtime;
 
 pub use clients::*;
@@ -69,5 +70,7 @@ pub extern "C" fn cosmos_enable_tracing() {
 
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_env("COSMOS_LOG"))
+        .with_thread_ids(true)
+        .with_thread_names(true)
         .init();
 }

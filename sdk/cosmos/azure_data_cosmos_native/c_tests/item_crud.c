@@ -46,9 +46,10 @@ int main() {
     printf("Database: %s\n", database_name);
     printf("Container: test-container\n");
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
-        printf("Failed to create runtime context\n");
+        display_error(&error);
         return 1;
     }
     cosmos_call_context ctx;
@@ -64,7 +65,7 @@ int main() {
     int container_created = 0;
 
     // Create Cosmos client
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         display_error(&ctx.error);
         result = 1;
@@ -73,7 +74,7 @@ int main() {
     printf("✓ Created Cosmos client\n");
 
     // Create database
-    code = cosmos_client_create_database(&ctx, client, database_name, &database);
+    code = cosmos_client_create_database(&ctx, client, database_name, NULL, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         display_error(&ctx.error);
         result = 1;
@@ -83,7 +84,7 @@ int main() {
     printf("✓ Created database: %s\n", database_name);
 
     // Create container with partition key
-    code = cosmos_database_create_container(&ctx, database, "test-container", PARTITION_KEY_PATH, &container);
+    code = cosmos_database_create_container(&ctx, database, "test-container", PARTITION_KEY_PATH, NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         display_error(&ctx.error);
         result = 1;
@@ -101,7 +102,7 @@ int main() {
     printf("Upserting document: %s\n", json_data);
 
     // Upsert the item
-    code = cosmos_container_upsert_item(&ctx, container, PARTITION_KEY_VALUE, json_data);
+    code = cosmos_container_upsert_item(&ctx, container, PARTITION_KEY_VALUE, json_data, NULL);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         display_error(&ctx.error);
         result = 1;
@@ -110,7 +111,7 @@ int main() {
     printf("✓ Upserted item successfully\n");
 
     // Read the item back
-    code = cosmos_container_read_item(&ctx, container, PARTITION_KEY_VALUE, ITEM_ID, &read_json);
+    code = cosmos_container_read_item(&ctx, container, PARTITION_KEY_VALUE, ITEM_ID, NULL, &read_json);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         display_error(&ctx.error);
         result = 1;
@@ -146,7 +147,7 @@ cleanup:
     // Delete database (this will also delete the container)
     if (database && database_created) {
         printf("Deleting database: %s\n", database_name);
-        cosmos_error_code delete_code = cosmos_database_delete(&ctx, database);
+        cosmos_error_code delete_code = cosmos_database_delete(&ctx, database, NULL);
         if (delete_code != COSMOS_ERROR_CODE_SUCCESS) {
             display_error(&ctx.error);
         } else {
