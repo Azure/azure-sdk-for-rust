@@ -56,7 +56,7 @@ pub struct CallContext {
 /// A [`CallContext`] may be reused for multiple calls, but cannot be used concurrently from multiple threads.
 ///
 /// # Arguments
-/// * `runtime` - Pointer to a [`RuntimeContext`] created by [`cosmos_runtime_context_create`](crate::runtime::cosmos_runtime_context_create).
+/// * `runtime_context` - Pointer to a [`RuntimeContext`] created by [`cosmos_runtime_context_create`](crate::runtime::cosmos_runtime_context_create).
 /// * `options` - Pointer to [`CallContextOptions`] for call configuration, may be null.
 #[no_mangle]
 pub extern "C" fn cosmos_call_context_create(
