@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::error::ErrorKind;
 use std::ffi::{CStr, CString, NulError};
 
