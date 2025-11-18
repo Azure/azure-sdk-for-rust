@@ -15,6 +15,19 @@ pub struct RuntimeContext {
 
 impl RuntimeContext {
     pub fn new(_options: Option<&RuntimeOptions>) -> Result<Self, Error> {
+        #[cfg(target_family = "wasm")]
+        let runtime = Builder::new_current_thread()
+            .enable_all()
+            .thread_name("cosmos-sdk-runtime")
+            .build()
+            .map_err(|e| {
+                Error::with_detail(
+                    CosmosErrorCode::UnknownError,
+                    c"Unknown error initializing Cosmos SDK runtime",
+                    e,
+                )
+            })?;
+        #[cfg(not(target_family = "wasm"))]
         let runtime = Builder::new_multi_thread()
             .enable_all()
             .thread_name("cosmos-sdk-runtime")
