@@ -8,13 +8,16 @@ use serde_json::value::RawValue;
 
 use crate::context::CallContext;
 use crate::error::{self, CosmosErrorCode, Error};
+use crate::options::{DeleteContainerOptions, ItemOptions, QueryOptions, ReadContainerOptions};
 use crate::string::parse_cstr;
 use crate::unwrap_required_ptr;
 
 /// Releases the memory associated with a [`ContainerClient`].
 #[no_mangle]
+#[tracing::instrument(level = "debug")]
 pub extern "C" fn cosmos_container_free(container: *mut ContainerClient) {
     if !container.is_null() {
+        tracing::trace!(?container, "freeing container client");
         unsafe { drop(Box::from_raw(container)) }
     }
 }
@@ -26,12 +29,19 @@ pub extern "C" fn cosmos_container_free(container: *mut ContainerClient) {
 /// * `container` - Pointer to the `ContainerClient`.
 /// * `partition_key` - The partition key value as a nul-terminated C string.
 /// * `json_data` - The item data as a raw JSON nul-terminated C string.
+/// * `options` - Pointer to [`ItemOptions`] for item creation configuration, may be null.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
 pub extern "C" fn cosmos_container_create_item(
     ctx: *mut CallContext,
     container: *const ContainerClient,
     partition_key: *const c_char,
     json_data: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ItemOptions,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
         let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
@@ -53,12 +63,19 @@ pub extern "C" fn cosmos_container_create_item(
 /// * `container` - Pointer to the `ContainerClient`.
 /// * `partition_key` - The partition key value as a nul-terminated C string.
 /// * `json_data` - The item data as a raw JSON nul-terminated C string.
+/// * `options` - Pointer to [`ItemOptions`] for item upsert configuration, may be null.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
 pub extern "C" fn cosmos_container_upsert_item(
     ctx: *mut CallContext,
     container: *const ContainerClient,
     partition_key: *const c_char,
     json_data: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ItemOptions,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
         let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
@@ -80,13 +97,20 @@ pub extern "C" fn cosmos_container_upsert_item(
 /// * `container` - Pointer to the `ContainerClient`.
 /// * `partition_key` - The partition key value as a nul-terminated C string.
 /// * `item_id` - The ID of the item to read as a nul-terminated C string.
+/// * `options` - Pointer to [`ItemOptions`] for item read configuration, may be null.
 /// * `out_json` - Output parameter that will receive the item data as a raw JSON nul-terminated C string.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
 pub extern "C" fn cosmos_container_read_item(
     ctx: *mut CallContext,
     container: *const ContainerClient,
     partition_key: *const c_char,
     item_id: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ItemOptions,
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
@@ -113,13 +137,20 @@ pub extern "C" fn cosmos_container_read_item(
 /// * `partition_key` - The partition key value as a nul-terminated C string.
 /// * `item_id` - The ID of the item to replace as a nul-terminated C string.
 /// * `json_data` - The new item data as a raw JSON nul-terminated C string.
+/// * `options` - Pointer to [`ItemOptions`] for item replacement configuration, may be null.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
 pub extern "C" fn cosmos_container_replace_item(
     ctx: *mut CallContext,
     container: *const ContainerClient,
     partition_key: *const c_char,
     item_id: *const c_char,
     json_data: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ItemOptions,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
         let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
@@ -142,12 +173,19 @@ pub extern "C" fn cosmos_container_replace_item(
 /// * `container` - Pointer to the `ContainerClient`.
 /// * `partition_key` - The partition key value as a nul-terminated C string.
 /// * `item_id` - The ID of the item to delete as a nul-terminated C string.
+/// * `options` - Pointer to [`ItemOptions`] for item deletion configuration, may be null.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
 pub extern "C" fn cosmos_container_delete_item(
     ctx: *mut CallContext,
     container: *const ContainerClient,
     partition_key: *const c_char,
     item_id: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ItemOptions,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
         let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
@@ -166,11 +204,18 @@ pub extern "C" fn cosmos_container_delete_item(
 /// # Arguments
 /// * `ctx` - Pointer to a [`CallContext`] to use for this call.
 /// * `container` - Pointer to the `ContainerClient`.
+/// * `options` - Pointer to [`ReadContainerOptions`] for read container configuration, may be null.
 /// * `out_json` - Output parameter that will receive the container properties as a raw JSON nul-terminated C string.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
 pub extern "C" fn cosmos_container_read(
     ctx: *mut CallContext,
     container: *const ContainerClient,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ReadContainerOptions,
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
@@ -181,6 +226,30 @@ pub extern "C" fn cosmos_container_read(
     })
 }
 
+/// Deletes the specified container.
+///
+/// # Arguments
+/// * `ctx` - Pointer to a [`CallContext`] to use for this call.
+/// * `container` - Pointer to the [`ContainerClient`].
+/// * `options` - Pointer to [`DeleteContainerOptions`] for delete container configuration, may be null.
+#[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
+pub extern "C" fn cosmos_container_delete(
+    ctx: *mut CallContext,
+    container: *const ContainerClient,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const DeleteContainerOptions,
+) -> CosmosErrorCode {
+    context!(ctx).run_async(async {
+        let container = unwrap_required_ptr(container, error::messages::INVALID_CONTAINER_POINTER)?;
+        container.delete(None).await?;
+        Ok(())
+    })
+}
+
 /// Queries items in the specified container.
 ///
 /// # Arguments
@@ -188,13 +257,20 @@ pub extern "C" fn cosmos_container_read(
 /// * `container` - Pointer to the `ContainerClient`.
 /// * `query` - The query to execute as a nul-terminated C string.
 /// * `partition_key` - Optional partition key value as a nul-terminated C string. Specify a null pointer for a cross-partition query.
+/// * `options` - Pointer to [`QueryOptions`] for query configuration, may be null.
 /// * `out_json` - Output parameter that will receive the query results as a raw JSON nul-terminated C string.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, container = ?container))]
 pub extern "C" fn cosmos_container_query_items(
     ctx: *mut CallContext,
     container: *const ContainerClient,
     query: *const c_char,
     partition_key: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const QueryOptions,
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {

@@ -36,7 +36,8 @@ int test_null_pointer_handling() {
         return TEST_PASS;
     }
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -50,7 +51,7 @@ int test_null_pointer_handling() {
     int result = TEST_PASS;
 
     // Test 1a: NULL context
-    cosmos_error_code code = cosmos_client_create_with_key(NULL, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(NULL, endpoint, key, NULL, &client);
     if (code == COSMOS_ERROR_CODE_CALL_CONTEXT_MISSING) {
         printf("✓ NULL context correctly rejected with CALL_CONTEXT_MISSING\n");
     } else {
@@ -59,7 +60,7 @@ int test_null_pointer_handling() {
     }
 
     // Test 1b: NULL endpoint
-    code = cosmos_client_create_with_key(&ctx, NULL, key, &client);
+    code = cosmos_client_create_with_key(&ctx, NULL, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ NULL endpoint correctly rejected with error code: %d\n", code);
     } else {
@@ -69,7 +70,7 @@ int test_null_pointer_handling() {
     }
 
     // Test 1c: NULL key
-    code = cosmos_client_create_with_key(&ctx, endpoint, NULL, &client);
+    code = cosmos_client_create_with_key(&ctx, endpoint, NULL, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ NULL key correctly rejected with error code: %d\n", code);
     } else {
@@ -79,7 +80,7 @@ int test_null_pointer_handling() {
     }
 
     // Test 1d: NULL output pointer
-    code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL);
+    code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, NULL);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ NULL output pointer correctly rejected with error code: %d\n", code);
     } else {
@@ -88,7 +89,7 @@ int test_null_pointer_handling() {
     }
 
     // Create a valid client for further tests
-    code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create valid client for remaining tests\n");
         cosmos_runtime_context_free(runtime);
@@ -139,7 +140,7 @@ int test_invalid_runtime_context() {
 
     // Now try to use the invalid context
     cosmos_client *client = NULL;
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
 
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ Invalid/freed runtime context correctly rejected with error code: %d\n", code);
@@ -167,7 +168,8 @@ int test_error_detail_with_flag() {
     char database_name[64];
     snprintf(database_name, sizeof(database_name), "test-err-dtl-%ld", current_time);
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -184,7 +186,7 @@ int test_error_detail_with_flag() {
     int database_created = 0;
 
     // Create client
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create client\n");
         result = TEST_FAIL;
@@ -192,7 +194,7 @@ int test_error_detail_with_flag() {
     }
 
     // Create database
-    code = cosmos_client_create_database(&ctx, client, database_name, &database);
+    code = cosmos_client_create_database(&ctx, client, database_name, NULL, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create database\n");
         result = TEST_FAIL;
@@ -201,7 +203,7 @@ int test_error_detail_with_flag() {
     database_created = 1;
 
     // Create container
-    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", &container);
+    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create container\n");
         result = TEST_FAIL;
@@ -210,7 +212,7 @@ int test_error_detail_with_flag() {
 
     // Trigger an error - try to read non-existent item
     const char *read_json = NULL;
-    code = cosmos_container_read_item(&ctx, container, "pk1", "nonexistent-item", &read_json);
+    code = cosmos_container_read_item(&ctx, container, "pk1", "nonexistent-item", NULL, &read_json);
 
     if (code == COSMOS_ERROR_CODE_NOT_FOUND) {
         printf("✓ Got expected NOT_FOUND error code\n");
@@ -235,7 +237,7 @@ int test_error_detail_with_flag() {
 
 cleanup:
     if (database && database_created) {
-        cosmos_database_delete(&ctx, database);
+        cosmos_database_delete(&ctx, database, NULL);
     }
 
     if (container) {
@@ -268,7 +270,8 @@ int test_error_detail_without_flag() {
     char database_name[64];
     snprintf(database_name, sizeof(database_name), "test-no-dtl-%ld", current_time);
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -285,7 +288,7 @@ int test_error_detail_without_flag() {
     int database_created = 0;
 
     // Create client
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create client\n");
         result = TEST_FAIL;
@@ -293,7 +296,7 @@ int test_error_detail_without_flag() {
     }
 
     // Create database
-    code = cosmos_client_create_database(&ctx, client, database_name, &database);
+    code = cosmos_client_create_database(&ctx, client, database_name, NULL, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create database\n");
         result = TEST_FAIL;
@@ -302,7 +305,7 @@ int test_error_detail_without_flag() {
     database_created = 1;
 
     // Create container
-    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", &container);
+    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create container\n");
         result = TEST_FAIL;
@@ -311,7 +314,7 @@ int test_error_detail_without_flag() {
 
     // Trigger an error - try to read non-existent item
     const char *read_json = NULL;
-    code = cosmos_container_read_item(&ctx, container, "pk1", "nonexistent-item", &read_json);
+    code = cosmos_container_read_item(&ctx, container, "pk1", "nonexistent-item", NULL, &read_json);
 
     if (code == COSMOS_ERROR_CODE_NOT_FOUND) {
         printf("✓ Got expected NOT_FOUND error code\n");
@@ -336,7 +339,7 @@ int test_error_detail_without_flag() {
 
 cleanup:
     if (database && database_created) {
-        cosmos_database_delete(&ctx, database);
+        cosmos_database_delete(&ctx, database, NULL);
     }
 
     if (container) {
@@ -369,7 +372,8 @@ int test_invalid_utf8_strings() {
     char database_name[64];
     snprintf(database_name, sizeof(database_name), "test-utf8-%ld", current_time);
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -386,7 +390,7 @@ int test_invalid_utf8_strings() {
     int database_created = 0;
 
     // Create client
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create client\n");
         result = TEST_FAIL;
@@ -394,7 +398,7 @@ int test_invalid_utf8_strings() {
     }
 
     // Create database
-    code = cosmos_client_create_database(&ctx, client, database_name, &database);
+    code = cosmos_client_create_database(&ctx, client, database_name, NULL, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create database\n");
         result = TEST_FAIL;
@@ -403,7 +407,7 @@ int test_invalid_utf8_strings() {
     database_created = 1;
 
     // Create container
-    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", &container);
+    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create container\n");
         result = TEST_FAIL;
@@ -421,7 +425,7 @@ int test_invalid_utf8_strings() {
     invalid_json[len + 1] = '\0';
     strcat(invalid_json, "\"}");
 
-    code = cosmos_container_upsert_item(&ctx, container, "pk1", invalid_json);
+    code = cosmos_container_upsert_item(&ctx, container, "pk1", invalid_json, NULL);
 
     if (code == COSMOS_ERROR_CODE_INVALID_UTF8) {
         printf("✓ Invalid UTF-8 correctly rejected with INVALID_UTF8 error code\n");
@@ -435,7 +439,7 @@ int test_invalid_utf8_strings() {
 
 cleanup:
     if (database && database_created) {
-        cosmos_database_delete(&ctx, database);
+        cosmos_database_delete(&ctx, database, NULL);
     }
 
     if (container) {
@@ -468,7 +472,8 @@ int test_empty_string_handling() {
     char database_name[64];
     snprintf(database_name, sizeof(database_name), "test-empty-%ld", current_time);
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -485,7 +490,7 @@ int test_empty_string_handling() {
     int database_created = 0;
 
     // Create client
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create client\n");
         result = TEST_FAIL;
@@ -493,7 +498,7 @@ int test_empty_string_handling() {
     }
 
     // Test 6a: Empty database name
-    code = cosmos_client_create_database(&ctx, client, "", &database);
+    code = cosmos_client_create_database(&ctx, client, "", NULL, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ Empty database name correctly rejected with error code: %d\n", code);
     } else {
@@ -504,7 +509,7 @@ int test_empty_string_handling() {
     }
 
     // Create valid database for remaining tests
-    code = cosmos_client_create_database(&ctx, client, database_name, &database);
+    code = cosmos_client_create_database(&ctx, client, database_name, NULL, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create valid database\n");
         result = TEST_FAIL;
@@ -513,7 +518,7 @@ int test_empty_string_handling() {
     database_created = 1;
 
     // Test 6b: Empty container name
-    code = cosmos_database_create_container(&ctx, database, "", "/pk", &container);
+    code = cosmos_database_create_container(&ctx, database, "", "/pk", NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ Empty container name correctly rejected with error code: %d\n", code);
     } else {
@@ -524,7 +529,7 @@ int test_empty_string_handling() {
     }
 
     // Test 6c: Empty partition key path
-    code = cosmos_database_create_container(&ctx, database, "test-container", "", &container);
+    code = cosmos_database_create_container(&ctx, database, "test-container", "", NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ Empty partition key path correctly rejected with error code: %d\n", code);
     } else {
@@ -535,7 +540,7 @@ int test_empty_string_handling() {
     }
 
     // Create valid container for remaining tests
-    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", &container);
+    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create valid container\n");
         result = TEST_FAIL;
@@ -544,7 +549,7 @@ int test_empty_string_handling() {
 
     // Test 6d: Empty item ID in JSON
     const char *json_with_empty_id = "{\"id\":\"\",\"pk\":\"pk1\",\"value\":\"test\"}";
-    code = cosmos_container_upsert_item(&ctx, container, "pk1", json_with_empty_id);
+    code = cosmos_container_upsert_item(&ctx, container, "pk1", json_with_empty_id, NULL);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ Empty item ID correctly rejected with error code: %d\n", code);
     } else {
@@ -554,7 +559,7 @@ int test_empty_string_handling() {
 
     // Test 6e: Empty partition key value
     const char *json_data = "{\"id\":\"item1\",\"pk\":\"pk1\",\"value\":\"test\"}";
-    code = cosmos_container_upsert_item(&ctx, container, "", json_data);
+    code = cosmos_container_upsert_item(&ctx, container, "", json_data, NULL);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("✓ Empty partition key value correctly rejected with error code: %d\n", code);
     } else {
@@ -564,7 +569,7 @@ int test_empty_string_handling() {
 
 cleanup:
     if (database && database_created) {
-        cosmos_database_delete(&ctx, database);
+        cosmos_database_delete(&ctx, database, NULL);
     }
 
     if (container) {

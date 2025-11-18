@@ -14,6 +14,11 @@ pub use tokio::*;
 
 use crate::error::CosmosError;
 
+#[repr(C)]
+pub struct RuntimeOptions {
+    // Reserved for future use.
+}
+
 /// Creates a new [`RuntimeContext`] for Cosmos DB Client API calls.
 ///
 /// This must be called before any other Cosmos DB Client API functions are used,
@@ -28,11 +33,22 @@ use crate::error::CosmosError;
 ///
 /// The error will contain a dynamically-allocated [`CosmosError::detail`] string that must be
 /// freed by the caller using the [`cosmos_string_free`](crate::string::cosmos_string_free) function.
+///
+/// # Arguments
+///
+/// * `options` - Pointer to [`RuntimeOptions`] for runtime configuration, may be null.
+/// * `out_error` - Output parameter that will receive error details if the function fails.
 #[no_mangle]
 pub extern "C" fn cosmos_runtime_context_create(
+    options: *const RuntimeOptions,
     out_error: *mut CosmosError,
 ) -> *mut RuntimeContext {
-    let c = match RuntimeContext::new() {
+    let options = if options.is_null() {
+        None
+    } else {
+        Some(unsafe { &*options })
+    };
+    let c = match RuntimeContext::new(options) {
         Ok(c) => c,
         Err(e) => {
             unsafe {
@@ -51,6 +67,7 @@ pub extern "C" fn cosmos_runtime_context_create(
 #[no_mangle]
 pub extern "C" fn cosmos_runtime_context_free(ctx: *mut RuntimeContext) {
     if !ctx.is_null() {
+        tracing::trace!(?ctx, "freeing runtime context");
         unsafe { drop(Box::from_raw(ctx)) }
     }
 }
