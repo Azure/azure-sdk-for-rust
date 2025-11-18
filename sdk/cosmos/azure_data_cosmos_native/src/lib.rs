@@ -39,6 +39,11 @@ pub fn unwrap_required_ptr<'a, T>(
             msg,
         ))
     } else {
+        tracing::trace!(
+            ?ptr,
+            type_name = std::any::type_name::<T>(),
+            "unwrapped pointer"
+        );
         Ok(unsafe { &*ptr })
     }
 }
