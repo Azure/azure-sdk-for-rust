@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{ClientOptions, RequestContent, StatusCode},
+    http::{ClientOptions, RequestContent, StatusCode, Url},
     Bytes,
 };
 use azure_core_test::{recorded, Matcher, TestContext};
@@ -21,7 +21,6 @@ use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_cli
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
-use typespec_client_core::http::Url;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
