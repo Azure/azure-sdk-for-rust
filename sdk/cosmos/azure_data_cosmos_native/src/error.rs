@@ -9,6 +9,7 @@ pub mod messages {
     use std::ffi::CStr;
 
     pub static INVALID_UTF8: &CStr = c"String is not valid UTF-8";
+    pub static STRING_CONTAINS_NUL: &CStr = c"String contains NUL bytes";
     pub static OPERATION_SUCCEEDED: &CStr = c"Operation completed successfully";
     pub static NULL_OUTPUT_POINTER: &CStr = c"Output pointer is null";
     pub static INVALID_JSON: &CStr = c"Invalid JSON data";
@@ -295,7 +296,7 @@ impl From<NulError> for Error {
     fn from(_error: NulError) -> Self {
         Error::new(
             CosmosErrorCode::InvalidCString,
-            c"String contains NUL bytes",
+            messages::STRING_CONTAINS_NUL,
         )
     }
 }
