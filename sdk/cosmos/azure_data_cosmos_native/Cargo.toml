@@ -15,12 +15,18 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 futures.workspace = true
-tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "macros"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 azure_core.workspace = true
 azure_data_cosmos = { path = "../azure_data_cosmos", features = [ "key_auth", "preview_query_engine" ] }
 tracing.workspace = true
 tracing-subscriber = { workspace = true, optional = true, features = ["fmt", "env-filter"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+# The 'rt-multi-thread' feature is not supported in wasm targets
+tokio = { workspace = true, optional = true, features = ["rt", "macros"] }
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "macros"] }
 
 [features]
 default = ["tokio", "reqwest", "reqwest_native_tls", "tracing"]
