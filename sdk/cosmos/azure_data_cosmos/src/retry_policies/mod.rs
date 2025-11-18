@@ -72,23 +72,21 @@ pub trait RetryPolicy: Send + Sync {
     async fn should_retry(&mut self, response: &azure_core::Result<RawResponse>) -> RetryResult;
 }
 
-fn get_substatus_code_from_error(err: &azure_core::Error) -> SubStatusCode {
+fn get_substatus_code_from_error(err: &azure_core::Error) -> Option<SubStatusCode> {
     if let ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
         raw_response
             .as_ref()
             .and_then(|r| r.headers().get_as(&SUB_STATUS).ok())
             .and_then(|raw: u32| SubStatusCode::try_from(raw).ok())
-            .unwrap_or(SubStatusCode::Unknown)
     } else {
-        SubStatusCode::Unknown
+        None
     }
 }
 
-fn get_substatus_code_from_response(response: &RawResponse) -> SubStatusCode {
+fn get_substatus_code_from_response(response: &RawResponse) -> Option<SubStatusCode> {
     response
         .headers()
         .get_as(&SUB_STATUS)
         .ok()
         .and_then(|raw: u32| SubStatusCode::try_from(raw).ok())
-        .unwrap_or(SubStatusCode::Unknown)
 }

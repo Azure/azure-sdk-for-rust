@@ -46,7 +46,6 @@ pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[non_exhaustive]
 pub enum SubStatusCode {
-    Unknown = 0,
     TooManyRequests = 429,
 
     // 400: Bad Request Substatus
@@ -167,7 +166,6 @@ impl TryFrom<u32> for SubStatusCode {
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         use SubStatusCode::*;
         let code = match value {
-            0 => Unknown,
             3 => WriteForbidden,
             429 => TooManyRequests,
             1000 => NameCacheIsStale,

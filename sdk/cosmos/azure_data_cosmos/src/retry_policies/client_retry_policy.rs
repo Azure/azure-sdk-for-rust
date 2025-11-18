@@ -309,10 +309,11 @@ impl ClientRetryPolicy {
     async fn should_retry_on_http_status(
         &mut self,
         status_code: StatusCode,
-        sub_status_code: SubStatusCode,
+        sub_status_code: Option<SubStatusCode>,
     ) -> Option<RetryResult> {
         // Forbidden - Write forbidden (403.3)
-        if status_code == StatusCode::Forbidden && sub_status_code == SubStatusCode::WriteForbidden
+        if status_code == StatusCode::Forbidden
+            && sub_status_code == Some(SubStatusCode::WriteForbidden)
         {
             // automatic failover support needed to be plugged in here.
             return Some(
@@ -323,7 +324,7 @@ impl ClientRetryPolicy {
 
         // Read Session Not Available (404.1022)
         if status_code == StatusCode::NotFound
-            && sub_status_code == SubStatusCode::READ_SESSION_NOT_AVAILABLE
+            && sub_status_code == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
         {
             return Some(self.should_retry_on_session_not_available(self.cosmos_request.clone()));
         }
@@ -335,7 +336,8 @@ impl ClientRetryPolicy {
 
         // Internal server error (500) or Gone - Lease not found (410)
         if (status_code == StatusCode::InternalServerError && self.is_read_request)
-            || (status_code == StatusCode::Gone && sub_status_code == SubStatusCode::LeaseNotFound)
+            || (status_code == StatusCode::Gone
+                && sub_status_code == Some(SubStatusCode::LeaseNotFound))
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }

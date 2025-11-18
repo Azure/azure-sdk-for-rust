@@ -146,14 +146,15 @@ impl MetadataRequestRetryPolicy {
     fn should_retry_with_status_code(
         &mut self,
         status_code: StatusCode,
-        sub_status_code: SubStatusCode,
+        sub_status_code: Option<SubStatusCode>,
     ) -> RetryResult {
         // Check for retryable status codes
         if (status_code == StatusCode::ServiceUnavailable
             || status_code == StatusCode::InternalServerError
-            || (status_code == StatusCode::Gone && sub_status_code == SubStatusCode::LeaseNotFound)
+            || (status_code == StatusCode::Gone
+                && sub_status_code == Some(SubStatusCode::LeaseNotFound))
             || (status_code == StatusCode::Forbidden
-                && sub_status_code == SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND))
+                && sub_status_code == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)))
             && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
         {
             return RetryResult::Retry {

@@ -15,11 +15,24 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+/// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
+///
+/// This component coordinates multi-region request routing by maintaining location cache state,
+/// refreshing account properties, and resolving service endpoints based on request characteristics
+/// and availability. It handles endpoint discovery, tracks unavailable endpoints, and supports
+/// multi-master write configurations.
 #[derive(Debug, Clone)]
 pub struct GlobalEndpointManager {
+    /// The primary default endpoint URL for the Cosmos DB account
     default_endpoint: String,
+
+    /// Thread-safe cache of location information including read/write endpoints and availability status
     location_cache: Arc<Mutex<LocationCache>>,
+
+    /// HTTP pipeline for making requests to the Cosmos DB service
     pipeline: Pipeline,
+
+    /// Cache for account properties with 600 second TTL to reduce redundant service calls
     account_properties_cache: Cache<&'static str, AccountProperties>,
 }
 
@@ -27,10 +40,19 @@ impl GlobalEndpointManager {
     /// Creates a new `GlobalEndpointManager` with a `LocationCache` initialized
     /// from the provided `default_endpoint` and `preferred_locations`.
     ///
-    /// Assumptions:
-    /// - We use simple fixed intervals for background refresh placeholders until
-    ///   a real scheduling implementation is added.
-    /// - Account refresh/background flags start as `false`.
+    /// # Summary
+    /// Initializes the endpoint manager with a default endpoint, preferred regions for routing,
+    /// and an HTTP pipeline for communication. Sets up location cache for endpoint management
+    /// and account properties cache with 600 second TTL. The manager starts with empty endpoint
+    /// lists until the first account properties refresh populates regional endpoints.
+    ///
+    /// # Arguments
+    /// * `default_endpoint` - The primary Cosmos DB account endpoint URL
+    /// * `preferred_locations` - Ordered list of preferred Azure regions for request routing
+    /// * `pipeline` - HTTP pipeline for making service requests
+    ///
+    /// # Returns
+    /// A new `GlobalEndpointManager` instance ready for request routing
     pub fn new(
         default_endpoint: String,
         preferred_locations: Vec<Cow<'static, str>>,
@@ -53,25 +75,72 @@ impl GlobalEndpointManager {
         }
     }
 
+    /// Returns the default hub endpoint URL for the Cosmos DB account.
+    ///
+    /// # Summary
+    /// Retrieves the primary endpoint URL that was configured during manager initialization.
+    /// This is the main entry point for the Cosmos DB account and is used as a fallback
+    /// when no preferred regional endpoints are available or configured.
+    ///
+    /// # Returns
+    /// The default endpoint URL as a String
     pub fn get_hub_uri(&self) -> String {
         self.default_endpoint.clone()
     }
 
+    /// Returns the list of available read endpoints.
+    ///
+    /// # Summary
+    /// Retrieves all currently available read endpoints from the location cache. The list
+    /// includes regional endpoints that can handle read operations and are not marked as
+    /// unavailable. Initially empty until account properties are fetched and processed.
+    ///
+    /// # Returns
+    /// A vector of endpoint URLs available for read operations
     #[allow(dead_code)]
     pub fn read_endpoints(&self) -> Vec<String> {
         self.location_cache.lock().unwrap().read_endpoints()
     }
 
+    /// Returns the list of available account read endpoints.
+    ///
+    /// # Summary
+    /// Alias for `read_endpoints()` that retrieves all currently available read endpoints
+    /// from the location cache. Provides the same functionality with an alternative name
+    /// for clarity in account-level operations context.
+    ///
+    /// # Returns
+    /// A vector of endpoint URLs available for read operations
     #[allow(dead_code)]
     pub fn account_read_endpoints(&self) -> Vec<String> {
         self.location_cache.lock().unwrap().read_endpoints()
     }
 
+    /// Returns the list of available write endpoints.
+    ///
+    /// # Summary
+    /// Retrieves all currently available write endpoints from the location cache. The list
+    /// includes regional endpoints that can handle write operations and are not marked as
+    /// unavailable. For multi-master accounts, this may include multiple regions; for
+    /// single-master accounts, typically only the write region. Initially empty until
+    /// account properties are fetched.
+    ///
+    /// # Returns
+    /// A vector of endpoint URLs available for write operations
     #[allow(dead_code)]
     pub fn write_endpoints(&self) -> Vec<String> {
         self.location_cache.lock().unwrap().write_endpoints()
     }
 
+    /// Returns the count of preferred locations configured for routing.
+    ///
+    /// # Summary
+    /// Retrieves the number of preferred Azure regions that were specified during
+    /// initialization. This count is used by retry policies to determine failover
+    /// behavior and calculate maximum retry attempts across regions.
+    ///
+    /// # Returns
+    /// The number of preferred locations as an i32
     pub fn preferred_location_count(&self) -> i32 {
         self.location_cache
             .lock()
@@ -81,6 +150,19 @@ impl GlobalEndpointManager {
             .len() as i32
     }
 
+    /// Resolves the appropriate service endpoint URL for a given request.
+    ///
+    /// # Summary
+    /// Determines which endpoint should handle the request based on operation type
+    /// (read vs write), resource type, preferred locations, and endpoint availability.
+    /// Delegates to the location cache which applies routing logic including regional
+    /// preferences and failover to available endpoints.
+    ///
+    /// # Arguments
+    /// * `request` - The Cosmos DB request requiring endpoint resolution
+    ///
+    /// # Returns
+    /// The resolved endpoint URL as a String
     pub(crate) fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
         self.location_cache
             .lock()
@@ -88,6 +170,19 @@ impl GlobalEndpointManager {
             .resolve_service_endpoint(request)
     }
 
+    /// Returns all endpoints applicable for handling a specific request.
+    ///
+    /// # Summary
+    /// Retrieves the list of endpoints that could potentially handle the request based
+    /// on its operation type (read or write) and current endpoint availability. Used by
+    /// retry policies to determine how many alternative endpoints are available for
+    /// failover attempts.
+    ///
+    /// # Arguments
+    /// * `request` - The Cosmos DB request to evaluate
+    ///
+    /// # Returns
+    /// A vector of applicable endpoint URLs
     pub fn get_applicable_endpoints(&self, request: &CosmosRequest) -> Vec<String> {
         self.location_cache
             .lock()
@@ -95,6 +190,16 @@ impl GlobalEndpointManager {
             .get_applicable_endpoints(request)
     }
 
+    /// Marks an endpoint as unavailable for read operations.
+    ///
+    /// # Summary
+    /// Flags the specified endpoint as unavailable for read requests in the location cache.
+    /// This is called by retry policies when read requests fail due to endpoint issues,
+    /// preventing subsequent read operations from being routed to the failing endpoint.
+    /// The endpoint may still be used for write operations if not separately marked unavailable.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The endpoint URL to mark as unavailable for reads
     pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) {
         self.location_cache
             .lock()
@@ -102,6 +207,16 @@ impl GlobalEndpointManager {
             .mark_endpoint_unavailable(endpoint, RequestOperation::Read)
     }
 
+    /// Marks an endpoint as unavailable for write operations.
+    ///
+    /// # Summary
+    /// Flags the specified endpoint as unavailable for write requests in the location cache.
+    /// This is called by retry policies when write requests fail due to endpoint issues,
+    /// preventing subsequent write operations from being routed to the failing endpoint.
+    /// The endpoint may still be used for read operations if not separately marked unavailable.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The endpoint URL to mark as unavailable for writes
     pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) {
         self.location_cache
             .lock()
@@ -109,12 +224,39 @@ impl GlobalEndpointManager {
             .mark_endpoint_unavailable(endpoint, RequestOperation::Write)
     }
 
+    /// Determines if a request can utilize multiple write locations.
+    ///
+    /// # Summary
+    /// Evaluates whether the given request can be routed to multiple write regions based
+    /// on the request's operation type and resource type. Returns true only for write
+    /// operations on resources that support multi-master writes (documents and stored
+    /// procedure executions) when the account is configured for multiple write locations.
+    ///
+    /// # Arguments
+    /// * `request` - The Cosmos DB request to evaluate
+    ///
+    /// # Returns
+    /// `true` if the request can use multiple write locations, `false` otherwise
     pub fn can_use_multiple_write_locations(&self, request: &CosmosRequest) -> bool {
         !request.is_read_only_request()
             && self
                 .can_support_multiple_write_locations(request.resource_type, request.operation_type)
     }
 
+    /// Refreshes account properties and location information from the service.
+    ///
+    /// # Summary
+    /// Fetches the latest Cosmos DB account properties including regional endpoint information
+    /// and updates the location cache. Uses a Moka cache with 600 second TTL to avoid redundant
+    /// service calls. If `force_refresh` is true, invalidates the cache to ensure fresh data.
+    /// The location cache is updated only when new data is fetched (TTL expiry or forced refresh),
+    /// not when serving cached data.
+    ///
+    /// # Arguments
+    /// * `force_refresh` - If true, invalidates cache and forces fresh fetch from service
+    ///
+    /// # Returns
+    /// `Ok(())` if refresh succeeded, `Err` if fetching account properties failed
     pub async fn refresh_location_async(&self, force_refresh: bool) -> Result<(), Error> {
         // If force_refresh is true, invalidate the cache to ensure a fresh fetch
         if force_refresh {
@@ -150,6 +292,16 @@ impl GlobalEndpointManager {
         Ok(())
     }
 
+    /// Returns a map of write endpoints indexed by location name.
+    ///
+    /// # Summary
+    /// Retrieves a mapping from Azure region names to their corresponding write endpoint URLs.
+    /// This provides direct lookup of write endpoints by location, useful for diagnostic
+    /// and monitoring scenarios. The map reflects the current account configuration and
+    /// may be empty until account properties are fetched.
+    ///
+    /// # Returns
+    /// A HashMap mapping location names to write endpoint URLs
     #[allow(dead_code)]
     fn get_available_write_endpoints_by_location(&self) -> HashMap<String, String> {
         self.location_cache
@@ -160,6 +312,16 @@ impl GlobalEndpointManager {
             .clone()
     }
 
+    /// Returns a map of read endpoints indexed by location name.
+    ///
+    /// # Summary
+    /// Retrieves a mapping from Azure region names to their corresponding read endpoint URLs.
+    /// This provides direct lookup of read endpoints by location, useful for diagnostic
+    /// and monitoring scenarios. The map reflects the current account configuration and
+    /// may be empty until account properties are fetched.
+    ///
+    /// # Returns
+    /// A HashMap mapping location names to read endpoint URLs
     #[allow(dead_code)]
     fn get_available_read_endpoints_by_location(&self) -> HashMap<String, String> {
         self.location_cache
@@ -170,6 +332,20 @@ impl GlobalEndpointManager {
             .clone()
     }
 
+    /// Determines if the account supports multiple write locations for specific resource and operation types.
+    ///
+    /// # Summary
+    /// Evaluates whether multi-master writes are supported based on account configuration and
+    /// the specific resource/operation combination. Multi-master writes are supported for
+    /// Documents (all operations) and StoredProcedures (Execute operation only). Other resource
+    /// types like Databases, Containers, etc., do not support multi-write even in multi-master accounts.
+    ///
+    /// # Arguments
+    /// * `resource_type` - The type of resource being operated on
+    /// * `operation_type` - The type of operation being performed
+    ///
+    /// # Returns
+    /// `true` if multi-write is supported for the resource/operation, `false` otherwise
     pub(crate) fn can_support_multiple_write_locations(
         &self,
         resource_type: ResourceType,
@@ -182,12 +358,16 @@ impl GlobalEndpointManager {
                     && operation_type == OperationType::Execute))
     }
 
-    /// Retrieves the Cosmos DB account ("database account") properties.
+    /// Retrieves the Cosmos DB account ("database account") properties from the service.
     ///
-    /// # Arguments
-    /// * `options` - Optional request options (currently unused for custom
-    ///   headers, but the context can carry per-call metadata for tracing or
-    ///   cancellation).
+    /// # Summary
+    /// Makes an HTTP request to fetch account properties including regional endpoint information,
+    /// consistency settings, and multi-master configuration. Uses the default endpoint for the
+    /// request and constructs a metadata read operation with appropriate resource link. Called
+    /// internally by `refresh_location_async` when cache needs updating.
+    ///
+    /// # Returns
+    /// `Ok(Response<AccountProperties>)` with account metadata, or `Err` if request failed
     async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
         let options = ReadDatabaseOptions {
             ..Default::default()
