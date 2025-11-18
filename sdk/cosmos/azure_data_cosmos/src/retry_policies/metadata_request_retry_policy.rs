@@ -196,7 +196,8 @@ impl MetadataRequestRetryPolicy {
     }
 }
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl RetryPolicy for MetadataRequestRetryPolicy {
     /// Method that is called before a request is sent to allow the retry policy implementation
     /// to modify the state of the request.

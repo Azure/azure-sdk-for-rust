@@ -402,7 +402,8 @@ impl ClientRetryPolicy {
     }
 }
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl RetryPolicy for ClientRetryPolicy {
     /// Prepares a request before it is sent, configuring routing and endpoint selection.
     ///
