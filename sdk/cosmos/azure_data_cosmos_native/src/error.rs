@@ -170,12 +170,12 @@ pub struct CosmosError {
 }
 
 impl CosmosError {
-    // /// cbindgen:ignore
-    // pub static SUCCESS: Self = Self {
-    //     code: CosmosErrorCode::Success,
-    //     message: messages::OPERATION_SUCCEEDED.as_ptr(),
-    //     detail: std::ptr::null(),
-    // };
+    /// cbindgen:ignore
+    pub const SUCCESS: Self = Self {
+        code: CosmosErrorCode::Success,
+        message: messages::OPERATION_SUCCEEDED.as_ptr(),
+        detail: std::ptr::null(),
+    };
 }
 
 pub fn http_status_to_error_code(status_code: u16) -> CosmosErrorCode {

@@ -109,7 +109,7 @@ impl CallContext {
         tracing::trace!("sync operation complete");
         match r {
             Ok(()) => {
-                self.error = Error::SUCCESS.into_ffi(self.include_error_details);
+                self.error = CosmosError::SUCCESS;
                 CosmosErrorCode::Success
             }
             Err(err) => self.set_error_and_return_code(err),
@@ -139,7 +139,7 @@ impl CallContext {
                 unsafe {
                     *out = value.into_raw();
                 }
-                self.error = Error::SUCCESS.into_ffi(self.include_error_details);
+                self.error = CosmosError::SUCCESS;
                 CosmosErrorCode::Success
             }
             Err(err) => self.set_error_and_return_code(err),
@@ -156,7 +156,7 @@ impl CallContext {
         tracing::trace!("async operation complete");
         match r {
             Ok(()) => {
-                self.error = Error::SUCCESS.into_ffi(self.include_error_details);
+                self.error = CosmosError::SUCCESS;
                 CosmosErrorCode::Success
             }
             Err(err) => self.set_error_and_return_code(err),
@@ -186,7 +186,7 @@ impl CallContext {
                 unsafe {
                     *out = value.into_raw();
                 }
-                self.error = Error::SUCCESS.into_ffi(self.include_error_details);
+                self.error = CosmosError::SUCCESS;
                 CosmosErrorCode::Success
             }
             Err(err) => self.set_error_and_return_code(err),
