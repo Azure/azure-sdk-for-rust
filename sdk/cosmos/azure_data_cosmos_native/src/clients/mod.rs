@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #![allow(
     clippy::missing_safety_doc,
     reason = "We're operating on raw pointers received from FFI."
