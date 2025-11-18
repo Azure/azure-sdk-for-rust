@@ -60,7 +60,15 @@ To install the Azure CLI, follow the  [Azure CLI install documentation](https://
    az --version
    ```
 
+1. Bicep (for testing and resource provisioning)
+
+```bash
+az bicep install
+```
+
 1. **PowerShell** (for running test resource scripts on Windows)
+
+Powershell install instructions [can be found here](https://learn.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-7.5).
 
 ## Part 1: TypeSpec Specification Setup
 
