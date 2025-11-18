@@ -5,6 +5,7 @@ use std::ffi::{CStr, CString, NulError};
 pub mod messages {
     use std::ffi::CStr;
 
+    pub static INVALID_UTF8: &CStr = c"String is not valid UTF-8";
     pub static OPERATION_SUCCEEDED: &CStr = c"Operation completed successfully";
     pub static NULL_OUTPUT_POINTER: &CStr = c"Output pointer is null";
     pub static INVALID_JSON: &CStr = c"Invalid JSON data";
@@ -51,13 +52,14 @@ pub enum CosmosErrorCode {
     ItemSizeTooLarge = 2004,
     PartitionKeyNotFound = 2005,
 
-    InvalidUTF8 = 3001,        // Invalid UTF-8 in string parameters crossing FFI
-    InvalidHandle = 3002,      // Corrupted/invalid handle passed across FFI
-    MemoryError = 3003,        // Memory allocation/deallocation issues at FFI boundary
-    MarshalingError = 3004,    // Data marshaling/unmarshaling failed at FFI boundary
-    CallContextMissing = 3005, // CallContext not provided where required
-    RuntimeContextMissing = 3006, // RuntimeContext not provided where required
-    InvalidCString = 3007,     // Invalid C string (not null-terminated or malformed)
+    InternalError = 3001,         // Internal error within the FFI layer
+    InvalidUTF8 = 3002,           // Invalid UTF-8 in string parameters crossing FFI
+    InvalidHandle = 3003,         // Corrupted/invalid handle passed across FFI
+    MemoryError = 3004,           // Memory allocation/deallocation issues at FFI boundary
+    MarshalingError = 3005,       // Data marshaling/unmarshaling failed at FFI boundary
+    CallContextMissing = 3006,    // CallContext not provided where required
+    RuntimeContextMissing = 3007, // RuntimeContext not provided where required
+    InvalidCString = 3008,        // Invalid C string (not null-terminated or malformed)
 }
 
 /// Internal structure for representing errors.
@@ -65,6 +67,8 @@ pub enum CosmosErrorCode {
 /// This structure is not exposed across the FFI boundary directly.
 /// Instead, the [`CallContext`](crate::context::CallContext) receives this error and then marshals it
 /// to an appropriate representation for the caller.
+/// cbindgen:ignore
+#[derive(Debug)]
 pub struct Error {
     /// The error code representing the type of error.
     code: CosmosErrorCode,
@@ -74,7 +78,7 @@ pub struct Error {
 
     /// An optional error detail object that can provide additional context about the error.
     /// This is held as a boxed trait so that it only allocates the string if the user requested detailed errors.
-    detail: Option<Box<dyn std::string::ToString>>,
+    detail: Option<Box<dyn std::error::Error>>,
 }
 
 impl Error {
@@ -98,7 +102,7 @@ impl Error {
     pub fn with_detail(
         code: CosmosErrorCode,
         message: &'static CStr,
-        detail: impl ToString + 'static,
+        detail: impl std::error::Error + 'static,
     ) -> Self {
         Self {
             code,
@@ -128,6 +132,23 @@ impl Error {
         }
     }
 }
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} (code: {:?})",
+            self.message.to_string_lossy(),
+            self.code
+        )?;
+        if let Some(detail) = &self.detail {
+            write!(f, ": {}", detail.to_string())?;
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for Error {}
 
 /// External representation of an error across the FFI boundary.
 #[repr(C)]
@@ -262,7 +283,7 @@ impl From<serde_json::Error> for Error {
         Error::with_detail(
             CosmosErrorCode::DataConversion,
             c"JSON serialization/deserialization error",
-            error.to_string(),
+            error,
         )
     }
 }

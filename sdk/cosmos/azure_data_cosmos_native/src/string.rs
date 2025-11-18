@@ -44,10 +44,11 @@ pub fn parse_cstr<'a>(ptr: *const c_char, error_msg: &'static CStr) -> Result<&'
 
 /// Releases the memory associated with a C string obtained from Rust.
 #[no_mangle]
-pub extern "C" fn cosmos_string_free(ptr: *const c_char) {
-    if !ptr.is_null() {
+pub extern "C" fn cosmos_string_free(str: *const c_char) {
+    if !str.is_null() {
+        tracing::trace!(?str, "freeing string");
         unsafe {
-            drop(CString::from_raw(ptr as *mut c_char));
+            drop(CString::from_raw(str as *mut c_char));
         }
     }
 }

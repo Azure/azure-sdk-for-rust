@@ -8,13 +8,18 @@ use futures::TryStreamExt;
 
 use crate::context::CallContext;
 use crate::error::{self, CosmosErrorCode, Error};
+use crate::options::{
+    CreateContainerOptions, DeleteDatabaseOptions, QueryOptions, ReadDatabaseOptions,
+};
 use crate::string::parse_cstr;
 use crate::unwrap_required_ptr;
 
 /// Releases the memory associated with a [`DatabaseClient`].
 #[no_mangle]
+#[tracing::instrument(level = "debug")]
 pub extern "C" fn cosmos_database_free(database: *mut DatabaseClient) {
     if !database.is_null() {
+        tracing::trace!(?database, "freeing database client");
         unsafe { drop(Box::from_raw(database)) }
     }
 }
@@ -27,6 +32,7 @@ pub extern "C" fn cosmos_database_free(database: *mut DatabaseClient) {
 /// * `container_id` - The container ID as a nul-terminated C string.
 /// * `out_container` - Output parameter that will receive a pointer to the [`ContainerClient`].
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, database = ?database))]
 pub extern "C" fn cosmos_database_container_client(
     ctx: *mut CallContext,
     database: *const DatabaseClient,
@@ -46,11 +52,18 @@ pub extern "C" fn cosmos_database_container_client(
 /// # Arguments
 /// * `ctx` - Pointer to a [`CallContext`] to use for this call.
 /// * `database` - Pointer to the [`DatabaseClient`].
+/// * `options` - Pointer to [`ReadDatabaseOptions`] for read configuration, may be null.
 /// * `out_json` - Output parameter that will receive a pointer to the JSON string.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, database = ?database))]
 pub extern "C" fn cosmos_database_read(
     ctx: *mut CallContext,
     database: *const DatabaseClient,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ReadDatabaseOptions,
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
@@ -66,10 +79,17 @@ pub extern "C" fn cosmos_database_read(
 /// # Arguments
 /// * `ctx` - Pointer to a [`CallContext`] to use for this call.
 /// * `database` - Pointer to the [`DatabaseClient`].
+/// * `options` - Pointer to [`DeleteDatabaseOptions`] for delete configuration, may be null.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, database = ?database))]
 pub extern "C" fn cosmos_database_delete(
     ctx: *mut CallContext,
     database: *const DatabaseClient,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const DeleteDatabaseOptions,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
         let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
@@ -85,13 +105,20 @@ pub extern "C" fn cosmos_database_delete(
 /// * `database` - Pointer to the [`DatabaseClient`].
 /// * `container_id` - The container ID as a nul-terminated C string.
 /// * `partition_key_path` - The partition key path as a nul-terminated C string.
+/// * `options` - Pointer to [`CreateContainerOptions`] for create container configuration, may be null.
 /// * `out_container` - Output parameter that will receive a pointer to the newly created [`ContainerClient`].
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, database = ?database))]
 pub extern "C" fn cosmos_database_create_container(
     ctx: *mut CallContext,
     database: *const DatabaseClient,
     container_id: *const c_char,
     partition_key_path: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const CreateContainerOptions,
     out_container: *mut *mut ContainerClient,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_container, async {
@@ -121,12 +148,19 @@ pub extern "C" fn cosmos_database_create_container(
 /// * `ctx` - Pointer to a [`CallContext`] to use for this call.
 /// * `database` - Pointer to the [`DatabaseClient`].
 /// * `query` - The query string as a nul-terminated C string.
+/// * `options` - Pointer to [`QueryOptions`] for query configuration, may be null.
 /// * `out_json` - Output parameter that will receive a pointer to the JSON string.
 #[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx, database = ?database))]
 pub extern "C" fn cosmos_database_query_containers(
     ctx: *mut CallContext,
     database: *const DatabaseClient,
     query: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const QueryOptions,
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {

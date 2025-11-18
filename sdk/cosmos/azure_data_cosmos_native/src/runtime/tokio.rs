@@ -1,6 +1,9 @@
 use tokio::runtime::{Builder, Runtime};
 
-use crate::error::{CosmosErrorCode, Error};
+use crate::{
+    error::{CosmosErrorCode, Error},
+    runtime::RuntimeOptions,
+};
 
 /// Provides a RuntimeContext (see [`crate::runtime`]) implementation using the Tokio runtime.
 pub struct RuntimeContext {
@@ -8,9 +11,10 @@ pub struct RuntimeContext {
 }
 
 impl RuntimeContext {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(_options: Option<&RuntimeOptions>) -> Result<Self, Error> {
         let runtime = Builder::new_multi_thread()
             .enable_all()
+            .thread_name("cosmos-sdk-runtime")
             .build()
             .map_err(|e| {
                 Error::with_detail(
@@ -28,6 +32,12 @@ impl RuntimeContext {
     where
         F: std::future::Future<Output = R>,
     {
-        self.runtime.block_on(future)
+        self.runtime.block_on(async {
+            let _span = tracing::trace_span!("block_on").entered();
+            tracing::trace!("entered async runtime");
+            let r = future.await;
+            tracing::trace!("leaving async runtime");
+            r
+        })
     }
 }

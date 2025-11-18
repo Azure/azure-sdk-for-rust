@@ -54,6 +54,8 @@ fn main() {
         export: cbindgen::ExportConfig {
             prefix: Some("cosmos_".into()),
             exclude: vec!["PartitionKeyValue".into()],
+
+            // From what I can tell, there's no way to set a rename rule for types :(
             rename: HashMap::from([
                 ("RuntimeContext".into(), "runtime_context".into()),
                 ("CallContext".into(), "call_context".into()),
@@ -62,6 +64,17 @@ fn main() {
                 ("CosmosClient".into(), "client".into()),
                 ("DatabaseClient".into(), "database_client".into()),
                 ("ContainerClient".into(), "container_client".into()),
+                ("ClientOptions".into(), "client_options".into()),
+                ("QueryOptions".into(), "query_options".into()),
+                ("CreateDatabaseOptions".into(), "create_database_options".into()),
+                ("ReadDatabaseOptions".into(), "read_database_options".into()),
+                ("DeleteDatabaseOptions".into(), "delete_database_options".into()),
+                ("CreateContainerOptions".into(), "create_container_options".into()),
+                ("ReadContainerOptions".into(), "read_container_options".into()),
+                ("DeleteContainerOptions".into(), "delete_container_options".into()),
+                ("ItemOptions".into(), "item_options".into()),
+                ("RuntimeOptions".into(), "runtime_options".into()),
+                ("CallContextOptions".into(), "call_context_options".into()),
             ]),
             ..Default::default()
         },
@@ -69,10 +82,13 @@ fn main() {
     };
 
     let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    cbindgen::Builder::new()
+    let Ok(bindings) = cbindgen::Builder::new()
         .with_crate(crate_dir)
         .with_config(config)
         .generate()
-        .expect("unable to generate bindings")
-        .write_to_file("include/azurecosmos.h");
+    else {
+        println!("cargo:error=Failed to generate C bindings for azure_data_cosmos_native");
+        return;
+    };
+    bindings.write_to_file("include/azurecosmos.h");
 }

@@ -28,7 +28,8 @@ void report_test(const char *test_name, int passed) {
 int test_runtime_context_lifecycle() {
     printf("\n--- Test: runtime_context_lifecycle ---\n");
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -46,7 +47,8 @@ int test_runtime_context_lifecycle() {
 int test_call_context_stack_allocated() {
     printf("\n--- Test: call_context_stack_allocated ---\n");
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -76,7 +78,8 @@ int test_call_context_stack_allocated() {
 int test_call_context_heap_allocated() {
     printf("\n--- Test: call_context_heap_allocated ---\n");
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -114,11 +117,13 @@ int test_call_context_reuse() {
     const char *key = getenv("AZURE_COSMOS_KEY");
 
     if (!endpoint || !key) {
-        printf("Skipping test - requires AZURE_COSMOS_ENDPOINT and AZURE_COSMOS_KEY\n");
-        return TEST_PASS; // Not a failure, just skipped
+        printf("Error: Missing required environment variables.\n");
+        printf("Required: AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY\n");
+        return TEST_FAIL;
     }
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -131,7 +136,7 @@ int test_call_context_reuse() {
     cosmos_client *client = NULL;
 
     // First call - create client
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("First call failed with code: %d\n", code);
         cosmos_runtime_context_free(runtime);
@@ -176,15 +181,17 @@ int test_string_memory_management() {
     const char *key = getenv("AZURE_COSMOS_KEY");
 
     if (!endpoint || !key) {
-        printf("Skipping test - requires AZURE_COSMOS_ENDPOINT and AZURE_COSMOS_KEY\n");
-        return TEST_PASS;
+        printf("Error: Missing required environment variables.\n");
+        printf("Required: AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY\n");
+        return TEST_FAIL;
     }
 
     time_t current_time = time(NULL);
     char database_name[64];
     snprintf(database_name, sizeof(database_name), "auto-test-db-str-mem-%ld", current_time);
 
-    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL);
+    cosmos_error error;
+    cosmos_runtime_context *runtime = cosmos_runtime_context_create(NULL, &error);
     if (!runtime) {
         printf("Failed to create runtime context\n");
         return TEST_FAIL;
@@ -202,7 +209,7 @@ int test_string_memory_management() {
     int database_created = 0;
 
     // Create client
-    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, &client);
+    cosmos_error_code code = cosmos_client_create_with_key(&ctx, endpoint, key, NULL, &client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create client\n");
         result = TEST_FAIL;
@@ -210,7 +217,7 @@ int test_string_memory_management() {
     }
 
     // Create database
-    code = cosmos_client_create_database(&ctx, client, database_name, &database);
+    code = cosmos_client_create_database(&ctx, client, database_name, NULL, &database);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create database\n");
         result = TEST_FAIL;
@@ -220,7 +227,7 @@ int test_string_memory_management() {
     printf("Created database: %s\n", database_name);
 
     // Create container
-    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", &container);
+    code = cosmos_database_create_container(&ctx, database, "test-container", "/pk", NULL, &container);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create container\n");
         result = TEST_FAIL;
@@ -230,7 +237,7 @@ int test_string_memory_management() {
 
     // Create an item
     const char *json_data = "{\"id\":\"item1\",\"pk\":\"pk1\",\"value\":\"test\"}";
-    code = cosmos_container_upsert_item(&ctx, container, "pk1", json_data);
+    code = cosmos_container_upsert_item(&ctx, container, "pk1", json_data, NULL);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to upsert item\n");
         result = TEST_FAIL;
@@ -239,7 +246,7 @@ int test_string_memory_management() {
     printf("Upserted item\n");
 
     // Read the item - this returns a string that must be freed
-    code = cosmos_container_read_item(&ctx, container, "pk1", "item1", &read_json);
+    code = cosmos_container_read_item(&ctx, container, "pk1", "item1", NULL, &read_json);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to read item\n");
         result = TEST_FAIL;
@@ -255,7 +262,7 @@ int test_string_memory_management() {
     }
 
     // Test freeing error details (trigger an error)
-    code = cosmos_container_read_item(&ctx, container, "pk1", "nonexistent-item", &read_json);
+    code = cosmos_container_read_item(&ctx, container, "pk1", "nonexistent-item", NULL, &read_json);
     if (code == COSMOS_ERROR_CODE_NOT_FOUND) {
         printf("Got expected NOT_FOUND error\n");
         if (ctx.error.detail) {
@@ -267,7 +274,7 @@ int test_string_memory_management() {
 
 cleanup:
     if (database && database_created) {
-        cosmos_database_delete(&ctx, database);
+        cosmos_database_delete(&ctx, database, NULL);
     }
 
     if (container) {

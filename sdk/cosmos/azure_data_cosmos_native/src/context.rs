@@ -3,6 +3,12 @@ use crate::{
     runtime::RuntimeContext,
 };
 
+#[repr(C)]
+#[derive(Default)]
+pub struct CallContextOptions {
+    pub include_error_details: bool,
+}
+
 /// Represents the context for a call into the Cosmos DB native SDK.
 ///
 /// This structure can be created on the caller side, as long as the caller is able to create a C-compatible struct.
@@ -45,27 +51,39 @@ pub struct CallContext {
 /// This must be freed using [`cosmos_call_context_free`] when no longer needed.
 ///
 /// A [`CallContext`] may be reused for multiple calls, but cannot be used concurrently from multiple threads.
+///
+/// # Arguments
+/// * `runtime` - Pointer to a [`RuntimeContext`] created by [`cosmos_runtime_context_create`](crate::runtime::cosmos_runtime_context_create).
+/// * `options` - Pointer to [`CallContextOptions`] for call configuration, may be null.
 #[no_mangle]
 pub extern "C" fn cosmos_call_context_create(
-    runtime_ctx: *const RuntimeContext,
-    include_error_details: bool,
+    runtime_context: *const RuntimeContext,
+    options: *const CallContextOptions,
 ) -> *mut CallContext {
+    let options = if options.is_null() {
+        &CallContextOptions::default()
+    } else {
+        unsafe { &*options }
+    };
     let ctx = CallContext {
-        runtime_context: runtime_ctx,
-        include_error_details,
+        runtime_context,
+        include_error_details: options.include_error_details,
         error: CosmosError {
             code: CosmosErrorCode::Success,
             message: crate::error::messages::OPERATION_SUCCEEDED.as_ptr(),
             detail: std::ptr::null(),
         },
     };
-    Box::into_raw(Box::new(ctx))
+    let ptr = Box::into_raw(Box::new(ctx));
+    tracing::trace!(?ptr, "created call context");
+    ptr
 }
 
 /// Frees a [`CallContext`] created by [`cosmos_call_context_create`].
 #[no_mangle]
 pub extern "C" fn cosmos_call_context_free(ctx: *mut CallContext) {
     if !ctx.is_null() {
+        tracing::trace!(?ctx, "freeing call context");
         unsafe { drop(Box::from_raw(ctx)) }
     }
 }
@@ -83,7 +101,10 @@ impl CallContext {
 
     /// Runs a synchronous operation with no outputs, capturing any error into the CallContext.
     pub fn run_sync(&mut self, f: impl FnOnce() -> Result<(), Error>) -> CosmosErrorCode {
-        match f() {
+        tracing::trace!("starting sync operation");
+        let r = f();
+        tracing::trace!("sync operation complete");
+        match r {
             Ok(()) => {
                 self.error = Error::SUCCESS.into_ffi(self.include_error_details);
                 CosmosErrorCode::Success
@@ -107,7 +128,10 @@ impl CallContext {
             return CosmosErrorCode::InvalidArgument;
         }
 
-        match f() {
+        tracing::trace!("starting sync operation");
+        let r = f();
+        tracing::trace!("sync operation complete");
+        match r {
             Ok(value) => {
                 unsafe {
                     *out = value.into_raw();
@@ -124,7 +148,9 @@ impl CallContext {
         &mut self,
         f: impl std::future::Future<Output = Result<(), Error>>,
     ) -> CosmosErrorCode {
+        tracing::trace!("starting async operation");
         let r = self.runtime().block_on(f);
+        tracing::trace!("async operation complete");
         match r {
             Ok(()) => {
                 self.error = Error::SUCCESS.into_ffi(self.include_error_details);
@@ -149,7 +175,9 @@ impl CallContext {
             return CosmosErrorCode::InvalidArgument;
         }
 
+        tracing::trace!("starting async operation");
         let r = self.runtime().block_on(f);
+        tracing::trace!("async operation complete");
         match r {
             Ok(value) => {
                 unsafe {
@@ -163,6 +191,7 @@ impl CallContext {
     }
 
     fn set_error_and_return_code(&mut self, err: Error) -> CosmosErrorCode {
+        tracing::error!(%err, "operation failed, preparing error for FFI");
         let err = err.into_ffi(self.include_error_details);
         let code = err.code;
         self.error = err;
@@ -174,12 +203,19 @@ impl CallContext {
 macro_rules! context {
     ($param: expr) => {
         if $param.is_null() {
+            tracing::error!("call context pointer is null");
             return $crate::error::CosmosErrorCode::CallContextMissing;
         } else {
             let ctx = $crate::context::CallContext::from_ptr($param);
             if ctx.runtime_context.is_null() {
+                tracing::error!(call_context_pointer = ?$param, "call context has null runtime pointer");
                 return $crate::error::CosmosErrorCode::RuntimeContextMissing;
             } else {
+                tracing::trace!(
+                    runtime_pointer = ?ctx.runtime_context,
+                    call_context_pointer = ?$param,
+                    "restored call context from pointer",
+                );
                 ctx
             }
         }
@@ -197,7 +233,13 @@ impl<T> IntoRaw for Box<T> {
     type Output = *mut T;
 
     fn into_raw(self) -> *mut T {
-        Box::into_raw(self)
+        let pointer = Box::into_raw(self);
+        tracing::trace!(
+            ?pointer,
+            type_name = std::any::type_name::<T>(),
+            "converting Box to raw pointer",
+        );
+        pointer
     }
 }
 
@@ -205,6 +247,8 @@ impl IntoRaw for std::ffi::CString {
     type Output = *const std::ffi::c_char;
 
     fn into_raw(self) -> *const std::ffi::c_char {
-        self.into_raw()
+        let pointer = self.into_raw();
+        tracing::trace!(?pointer, "converting CString to raw pointer",);
+        pointer
     }
 }
