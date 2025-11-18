@@ -39,7 +39,7 @@ int main() {
     // Generate unique database and container names using timestamp
     time_t current_time = time(NULL);
     char database_name[64];
-    snprintf(database_name, sizeof(database_name), "auto-test-db-%ld", current_time);
+    snprintf(database_name, sizeof(database_name), "auto-test-db-item-crud-%ld", current_time);
 
     printf("Running Cosmos DB item CRUD test...\n");
     printf("Endpoint: %s\n", endpoint);

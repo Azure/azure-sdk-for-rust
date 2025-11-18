@@ -24,7 +24,9 @@ corrosion_import_crate(
 
 set(TEST_FILES
     ./c_tests/version.c
-    ./c_tests/item_crud.c)
+    ./c_tests/item_crud.c
+    ./c_tests/context_memory_management.c
+    ./c_tests/error_handling.c)
 
 foreach(test_file ${TEST_FILES})
     get_filename_component(test_name ${test_file} NAME_WE)

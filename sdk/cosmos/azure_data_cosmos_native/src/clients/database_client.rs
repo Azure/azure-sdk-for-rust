@@ -9,6 +9,7 @@ use futures::TryStreamExt;
 use crate::context::CallContext;
 use crate::error::{self, CosmosErrorCode, Error};
 use crate::string::parse_cstr;
+use crate::unwrap_required_ptr;
 
 /// Releases the memory associated with a [`DatabaseClient`].
 #[no_mangle]
@@ -33,7 +34,7 @@ pub extern "C" fn cosmos_database_container_client(
     out_container: *mut *mut ContainerClient,
 ) -> CosmosErrorCode {
     context!(ctx).run_sync_with_output(out_container, || {
-        let database = unsafe { &*database };
+        let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
         let container_id = parse_cstr(container_id, error::messages::INVALID_CONTAINER_ID)?;
         let container_client = database.container_client(container_id);
         Ok(Box::new(container_client))
@@ -53,7 +54,7 @@ pub extern "C" fn cosmos_database_read(
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
-        let database = unsafe { &*database };
+        let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
         let response = database.read(None).await?;
         let json = response.into_body().into_string()?;
         Ok(CString::new(json)?)
@@ -71,7 +72,7 @@ pub extern "C" fn cosmos_database_delete(
     database: *const DatabaseClient,
 ) -> CosmosErrorCode {
     context!(ctx).run_async(async {
-        let database = unsafe { &*database };
+        let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
         database.delete(None).await?;
         Ok(())
     })
@@ -94,7 +95,7 @@ pub extern "C" fn cosmos_database_create_container(
     out_container: *mut *mut ContainerClient,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_container, async {
-        let database = unsafe { &*database };
+        let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
 
         let container_id =
             parse_cstr(container_id, error::messages::INVALID_CONTAINER_ID)?.to_string();
@@ -110,7 +111,7 @@ pub extern "C" fn cosmos_database_create_container(
 
         let container_client = database.container_client(&container_id);
 
-        Ok(Box::new(container_client.into()))
+        Ok(Box::new(container_client))
     })
 }
 
@@ -129,7 +130,7 @@ pub extern "C" fn cosmos_database_query_containers(
     out_json: *mut *const c_char,
 ) -> CosmosErrorCode {
     context!(ctx).run_async_with_output(out_json, async {
-        let database = unsafe { &*database };
+        let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
 
         let query = parse_cstr(query, error::messages::INVALID_QUERY)?;
         let cosmos_query = Query::from(query);
