@@ -22,15 +22,13 @@ Note that the crate name, service directory and display name should be in the `t
 ## 1. Before you begin
 
 1. Confirm the TypeSpec definitions and `tspconfig.yaml` have landed in the `main` branch of `${input:specRepoRef}`. If not, route the user to finish the REST spec workflow first.
-2. Prerequisites (call them out explicitly):
+1. Prerequisites (call them out explicitly):
 
--   Node.js 20+. Node.js can be installed at [nodejs.org](https://nodejs.org/).
--   Rust toolchain from `rustup` matching the repo’s `rust-toolchain.toml` (currently 1.85).
--   `tsp-client` dependencies installed globally via `npm install -g @azure-tools/typespec-client-generator-cli`
+    - Node.js 20+. Node.js can be installed at [nodejs.org](https://nodejs.org/).
+    - Rust toolchain from `rustup` matching the repo’s `rust-toolchain.toml` (currently 1.85).
+    - `tsp-client` dependencies installed globally via `npm install -g @azure-tools/typespec-client-generator-cli`
 
-3. Mention the [TypeSpec Discussion](https://teams.microsoft.com/l/channel/19%3A906c1efbbec54dc8949ac736633e6bdf%40thread.skype/TypeSpec%20Discussion?groupId=3e17dcb0-4257-4a30-b843-77f47f1d4121&tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47) Teams channel for help.
-4. Mention the `TypeSpec Discussion` and `DPG` Teams channels for help.
-5. Confirm that the service and crate naming (namespace) has already been approved by the Azure SDK Architecture Board.
+1. Confirm that the service and crate naming (namespace) has already been approved by the Azure SDK Architecture Board.
 
 ## 2. Lay out the SDK workspace
 
@@ -39,12 +37,11 @@ Note that the crate name, service directory and display name should be in the `t
 
 ## 3. Prepare your TypeSpec inputs
 
-1. Service definitions normally live under `specification/${input:serviceDirectory}` in [`azure-rest-api-specs`](https://github.com/Azure/azure-rest-api-specs). Verify they contain:
 1. Service definitions normally live under `specification/${input:serviceDirectory}` in `azure-rest-api-specs`. Verify they contain:
 
--   `main.tsp` (the service contract)
--   `client.tsp` (customizations using `@azure-tools/typespec-client-generator-core` with `using Azure.ClientGenerator.Core;`)
--   `tspconfig.yaml` configured with the Rust emitter, for example:
+    - `main.tsp` (the service contract)
+    - `client.tsp` (customizations using `@azure-tools/typespec-client-generator-core` with `using Azure.ClientGenerator.Core;`)
+    - `tspconfig.yaml` configured with the Rust emitter, for example:
 
     ```yaml
     options:
@@ -54,9 +51,8 @@ Note that the crate name, service directory and display name should be in the `t
             crate-version: "0.1.0"
     ```
 
-2. Highlight that `client.tsp` is where they apply decorators such as `@client`, `@operationGroup`, and `@@clientName`, mirroring the customization table from the knowledge article.
-3. Remind the user that generated SDK code must _not_ be edited manually—customizations belong in `client.tsp`.
-4. Remind the user that generated code must _not_ be edited manually—customizations belong in `client.tsp`.
+1. Highlight that `client.tsp` is where they apply decorators such as `@client`, `@operationGroup`, and `@@clientName`, mirroring the customization table from the knowledge article.
+1. Remind the user that generated SDK code must _not_ be edited manually—customizations belong in `client.tsp`.
 
 ## 4. Generate the Rust crate with `tsp-client`
 
@@ -64,25 +60,25 @@ Walk them through both the Azure DevOps pipeline flow and the local init/update 
 
 1. **Initial generation on your machine**
 
-```pwsh
-tsp-client init -c ${input:tspConfigUrl}
-```
+    ```pwsh
+    tsp-client init -c ${input:tspConfigUrl}
+    ```
 
--   Explain that `init` scaffolds `sdk/${input:serviceDirectory}/${input:crateName}`, downloads the referenced `tspconfig.yaml`, and emits Rust code into the crate. Ensure the config URL includes a specific commit SHA for reproducibility.
--   If the spec lives locally instead of via URL, use `-c ../../specification/.../tspconfig.yaml`.
--   Mention that contributors can install `tsp-client` globally (`npm install -g @azure-tools/typespec-client-generator-cli`) if they prefer direct CLI invocation.
+    - Explain that `init` scaffolds `sdk/${input:serviceDirectory}/${input:crateName}`, downloads the referenced `tspconfig.yaml`, and emits Rust code into the crate. Ensure the config URL includes a specific commit SHA for reproducibility.
+    - If the spec lives locally instead of via URL, use `-c ../../specification/.../tspconfig.yaml`.
+    - Mention that contributors can install `tsp-client` globally (`npm install -g @azure-tools/typespec-client-generator-cli`) if they prefer direct CLI invocation.
 
 1. **Regeneration**
 
--   Update `tsp-location.yaml` with the new commit SHA.
--   From `sdk/${input:serviceDirectory}/${input:crateName}`, run:
+    - Update `tsp-location.yaml` with the new commit SHA.
+    - From `sdk/${input:serviceDirectory}/${input:crateName}`, run:
 
-```pwsh
-tsp-client update
-```
+    ```pwsh
+    tsp-client update
+    ```
 
--   Capture any generator diff in a standalone commit for easier review.
--   When iterating rapidly, use `tsp-client update --save-inputs` to keep temporary TypeSpec files for local tweaks, and delete stale `generated/` folders if models were renamed so obsolete code doesn’t linger.
+    - Capture any generator diff in a standalone commit for easier review.
+    - When iterating rapidly, use `tsp-client update --save-inputs` to keep temporary TypeSpec files for local tweaks, and delete stale `generated/` folders if models were renamed so obsolete code doesn’t linger.
 
 1. If the user needs to pin a different emitter version, point them to `eng/emitter-package.json` + lockfile, mirroring the warnings from the other quickstarts.
 
@@ -127,7 +123,7 @@ cargo doc --no-deps -p ${input:crateName}
 
 6. **Validation & local install**
 
--   If you need to consume the crate locally (analogous to `mvn install`), run `cargo install --path sdk/${input:serviceDirectory}/${input:crateName}` into a temporary prefix or `cargo publish --dry-run` to validate packaging.
+-   If you need to consume the crate locally, run `cargo install --path sdk/${input:serviceDirectory}/${input:crateName}` into a temporary prefix or `cargo publish --dry-run` to validate packaging.
 -   Verify no files under `generated/` were manually edited.
 
 7. **Feature checklist**
@@ -141,7 +137,6 @@ cargo doc --no-deps -p ${input:crateName}
 
 -   Link to `https://aka.ms/azsdk/dpcodegen` for architecture-board policy.
 -   Call out that any new SDK requires board approval and onboarding into the release pipeline.
--   Encourage filing questions in the TypeSpec Teams channel (`@DPG Rust`) as applicable.
 -   Loop in APIView reviewers (`apiview.dev`) once the crate builds.
 -   Highlight release readiness: ensure CHANGELOGs, CI definitions, and release scripts are updated before requesting the "increment versions" automation or publishing the crate.
 
@@ -149,7 +144,7 @@ cargo doc --no-deps -p ${input:crateName}
 
 When you finish, deliver a short status summary that includes:
 
--   Confirmation that `tsp-client init/update` or the Azure SDK Generation Pipeline ran (include command output snippets or pipeline links).
+-   Confirmation that `tsp-client init/update` ran without errors.
 -   Location of the generated crate (`sdk/${input:serviceDirectory}/${input:crateName}`).
 -   Build/test/doc command results.
 -   Follow-ups (e.g., pending API review, missing recordings, release checklist items).

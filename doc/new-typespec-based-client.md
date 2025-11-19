@@ -3,8 +3,9 @@
 
 This guide provides step-by-step instructions for creating a new Rust SDK client from TypeSpec definitions. There are two approaches:
 
-1. **Fully Generated Client** - All code is generated from TypeSpec (e.g., `azure_security_keyvault_secrets`)
-2. **Partially Generated Client** - Generated code with custom client wrappers (e.g., `azure_security_keyvault_certificates`)
+1. **Fully Generated Client** - All code is generated from TypeSpec (e.g., `azure_security_keyvault_secrets`). This is the solution which is expected for the vast majority of Rust clients.
+1. **Partially Generated Client** - Generated code with custom client wrappers (e.g., `azure_security_keyvault_certificates`). This solution should be limited to the very
+small set of SDK clients which require additional levels of customization beyond what is available in the `client.tsp` file.
 
 ## Table of Contents
 
@@ -24,51 +25,42 @@ Before you begin, ensure you have the following installed:
 
 1. **Rust toolchain** (version 1.85 or later)
 
-To install the rustup tool, follow the [rust-lang install instructions](https://rust-lang.org/tools/install)
-
-   ```bash
-   rustup toolchain install 1.85
-   ```
+    To install the rustup tool, follow the [rust-lang install instructions](https://rust-lang.org/tools/install)
 
 1. **Node.js 20+** and **npm**
 
-To install node initially, follow the [node installation instructions](https://nodejs.org/en/download)
-
-   ```bash
-   node --version  # Should be 20.x or later
-   npm --version
-   ```
+    To install node initially, follow the [node installation instructions](https://nodejs.org/en/download)
 
 1. **tsp-client dependencies** (from the repository root)
-Installed globally (preferred):
+    Installed globally (preferred):
 
-```bash
-npm install -g @azure-tools/typespec-client-generator-cli
-```
+    ```bash
+    npm install -g @azure-tools/typespec-client-generator-cli
+    ```
 
-or locally:
+    or locally:
 
-```bash
-npm ci --prefix eng/common/tsp-client
-```
+    ```bash
+    npm ci --prefix eng/common/tsp-client
+    ```
 
 1. **Azure CLI** (for testing and resource provisioning)
 
-To install the Azure CLI, follow the  [Azure CLI install documentation](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest)
+    To install the Azure CLI, follow the  [Azure CLI install documentation](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest)
 
-   ```bash
-   az --version
-   ```
+    ```bash
+    az --version
+    ```
 
 1. Bicep (for testing and resource provisioning)
 
-```bash
-az bicep install
-```
+    ```bash
+    az bicep install
+    ```
 
 1. **PowerShell** (for running test resource scripts on Windows)
 
-Powershell install instructions [can be found here](https://learn.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-7.5).
+    Powershell install instructions [can be found here](https://learn.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-7.5).
 
 ## Part 1: TypeSpec Specification Setup
 
@@ -82,14 +74,14 @@ Required files:
 - `client.tsp` - Client customizations
 - `tspconfig.yaml` - TypeSpec compiler configuration
 
-**Example**: For Key Vault Secrets, the files are located at:
+    **Example**: For Key Vault Secrets, the files are located at:
 
-```text
-specification/keyvault/Security.KeyVault.Secrets/
-├── main.tsp
-├── client.tsp
-└── tspconfig.yaml
-```
+    ```text
+    specification/keyvault/Security.KeyVault.Secrets/
+    ├── main.tsp
+    ├── client.tsp
+    └── tspconfig.yaml
+    ```
 
 ### Step 1.2: Work with your language architect to determine the language specific name for your crate
 
@@ -104,23 +96,23 @@ If the `tspconfig.yaml` doesn't already have Rust emitter configuration, you nee
 1. Edit `specification/<service-name>/<TypeSpec.Dir>/tspconfig.yaml`
 1. Add the Rust emitter configuration under the `options` section:
 
-```yaml
-options:
-  "@azure-tools/typespec-rust":
-    emitter-output-dir: "{output-dir}/<service-dir>/<crate-name>"
-    crate-name: "<crate-name>"
-    crate-version: "0.1.0"
-```
+    ```yaml
+    options:
+      "@azure-tools/typespec-rust":
+        emitter-output-dir: "{output-dir}/<service-dir>/<crate-name>"
+        crate-name: "<crate-name>"
+        crate-version: "0.1.0"
+    ```
 
-**Example** for EventGrid:
+    **Example** for EventGrid:
 
-```yaml
-options:
-  "@azure-tools/typespec-rust":
-    emitter-output-dir: "{output-dir}/{service-dir}/{crate-name}"
-    crate-name: "azure_messaging_eventgrid"
-    crate-version: "0.1.0"
-```
+    ```yaml
+    options:
+      "@azure-tools/typespec-rust":
+        emitter-output-dir: "{output-dir}/{service-dir}/{crate-name}"
+        crate-name: "azure_messaging_eventgrid"
+        crate-version: "0.1.0"
+    ```
 
 1. Create a pull request with title: "Add Rust emitter support to `<ServiceName>` TypeSpec"
 1. Wait for the PR to be merged (or use a local clone for development)
@@ -145,8 +137,8 @@ Edit the root `Cargo.toml` file to add your new crate to the workspace members:
 ```toml
 [workspace]
 members = [
-  # ... existing members ...
-  "sdk/<service-dir>/<crate-name>",
+    # ... existing members ...
+    "sdk/<service-dir>/<crate-name>",
 ]
 ```
 
@@ -265,63 +257,25 @@ var adminDefinitionId = '<role-definition-guid>'
 var adminAssignmentName = guid(resourceGroup().id, adminDefinitionId, testApplicationOid)
 
 resource serviceResource 'Microsoft.<Provider>/<ResourceType>@<api-version>' = {
-  name: baseName
-  location: location
-  properties: {
+    name: baseName
+    location: location
+    properties: {
     // Resource-specific properties
-  }
+    }
 }
 
 resource admin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: adminAssignmentName
-  properties: {
+    name: adminAssignmentName
+    properties: {
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', adminDefinitionId)
     principalId: testApplicationOid
-  }
+    }
 }
 
 output AZURE_<SERVICE>_URL string = serviceResource.properties.endpoint
 ```
 
 See other existing `test-resources.bicep` files in the repository for more detailed examples.
-
-**Example** for Key Vault:
-
-```bicep
-param baseName string = resourceGroup().name
-param tenantId string = '72f988bf-86f1-41af-91ab-2d7cd011db47'
-param testApplicationOid string
-param location string = resourceGroup().location
-@allowed(['standard', 'premium'])
-param keyVaultSku string = 'premium'
-
-var kvAdminDefinitionId = '00482a5a-887f-4fb3-b363-3b7fe8e74483'
-var kvAdminAssignmentName = guid(resourceGroup().id, kvAdminDefinitionId, testApplicationOid)
-
-resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: baseName
-  location: location
-  properties: {
-    sku: {
-      family: 'A'
-      name: keyVaultSku
-    }
-    tenantId: tenantId
-    enableRbacAuthorization: true
-    softDeleteRetentionInDays: 7
-  }
-}
-
-resource kvAdmin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: kvAdminAssignmentName
-  properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', kvAdminDefinitionId)
-    principalId: testApplicationOid
-  }
-}
-
-output AZURE_KEYVAULT_URL string = kv.properties.vaultUri
-```
 
 ### Step 5.2: Create Integration Tests
 
@@ -358,58 +312,6 @@ async fn basic_operation(ctx: TestContext) -> Result<()> {
 }
 ```
 
-**Example** from Key Vault Secrets:
-
-```rust
-use azure_core::Result;
-use azure_core_test::{recorded, TestContext};
-use azure_security_keyvault_secrets::{
-    models::{SetSecretParameters, SecretClientGetSecretOptions},
-    ResourceExt as _, SecretClient, SecretClientOptions,
-};
-
-#[recorded::test]
-async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
-    let recording = ctx.recording();
-
-    let mut options = SecretClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    let client = SecretClient::new(
-        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
-        recording.credential(),
-        Some(options),
-    )?;
-
-    // Set a secret
-    let body = SetSecretParameters {
-        value: Some("secret-value".into()),
-        ..Default::default()
-    };
-    let secret = client
-        .set_secret("secret-roundtrip", body.try_into()?, None)
-        .await?
-        .into_model()?;
-    assert_eq!(secret.value, Some("secret-value".into()));
-
-    // Get the secret
-    let secret_version = secret.resource_id()?.version;
-    let secret = client
-        .get_secret(
-            "secret-roundtrip",
-            Some(SecretClientGetSecretOptions {
-                secret_version,
-                ..Default::default()
-            }),
-        )
-        .await?
-        .into_model()?;
-    assert_eq!(secret.value, Some("secret-value".into()));
-
-    Ok(())
-}
-```
-
 ### Step 5.3: Provision Test Resources
 
 Before running live tests, provision the required Azure resources:
@@ -419,17 +321,11 @@ Before running live tests, provision the required Azure resources:
 eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service-dir>
 ```
 
-**Example**:
-
-```powershell
-eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory keyvault
-```
-
 This script will:
 
 1. Deploy the resources defined in `test-resources.bicep`
-2. Create a `.env` file with connection information
-3. Set environment variables for testing
+1. Create a `.env` file with connection information
+1. Set environment variables for testing
 
 ### Step 5.4: Run Tests
 
@@ -451,56 +347,56 @@ AZURE_TEST_MODE=live cargo test -p <crate-name>
 Create `sdk/<service-dir>/<crate-name>/README.md`:
 
 ````markdown
-# Azure <Service Name> client library for Rust
+    # Azure <Service Name> client library for Rust
 
-<Brief description of the service>
+    <Brief description of the service>
 
-The Azure <Service Name> client library allows you to <describe main capabilities>.
+    The Azure <Service Name> client library allows you to <describe main capabilities>.
 
-[Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
+    [Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
 
-## Getting started
+    ## Getting started
 
-### Install the package
+    ### Install the package
 
-Install the Azure <Service Name> client library for Rust with [Cargo]:
+    Install the Azure <Service Name> client library for Rust with [Cargo]:
 
-```sh
-cargo add <crate-name>
-```
+    ```sh
+    cargo add <crate-name>
+    ```
 
 ### Prerequisites
 
-* An [Azure subscription].
-* An existing Azure <Service Name> resource. If you need to create one, you can use the Azure Portal or [Azure CLI].
+- An [Azure subscription].
+- An existing Azure `<Service Name>` resource. If you need to create one, you can use the Azure Portal or [Azure CLI].
 
 If you use the Azure CLI:
 
-```azurecli
-az <service> create --resource-group <resource-group-name> --name <resource-name>
-```
+    ```azurecli
+    az <service> create --resource-group <resource-group-name> --name <resource-name>
+    ```
 
 ### Authenticate the client
 
 In order to interact with the Azure <Service Name> service, you'll need to create an instance of the `<ClientName>`. You need a **service url** and credentials to instantiate a client object.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use <crate_name>::{<ClientName>, models::*};
+    ```rust no_run
+    use azure_identity::DeveloperToolsCredential;
+    use <crate_name>::{<ClientName>, models::*};
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = <ClientName>::new(
-        "https://your-service.azure.net/",
-        credential,
-        None,
-    )?;
+    #[tokio::main]
+    async fn main() -> Result<(), Box<dyn std::error::Error>> {
+        let credential = DeveloperToolsCredential::new(None)?;
+        let client = <ClientName>::new(
+            "https://your-service.azure.net/",
+            credential,
+            None,
+        )?;
 
-    // Use the client
-    Ok(())
-}
-```
+        // Use the client
+        Ok(())
+    }
+    ```
 
 ## Key concepts
 
@@ -602,33 +498,33 @@ Create `sdk/<service-dir>/ci.yml` if it doesn't exist:
 ```yaml
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
 trigger:
-  branches:
+    branches:
     include:
     - main
     - hotfix/*
     - release/*
-  paths:
+    paths:
     include:
     - sdk/<service-dir>/
 
 parameters:
 - name: RunLiveTests
-  displayName: Run live tests
-  type: boolean
-  default: false
+    displayName: Run live tests
+    type: boolean
+    default: false
 - name: release_<crate_name>
-  displayName: <crate-name>
-  type: boolean
-  default: false
+    displayName: <crate-name>
+    type: boolean
+    default: false
 
 extends:
-  template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
-  parameters:
+    template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
+    parameters:
     ServiceDirectory: <service-dir>
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
     Artifacts:
     - name: <crate-name>
-      releaseInBatch: ${{ parameters.release_<crate_name> }}
+        releaseInBatch: ${{ parameters.release_<crate_name> }}
 ```
 
 Or update an existing `ci.yml` to add your crate to the artifacts list:
@@ -636,9 +532,9 @@ Or update an existing `ci.yml` to add your crate to the artifacts list:
 ```yaml
 Artifacts:
 - name: <existing-crate>
-  releaseInBatch: ${{ parameters.release_<existing_crate> }}
+    releaseInBatch: ${{ parameters.release_<existing_crate> }}
 - name: <new-crate>
-  releaseInBatch: ${{ parameters.release_<new_crate> }}
+    releaseInBatch: ${{ parameters.release_<new_crate> }}
 ```
 
 ## Part 8: Updating Generated Code
@@ -650,11 +546,11 @@ When TypeSpec definitions are updated in azure-rest-api-specs:
 1. Note the new commit SHA
 2. Update `tsp-location.yaml` with the new commit:
 
-```yaml
-directory: specification/<service-name>/<TypeSpec.Dir>
-commit: <new-commit-sha>
-repo: Azure/azure-rest-api-specs
-```
+    ```yaml
+    directory: specification/<service-name>/<TypeSpec.Dir>
+    commit: <new-commit-sha>
+    repo: Azure/azure-rest-api-specs
+    ```
 
 ### Step 8.2: Regenerate Code
 
