@@ -105,8 +105,8 @@ typedef struct cosmos_error {
  * The `runtime_context` field must be set to a pointer to a `RuntimeContext` created by the
  * [`cosmos_runtime_context_create`](crate::runtime::cosmos_runtime_context_create) function.
  *
- * The structure can also be created using [`cosmos_call_context_create`](crate::context::cosmos_call_context_create),
- * in which case Rust will manage the memory for the structure, and it must be freed using [`cosmos_call_context_free`](crate::context::cosmos_call_context_free).
+ * The structure can also be created using [`cosmos_call_context_create`],
+ * in which case Rust will manage the memory for the structure, and it must be freed using [`cosmos_call_context_free`].
  *
  * This structure must remain active and at the memory address specified in the function call for the duration of the call into the SDK.
  * If calling an async function, that may mean it must be allocated on the heap to ensure it remains live (depending on the caller's language/runtime).
@@ -369,7 +369,7 @@ cosmos_error_code cosmos_container_query_items(struct cosmos_call_context *ctx,
  * * `ctx` - Pointer to a [`CallContext`] to use for this call.
  * * `endpoint` - The Cosmos DB account endpoint, as a nul-terminated C string.
  * * `key` - The Cosmos DB account key, as a nul-terminated C string
- * * `options` - Pointer to [`CosmosClientOptions`] for client configuration, may be null.
+ * * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
  * * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
  *
  * # Returns
