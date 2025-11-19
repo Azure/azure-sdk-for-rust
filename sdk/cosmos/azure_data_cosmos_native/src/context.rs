@@ -24,7 +24,7 @@ pub struct CallContextOptions {
 /// This structure must remain active and at the memory address specified in the function call for the duration of the call into the SDK.
 /// If calling an async function, that may mean it must be allocated on the heap to ensure it remains live (depending on the caller's language/runtime).
 ///
-/// A single [`CallContext`] may be reused for muliple calls, but cannot be used concurrently from multiple threads.
+/// A single [`CallContext`] may be reused for multiple calls, but cannot be used concurrently from multiple threads.
 /// When reusing a [`CallContext`] the [`CallContext::error`] field will be overwritten with the error from the most recent call.
 /// Error details will NOT be freed if the context is reused; the caller is responsible for freeing any error details if needed.
 #[repr(C)]
