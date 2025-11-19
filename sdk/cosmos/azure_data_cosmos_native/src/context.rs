@@ -18,8 +18,8 @@ pub struct CallContextOptions {
 /// The `runtime_context` field must be set to a pointer to a `RuntimeContext` created by the
 /// [`cosmos_runtime_context_create`](crate::runtime::cosmos_runtime_context_create) function.
 ///
-/// The structure can also be created using [`cosmos_call_context_create`](crate::context::cosmos_call_context_create),
-/// in which case Rust will manage the memory for the structure, and it must be freed using [`cosmos_call_context_free`](crate::context::cosmos_call_context_free).
+/// The structure can also be created using [`cosmos_call_context_create`],
+/// in which case Rust will manage the memory for the structure, and it must be freed using [`cosmos_call_context_free`].
 ///
 /// This structure must remain active and at the memory address specified in the function call for the duration of the call into the SDK.
 /// If calling an async function, that may mean it must be allocated on the heap to ensure it remains live (depending on the caller's language/runtime).
@@ -236,7 +236,7 @@ pub trait IntoRaw {
 impl<T> IntoRaw for Box<T> {
     type Output = *mut T;
 
-    /// Converts a Box<T> into a `*mut T` using [`Box::into_raw`].
+    /// Converts a `Box<T>` into a `*mut T` using [`Box::into_raw`].
     fn into_raw(self) -> *mut T {
         let pointer = Box::into_raw(self);
         tracing::trace!(
