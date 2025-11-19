@@ -177,7 +177,7 @@ impl MetadataRequestRetryPolicy {
     ///
     /// # Returns
     /// A `RetryResult` indicating whether to retry and the delay duration:
-    /// - `Retry { after: Duration::ZERO }` for retriable metadata failures
+    /// - `Retry { after: Duration::ZERO }` for retryable metadata failures
     /// - Delegates to throttling policy for rate limiting errors
     pub async fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
         let status_code = response.status();
@@ -205,8 +205,8 @@ impl MetadataRequestRetryPolicy {
     ///
     /// # Returns
     /// A `RetryResult`:
-    /// - `Retry { after: Duration::ZERO }` if the error is retriable and retry count not exceeded
-    /// - `DoNotRetry` for non-retriable errors or if max retries exceeded
+    /// - `Retry { after: Duration::ZERO }` if the error is retryable and retry count not exceeded
+    /// - `DoNotRetry` for non-retryable errors or if max retries exceeded
     fn should_retry_with_status_code(
         &mut self,
         status_code: StatusCode,

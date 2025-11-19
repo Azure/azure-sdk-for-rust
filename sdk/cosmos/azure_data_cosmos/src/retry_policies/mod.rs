@@ -114,7 +114,7 @@ impl RetryPolicy {
     /// # Returns
     /// A `RetryResult`:
     /// - `Retry { after: Duration }` if retry should occur with specified delay
-    /// - `DoNotRetry` for successful requests or non-retriable failures
+    /// - `DoNotRetry` for successful requests or non-retryable failures
     pub async fn should_retry(
         &mut self,
         response: &azure_core::Result<RawResponse>,
