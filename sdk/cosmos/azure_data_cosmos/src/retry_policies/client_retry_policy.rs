@@ -107,6 +107,100 @@ impl ClientRetryPolicy {
         }
     }
 
+    /// Prepares a request before it is sent, configuring routing and endpoint selection.
+    ///
+    /// # Summary
+    /// Performs pre-flight setup for each request attempt by refreshing location cache,
+    /// determining request characteristics (read vs write, multi-master support), and
+    /// resolving the target endpoint based on retry context. Handles location-based routing
+    /// directives, including retry attempts that target specific location indices or the hub
+    /// endpoint. Clears previous routing context and configures the request with the
+    /// appropriate endpoint URL for the current attempt.
+    ///
+    /// # Arguments
+    /// * `request` - The mutable request to configure before sending
+    pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
+        self.cosmos_request = Some(request.clone());
+        let _stat = self
+            .global_endpoint_manager
+            .refresh_location_async(false)
+            .await;
+        self.is_read_request = request.is_read_only_request();
+        self.can_use_multiple_write_locations = self
+            .global_endpoint_manager
+            .can_use_multiple_write_locations(request);
+
+        self.is_multi_master_write_request = !self.is_read_request
+            && self
+                .global_endpoint_manager
+                .can_support_multiple_write_locations(
+                    request.resource_type,
+                    request.operation_type,
+                );
+
+        // Clear previous location-based routing directive
+        request.request_context.clear_route_to_location();
+
+        if let Some(ref ctx) = self.retry_context {
+            let mut req_ctx = request.request_context.clone();
+            if ctx.route_to_hub {
+                req_ctx.route_to_location_endpoint(
+                    request
+                        .resource_link
+                        .url(&Url::parse(&self.global_endpoint_manager.get_hub_uri()).unwrap()),
+                );
+            } else {
+                req_ctx.route_to_location_index(
+                    ctx.retry_location_index,
+                    ctx.retry_request_on_preferred_locations,
+                );
+            }
+            request.request_context = req_ctx;
+        }
+
+        // Resolve the endpoint for the request
+        self.location_endpoint = Some(
+            self.global_endpoint_manager
+                .resolve_service_endpoint(request),
+        );
+
+        if let Some(ref endpoint) = self.location_endpoint {
+            request.request_context.route_to_location_endpoint(
+                request.resource_link.url(&Url::parse(endpoint).unwrap()),
+            );
+        }
+    }
+
+    /// Determines whether a Data Plane request should be retried based on the response or error
+    ///
+    /// # Summary
+    /// Evaluates the result of a request attempt to determine if it should be retried.
+    /// Distinguishes between successful responses (2xx), client/server error responses
+    /// (4xx/5xx), and transport/network errors. Delegates error responses to
+    /// `should_retry_response` and exceptions to `should_retry_error` for detailed
+    /// evaluation. Non-error responses (2xx, 3xx) are not retried. This method is
+    /// called by the retry framework after each request attempt.
+    ///
+    /// # Arguments
+    /// * `response` - The result of the request attempt (Ok with response or Err with error)
+    ///
+    /// # Returns
+    /// A `RetryResult`:
+    /// - `Retry { after: Duration }` if the request should be retried with specified delay
+    /// - `DoNotRetry` for successful responses or non-retryable failures
+    pub(crate) async fn should_retry(
+        &mut self,
+        response: &azure_core::Result<RawResponse>,
+    ) -> RetryResult {
+        match response {
+            Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
+                self.should_retry_response(resp).await
+            }
+            Ok(_) => RetryResult::DoNotRetry,
+            Err(err) => self.should_retry_error(err).await,
+        }
+    }
+
     /// Determines if a request should be retried when session token is unavailable.
     ///
     /// # Summary
@@ -359,7 +453,7 @@ impl ClientRetryPolicy {
     /// # Returns
     /// A `RetryResult` indicating whether to retry and with what delay
     async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
-        let status_code = err.http_status().unwrap();
+        let status_code = err.http_status().unwrap_or(StatusCode::UnknownValue(0));
         let sub_status_code = get_substatus_code_from_error(err);
 
         if let Some(result) = self
@@ -398,102 +492,6 @@ impl ClientRetryPolicy {
         }
 
         self.throttling_retry.should_retry_response(response)
-    }
-}
-
-impl ClientRetryPolicy {
-    /// Prepares a request before it is sent, configuring routing and endpoint selection.
-    ///
-    /// # Summary
-    /// Performs pre-flight setup for each request attempt by refreshing location cache,
-    /// determining request characteristics (read vs write, multi-master support), and
-    /// resolving the target endpoint based on retry context. Handles location-based routing
-    /// directives, including retry attempts that target specific location indices or the hub
-    /// endpoint. Clears previous routing context and configures the request with the
-    /// appropriate endpoint URL for the current attempt.
-    ///
-    /// # Arguments
-    /// * `request` - The mutable request to configure before sending
-    pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
-        self.cosmos_request = Some(request.clone());
-        let _stat = self
-            .global_endpoint_manager
-            .refresh_location_async(false)
-            .await;
-        self.is_read_request = request.is_read_only_request();
-        self.can_use_multiple_write_locations = self
-            .global_endpoint_manager
-            .can_use_multiple_write_locations(request);
-
-        self.is_multi_master_write_request = !self.is_read_request
-            && self
-                .global_endpoint_manager
-                .can_support_multiple_write_locations(
-                    request.resource_type,
-                    request.operation_type,
-                );
-
-        // Clear previous location-based routing directive
-        request.request_context.clear_route_to_location();
-
-        if let Some(ref ctx) = self.retry_context {
-            let mut req_ctx = request.request_context.clone();
-            if ctx.route_to_hub {
-                req_ctx.route_to_location_endpoint(
-                    request
-                        .resource_link
-                        .url(&Url::parse(&self.global_endpoint_manager.get_hub_uri()).unwrap()),
-                );
-            } else {
-                req_ctx.route_to_location_index(
-                    ctx.retry_location_index,
-                    ctx.retry_request_on_preferred_locations,
-                );
-            }
-            request.request_context = req_ctx;
-        }
-
-        // Resolve the endpoint for the request
-        self.location_endpoint = Some(
-            self.global_endpoint_manager
-                .resolve_service_endpoint(request),
-        );
-
-        if let Some(ref endpoint) = self.location_endpoint {
-            request.request_context.route_to_location_endpoint(
-                request.resource_link.url(&Url::parse(endpoint).unwrap()),
-            );
-        }
-    }
-
-    /// Determines whether a Data Plane request should be retried based on the response or error
-    ///
-    /// # Summary
-    /// Evaluates the result of a request attempt to determine if it should be retried.
-    /// Distinguishes between successful responses (2xx), client/server error responses
-    /// (4xx/5xx), and transport/network errors. Delegates error responses to
-    /// `should_retry_response` and exceptions to `should_retry_error` for detailed
-    /// evaluation. Non-error responses (2xx, 3xx) are not retried. This method is
-    /// called by the retry framework after each request attempt.
-    ///
-    /// # Arguments
-    /// * `response` - The result of the request attempt (Ok with response or Err with error)
-    ///
-    /// # Returns
-    /// A `RetryResult`:
-    /// - `Retry { after: Duration }` if the request should be retried with specified delay
-    /// - `DoNotRetry` for successful responses or non-retriable failures
-    pub(crate) async fn should_retry(
-        &mut self,
-        response: &azure_core::Result<RawResponse>,
-    ) -> RetryResult {
-        match response {
-            Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
-                self.should_retry_response(resp).await
-            }
-            Ok(_) => RetryResult::DoNotRetry,
-            Err(err) => self.should_retry_error(err).await,
-        }
     }
 }
 

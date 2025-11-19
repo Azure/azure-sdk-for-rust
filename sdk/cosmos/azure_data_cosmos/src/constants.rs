@@ -48,14 +48,14 @@ pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 pub enum SubStatusCode {
     TooManyRequests = 429,
 
-    // 400: Bad Request Substatus
+    // 400: Bad Request sub-status
     PartitionKeyMismatch = 1001,
     CrossPartitionQueryNotServable = 1004,
     ScriptCompileError = 0xFFFF, // From ExecuteStoredProcedure.
     AnotherOfferReplaceOperationIsInProgress = 3205,
     HttpListenerException = 1101,
 
-    // 410: StatusCodeType_Gone: substatus
+    // 410: StatusCodeType_Gone: sub-status
     NameCacheIsStale = 1000,
     PartitionKeyRangeGone = 1002,
     CompletingSplit = 1007,
@@ -70,14 +70,14 @@ pub enum SubStatusCode {
     StoreNotReady = 1023,
     AuthTokenNotFoundInCache = 1030,
 
-    // 404: StatusCodeType_NotFound: substatus
+    // 404: StatusCodeType_NotFound: sub-status
     PartitionMigratingCollectionDeleted = 1031,
     PartitionMigrationSourcePartitionDeletedInMaster = 1034,
     PartitionMigrationSharedThroughputDatabasePartitionResourceNotFoundInMaster = 1035,
     PartitionMigrationPartitionResourceNotFoundInMaster = 1036,
     PartitionMigrationFailedToUpdateDNS = 1037,
 
-    // 403: Forbidden Substatus.
+    // 403: Forbidden sub-status.
     WriteForbidden = 3,
     RedundantCollectionPut = 1009,
     SharedThroughputDatabaseQuotaExceeded = 1010,
@@ -92,7 +92,7 @@ pub enum SubStatusCode {
     // 409: Conflict exception
     ConflictWithControlPlane = 1006,
     DatabaseNameAlreadyExists = 3206,
-    PartitionkeyHashCollisionForId = 3302,
+    PartitionKeyHashCollisionForId = 3302,
 
     // 409: Partition migration Count mismatch conflict sub status codes
     PartitionMigrationDocumentCountMismatchBetweenSourceAndTargetPartition = 3050,
@@ -117,7 +117,7 @@ pub enum SubStatusCode {
     TombstoneRecordsNotFound = 2015, // Tombstone records were not found because they were purged.
     InvalidAccountStatus = 2016,
     OfferValidationFailed = 2017,
-    CanNotAquireMasterPartitionAccessLock = 2018,
+    CanNotAcquireMasterPartitionAccessLock = 2018,
     CanNotAcquireInAccountRestoreInProgressLock = 2019,
     CollectionStateChanged = 2020,
     OfferScaledUpByUser = 2021,
@@ -127,7 +127,7 @@ pub enum SubStatusCode {
     ConfigurationNameNotEmpty = 3001,
     ConfigurationOperationCancelled = 3002,
     InvalidAccountConfiguration = 3003,
-    FederationDoesnotExistOrIsLocked = 3004,
+    FederationDoesNotExistOrIsLocked = 3004,
     PartitionFailoverErrorCode = 3010,
 
     // 429: Request Rate Too Large
@@ -210,7 +210,7 @@ impl TryFrom<u32> for SubStatusCode {
             2015 => TombstoneRecordsNotFound,
             2016 => InvalidAccountStatus,
             2017 => OfferValidationFailed,
-            2018 => CanNotAquireMasterPartitionAccessLock,
+            2018 => CanNotAcquireMasterPartitionAccessLock,
             2019 => CanNotAcquireInAccountRestoreInProgressLock,
             2020 => CollectionStateChanged,
             2021 => OfferScaledUpByUser,
@@ -218,7 +218,7 @@ impl TryFrom<u32> for SubStatusCode {
             3001 => ConfigurationNameNotEmpty,
             3002 => ConfigurationOperationCancelled,
             3003 => InvalidAccountConfiguration,
-            3004 => FederationDoesnotExistOrIsLocked,
+            3004 => FederationDoesNotExistOrIsLocked,
             3010 => PartitionFailoverErrorCode,
             3050 => PartitionMigrationDocumentCountMismatchBetweenSourceAndTargetPartition,
             3051 => PartitionMigrationDocumentCountMismatchBetweenTargetPartitionReplicas,
@@ -230,7 +230,7 @@ impl TryFrom<u32> for SubStatusCode {
             3207 => PrepareTimeLimitExceeded,
             3208 => ClientTcpChannelFull,
             3209 => BWTermCountLimitExceeded,
-            3302 => PartitionkeyHashCollisionForId,
+            3302 => PartitionKeyHashCollisionForId,
             9001 => OperationPaused,
             9002 => ServiceIsOffline,
             9003 => InsufficientCapacity,

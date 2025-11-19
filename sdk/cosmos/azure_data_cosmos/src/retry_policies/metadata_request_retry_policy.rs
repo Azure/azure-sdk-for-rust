@@ -71,6 +71,73 @@ impl MetadataRequestRetryPolicy {
         }
     }
 
+    /// Method that is called before a request is sent to allow the retry policy implementation
+    /// to modify the state of the request.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The request being sent to the service
+    pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
+        let _stat = self
+            .global_endpoint_manager
+            .refresh_location_async(false)
+            .await;
+
+        // Clear the previous location-based routing directive
+        request.request_context.clear_route_to_location();
+
+        if let Some(ref ctx) = self.retry_context {
+            let mut req_ctx = request.request_context.clone();
+            req_ctx.route_to_location_index(
+                ctx.retry_location_index,
+                ctx.retry_request_on_preferred_locations,
+            );
+            request.request_context = req_ctx;
+        }
+
+        let metadata_location_endpoint = self
+            .global_endpoint_manager
+            .resolve_service_endpoint(request);
+
+        trace!(
+            "MetadataRequestThrottleRetryPolicy: Routing the metadata request to: {:?} for operation type: {:?} and resource type: {:?}.",
+            metadata_location_endpoint,
+            request.operation_type,
+            request.resource_type
+        );
+
+        request
+            .request_context
+            .route_to_location_endpoint(metadata_location_endpoint.parse().unwrap());
+    }
+
+    /// Determines whether an HTTP request should be retried based on the response or error
+    ///
+    /// This method evaluates the result of an HTTP request attempt and decides whether
+    /// the operation should be retried, and if so, how long to wait before the next attempt.
+    ///
+    /// # Arguments
+    ///
+    /// * `response` - A reference to the result of the HTTP request attempt. This can be:
+    ///   - `Ok(RawResponse)` - A successful HTTP response (which may still indicate an error via status code)
+    ///   - `Err(azure_core::Error)` - A network or client-side error
+    ///
+    /// # Returns
+    ///
+    /// A `RetryResult` indicating the retry decision.
+    pub(crate) async fn should_retry(
+        &mut self,
+        response: &azure_core::Result<RawResponse>,
+    ) -> RetryResult {
+        match response {
+            Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
+                self.should_retry_response(resp).await
+            }
+            Ok(_) => RetryResult::DoNotRetry,
+            Err(err) => self.should_retry_error(err).await,
+        }
+    }
+
     /// Determines whether to retry a metadata operation that failed with an error.
     ///
     /// # Summary
@@ -83,10 +150,10 @@ impl MetadataRequestRetryPolicy {
     ///
     /// # Returns
     /// A `RetryResult` indicating whether to retry and the delay duration:
-    /// - `Retry { after: Duration::ZERO }` for retriable metadata errors
+    /// - `Retry { after: Duration::ZERO }` for retryable metadata errors
     /// - Delegates to throttling policy for other errors
     pub async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
-        let status_code = err.http_status().unwrap();
+        let status_code = err.http_status().unwrap_or(StatusCode::UnknownValue(0));
         let sub_status_code = get_substatus_code_from_error(err);
 
         let retry_result = self.should_retry_with_status_code(status_code, sub_status_code);
@@ -190,75 +257,6 @@ impl MetadataRequestRetryPolicy {
         });
 
         true
-    }
-}
-
-impl MetadataRequestRetryPolicy {
-    /// Method that is called before a request is sent to allow the retry policy implementation
-    /// to modify the state of the request.
-    ///
-    /// # Arguments
-    ///
-    /// * `request` - The request being sent to the service
-    pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
-        let _stat = self
-            .global_endpoint_manager
-            .refresh_location_async(false)
-            .await;
-
-        // Clear the previous location-based routing directive
-        request.request_context.clear_route_to_location();
-
-        if let Some(ref ctx) = self.retry_context {
-            let mut req_ctx = request.request_context.clone();
-            req_ctx.route_to_location_index(
-                ctx.retry_location_index,
-                ctx.retry_request_on_preferred_locations,
-            );
-            request.request_context = req_ctx;
-        }
-
-        let metadata_location_endpoint = self
-            .global_endpoint_manager
-            .resolve_service_endpoint(request);
-
-        trace!(
-            "MetadataRequestThrottleRetryPolicy: Routing the metadata request to: {:?} for operation type: {:?} and resource type: {:?}.",
-            metadata_location_endpoint,
-            request.operation_type,
-            request.resource_type
-        );
-
-        request
-            .request_context
-            .route_to_location_endpoint(metadata_location_endpoint.parse().unwrap());
-    }
-
-    /// Determines whether an HTTP request should be retried based on the response or error
-    ///
-    /// This method evaluates the result of an HTTP request attempt and decides whether
-    /// the operation should be retried, and if so, how long to wait before the next attempt.
-    ///
-    /// # Arguments
-    ///
-    /// * `response` - A reference to the result of the HTTP request attempt. This can be:
-    ///   - `Ok(RawResponse)` - A successful HTTP response (which may still indicate an error via status code)
-    ///   - `Err(azure_core::Error)` - A network or client-side error
-    ///
-    /// # Returns
-    ///
-    /// A `RetryResult` indicating the retry decision.
-    pub(crate) async fn should_retry(
-        &mut self,
-        response: &azure_core::Result<RawResponse>,
-    ) -> RetryResult {
-        match response {
-            Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
-                self.should_retry_response(resp).await
-            }
-            Ok(_) => RetryResult::DoNotRetry,
-            Err(err) => self.should_retry_error(err).await,
-        }
     }
 }
 
