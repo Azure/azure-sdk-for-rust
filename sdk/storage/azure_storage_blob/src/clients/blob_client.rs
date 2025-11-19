@@ -443,15 +443,14 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `expiry` - Specifies the date time when the blobs immutability policy is set to expire.
     /// * `options` - Optional configuration for the request.
     pub async fn set_immutability_policy(
         &self,
-        immutability_policy_expiry: &OffsetDateTime,
+        expiry: &OffsetDateTime,
         options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client
-            .set_immutability_policy(immutability_policy_expiry, options)
-            .await
+        self.client.set_immutability_policy(expiry, options).await
     }
 
     /// Deletes the immutability policy on the blob.
