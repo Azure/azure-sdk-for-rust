@@ -20,7 +20,7 @@ use crate::unwrap_required_ptr;
 /// * `ctx` - Pointer to a [`CallContext`] to use for this call.
 /// * `endpoint` - The Cosmos DB account endpoint, as a nul-terminated C string.
 /// * `key` - The Cosmos DB account key, as a nul-terminated C string
-/// * `options` - Pointer to [`CosmosClientOptions`] for client configuration, may be null.
+/// * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
 /// * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
 ///
 /// # Returns
