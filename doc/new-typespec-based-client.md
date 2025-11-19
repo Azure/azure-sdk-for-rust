@@ -202,8 +202,9 @@ description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault 
 readme = "README.md"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/<your package name>"
+# Note: There can be no more than 5 keywords for your package.
 keywords = ["Keywords", "for", "your", "package"]
-categories = ["categories", "for", "your", "package"]
+categories = ["api-bindings"]
 ```
 
 In addition to the sections above, there are a number of additional sections to add to the cargo.toml file:
