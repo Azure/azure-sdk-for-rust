@@ -299,7 +299,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{RawResponse, Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, ItemIterator, pager::{Page, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -318,7 +318,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, ctx: Context| {
+    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, options: PagerOptions| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -337,7 +337,7 @@ impl<P: Page> ItemIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: ListItemsResult = json::from_json(&body)?;
@@ -373,7 +373,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |continuation, ctx| {
+    /// let pager = ItemIterator::from_callback(move |continuation, options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
@@ -382,7 +382,7 @@ impl<P: Page> ItemIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
@@ -392,10 +392,10 @@ impl<P: Page> ItemIterator<P> {
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
@@ -406,7 +406,7 @@ impl<P: Page> ItemIterator<P> {
     {
         let options = options.unwrap_or_default();
         let next_token = Arc::new(Mutex::new(None::<String>));
-        let stream = iter_from_callback(make_request, options.context.clone(), next_token.clone());
+        let stream = iter_from_callback(make_request, options, next_token.clone());
 
         Self {
             stream: Box::pin(stream),
@@ -619,7 +619,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{RawResponse, Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, pager::{PageIterator, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -629,7 +629,7 @@ impl<P> PageIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = PageIterator::from_callback(move |next_link: PagerState<Url>, ctx| {
+    /// let pager = PageIterator::from_callback(move |next_link: PagerState<Url>, options: PagerOptions<'static>| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -648,7 +648,7 @@ impl<P> PageIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: ListItemsResult = json::from_json(&body)?;
@@ -675,7 +675,7 @@ impl<P> PageIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = PageIterator::from_callback(move |continuation, ctx| {
+    /// let pager = PageIterator::from_callback(move |continuation, options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
@@ -684,7 +684,7 @@ impl<P> PageIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-ms-continuation")))
@@ -694,10 +694,10 @@ impl<P> PageIterator<P> {
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
@@ -708,11 +708,7 @@ impl<P> PageIterator<P> {
     {
         let options = options.unwrap_or_default();
         let continuation_token = Arc::new(Mutex::new(None::<String>));
-        let stream = iter_from_callback(
-            make_request,
-            options.context.clone(),
-            continuation_token.clone(),
-        );
+        let stream = iter_from_callback(make_request, options, continuation_token.clone());
 
         Self {
             stream: Box::pin(stream),
@@ -855,7 +851,7 @@ where
     state: State<C>,
     make_request: F,
     continuation_token: Arc<Mutex<Option<String>>>,
-    ctx: Context<'a>,
+    options: PagerOptions<'a>,
     added_span: bool,
 }
 
@@ -863,14 +859,14 @@ fn iter_from_callback<
     P,
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
     #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
     #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
 >(
     make_request: F,
-    ctx: Context<'static>,
+    options: PagerOptions<'static>,
     continuation_token: Arc<Mutex<Option<String>>>,
 ) -> impl Stream<Item = crate::Result<P>> + 'static
 where
@@ -881,7 +877,7 @@ where
             state: State::Init,
             make_request,
             continuation_token,
-            ctx,
+            options,
             added_span: false,
         },
         |mut stream_state| async move {
@@ -891,10 +887,11 @@ where
                 tracing::debug!("establish a public API span for new pager.");
 
                 // At the very start of polling, create a span for the entire request, and attach it to the context
-                let span = create_public_api_span(&stream_state.ctx, None, None);
+                let span = create_public_api_span(&stream_state.options.context, None, None);
                 if let Some(ref s) = span {
                     stream_state.added_span = true;
-                    stream_state.ctx = stream_state.ctx.with_value(s.clone());
+                    stream_state.options.context =
+                        stream_state.options.context.with_value(s.clone());
                 }
             }
 
@@ -929,11 +926,13 @@ where
             let result = match stream_state.state {
                 State::Init => {
                     tracing::debug!("initial page request");
-                    (stream_state.make_request)(PagerState::Initial, stream_state.ctx.clone()).await
+                    (stream_state.make_request)(PagerState::Initial, stream_state.options.clone())
+                        .await
                 }
                 State::More(n) => {
                     tracing::debug!("subsequent page request to {:?}", AsRef::<str>::as_ref(&n));
-                    (stream_state.make_request)(PagerState::More(n), stream_state.ctx.clone()).await
+                    (stream_state.make_request)(PagerState::More(n), stream_state.options.clone())
+                        .await
                 }
                 State::Done => {
                     tracing::debug!("done");
@@ -947,7 +946,7 @@ where
             let (item, next_state) = match result {
                 Err(e) => {
                     if stream_state.added_span {
-                        if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
+                        if let Some(span) = stream_state.options.context.value::<Arc<dyn Span>>() {
                             // Mark the span as an error with an appropriate description.
                             span.set_status(SpanStatus::Error {
                                 description: e.to_string(),
@@ -978,7 +977,7 @@ where
                     // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
                     // otherwise it is the responsibility of the caller to end their span.
                     if stream_state.added_span {
-                        if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
+                        if let Some(span) = stream_state.options.context.value::<Arc<dyn Span>>() {
                             // P is unconstrained, so it's not possible to retrieve the status code for now.
 
                             span.end();
@@ -1000,8 +999,8 @@ mod tests {
         error::ErrorKind,
         http::{
             headers::{HeaderName, HeaderValue},
-            pager::{PageIterator, Pager, PagerResult, PagerState},
-            Context, RawResponse, Response, StatusCode,
+            pager::{PageIterator, Pager, PagerOptions, PagerResult, PagerState},
+            RawResponse, Response, StatusCode,
         },
     };
     use async_trait::async_trait;
@@ -1083,7 +1082,7 @@ mod tests {
     #[tokio::test]
     async fn callback_item_pagination_error() {
         let pager: Pager<Page> = Pager::from_callback(
-            |continuation: PagerState<String>, _ctx| async move {
+            |continuation: PagerState<String>, _options| async move {
                 match continuation {
                     PagerState::Initial => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
@@ -1556,12 +1555,12 @@ mod tests {
     #[allow(clippy::type_complexity)]
     fn make_three_page_callback() -> impl Fn(
         PagerState<String>,
-        Context<'_>,
+        PagerOptions<'_>,
     ) -> Pin<
         Box<dyn Future<Output = crate::Result<PagerResult<Response<Page>, String>>> + Send>,
     > + Send
            + 'static {
-        |continuation: PagerState<String>, _ctx| {
+        |continuation: PagerState<String>, _options| {
             Box::pin(async move {
                 match continuation.as_deref() {
                     PagerState::Initial => Ok(PagerResult::More {

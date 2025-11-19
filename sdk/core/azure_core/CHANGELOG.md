@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+The callback for `Pager::with_callback` has a `PagerOptions` second parameter rather than a `Context` parameter.
+
 ### Bugs Fixed
 
 ### Other Changes
