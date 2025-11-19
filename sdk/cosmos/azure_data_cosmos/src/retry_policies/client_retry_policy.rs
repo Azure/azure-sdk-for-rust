@@ -482,7 +482,7 @@ impl ClientRetryPolicy {
     /// A `RetryResult` indicating whether to retry and with what delay
     async fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
         let status_code = response.status();
-        let sub_status_code = get_substatus_code_from_response(&response.clone());
+        let sub_status_code = get_substatus_code_from_response(response);
 
         if let Some(result) = self
             .should_retry_on_http_status(status_code, sub_status_code)

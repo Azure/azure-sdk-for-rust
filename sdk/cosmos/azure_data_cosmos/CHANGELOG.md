@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added GlobalEndpointManager, LocationCache to support Cross Regional Retry.
+
 ### Breaking Changes
 
 ### Bugs Fixed

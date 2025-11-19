@@ -332,15 +332,16 @@ impl LocationCache {
     /// # Returns
     /// `true` if multiple write endpoints are available, `false` otherwise
     pub fn can_use_multiple_write_locations(&self) -> bool {
-        !self.write_endpoints().is_empty() && self.write_endpoints().iter().len() > 1
+        let endpoints = self.write_endpoints();
+        !endpoints.is_empty() && endpoints.len() > 1
     }
 
     /// Returns all endpoints that could handle a specific request.
     ///
     /// # Summary
     /// Retrieves the list of endpoints applicable for the request based on operation type.
-    /// Currently returns read endpoints for all requests. TODO: Fix to properly distinguish
-    /// between read and write requests. Used by retry policies to determine available
+    /// Currently, returns read endpoints for all requests. . Used by retry policies to
+    /// determine available
     /// failover endpoints.
     ///
     /// # Arguments
@@ -348,13 +349,21 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn get_applicable_endpoints(&mut self, _request: &CosmosRequest) -> Vec<String> {
-        //TODO: Fix this.
-        self.get_preferred_available_endpoints(
-            &self.locations_info.account_read_endpoints_by_location,
-            RequestOperation::Read,
-            &self.default_endpoint,
-        )
+    pub fn get_applicable_endpoints(&mut self, request: &CosmosRequest) -> Vec<String> {
+        // Select endpoints based on operation type.
+        if request.operation_type.is_read_only() {
+            self.get_preferred_available_endpoints(
+                &self.locations_info.account_read_endpoints_by_location,
+                RequestOperation::Read,
+                &self.default_endpoint,
+            )
+        } else {
+            self.get_preferred_available_endpoints(
+                &self.locations_info.account_write_endpoints_by_location,
+                RequestOperation::Write,
+                &self.default_endpoint,
+            )
+        }
     }
 
     /// Refreshes the ordered endpoint lists based on availability and preferences.
