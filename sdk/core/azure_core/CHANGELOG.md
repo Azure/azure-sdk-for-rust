@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
+
 ### Breaking Changes
 
 The callback for `Pager::with_callback` has a `PagerOptions` second parameter rather than a `Context` parameter.

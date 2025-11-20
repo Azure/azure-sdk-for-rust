@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
+
 ### Breaking Changes
 
 ### Bugs Fixed
