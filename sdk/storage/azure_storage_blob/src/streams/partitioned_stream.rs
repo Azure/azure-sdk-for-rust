@@ -1,5 +1,6 @@
 use std::{
     mem,
+    num::NonZero,
     pin::{pin, Pin},
     task::Poll,
 };
@@ -20,8 +21,8 @@ pub(crate) struct PartitionedStream {
 }
 
 impl PartitionedStream {
-    pub(crate) fn new(inner: Box<dyn SeekableStream>, partition_len: usize) -> Self {
-        assert!(partition_len > 0);
+    pub(crate) fn new(inner: Box<dyn SeekableStream>, partition_len: NonZero<usize>) -> Self {
+        let partition_len = partition_len.get();
         Self {
             buf: vec![0u8; std::cmp::min(partition_len, inner.len())],
             inner,
@@ -101,8 +102,10 @@ mod tests {
         for part_count in [2usize, 3, 11, 16] {
             for part_len in [1024usize, 1000, 9999, 1] {
                 let data = get_random_data(part_len * part_count);
-                let stream =
-                    PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+                let stream = PartitionedStream::new(
+                    Box::new(BytesStream::new(data.clone())),
+                    NonZero::new(part_len).unwrap(),
+                );
 
                 let parts: Vec<_> = stream.try_collect().await?;
 
@@ -122,8 +125,10 @@ mod tests {
             for part_len in [1024usize, 1000, 9999] {
                 for dangling_len in [part_len / 2, 100, 128, 99] {
                     let data = get_random_data(part_len * (part_count - 1) + dangling_len);
-                    let stream =
-                        PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+                    let stream = PartitionedStream::new(
+                        Box::new(BytesStream::new(data.clone())),
+                        NonZero::new(part_len).unwrap(),
+                    );
 
                     let parts: Vec<_> = stream.try_collect().await?;
 
@@ -147,7 +152,10 @@ mod tests {
     async fn partitions_exactly_one() -> AzureResult<()> {
         for len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(len);
-            let mut stream = PartitionedStream::new(Box::new(BytesStream::new(data.clone())), len);
+            let mut stream = PartitionedStream::new(
+                Box::new(BytesStream::new(data.clone())),
+                NonZero::new(len).unwrap(),
+            );
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -162,8 +170,10 @@ mod tests {
         let part_len = 99999usize;
         for len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(len);
-            let mut stream =
-                PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+            let mut stream = PartitionedStream::new(
+                Box::new(BytesStream::new(data.clone())),
+                NonZero::new(part_len).unwrap(),
+            );
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -177,8 +187,10 @@ mod tests {
     async fn partitions_none() -> AzureResult<()> {
         for part_len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(0);
-            let mut stream =
-                PartitionedStream::new(Box::new(BytesStream::new(data.clone())), part_len);
+            let mut stream = PartitionedStream::new(
+                Box::new(BytesStream::new(data.clone())),
+                NonZero::new(part_len).unwrap(),
+            );
 
             assert!(stream.try_next().await?.is_none());
         }
