@@ -278,7 +278,7 @@ impl GlobalEndpointManager {
         }
 
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        let _account_prop = self
+        _ = self
             .account_properties_cache
             .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
                 // Fetch latest account properties from service
