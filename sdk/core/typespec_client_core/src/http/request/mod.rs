@@ -208,6 +208,11 @@ impl Request {
         &self.body
     }
 
+    /// Gets the mutable request body.
+    pub fn body_mut(&mut self) -> &mut Body {
+        &mut self.body
+    }
+
     /// Sets request body JSON.
     #[cfg(feature = "json")]
     pub fn set_json<T>(&mut self, data: &T) -> crate::Result<()>
