@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added GlobalEndpointManager, LocationCache to support Cross Regional Retry.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
 
 ### Breaking Changes
