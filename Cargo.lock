@@ -202,6 +202,7 @@ dependencies = [
  "futures",
  "hmac",
  "http",
+ "include-file",
  "json-patch",
  "openssl",
  "pin-project",
@@ -1647,9 +1648,9 @@ dependencies = [
 
 [[package]]
 name = "include-file"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b82360a1cfc38a30a967d4e1b58745ff9258c9326772293402d88d6dd201229"
+checksum = "4db0c2483923cdc1a04d371af232e93215bef3d6a761b663870dd2db4ca795a9"
 dependencies = [
  "proc-macro2",
  "syn 2.0.110",
