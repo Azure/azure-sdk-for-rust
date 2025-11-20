@@ -117,8 +117,14 @@ impl ClientRetryPolicy {
     /// # Arguments
     /// * `request` - The mutable request to configure before sending
     pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
-        // self.cosmos_request = Some(request.clone());
-        let _stat = self.global_endpoint_manager.refresh_location(false).await;
+        // Ideally, any request flow should not be blocked by the outcome of refresh_location.
+        // There can be three possible cases:
+        // a) The refresh_location succeeds when TTL expires.
+        // b) The refresh_location is bypassed when TTL hasn't expired.
+        // c) The refresh_location operation has failed. In the event of a failure,
+        //    the error is logged and the request should not be blocked.
+        // Hence, the outcome of the operation is ignored here.
+        let _refresh_cache_result = self.global_endpoint_manager.refresh_location(false).await;
         self.operation_type = Some(request.operation_type);
         self.can_use_multiple_write_locations = self
             .global_endpoint_manager
@@ -312,6 +318,13 @@ impl ClientRetryPolicy {
             Duration::milliseconds(RETRY_INTERVAL_MS)
         };
 
+        // Ideally, any request flow should not be blocked by the outcome of refresh_location.
+        // There can be three possible cases:
+        // a) The refresh_location succeeds when TTL expires.
+        // b) The refresh_location is bypassed when TTL hasn't expired.
+        // c) The refresh_location operation has failed. In the event of a failure,
+        //    the error is logged and the request should not be blocked.
+        // Hence, the outcome of the operation is ignored here.
         let _refresh_cache_result = self
             .global_endpoint_manager
             .refresh_location(force_refresh)

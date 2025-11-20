@@ -84,13 +84,13 @@ impl BackOffRetryHandler {
     /// A `RetryPolicy` enum variant appropriate for the request type
     pub fn retry_policy_for_request(&self, request: &CosmosRequest) -> RetryPolicy {
         if request.resource_type.is_meta_data() {
-            RetryPolicy::Metadata(Box::new(MetadataRequestRetryPolicy::new(
+            RetryPolicy::Metadata(MetadataRequestRetryPolicy::new(
                 self.global_endpoint_manager.clone(),
-            )))
+            ))
         } else {
-            RetryPolicy::Client(Box::new(ClientRetryPolicy::new(
+            RetryPolicy::Client(ClientRetryPolicy::new(
                 self.global_endpoint_manager.clone(),
-            )))
+            ))
         }
     }
 
