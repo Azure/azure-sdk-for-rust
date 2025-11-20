@@ -84,8 +84,8 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// The default endpoint URL as a String
-    pub fn get_hub_uri(&self) -> String {
-        self.default_endpoint.clone()
+    pub fn hub_uri(&self) -> &str {
+        &self.default_endpoint
     }
 
     /// Returns the list of available read endpoints.
@@ -99,7 +99,11 @@ impl GlobalEndpointManager {
     /// A vector of endpoint URLs available for read operations
     #[allow(dead_code)]
     pub fn read_endpoints(&self) -> Vec<String> {
-        self.location_cache.lock().unwrap().read_endpoints()
+        self.location_cache
+            .lock()
+            .unwrap()
+            .read_endpoints()
+            .to_vec()
     }
 
     /// Returns the list of available account read endpoints.
@@ -113,7 +117,11 @@ impl GlobalEndpointManager {
     /// A vector of endpoint URLs available for read operations
     #[allow(dead_code)]
     pub fn account_read_endpoints(&self) -> Vec<String> {
-        self.location_cache.lock().unwrap().read_endpoints()
+        self.location_cache
+            .lock()
+            .unwrap()
+            .read_endpoints()
+            .to_vec()
     }
 
     /// Returns the list of available write endpoints.
@@ -129,7 +137,11 @@ impl GlobalEndpointManager {
     /// A vector of endpoint URLs available for write operations
     #[allow(dead_code)]
     pub fn write_endpoints(&self) -> Vec<String> {
-        self.location_cache.lock().unwrap().write_endpoints()
+        self.location_cache
+            .lock()
+            .unwrap()
+            .write_endpoints()
+            .to_vec()
     }
 
     /// Returns the count of preferred locations configured for routing.
@@ -140,14 +152,14 @@ impl GlobalEndpointManager {
     /// behavior and calculate maximum retry attempts across regions.
     ///
     /// # Returns
-    /// The number of preferred locations as an i32
-    pub fn preferred_location_count(&self) -> i32 {
+    /// The number of preferred locations as usize
+    pub fn preferred_location_count(&self) -> usize {
         self.location_cache
             .lock()
             .unwrap()
             .locations_info
             .preferred_locations
-            .len() as i32
+            .len()
     }
 
     /// Resolves the appropriate service endpoint URL for a given request.
@@ -183,11 +195,11 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn get_applicable_endpoints(&self, request: &CosmosRequest) -> Vec<String> {
+    pub fn applicable_endpoints(&self, operation_type: OperationType) -> Vec<String> {
         self.location_cache
             .lock()
             .unwrap()
-            .get_applicable_endpoints(request)
+            .get_applicable_endpoints(operation_type)
     }
 
     /// Marks an endpoint as unavailable for read operations.
@@ -257,7 +269,7 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// `Ok(())` if refresh succeeded, `Err` if fetching account properties failed
-    pub async fn refresh_location_async(&self, force_refresh: bool) -> Result<(), Error> {
+    pub async fn refresh_location(&self, force_refresh: bool) -> Result<(), Error> {
         // If force_refresh is true, invalidate the cache to ensure a fresh fetch
         if force_refresh {
             self.account_properties_cache
@@ -283,10 +295,12 @@ impl GlobalEndpointManager {
             })
             .await
             .map_err(|e: Arc<Error>| {
-                Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("Failed to fetch account properties: {}", e),
-                )
+                Arc::try_unwrap(e).unwrap_or_else(|e| {
+                    Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        format!("Failed to fetch account properties: {}", e),
+                    )
+                })
             })?;
 
         Ok(())
@@ -303,7 +317,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap mapping location names to write endpoint URLs
     #[allow(dead_code)]
-    fn get_available_write_endpoints_by_location(&self) -> HashMap<String, String> {
+    fn available_write_endpoints_by_location(&self) -> HashMap<String, String> {
         self.location_cache
             .lock()
             .unwrap()
@@ -323,7 +337,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap mapping location names to read endpoint URLs
     #[allow(dead_code)]
-    fn get_available_read_endpoints_by_location(&self) -> HashMap<String, String> {
+    fn available_read_endpoints_by_location(&self) -> HashMap<String, String> {
         self.location_cache
             .lock()
             .unwrap()
@@ -364,7 +378,7 @@ impl GlobalEndpointManager {
     /// Makes an HTTP request to fetch account properties including regional endpoint information,
     /// consistency settings, and multi-master configuration. Uses the default endpoint for the
     /// request and constructs a metadata read operation with appropriate resource link. Called
-    /// internally by `refresh_location_async` when cache needs updating.
+    /// internally by `refresh_location` when cache needs updating.
     ///
     /// # Returns
     /// `Ok(Response<AccountProperties>)` with account metadata, or `Err` if request failed
@@ -434,16 +448,16 @@ mod tests {
     fn test_new_manager_initialization() {
         let manager = create_test_manager();
         assert_eq!(
-            manager.get_hub_uri(),
+            manager.hub_uri(),
             "https://test.documents.azure.com".to_string()
         );
         assert_eq!(manager.preferred_location_count(), 2);
     }
 
     #[test]
-    fn test_get_hub_uri() {
+    fn test_hub_uri() {
         let manager = create_test_manager();
-        let hub_uri = manager.get_hub_uri();
+        let hub_uri = manager.hub_uri();
         assert_eq!(hub_uri, "https://test.documents.azure.com");
     }
 
@@ -577,11 +591,9 @@ mod tests {
     }
 
     #[test]
-    fn test_get_applicable_endpoints() {
+    fn test_applicable_endpoints() {
         let manager = create_test_manager();
-        let request = create_test_request(OperationType::Read);
-
-        let endpoints = manager.get_applicable_endpoints(&request);
+        let endpoints = manager.applicable_endpoints(OperationType::Read);
         assert!(!endpoints.is_empty());
     }
 
@@ -595,18 +607,18 @@ mod tests {
     }
 
     #[test]
-    fn test_get_available_write_endpoints_by_location() {
+    fn test_available_write_endpoints_by_location() {
         let manager = create_test_manager();
-        let endpoints_map = manager.get_available_write_endpoints_by_location();
+        let endpoints_map = manager.available_write_endpoints_by_location();
 
         // Should not panic and return a valid map
         let _ = endpoints_map.len();
     }
 
     #[test]
-    fn test_get_available_read_endpoints_by_location() {
+    fn test_available_read_endpoints_by_location() {
         let manager = create_test_manager();
-        let endpoints_map = manager.get_available_read_endpoints_by_location();
+        let endpoints_map = manager.available_read_endpoints_by_location();
 
         // Should not panic and return a valid map
         let _ = endpoints_map.len();

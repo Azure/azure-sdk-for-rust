@@ -75,8 +75,7 @@ impl DatabaseClient {
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Read, self.link.clone());
-        let cosmos_request = builder.build();
+        let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
         self.pipeline
             .send(cosmos_request?, options.method_options.context)
@@ -136,11 +135,11 @@ impl DatabaseClient {
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Create, self.containers_link.clone());
-        let cosmos_request = builder
-            .headers(&options.throughput)
-            .json(&properties)
-            .build()?;
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
+                .headers(&options.throughput)
+                .json(&properties)
+                .build()?;
 
         self.pipeline
             .send(cosmos_request, options.method_options.context)
@@ -158,10 +157,10 @@ impl DatabaseClient {
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Delete, self.link.clone());
-        let cosmos_request = builder.build();
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
         self.pipeline
-            .send(cosmos_request.unwrap(), options.method_options.context)
+            .send(cosmos_request?, options.method_options.context)
             .await
     }
 

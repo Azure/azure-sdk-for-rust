@@ -63,7 +63,7 @@ impl MetadataRequestRetryPolicy {
             global_endpoint_manager: Arc::from(global_endpoint_manager.clone()),
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
             max_unavailable_endpoint_retry_count: max(
-                global_endpoint_manager.preferred_location_count(),
+                global_endpoint_manager.preferred_location_count() as i32,
                 1,
             ),
             retry_context: None,
@@ -78,10 +78,7 @@ impl MetadataRequestRetryPolicy {
     ///
     /// * `request` - The request being sent to the service
     pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
-        let _stat = self
-            .global_endpoint_manager
-            .refresh_location_async(false)
-            .await;
+        let _stat = self.global_endpoint_manager.refresh_location(false).await;
 
         // Clear the previous location-based routing directive
         request.request_context.clear_route_to_location();

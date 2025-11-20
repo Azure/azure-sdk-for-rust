@@ -108,8 +108,9 @@ impl ContainerClient {
         options: Option<ReplaceContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Replace, self.link.clone());
-        let cosmos_request = builder.json(&properties).build()?;
+        let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
+            .json(&properties)
+            .build()?;
         self.pipeline
             .send(cosmos_request, options.method_options.context)
             .await
@@ -174,8 +175,8 @@ impl ContainerClient {
         options: Option<DeleteContainerOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Delete, self.link.clone());
-        let cosmos_request = builder.build()?;
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
         self.pipeline
             .send(cosmos_request, options.method_options.context)
             .await
@@ -253,8 +254,7 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Create, self.items_link.clone());
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())
             .headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
@@ -339,8 +339,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Replace, link);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
             .headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
@@ -426,8 +425,7 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequest::builder(OperationType::Upsert, self.items_link.clone());
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
             .headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
@@ -480,8 +478,7 @@ impl ContainerClient {
         options.enable_content_response_on_write = true;
 
         let link = self.items_link.item(item_id);
-        let builder = CosmosRequest::builder(OperationType::Read, link);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Read, link)
             .partition_key(partition_key.into())
             .headers(&options)
             .build()?;
@@ -519,9 +516,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-
-        let builder = CosmosRequest::builder(OperationType::Delete, link);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
             .headers(&options)
             .build()?;
@@ -595,8 +590,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let builder = CosmosRequest::builder(OperationType::Patch, link);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Patch, link)
             .partition_key(partition_key.into())
             .headers(&options)
             .json(&patch)

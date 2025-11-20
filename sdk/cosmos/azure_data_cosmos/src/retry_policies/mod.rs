@@ -90,7 +90,7 @@ impl RetryPolicy {
     pub async fn before_send_request(&mut self, request: &mut CosmosRequest) {
         match self {
             RetryPolicy::Client(p) => p.before_send_request(request).await,
-            RetryPolicy::ResourceThrottle(p) => p.before_send_request(request).await,
+            RetryPolicy::ResourceThrottle(_p) => {}
             RetryPolicy::Metadata(p) => p.before_send_request(request).await,
         }
     }

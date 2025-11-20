@@ -240,11 +240,11 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let builder = CosmosRequest::builder(OperationType::Create, self.databases_link.clone());
-        let cosmos_request = builder
-            .headers(&options.throughput)
-            .json(&RequestBody { id })
-            .build()?;
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Create, self.databases_link.clone())
+                .headers(&options.throughput)
+                .json(&RequestBody { id })
+                .build()?;
 
         self.pipeline
             .send(cosmos_request, options.method_options.context)

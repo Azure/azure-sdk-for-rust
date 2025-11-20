@@ -38,7 +38,7 @@ impl OperationType {
     }
 
     /// Maps the `OperationType` to its corresponding HTTP verb.
-    pub fn http_method(&self) -> Method {
+    pub fn http_method(self) -> Method {
         match self {
             OperationType::Create
             | OperationType::Upsert

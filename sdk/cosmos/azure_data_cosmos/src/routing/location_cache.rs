@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 use crate::cosmos_request::CosmosRequest;
 use crate::models::{AccountProperties, AccountRegion};
+use crate::operation_context::OperationType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::{
@@ -128,8 +129,8 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of read endpoint URLs
-    pub fn read_endpoints(&self) -> Vec<String> {
-        self.locations_info.read_endpoints.clone()
+    pub fn read_endpoints(&self) -> &[String] {
+        &self.locations_info.read_endpoints
     }
 
     /// Returns the list of available write endpoints.
@@ -141,8 +142,8 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of write endpoint URLs
-    pub fn write_endpoints(&self) -> Vec<String> {
-        self.locations_info.write_endpoints.clone()
+    pub fn write_endpoints(&self) -> &[String] {
+        &self.locations_info.write_endpoints
     }
 
     /// Updates location cache with account properties from the service.
@@ -293,7 +294,7 @@ impl LocationCache {
     pub fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
         let location_index = request.request_context.location_index_to_route.unwrap_or(0) as usize;
-        let mut location_endpoint_to_route = self.default_endpoint.clone();
+        let mut location_endpoint_to_route = None;
         if !request
             .request_context
             .use_preferred_locations
@@ -303,9 +304,11 @@ impl LocationCache {
             let location_info = &self.locations_info;
             if !location_info.account_write_locations.is_empty() {
                 let idx = (location_index) % location_info.account_write_locations.len();
-                location_endpoint_to_route = location_info.account_write_locations[idx]
-                    .database_account_endpoint
-                    .clone();
+                location_endpoint_to_route = Some(
+                    location_info.account_write_locations[idx]
+                        .database_account_endpoint
+                        .clone(),
+                );
             }
         } else {
             let endpoints = if request.operation_type.is_read_only() {
@@ -315,11 +318,12 @@ impl LocationCache {
             };
 
             if !endpoints.is_empty() {
-                location_endpoint_to_route = endpoints[location_index % endpoints.len()].clone();
+                location_endpoint_to_route =
+                    Some(endpoints[location_index % endpoints.len()].clone());
             }
         }
 
-        location_endpoint_to_route
+        location_endpoint_to_route.unwrap_or(self.default_endpoint.clone())
     }
 
     /// Determines if the account supports multiple write locations.
@@ -349,9 +353,9 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn get_applicable_endpoints(&mut self, request: &CosmosRequest) -> Vec<String> {
+    pub fn get_applicable_endpoints(&mut self, operation_type: OperationType) -> Vec<String> {
         // Select endpoints based on operation type.
-        if request.operation_type.is_read_only() {
+        if operation_type.is_read_only() {
             self.get_preferred_available_endpoints(
                 &self.locations_info.account_read_endpoints_by_location,
                 RequestOperation::Read,

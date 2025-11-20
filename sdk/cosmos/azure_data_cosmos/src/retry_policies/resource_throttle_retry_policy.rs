@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use super::RetryResult;
-use crate::cosmos_request::CosmosRequest;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 
@@ -159,13 +158,6 @@ impl ResourceThrottleRetryPolicy {
 }
 
 impl ResourceThrottleRetryPolicy {
-    /// Called before sending a request to allow policy-specific modifications
-    ///
-    /// This method is invoked immediately before each request is sent (including retries).
-    /// # Arguments
-    /// * `request` - Mutable reference to the HTTP request being sent
-    pub(crate) async fn before_send_request(&mut self, _request: &mut CosmosRequest) {}
-
     /// Determines whether an HTTP request should be retried based on the response or error
     ///
     /// This method evaluates the result of an HTTP request attempt and decides whether

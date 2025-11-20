@@ -7,6 +7,7 @@ use super::{
 };
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
+use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
@@ -54,7 +55,7 @@ pub struct ClientRetryPolicy {
     service_unavailable_retry_count: i32,
 
     /// Whether the current request is a read operation (true) or write operation (false)
-    is_read_request: bool,
+    operation_type: Option<OperationType>,
 
     /// Whether the account supports writing to multiple locations simultaneously
     can_use_multiple_write_locations: bool,
@@ -67,9 +68,6 @@ pub struct ClientRetryPolicy {
 
     /// Context information for routing the next retry attempt to a specific location
     retry_context: Option<RetryContext>,
-
-    /// Clone of the original request used for retry decision logic
-    cosmos_request: Option<CosmosRequest>,
 
     /// Underlying policy for handling resource throttling (429) with exponential backoff
     throttling_retry: ResourceThrottleRetryPolicy,
@@ -97,12 +95,11 @@ impl ClientRetryPolicy {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             service_unavailable_retry_count: 0,
-            is_read_request: false,
+            operation_type: None,
             can_use_multiple_write_locations: false,
             is_multi_master_write_request: false,
             location_endpoint: None,
             retry_context: None,
-            cosmos_request: None,
             throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10),
         }
     }
@@ -120,17 +117,14 @@ impl ClientRetryPolicy {
     /// # Arguments
     /// * `request` - The mutable request to configure before sending
     pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
-        self.cosmos_request = Some(request.clone());
-        let _stat = self
-            .global_endpoint_manager
-            .refresh_location_async(false)
-            .await;
-        self.is_read_request = request.is_read_only_request();
+        // self.cosmos_request = Some(request.clone());
+        let _stat = self.global_endpoint_manager.refresh_location(false).await;
+        self.operation_type = Some(request.operation_type);
         self.can_use_multiple_write_locations = self
             .global_endpoint_manager
             .can_use_multiple_write_locations(request);
 
-        self.is_multi_master_write_request = !self.is_read_request
+        self.is_multi_master_write_request = !request.operation_type.is_read_only()
             && self
                 .global_endpoint_manager
                 .can_support_multiple_write_locations(
@@ -147,7 +141,7 @@ impl ClientRetryPolicy {
                 req_ctx.route_to_location_endpoint(
                     request
                         .resource_link
-                        .url(&Url::parse(&self.global_endpoint_manager.get_hub_uri()).unwrap()),
+                        .url(&Url::parse(self.global_endpoint_manager.hub_uri()).unwrap()),
                 );
             } else {
                 req_ctx.route_to_location_index(
@@ -216,10 +210,7 @@ impl ClientRetryPolicy {
     /// A `RetryResult`:
     /// - `Retry { after: Duration::ZERO }` if retry is allowed on a different endpoint
     /// - `DoNotRetry` if endpoint discovery is disabled or all endpoints have been tried
-    fn should_retry_on_session_not_available(
-        &mut self,
-        cosmos_request: Option<CosmosRequest>,
-    ) -> RetryResult {
+    fn should_retry_on_session_not_available(&mut self) -> RetryResult {
         self.session_token_retry_count += 1;
 
         // If endpoint discovery is disabled, the request cannot be retried anywhere else
@@ -230,7 +221,7 @@ impl ClientRetryPolicy {
         if self.can_use_multiple_write_locations {
             let endpoints = self
                 .global_endpoint_manager
-                .get_applicable_endpoints(&cosmos_request.unwrap());
+                .applicable_endpoints(self.operation_type.unwrap());
             if self.session_token_retry_count > endpoints.len() as i32 {
                 // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
                 RetryResult::DoNotRetry
@@ -282,7 +273,7 @@ impl ClientRetryPolicy {
     /// A `RetryResult`:
     /// - `Retry { after: Duration }` with appropriate delay if retry is allowed
     /// - `DoNotRetry` if max retry count exceeded or endpoint discovery disabled
-    async fn should_retry_on_endpoint_failure_async(
+    async fn should_retry_on_endpoint_failure(
         &mut self,
         is_read_request: bool,
         mark_both_read_and_write_as_unavailable: bool,
@@ -323,7 +314,7 @@ impl ClientRetryPolicy {
 
         let _refresh_cache_result = self
             .global_endpoint_manager
-            .refresh_location_async(force_refresh)
+            .refresh_location(force_refresh)
             .await;
         let retry_location_index = if retry_on_preferred_locations {
             0
@@ -361,7 +352,7 @@ impl ClientRetryPolicy {
         }
 
         // automatic failover support needed to be plugged in.
-        if !self.can_use_multiple_write_locations && !self.is_read_request {
+        if !self.can_use_multiple_write_locations && !self.operation_type.unwrap().is_read_only() {
             return RetryResult::DoNotRetry;
         }
 
@@ -410,7 +401,7 @@ impl ClientRetryPolicy {
         {
             // automatic failover support needed to be plugged in here.
             return Some(
-                self.should_retry_on_endpoint_failure_async(false, false, true, false, false)
+                self.should_retry_on_endpoint_failure(false, false, true, false, false)
                     .await,
             );
         }
@@ -419,7 +410,7 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::NotFound
             && sub_status_code == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
         {
-            return Some(self.should_retry_on_session_not_available(self.cosmos_request.clone()));
+            return Some(self.should_retry_on_session_not_available());
         }
 
         // Service unavailable (503)
@@ -428,7 +419,8 @@ impl ClientRetryPolicy {
         }
 
         // Internal server error (500) or Gone - Lease not found (410)
-        if (status_code == StatusCode::InternalServerError && self.is_read_request)
+        if (status_code == StatusCode::InternalServerError
+            && self.operation_type.unwrap().is_read_only())
             || (status_code == StatusCode::Gone
                 && sub_status_code == Some(SubStatusCode::LeaseNotFound))
         {
@@ -636,12 +628,11 @@ mod tests {
         assert_eq!(policy.failover_retry_count, 0);
         assert_eq!(policy.session_token_retry_count, 0);
         assert_eq!(policy.service_unavailable_retry_count, 0);
-        assert!(!policy.is_read_request);
         assert!(!policy.can_use_multiple_write_locations);
         assert!(!policy.is_multi_master_write_request);
         assert!(policy.location_endpoint.is_none());
         assert!(policy.retry_context.is_none());
-        assert!(policy.cosmos_request.is_none());
+        assert!(policy.operation_type.is_none());
     }
 
     #[test]
@@ -653,7 +644,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_retry_service_unavailable_with_preferred_locations() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
 
         let result = policy.should_retry_error(&error).await;
@@ -671,7 +662,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_not_retry_service_unavailable_without_preferred_locations() {
         let mut policy = create_test_policy_no_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
 
         let result = policy.should_retry_error(&error).await;
@@ -685,7 +676,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_retry_internal_server_error_for_read() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         let error = create_error_with_status(StatusCode::InternalServerError);
 
         let result = policy.should_retry_error(&error).await;
@@ -702,7 +693,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_not_retry_internal_server_error_for_write() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = false;
+        policy.operation_type = Some(OperationType::Create);
         let error = create_error_with_status(StatusCode::InternalServerError);
 
         let result = policy.should_retry_error(&error).await;
@@ -716,7 +707,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_retry_gone_with_lease_not_found() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         let error =
             create_error_with_substatus(StatusCode::Gone, SubStatusCode::LeaseNotFound as u32);
 
@@ -734,7 +725,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_retry_write_forbidden() {
         let mut policy = create_test_policy();
-        policy.is_read_request = false;
+        policy.operation_type = Some(OperationType::Create);
         policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
         let error = create_error_with_substatus(
             StatusCode::Forbidden,
@@ -756,8 +747,6 @@ mod tests {
         let mut policy = create_test_policy();
         policy.enable_endpoint_discovery = true;
         policy.can_use_multiple_write_locations = false;
-        let request = create_test_request();
-        policy.cosmos_request = Some(request);
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
@@ -780,8 +769,6 @@ mod tests {
     async fn test_should_not_retry_session_not_available_when_discovery_disabled() {
         let mut policy = create_test_policy();
         policy.enable_endpoint_discovery = false;
-        let request = create_test_request();
-        policy.cosmos_request = Some(request);
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
@@ -804,8 +791,6 @@ mod tests {
         policy.enable_endpoint_discovery = true;
         policy.can_use_multiple_write_locations = false;
         policy.session_token_retry_count = 1;
-        let request = create_test_request();
-        policy.cosmos_request = Some(request);
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
@@ -813,7 +798,6 @@ mod tests {
         );
 
         let result = policy.should_retry_error(&error).await;
-
         match result {
             RetryResult::DoNotRetry => {
                 assert_eq!(policy.session_token_retry_count, 2);
@@ -825,7 +809,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_not_retry_service_unavailable_after_max_retries() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         policy.service_unavailable_retry_count = MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE;
 
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
@@ -846,7 +830,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_not_retry_service_unavailable_for_write_without_multi_write() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = false;
+        policy.operation_type = Some(OperationType::Create);
         policy.can_use_multiple_write_locations = false;
 
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
@@ -876,7 +860,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_retry_response_service_unavailable() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         let response = create_raw_response(StatusCode::ServiceUnavailable);
 
         let result = policy.should_retry_response(&response).await;
@@ -907,7 +891,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_retry_for_error_response() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         let response = create_raw_response(StatusCode::ServiceUnavailable);
         let result_with_response: azure_core::Result<RawResponse> = Ok(response);
 
@@ -938,7 +922,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_retry_for_transport_error() {
         let mut policy = create_test_policy_with_preferred_locations();
-        policy.is_read_request = true;
+        policy.operation_type = Some(OperationType::Read);
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
         let result_with_error: azure_core::Result<RawResponse> = Err(error);
 
@@ -956,7 +940,7 @@ mod tests {
         policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
 
         let result = policy
-            .should_retry_on_endpoint_failure_async(true, false, false, false, false)
+            .should_retry_on_endpoint_failure(true, false, false, false, false)
             .await;
 
         match result {
@@ -974,7 +958,7 @@ mod tests {
         policy.failover_retry_count = MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE + 1;
 
         let result = policy
-            .should_retry_on_endpoint_failure_async(true, false, false, false, false)
+            .should_retry_on_endpoint_failure(true, false, false, false, false)
             .await;
 
         match result {
@@ -989,7 +973,7 @@ mod tests {
         policy.enable_endpoint_discovery = false;
 
         let result = policy
-            .should_retry_on_endpoint_failure_async(true, false, false, false, false)
+            .should_retry_on_endpoint_failure(true, false, false, false, false)
             .await;
 
         match result {
@@ -1005,7 +989,7 @@ mod tests {
         policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
 
         let result = policy
-            .should_retry_on_endpoint_failure_async(true, false, false, false, true)
+            .should_retry_on_endpoint_failure(true, false, false, false, true)
             .await;
 
         match result {
@@ -1023,7 +1007,7 @@ mod tests {
         policy.failover_retry_count = 1;
 
         let result = policy
-            .should_retry_on_endpoint_failure_async(false, false, false, false, false)
+            .should_retry_on_endpoint_failure(false, false, false, false, false)
             .await;
 
         match result {
@@ -1041,7 +1025,7 @@ mod tests {
         policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
 
         let result = policy
-            .should_retry_on_endpoint_failure_async(false, false, false, false, false)
+            .should_retry_on_endpoint_failure(false, false, false, false, false)
             .await;
 
         match result {
@@ -1059,7 +1043,7 @@ mod tests {
         policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
 
         let result = policy
-            .should_retry_on_endpoint_failure_async(true, false, false, false, false)
+            .should_retry_on_endpoint_failure(true, false, false, false, false)
             .await;
 
         match result {
@@ -1077,8 +1061,8 @@ mod tests {
 
         policy.before_send_request(&mut request).await;
 
-        assert!(policy.is_read_request);
-        assert!(policy.cosmos_request.is_some());
+        assert!(policy.operation_type.is_some());
+        assert!(policy.operation_type.unwrap().is_read_only());
     }
 
     #[tokio::test]
@@ -1088,8 +1072,8 @@ mod tests {
 
         policy.before_send_request(&mut request).await;
 
-        assert!(!policy.is_read_request);
-        assert!(policy.cosmos_request.is_some());
+        assert!(policy.operation_type.is_some());
+        assert!(!policy.operation_type.unwrap().is_read_only());
     }
 
     #[tokio::test]
