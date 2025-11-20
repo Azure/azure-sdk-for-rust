@@ -117,6 +117,7 @@ impl CosmosPipeline {
         let pipeline = self.pipeline.clone();
         let options = PagerOptions {
             context: ctx.with_value(resource_link).into_owned(),
+            ..Default::default()
         };
         Ok(FeedPager::from_callback(
             move |continuation, pager_options| {
