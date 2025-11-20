@@ -1,4 +1,4 @@
-use std::{future::Future, num::NonZero};
+use std::{cmp::max, future::Future, num::NonZero, pin::Pin};
 
 use futures::{
     future::{self},
@@ -7,14 +7,23 @@ use futures::{
 
 type AzureResult<T> = azure_core::Result<T>;
 
-async fn run_all_with_concurrency_limit<TFut, TErr>(
-    mut ops_queue: impl Stream<Item = Result<impl FnOnce() -> TFut, TErr>> + Unpin,
+async fn run_all_with_concurrency_limit<Fut, Err>(
+    mut ops_queue: impl Stream<Item = Result<impl FnOnce() -> Fut, Err>> + Unpin,
     parallel: NonZero<usize>,
-) -> Result<(), TErr>
+) -> Result<(), Err>
 where
-    TFut: Future<Output = Result<(), TErr>>,
+    Fut: Future<Output = Result<(), Err>>,
 {
     let parallel = parallel.get();
+
+    // if no real parallelism, take the simple option of executing ops sequentially.
+    // The "true" implementation can't handle parallel < 2.
+    if parallel == 1 {
+        while let Some(op) = ops_queue.try_next().await? {
+            op().await?;
+        }
+        return Ok(());
+    }
 
     let first_op = match ops_queue.try_next().await? {
         Some(item) => item,
@@ -25,35 +34,29 @@ where
     let mut get_next_queue_op_future = ops_queue.try_next();
     loop {
         // while max parallel running ops, focus on just running ops
-        let mut running_ops = get_next_completed_op_future.into_inner();
-        while running_ops.len() >= parallel {
-            let result;
-            (result, _, running_ops) = future::select_all(running_ops).await;
-            result?
-        }
-        get_next_completed_op_future = future::select_all(running_ops);
+        get_next_completed_op_future = run_down(get_next_completed_op_future, parallel - 1).await?;
 
         match future::select(get_next_queue_op_future, get_next_completed_op_future).await {
             future::Either::Left((Err(e), _)) => return Err(e),
             future::Either::Right(((Err(e), _, _), _)) => return Err(e),
 
-            // next op in the queue arrived first
+            // Next op in the queue arrived first. Add it to existing running ops.
             future::Either::Left((Ok(next_op_in_queue), running_ops_fut)) => {
                 get_next_queue_op_future = ops_queue.try_next();
                 get_next_completed_op_future = running_ops_fut;
 
                 match next_op_in_queue {
                     Some(op) => {
-                        running_ops = get_next_completed_op_future.into_inner();
-                        running_ops.push(Box::pin(op()));
-                        get_next_completed_op_future = future::select_all(running_ops);
+                        get_next_completed_op_future =
+                            combine_select_all(get_next_completed_op_future, Box::pin(op()));
                     }
                     // queue was finished, race is over
                     None => break,
                 }
             }
-            // a running op completed first
+            // A running op completed first. Start another select_all with remaining running ops.
             future::Either::Right(((Ok(_), _, remaining_running_ops), next_op_fut)) => {
+                // remaining_running_ops could be empty now.
                 // select panics on empty iter, so we can't race in this case.
                 // forcibly wait for next op in queue and handle it before continuing.
                 if remaining_running_ops.is_empty() {
@@ -71,13 +74,41 @@ where
         }
     }
 
-    let mut running_ops = get_next_completed_op_future.into_inner();
-    while !running_ops.is_empty() {
+    let _ = future::try_join_all(get_next_completed_op_future.into_inner()).await?;
+    Ok(())
+}
+
+/// Loops `future::select_all()` with the existing `SelectAll`` until the target remaining
+/// inner futures is reached. Will always leave at least one inner future remaining, for
+/// type simplicity (select_all panics on len == 0);
+async fn run_down<Fut, Err>(
+    select_fut: future::SelectAll<Pin<Box<Fut>>>,
+    target_remaining: usize,
+) -> Result<future::SelectAll<Pin<Box<Fut>>>, Err>
+where
+    Fut: Future<Output = Result<(), Err>>,
+{
+    let target_remaining = max(target_remaining, 1);
+    let mut select_vec = select_fut.into_inner();
+    while select_vec.len() > target_remaining {
         let result;
-        (result, _, running_ops) = future::select_all(running_ops).await;
+        (result, _, select_vec) = future::select_all(select_vec).await;
         result?;
     }
-    Ok(())
+    Ok(future::select_all(select_vec))
+}
+
+/// Adds a pin-boxed future to an existing SelectAll of pin-boxed futures.
+fn combine_select_all<Fut>(
+    select_fut: future::SelectAll<Pin<Box<Fut>>>,
+    new_fut: Pin<Box<Fut>>,
+) -> future::SelectAll<Pin<Box<Fut>>>
+where
+    Fut: Future,
+{
+    let mut futures = select_fut.into_inner();
+    futures.push(new_fut);
+    future::select_all(futures)
 }
 
 #[cfg(test)]
