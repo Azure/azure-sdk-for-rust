@@ -5,6 +5,9 @@
 ### Features Added
 
 - Added `continuation_token` to `PagerOptions`.
+- Added extensible request authorization and authentication challenge handling to `BearerTokenAuthorizationPolicy`.
+  - `OnRequest`, `OnChallenge`, and `Authorizer` traits define callbacks for these features.
+  - `with_on_request()` and `with_on_challenge()` builder methods set callbacks for a policy instance.
 
 ### Breaking Changes
 
