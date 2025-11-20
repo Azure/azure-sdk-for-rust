@@ -4,7 +4,7 @@
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
 use azure_core::{
-    http::{InstrumentationOptions, StatusCode},
+    http::{pager::PagerOptions, InstrumentationOptions, StatusCode},
     Result,
 };
 use azure_core_test::{
@@ -13,7 +13,10 @@ use azure_core_test::{
     TestContext, TestMode,
 };
 use azure_security_keyvault_secrets::{
-    models::{SecretClientGetSecretOptions, SetSecretParameters, UpdateSecretPropertiesParameters},
+    models::{
+        SecretClientGetSecretOptions, SecretClientListSecretPropertiesOptions, SetSecretParameters,
+        UpdateSecretPropertiesParameters,
+    },
     ResourceExt as _, SecretClient, SecretClientOptions,
 };
 use azure_security_keyvault_test::Retry;
@@ -527,10 +530,14 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                     .continuation_token()
                     .expect("expected continuation token to be created after first page")
             };
-            let mut rehydrated_pager = client
-                .list_secret_properties(None)?
-                .into_pages()
-                .with_continuation_token(rehydration_token);
+            let options = SecretClientListSecretPropertiesOptions {
+                method_options: PagerOptions {
+                    continuation_token: Some(rehydration_token),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut rehydrated_pager = client.list_secret_properties(Some(options))?.into_pages();
 
             while let Some(secret_page) = rehydrated_pager.try_next().await? {
                 let secrets = secret_page.into_model()?;

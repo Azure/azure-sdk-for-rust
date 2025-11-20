@@ -211,6 +211,44 @@ pub type Pager<P, F = JsonFormat> = ItemIterator<Response<P, F>>;
 pub struct PagerOptions<'a> {
     /// Context for HTTP requests made by the [`Pager`].
     pub context: Context<'a>,
+
+    /// Optional continuation token or next link to resume paging.
+    ///
+    /// # Examples
+    ///
+    /// ``` no_run
+    /// use azure_core::http::pager::PagerOptions;
+    /// use azure_identity::DeveloperToolsCredential;
+    /// use azure_security_keyvault_secrets::{
+    ///     models::SecretClientListSecretPropertiesOptions,
+    ///     SecretClient,
+    /// };
+    /// use futures::stream::TryStreamExt as _;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> azure_core::Result<()> {
+    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
+    ///
+    /// // Start the first pager at the first page.
+    /// let mut pager = client.list_secret_properties(None)?;
+    ///
+    /// // Continue the second pager from where the first pager left off,
+    /// // which is the first page in this example.
+    /// let options = SecretClientListSecretPropertiesOptions {
+    ///     method_options: PagerOptions {
+    ///         continuation_token: pager.continuation_token(),
+    ///         ..Default::default()
+    ///     },
+    ///     ..Default::default()
+    /// };
+    /// let mut pager = client.list_secret_properties(Some(options))?;
+    /// while let Some(secret) = pager.try_next().await? {
+    ///     println!("{:?}", secret.id);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub continuation_token: Option<String>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -405,12 +443,15 @@ impl<P: Page> ItemIterator<P> {
         <C as FromStr>::Err: std::error::Error,
     {
         let options = options.unwrap_or_default();
-        let next_token = Arc::new(Mutex::new(None::<String>));
+
+        // Start from the optional `PagerOptions::continuation_token`.
+        let continuation_token = options.continuation_token.clone();
+        let next_token = Arc::new(Mutex::new(continuation_token.clone()));
         let stream = iter_from_callback(make_request, options, next_token.clone());
 
         Self {
             stream: Box::pin(stream),
-            continuation_token: None,
+            continuation_token,
             next_token,
             current: None,
         }
@@ -456,52 +497,9 @@ impl<P: Page> ItemIterator<P> {
         }
     }
 
-    /// Start the `ItemIterator` at the page referenced by `continuation_token`.
-    ///
-    /// You should call this before iterating the [`Stream`] or results may be unpredictable.
-    /// Iteration of items will start from the beginning on the current page until _after_ all items are iterated.
-    /// It does not continue on the next page until you call `next()` after the last item in the current page
-    /// because of how iterators are implemented. This may yield duplicates but will reduce the likelihood of skipping items instead.
-    ///
-    /// # Examples
-    ///
-    /// Using a result of a call to [`ItemIterator::continuation_token`] in another process, you can create a new `ItemIterator`
-    /// that, when first iterated, will get the next page of results.
-    ///
-    /// ``` no_run
-    /// use azure_identity::DeveloperToolsCredential;
-    /// use azure_security_keyvault_secrets::SecretClient;
-    /// use futures::stream::TryStreamExt as _;
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() -> azure_core::Result<()> {
-    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
-    ///
-    /// // Start the first pager at the first page.
-    /// let mut pager = client.list_secret_properties(None)?;
-    ///
-    /// // Continue the second pager from where the first pager left off,
-    /// // which is the first page in this example.
-    /// let mut pager = client.list_secret_properties(None)?
-    ///     .with_continuation_token(Some("continuation_token_from_another_pager".into()));
-    ///
-    /// while let Some(secret) = pager.try_next().await? {
-    ///     println!("{:?}", secret.id);
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn with_continuation_token(self, continuation_token: Option<String>) -> Self {
-        // Set the next_token because that's what is passed to iter_from_callback to get the initial page.
-        if let Ok(mut token) = self.next_token.lock() {
-            *token = continuation_token;
-        }
-        self
-    }
-
     /// Gets the continuation token for the current page.
     ///
-    /// Pass this to [`ItemIterator::with_continuation_token`] to create a `ItemIterator` that, when first iterated,
+    /// Pass this in [`PagerOptions::continuation_token`] to create a `ItemIterator` that, when first iterated,
     /// will return the current page until _after_ all items are iterated.
     /// It does not continue on the next page until you call `next()` after the last item in the current page
     /// because of how iterators are implemented. This may yield duplicates but will reduce the likelihood of skipping items instead.
@@ -560,7 +558,9 @@ impl<P: Page> futures::Stream for ItemIterator<P> {
 
 impl<P: Page> fmt::Debug for ItemIterator<P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ItemIterator").finish_non_exhaustive()
+        f.debug_struct("ItemIterator")
+            .field("continuation_token", &self.continuation_token)
+            .finish_non_exhaustive()
     }
 }
 
@@ -707,7 +707,9 @@ impl<P> PageIterator<P> {
         <C as FromStr>::Err: std::error::Error,
     {
         let options = options.unwrap_or_default();
-        let continuation_token = Arc::new(Mutex::new(None::<String>));
+
+        // Start from the optional `PagerOptions::continuation_token`.
+        let continuation_token = Arc::new(Mutex::new(options.continuation_token.clone()));
         let stream = iter_from_callback(make_request, options, continuation_token.clone());
 
         Self {
@@ -732,54 +734,9 @@ impl<P> PageIterator<P> {
         }
     }
 
-    /// Start the `PageIterator` at the page referenced by `continuation_token`.
-    ///
-    /// You should call this before iterating the [`Stream`] or results may be unpredictable.
-    ///
-    /// # Examples
-    ///
-    /// Using a result of a call to [`PageIterator::continuation_token`] in another process, you can create a new `PageIterator`
-    /// that, when first iterated, will get the next page of results.
-    ///
-    /// ``` no_run
-    /// use azure_identity::DeveloperToolsCredential;
-    /// use azure_security_keyvault_secrets::SecretClient;
-    /// use futures::stream::TryStreamExt as _;
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() -> azure_core::Result<()> {
-    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
-    ///
-    /// // Start the first pager at the first page.
-    /// let mut pager = client.list_secret_properties(None)?
-    ///     .into_pages();
-    ///
-    /// // Continue the second pager from where the first pager left off,
-    /// // which is the first page in this example.
-    /// let mut pager = client.list_secret_properties(None)?
-    ///     .into_pages()
-    ///     .with_continuation_token("continuation_token_from_another_pager".to_string());
-    ///
-    /// while let Some(secrets) = pager.try_next().await? {
-    ///     let secrets = secrets.into_model()?;
-    ///     for secret in secrets.value {
-    ///         println!("{:?}", secret.id);
-    ///     }
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn with_continuation_token(self, continuation_token: String) -> Self {
-        if let Ok(mut token_guard) = self.continuation_token.lock() {
-            *token_guard = Some(continuation_token);
-        }
-
-        self
-    }
-
     /// Gets the continuation token for the current page.
     ///
-    /// Pass this to [`PageIterator::with_continuation_token`] to create a `PageIterator` that, when first iterated,
+    /// Pass this to [`PagerOptions::continuation_token`] to create a `PageIterator` that, when first iterated,
     /// will return the next page. You can use this to page results across separate processes.
     pub fn continuation_token(&self) -> Option<String> {
         if let Ok(token) = self.continuation_token.lock() {
@@ -1165,9 +1122,13 @@ mod tests {
         assert_eq!(continuation_token, "next-token-1");
 
         // Create the second PageIterator.
-        let mut second_pager: PageIterator<Response<Page>> =
-            PageIterator::from_callback(make_three_page_callback(), None)
-                .with_continuation_token(continuation_token);
+        let mut second_pager: PageIterator<Response<Page>> = PageIterator::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token: Some(continuation_token),
+                ..Default::default()
+            }),
+        );
 
         // Should start with link to second page.
         assert_eq!(
@@ -1348,8 +1309,13 @@ mod tests {
         assert_eq!(continuation_token, None);
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
-            .with_continuation_token(continuation_token);
+        let mut second_pager: Pager<Page> = Pager::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token,
+                ..Default::default()
+            }),
+        );
 
         // Should start with link to first page.
         assert_eq!(second_pager.continuation_token(), None);
@@ -1422,8 +1388,13 @@ mod tests {
         assert_eq!(continuation_token.as_deref(), Some("next-token-1"));
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
-            .with_continuation_token(continuation_token);
+        let mut second_pager: Pager<Page> = Pager::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token,
+                ..Default::default()
+            }),
+        );
 
         // When continuing with a continuation token, we should start over from the
         // beginning of the current page (second page), not where we left off.
@@ -1475,8 +1446,13 @@ mod tests {
         assert_eq!(continuation_token, None);
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
-            .with_continuation_token(continuation_token);
+        let mut second_pager: Pager<Page> = Pager::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token,
+                ..Default::default()
+            }),
+        );
 
         // When continuing with a continuation token after finishing a page, we should
         // start from the beginning of the current page.

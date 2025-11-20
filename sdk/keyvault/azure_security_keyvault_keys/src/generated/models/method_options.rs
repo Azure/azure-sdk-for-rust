@@ -116,6 +116,7 @@ impl KeyClientListDeletedKeyPropertiesOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
         }
     }
@@ -138,6 +139,7 @@ impl KeyClientListKeyPropertiesOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
         }
     }
@@ -160,6 +162,7 @@ impl KeyClientListKeyPropertiesVersionsOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
         }
     }
