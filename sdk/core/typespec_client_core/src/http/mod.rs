@@ -184,7 +184,7 @@ impl<'a> QueryBuilder<'a> {
     /// assert!(params.contains(&("debug".into(), "".into())));
     /// assert!(params.contains(&("a".into(), "1".into())));
     /// ```
-    pub fn append_key_only(&mut self, key: impl Into<Cow<'a, str>>) -> &mut Self {
+    pub fn append_key_only(mut self, key: impl Into<Cow<'a, str>>) -> Self {
         let key = key.into();
 
         if let Some(vals) = self.values.get_mut(&key) {
@@ -224,10 +224,10 @@ impl<'a> QueryBuilder<'a> {
     /// assert!(params.contains(&("b".into(), "3".into())));
     /// ```
     pub fn append_pair(
-        &mut self,
+        mut self,
         key: impl Into<Cow<'a, str>>,
         value: impl Into<Cow<'a, str>>,
-    ) -> &mut Self {
+    ) -> Self {
         let key = key.into();
         let value = value.into();
 
@@ -269,10 +269,10 @@ impl<'a> QueryBuilder<'a> {
     /// assert!(params.contains(&("c".into(), "3".into())));
     /// ```
     pub fn set_pair(
-        &mut self,
+        mut self,
         key: impl Into<Cow<'a, str>>,
         value: impl Into<Cow<'a, str>>,
-    ) -> &mut Self {
+    ) -> Self {
         let key = key.into();
         let value = value.into();
 
@@ -284,7 +284,7 @@ impl<'a> QueryBuilder<'a> {
     }
 
     /// Applies all the query parameter changes to the URL.
-    pub fn build(&mut self) {
+    pub fn build(self) {
         if !self.dirty {
             return;
         }
@@ -302,8 +302,6 @@ impl<'a> QueryBuilder<'a> {
                 }
             }
         }
-
-        self.dirty = false;
     }
 }
 
@@ -413,18 +411,16 @@ mod test {
     #[test]
     fn test_query_builder_empty_query() {
         let mut url = Url::parse("https://contoso.com").unwrap();
-        let mut builder = url.query_builder();
-        builder.set_pair("a", "1");
-        builder.build();
+        let builder = url.query_builder();
+        builder.set_pair("a", "1").build();
         assert_eq!(url.as_str(), "https://contoso.com/?a=1");
     }
 
     #[test]
     fn test_query_builder_new_parameter() {
         let mut url = Url::parse("https://contoso.com?b=2").unwrap();
-        let mut builder = url.query_builder();
-        builder.set_pair("a", "1");
-        builder.build();
+        let builder = url.query_builder();
+        builder.set_pair("a", "1").build();
         let params: Vec<_> = url.query_pairs().collect();
         assert!(params.contains(&("a".into(), "1".into())));
         assert!(params.contains(&("b".into(), "2".into())));
@@ -434,9 +430,8 @@ mod test {
     #[test]
     fn test_query_builder_overwrite_existing() {
         let mut url = Url::parse("https://contoso.com?a=1&b=2").unwrap();
-        let mut builder = url.query_builder();
-        builder.set_pair("a", "new_value");
-        builder.build();
+        let builder = url.query_builder();
+        builder.set_pair("a", "new_value").build();
         let params: Vec<_> = url.query_pairs().collect();
         assert!(params.contains(&("a".into(), "new_value".into())));
         assert!(params.contains(&("b".into(), "2".into())));
@@ -446,9 +441,8 @@ mod test {
     #[test]
     fn test_query_builder_overwrite_duplicate() {
         let mut url = Url::parse("https://contoso.com?a=1&b=2&a=3").unwrap();
-        let mut builder = url.query_builder();
-        builder.set_pair("a", "new_value");
-        builder.build();
+        let builder = url.query_builder();
+        builder.set_pair("a", "new_value").build();
 
         let params: Vec<_> = url.query_pairs().collect();
         assert!(params.contains(&("a".into(), "new_value".into())));
@@ -459,9 +453,8 @@ mod test {
     #[test]
     fn test_query_builder_with_hashmap() {
         let mut url = Url::parse("https://contoso.com?x=1&a=old&y=2&z=3").unwrap();
-        let mut builder = url.query_builder();
-        builder.set_pair("a", "new");
-        builder.build();
+        let builder = url.query_builder();
+        builder.set_pair("a", "new").build();
 
         let params: Vec<_> = url.query_pairs().collect();
         assert!(params.contains(&("a".into(), "new".into())));
@@ -474,21 +467,20 @@ mod test {
     #[test]
     fn test_query_builder_with_special_chars() {
         let mut url = Url::parse("https://contoso.com?a=old").unwrap();
-        let mut builder = url.query_builder();
-        builder.set_pair("a", "hello world");
-        builder.build();
+        let builder = url.query_builder();
+        builder.set_pair("a", "hello world").build();
         assert_eq!(url.as_str(), "https://contoso.com/?a=hello+world");
     }
 
     #[test]
     fn test_query_builder_multiple_sets() {
         let mut url = Url::parse("https://contoso.com?a=1&b=2").unwrap();
-        let mut builder = url.query_builder();
+        let builder = url.query_builder();
         builder
             .set_pair("a", "new")
             .set_pair("c", "3")
-            .set_pair("b", "updated");
-        builder.build();
+            .set_pair("b", "updated")
+            .build();
         let params: Vec<_> = url.query_pairs().collect();
         assert!(params.contains(&("a".into(), "new".into())));
         assert!(params.contains(&("b".into(), "updated".into())));
@@ -499,9 +491,11 @@ mod test {
     #[test]
     fn test_query_builder_with_numeric_value() {
         let mut url = Url::parse("https://contoso.com").unwrap();
-        let mut builder = url.query_builder();
-        builder.set_pair("foo", 1.to_string()).set_pair("bar", "2");
-        builder.build();
+        let builder = url.query_builder();
+        builder
+            .set_pair("foo", 1.to_string())
+            .set_pair("bar", "2")
+            .build();
         let params: Vec<_> = url.query_pairs().collect();
         assert!(params.contains(&("bar".into(), "2".into())));
         assert!(params.contains(&("foo".into(), "1".into())));
@@ -511,36 +505,17 @@ mod test {
     #[test]
     fn test_query_builder_append_key_only() {
         let mut url = Url::parse("https://contoso.com").unwrap();
-        let mut builder = url.query_builder();
+        let builder = url.query_builder();
         builder
             .append_key_only("debug")
             .append_pair("a", "1")
-            .append_key_only("verbose");
-        builder.build();
+            .append_key_only("verbose")
+            .build();
 
         let params: Vec<_> = url.query_pairs().collect();
         assert!(params.contains(&("a".into(), "1".into())));
         assert!(params.contains(&("debug".into(), "".into())));
         assert!(params.contains(&("verbose".into(), "".into())));
         assert_eq!(params.len(), 3);
-    }
-
-    #[test]
-    fn test_query_builder_multiple_builds() {
-        let mut url = Url::parse("https://contoso.com").unwrap();
-
-        let mut builder = url.query_builder();
-        builder.set_pair("a", "1");
-        builder.build();
-
-        builder.set_pair("b", "2");
-        builder.build();
-
-        // Calling build() again without changes does nothing
-        builder.build();
-        let params: Vec<_> = url.query_pairs().collect();
-        assert!(params.contains(&("a".into(), "1".into())));
-        assert!(params.contains(&("b".into(), "2".into())));
-        assert_eq!(params.len(), 2);
     }
 }
