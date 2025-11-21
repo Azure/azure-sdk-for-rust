@@ -150,15 +150,11 @@ pub trait OnRequest: std::fmt::Debug + Send + Sync {
     ) -> Result<()>;
 }
 
-mod sealed {
-    pub trait Sealed {}
-}
-
 /// Helper trait used by [`OnChallenge`] and [`OnRequest`] to authorize requests. This trait is sealed and cannot
 /// be implemented outside of this module.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-pub trait Authorizer: sealed::Sealed + std::fmt::Debug + Send + Sync {
+pub trait Authorizer: crate::private::Sealed + std::fmt::Debug + Send + Sync {
     /// Acquire an access token for the provided scopes and options, and set the request's authorization header.
     async fn authorize(
         &self,
@@ -188,7 +184,7 @@ impl BearerTokenAuthorizer {
     }
 }
 
-impl sealed::Sealed for BearerTokenAuthorizer {}
+impl crate::private::Sealed for BearerTokenAuthorizer {}
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
