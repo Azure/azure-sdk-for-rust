@@ -81,11 +81,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
         if response.status() == StatusCode::Unauthorized {
             self.authorizer.invalidate_cache().await;
             if let Some(ref on_challenge) = self.on_challenge {
-                let has_challenge = response
-                    .headers()
-                    .get_optional_str(&WWW_AUTHENTICATE)
-                    .is_some();
-                if has_challenge {
+                if response.headers().get_str(&WWW_AUTHENTICATE).is_ok() {
                     let should_retry = on_challenge
                         .on_challenge(ctx, request, self.authorizer.as_ref(), response.headers())
                         .await?;
