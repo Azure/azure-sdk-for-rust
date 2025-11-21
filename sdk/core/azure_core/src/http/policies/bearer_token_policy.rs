@@ -44,17 +44,19 @@ impl BearerTokenAuthorizationPolicy {
         }
     }
 
-    /// Sets a callback for `send` to invoke once on each request it receives, before sending the request. See [`OnRequest`]
-    /// for more details. When not set, the policy authorizes each request using the credential and scopes specified to `new`.
+    /// Sets a callback for `send` to invoke once on each request it receives, before sending the request.
+    ///
+    /// See [`OnRequest`] for more details. When not set, the policy authorizes each request using the credential
+    /// and scopes specified to `new`.
     pub fn with_on_request(mut self, on_request: Arc<dyn OnRequest>) -> Self {
         self.on_request = on_request;
         self
     }
 
     /// Sets a callback to invoke upon receiving a 401 Unauthorized response with an authentication challenge.
-    /// See [`OnChallenge`] for more details.
     ///
-    /// When not set, `send` returns 401 responses without attempting to handle their challenges.
+    /// See [`OnChallenge`] for more details. When not set, `send` returns 401 responses without attempting to
+    /// handle their challenges.
     pub fn with_on_challenge(mut self, on_challenge: Arc<dyn OnChallenge>) -> Self {
         self.on_challenge = Some(on_challenge);
         self
@@ -106,8 +108,9 @@ impl Policy for BearerTokenAuthorizationPolicy {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait OnChallenge: std::fmt::Debug + Send + Sync {
-    /// Called when [`BearerTokenAuthorizationPolicy`] receives a 401 Unauthorized response with a challenge. Implementations are
-    /// responsible for parsing authentication parameters from the challenge, authorizing the request via the provided [`Authorizer`],
+    /// Called when [`BearerTokenAuthorizationPolicy`] receives a 401 Unauthorized response with a challenge.
+    ///
+    /// Implementations are responsible for parsing authentication parameters from the challenge, authorizing the request via the provided [`Authorizer`],
     /// and indicating whether the policy should retry the request.
     ///
     /// # Arguments
@@ -134,6 +137,7 @@ pub trait OnChallenge: std::fmt::Debug + Send + Sync {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait OnRequest: std::fmt::Debug + Send + Sync {
     /// Invoked once on every [`BearerTokenAuthorizationPolicy::send`] invocation, before the policy sends the request.
+    ///
     /// `send` doesn't call this method before retrying a request after an authentication challenge (see [`OnChallenge`]
     /// for more about challenge handling). Implementations are responsible for authorizing each request via the provided
     /// [`Authorizer`]. The policy sends the request when this method returns Ok.
