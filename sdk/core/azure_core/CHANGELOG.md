@@ -8,6 +8,7 @@
 - Added extensible request authorization and authentication challenge handling to `BearerTokenAuthorizationPolicy`.
   - `OnRequest`, `OnChallenge`, and `Authorizer` traits define callbacks for these features.
   - `with_on_request()` and `with_on_challenge()` builder methods set callbacks for a policy instance.
+- Added `Request::body_mut()`.
 - Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
 
 ### Breaking Changes
