@@ -148,14 +148,6 @@ impl Parse for Attributes {
                 }
             }
         }
-
-        if attrs.live && attrs.playback {
-            return Err(syn::Error::new(
-                input.span(),
-                "cannot specify both 'live' and 'playback' attributes",
-            ));
-        }
-
         Ok(attrs)
     }
 }
