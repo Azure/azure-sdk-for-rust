@@ -23,6 +23,9 @@ small set of SDK clients which require additional levels of customization beyond
 
 Before you begin, ensure you have the following installed:
 
+1. Familiarize yourself with the [Azure API Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html). These define the required
+conventions for an Azure SDK for Rust crate.
+
 1. **Rust toolchain** (version 1.85 or later)
 
     To install the rustup tool, follow the [rust-lang install instructions](https://rust-lang.org/tools/install)
@@ -345,129 +348,21 @@ AZURE_TEST_MODE=live cargo test -p <crate-name>
 
 ### Step 6.1: Create README.md
 
-Create `sdk/<service-dir>/<crate-name>/README.md`:
+Create `sdk/<service-dir>/<crate-name>/README.md`.
 
-````markdown
-    # Azure <Service Name> client library for Rust
+The `README.md` file typically has several sections that are common to all crates:
 
-    <Brief description of the service>
+- Brief description of the crate, including
+  - Location of crate
+  - Location of crate documentation
+- Prerequisites
+- Key Concepts
+- Examples of hero scenarios
+- Troubleshooting guide
+- Contributing Guide
+- References
 
-    The Azure <Service Name> client library allows you to <describe main capabilities>.
-
-    [Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
-
-    ## Getting started
-
-    ### Install the package
-
-    Install the Azure <Service Name> client library for Rust with [Cargo]:
-
-    ```sh
-    cargo add <crate-name>
-    ```
-
-### Prerequisites
-
-- An [Azure subscription].
-- An existing Azure `<Service Name>` resource. If you need to create one, you can use the Azure Portal or [Azure CLI].
-
-If you use the Azure CLI:
-
-    ```azurecli
-    az <service> create --resource-group <resource-group-name> --name <resource-name>
-    ```
-
-### Authenticate the client
-
-In order to interact with the Azure <Service Name> service, you'll need to create an instance of the `<ClientName>`. You need a **service url** and credentials to instantiate a client object.
-
-    ```rust no_run
-    use azure_identity::DeveloperToolsCredential;
-    use <crate_name>::{<ClientName>, models::*};
-
-    #[tokio::main]
-    async fn main() -> Result<(), Box<dyn std::error::Error>> {
-        let credential = DeveloperToolsCredential::new(None)?;
-        let client = <ClientName>::new(
-            "https://your-service.azure.net/",
-            credential,
-            None,
-        )?;
-
-        // Use the client
-        Ok(())
-    }
-    ```
-
-## Key concepts
-
-<Describe key concepts, entities, and terminology>
-
-## Examples
-
-### Example 1: <Primary Operation>
-
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use <crate_name>::{<ClientName>, models::*};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = <ClientName>::new(
-        "https://your-service.azure.net/",
-        credential,
-        None,
-    )?;
-
-    // Perform operation
-    let result = client.operation("name", parameters).await?;
-    println!("{:?}", result);
-
-    Ok(())
-}
-```
-
-## Troubleshooting
-
-### Logging
-
-Enable trace logging to see detailed information about service requests:
-
-```rust
-use tracing_subscriber;
-
-tracing_subscriber::fmt()
-    .with_max_level(tracing::Level::TRACE)
-    .init();
-```
-
-## Next steps
-
-<Links to additional documentation, samples, or related services>
-
-## Contributing
-
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA).
-
-This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact [opencode@microsoft.com] with any questions or comments.
-
-## Provenance
-
-This crate is generated from TypeSpec definitions in the [Azure/azure-rest-api-specs] repository.
-
-[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/<service-dir>/<crate-name>
-[Package (crates.io)]: https://crates.io/crates/<crate-name>
-[API reference documentation]: https://docs.rs/<crate-name>
-[Product documentation]: https://azure.microsoft.com/services/<service>/
-[Azure subscription]: https://azure.microsoft.com/free/
-[Azure CLI]: https://docs.microsoft.com/cli/azure
-[Cargo]: https://doc.rust-lang.org/cargo/
-[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[opencode@microsoft.com]: mailto:opencode@microsoft.com
-[Azure/azure-rest-api-specs]: https://github.com/Azure/azure-rest-api-specs
-````
+It is often helpful to look at the `README.md` for the package you are creating from other SDK languages, they usually contain helpful information that should be included in your `README.md` (this is helpful for the Key Concepts and Hero scenarios sections. It is also extremely helpful to look at other packages within the Azure SDK for Rust SDK for examples of content (this is especially true for the Prerequisites and References sections).
 
 ### Step 6.2: Create CHANGELOG.md
 
