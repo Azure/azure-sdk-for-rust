@@ -145,10 +145,6 @@ pub struct BlobClientSetExpiryResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetImmutabilityPolicyResult;
 
-/// Contains results for `BlobClient::set_legal_hold()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetLegalHoldResult;
-
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
