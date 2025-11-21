@@ -3,10 +3,6 @@
 
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
-use time::{format_description::FormatItem, macros::format_description, OffsetDateTime, UtcOffset};
-
-static RFC3339_7: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:7]Z");
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
 ///  returns the HTTP range in String format.
@@ -62,19 +58,4 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
         .collect();
 
     Ok(format_expression.join(" and "))
-}
-
-/// Takes a OffsetDateTime and converts to RFC3339-like string with exactly 7 decimal precision and converted to UTC.
-///
-/// # Arguments
-///
-/// * `datetime` - OffsetDateTime to format.
-pub fn format_storage_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
-    let utc = datetime.to_offset(UtcOffset::UTC);
-    utc.format(RFC3339_7).map_err(|e| {
-        Error::new(
-            ErrorKind::InvalidInput,
-            format!("Failed to format datetime: {}", e),
-        )
-    })
 }

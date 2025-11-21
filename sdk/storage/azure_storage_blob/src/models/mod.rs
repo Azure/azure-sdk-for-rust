@@ -26,7 +26,6 @@ pub use crate::generated::models::{
     BlobClientReleaseLeaseResultHeaders, BlobClientRenewLeaseOptions, BlobClientRenewLeaseResult,
     BlobClientRenewLeaseResultHeaders, BlobClientSetExpiryResult, BlobClientSetExpiryResultHeaders,
     BlobClientSetImmutabilityPolicyResult, BlobClientSetImmutabilityPolicyResultHeaders,
-    BlobClientSetLegalHoldResult, BlobClientSetLegalHoldResultHeaders,
     BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
     BlobClientSetTierOptions, BlobClientStartCopyFromUrlResult,
     BlobClientStartCopyFromUrlResultHeaders, BlobClientUndeleteResult,

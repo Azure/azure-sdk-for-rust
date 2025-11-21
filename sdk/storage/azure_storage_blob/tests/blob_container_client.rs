@@ -3,9 +3,10 @@
 
 use azure_core::{
     http::{RequestContent, StatusCode},
-    time::OffsetDateTime,
+    time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
 use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
+use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
@@ -13,7 +14,6 @@ use azure_storage_blob::models::{
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
     SignedIdentifiers,
 };
-use azure_storage_blob::{format_filter_expression, format_storage_datetime};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name,
@@ -417,34 +417,32 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     let expiry = recording.var(
         "expiry",
         Some(VarOptions {
-            default_value: format_storage_datetime(
-                OffsetDateTime::now_utc() + Duration::from_secs(10),
-            )
-            .ok()
-            .map(Into::into),
+            default_value: Some(
+                to_rfc3339(&(OffsetDateTime::now_utc() + Duration::from_secs(10))).into(),
+            ),
             ..Default::default()
         }),
     );
     let start = recording.var(
         "start",
         Some(VarOptions {
-            default_value: format_storage_datetime(OffsetDateTime::now_utc())
-                .ok()
-                .map(Into::into),
+            default_value: Some(to_rfc3339(&OffsetDateTime::now_utc()).into()),
             ..Default::default()
         }),
     );
+    println!("Expiry: {}", &expiry);
+    println!("Start: {}", &start);
     let test_id_1: Option<String> = Some("testid_1".into());
     let test_id_2: Option<String> = Some("testid_2".into());
     let access_policy_1 = AccessPolicy {
-        expiry: Some(expiry.clone()),
+        expiry: Some(parse_rfc3339(&expiry)?),
         permission: Some("rw".to_string()),
-        start: Some(start.clone()),
+        start: Some(parse_rfc3339(&start)?),
     };
     let access_policy_2 = AccessPolicy {
-        expiry: Some(expiry),
+        expiry: Some(parse_rfc3339(&expiry)?),
         permission: Some("cd".to_string()),
-        start: Some(start),
+        start: Some(parse_rfc3339(&start)?),
     };
     let policies: HashMap<String, AccessPolicy> = HashMap::from([
         (test_id_1.clone().unwrap(), access_policy_1.clone()),

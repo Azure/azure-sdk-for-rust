@@ -380,13 +380,13 @@ impl BlobContainerClient {
     ///
     /// ```rust, ignore
     /// use azure_core::http::RequestContent;
-    /// use azure_storage_blob::{format_storage_datetime, models::{AccessPolicy, SignedIdentifiers}};
+    /// use azure_storage_blob::models::{AccessPolicy, SignedIdentifiers};
     /// use typespec_client_core::time::OffsetDateTime;
     ///
     /// let mut policies = HashMap::new();
     /// policies.insert("some_policy_id".to_string(), AccessPolicy {
-    ///     start: Some(format_storage_datetime(OffsetDateTime::now_utc())?),
-    ///     expiry: Some(format_storage_datetime(OffsetDateTime::now_utc() + Duration::from_secs(10))?),
+    ///     start: Some(OffsetDateTime::now_utc()),
+    ///     expiry: Some(OffsetDateTime::now_utc() + Duration::from_secs(10)),
     ///     permission: Some("rwd".to_string()),
     /// });
     ///
