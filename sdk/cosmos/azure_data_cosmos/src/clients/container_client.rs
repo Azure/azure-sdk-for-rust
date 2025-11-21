@@ -9,8 +9,9 @@ use crate::{
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
     ThroughputOptions,
 };
+use std::sync::Arc;
 
-use crate::cosmos_request::CosmosRequestBuilder;
+use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
@@ -22,19 +23,19 @@ use serde::{de::DeserializeOwned, Serialize};
 pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
-    pipeline: CosmosPipeline,
+    pipeline: Arc<CosmosPipeline>,
 }
 
 impl ContainerClient {
     pub(crate) fn new(
-        pipeline: CosmosPipeline,
+        pipeline: Arc<CosmosPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
-        let items_link = link.feed(ResourceType::Items);
+        let items_link = link.feed(ResourceType::Documents);
 
         Self {
             link,
@@ -65,13 +66,9 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
-            CosmosRequestBuilder::new(OperationType::Read, ResourceType::Containers).build()?;
+            CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
         self.pipeline
-            .send(
-                cosmos_request,
-                self.link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -111,14 +108,11 @@ impl ContainerClient {
         options: Option<ReplaceContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Containers);
-        let cosmos_request = builder.json(&properties).build()?;
+        let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
+            .json(&properties)
+            .build()?;
         self.pipeline
-            .send(
-                cosmos_request,
-                self.link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -181,14 +175,10 @@ impl ContainerClient {
         options: Option<DeleteContainerOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Containers);
-        let cosmos_request = builder.build()?;
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
         self.pipeline
-            .send(
-                cosmos_request,
-                self.link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -264,19 +254,14 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Items);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())
             .headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
             .build()?;
 
         self.pipeline
-            .send(
-                cosmos_request,
-                self.items_link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -354,15 +339,14 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Replace, ResourceType::Items);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
             .headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
             .build()?;
 
         self.pipeline
-            .send(cosmos_request, link, options.method_options.context)
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -441,19 +425,14 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
-        let builder = CosmosRequestBuilder::new(OperationType::Upsert, ResourceType::Items);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
             .headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
             .build()?;
 
         self.pipeline
-            .send(
-                cosmos_request,
-                self.items_link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -499,14 +478,13 @@ impl ContainerClient {
         options.enable_content_response_on_write = true;
 
         let link = self.items_link.item(item_id);
-        let builder = CosmosRequestBuilder::new(OperationType::Read, ResourceType::Items);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Read, link)
             .partition_key(partition_key.into())
             .headers(&options)
             .build()?;
 
         self.pipeline
-            .send(cosmos_request, link, options.method_options.context)
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -538,15 +516,13 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-
-        let builder = CosmosRequestBuilder::new(OperationType::Delete, ResourceType::Items);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
             .headers(&options)
             .build()?;
 
         self.pipeline
-            .send(cosmos_request, link, options.method_options.context)
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -614,15 +590,14 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let builder = CosmosRequestBuilder::new(OperationType::Patch, ResourceType::Items);
-        let cosmos_request = builder
+        let cosmos_request = CosmosRequest::builder(OperationType::Patch, link)
             .partition_key(partition_key.into())
             .headers(&options)
             .json(&patch)
             .build()?;
 
         self.pipeline
-            .send(cosmos_request, link, options.method_options.context)
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 

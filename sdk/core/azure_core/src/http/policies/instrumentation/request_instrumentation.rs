@@ -11,12 +11,9 @@ use crate::{
     http::{headers, Context, Request},
     tracing::{Span, SpanKind},
 };
-use std::{borrow::Cow, collections::HashSet, sync::Arc};
+use std::sync::Arc;
 use typespec_client_core::{
-    http::{
-        policies::{Policy, PolicyResult, RetryPolicyCount},
-        LoggingOptions, Sanitizer, DEFAULT_ALLOWED_QUERY_PARAMETERS,
-    },
+    http::policies::{Policy, PolicyResult, RetryPolicyCount},
     tracing::Attribute,
 };
 
@@ -24,7 +21,6 @@ use typespec_client_core::{
 #[derive(Clone, Debug)]
 pub(crate) struct RequestInstrumentationPolicy {
     tracer: Option<Arc<dyn crate::tracing::Tracer>>,
-    allowed_query_params: HashSet<Cow<'static, str>>,
 }
 
 impl RequestInstrumentationPolicy {
@@ -41,23 +37,8 @@ impl RequestInstrumentationPolicy {
     /// The tracer provided is a "fallback" tracer which is used if the `ctx` parameter
     /// to the `send` method does not contain a tracer.
     ///
-    pub fn new(
-        tracer: Option<Arc<dyn crate::tracing::Tracer>>,
-        logging_options: &LoggingOptions,
-    ) -> Self {
-        // Merge the customer or service provided log options with the default allowed query parameters for sanitization.
-        // This ensures that any query parameters that are allowed to be logged are also allowed to be propagated in the URL_FULL_ATTRIBUTE.
-        // If no log options are provided, we just use the default allowed query parameters.
-        // This ensures that we do not accidentally propagate any sensitive information in the URL_FULL_ATTRIBUTE.
-        // Note that the allowed header names are not used in this policy, as we do not log headers here.
-        let mut allowed_query_params: HashSet<Cow<'static, str>> =
-            DEFAULT_ALLOWED_QUERY_PARAMETERS.clone();
-        allowed_query_params.extend(logging_options.additional_allowed_query_params.clone());
-
-        Self {
-            tracer,
-            allowed_query_params,
-        }
+    pub fn new(tracer: Option<Arc<dyn crate::tracing::Tracer>>) -> Self {
+        Self { tracer }
     }
 }
 
@@ -105,7 +86,7 @@ impl Policy for RequestInstrumentationPolicy {
         if request.url().username().is_empty() && request.url().password().is_none() {
             span_attributes.push(Attribute {
                 key: URL_FULL_ATTRIBUTE.into(),
-                value: request.url().sanitize(&self.allowed_query_params).into(),
+                value: request.url().into(),
             });
         }
 
@@ -229,10 +210,7 @@ pub(crate) mod tests {
             crate_name.unwrap_or("unknown"),
             version,
         );
-        let policy = Arc::new(RequestInstrumentationPolicy::new(
-            Some(tracer.clone()),
-            &LoggingOptions::default(),
-        ));
+        let policy = Arc::new(RequestInstrumentationPolicy::new(Some(tracer.clone())));
 
         let transport =
             TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
@@ -298,10 +276,11 @@ pub(crate) mod tests {
                         (
                             URL_FULL_ATTRIBUTE,
                             AttributeValue::from(
-                                "http://example.com/path?query=REDACTED&api-version=2024-01-01",
+                                "http://example.com/path?query=value&api-version=2024-01-01",
                             ),
                         ),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -309,20 +288,19 @@ pub(crate) mod tests {
 
     #[test]
     fn test_request_instrumentation_policy_creation() {
-        let policy = RequestInstrumentationPolicy::new(None, &LoggingOptions::default());
+        let policy = RequestInstrumentationPolicy::new(None);
         assert!(policy.tracer.is_none());
 
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
         let tracer =
             mock_tracer_provider.get_tracer(Some("test namespace"), "test_crate", Some("1.0.0"));
-        let policy_with_tracer =
-            RequestInstrumentationPolicy::new(Some(tracer), &LoggingOptions::default());
+        let policy_with_tracer = RequestInstrumentationPolicy::new(Some(tracer));
         assert!(policy_with_tracer.tracer.is_some());
     }
 
     #[test]
     fn test_request_instrumentation_policy_without_tracer() {
-        let policy = RequestInstrumentationPolicy::new(None, &LoggingOptions::default());
+        let policy = RequestInstrumentationPolicy::new(None);
         assert!(policy.tracer.is_none());
     }
 
@@ -388,6 +366,7 @@ pub(crate) mod tests {
                             AttributeValue::from("https://example.com/client_request_id"),
                         ),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -433,6 +412,7 @@ pub(crate) mod tests {
                         (SERVER_ADDRESS_ATTRIBUTE, AttributeValue::from("host")),
                         (SERVER_PORT_ATTRIBUTE, AttributeValue::from(8080)),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -502,6 +482,7 @@ pub(crate) mod tests {
                             AttributeValue::from("https://microsoft.com/request_failed.htm"),
                         ),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
