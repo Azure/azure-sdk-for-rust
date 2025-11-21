@@ -10,6 +10,11 @@
 ### Breaking Changes
 
 - Changed conversion implementation from `BlobTags` to `HashMap<String, String>` from `TryFrom` to `From`.
+- Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+
+### Breaking Changes
+
+- Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ### Bugs Fixed
 

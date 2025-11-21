@@ -808,7 +808,7 @@ impl BlobContainerClient {
         }
         let version = self.version.clone();
         Ok(Pager::from_callback(
-            move |marker: PagerState<String>, ctx| {
+            move |marker: PagerState<String>, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
@@ -829,7 +829,7 @@ impl BlobContainerClient {
                 async move {
                     let rsp = pipeline
                         .send(
-                            &ctx,
+                            &pager_options.context,
                             &mut request,
                             Some(PipelineSendOptions {
                                 check_success: CheckSuccessOptions {
@@ -932,7 +932,7 @@ impl BlobContainerClient {
         }
         let version = self.version.clone();
         Ok(Pager::from_callback(
-            move |marker: PagerState<String>, ctx| {
+            move |marker: PagerState<String>, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
@@ -953,7 +953,7 @@ impl BlobContainerClient {
                 async move {
                     let rsp = pipeline
                         .send(
-                            &ctx,
+                            &pager_options.context,
                             &mut request,
                             Some(PipelineSendOptions {
                                 check_success: CheckSuccessOptions {

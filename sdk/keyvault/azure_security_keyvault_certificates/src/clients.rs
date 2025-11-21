@@ -78,7 +78,7 @@ impl CertificateClient {
         parameters: RequestContent<CreateCertificateParameters>,
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
     ) -> Result<Poller<CertificateOperation>> {
-        let options = options.unwrap_or_default();
+        let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
 
         let mut url = self.endpoint.clone();
@@ -189,7 +189,7 @@ impl CertificateClient {
                     })
                 }
             },
-            Some(options.method_options.into_owned()),
+            Some(options.method_options),
         ))
     }
 }

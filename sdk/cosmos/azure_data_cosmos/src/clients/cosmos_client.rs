@@ -15,16 +15,18 @@ use azure_core::{
 use serde::Serialize;
 use std::sync::Arc;
 
-use crate::cosmos_request::CosmosRequestBuilder;
+use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
+use azure_core::http::RetryOptions;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     databases_link: ResourceLink,
-    pipeline: CosmosPipeline,
+    pipeline: Arc<CosmosPipeline>,
 }
 
 impl CosmosClient {
@@ -51,16 +53,36 @@ impl CosmosClient {
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
+        let mut client_options = options.client_options;
+        client_options.retry = RetryOptions::none();
+
+        let pipeline_core = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::new(),
+            vec![Arc::new(AuthorizationPolicy::from_token_credential(
+                credential,
+            ))],
+            None,
+        );
+
+        let global_endpoint_manager = GlobalEndpointManager::new(
+            endpoint.parse()?,
+            options.application_preferred_regions,
+            pipeline_core.clone(),
+        );
+
+        let pipeline = Arc::new(CosmosPipeline::new(
+            endpoint.parse()?,
+            pipeline_core,
+            global_endpoint_manager,
+        ));
+
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline: CosmosPipeline::new(
-                endpoint.parse()?,
-                AuthorizationPolicy::from_token_credential(credential),
-                options.client_options,
-            ),
+            pipeline,
         })
-        // Initialize and warm-up database account, endpoint manager and caches.
-        // Self::initialize(client.clone()).await?;
     }
 
     /// Creates a new CosmosClient, using key authentication.
@@ -86,13 +108,33 @@ impl CosmosClient {
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
+        let mut client_options = options.client_options;
+        client_options.retry = RetryOptions::none();
+
+        let pipeline_core = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::new(),
+            vec![Arc::new(AuthorizationPolicy::from_shared_key(key))],
+            None,
+        );
+
+        let global_endpoint_manager = GlobalEndpointManager::new(
+            endpoint.parse()?,
+            options.application_preferred_regions,
+            pipeline_core.clone(),
+        );
+
+        let pipeline = Arc::new(CosmosPipeline::new(
+            endpoint.parse()?,
+            pipeline_core,
+            global_endpoint_manager.clone(),
+        ));
+
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline: CosmosPipeline::new(
-                endpoint.parse()?,
-                AuthorizationPolicy::from_shared_key(key),
-                options.client_options,
-            ),
+            pipeline,
         })
     }
 
@@ -198,18 +240,14 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let builder = CosmosRequestBuilder::new(OperationType::Create, ResourceType::Databases);
-        let cosmos_request = builder
-            .headers(&options.throughput)
-            .json(&RequestBody { id })
-            .build()?;
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Create, self.databases_link.clone())
+                .headers(&options.throughput)
+                .json(&RequestBody { id })
+                .build()?;
 
         self.pipeline
-            .send(
-                cosmos_request,
-                self.databases_link.clone(),
-                options.method_options.context,
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 }

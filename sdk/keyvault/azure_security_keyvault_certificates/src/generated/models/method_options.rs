@@ -117,6 +117,7 @@ impl CertificateClientListCertificatePropertiesOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
         }
     }
@@ -139,6 +140,7 @@ impl CertificateClientListCertificatePropertiesVersionsOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
         }
     }
@@ -165,6 +167,7 @@ impl CertificateClientListDeletedCertificatePropertiesOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
         }
     }
@@ -187,6 +190,7 @@ impl CertificateClientListIssuerPropertiesOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
         }
     }

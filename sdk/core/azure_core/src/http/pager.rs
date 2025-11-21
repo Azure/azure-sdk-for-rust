@@ -211,6 +211,44 @@ pub type Pager<P, F = JsonFormat> = ItemIterator<Response<P, F>>;
 pub struct PagerOptions<'a> {
     /// Context for HTTP requests made by the [`Pager`].
     pub context: Context<'a>,
+
+    /// Optional continuation token or next link to resume paging.
+    ///
+    /// # Examples
+    ///
+    /// ``` no_run
+    /// use azure_core::http::pager::PagerOptions;
+    /// use azure_identity::DeveloperToolsCredential;
+    /// use azure_security_keyvault_secrets::{
+    ///     models::SecretClientListSecretPropertiesOptions,
+    ///     SecretClient,
+    /// };
+    /// use futures::stream::TryStreamExt as _;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> azure_core::Result<()> {
+    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
+    ///
+    /// // Start the first pager at the first page.
+    /// let mut pager = client.list_secret_properties(None)?;
+    ///
+    /// // Continue the second pager from where the first pager left off,
+    /// // which is the first page in this example.
+    /// let options = SecretClientListSecretPropertiesOptions {
+    ///     method_options: PagerOptions {
+    ///         continuation_token: pager.continuation_token(),
+    ///         ..Default::default()
+    ///     },
+    ///     ..Default::default()
+    /// };
+    /// let mut pager = client.list_secret_properties(Some(options))?;
+    /// while let Some(secret) = pager.try_next().await? {
+    ///     println!("{:?}", secret.id);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub continuation_token: Option<String>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -299,7 +337,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{RawResponse, Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, ItemIterator, pager::{Page, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -318,7 +356,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, ctx: Context| {
+    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>, options: PagerOptions| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -337,7 +375,7 @@ impl<P: Page> ItemIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: ListItemsResult = json::from_json(&body)?;
@@ -373,7 +411,7 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |continuation, ctx| {
+    /// let pager = ItemIterator::from_callback(move |continuation, options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
@@ -382,7 +420,7 @@ impl<P: Page> ItemIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
@@ -392,10 +430,10 @@ impl<P: Page> ItemIterator<P> {
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
@@ -405,12 +443,15 @@ impl<P: Page> ItemIterator<P> {
         <C as FromStr>::Err: std::error::Error,
     {
         let options = options.unwrap_or_default();
-        let next_token = Arc::new(Mutex::new(None::<String>));
-        let stream = iter_from_callback(make_request, options.context.clone(), next_token.clone());
+
+        // Start from the optional `PagerOptions::continuation_token`.
+        let continuation_token = options.continuation_token.clone();
+        let next_token = Arc::new(Mutex::new(continuation_token.clone()));
+        let stream = iter_from_callback(make_request, options, next_token.clone());
 
         Self {
             stream: Box::pin(stream),
-            continuation_token: None,
+            continuation_token,
             next_token,
             current: None,
         }
@@ -456,52 +497,9 @@ impl<P: Page> ItemIterator<P> {
         }
     }
 
-    /// Start the `ItemIterator` at the page referenced by `continuation_token`.
-    ///
-    /// You should call this before iterating the [`Stream`] or results may be unpredictable.
-    /// Iteration of items will start from the beginning on the current page until _after_ all items are iterated.
-    /// It does not continue on the next page until you call `next()` after the last item in the current page
-    /// because of how iterators are implemented. This may yield duplicates but will reduce the likelihood of skipping items instead.
-    ///
-    /// # Examples
-    ///
-    /// Using a result of a call to [`ItemIterator::continuation_token`] in another process, you can create a new `ItemIterator`
-    /// that, when first iterated, will get the next page of results.
-    ///
-    /// ``` no_run
-    /// use azure_identity::DeveloperToolsCredential;
-    /// use azure_security_keyvault_secrets::SecretClient;
-    /// use futures::stream::TryStreamExt as _;
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() -> azure_core::Result<()> {
-    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
-    ///
-    /// // Start the first pager at the first page.
-    /// let mut pager = client.list_secret_properties(None)?;
-    ///
-    /// // Continue the second pager from where the first pager left off,
-    /// // which is the first page in this example.
-    /// let mut pager = client.list_secret_properties(None)?
-    ///     .with_continuation_token(Some("continuation_token_from_another_pager".into()));
-    ///
-    /// while let Some(secret) = pager.try_next().await? {
-    ///     println!("{:?}", secret.id);
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn with_continuation_token(self, continuation_token: Option<String>) -> Self {
-        // Set the next_token because that's what is passed to iter_from_callback to get the initial page.
-        if let Ok(mut token) = self.next_token.lock() {
-            *token = continuation_token;
-        }
-        self
-    }
-
     /// Gets the continuation token for the current page.
     ///
-    /// Pass this to [`ItemIterator::with_continuation_token`] to create a `ItemIterator` that, when first iterated,
+    /// Pass this in [`PagerOptions::continuation_token`] to create a `ItemIterator` that, when first iterated,
     /// will return the current page until _after_ all items are iterated.
     /// It does not continue on the next page until you call `next()` after the last item in the current page
     /// because of how iterators are implemented. This may yield duplicates but will reduce the likelihood of skipping items instead.
@@ -560,7 +558,9 @@ impl<P: Page> futures::Stream for ItemIterator<P> {
 
 impl<P: Page> fmt::Debug for ItemIterator<P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ItemIterator").finish_non_exhaustive()
+        f.debug_struct("ItemIterator")
+            .field("continuation_token", &self.continuation_token)
+            .finish_non_exhaustive()
     }
 }
 
@@ -619,7 +619,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{RawResponse, Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, pager::{PageIterator, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -629,7 +629,7 @@ impl<P> PageIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = PageIterator::from_callback(move |next_link: PagerState<Url>, ctx| {
+    /// let pager = PageIterator::from_callback(move |next_link: PagerState<Url>, options: PagerOptions<'static>| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -648,7 +648,7 @@ impl<P> PageIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: ListItemsResult = json::from_json(&body)?;
@@ -675,7 +675,7 @@ impl<P> PageIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = PageIterator::from_callback(move |continuation, ctx| {
+    /// let pager = PageIterator::from_callback(move |continuation, options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
@@ -684,7 +684,7 @@ impl<P> PageIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&ctx, &mut req, None)
+    ///           .send(&options.context, &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-ms-continuation")))
@@ -694,10 +694,10 @@ impl<P> PageIterator<P> {
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
@@ -707,12 +707,10 @@ impl<P> PageIterator<P> {
         <C as FromStr>::Err: std::error::Error,
     {
         let options = options.unwrap_or_default();
-        let continuation_token = Arc::new(Mutex::new(None::<String>));
-        let stream = iter_from_callback(
-            make_request,
-            options.context.clone(),
-            continuation_token.clone(),
-        );
+
+        // Start from the optional `PagerOptions::continuation_token`.
+        let continuation_token = Arc::new(Mutex::new(options.continuation_token.clone()));
+        let stream = iter_from_callback(make_request, options, continuation_token.clone());
 
         Self {
             stream: Box::pin(stream),
@@ -736,54 +734,9 @@ impl<P> PageIterator<P> {
         }
     }
 
-    /// Start the `PageIterator` at the page referenced by `continuation_token`.
-    ///
-    /// You should call this before iterating the [`Stream`] or results may be unpredictable.
-    ///
-    /// # Examples
-    ///
-    /// Using a result of a call to [`PageIterator::continuation_token`] in another process, you can create a new `PageIterator`
-    /// that, when first iterated, will get the next page of results.
-    ///
-    /// ``` no_run
-    /// use azure_identity::DeveloperToolsCredential;
-    /// use azure_security_keyvault_secrets::SecretClient;
-    /// use futures::stream::TryStreamExt as _;
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() -> azure_core::Result<()> {
-    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
-    ///
-    /// // Start the first pager at the first page.
-    /// let mut pager = client.list_secret_properties(None)?
-    ///     .into_pages();
-    ///
-    /// // Continue the second pager from where the first pager left off,
-    /// // which is the first page in this example.
-    /// let mut pager = client.list_secret_properties(None)?
-    ///     .into_pages()
-    ///     .with_continuation_token("continuation_token_from_another_pager".to_string());
-    ///
-    /// while let Some(secrets) = pager.try_next().await? {
-    ///     let secrets = secrets.into_model()?;
-    ///     for secret in secrets.value {
-    ///         println!("{:?}", secret.id);
-    ///     }
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn with_continuation_token(self, continuation_token: String) -> Self {
-        if let Ok(mut token_guard) = self.continuation_token.lock() {
-            *token_guard = Some(continuation_token);
-        }
-
-        self
-    }
-
     /// Gets the continuation token for the current page.
     ///
-    /// Pass this to [`PageIterator::with_continuation_token`] to create a `PageIterator` that, when first iterated,
+    /// Pass this to [`PagerOptions::continuation_token`] to create a `PageIterator` that, when first iterated,
     /// will return the next page. You can use this to page results across separate processes.
     pub fn continuation_token(&self) -> Option<String> {
         if let Ok(token) = self.continuation_token.lock() {
@@ -855,7 +808,7 @@ where
     state: State<C>,
     make_request: F,
     continuation_token: Arc<Mutex<Option<String>>>,
-    ctx: Context<'a>,
+    options: PagerOptions<'a>,
     added_span: bool,
 }
 
@@ -863,14 +816,14 @@ fn iter_from_callback<
     P,
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
     #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, Context<'static>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
     #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, Context<'static>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
 >(
     make_request: F,
-    ctx: Context<'static>,
+    options: PagerOptions<'static>,
     continuation_token: Arc<Mutex<Option<String>>>,
 ) -> impl Stream<Item = crate::Result<P>> + 'static
 where
@@ -881,7 +834,7 @@ where
             state: State::Init,
             make_request,
             continuation_token,
-            ctx,
+            options,
             added_span: false,
         },
         |mut stream_state| async move {
@@ -891,10 +844,11 @@ where
                 tracing::debug!("establish a public API span for new pager.");
 
                 // At the very start of polling, create a span for the entire request, and attach it to the context
-                let span = create_public_api_span(&stream_state.ctx, None, None);
+                let span = create_public_api_span(&stream_state.options.context, None, None);
                 if let Some(ref s) = span {
                     stream_state.added_span = true;
-                    stream_state.ctx = stream_state.ctx.with_value(s.clone());
+                    stream_state.options.context =
+                        stream_state.options.context.with_value(s.clone());
                 }
             }
 
@@ -929,11 +883,13 @@ where
             let result = match stream_state.state {
                 State::Init => {
                     tracing::debug!("initial page request");
-                    (stream_state.make_request)(PagerState::Initial, stream_state.ctx.clone()).await
+                    (stream_state.make_request)(PagerState::Initial, stream_state.options.clone())
+                        .await
                 }
                 State::More(n) => {
                     tracing::debug!("subsequent page request to {:?}", AsRef::<str>::as_ref(&n));
-                    (stream_state.make_request)(PagerState::More(n), stream_state.ctx.clone()).await
+                    (stream_state.make_request)(PagerState::More(n), stream_state.options.clone())
+                        .await
                 }
                 State::Done => {
                     tracing::debug!("done");
@@ -947,7 +903,7 @@ where
             let (item, next_state) = match result {
                 Err(e) => {
                     if stream_state.added_span {
-                        if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
+                        if let Some(span) = stream_state.options.context.value::<Arc<dyn Span>>() {
                             // Mark the span as an error with an appropriate description.
                             span.set_status(SpanStatus::Error {
                                 description: e.to_string(),
@@ -978,7 +934,7 @@ where
                     // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
                     // otherwise it is the responsibility of the caller to end their span.
                     if stream_state.added_span {
-                        if let Some(span) = stream_state.ctx.value::<Arc<dyn Span>>() {
+                        if let Some(span) = stream_state.options.context.value::<Arc<dyn Span>>() {
                             // P is unconstrained, so it's not possible to retrieve the status code for now.
 
                             span.end();
@@ -1000,8 +956,8 @@ mod tests {
         error::ErrorKind,
         http::{
             headers::{HeaderName, HeaderValue},
-            pager::{PageIterator, Pager, PagerResult, PagerState},
-            Context, RawResponse, Response, StatusCode,
+            pager::{PageIterator, Pager, PagerOptions, PagerResult, PagerState},
+            RawResponse, Response, StatusCode,
         },
     };
     use async_trait::async_trait;
@@ -1083,7 +1039,7 @@ mod tests {
     #[tokio::test]
     async fn callback_item_pagination_error() {
         let pager: Pager<Page> = Pager::from_callback(
-            |continuation: PagerState<String>, _ctx| async move {
+            |continuation: PagerState<String>, _options| async move {
                 match continuation {
                     PagerState::Initial => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
@@ -1166,9 +1122,13 @@ mod tests {
         assert_eq!(continuation_token, "next-token-1");
 
         // Create the second PageIterator.
-        let mut second_pager: PageIterator<Response<Page>> =
-            PageIterator::from_callback(make_three_page_callback(), None)
-                .with_continuation_token(continuation_token);
+        let mut second_pager: PageIterator<Response<Page>> = PageIterator::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token: Some(continuation_token),
+                ..Default::default()
+            }),
+        );
 
         // Should start with link to second page.
         assert_eq!(
@@ -1349,8 +1309,13 @@ mod tests {
         assert_eq!(continuation_token, None);
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
-            .with_continuation_token(continuation_token);
+        let mut second_pager: Pager<Page> = Pager::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token,
+                ..Default::default()
+            }),
+        );
 
         // Should start with link to first page.
         assert_eq!(second_pager.continuation_token(), None);
@@ -1423,8 +1388,13 @@ mod tests {
         assert_eq!(continuation_token.as_deref(), Some("next-token-1"));
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
-            .with_continuation_token(continuation_token);
+        let mut second_pager: Pager<Page> = Pager::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token,
+                ..Default::default()
+            }),
+        );
 
         // When continuing with a continuation token, we should start over from the
         // beginning of the current page (second page), not where we left off.
@@ -1476,8 +1446,13 @@ mod tests {
         assert_eq!(continuation_token, None);
 
         // Create the second ItemIterator with continuation token.
-        let mut second_pager: Pager<Page> = Pager::from_callback(make_three_page_callback(), None)
-            .with_continuation_token(continuation_token);
+        let mut second_pager: Pager<Page> = Pager::from_callback(
+            make_three_page_callback(),
+            Some(PagerOptions {
+                continuation_token,
+                ..Default::default()
+            }),
+        );
 
         // When continuing with a continuation token after finishing a page, we should
         // start from the beginning of the current page.
@@ -1556,12 +1531,12 @@ mod tests {
     #[allow(clippy::type_complexity)]
     fn make_three_page_callback() -> impl Fn(
         PagerState<String>,
-        Context<'_>,
+        PagerOptions<'_>,
     ) -> Pin<
         Box<dyn Future<Output = crate::Result<PagerResult<Response<Page>, String>>> + Send>,
     > + Send
            + 'static {
-        |continuation: PagerState<String>, _ctx| {
+        |continuation: PagerState<String>, _options| {
             Box::pin(async move {
                 match continuation.as_deref() {
                     PagerState::Initial => Ok(PagerResult::More {
