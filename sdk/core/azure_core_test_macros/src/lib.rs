@@ -9,9 +9,15 @@ use proc_macro::TokenStream;
 
 /// Attribute client library tests to play back recordings, record sessions, or execute tests without recording.
 ///
+/// # Arguments
+///
+/// * `live` - Run the test only in live mode. The test will be ignored unless `AZURE_TEST_MODE=live`.
+/// * `playback` - Run the test only in playback mode. The test will be ignored unless `AZURE_TEST_MODE=playback`.
+///   Note: Only use this for tests that validate playback-specific behavior. Most tests should not use this option.
+///
 /// # Examples
 ///
-/// For live or recorded tests, you must declare an async function that accepts a `TestContext` and returns a `Result<T, E>`.
+/// For live or recorded tests (the default), you must declare an async function that accepts a `TestContext` and returns a `Result<T, E>`.
 ///
 /// ```
 /// use azure_core::Result;

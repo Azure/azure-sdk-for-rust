@@ -10,7 +10,7 @@ use syn::{
 };
 
 const INVALID_RECORDED_ATTRIBUTE_MESSAGE: &str =
-    "expected `#[recorded::test]` or `#[recorded::test(live)]`";
+    "expected `#[recorded::test]`, `#[recorded::test(live)]`, or `#[recorded::test(playback)]`";
 const INVALID_RECORDED_FUNCTION_MESSAGE: &str =
     "expected `async fn(TestContext)` function signature with `Result<T, E>` return";
 
@@ -47,6 +47,13 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     if recorded_attrs.live && test_mode < TestMode::Live {
         test_attr.extend(quote! {
             #[ignore = "skipping live tests"]
+        });
+    }
+
+    // Ignore playback-only tests if not running playback tests.
+    if recorded_attrs.playback && test_mode != TestMode::Playback {
+        test_attr.extend(quote! {
+            #[ignore = "skipping playback-only tests"]
         });
     }
 
@@ -110,6 +117,7 @@ static TEST_MODE: LazyLock<TestMode> = LazyLock::new(|| {
 #[derive(Debug, Default)]
 struct Attributes {
     live: bool,
+    playback: bool,
 }
 
 impl Parse for Attributes {
@@ -123,6 +131,7 @@ impl Parse for Attributes {
                     })?;
                     match ident.to_string().as_str() {
                         "live" => attrs.live = true,
+                        "playback" => attrs.playback = true,
                         _ => {
                             return Err(syn::Error::new(
                                 arg.span(),
@@ -139,7 +148,6 @@ impl Parse for Attributes {
                 }
             }
         }
-
         Ok(attrs)
     }
 }
@@ -269,6 +277,35 @@ mod tests {
         let attr = quote! { live };
         let item = quote! {
             async fn live_only(ctx: TestContext) -> azure_core::Result<()> {
+                todo!()
+            }
+        };
+        parse_test(attr, item).unwrap();
+    }
+
+    #[test]
+    fn attributes_parse_playback() {
+        let attr: Attribute = syn::parse_quote! {
+            #[recorded(playback)]
+        };
+        let attrs: Attributes = attr.parse_args().unwrap();
+        assert!(attrs.playback);
+        assert!(!attrs.live);
+    }
+
+    #[test]
+    fn attributes_parse_conflicting() {
+        let attr: Attribute = syn::parse_quote! {
+            #[recorded(live, playback)]
+        };
+        attr.parse_args::<Attributes>().unwrap_err();
+    }
+
+    #[test]
+    fn parse_recorded_playback_only() {
+        let attr = quote! { playback };
+        let item = quote! {
+            async fn playback_only(ctx: TestContext) -> azure_core::Result<()> {
                 todo!()
             }
         };
