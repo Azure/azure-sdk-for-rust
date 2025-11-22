@@ -6,7 +6,7 @@
 use super::{
     BlobItemInternal, BlobServiceProperties, BlobTags, BlockLookupList, ContainerItem, KeyInfo,
     ListBlobsFlatSegmentResponse, ListBlobsHierarchySegmentResponse, ListContainersSegmentResponse,
-    QueryRequest,
+    QueryRequest, SignedIdentifiers,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -76,6 +76,13 @@ impl TryFrom<KeyInfo> for RequestContent<KeyInfo, XmlFormat> {
 impl TryFrom<QueryRequest> for RequestContent<QueryRequest, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: QueryRequest) -> Result<Self> {
+        Ok(to_xml(&value)?.into())
+    }
+}
+
+impl TryFrom<SignedIdentifiers> for RequestContent<SignedIdentifiers, XmlFormat> {
+    type Error = azure_core::Error;
+    fn try_from(value: SignedIdentifiers) -> Result<Self> {
         Ok(to_xml(&value)?.into())
     }
 }
