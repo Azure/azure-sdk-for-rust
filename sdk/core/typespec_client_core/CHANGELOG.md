@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `Request::body_mut()`.
+
 ### Breaking Changes
 
 ### Bugs Fixed
