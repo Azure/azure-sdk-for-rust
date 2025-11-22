@@ -3,6 +3,9 @@
 
 //! Types and methods for pageable responses.
 
+// TODO: Remove once tests re-enabled!
+#![allow(missing_docs, unexpected_cfgs)]
+
 use crate::{
     error::ErrorKind,
     http::{
@@ -16,6 +19,7 @@ use futures::{stream::unfold, FutureExt, Stream};
 use std::{
     fmt,
     future::Future,
+    marker::PhantomData,
     ops::Deref,
     pin::Pin,
     str::FromStr,
@@ -457,45 +461,24 @@ impl<P: Page> ItemIterator<P> {
         }
     }
 
-    /// Creates a [`ItemIterator<P>`] from a raw stream of [`Result<P>`](crate::Result<P>) values.
-    ///
-    /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
-    pub fn from_stream<
-        // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = crate::Result<P>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] S: Stream<Item = crate::Result<P>> + 'static,
-    >(
-        stream: S,
-    ) -> Self {
-        Self {
-            stream: Box::pin(stream),
-            continuation_token: None,
-            next_token: Default::default(),
-            current: None,
-        }
-    }
+    // /// Gets a [`PageIterator<P>`] to iterate over a collection of pages from a service.
+    // ///
+    // /// You can use this to asynchronously iterate pages returned by a collection request to a service.
+    // /// This allows you to get the individual pages' [`Response<P>`], from which you can iterate items in each page
+    // /// or deserialize the raw response as appropriate.
+    // ///
+    // /// The returned `PageIterator` resumes from the current page until _after_ all items are processed.
+    // /// It does not continue on the next page until you call `next()` after the last item in the current page
+    // /// because of how iterators are implemented. This may yield duplicates but will reduce the likelihood of skipping items instead.
+    // pub fn into_pages(self) -> impl PagePager<P> {
+    //     // Attempt to start paging from the current page so that we don't skip items,
+    //     // assuming the service collection hasn't changed (most services don't create ephemeral snapshots).
+    //     if let Ok(mut token) = self.next_token.lock() {
+    //         *token = self.continuation_token;
+    //     }
 
-    /// Gets a [`PageIterator<P>`] to iterate over a collection of pages from a service.
-    ///
-    /// You can use this to asynchronously iterate pages returned by a collection request to a service.
-    /// This allows you to get the individual pages' [`Response<P>`], from which you can iterate items in each page
-    /// or deserialize the raw response as appropriate.
-    ///
-    /// The returned `PageIterator` resumes from the current page until _after_ all items are processed.
-    /// It does not continue on the next page until you call `next()` after the last item in the current page
-    /// because of how iterators are implemented. This may yield duplicates but will reduce the likelihood of skipping items instead.
-    pub fn into_pages(self) -> PageIterator<P> {
-        // Attempt to start paging from the current page so that we don't skip items,
-        // assuming the service collection hasn't changed (most services don't create ephemeral snapshots).
-        if let Ok(mut token) = self.next_token.lock() {
-            *token = self.continuation_token;
-        }
-
-        PageIterator {
-            stream: self.stream,
-            continuation_token: self.next_token,
-        }
-    }
+    //     todo!()
+    // }
 
     /// Gets the continuation token for the current page.
     ///
@@ -594,19 +577,48 @@ impl<P: Page> fmt::Debug for ItemIterator<P> {
 /// }
 /// # Ok(()) }
 /// ```
+#[must_use = "streams do nothing unless polled"]
 #[pin_project::pin_project]
-pub struct PageIterator<P> {
+pub struct PageIterator<'a, P, C, F, Fut>
+where
+    C: AsRef<str> + FromStr + ConditionalSend,
+    F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + ConditionalSend,
+    Fut: Future<Output = crate::Result<PagerResult<P, C>>> + ConditionalSend,
+    <C as FromStr>::Err: std::error::Error,
+{
     #[pin]
-    stream: Pin<BoxedStream<P>>,
-    continuation_token: Arc<Mutex<Option<String>>>,
+    make_request: Pin<Box<F>>,
+    continuation_token: Option<String>,
+    options: PagerOptions<'a>,
+    state: State<C>,
+    added_span: bool,
+    phantom: PhantomData<P>,
 }
 
-impl<P> PageIterator<P> {
-    /// Creates a [`PageIterator<P>`] from a callback that will be called repeatedly to request each page.
+#[cfg(not(target_arch = "wasm32"))]
+pub trait ConditionalSend: Send {}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<T> ConditionalSend for T where T: Send {}
+
+#[cfg(target_arch = "wasm32")]
+pub trait ConditionalSend {}
+
+#[cfg(target_arch = "wasm32")]
+impl<T> ConditionalSend for T {}
+
+impl<'a, P, C, F, Fut> PageIterator<'a, P, C, F, Fut>
+where
+    C: AsRef<str> + FromStr + ConditionalSend,
+    F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + ConditionalSend,
+    Fut: Future<Output = crate::Result<PagerResult<P, C>>> + ConditionalSend,
+    <C as FromStr>::Err: std::error::Error,
+{
+    /// Creates a [`PageIterator`] from a callback that will be called repeatedly to request each page.
     ///
-    /// This method expect a callback that accepts a single [`PagerState<C>`] parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
+    /// This method expect a callback that accepts a single [`PagerState`] parameter, and returns a [`PagerResult`] value asynchronously.
     /// The `C` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
-    /// The result will be an asynchronous stream of [`Result<T>`](crate::Result<T>) values.
+    /// The result will be an asynchronous stream of [`Result`](crate::Result) values.
     ///
     /// The first time your callback is called, it will be called with [`PagerState::Initial`], indicating no next link/continuation token is present.
     ///
@@ -691,76 +703,168 @@ impl<P> PageIterator<P> {
     ///     }
     /// }, None);
     /// ```
-    pub fn from_callback<
-        // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + 'static,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
-    >(
-        make_request: F,
-        options: Option<PagerOptions<'static>>,
-    ) -> Self
+    pub fn from_callback(make_request: F, options: Option<PagerOptions<'static>>) -> Self
     where
         <C as FromStr>::Err: std::error::Error,
     {
+        // TODO: We'll want to delete this whole function and define a module function that returns an `ItemIterator<..>` since declaring the right type will be difficult.
         let options = options.unwrap_or_default();
 
         // Start from the optional `PagerOptions::continuation_token`.
-        let continuation_token = Arc::new(Mutex::new(options.continuation_token.clone()));
-        let stream = iter_from_callback(make_request, options, continuation_token.clone());
+        let continuation_token = options.continuation_token.clone();
 
         Self {
-            stream: Box::pin(stream),
+            make_request: Box::pin(make_request),
             continuation_token,
+            options,
+            state: State::Init,
+            added_span: false,
+            phantom: PhantomData,
         }
     }
+}
 
-    /// Creates a [`PageIterator<P>`] from a raw stream of [`Result<P>`](crate::Result<P>) values.
-    ///
-    /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
-    pub fn from_stream<
-        // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = crate::Result<P>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] S: Stream<Item = crate::Result<P>> + 'static,
-    >(
-        stream: S,
-    ) -> Self {
-        Self {
-            stream: Box::pin(stream),
-            continuation_token: Default::default(),
-        }
-    }
-
+// TODO: Rename this.
+pub trait PagePager<P>: futures::Stream<Item = crate::Result<P>> {
     /// Gets the continuation token for the current page.
     ///
     /// Pass this to [`PagerOptions::continuation_token`] to create a `PageIterator` that, when first iterated,
     /// will return the next page. You can use this to page results across separate processes.
-    pub fn continuation_token(&self) -> Option<String> {
-        if let Ok(token) = self.continuation_token.lock() {
-            return token.clone();
-        }
+    fn continuation_token(&self) -> Option<&str>;
+}
 
-        None
+impl<'a, P, C, F, Fut> PagePager<P> for PageIterator<'a, P, C, F, Fut>
+where
+    C: AsRef<str> + FromStr + ConditionalSend,
+    F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + ConditionalSend,
+    Fut: Future<Output = crate::Result<PagerResult<P, C>>> + ConditionalSend,
+    <C as FromStr>::Err: std::error::Error,
+{
+    fn continuation_token(&self) -> Option<&str> {
+        self.continuation_token.as_deref()
     }
 }
 
-impl<P> futures::Stream for PageIterator<P> {
+impl<'a, P, C, F, Fut> futures::Stream for PageIterator<'a, P, C, F, Fut>
+where
+    C: AsRef<str> + FromStr + ConditionalSend,
+    F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + ConditionalSend,
+    Fut: Future<Output = crate::Result<PagerResult<P, C>>> + ConditionalSend,
+    <C as FromStr>::Err: std::error::Error,
+{
     type Item = crate::Result<P>;
 
     fn poll_next(
         self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
-        self.project().stream.poll_next(cx)
+        let this = self.project();
+
+        // When in the "Init" state, we are either starting fresh or resuming from a continuation token.
+        // In either case, attach a span to the context for the entire paging operation.
+        if *this.state == State::Init {
+            tracing::debug!("establish a public API span for new pager.");
+
+            // At the very start of polling, create a span for the entire request, and attach it to the context
+            let span = create_public_api_span(&this.options.context, None, None);
+            if let Some(s) = span {
+                *this.added_span = true;
+                let old_context = std::mem::replace(this.options, PagerOptions::default());
+                *this.options = PagerOptions {
+                    context: old_context.context.with_value(s),
+                    continuation_token: old_context.continuation_token,
+                };
+            }
+        }
+
+        // Get the `continuation_token` to pick up where we left off, or None for the initial page,
+        // but don't override the terminal `State::Done`.
+        if *this.state != State::Done {
+            let next_state = match this.continuation_token.as_deref() {
+                Some(n) => match n.parse() {
+                    Ok(s) => State::More(s),
+                    Err(err) => {
+                        let error =
+                            crate::Error::with_message_fn(ErrorKind::DataConversion, || {
+                                format!("invalid continuation token: {err}")
+                            });
+                        *this.state = State::Done;
+                        return std::task::Poll::Ready(Some(Err(error)));
+                    }
+                },
+                // Restart the pager if `continuation_token` is None indicating we resumed from before or within the first page.
+                None => State::Init,
+            };
+            *this.state = next_state;
+        }
+
+        // Poll based on current state
+        match *this.state {
+            State::Init => {
+                tracing::debug!("initial page request");
+                let mut fut = (this.make_request)(PagerState::Initial, this.options.clone());
+                match fut.poll(cx) {
+                    std::task::Poll::Ready(result) => {
+                        let (item, next_state) =
+                            Self::handle_result(result, this.added_span, &this.options.context);
+                        *this.state = next_state.unwrap_or(State::Done);
+                        if let Ok(ref response) = item {
+                            if let State::More(ref token) = *this.state {
+                                *this.continuation_token = Some(token.as_ref().into());
+                            } else {
+                                *this.continuation_token = None;
+                            }
+                        }
+                        std::task::Poll::Ready(Some(item))
+                    }
+                    std::task::Poll::Pending => std::task::Poll::Pending,
+                }
+            }
+            State::More(ref n) => {
+                tracing::debug!("subsequent page request to {:?}", AsRef::<str>::as_ref(n));
+                let mut fut =
+                    (this.make_request)(PagerState::More(n.clone()), this.options.clone());
+                match Pin::new(&mut fut).poll(cx) {
+                    std::task::Poll::Ready(result) => {
+                        let (item, next_state) =
+                            Self::handle_result(result, this.added_span, &this.options.context);
+                        *this.state = next_state.unwrap_or(State::Done);
+                        if let Ok(ref response) = item {
+                            if let State::More(ref token) = *this.state {
+                                *this.continuation_token = Some(token.as_ref().into());
+                            } else {
+                                *this.continuation_token = None;
+                            }
+                        }
+                        std::task::Poll::Ready(Some(item))
+                    }
+                    std::task::Poll::Pending => std::task::Poll::Pending,
+                }
+            }
+            State::Done => {
+                tracing::debug!("done");
+                // Set the `continuation_token` to None now that we are done.
+                *this.continuation_token = None;
+                std::task::Poll::Ready(None)
+            }
+        }
     }
 }
 
-impl<P> fmt::Debug for PageIterator<P> {
+impl<'a, P, C, F, Fut> fmt::Debug for PageIterator<'a, P, C, F, Fut>
+where
+    C: AsRef<str> + FromStr + ConditionalSend,
+    F: Fn(PagerState<C>, PagerOptions<'static>) -> Fut + ConditionalSend,
+    Fut: Future<Output = crate::Result<PagerResult<P, C>>> + ConditionalSend,
+    <C as FromStr>::Err: std::error::Error,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PageIterator").finish_non_exhaustive()
+        f.debug_struct("PageIterator")
+            .field("continuation_token", &self.continuation_token)
+            .field("options", &self.options)
+            .field("state", &self.state)
+            .field("added_span", &self.added_span)
+            .finish_non_exhaustive()
     }
 }
 
