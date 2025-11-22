@@ -362,7 +362,7 @@ The `README.md` file typically has several sections that are common to all crate
 - Contributing Guide
 - References
 
-It is often helpful to look at the `README.md` for the package you are creating from other SDK languages, they usually contain helpful information that should be included in your `README.md` (this is helpful for the Key Concepts and Hero scenarios sections. It is also extremely helpful to look at other packages within the Azure SDK for Rust SDK for examples of content (this is especially true for the Prerequisites and References sections).
+It is often helpful to look at the `README.md` for the package you are creating from other SDK languages e.g., [sdk/keyvault/azure_security_keyvault_secrets/README.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/README.md). They usually contain helpful information that should be included in your `README.md` (this is helpful for the Key Concepts and Hero scenarios sections. It is also extremely helpful to look at other packages within the Azure SDK for Rust SDK for examples of content (this is especially true for the Prerequisites and References sections).
 
 ### Step 6.2: Create CHANGELOG.md
 
