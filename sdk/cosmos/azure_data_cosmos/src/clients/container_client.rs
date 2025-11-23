@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::any::Any;
 use crate::{
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
@@ -15,6 +16,9 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
+use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
+use crate::routing::partition_key_range::PartitionKeyRange;
+use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
@@ -24,6 +28,8 @@ pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
+    partition_key_range_cache: PartitionKeyRangeCache,
+    container_id: String,
 }
 
 impl ContainerClient {
@@ -31,6 +37,7 @@ impl ContainerClient {
         pipeline: Arc<CosmosPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
+        partition_key_range_cache: &PartitionKeyRangeCache,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
@@ -41,6 +48,8 @@ impl ContainerClient {
             link,
             items_link,
             pipeline,
+            partition_key_range_cache: partition_key_range_cache.clone(),
+            container_id: container_id.to_string(),
         }
     }
 
@@ -254,6 +263,9 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
+        let pk_range_link = self.link.feed(ResourceType::PartitionKeyRanges);
+        let pk_range = self.partition_key_range_cache.execute_partition_key_range_read_change_feed(&*self.container_id, pk_range_link.clone()).await?.into_body().into_string();
+
         let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())
             .headers(&options)
             .json(&item)

@@ -15,6 +15,7 @@ use std::sync::Arc;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use azure_core::http::response::Response;
+use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -24,19 +25,21 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     pipeline: Arc<CosmosPipeline>,
+    partition_key_range_cache: PartitionKeyRangeCache,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str) -> Self {
+    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str, partition_key_range_cache: &PartitionKeyRangeCache) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
-
+        let partition_key_range_cache = partition_key_range_cache.clone();
         Self {
             link,
             containers_link,
             database_id,
             pipeline,
+            partition_key_range_cache,
         }
     }
 
@@ -45,7 +48,7 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: &str) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name)
+        ContainerClient::new(self.pipeline.clone(), &self.link, name, &self.partition_key_range_cache)
     }
 
     /// Returns the identifier of the Cosmos database.
