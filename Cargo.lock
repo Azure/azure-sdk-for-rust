@@ -456,6 +456,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -478,6 +479,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -497,6 +499,7 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

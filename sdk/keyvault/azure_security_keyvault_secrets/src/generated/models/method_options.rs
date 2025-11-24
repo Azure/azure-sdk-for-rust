@@ -6,7 +6,7 @@
 use super::ContentType;
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, ClientMethodOptions},
+    http::{pager::PagerOptions, ClientMethodOptions, Url},
 };
 
 /// Options to be passed to [`SecretClient::backup_secret()`](crate::generated::clients::SecretClient::backup_secret())
@@ -52,7 +52,7 @@ pub struct SecretClientListDeletedSecretPropertiesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl SecretClientListDeletedSecretPropertiesOptions<'_> {
@@ -75,7 +75,7 @@ pub struct SecretClientListSecretPropertiesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl SecretClientListSecretPropertiesOptions<'_> {
@@ -98,7 +98,7 @@ pub struct SecretClientListSecretPropertiesVersionsOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl SecretClientListSecretPropertiesVersionsOptions<'_> {

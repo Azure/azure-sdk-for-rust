@@ -5,7 +5,7 @@
 
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, ClientMethodOptions},
+    http::{pager::PagerOptions, ClientMethodOptions, Url},
 };
 
 /// Options to be passed to [`CertificateClient::backup_certificate()`](crate::generated::clients::CertificateClient::backup_certificate())
@@ -106,7 +106,7 @@ pub struct CertificateClientListCertificatePropertiesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl CertificateClientListCertificatePropertiesOptions<'_> {
@@ -130,7 +130,7 @@ pub struct CertificateClientListCertificatePropertiesVersionsOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl CertificateClientListCertificatePropertiesVersionsOptions<'_> {
@@ -156,7 +156,7 @@ pub struct CertificateClientListDeletedCertificatePropertiesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl CertificateClientListDeletedCertificatePropertiesOptions<'_> {
@@ -180,7 +180,7 @@ pub struct CertificateClientListIssuerPropertiesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl CertificateClientListIssuerPropertiesOptions<'_> {
