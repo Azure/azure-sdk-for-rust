@@ -106,14 +106,14 @@ impl CosmosPipeline {
             context: ctx.with_value(resource_link).into_owned(),
             ..Default::default()
         };
-        Ok(FeedPager::from_callback(
+        Ok(FeedPager::new(
             move |continuation, pager_options| {
                 // Then we have to clone it again to pass it in to the async block.
                 // This is because Pageable can't borrow any data, it has to own it all.
                 // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
                 let pipeline = pipeline.clone();
                 let mut req = base_request.clone();
-                async move {
+                Box::pin(async move {
                     if let PagerState::More(continuation) = continuation {
                         req.insert_header(constants::CONTINUATION, continuation);
                     }
@@ -124,7 +124,7 @@ impl CosmosPipeline {
                     let page = FeedPage::<T>::from_response(resp).await?;
 
                     Ok(page.into())
-                }
+                })
             },
             Some(options),
         ))
