@@ -7,6 +7,44 @@ use futures::{
 
 type AzureResult<T> = azure_core::Result<T>;
 
+/// Executes async operations from a queue with a concurrency limit.
+///
+/// This function consumes a stream (`ops_queue`) of async operation factories (closures returning futures),
+/// and runs up to `parallel` operations concurrently. As operations complete, new ones are started from the queue,
+/// maintaining the concurrency limit. If any operation or queue item returns an error, the function returns early
+/// with that error. When all operations and queue items are complete, returns `Ok(())`.
+///
+/// # Parameters
+/// - `ops_queue`: A stream yielding `Result<FnOnce() -> TFut, TErr>`. Each item is either a closure producing a future,
+///   or an error. The stream must be `Unpin`.
+/// - `parallel`: The maximum number of operations to run concurrently. Must be non-zero.
+///
+/// # Behavior
+/// - Operations are scheduled as soon as possible, up to the concurrency limit.
+/// - If an error is encountered in the queue or in any operation, the function returns that error immediately.
+/// - When the queue is exhausted, waits for all running operations to complete before returning.
+///
+/// # Example
+/// ```rust
+/// use futures::{stream, StreamExt};
+/// use std::num::NonZeroUsize;
+///
+/// async fn example() {
+///     let ops = vec![
+///         Ok(|| async { Ok(()) }),
+///         Ok(|| async { Ok(()) }),
+///     ];
+///     let ops_stream = stream::iter(ops);
+///     run_all_with_concurrency_limit(ops_stream, NonZeroUsize::new(2).unwrap()).await.unwrap();
+/// }
+/// ```
+///
+/// # Errors
+/// Returns the first error encountered from the queue or any operation.
+///
+/// # Type Parameters
+/// - `TFut`: Future type returned by each operation.
+/// - `TErr`: Error type for queue or operation failures.
 async fn run_all_with_concurrency_limit<Fut, Err>(
     mut ops_queue: impl Stream<Item = Result<impl FnOnce() -> Fut, Err>> + Unpin,
     parallel: NonZero<usize>,
