@@ -24,21 +24,6 @@ type AzureResult<T> = azure_core::Result<T>;
 /// - If an error is encountered in the queue or in any operation, the function returns that error immediately.
 /// - When the queue is exhausted, waits for all running operations to complete before returning.
 ///
-/// # Example
-/// ```rust
-/// use futures::{stream, StreamExt};
-/// use std::num::NonZeroUsize;
-///
-/// async fn example() {
-///     let ops = vec![
-///         Ok(|| async { Ok(()) }),
-///         Ok(|| async { Ok(()) }),
-///     ];
-///     let ops_stream = stream::iter(ops);
-///     run_all_with_concurrency_limit(ops_stream, NonZeroUsize::new(2).unwrap()).await.unwrap();
-/// }
-/// ```
-///
 /// # Errors
 /// Returns the first error encountered from the queue or any operation.
 ///
