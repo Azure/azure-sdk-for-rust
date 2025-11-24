@@ -529,6 +529,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 first_pager
                     .continuation_token()
                     .expect("expected continuation token to be created after first page")
+                    .into()
             };
             let options = SecretClientListSecretPropertiesOptions {
                 method_options: PagerOptions {
