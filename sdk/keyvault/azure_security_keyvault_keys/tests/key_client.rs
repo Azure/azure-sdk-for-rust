@@ -196,11 +196,11 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
     loop {
         match client.purge_deleted_key(name.as_ref(), None).await {
             Ok(_) => {
-                println!("{name} has been purged");
+                tracing::debug!("{name} has been purged");
                 break;
             }
             Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
-                println!(
+                tracing::debug!(
                     "Retrying in {} seconds",
                     retry.duration().unwrap_or_default().as_secs_f32()
                 );

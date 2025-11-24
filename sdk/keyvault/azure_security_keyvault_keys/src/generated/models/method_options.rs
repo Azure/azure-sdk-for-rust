@@ -5,7 +5,7 @@
 
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, ClientMethodOptions},
+    http::{pager::PagerOptions, ClientMethodOptions, Url},
 };
 
 /// Options to be passed to [`KeyClient::backup_key()`](crate::generated::clients::KeyClient::backup_key())
@@ -106,7 +106,7 @@ pub struct KeyClientListDeletedKeyPropertiesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl KeyClientListDeletedKeyPropertiesOptions<'_> {
@@ -129,7 +129,7 @@ pub struct KeyClientListKeyPropertiesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl KeyClientListKeyPropertiesOptions<'_> {
@@ -152,7 +152,7 @@ pub struct KeyClientListKeyPropertiesVersionsOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: PagerOptions<'a, Url>,
 }
 
 impl KeyClientListKeyPropertiesVersionsOptions<'_> {
