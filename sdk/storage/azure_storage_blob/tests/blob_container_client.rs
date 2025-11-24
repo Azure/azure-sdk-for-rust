@@ -430,8 +430,6 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
             ..Default::default()
         }),
     );
-    println!("Expiry: {}", &expiry);
-    println!("Start: {}", &start);
     let test_id_1: Option<String> = Some("testid_1".into());
     let test_id_2: Option<String> = Some("testid_2".into());
     let access_policy_1 = AccessPolicy {
