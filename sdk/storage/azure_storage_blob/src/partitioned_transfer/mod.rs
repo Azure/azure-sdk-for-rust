@@ -157,7 +157,7 @@ mod tests {
     use std::{pin::Pin, sync::mpsc::channel, task::Poll, time::Duration};
 
     #[tokio::test]
-    async fn limit_ops() -> AzureResult<()> {
+    async fn enforce_concurrency_limit() -> AzureResult<()> {
         let parallel = 4usize;
         let num_ops = parallel + 1;
         let wait_time_millis = 10u64;
@@ -200,7 +200,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn slow_stream() -> AzureResult<()> {
+    async fn handles_slow_stream() -> AzureResult<()> {
         let parallel = 10;
         let num_ops = 5;
         let op_time_millis = 10;
@@ -222,7 +222,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn empty_ops() -> AzureResult<()> {
+    async fn success_when_no_ops() -> AzureResult<()> {
         let parallel = 4usize;
 
         // not possible to manually type what we need

@@ -98,7 +98,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_exact_multiple() -> AzureResult<()> {
+    async fn partitions_exact_len() -> AzureResult<()> {
         for part_count in [2usize, 3, 11, 16] {
             for part_len in [1024usize, 1000, 9999, 1] {
                 let data = get_random_data(part_len * part_count);
@@ -120,7 +120,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_leftover_multiple() -> AzureResult<()> {
+    async fn partitions_with_remainder() -> AzureResult<()> {
         for part_count in [2usize, 3, 11, 16] {
             for part_len in [1024usize, 1000, 9999] {
                 for dangling_len in [part_len / 2, 100, 128, 99] {
@@ -149,7 +149,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_exactly_one() -> AzureResult<()> {
+    async fn exactly_one_partition() -> AzureResult<()> {
         for len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(len);
             let mut stream = PartitionedStream::new(
@@ -166,7 +166,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_less_than_one() -> AzureResult<()> {
+    async fn less_than_one_partition() -> AzureResult<()> {
         let part_len = 99999usize;
         for len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(len);
@@ -184,7 +184,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_none() -> AzureResult<()> {
+    async fn successful_empty_stream_when_empty_source_stream() -> AzureResult<()> {
         for part_len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(0);
             let mut stream = PartitionedStream::new(
