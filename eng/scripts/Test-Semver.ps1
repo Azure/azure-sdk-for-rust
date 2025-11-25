@@ -6,7 +6,8 @@ param(
   [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
-  [string]$PackageInfoDirectory
+  [string]$PackageInfoDirectory,
+  [switch]$IgnoreCgManfiestVersion
 )
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
@@ -44,9 +45,22 @@ function Get-OutputPackageNames($workspacePackages) {
 $packages = Get-CargoPackages
 $outputPackageNames = Get-OutputPackageNames $packages
 
-LogGroupStart "cargo install cargo-semver-checks"
-Write-Host "cargo install cargo-semver-checks"
-cargo install cargo-semver-checks --locked
+# Read version from cgmanifest.json. If ignored the currently installed or
+# "latest" version is used.
+$versionParams = @()
+if (!$IgnoreCgManfiestVersion) {
+  $versionParams += '--version'
+  $cgManfiest = Get-Content ([System.IO.Path]::Combine($PSScriptRoot, '..', 'cgmanifest.json')) `
+  | ConvertFrom-Json
+  $versionParams += $cgManfiest.
+  registrations.
+  Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq 'cargo-semver-checks' }).
+  component.cargo.version
+}
+
+LogGroupStart "cargo install cargo-semver-checks $($versionParams -join ' ')"
+Write-Host "cargo install cargo-semver-checks $($versionParams -join ' ')"
+cargo install cargo-semver-checks --locked @versionParams
 LogGroupEnd
 
 $packageParams = @()
