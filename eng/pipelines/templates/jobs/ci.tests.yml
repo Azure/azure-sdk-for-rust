@@ -58,6 +58,12 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
+  - task: Cache@2
+    displayName: Cache cargo bin directory
+    inputs:
+      key: '"cargo-bin" | eng/cgmanifest.json | "$(OSVmImage)" | "$(RustToolchainName)"'
+      path: ~/.cargo/bin
+
   - task: PowerShell@2
     displayName: Check SemVer compatibility
     condition: >-
