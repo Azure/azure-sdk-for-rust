@@ -86,7 +86,8 @@ int test_call_context_heap_allocated() {
     }
 
     // Heap-allocated context
-    cosmos_call_context *ctx = cosmos_call_context_create(runtime, false);
+    cosmos_call_context_options options;
+    cosmos_call_context *ctx = cosmos_call_context_create(runtime, &options);
     if (!ctx) {
         printf("Failed to create heap-allocated call context\n");
         cosmos_runtime_context_free(runtime);
