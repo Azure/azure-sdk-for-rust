@@ -49,7 +49,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
-    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
+    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and ($null -eq $_.publish -or $_.publish.Count -gt 0) }
 
     $packageManifests = @{}
     foreach ($package in $packages) {
@@ -63,6 +63,10 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 
       $package.DirectoryPath = Split-Path $package.manifest_path -Parent
       $package.DependentPackages = @()
+
+      # Collect the crate types available in this package
+      $package.CrateTypes = $package.targets | Select-Object -ExpandProperty crate_types | Select-Object -Unique
+
       $packageManifests[$package.name] = $package
     }
   }
@@ -101,6 +105,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     $pkgProp = [PackageProps]::new($package.name, $package.version, $package.DirectoryPath, $package.ServiceDirectoryName)
     $pkgProp.IsNewSdk = $true
     $pkgProp.ArtifactName = $package.name
+    $pkgProp.CrateTypes = $package.CrateTypes
 
     if ($package.name -match "mgmt") {
       $pkgProp.SdkType = "mgmt"
@@ -120,7 +125,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
   # if the change was in a service directory, but not in a package directory, test all the packages in the service directory
   [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
-  
+
   # remove files that target any specific package
   foreach ($package in $allPackageProperties) {
     $packagePathPattern = "^$( [Regex]::Escape($package.DirectoryPath.Replace('\', '/')) )/"
