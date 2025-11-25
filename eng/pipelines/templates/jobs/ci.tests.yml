@@ -58,9 +58,6 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
-  - ${{ if eq(parameters.TestProxy, true) }}:
-    - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
-
   - task: PowerShell@2
     displayName: Check SemVer compatibility
     condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
@@ -69,6 +66,9 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+
+  - ${{ if eq(parameters.TestProxy, true) }}:
+    - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
 
   - task: PowerShell@2
     displayName: "Test Packages"
