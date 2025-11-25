@@ -33,12 +33,7 @@ jobs:
 
   - task: PowerShell@2
     displayName: Check SemVer compatibility
-    condition: >-
-      and(
-        succeeded(),
-        ne(variables['NoPackagesChanged'],'true'),
-        eq(variables['RustToolchainName'], 'stable')
-      )
+    condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
     inputs:
       pwsh: true
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
