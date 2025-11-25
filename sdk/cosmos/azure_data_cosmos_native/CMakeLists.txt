@@ -1,7 +1,7 @@
 # cSpell:ignore cosmosctest CRATETYPES endforeach
 
 project(cosmosctest C)
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.31)
 
 # CMake automatically uses this option, but we should define it.
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)

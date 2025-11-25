@@ -1,6 +1,5 @@
 [package]
 name = "azure_data_cosmos_native"
-publish = ["internal"] # Disallow publishing to crates.io, but don't use 'publish = false' so that our tooling still identifies this as a package.
 description = "The Cosmos Native Client is a C library, written in Rust but exporting a C-compatible API, that provides a full SDK for Azure Cosmos DB."
 version = "0.27.0"
 authors.workspace = true

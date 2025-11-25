@@ -49,7 +49,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
-    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and ($null -eq $_.publish -or $_.publish.Count -gt 0) }
+    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
 
     $packageManifests = @{}
     foreach ($package in $packages) {
@@ -105,7 +105,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     $pkgProp = [PackageProps]::new($package.name, $package.version, $package.DirectoryPath, $package.ServiceDirectoryName)
     $pkgProp.IsNewSdk = $true
     $pkgProp.ArtifactName = $package.name
-    $pkgProp.CrateTypes = $package.CrateTypes
+    $pkgProp.TargetKinds = $package.targets | Select-Object -ExpandProperty kind | Select-Object -Unique
 
     if ($package.name -match "mgmt") {
       $pkgProp.SdkType = "mgmt"
