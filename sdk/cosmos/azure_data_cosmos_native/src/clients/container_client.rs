@@ -163,8 +163,9 @@ pub extern "C" fn cosmos_container_replace_item(
         let json = parse_cstr(json_data, error::messages::INVALID_JSON)?.to_string();
 
         let raw_value = RawValue::from_string(json)?;
-        let pk = partition_key.to_string();
-        container.replace_item(pk, item_id, raw_value, None).await?;
+        container
+            .replace_item(partition_key, item_id, raw_value, None)
+            .await?;
         Ok(())
     })
 }

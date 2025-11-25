@@ -23,7 +23,7 @@ pub struct ReadDatabaseOptions {
 
 #[repr(C)]
 pub struct DeleteDatabaseOptions {
-    // Placeholder for future read database options
+    // Placeholder for future delete database options
 }
 
 #[repr(C)]
@@ -38,7 +38,7 @@ pub struct ReadContainerOptions {
 
 #[repr(C)]
 pub struct DeleteContainerOptions {
-    // Placeholder for future read container options
+    // Placeholder for future delete container options
 }
 
 #[repr(C)]
