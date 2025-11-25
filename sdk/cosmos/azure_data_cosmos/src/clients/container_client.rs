@@ -264,8 +264,8 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
         let pk_range_link = self.link.feed(ResourceType::PartitionKeyRanges);
-        let pk_range = self.partition_key_range_cache.execute_partition_key_range_read_change_feed(&*self.container_id, pk_range_link.clone()).await?.into_body().into_string();
-
+        // let pk_range = self.partition_key_range_cache.execute_partition_key_range_read_change_feed(&*self.container_id, pk_range_link.clone()).await?.into_body().into_string();
+        let pk_range = self.partition_key_range_cache.try_get_partition_key_range_by_id(&*self.container_id, "0", false).await;
         let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())
             .headers(&options)
             .json(&item)
