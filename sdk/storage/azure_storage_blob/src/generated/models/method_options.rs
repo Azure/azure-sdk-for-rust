@@ -1241,6 +1241,7 @@ impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
             prefix: self.prefix,
             timeout: self.timeout,
@@ -1283,6 +1284,7 @@ impl BlobContainerClientListBlobHierarchySegmentOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
             prefix: self.prefix,
             timeout: self.timeout,
@@ -1487,6 +1489,7 @@ impl BlobServiceClientListContainersSegmentOptions<'_> {
             maxresults: self.maxresults,
             method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
             prefix: self.prefix,
             timeout: self.timeout,

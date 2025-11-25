@@ -17,8 +17,9 @@ use crate::{
         BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
         BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
         BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
-        BlobClientSetTierOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
+        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -463,5 +464,19 @@ impl BlobClient {
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.delete_immutability_policy(options).await
+    }
+
+    /// Sets a legal hold on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `legal_hold` - Specifies the legal hold status to set on the blob.
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_legal_hold(
+        &self,
+        legal_hold: bool,
+        options: Option<BlobClientSetLegalHoldOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        self.client.set_legal_hold(legal_hold, options).await
     }
 }

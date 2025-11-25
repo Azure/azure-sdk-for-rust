@@ -247,7 +247,6 @@ mod tests {
     };
     use futures::future::BoxFuture;
     use std::sync::Arc;
-    use typespec_client_core::http::LoggingOptions;
 
     // Test just the public API instrumentation policy without request instrumentation.
     async fn run_public_api_instrumentation_test<C>(
@@ -322,10 +321,8 @@ mod tests {
         let transport =
             TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
 
-        let request_instrumentation_policy = RequestInstrumentationPolicy::new(
-            Some(mock_tracer.clone()),
-            &LoggingOptions::default(),
-        );
+        let request_instrumentation_policy =
+            RequestInstrumentationPolicy::new(Some(mock_tracer.clone()));
 
         let next: Vec<Arc<dyn Policy>> = vec![
             Arc::new(request_instrumentation_policy),
@@ -555,8 +552,7 @@ mod tests {
                     status: SpanStatus::Unset,
                     kind: SpanKind::Internal,
                     span_id: Uuid::new_v4(),
-                    parent_id: None,
-                    attributes: vec![],
+                    ..Default::default()
                 }],
             }],
         )
@@ -599,9 +595,9 @@ mod tests {
                     span_name: "MyClient.MyApi",
                     status: SpanStatus::Unset,
                     span_id: Uuid::new_v4(),
-                    parent_id: None,
                     kind: SpanKind::Internal,
                     attributes: vec![(AZ_NAMESPACE_ATTRIBUTE, "test namespace".into())],
+                    ..Default::default()
                 }],
             }],
         );
@@ -652,6 +648,7 @@ mod tests {
                         (AZ_NAMESPACE_ATTRIBUTE, "test namespace".into()),
                         (ERROR_TYPE_ATTRIBUTE, "500".into()),
                     ],
+                    ..Default::default()
                 }],
             }],
         );
@@ -701,6 +698,7 @@ mod tests {
                             (AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into()),
                             ("az.fake_attribute", "attribute value".into()),
                         ],
+                        ..Default::default()
                     },
                     ExpectedSpanInformation {
                         span_name: "PUT",
@@ -716,6 +714,7 @@ mod tests {
                             ("server.port", 80.into()),
                             ("http.response.status_code", 200.into()),
                         ],
+                        ..Default::default()
                     },
                 ],
             }],

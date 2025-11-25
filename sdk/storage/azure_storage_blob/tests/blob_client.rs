@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{ClientOptions, RequestContent, StatusCode},
+    http::{ClientOptions, RequestContent, StatusCode, Url},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
@@ -25,7 +25,6 @@ use azure_storage_blob_test::{
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
-use typespec_client_core::http::Url;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -460,7 +459,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_model()?;
-    let map: HashMap<String, String> = response_tags.try_into()?;
+    let map: HashMap<String, String> = response_tags.into();
     assert_eq!(blob_tags, map);
 
     // Set Tags with No Tags (Clear Tags)
@@ -468,7 +467,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_model()?;
-    let map: HashMap<String, String> = response_tags.try_into()?;
+    let map: HashMap<String, String> = response_tags.into();
     assert_eq!(HashMap::new(), map);
 
     container_client.delete_container(None).await?;
@@ -645,6 +644,40 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     }
 
     container_client.delete_container(None).await?;
+
+    Ok(())
+}
+
+#[recorded::test(playback)]
+async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Set Legal Hold
+    blob_client.set_legal_hold(true, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(legal_hold.unwrap());
+
+    // Attempt Operation While Legal Hold Active
+    let response = blob_client.delete(None).await;
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Remove Legal Hold
+    blob_client.set_legal_hold(false, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(!legal_hold.unwrap());
+
+    blob_client.delete(None).await?;
 
     Ok(())
 }

@@ -30,7 +30,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -43,7 +43,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub start: Option<OffsetDateTime>,
 }
@@ -194,10 +194,6 @@ pub struct BlobContainerClientRenewLeaseResult;
 /// Contains results for `BlobContainerClient::restore()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRestoreResult;
-
-/// Contains results for `BlobContainerClient::set_access_policy()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientSetAccessPolicyResult;
 
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -1292,6 +1288,14 @@ pub struct SignedIdentifier {
     /// The unique ID for the signed identifier.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+
+/// Represents an array of signed identifiers
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct SignedIdentifiers {
+    /// The array of signed identifiers.
+    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SignedIdentifier>>,
 }
 
 /// The properties that enable an account to host a static website
