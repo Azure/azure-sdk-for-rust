@@ -1,5 +1,7 @@
 # Azure Core shared client library for Rust
 
+Contrive a change to trigger semver check
+
 `azure_core` provides shared primitives, abstractions, and helpers for modern Rust Azure SDK client libraries.
 These libraries follow the [Azure SDK Design Guidelines for Rust][guidelines]
 and can typically be identified by package and namespaces names starting with `azure_`, e.g. `azure_identity`.
@@ -20,12 +22,12 @@ you can find the [package on crates.io][Package (crates.io)].
 
 The main shared concepts of `azure_core` - and Azure SDK libraries using `azure_core` - include:
 
-- Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
-- Accessing HTTP response details (`Response<T>`).
-- Paging and asynchronous streams (`Pager<T>`).
-- Errors from service requests in a consistent fashion. (`azure_core::Error`).
-- Customizing requests (`ClientOptions`).
-- Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
+-   Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
+-   Accessing HTTP response details (`Response<T>`).
+-   Paging and asynchronous streams (`Pager<T>`).
+-   Errors from service requests in a consistent fashion. (`azure_core::Error`).
+-   Customizing requests (`ClientOptions`).
+-   Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
 
 ### Thread safety
 
@@ -47,18 +49,18 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Features
 
-- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
-- `decimal`: enables support for `rust_decimal::Decimal` type.
-- `derive`: enable derive macros e.g., `SafeDebug`.
-- `hmac_openssl`: enables HMAC signing using `openssl`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
-- `hmac_rust`: enables HMAC signing using rust-native libraries `sha2` and `hmac`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
-- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`.
-- `reqwest_deflate` (default): enables deflate compression for `reqwest`.
-- `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
-- `tokio`: enables and sets `tokio` as the default async runtime.
-- `wasm_bindgen`: enables the async runtime for WASM.
-- `xml`: enables XML support.
+-   `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
+-   `decimal`: enables support for `rust_decimal::Decimal` type.
+-   `derive`: enable derive macros e.g., `SafeDebug`.
+-   `hmac_openssl`: enables HMAC signing using `openssl`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
+-   `hmac_rust`: enables HMAC signing using rust-native libraries `sha2` and `hmac`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
+-   `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`.
+-   `reqwest_deflate` (default): enables deflate compression for `reqwest`.
+-   `reqwest_gzip` (default): enables gzip compression for `reqwest`.
+-   `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
+-   `tokio`: enables and sets `tokio` as the default async runtime.
+-   `wasm_bindgen`: enables the async runtime for WASM.
+-   `xml`: enables XML support.
 
 ### Enabling dependencies' features
 
