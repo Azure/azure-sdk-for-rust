@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{ClientOptions, RequestContent, StatusCode},
+    http::{ClientOptions, RequestContent, StatusCode, Url},
     Bytes,
 };
 use azure_core_test::{recorded, Matcher, TestContext};
@@ -21,7 +21,6 @@ use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_cli
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
-use typespec_client_core::http::Url;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -456,7 +455,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_model()?;
-    let map: HashMap<String, String> = response_tags.try_into()?;
+    let map: HashMap<String, String> = response_tags.into();
     assert_eq!(blob_tags, map);
 
     // Set Tags with No Tags (Clear Tags)
@@ -464,7 +463,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_model()?;
-    let map: HashMap<String, String> = response_tags.try_into()?;
+    let map: HashMap<String, String> = response_tags.into();
     assert_eq!(HashMap::new(), map);
 
     container_client.delete_container(None).await?;

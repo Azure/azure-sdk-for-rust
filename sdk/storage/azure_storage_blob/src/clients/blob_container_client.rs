@@ -9,12 +9,13 @@ use crate::{
         BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccountInfoOptions,
-        BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesOptions,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientListBlobFlatSegmentOptions,
-        BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
-        BlobContainerClientSetMetadataOptions,
+        BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
+        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
+        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
+        BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
+        BlobContainerClientSetMetadataOptions, SignedIdentifiers,
     },
     models::{FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode},
     pipeline::StorageHeadersPolicy,
@@ -25,7 +26,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pager, Pipeline, Response, StatusCode, Url, XmlFormat,
+        NoFormat, Pager, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     tracing, Result,
 };
@@ -364,5 +365,52 @@ impl BlobContainerClient {
             },
             Err(e) => Err(e),
         }
+    }
+
+    /// Sets the permissions for the specified container. The permissions indicate whether blobs in a
+    /// container may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_acl` - The access control list for the container. You can create this from a
+    ///   [`HashMap<String, AccessPolicy>`] using [`SignedIdentifiers::from()`] and then wrapping it into a RequestContent.
+    /// * `options` - Optional configuration for the request.
+    ///
+    /// # Example
+    ///
+    /// ```rust, ignore
+    /// use azure_core::http::RequestContent;
+    /// use azure_storage_blob::models::{AccessPolicy, SignedIdentifiers};
+    /// use typespec_client_core::time::OffsetDateTime;
+    ///
+    /// let mut policies = HashMap::new();
+    /// policies.insert("some_policy_id".to_string(), AccessPolicy {
+    ///     start: Some(OffsetDateTime::now_utc()),
+    ///     expiry: Some(OffsetDateTime::now_utc() + Duration::from_secs(10)),
+    ///     permission: Some("rwd".to_string()),
+    /// });
+    ///
+    /// let request_content = RequestContent::try_from(SignedIdentifiers::from(policies))?;
+    /// container_client.set_access_policy(request_content, None).await?;
+    /// ```
+    pub async fn set_access_policy(
+        &self,
+        container_acl: RequestContent<SignedIdentifiers, XmlFormat>,
+        options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        self.client.set_access_policy(container_acl, options).await
+    }
+
+    /// Gets the permissions for the specified container. The permissions indicate whether container data
+    /// may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_access_policy(
+        &self,
+        options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<SignedIdentifiers, XmlFormat>> {
+        self.client.get_access_policy(options).await
     }
 }

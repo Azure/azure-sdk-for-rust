@@ -4,7 +4,13 @@
 
 ### Features Added
 
+- Added support for `set_access_policy` to `BlobContainerClient`.
+- Added support for `get_access_policy` to `BlobContainerClient`.
 - Added support for `set_legal_hold` to `BlobClient`.
+
+### Breaking Changes
+
+- Changed conversion implementation from `BlobTags` to `HashMap<String, String>` from `TryFrom` to `From`.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
 
 ### Breaking Changes
