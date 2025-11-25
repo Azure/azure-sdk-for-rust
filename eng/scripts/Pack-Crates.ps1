@@ -17,11 +17,6 @@ $ErrorActionPreference = 'Stop'
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 
-Write-Host @"
-Packing crates with
-    RUSTFLAGS: '${env:RUSTFLAGS}'
-"@
-
 function Get-OutputPackageNames($workspacePackages) {
   $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
   $packablePackageNames = $packablePackages.name
@@ -73,6 +68,19 @@ function Get-CargoPackages() {
   return $metadata.packages
 }
 
+function Test-PackageCanBePublished($package) {
+  if ($null -ne $package.publish -and $package.publish.Count -eq 0) {
+    return $false
+  }
+
+  foreach ($target in $package.targets) {
+    if ($target.kind -contains 'lib' -or $target.kind -contains 'bin' -or $target.kind -contains 'proc-macro') {
+      return $true
+    }
+  }
+  return $false
+}
+
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
   $outputPackageNames = Get-OutputPackageNames $packages
@@ -83,6 +91,10 @@ function Get-PackagesToBuild() {
   }
 
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
+
+  # Only pack crates with a lib, bin, or proc-macro target, as these are the only crates crates.io accepts.
+  # This means skipping any crate that ONLY contains tests, benchmarks, examples, or native code (cdylib/staticlib)
+  $packagesToBuild = $packagesToBuild | Where-Object { Test-PackageCanBePublished $_ }
 
   if ($Release) {
     return $packagesToBuild
@@ -96,12 +108,14 @@ function Get-PackagesToBuild() {
 
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
+        if (-not (Test-PackageCanBePublished $dependency)) {
+          Write-Error "Package '$($dependency.name)' is a dependency of '$($package.name)' but cannot be published to crates.io"
+        }
         $packagesToBuild += $dependency
         $toProcess += $dependency
       }
     }
   }
-
   return $packagesToBuild
 }
 
@@ -124,10 +138,19 @@ try {
   Set-Location $RepoRoot
 
   [array]$packages = Get-PackagesToBuild
+
+  Write-Host "Packing crates:"
   $packageParams = @()
   foreach ($package in $packages) {
     $packageParams += "--package", $package.name
+    Write-Host "    '$($package.name)' version '$($package.version)'"
   }
+
+  Write-Host @"
+with
+    RUSTFLAGS: '${env:RUSTFLAGS}'
+
+"@
 
   if ($NoVerify) {
     $packageParams += "--no-verify"

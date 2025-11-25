@@ -2,7 +2,8 @@
 
 #Requires -Version 7.0
 param(
-  [string]$PackageInfoDirectory
+  [string]$PackageInfoDirectory,
+  [string[]]$PackageNames
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,45 +35,29 @@ else {
   $packagesToTest = Get-AllPackageInfoFromRepo
 }
 
+if ($PackageNames -and $PackageNames.Length -gt 0) {
+  $packagesToTest = $packagesToTest | Where-Object { $PackageNames -contains $_.Name }
+}
+
 Write-Host "Testing packages:"
 foreach ($package in $packagesToTest) {
   Write-Host "  '$($package.Name)' in '$($package.DirectoryPath)'"
 }
 
 foreach ($package in $packagesToTest) {
-  Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
-  try {
-    $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
+  Write-Host "Testing package '$($package.Name)', with crate types $($package.CrateTypes -join ', ') ..."
 
-    $setupScript = Join-Path $packageDirectory "Test-Setup.ps1"
-    if (Test-Path $setupScript) {
-      Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $setupScript -GroupOutput
-      if (!$? -ne 0) {
-        Write-Error "Test setup script failed for package: '$($package.Name)'"
-        exit 1
-      }
-    }
-
-    Write-Host "`n`nTesting package: '$($package.Name)'`n"
-
-    Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
-
-    $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
-    if (Test-Path $cleanupScript) {
-      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $cleanupScript -GroupOutput
-      # We ignore the exit code of the cleanup script.
-    }
-  }
-  finally {
-    Pop-Location
+  # Launch a child process to test the package to isolate environment changes.
+  # NOTE: This means we can only pass simple parameters (strings, arrays) to the child process.
+  $Command = @(
+    Join-Path $PSScriptRoot 'Test-Package.ps1'
+    '-PackageName', $package.Name
+    '-DirectoryPath', $package.DirectoryPath
+    '-CrateTypes', ($package.CrateTypes -join ',')
+  )
+  Start-Process -FilePath pwsh -ArgumentList $Command -NoNewWindow -Wait
+  if ($LASTEXITCODE -ne 0) {
+    Write-Error "Testing package '$($package.Name)' failed."
+    exit $LASTEXITCODE
   }
 }
