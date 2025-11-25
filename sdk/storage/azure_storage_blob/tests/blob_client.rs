@@ -682,9 +682,8 @@ async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    //TODO: Mark as playback only once set_legal_hold PR is in
     // Recording Setup
     let recording = ctx.recording();
     use_storage_account(StorageAccount::Versioned);

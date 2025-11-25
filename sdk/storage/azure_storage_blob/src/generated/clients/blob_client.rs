@@ -15,10 +15,9 @@ use crate::generated::models::{
     BlobClientReleaseLeaseOptions, BlobClientReleaseLeaseResult, BlobClientRenewLeaseOptions,
     BlobClientRenewLeaseResult, BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
-    BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTagsOptions, BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
-    BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
-    BlobExpiryOptions, BlobTags,
+    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+    BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
+    BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
 };
 use azure_core::{
     base64::encode,
