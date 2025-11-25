@@ -755,6 +755,7 @@ async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>
     time::sleep(Duration::from_secs(5)).await;
 
     blob_client.delete(None).await?;
+    use_storage_account(StorageAccount::Standard);
 
     Ok(())
 }
