@@ -689,7 +689,7 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
@@ -774,7 +774,7 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
@@ -855,7 +855,7 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
@@ -930,7 +930,7 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
