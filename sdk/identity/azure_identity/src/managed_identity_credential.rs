@@ -19,6 +19,7 @@ pub enum UserAssignedId {
     ObjectId(String),
     /// The Azure resource ID of a user-assigned identity
     ResourceId(String),
+    SomeBreakingChange,
 }
 
 /// Authenticates a managed identity from Azure App Service or an Azure Virtual Machine.
@@ -120,6 +121,7 @@ enum ManagedIdentitySource {
     CloudShell,
     Imds,
     ServiceFabric,
+    ContriveABreakingChange,
 }
 
 impl ManagedIdentitySource {
