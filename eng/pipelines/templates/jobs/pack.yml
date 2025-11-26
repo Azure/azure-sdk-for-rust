@@ -68,6 +68,19 @@ jobs:
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
   - ${{ if eq('auto', parameters.ServiceDirectory) }}:
+    - task: PowerShell@2
+      displayName: Check SemVer compatibility
+      condition: >-
+        and(
+          succeeded(),
+          ne(variables['NoPackagesChanged'],'true'),
+          ne(variables['Skip.Semver'], 'true')
+        )
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
+        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+
     - task: Powershell@2
       displayName: Pack Crates
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
@@ -101,6 +114,20 @@ jobs:
       displayName: Configure crate packing
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
 
+    - task: PowerShell@2
+      displayName: Check SemVer compatibility
+      condition: >-
+        and(
+          succeeded(),
+          ne(variables['NoPackagesChanged'],'true'),
+          ne(variables['Skip.Semver'], 'true')
+        )
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
+        arguments: -PackageNames $(PackageNames)
+
+
     - task: Powershell@2
       displayName: Pack Crates
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
@@ -123,5 +150,5 @@ jobs:
   - template: /eng/common/pipelines/templates/steps/create-apireview.yml
     parameters:
       Artifacts: ${{ parameters.Artifacts }}
-      
+
   - template: /eng/common/pipelines/templates/steps/detect-api-changes.yml
