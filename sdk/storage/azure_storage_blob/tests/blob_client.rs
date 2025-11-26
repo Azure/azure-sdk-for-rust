@@ -3,21 +3,25 @@
 
 use azure_core::{
     http::{ClientOptions, RequestContent, StatusCode, Url},
+    time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
-use azure_core_test::{recorded, Matcher, TestContext};
+use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
         AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
         BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
         BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientUploadOptions, LeaseState,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
+        ImmutabilityPolicyMode, LeaseState,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, use_storage_account, StorageAccount,
+};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
@@ -674,6 +678,84 @@ async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(!legal_hold.unwrap());
 
     blob_client.delete(None).await?;
+
+    Ok(())
+}
+
+#[recorded::test(playback)]
+async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    use_storage_account(StorageAccount::Versioned);
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Set Immutability Policy (No Mode Specified, Default to Unlocked)
+    let expiry_1_str = recording.var(
+        "expiry_1",
+        Some(VarOptions {
+            default_value: Some(
+                to_rfc3339(&(OffsetDateTime::now_utc() + Duration::from_secs(5))).into(),
+            ),
+            ..Default::default()
+        }),
+    );
+    let expiry_1 = parse_rfc3339(&expiry_1_str)?;
+
+    blob_client.set_immutability_policy(&expiry_1, None).await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+    assert_eq!(ImmutabilityPolicyMode::Unlocked, mode.unwrap());
+    // Need to ignore nanoseconds due to Service truncation
+    assert_eq!(expiry_1.replace_nanosecond(0)?, expires_on.unwrap());
+
+    // Delete Immutability Policy
+    blob_client.delete_immutability_policy(None).await?;
+    let response = blob_client.get_properties(None).await?;
+
+    // Assert
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+    assert!(mode.is_none());
+    assert!(expires_on.is_none());
+
+    // Set Immutability Policy (Locked Mode)
+    let expiry_2_str = recording.var(
+        "expiry_2",
+        Some(VarOptions {
+            default_value: Some(
+                to_rfc3339(&(OffsetDateTime::now_utc() + Duration::from_secs(5))).into(),
+            ),
+            ..Default::default()
+        }),
+    );
+    let expiry_2 = parse_rfc3339(&expiry_2_str)?;
+    let immutability_policy_options = BlobClientSetImmutabilityPolicyOptions {
+        immutability_policy_mode: Some(ImmutabilityPolicyMode::Locked),
+        ..Default::default()
+    };
+    blob_client
+        .set_immutability_policy(&expiry_2, Some(immutability_policy_options))
+        .await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+    assert_eq!(ImmutabilityPolicyMode::Locked, mode.unwrap());
+    // Need to ignore nanoseconds due to Service truncation
+    assert_eq!(expiry_2.replace_nanosecond(0)?, expires_on.unwrap());
+
+    // Sleep to allow immutability policy to expire
+    time::sleep(Duration::from_secs(5)).await;
+
+    blob_client.delete(None).await?;
+    use_storage_account(StorageAccount::Standard);
 
     Ok(())
 }
