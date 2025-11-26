@@ -58,8 +58,8 @@ if (!$IgnoreCgManfiestVersion) {
   component.cargo.version
 }
 
-LogGroupStart "cargo install cargo-semver-checks $($versionParams -join ' ')"
-Write-Host "cargo install cargo-semver-checks $($versionParams -join ' ')"
+LogGroupStart "cargo install cargo-semver-checks --locked $($versionParams -join ' ')"
+Write-Host "cargo install cargo-semver-checks --locked $($versionParams -join ' ')"
 cargo install cargo-semver-checks --locked @versionParams
 LogGroupEnd
 
