@@ -32,9 +32,20 @@ jobs:
     Toolchain: stable
     TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
 
-- template: /eng/pipelines/templates/jobs/semver.yml
+
+- template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
   parameters:
-    ServiceDirectory: ${{ parameters.ServiceDirectory }}
+    JobTemplatePath: /eng/pipelines/templates/jobs/semver.yml
+    MatrixConfigs: ${{ parameters.MatrixConfigs }}
+    MatrixFilters: ${{ parameters.MatrixFilters }}
+    MatrixReplace: ${{ parameters.MatrixReplace }}
+    CloudConfig:
+      Cloud: public
+    SparseCheckoutPaths:
+      - /*
+    GenerateJobName: generate_semver_job_matrix
+    AdditionalParameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
 
 - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
   parameters:
