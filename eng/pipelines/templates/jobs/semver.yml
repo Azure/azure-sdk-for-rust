@@ -2,37 +2,15 @@ parameters:
 - name: ServiceDirectory
   type: string
 
-# required matrix parameters
-- name: UsePlatformContainer
-  type: boolean
-- name: OSName
-  type: string
-- name: Matrix
-  type: object
-- name: DependsOn
-  type: string
-- name: CloudConfig
-  type: object
-
 jobs:
-- job:
+- job: Semver
   displayName: Semver Check
   condition: and(succeeded(), ne(variables['Skip.Semver'], 'true'))
-  dependsOn: ${{ parameters.DependsOn }}
-
-  strategy:
-    matrix: $[ ${{ parameters.Matrix }} ]
 
   pool:
-    name: $(Pool)
-    # 1es pipeline templates converts `image` to demands: ImageOverride under the hood
-    # which is incompatible with image selection in the default non-1es hosted pools
-    ${{ if eq(parameters.OSName, 'macOS') }}:
-      vmImage: $(OSVmImage)
-    ${{ else }}:
-      image: $(OSVmImage)
-    os: ${{ parameters.OSName }}
-
+    os: linux
+    name: $(LINUXPOOL)
+    image: $(LINUXVMIMAGE)
 
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
