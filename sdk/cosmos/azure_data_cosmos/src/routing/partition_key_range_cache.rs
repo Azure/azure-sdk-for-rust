@@ -14,6 +14,7 @@ use async_trait::async_trait;
 use azure_core::Error;
 use azure_core::http::{Pipeline, RawResponse, Response, StatusCode};
 use azure_core::http::headers::HeaderName;
+use serde::Deserialize;
 use crate::ReadDatabaseOptions;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
@@ -88,8 +89,6 @@ impl PartitionKeyRangeCache {
         let mut routing_map = self.try_lookup(
             collection_rid,
             None,
-            None,
-            // child_trace.clone(),
         ).await?;
 
         if force_refresh && routing_map.is_some() {
@@ -97,8 +96,6 @@ impl PartitionKeyRangeCache {
             routing_map = self.try_lookup(
                 collection_rid,
                 previous,
-                None,
-                // child_trace.clone(),
             ).await?;
         }
 
@@ -116,15 +113,6 @@ impl PartitionKeyRangeCache {
         }
     }
 
-    async fn try_lookup(
-        &self,
-        collection_rid: &str,
-        previous_value: Option<Arc<CollectionRoutingMap>>,
-        request: Option<Arc<CosmosRequest>>,
-    ) -> Result<Option<Arc<CollectionRoutingMap>>, Error> {
-        self.try_lookup_internal(collection_rid, previous_value, request).await
-    }
-
     pub async fn try_get_partition_key_range_by_id(
         &self,
         collection_resource_id: &str,
@@ -135,7 +123,6 @@ impl PartitionKeyRangeCache {
         let mut routing_map = self.try_lookup(
             collection_resource_id,
             None,
-            None,
         ).await.unwrap();
 
         // if force_refresh && routing_map.is_some() {
@@ -144,7 +131,6 @@ impl PartitionKeyRangeCache {
             routing_map = self.try_lookup(
                 collection_resource_id,
                 previous,
-                None,
             ).await.unwrap();
         }
 
@@ -162,11 +148,10 @@ impl PartitionKeyRangeCache {
         }
     }
 
-    async fn try_lookup_internal(
+    async fn try_lookup(
         &self,
         collection_rid: &str,
         previous_value: Option<Arc<CollectionRoutingMap>>,
-        request: Option<Arc<CosmosRequest>>,
     ) -> Result<Option<Arc<CollectionRoutingMap>>, Error> {
         // Check if we need to force refresh
         let should_refresh = {
@@ -233,13 +218,13 @@ impl PartitionKeyRangeCache {
         loop {
             let mut headers = HashMap::new();
             headers.insert("x-ms-max-item-count".to_string(), PAGE_SIZE_STRING.to_string());
-            headers.insert("A-IM".to_string(), "Incremental feed".to_string());
+            headers.insert("a-iam".to_string(), "Incremental feed".to_string());
 
             if let Some(ref etag) = change_feed_next_if_none_match {
-                headers.insert("If-None-Match".to_string(), etag.clone());
+                headers.insert("if-none-match".to_string(), etag.clone());
             }
 
-            let pk_range_link = ResourceLink::root(ResourceType::Databases).feed(ResourceType::Containers).item(collection_rid).feed(ResourceType::PartitionKeyRanges);
+            let pk_range_link = ResourceLink::root(ResourceType::Databases).item("sdk_rust_db").feed(ResourceType::Containers).item(collection_rid).feed(ResourceType::PartitionKeyRanges);
             let response = self.execute_partition_key_range_read_change_feed(
                 collection_rid,
                 pk_range_link,
@@ -248,15 +233,29 @@ impl PartitionKeyRangeCache {
             ).await?;
 
             last_status_code = response.status();
-            change_feed_next_if_none_match = response.headers().get_optional_string(&HeaderName::from_static("ETag"));
+            change_feed_next_if_none_match = response.headers().get_optional_string(&HeaderName::from_static("etag"));
 
-            // if let Some(feed_resource) = response.get_resource::<Vec<PartitionKeyRange>>() {
-            //     ranges.extend(feed_resource);
-            // }
-
-            if last_status_code == StatusCode::NotModified { // HttpStatusCode::NotModified
+            // Deserialize the response body to extract Vec<PartitionKeyRange>
+            if last_status_code == StatusCode::Ok {
+                let body_string = response.into_body().into_string()?;
+                
+                // Cosmos DB wraps partition key ranges in a "PartitionKeyRanges" field
+                #[derive(Deserialize)]
+                struct PkRangesResponse {
+                    #[serde(rename = "PartitionKeyRanges")]
+                    partition_key_ranges: Vec<PartitionKeyRange>,
+                }
+                
+                let pk_ranges_response: PkRangesResponse = serde_json::from_str(&body_string)
+                    .map_err(|e| Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+                
+                ranges.extend(pk_ranges_response.partition_key_ranges);
                 break;
             }
+
+            // if last_status_code != StatusCode::Ok { // HttpStatusCode::NotModified
+            //     break;
+            // }
         }
 
         let tuples: Vec<(PartitionKeyRange, Option<ServiceIdentity>)> = ranges
@@ -327,22 +326,3 @@ impl PartitionKeyRangeCache {
             .map(Into::into)
     }
 }
-//
-// #[async_trait]
-// impl RoutingMapProvider for PartitionKeyRangeCache {
-//     async fn try_get_partition_key_range_by_id(
-//         &self,
-//         collection_resource_id: &str,
-//         partition_key_range_id: &str,
-//         trace: Arc<dyn ITrace>,
-//         force_refresh: bool,
-//     ) -> CosmosResult<Option<PartitionKeyRange>> {
-//         self.try_get_partition_key_range_by_id(
-//             collection_resource_id,
-//             partition_key_range_id,
-//             trace,
-//             force_refresh,
-//         ).await
-//     }
-// }
-//
