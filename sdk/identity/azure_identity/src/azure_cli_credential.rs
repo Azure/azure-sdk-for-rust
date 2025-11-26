@@ -83,7 +83,7 @@ pub struct AzureCliCredentialOptions {
     ///
     /// When `tenant_id` is `None` this option has no effect and the credential will authenticate to any requested tenant.
     /// Add the wildcard value "*" to allow the credential to authenticate to any tenant.
-    pub additionally_allowed_tenants_with_breaking_change: Vec<String>,
+    pub additionally_allowed_tenants: Vec<String>,
 
     /// The name or ID of a subscription
     ///
