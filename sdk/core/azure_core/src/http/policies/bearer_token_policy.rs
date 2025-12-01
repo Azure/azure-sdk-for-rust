@@ -816,8 +816,7 @@ mod tests {
         assert_eq!(1, calls.load(Ordering::SeqCst));
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    #[tokio::test]
+    #[cfg_attr(not(target_arch = "wasm32"), tokio::test)]
     async fn resets_stream_for_retry_after_challenge() {
         use futures::StreamExt;
         use typespec_client_core::http::Body;
