@@ -80,18 +80,16 @@ impl Policy for BearerTokenAuthorizationPolicy {
 
         if response.status() == StatusCode::Unauthorized {
             self.authorizer.invalidate_cache().await;
-            if let Some(ref on_challenge) = self.on_challenge {
+            if let Some(ref callback) = self.on_challenge {
                 if response.headers().get_str(&WWW_AUTHENTICATE).is_ok() {
-                    let should_retry = on_challenge
+                    callback
                         .on_challenge(ctx, request, self.authorizer.as_ref(), response.headers())
                         .await?;
-                    if should_retry {
-                        #[cfg(not(target_arch = "wasm32"))]
-                        if let SeekableStream(stream) = request.body_mut() {
-                            stream.reset().await?;
-                        }
-                        response = next[0].send(ctx, request, &next[1..]).await?
+                    #[cfg(not(target_arch = "wasm32"))]
+                    if let SeekableStream(stream) = request.body_mut() {
+                        stream.reset().await?;
                     }
+                    response = next[0].send(ctx, request, &next[1..]).await?
                 }
             }
         }
@@ -116,16 +114,15 @@ pub trait OnChallenge: std::fmt::Debug + Send + Sync {
     /// * `headers` - The 401 response's headers
     ///
     /// # Returns
-    /// * `Ok(true)` when the callback handled the challenge and [`BearerTokenAuthorizationPolicy`] should retry the request.
-    /// * `Ok(false)` when the callback can't handle the challenge. [`BearerTokenAuthorizationPolicy`] will return the 401 response to the client in this case.
-    /// * `Err` when an error occurs while handling the challenge.
+    /// * `Ok` when the callback handled the challenge and [`BearerTokenAuthorizationPolicy`] should retry the request.
+    /// * `Err` when an error occurred while handling the challenge.
     async fn on_challenge(
         &self,
         context: &Context,
         request: &mut Request,
         authorizer: &dyn Authorizer,
         headers: &Headers,
-    ) -> Result<bool>;
+    ) -> Result<()>;
 }
 
 /// Callback [`BearerTokenAuthorizationPolicy`] invokes on every request it receives, before sending the request.
@@ -452,7 +449,6 @@ mod tests {
     struct TestOnChallenge {
         calls: Arc<AtomicUsize>,
         error: Option<Error>,
-        should_retry: bool,
     }
 
     #[async_trait]
@@ -463,20 +459,18 @@ mod tests {
             request: &mut Request,
             authorizer: &dyn Authorizer,
             _headers: &Headers,
-        ) -> Result<bool> {
+        ) -> Result<()> {
             self.calls.fetch_add(1, Ordering::SeqCst);
             if let Some(ref e) = self.error {
                 return Err(Error::with_message(e.kind().clone(), e.to_string()));
             }
-            if self.should_retry {
-                let options = TokenRequestOptions {
-                    method_options: ClientMethodOptions {
-                        context: context.clone(),
-                    },
-                };
-                authorizer.authorize(request, &["scope"], options).await?;
-            }
-            Ok(self.should_retry)
+            let options = TokenRequestOptions {
+                method_options: ClientMethodOptions {
+                    context: context.clone(),
+                },
+            };
+            authorizer.authorize(request, &["scope"], options).await?;
+            Ok(())
         }
     }
 
@@ -489,7 +483,6 @@ mod tests {
                 ErrorKind::Other,
                 "something went wrong",
             )),
-            should_retry: false,
         });
 
         let credential = Arc::new(MockCredential::new(&[AccessToken {
@@ -535,7 +528,6 @@ mod tests {
         let on_challenge = Arc::new(TestOnChallenge {
             calls: calls.clone(),
             error: None,
-            should_retry: false,
         });
 
         let credential = Arc::new(MockCredential::new(&[AccessToken {
@@ -573,60 +565,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn on_challenge_no_retry() {
-        let calls = Arc::new(AtomicUsize::new(0));
-        let on_challenge = Arc::new(TestOnChallenge {
-            calls: calls.clone(),
-            error: None,
-            should_retry: false,
-        });
-
-        let credential = Arc::new(MockCredential::new(&[AccessToken::new(
-            "token",
-            OffsetDateTime::now_utc() + Duration::seconds(3600),
-        )]));
-
-        let policy = BearerTokenAuthorizationPolicy::new(credential, ["scope"])
-            .with_on_challenge(on_challenge);
-
-        let client = MockHttpClient::new(|_| {
-            async {
-                Ok(AsyncRawResponse::from_bytes(
-                    StatusCode::Unauthorized,
-                    Headers::from(std::collections::HashMap::from([(
-                        WWW_AUTHENTICATE,
-                        HeaderValue::from("Bearer challenge".to_string()),
-                    )])),
-                    Bytes::new(),
-                ))
-            }
-            .boxed()
-        });
-        let transport: Arc<dyn Policy> =
-            Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
-
-        let ctx = Context::default();
-        let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
-        let res = policy
-            .send(&ctx, &mut req, std::slice::from_ref(&transport))
-            .await
-            .expect("successful request");
-
-        assert_eq!(1, calls.load(Ordering::SeqCst));
-        assert_eq!(StatusCode::Unauthorized, res.status());
-        assert_eq!(
-            "Bearer challenge",
-            res.headers().get_str(&WWW_AUTHENTICATE).unwrap()
-        );
-    }
-
-    #[tokio::test]
     async fn on_challenge_with_retry() {
         let on_challenge_calls = Arc::new(AtomicUsize::new(0));
         let on_challenge = Arc::new(TestOnChallenge {
             calls: on_challenge_calls.clone(),
             error: None,
-            should_retry: true,
         });
 
         let on_request_calls = Arc::new(AtomicUsize::new(0));
@@ -826,7 +769,6 @@ mod tests {
         let on_challenge = Arc::new(TestOnChallenge {
             calls: on_challenge_calls.clone(),
             error: None,
-            should_retry: true,
         });
 
         let credential = Arc::new(MockCredential::new(&[
