@@ -7,7 +7,7 @@ param(
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
-  [switch]$IgnoreCgManfiestVersion
+  [switch]$IgnoreCgManifestVersion
 )
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
@@ -48,11 +48,11 @@ $outputPackageNames = Get-OutputPackageNames $packages
 # Read version from cgmanifest.json. If ignored the currently installed or
 # "latest" version is used.
 $versionParams = @()
-if (!$IgnoreCgManfiestVersion) {
+if (!$IgnoreCgManifestVersion) {
   $versionParams += '--version'
-  $cgManfiest = Get-Content ([System.IO.Path]::Combine($PSScriptRoot, '..', 'cgmanifest.json')) `
+  $cgManifest = Get-Content ([System.IO.Path]::Combine($PSScriptRoot, '..', 'cgmanifest.json')) `
   | ConvertFrom-Json
-  $versionParams += $cgManfiest.
+  $versionParams += $cgManifest.
   registrations.
   Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq 'cargo-semver-checks' }).
   component.cargo.version
