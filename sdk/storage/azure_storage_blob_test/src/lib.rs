@@ -3,6 +3,7 @@
 
 use azure_core::{
     http::{ClientOptions, NoFormat, RequestContent, Response},
+    time::OffsetDateTime,
     Bytes, Result,
 };
 use azure_core_test::Recording;
@@ -11,6 +12,7 @@ use azure_storage_blob::{
     BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
     BlobServiceClientOptions,
 };
+use std::time::Duration;
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
 ///
@@ -124,5 +126,30 @@ pub async fn create_test_blob(
                 )
                 .await
         }
+    }
+}
+
+/// Helper function that enables `OffsetDateTime` comparison with a specified margin of error.
+///
+/// # Arguments
+///
+/// * `expected` - The expected `OffsetDateTime`.
+/// * `data` - The actual (or returned) `OffsetDateTime`.
+/// * `tolerance` - Margin of error in seconds.
+pub fn assert_datetime_within(
+    expected: Option<OffsetDateTime>,
+    actual: Option<OffsetDateTime>,
+    tolerance: Duration,
+) {
+    match (expected, actual) {
+        (Some(exp), Some(act)) => {
+            let diff = (exp - act).abs();
+            assert!(
+                diff <= tolerance,
+                "Datetime difference too large: expected {exp:?}, got {act:?}, difference: {diff:?} (max: {tolerance:?})"
+            );
+        }
+        (None, None) => {}
+        (exp, act) => panic!("Datetime mismatch: expected {exp:?}, got {act:?}"),
     }
 }

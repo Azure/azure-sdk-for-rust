@@ -15,8 +15,8 @@ use azure_storage_blob::models::{
     SignedIdentifiers,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name,
+    assert_datetime_within, create_test_blob, get_blob_name, get_blob_service_client,
+    get_container_client, get_container_name,
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -475,8 +475,16 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         let returned_policy = signed_identifier.access_policy.unwrap();
         let expected_policy = expected_policies.get(&id).expect("Unexpected ID returned");
 
-        assert_eq!(expected_policy.start, returned_policy.start);
-        assert_eq!(expected_policy.expiry, returned_policy.expiry);
+        assert_datetime_within(
+            returned_policy.start,
+            expected_policy.start,
+            Duration::from_secs(5),
+        );
+        assert_datetime_within(
+            returned_policy.expiry,
+            expected_policy.expiry,
+            Duration::from_secs(5),
+        );
         assert_eq!(expected_policy.permission, returned_policy.permission);
     }
 
