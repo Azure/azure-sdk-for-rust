@@ -127,7 +127,6 @@ jobs:
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
         arguments: -PackageNames $(PackageNames)
 
-
     - task: Powershell@2
       displayName: Pack Crates
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
