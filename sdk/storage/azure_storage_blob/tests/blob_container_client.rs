@@ -457,7 +457,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     if ctx.recording().test_mode() == TestMode::Live
         || ctx.recording().test_mode() == TestMode::Record
     {
-        time::sleep(Duration::from_secs(10)).await;
+        time::sleep(Duration::from_secs(15)).await;
     }
 
     // Assert
