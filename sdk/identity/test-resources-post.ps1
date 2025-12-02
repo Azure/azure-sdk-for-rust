@@ -42,16 +42,18 @@ if ($CI) {
 }
 
 $repoRoot = git rev-parse --show-toplevel
-$testAppDir = "$repoRoot/sdk/identity/azure_identity/tests/tools/deployed_live_test"
+$testAppDir = [System.IO.Path]::Combine($repoRoot, "sdk", "identity", "azure_identity", "tests", "tools", "deployed_live_test")
+$targetDir = [System.IO.Path]::Combine($testAppDir, "target")
 
 Write-Host "##[group]Building test app"
-cargo install --path $testAppDir --root "$testAppDir/target"
+cargo install --path $testAppDir --root $targetDir
 Write-Host "##[endgroup]"
 
 Write-Host "##[group]Building container image"
 az acr login -n $DeploymentOutputs['IDENTITY_ACR_NAME']
 $image = "$($DeploymentOutputs['IDENTITY_ACR_LOGIN_SERVER'])/live-test"
-Set-Content -Path "$testAppDir/Dockerfile" -Value @"
+$dockerfilePath = [System.IO.Path]::Combine($testAppDir, "Dockerfile")
+Set-Content -Path $dockerfilePath -Value @"
 FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
 RUN apt update && apt install ca-certificates --no-install-recommends -y
 COPY target/bin/deployed_live_test .

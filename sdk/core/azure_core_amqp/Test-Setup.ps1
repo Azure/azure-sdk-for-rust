@@ -25,12 +25,13 @@ if (-not (Test-Path $WorkingDirectory)) {
 # Clone and build the Test Amqp Broker.
 $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
 $repositoryHash = "d82a86455c3459c5628bc95b25511f6e8a065598"
-$cloneCommand = "git -C '$WorkingDirectory' clone $repositoryUrl --revision $repositoryHash"
+$cloneDir = [System.IO.Path]::Combine($WorkingDirectory, "azure-amqp")
+$cloneCommand = "git clone $repositoryUrl --revision $repositoryHash '$cloneDir'"
 
 Write-Host "Cloning repository from $repositoryUrl..."
 Invoke-LoggedCommand $cloneCommand
 
-$testBrokerDir = "$WorkingDirectory/azure-amqp/test/TestAmqpBroker"
+$testBrokerDir = [System.IO.Path]::Combine($cloneDir, "test", "TestAmqpBroker")
 
 Invoke-LoggedCommand "dotnet build '$testBrokerDir' --framework net8.0"
 if (-not $?) {
@@ -49,7 +50,7 @@ Write-Host "Starting test broker listening on ${env:TEST_BROKER_ADDRESS} ..."
 # If we use `dotnet run -f`, the first argument is the csproj file.
 # Instead, we use `dotnet exec` to run the compiled DLL directly.
 # This allows us to pass the broker address as the first argument.
-$brokerDll = "$WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net8.0/TestAmqpBroker.dll"
+$brokerDll = [System.IO.Path]::Combine($cloneDir, "bin", "Debug", "TestAmqpBroker", "net8.0", "TestAmqpBroker.dll")
 $job = dotnet exec $brokerDll ${env:TEST_BROKER_ADDRESS} /headless &
 
 $env:TEST_BROKER_JOBID = $job.Id
