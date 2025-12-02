@@ -475,7 +475,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         let returned_policy = signed_identifier.access_policy.unwrap();
         let expected_policy = expected_policies.get(&id).expect("Unexpected ID returned");
 
-        // Compare start times by truncating to seconds precision
+        // Truncate start and expiry times to seconds precision for assertion
         assert_eq!(
             expected_policy
                 .start
@@ -485,7 +485,6 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
                 .map(|dt| dt.replace_nanosecond(0).unwrap()),
             "Start times don't match (truncated to seconds precision)"
         );
-        // Compare expiry times by truncating to seconds precision
         assert_eq!(
             expected_policy
                 .expiry
