@@ -40,39 +40,34 @@ foreach ($package in $packagesToTest) {
 }
 
 foreach ($package in $packagesToTest) {
-  Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
-  try {
-    $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
+  $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
+  $manifestPath = Join-Path $packageDirectory "Cargo.toml"
 
-    $setupScript = Join-Path $packageDirectory "Test-Setup.ps1"
-    if (Test-Path $setupScript) {
-      Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $setupScript -GroupOutput
-      if (!$? -ne 0) {
-        Write-Error "Test setup script failed for package: '$($package.Name)'"
-        exit 1
-      }
-    }
-
-    Write-Host "`n`nTesting package: '$($package.Name)'`n"
-
-    Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
-
-    $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
-    if (Test-Path $cleanupScript) {
-      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $cleanupScript -GroupOutput
-      # We ignore the exit code of the cleanup script.
+  $setupScript = Join-Path $packageDirectory "Test-Setup.ps1"
+  if (Test-Path $setupScript) {
+    Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
+    Invoke-LoggedCommand $setupScript -GroupOutput
+    if (!$? -ne 0) {
+      Write-Error "Test setup script failed for package: '$($package.Name)'"
+      exit 1
     }
   }
-  finally {
-    Pop-Location
+
+  Write-Host "`n`nTesting package: '$($package.Name)'`n"
+
+  Invoke-LoggedCommand "cargo build --manifest-path '$manifestPath' --keep-going" -GroupOutput
+  Write-Host "`n`n"
+
+  Invoke-LoggedCommand "cargo test --manifest-path '$manifestPath' --doc --no-fail-fast" -GroupOutput
+  Write-Host "`n`n"
+
+  Invoke-LoggedCommand "cargo test --manifest-path '$manifestPath' --all-targets --no-fail-fast" -GroupOutput
+  Write-Host "`n`n"
+
+  $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
+  if (Test-Path $cleanupScript) {
+    Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
+    Invoke-LoggedCommand $cleanupScript -GroupOutput
+    # We ignore the exit code of the cleanup script.
   }
 }

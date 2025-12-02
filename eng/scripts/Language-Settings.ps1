@@ -36,38 +36,32 @@ function GetExistingPackageVersions ($PackageName, $GroupId = $null) {
 
 function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
   $allPackageProps = @()
-  Push-Location $RepoRoot
-  try {
-    $searchPath = Join-Path $RepoRoot 'sdk' -Resolve
+  $searchPath = Join-Path $RepoRoot 'sdk' -Resolve
 
-    if ($ServiceDirectory -and $ServiceDirectory -ne 'auto') {
-      $searchPath = Join-Path $searchPath $ServiceDirectory -Resolve
-    }
-
-    # when a package is marked `publish = false` in the Cargo.toml, `cargo metadata` returns an empty array for
-    # `publish`, otherwise it returns null. We only want to include packages where `publish` is null.
-    $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
-    | ConvertFrom-Json -AsHashtable
-    | Select-Object -ExpandProperty packages
-    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
-
-    $packageManifests = @{}
-    foreach ($package in $packages) {
-      if ($package.manifest_path -replace '\\', '/' -match '/sdk/([^/]+)/') {
-        $package.ServiceDirectoryName = $Matches[1]
-      }
-      else {
-        # ignore manifests that are not in a service directory
-        continue
-      }
-
-      $package.DirectoryPath = Split-Path $package.manifest_path -Parent
-      $package.DependentPackages = @()
-      $packageManifests[$package.name] = $package
-    }
+  if ($ServiceDirectory -and $ServiceDirectory -ne 'auto') {
+    $searchPath = Join-Path $searchPath $ServiceDirectory -Resolve
   }
-  finally {
-    Pop-Location
+
+  # when a package is marked `publish = false` in the Cargo.toml, `cargo metadata` returns an empty array for
+  # `publish`, otherwise it returns null. We only want to include packages where `publish` is null.
+  $packages = Invoke-LoggedCommand "cargo metadata --manifest-path '$RepoRoot/Cargo.toml' --format-version 1 --no-deps" -GroupOutput
+  | ConvertFrom-Json -AsHashtable
+  | Select-Object -ExpandProperty packages
+  | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
+
+  $packageManifests = @{}
+  foreach ($package in $packages) {
+    if ($package.manifest_path -replace '\\', '/' -match '/sdk/([^/]+)/') {
+      $package.ServiceDirectoryName = $Matches[1]
+    }
+    else {
+      # ignore manifests that are not in a service directory
+      continue
+    }
+
+    $package.DirectoryPath = Split-Path $package.manifest_path -Parent
+    $package.DependentPackages = @()
+    $packageManifests[$package.name] = $package
   }
 
   # Invert the manifest dependency graph

@@ -41,22 +41,23 @@ if ($CI) {
   az account set --subscription $SubscriptionId
 }
 
-Set-Location "$(git rev-parse --show-toplevel)/sdk/identity/azure_identity/tests/tools/deployed_live_test"
+$repoRoot = git rev-parse --show-toplevel
+$testAppDir = "$repoRoot/sdk/identity/azure_identity/tests/tools/deployed_live_test"
 
 Write-Host "##[group]Building test app"
-cargo install --path . --root target
+cargo install --path $testAppDir --root "$testAppDir/target"
 Write-Host "##[endgroup]"
 
 Write-Host "##[group]Building container image"
 az acr login -n $DeploymentOutputs['IDENTITY_ACR_NAME']
 $image = "$($DeploymentOutputs['IDENTITY_ACR_LOGIN_SERVER'])/live-test"
-Set-Content -Path Dockerfile -Value @"
+Set-Content -Path "$testAppDir/Dockerfile" -Value @"
 FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
 RUN apt update && apt install ca-certificates --no-install-recommends -y
 COPY target/bin/deployed_live_test .
 CMD ["./deployed_live_test"]
 "@
-docker build -t $image .
+docker build -t $image $testAppDir
 docker push $image
 Write-Host "##[endgroup]"
 
