@@ -457,7 +457,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     if ctx.recording().test_mode() == TestMode::Live
         || ctx.recording().test_mode() == TestMode::Record
     {
-        time::sleep(Duration::from_secs(15)).await;
+        time::sleep(Duration::from_secs(5)).await;
     }
 
     // Assert
@@ -476,14 +476,14 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         let expected_policy = expected_policies.get(&id).expect("Unexpected ID returned");
 
         assert_datetime_within(
-            returned_policy.start,
             expected_policy.start,
-            Duration::from_secs(5),
+            returned_policy.start,
+            Duration::from_secs(1),
         );
         assert_datetime_within(
-            returned_policy.expiry,
             expected_policy.expiry,
-            Duration::from_secs(5),
+            returned_policy.expiry,
+            Duration::from_secs(1),
         );
         assert_eq!(expected_policy.permission, returned_policy.permission);
     }
