@@ -344,7 +344,7 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
     ctx.recording()
         .set_matcher(Matcher::HeaderlessMatcher)
         .await?;
-    let container_client = get_container_client(ctx.recording(), true).await?;
+    let container_client = get_container_client(ctx.recording(), true, None).await?;
 
     // Create Test Blobs with Tags
     let blob1_name = get_blob_name(ctx.recording());
