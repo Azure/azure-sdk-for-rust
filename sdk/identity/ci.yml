@@ -11,11 +11,10 @@ trigger:
     - sdk/identity/
 
 parameters:
-${{ if not(endsWith(variables['Build.DefinitionName'], 'weekly')) }}:
-  - name: release_azure_identity
-    displayName: azure_identity
-    type: boolean
-    default: false
+- name: release_azure_identity
+  displayName: azure_identity
+  type: boolean
+  default: false
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
