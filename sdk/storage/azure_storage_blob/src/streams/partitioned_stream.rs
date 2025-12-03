@@ -59,20 +59,18 @@ impl Stream for PartitionedStream {
                     Poll::Ready(Some(Ok(ret.freeze())))
                 };
             }
-            let read_buffer;
-            unsafe {
-                // original slice comes from the known remaining capacity of BytesMut.
+            match ready!(this.inner.as_mut().poll_read(cx, unsafe {
+                // spare_capacity_mut() gives us the known remaining capacity of BytesMut.
                 // Those bytes are valid reserved memory but have had no values written
-                // to them. Those are the exact bytes we want to read into.
-                read_buffer = mem::transmute::<&mut [MaybeUninit<u8>], &mut [u8]>(
-                    this.buf.spare_capacity_mut(),
-                );
-            }
-            match ready!(this.inner.as_mut().poll_read(cx, read_buffer)) {
+                // to them. Those are the exact bytes we want to write into.
+                // This transmuted data is not saved to a variable, leaving it inaccessible
+                // to anything but poll_read().
+                mem::transmute::<&mut [MaybeUninit<u8>], &mut [u8]>(this.buf.spare_capacity_mut())
+            })) {
                 Ok(bytes_read) => {
-                    // poll_read() wrote these bytes_read-many bytes into
-                    // the spare capacity, so we can mark those new bytes
-                    // as part of the length
+                    // poll_read() wrote bytes_read-many bytes into the spare capacity.
+                    // those values are therefore initialized and we can add them to
+                    // the existing buffer length
                     unsafe { this.buf.set_len(this.buf.len() + bytes_read) };
                     *this.total_read += bytes_read;
                     *this.inner_complete = bytes_read == 0;
