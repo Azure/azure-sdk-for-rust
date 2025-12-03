@@ -67,7 +67,7 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
-  - ${{ if eq('auto', parameters.ServiceDirectory) }}:
+  - ${{ if or(eq('auto', parameters.ServiceDirectory), endsWith(variables['Build.DefinitionName'], 'weekly')) }}:
     - task: PowerShell@2
       displayName: Check SemVer compatibility
       condition: >-
