@@ -20,6 +20,7 @@ use std::{
     fmt::Debug,
     sync::{Arc, Mutex},
 };
+use tracing::{trace, warn};
 
 /// Mock Tracing Provider - used for testing distributed tracing without involving a specific tracing implementation.
 #[derive(Debug)]
@@ -132,9 +133,9 @@ impl MockSpanInner {
     where
         C: Into<Cow<'static, str>> + Debug,
     {
-        eprintln!("Creating MockSpan: {:?}", name);
+        trace!("Creating MockSpan: {:?}", name);
 
-        eprintln!("Attributes: {:?}", attributes);
+        trace!("Attributes: {:?}", attributes);
         let id = rng().random();
 
         let parent = parent.map(|p| p.span_id());
@@ -165,7 +166,7 @@ impl AsAny for MockSpanInner {
 
 impl Span for MockSpanInner {
     fn set_attribute(&self, key: &'static str, value: AttributeValue) {
-        eprintln!("{}: Setting attribute {}: {:?}", self.name, key, value);
+        trace!("{}: Setting attribute {}: {:?}", self.name, key, value);
         let mut attributes = self.attributes.lock().unwrap();
         attributes.push(Attribute {
             key: key.into(),
@@ -174,13 +175,13 @@ impl Span for MockSpanInner {
     }
 
     fn set_status(&self, status: crate::tracing::SpanStatus) {
-        eprintln!("{}: Setting span status: {:?}", self.name, status);
+        trace!("{}: Setting span status: {:?}", self.name, status);
         let mut state = self.state.lock().unwrap();
         *state = status;
     }
 
     fn end(&self) {
-        eprintln!("Ending span: {}", self.name);
+        trace!("Ending span: {}", self.name);
         let mut is_open = self.is_open.lock().unwrap();
         *is_open = false;
     }
@@ -219,7 +220,7 @@ pub struct MockSpan {
 impl Drop for MockSpan {
     fn drop(&mut self) {
         if self.inner.is_open() {
-            eprintln!("Warning: Dropping open span: {}", self.inner.name);
+            warn!("Dropping open span: {}", self.inner.name);
             self.inner.end();
         }
     }
@@ -297,8 +298,8 @@ pub fn check_instrumentation_result(
 ) {
     let tracers = mock_tracer.tracers.lock().unwrap();
     if tracers.len() != expected_tracers.len() {
-        eprintln!("Expected tracers: {:?}", expected_tracers);
-        eprintln!("Found tracers: {:?}", tracers);
+        trace!("Expected tracers: {:?}", expected_tracers);
+        trace!("Found tracers: {:?}", tracers);
     }
     assert_eq!(
         tracers.len(),
@@ -308,7 +309,7 @@ pub fn check_instrumentation_result(
         tracers.len()
     );
     for (index, expected) in expected_tracers.iter().enumerate() {
-        eprintln!("Checking tracer {}: {}", index, expected.name);
+        trace!("Checking tracer {}: {}", index, expected.name);
         let tracer = &tracers[index];
         let mut parent_span_map = HashMap::new();
         assert_eq!(tracer.package_name, expected.name);
@@ -329,9 +330,11 @@ pub fn check_instrumentation_result(
 
         let mut expected_index = 0;
         for (span_index, span_actual) in spans.iter().enumerate() {
-            eprintln!(
+            trace!(
                 "Checking span {} of tracer {}: {}",
-                span_index, expected.name, span_actual.name
+                span_index,
+                expected.name,
+                span_actual.name
             );
             check_span_information(
                 span_actual,
@@ -342,7 +345,7 @@ pub fn check_instrumentation_result(
             parent_span_map.insert(expected.spans[expected_index].span_id, span_actual.id);
             if expected.spans[expected_index].is_wildcard {
                 // If this is a wildcard span, we don't increment the expected index.
-                eprintln!(
+                trace!(
                     "Span {} is a wildcard, not incrementing expected index",
                     span_actual.name
                 );
@@ -353,7 +356,7 @@ pub fn check_instrumentation_result(
                         &expected.spans[expected_index],
                         &parent_span_map,
                     ) {
-                        eprintln!(
+                        trace!(
                             "Next actual span does not match expected span: {}",
                             expected.spans[expected_index].span_name
                         );
@@ -432,10 +435,10 @@ fn check_span_information(
         }
     }
     let attributes = span.attributes.lock().unwrap();
-    eprintln!("Expected attributes: {:?}", expected.attributes);
-    eprintln!("Found attributes: {:?}", attributes);
+    trace!("Expected attributes: {:?}", expected.attributes);
+    trace!("Found attributes: {:?}", attributes);
     for (index, attr) in attributes.iter().enumerate() {
-        eprintln!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
+        trace!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
         let mut found = false;
         for (key, value) in &expected.attributes {
             if attr.key == *key {
@@ -495,10 +498,10 @@ fn compare_span_information(
         }
     }
     let attributes = actual.attributes.lock().unwrap();
-    eprintln!("Expected attributes: {:?}", expected.attributes);
-    eprintln!("Found attributes: {:?}", attributes);
+    trace!("Expected attributes: {:?}", expected.attributes);
+    trace!("Found attributes: {:?}", attributes);
     for (index, attr) in attributes.iter().enumerate() {
-        eprintln!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
+        trace!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
         let mut found = false;
         for (key, value) in &expected.attributes {
             if attr.key == *key {
