@@ -1,21 +1,23 @@
+use pin_project::pin_project;
 use std::{
-    mem,
+    mem::{self, MaybeUninit},
     num::NonZero,
     pin::{pin, Pin},
     task::Poll,
 };
 
 use azure_core::stream::SeekableStream;
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::FusedStream, AsyncRead, Stream};
 
 type AzureResult<T> = azure_core::Result<T>;
 
+#[pin_project]
 pub(crate) struct PartitionedStream {
+    #[pin]
     inner: Box<dyn SeekableStream>,
-    buf: Vec<u8>,
+    buf: BytesMut,
     partition_len: usize,
-    buf_offset: usize,
     total_read: usize,
     inner_complete: bool,
 }
@@ -24,23 +26,12 @@ impl PartitionedStream {
     pub(crate) fn new(inner: Box<dyn SeekableStream>, partition_len: NonZero<usize>) -> Self {
         let partition_len = partition_len.get();
         Self {
-            buf: vec![0u8; std::cmp::min(partition_len, inner.len())],
+            buf: BytesMut::with_capacity(std::cmp::min(partition_len, inner.len())),
             inner,
             partition_len,
-            buf_offset: 0,
             total_read: 0,
             inner_complete: false,
         }
-    }
-
-    fn take(&mut self) -> Vec<u8> {
-        let mut ret = mem::replace(
-            &mut self.buf,
-            vec![0u8; std::cmp::min(self.partition_len, self.inner.len() - self.total_read)],
-        );
-        ret.truncate(self.buf_offset);
-        self.buf_offset = 0;
-        ret
     }
 }
 
@@ -51,27 +42,43 @@ impl Stream for PartitionedStream {
         self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> Poll<Option<Self::Item>> {
-        let this = self.get_mut();
+        let mut this = self.project();
 
         loop {
-            if this.inner_complete || this.buf_offset >= this.buf.len() {
-                let ret = this.take();
+            if *this.inner_complete || this.buf.len() >= *this.partition_len {
+                let ret = mem::replace(
+                    this.buf,
+                    BytesMut::with_capacity(std::cmp::min(
+                        *this.partition_len,
+                        this.inner.len() - *this.total_read,
+                    )),
+                );
                 return if ret.is_empty() {
                     Poll::Ready(None)
                 } else {
-                    Poll::Ready(Some(Ok(Bytes::from(ret))))
+                    Poll::Ready(Some(Ok(ret.freeze())))
                 };
-            } else {
-                match ready!(pin!(&mut this.inner).poll_read(cx, &mut this.buf[this.buf_offset..]))
-                {
-                    Ok(bytes_read) => {
-                        this.buf_offset += bytes_read;
-                        this.total_read += bytes_read;
-                        this.inner_complete = bytes_read == 0;
-                    }
-                    Err(e) => {
-                        return Poll::Ready(Some(Err(e.into())));
-                    }
+            }
+            let read_buffer;
+            unsafe {
+                // original slice comes from the known remaining capacity of BytesMut.
+                // Those bytes are valid reserved memory but have had no values written
+                // to them. Those are the exact bytes we want to read into.
+                read_buffer = mem::transmute::<&mut [MaybeUninit<u8>], &mut [u8]>(
+                    this.buf.spare_capacity_mut(),
+                );
+            }
+            match ready!(this.inner.as_mut().poll_read(cx, read_buffer)) {
+                Ok(bytes_read) => {
+                    // poll_read() wrote these bytes_read-many bytes into
+                    // the spare capacity, so we can mark those new bytes
+                    // as part of the length
+                    unsafe { this.buf.set_len(this.buf.len() + bytes_read) };
+                    *this.total_read += bytes_read;
+                    *this.inner_complete = bytes_read == 0;
+                }
+                Err(e) => {
+                    return Poll::Ready(Some(Err(e.into())));
                 }
             }
         }
@@ -159,7 +166,7 @@ mod tests {
 
             let single_partition = stream.try_next().await?.unwrap();
 
-            assert!(stream.try_next().await?.is_none());
+            assert_eq!(stream.try_next().await?, None);
             assert_eq!(single_partition[..], data[..]);
         }
         Ok(())
