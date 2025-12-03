@@ -2,7 +2,7 @@ use pin_project::pin_project;
 use std::{
     mem::{self, MaybeUninit},
     num::NonZero,
-    pin::{pin, Pin},
+    pin::Pin,
     task::Poll,
 };
 
