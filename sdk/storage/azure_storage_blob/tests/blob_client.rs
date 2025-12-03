@@ -188,6 +188,35 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
+async fn test_undelete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Existence Check
+    blob_client.get_properties(None).await?;
+
+    blob_client.delete(None).await?;
+
+    let response = blob_client.download(None).await;
+
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::NotFound, error.unwrap());
+
+    // Undelete and Assert
+    blob_client.undelete(None).await?;
+    let response = blob_client.get_properties(None).await?;
+    let content_length = response.content_length()?;
+    assert_eq!(17, content_length.unwrap());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
