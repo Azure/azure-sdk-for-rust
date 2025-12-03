@@ -26,17 +26,17 @@ pub enum StorageAccount {
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-/// * `account_type` - The storage account type to use. Defaults to `Standard` if `None`.
+/// * `account_type` - The storage account type to use.
 pub fn recorded_test_setup(
     recording: &Recording,
-    account_type: Option<StorageAccount>,
+    account_type: StorageAccount,
 ) -> (ClientOptions, String) {
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
 
     let account_name_var = match account_type {
-        None | Some(StorageAccount::Standard) => "AZURE_STORAGE_ACCOUNT_NAME",
-        Some(StorageAccount::Versioned) => "VERSIONED_AZURE_STORAGE_ACCOUNT_NAME",
+        StorageAccount::Standard => "AZURE_STORAGE_ACCOUNT_NAME",
+        StorageAccount::Versioned => "VERSIONED_AZURE_STORAGE_ACCOUNT_NAME",
     };
 
     let endpoint = format!(
@@ -74,10 +74,10 @@ pub fn get_container_name(recording: &Recording) -> String {
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-/// * `account_type` - The storage account type to use. Defaults to `Standard` if `None`.
+/// * `account_type` - The storage account type to use.
 pub fn get_blob_service_client(
     recording: &Recording,
-    account_type: Option<StorageAccount>,
+    account_type: StorageAccount,
 ) -> Result<BlobServiceClient> {
     let (options, endpoint) = recorded_test_setup(recording, account_type);
     let service_client_options = BlobServiceClientOptions {
@@ -97,11 +97,11 @@ pub fn get_blob_service_client(
 ///
 /// * `recording` - A reference to a Recording instance.
 /// * `create` - An optional flag to determine whether the container should also be created.
-/// * `account_type` - The storage account type to use. Defaults to `Standard` if `None`.
+/// * `account_type` - The storage account type to use.
 pub async fn get_container_client(
     recording: &Recording,
     create: bool,
-    account_type: Option<StorageAccount>,
+    account_type: StorageAccount,
 ) -> Result<BlobContainerClient> {
     let container_name = get_container_name(recording);
     let (options, endpoint) = recorded_test_setup(recording, account_type);

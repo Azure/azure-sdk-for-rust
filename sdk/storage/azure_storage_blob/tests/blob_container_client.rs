@@ -16,7 +16,7 @@ use azure_storage_blob::models::{
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name,
+    get_container_name, StorageAccount,
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -26,7 +26,7 @@ use tokio::time;
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, false, None).await?;
+    let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
 
     container_client.create_container(None).await?;
 
@@ -38,7 +38,7 @@ async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, false, None).await?;
+    let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
 
     // Container Doesn't Exists Scenario
     let response = container_client.get_properties(None).await;
@@ -68,7 +68,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
 async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, None).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
 
     // Set Metadata With Values
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
@@ -97,7 +97,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
 async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, false, None).await?;
+    let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
     let blob_names = ["testblob1".to_string(), "testblob2".to_string()];
 
     container_client.create_container(None).await?;
@@ -137,7 +137,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, false, None).await?;
+    let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
     let blob_names = [
         "testblob1".to_string(),
         "testblob2".to_string(),
@@ -254,7 +254,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
 async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let blob_service_client = get_blob_service_client(recording, None)?;
+    let blob_service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
     let container_name = get_container_name(recording);
     let container_client = blob_service_client.blob_container_client(&container_name.clone());
     let other_container_client = blob_service_client.blob_container_client(&container_name);
@@ -323,7 +323,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, None).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
 
     // Act
     let response = container_client.get_account_info(None).await?;
@@ -410,7 +410,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     // Recording Setup
     let recording = ctx.recording();
     recording.set_matcher(Matcher::BodilessMatcher).await?;
-    let container_client = get_container_client(recording, false, None).await?;
+    let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
     container_client.create_container(None).await?;
 
     // Set Access Policy w/ Multiple Policy Defined

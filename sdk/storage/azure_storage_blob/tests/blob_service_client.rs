@@ -21,7 +21,7 @@ use tokio::time;
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording, None)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
 
     let response = service_client
         .get_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
@@ -38,7 +38,7 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
 async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording, None)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
     let mut container_names = HashMap::from([
         (get_container_name(recording), 0),
         (get_container_name(recording), 0),
@@ -82,7 +82,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording, None)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
     let mut container_names = HashMap::from([
         (get_container_name(recording), 0),
         (get_container_name(recording), 0),
@@ -136,7 +136,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
 async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording, None)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
 
     // Storage Service Properties
     let blob_service_properties = BlobServiceProperties {
@@ -160,7 +160,7 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording, None)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
 
     // Act
     let response = service_client.get_account_info(None).await?;
@@ -179,9 +179,11 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording, None)?;
-    let container_client_1 = get_container_client(recording, true, None).await?;
-    let container_client_2 = get_container_client(recording, true, None).await?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
+    let container_client_1 =
+        get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client_2 =
+        get_container_client(recording, true, StorageAccount::Standard).await?;
 
     // Create Test Blobs with Tags
     let blob1_name = get_blob_name(recording);
