@@ -11,7 +11,7 @@ use azure_storage_blob::models::{
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name,
+    get_container_name, StorageAccount,
 };
 use futures::StreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};

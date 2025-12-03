@@ -5,7 +5,7 @@
 
 use azure_core_test::{recorded, stream::GeneratedStream, TestContext};
 use azure_storage_blob::BlobClient;
-use azure_storage_blob_test::{get_blob_name, get_container_client};
+use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt as _;
 use std::error::Error;
 
