@@ -7,6 +7,67 @@ use crate::models::{
     PageBlobClientCreateOptions, SignedIdentifier, SignedIdentifiers,
 };
 use std::collections::HashMap;
+use time::OffsetDateTime;
+
+/// Access conditions for blob operations.
+///
+/// Specifies HTTP conditional headers to control when a blob operation should be performed.
+#[derive(Clone, Default, Debug)]
+pub struct AccessConditions {
+    /// A condition that must be met (ETag match) for the request to be processed.
+    pub if_match: Option<String>,
+
+    /// A date-time value. Request is made only if the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A condition that must be met (ETag does not match) for the request to be processed.
+    pub if_none_match: Option<String>,
+
+    /// A date-time value. Request is made only if the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// A SQL where clause on blob tags to operate only on blobs with matching tag values.
+    pub if_tags: Option<String>,
+}
+
+impl AccessConditions {
+    /// Creates access conditions that allow overwriting an existing blob.
+    ///
+    /// This is equivalent to having no access conditions - the operation will succeed
+    /// whether the blob exists or not. This is the most common case for uploads.
+    pub fn allow_overwrite() -> Self {
+        Self::default()
+    }
+
+    /// Creates access conditions that only succeed if the resource does not exist.
+    ///
+    /// This sets `if_none_match` to "*" which causes the operation to fail if the resource already exists.
+    /// Use this when you want to ensure you're creating a new blob, not overwriting an existing one.
+    pub fn if_not_exists() -> Self {
+        Self {
+            if_none_match: Some("*".to_string()),
+            ..Default::default()
+        }
+    }
+
+    /// Creates access conditions that require the resource to exist with a specific ETag.
+    ///
+    /// Use this for optimistic concurrency - the operation will only succeed if the blob
+    /// hasn't been modified since you last read it.
+    pub fn if_match(etag: impl Into<String>) -> Self {
+        Self {
+            if_match: Some(etag.into()),
+            ..Default::default()
+        }
+    }
+
+    /// Creates empty access conditions (no restrictions).
+    ///
+    /// Alias for `allow_overwrite()`. The operation will succeed whether the blob exists or not.
+    pub fn none() -> Self {
+        Self::default()
+    }
+}
 
 /// Augments the current options bag to only create if the Page blob does not already exist.
 /// # Arguments
