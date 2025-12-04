@@ -51,6 +51,11 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     | Select-Object -ExpandProperty packages
     | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
 
+    if (!$packages) {
+      LogError "No publishable packages found in service directory: $ServiceDirectory"
+      return @()
+    }
+
     $packageManifests = @{}
     foreach ($package in $packages) {
       if ($package.manifest_path -replace '\\', '/' -match '/sdk/([^/]+)/') {
@@ -120,7 +125,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
   # if the change was in a service directory, but not in a package directory, test all the packages in the service directory
   [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
-  
+
   # remove files that target any specific package
   foreach ($package in $allPackageProperties) {
     $packagePathPattern = "^$( [Regex]::Escape($package.DirectoryPath.Replace('\', '/')) )/"
