@@ -56,7 +56,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     | Where-Object { $_.manifest_path.StartsWith($searchPath) -and "test" -notin ($_.name -split '_') }
 
     if (!$packages) {
-      LogError "No publishable packages found in service directory: $ServiceDirectory"
+      LogWarning "No publishable packages found in service directory: $ServiceDirectory"
       return @()
     }
 
