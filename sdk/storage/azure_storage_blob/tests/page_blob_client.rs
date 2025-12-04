@@ -11,7 +11,7 @@ use azure_storage_blob::{
         PageBlobClientSetSequenceNumberResultHeaders, SequenceNumberActionType,
     },
 };
-use azure_storage_blob_test::{get_blob_name, get_container_client};
+use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use std::error::Error;
 
 #[recorded::test]
@@ -19,7 +19,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
 
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
@@ -58,7 +58,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
     page_blob_client.create(512, None).await?;
@@ -88,7 +88,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
     page_blob_client.create(512, None).await?;
@@ -122,7 +122,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
@@ -170,7 +170,7 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Recording Setup
 
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
@@ -215,7 +215,7 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
 async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client_1 = container_client.blob_client(&get_blob_name(recording));
     let blob_client_2 = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client_1 = blob_client_1.page_blob_client();
@@ -270,7 +270,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
     page_blob_client.create(1024, None).await?;

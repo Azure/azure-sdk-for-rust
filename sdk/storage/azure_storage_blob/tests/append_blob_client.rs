@@ -6,14 +6,16 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+};
 use std::error::Error;
 
 #[recorded::test]
 async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let append_blob_client = blob_client.append_blob_client();
 
@@ -35,7 +37,7 @@ async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>>
 async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let append_blob_client = blob_client.append_blob_client();
     append_blob_client.create(None).await?;
@@ -75,7 +77,7 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let blob_client_2 = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client_2, None, None).await?;
@@ -106,7 +108,7 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
 async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let append_blob_client = blob_client.append_blob_client();
     append_blob_client.create(None).await?;
