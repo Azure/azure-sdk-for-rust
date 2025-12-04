@@ -14,7 +14,6 @@ documentation = "https://docs.rs/azure_messaging_servicebus"
 keywords = ["sdk", "azure", "messaging", "cloud", "servicebus"]
 categories = ["api-bindings"]
 edition.workspace = true
-publish = true
 
 [dependencies]
 async-lock.workspace = true
