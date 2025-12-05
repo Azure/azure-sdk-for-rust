@@ -135,20 +135,6 @@ pub enum BlobExpiryOptions {
     UnknownValue(String),
 }
 
-/// The immutability policy mode.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum BlobImmutabilityPolicyMode {
-    /// The immutability policy is locked.
-    Locked,
-
-    /// The immutability policy is mutable.
-    Mutable,
-
-    /// The immutability policy is unlocked.
-    Unlocked,
-}
-
 /// The blob type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
@@ -253,12 +239,15 @@ pub enum GeoReplicationStatusType {
     UnknownValue(String),
 }
 
-/// The immutability policy mode used in requests.
+/// The immutability policy mode used in requests and responses.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ImmutabilityPolicyMode {
     /// The immutability policy is locked.
     Locked,
+
+    /// The immutability policy is mutable. Should never be set, only returned.
+    Mutable,
 
     /// The immutability policy is unlocked.
     Unlocked,

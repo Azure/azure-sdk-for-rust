@@ -781,9 +781,6 @@ pub struct BlobClientSetImmutabilityPolicyOptions<'a> {
     /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
     pub if_unmodified_since: Option<OffsetDateTime>,
 
-    /// Specifies the date time when the blobs immutability policy is set to expire.
-    pub immutability_policy_expiry: Option<OffsetDateTime>,
-
     /// Specifies the immutability policy mode to set on the blob.
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
 

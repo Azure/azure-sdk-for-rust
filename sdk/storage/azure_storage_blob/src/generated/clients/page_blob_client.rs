@@ -317,8 +317,8 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `blob_content_length` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must
-    ///   be aligned to a 512-byte boundary.
+    /// * `size` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to
+    ///   a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -358,7 +358,7 @@ impl PageBlobClient {
     #[tracing::function("Storage.Blob.PageBlob.create")]
     pub async fn create(
         &self,
-        blob_content_length: u64,
+        size: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
     ) -> Result<Response<PageBlobClientCreateResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -397,7 +397,7 @@ impl PageBlobClient {
         if let Some(blob_content_language) = options.blob_content_language {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
-        request.insert_header("x-ms-blob-content-length", blob_content_length.to_string());
+        request.insert_header("x-ms-blob-content-length", size.to_string());
         if let Some(blob_content_md5) = options.blob_content_md5 {
             request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
         }
@@ -687,8 +687,8 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `blob_content_length` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must
-    ///   be aligned to a 512-byte boundary.
+    /// * `size` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to
+    ///   a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -724,7 +724,7 @@ impl PageBlobClient {
     #[tracing::function("Storage.Blob.PageBlob.resize")]
     pub async fn resize(
         &self,
-        blob_content_length: u64,
+        size: u64,
         options: Option<PageBlobClientResizeOptions<'_>>,
     ) -> Result<Response<PageBlobClientResizeResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -751,7 +751,7 @@ impl PageBlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        request.insert_header("x-ms-blob-content-length", blob_content_length.to_string());
+        request.insert_header("x-ms-blob-content-length", size.to_string());
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
                 "x-ms-encryption-algorithm",

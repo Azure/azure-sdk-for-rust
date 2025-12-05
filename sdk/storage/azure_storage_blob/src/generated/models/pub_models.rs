@@ -9,8 +9,8 @@ use super::{
         Blob_tag_setTag, BlobsBlob, Committed_blocksBlock, Container_itemsContainer, CorsCorsRule,
         SchemaField, Uncommitted_blocksBlock,
     },
-    AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
-    GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
+    AccessTier, ArchiveStatus, BlobType, CopyStatus, GeoReplicationStatusType,
+    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     QueryRequestType, QueryType, RehydratePriority,
 };
 use azure_core::{
@@ -123,10 +123,6 @@ pub struct BlobClientCopyFromUrlResult;
 #[derive(SafeDebug)]
 pub struct BlobClientCreateSnapshotResult;
 
-/// Contains results for `BlobClient::delete_immutability_policy()`
-#[derive(SafeDebug)]
-pub struct BlobClientDeleteImmutabilityPolicyResult;
-
 /// Contains results for `BlobClient::download()`
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult;
@@ -151,17 +147,9 @@ pub struct BlobClientRenewLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetExpiryResult;
 
-/// Contains results for `BlobClient::set_immutability_policy()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetImmutabilityPolicyResult;
-
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
-
-/// Contains results for `BlobClient::undelete()`
-#[derive(SafeDebug)]
-pub struct BlobClientUndeleteResult;
 
 /// Contains results for `BlobContainerClient::acquire_lease()`
 #[derive(SafeDebug)]
@@ -469,7 +457,7 @@ pub struct BlobPropertiesInternal {
         rename = "ImmutabilityPolicyMode",
         skip_serializing_if = "Option::is_none"
     )]
-    pub immutability_policy_mode: Option<BlobImmutabilityPolicyMode>,
+    pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
 
     /// Whether the blob is incremental copy.
     #[serde(rename = "IncrementalCopy", skip_serializing_if = "Option::is_none")]
