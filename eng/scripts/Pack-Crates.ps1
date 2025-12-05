@@ -95,73 +95,65 @@ function Create-ApiViewFile($package) {
   "$packagePath/review/$packageName.rust.json"
 }
 
-$originalLocation = Get-Location
-try {
-  Set-Location $RepoRoot
+[array]$packages = Get-PackagesToBuild
+$packageParams = @("--manifest-path", "$RepoRoot/Cargo.toml")
+foreach ($package in $packages) {
+  $packageParams += "--package", $package.name
+}
 
-  [array]$packages = Get-PackagesToBuild
-  $packageParams = @()
+if ($NoVerify) {
+  $packageParams += "--no-verify"
+}
+
+LogGroupStart "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
+Write-Host "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
+& cargo publish --locked --dry-run --allow-dirty @packageParams 2>&1 `
+| Tee-Object -Variable packResult `
+| ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+LogGroupEnd
+
+Write-Host "Finished packing crates"
+if ($LASTEXITCODE) {
+  Write-Host "cargo publish failed with exit code $LASTEXITCODE"
+  exit $LASTEXITCODE
+}
+
+if ($OutputPath) {
+  $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
+
   foreach ($package in $packages) {
-    $packageParams += "--package", $package.name
-  }
+    $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
+    $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
+    $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
+    $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
 
-  if ($NoVerify) {
-    $packageParams += "--no-verify"
-  }
-
-  LogGroupStart "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
-  Write-Host "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
-  & cargo publish --locked --dry-run --allow-dirty @packageParams 2>&1 `
-  | Tee-Object -Variable packResult `
-  | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
-  LogGroupEnd
-
-  Write-Host "Finished packing crates"
-  if ($LASTEXITCODE) {
-    Write-Host "cargo publish failed with exit code $LASTEXITCODE"
-    exit $LASTEXITCODE
-  }
-
-  if ($OutputPath) {
-    $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
-
-    foreach ($package in $packages) {
-      $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
-      $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
-      $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
-      $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
-
-      if (Test-Path -Path $targetContentsPath) {
-        Remove-Item -Path $targetContentsPath -Recurse -Force
-      }
-
-      Write-Host "Copying package contents '$($package.name)' to '$targetContentsPath'"
-      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
-      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse
-
-      Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
-      Copy-Item -Path "$sourcePath.crate" -Destination $targetPath -Force
-
-      Write-Host "Creating API review file"
-      $apiReviewFile = Create-ApiViewFile $package
-
-      Write-Host "Copying API review file to '$targetApiReviewFile'"
-      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
-    }
-  }
-
-  if ($OutBuildOrderFile) {
-    $buildOrder = @()
-    foreach ($line in $packResult) {
-      if ($line -match '^\s*Packaging (\w*) ([\w\d\.-]*)') {
-        $buildOrder += $matches[1]
-      }
+    if (Test-Path -Path $targetContentsPath) {
+      Remove-Item -Path $targetContentsPath -Recurse -Force
     }
 
-    Write-Host "Build Order: $($buildOrder -join ', ')"
-    ConvertTo-Json $buildOrder -Depth 100 | Set-Content $OutBuildOrderFile
+    Write-Host "Copying package contents '$($package.name)' to '$targetContentsPath'"
+    New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
+    Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse
+
+    Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
+    Copy-Item -Path "$sourcePath.crate" -Destination $targetPath -Force
+
+    Write-Host "Creating API review file"
+    $apiReviewFile = Create-ApiViewFile $package
+
+    Write-Host "Copying API review file to '$targetApiReviewFile'"
+    Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
   }
 }
-finally {
-  Set-Location $originalLocation
+
+if ($OutBuildOrderFile) {
+  $buildOrder = @()
+  foreach ($line in $packResult) {
+    if ($line -match '^\s*Packaging (\w*) ([\w\d\.-]*)') {
+      $buildOrder += $matches[1]
+    }
+  }
+
+  Write-Host "Build Order: $($buildOrder -join ', ')"
+  ConvertTo-Json $buildOrder -Depth 100 | Set-Content $OutBuildOrderFile
 }

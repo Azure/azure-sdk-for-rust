@@ -43,25 +43,22 @@ foreach ($file in $tspFiles) {
   if ([string]::IsNullOrEmpty($dir)) {
     $dir = "."
   }
+  $fullDir = Join-Path $Path $dir
 
-  Write-Host "`nRunning tsp-client update in: $dir" -ForegroundColor Cyan
+  Write-Host "`nRunning tsp-client update in: $fullDir" -ForegroundColor Cyan
 
   try {
-    Push-Location $dir
-    tsp-client update
+    tsp-client update --output-dir $fullDir
 
     if ($LASTEXITCODE -ne 0) {
-      Write-Warning "tsp-client update failed in directory: $dir (exit code: $LASTEXITCODE)"
+      Write-Warning "tsp-client update failed in directory: $fullDir (exit code: $LASTEXITCODE)"
     }
     else {
-      Write-Host "Successfully updated: $dir" -ForegroundColor Green
+      Write-Host "Successfully updated: $fullDir" -ForegroundColor Green
     }
   }
   catch {
-    Write-Error "Error running tsp-client update in directory: $dir - $_"
-  }
-  finally {
-    Pop-Location
+    Write-Error "Error running tsp-client update in directory: $fullDir - $_"
   }
 }
 
