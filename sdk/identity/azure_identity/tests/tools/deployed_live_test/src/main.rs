@@ -104,7 +104,7 @@ async fn try_storage(
     storage_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let endpoint = format!("https://{}.blob.core.windows.net", storage_name);
-    BlobServiceClient::new(endpoint.as_str(), credential, None)?
+    BlobServiceClient::new(endpoint.as_str(), Some(credential), None)?
         .get_properties(None)
         .await
         .map_err(|e| format!("BlobServiceClient::get_properties failed: {:?}", e).into())

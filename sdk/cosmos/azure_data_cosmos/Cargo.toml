@@ -21,6 +21,7 @@ serde_json.workspace = true
 serde.workspace = true
 tracing.workspace = true
 url.workspace = true
+moka.workspace = true
 
 [dev-dependencies]
 azure_identity.workspace = true

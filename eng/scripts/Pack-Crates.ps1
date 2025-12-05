@@ -16,62 +16,13 @@ param(
 $ErrorActionPreference = 'Stop'
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
 Write-Host @"
 Packing crates with
     RUSTFLAGS: '${env:RUSTFLAGS}'
 "@
 
-function Get-OutputPackageNames($workspacePackages) {
-  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
-  $packablePackageNames = $packablePackages.name
-
-  $names = @()
-  switch ($PsCmdlet.ParameterSetName) {
-    'Named' {
-      $names = $PackageNames
-    }
-
-    'PackageInfo' {
-      $packageInfoFiles = Get-ChildItem -Path $PackageInfoDirectory -Filter '*.json' -File
-      foreach ($packageInfoFile in $packageInfoFiles) {
-        $packageInfo = Get-Content -Path $packageInfoFile.FullName | ConvertFrom-Json
-        $names += $packageInfo.name
-      }
-    }
-
-    default {
-      return $packablePackageNames
-    }
-  }
-
-  foreach ($name in $names) {
-    if (-not $packablePackageNames.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace or does not publish"
-      exit 1
-    }
-  }
-
-  return $names
-}
-
-function Get-CargoPackages() {
-  $metadata = Get-CargoMetadata
-
-  # Path based dependencies are assumed to be unreleased package versions. In
-  # non-release builds these should be packed as well.
-  foreach ($package in $metadata.packages) {
-    $package.UnreleasedDependencies = @()
-    foreach ($dependency in $package.dependencies) {
-      if ($dependency.path -and $dependency.kind -ne 'dev') {
-        $dependencyPackage = $metadata.packages | Where-Object -Property name -EQ -Value $dependency.name | Select-Object -First 1
-        $package.UnreleasedDependencies += $dependencyPackage
-      }
-    }
-  }
-
-  return $metadata.packages
-}
 
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
@@ -105,8 +56,33 @@ function Get-PackagesToBuild() {
   return $packagesToBuild
 }
 
-function Get-CargoMetadata() {
-  cargo metadata --no-deps --format-version 1 --manifest-path "$RepoRoot/Cargo.toml" | ConvertFrom-Json -Depth 100 -AsHashtable
+function Get-OutputPackageNames($workspacePackages) {
+  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
+  $packablePackageNames = $packablePackages.name
+
+  $names = @()
+  switch ($PsCmdlet.ParameterSetName) {
+    'Named' {
+      $names = $PackageNames
+    }
+
+    'PackageInfo' {
+      $names = Get-PackageNamesFromPackageInfo $PackageInfoDirectory
+    }
+
+    default {
+      return $packablePackageNames
+    }
+  }
+
+  foreach ($name in $names) {
+    if (-not $packablePackageNames.Contains($name)) {
+      Write-Error "Package '$name' is not in the workspace or does not publish"
+      exit 1
+    }
+  }
+
+  return $names
 }
 
 function Create-ApiViewFile($package) {

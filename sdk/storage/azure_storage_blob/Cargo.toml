@@ -21,7 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 serde.workspace = true
 serde_json.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
+time.workspace = true
 url.workspace = true
 uuid.workspace = true
 
