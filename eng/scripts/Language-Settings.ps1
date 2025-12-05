@@ -44,12 +44,21 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
       $searchPath = Join-Path $searchPath $ServiceDirectory -Resolve
     }
 
-    # when a package is marked `publish = false` in the Cargo.toml, `cargo metadata` returns an empty array for
-    # `publish`, otherwise it returns null. We only want to include packages where `publish` is null.
+    # Enumerate packages that do not have "test" as an independent word in the
+    # name.
+    # Examples:
+    # "azure_core" - included
+    # "azure_core_test" - excluded
+    # "azure_attestation" - included
     $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
-    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
+    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and "test" -notin ($_.name -split '_') }
+
+    if (!$packages) {
+      LogWarning "No publishable packages found in service directory: $ServiceDirectory"
+      return @()
+    }
 
     $packageManifests = @{}
     foreach ($package in $packages) {
@@ -120,7 +129,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
   # if the change was in a service directory, but not in a package directory, test all the packages in the service directory
   [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
-  
+
   # remove files that target any specific package
   foreach ($package in $allPackageProperties) {
     $packagePathPattern = "^$( [Regex]::Escape($package.DirectoryPath.Replace('\', '/')) )/"
