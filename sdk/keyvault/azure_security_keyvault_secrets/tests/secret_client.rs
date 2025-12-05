@@ -148,7 +148,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     assert_eq!(secret2.value, Some("secret-value-2".into()));
 
     // List secrets.
-    let mut pager = client.list_secret_properties(None)?.into_stream();
+    let mut pager = client.list_secret_properties(None)?;
     while let Some(secret) = pager.try_next().await? {
         // Get the secret name from the ID.
         let name = secret.resource_id()?.name;
@@ -201,11 +201,11 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
     loop {
         match client.purge_deleted_secret(name.as_ref(), None).await {
             Ok(_) => {
-                println!("{name} has been purged");
+                tracing::debug!("{name} has been purged");
                 break;
             }
             Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
-                println!(
+                tracing::debug!(
                     "Retrying in {} seconds",
                     retry.duration().unwrap_or_default().as_secs_f32()
                 );
@@ -527,7 +527,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 }
 
                 first_pager
-                    .continuation_token()
+                    .into_continuation_token()
                     .expect("expected continuation token to be created after first page")
             };
             let options = SecretClientListSecretPropertiesOptions {

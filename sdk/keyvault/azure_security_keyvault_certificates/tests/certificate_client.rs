@@ -219,7 +219,7 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
         .await?;
 
     // List certificates.
-    let mut pager = client.list_certificate_properties(None)?.into_stream();
+    let mut pager = client.list_certificate_properties(None)?;
     while let Some(certificate) = pager.try_next().await? {
         // Get the certificate name from the ID.
         let name = certificate.resource_id()?.name;
@@ -268,11 +268,11 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     loop {
         match client.purge_deleted_certificate(NAME.as_ref(), None).await {
             Ok(_) => {
-                println!("{NAME} has been purged");
+                tracing::debug!("{NAME} has been purged");
                 break;
             }
             Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
-                println!(
+                tracing::debug!(
                     "Retrying in {} seconds",
                     retry.duration().unwrap_or_default().as_secs_f32()
                 );

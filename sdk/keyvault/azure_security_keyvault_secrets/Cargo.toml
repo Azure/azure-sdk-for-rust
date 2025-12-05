@@ -34,6 +34,7 @@ azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 include-file.workspace = true
 rand.workspace = true
 tokio.workspace = true
+tracing.workspace = true
 
 [build-dependencies]
 rustc_version.workspace = true
