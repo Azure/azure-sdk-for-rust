@@ -262,8 +262,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     Ok(())
 }
 
-// TODO: Mark as playback-only once that PR merges
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
