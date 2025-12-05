@@ -1,10 +1,5 @@
 use pin_project::pin_project;
-use std::{
-    mem::{self, MaybeUninit},
-    num::NonZero,
-    pin::Pin,
-    task::Poll,
-};
+use std::{mem, num::NonZero, pin::Pin, slice, task::Poll};
 
 use azure_core::stream::SeekableStream;
 use bytes::{Bytes, BytesMut};
@@ -59,14 +54,21 @@ impl Stream for PartitionedStream {
                     Poll::Ready(Some(Ok(ret.freeze())))
                 };
             }
-            match ready!(this.inner.as_mut().poll_read(cx, unsafe {
+
+            let spare_capacity = this.buf.spare_capacity_mut();
+            let spare_capacity = unsafe {
                 // spare_capacity_mut() gives us the known remaining capacity of BytesMut.
                 // Those bytes are valid reserved memory but have had no values written
                 // to them. Those are the exact bytes we want to write into.
-                // This transmuted data is not saved to a variable, leaving it inaccessible
-                // to anything but poll_read().
-                mem::transmute::<&mut [MaybeUninit<u8>], &mut [u8]>(this.buf.spare_capacity_mut())
-            })) {
+                // MaybeUninit<u8> can be safely cast into u8, and so this pointer cast
+                // is safe. Since the spare capacity length is safely known, we can
+                // provide those to from_raw_parts without worry.
+                slice::from_raw_parts_mut(
+                    spare_capacity.as_mut_ptr() as *mut u8,
+                    spare_capacity.len(),
+                )
+            };
+            match ready!(this.inner.as_mut().poll_read(cx, spare_capacity)) {
                 Ok(bytes_read) => {
                     // poll_read() wrote bytes_read-many bytes into the spare capacity.
                     // those values are therefore initialized and we can add them to
