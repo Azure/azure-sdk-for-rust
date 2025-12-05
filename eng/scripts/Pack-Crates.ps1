@@ -57,9 +57,6 @@ function Get-PackagesToBuild() {
 }
 
 function Get-OutputPackageNames($workspacePackages) {
-  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
-  $packablePackageNames = $packablePackages.name
-
   $names = @()
   switch ($PsCmdlet.ParameterSetName) {
     'Named' {
@@ -71,12 +68,12 @@ function Get-OutputPackageNames($workspacePackages) {
     }
 
     default {
-      return $packablePackageNames
+      return $workspacePackages.name
     }
   }
 
   foreach ($name in $names) {
-    if (-not $packablePackageNames.Contains($name)) {
+    if (-not $workspacePackages.name.Contains($name)) {
       Write-Error "Package '$name' is not in the workspace or does not publish"
       exit 1
     }
@@ -109,9 +106,18 @@ try {
     $packageParams += "--no-verify"
   }
 
-  LogGroupStart "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
-  Write-Host "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
-  & cargo publish --locked --dry-run --allow-dirty @packageParams 2>&1 `
+  # Some packages are not publishable, in cases where the script is not in a
+  # release context, run cargo package` instead of `cargo publish --dry-run`.
+  # The two are equivalent (https://doc.rust-lang.org/cargo/reference/publishing.html)
+  # though `cargo publish` has additional checks like publishability.
+  $subCommand = @("package")
+  if ($Release) {
+    $subCommand = @("publish", "--dry-run")
+  }
+
+  LogGroupStart "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ')"
+  Write-Host "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ')"
+  & cargo @subCommand --locked --allow-dirty @packageParams 2>&1 `
   | Tee-Object -Variable packResult `
   | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
   LogGroupEnd
