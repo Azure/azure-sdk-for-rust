@@ -12,7 +12,7 @@ use crate::{
         BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
     },
     models::{
-        AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
+        AccessConditions, AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
         BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
         BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetLegalHoldOptions,
@@ -224,21 +224,34 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `data` - The blob data to upload.
-    /// * `overwrite` - Whether the blob to be uploaded should overwrite the current data. If True, `upload()` will overwrite the existing data.
-    ///   If False, the operation will fail with ResourceExistsError.
     /// * `content_length` - Total length of the blob data to be uploaded.
+    /// * `access_conditions` - Access conditions to control when the upload should succeed.
     /// * `options` - Optional configuration for the request.
+    ///
     pub async fn upload(
         &self,
         data: RequestContent<Bytes, NoFormat>,
-        overwrite: bool,
         content_length: u64,
+        access_conditions: AccessConditions,
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
         let mut options = options.unwrap_or_default();
 
-        if !overwrite {
-            options.if_none_match = Some(String::from("*"));
+        // Apply access conditions specified in AccessConditions(will squash, ie. take precedence over any provided in options bag as-is)
+        if access_conditions.if_match.is_some() {
+            options.if_match = access_conditions.if_match;
+        }
+        if access_conditions.if_modified_since.is_some() {
+            options.if_modified_since = access_conditions.if_modified_since;
+        }
+        if access_conditions.if_none_match.is_some() {
+            options.if_none_match = access_conditions.if_none_match;
+        }
+        if access_conditions.if_unmodified_since.is_some() {
+            options.if_unmodified_since = access_conditions.if_unmodified_since;
+        }
+        if access_conditions.if_tags.is_some() {
+            options.if_tags = access_conditions.if_tags;
         }
 
         self.block_blob_client()

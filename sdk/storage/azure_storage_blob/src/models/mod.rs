@@ -3,6 +3,8 @@
 
 mod extensions;
 
+pub use extensions::AccessConditions;
+
 pub use crate::generated::models::{
     AccessPolicy, AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
     AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockFromUrlResultHeaders,
