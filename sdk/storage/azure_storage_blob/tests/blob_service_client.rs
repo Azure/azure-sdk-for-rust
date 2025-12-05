@@ -3,15 +3,15 @@
 
 use azure_core::http::{RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
-use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-    BlobServiceProperties, BlockBlobClientUploadOptions,
+    BlobServiceProperties, BlockBlobClientUploadOptions, GeoReplicationStatusType,
 };
+use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name,
+    get_container_name, recorded_test_setup,
 };
 use futures::StreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -259,5 +259,38 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
     container_client_1.delete_container(None).await?;
     container_client_2.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test(playback)]
+async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording);
+    let endpoint = endpoint.replace(
+        ".blob.core.windows.net/",
+        "-secondary.blob.core.windows.net/",
+    );
+    let service_client_options = BlobServiceClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let service_client = BlobServiceClient::new(
+        &endpoint,
+        Some(recording.credential()),
+        Some(service_client_options),
+    )?;
+
+    let service_stats = service_client.get_statistics(None).await?;
+
+    // Assert
+    let stats = service_stats.into_model()?;
+    assert!(stats.geo_replication.is_some());
+    assert_eq!(
+        GeoReplicationStatusType::Live,
+        stats.clone().geo_replication.unwrap().status.unwrap()
+    );
+    assert!(stats.geo_replication.unwrap().last_sync_time.is_some());
+
     Ok(())
 }
