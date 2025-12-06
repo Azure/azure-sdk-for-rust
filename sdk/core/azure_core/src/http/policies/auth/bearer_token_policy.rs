@@ -72,24 +72,25 @@ impl Policy for BearerTokenAuthorizationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
+        let mut ctx = ctx.to_borrowed();
         self.on_request
-            .on_request(ctx, request, self.authorizer.as_ref())
+            .on_request(&mut ctx, request, self.authorizer.as_ref())
             .await?;
 
-        let mut response = next[0].send(ctx, request, &next[1..]).await?;
+        let mut response = next[0].send(&ctx, request, &next[1..]).await?;
 
         if response.status() == StatusCode::Unauthorized {
             self.authorizer.invalidate_cache().await;
             if let Some(ref callback) = self.on_challenge {
                 if response.headers().get_str(&WWW_AUTHENTICATE).is_ok() {
                     callback
-                        .on_challenge(ctx, request, self.authorizer.as_ref(), response.headers())
+                        .on_challenge(&ctx, request, self.authorizer.as_ref(), response.headers())
                         .await?;
                     #[cfg(not(target_arch = "wasm32"))]
                     if let SeekableStream(stream) = request.body_mut() {
                         stream.reset().await?;
                     }
-                    response = next[0].send(ctx, request, &next[1..]).await?
+                    response = next[0].send(&ctx, request, &next[1..]).await?
                 }
             }
         }
@@ -141,7 +142,7 @@ pub trait OnRequest: std::fmt::Debug + Send + Sync {
     /// * `authorizer` - Helper used to acquire an access token and set the request's authorization header
     async fn on_request(
         &self,
-        context: &Context,
+        context: &mut Context,
         request: &mut Request,
         authorizer: &dyn Authorizer,
     ) -> Result<()>;
@@ -265,7 +266,7 @@ struct DefaultOnRequest {
 impl OnRequest for DefaultOnRequest {
     async fn on_request(
         &self,
-        context: &Context,
+        context: &mut Context,
         request: &mut Request,
         authorizer: &dyn Authorizer,
     ) -> Result<()> {
@@ -653,7 +654,7 @@ mod tests {
     impl OnRequest for TestOnRequest {
         async fn on_request(
             &self,
-            _context: &Context,
+            _: &mut Context,
             request: &mut Request,
             authorizer: &dyn Authorizer,
         ) -> Result<()> {
