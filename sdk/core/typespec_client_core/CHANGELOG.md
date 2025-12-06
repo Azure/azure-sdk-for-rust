@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `Request::body_mut()`.
 - Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
 
 ### Breaking Changes
