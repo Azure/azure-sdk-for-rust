@@ -268,7 +268,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording, StorageAccount::Versioned);
+    let (options, endpoint) = recorded_test_setup(recording, StorageAccount::Standard);
     let endpoint = endpoint.replace(
         ".blob.core.windows.net/",
         "-secondary.blob.core.windows.net/",
