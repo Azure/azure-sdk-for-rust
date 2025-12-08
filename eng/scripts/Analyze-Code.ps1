@@ -19,6 +19,7 @@ Write-Host @"
 Analyzing code with
     RUSTFLAGS: '${env:RUSTFLAGS}'
     RUSTDOCFLAGS: '${env:RUSTDOCFLAGS}'
+    RUST_LOG: '${env:RUST_LOG}'
 "@
 
 if ($CheckWasm) {
