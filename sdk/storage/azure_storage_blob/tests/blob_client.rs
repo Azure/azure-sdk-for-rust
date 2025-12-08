@@ -3,21 +3,25 @@
 
 use azure_core::{
     http::{ClientOptions, RequestContent, StatusCode, Url},
+    time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
-use azure_core_test::{recorded, Matcher, TestContext};
+use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
         AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
         BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
         BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientUploadOptions, LeaseState,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
+        ImmutabilityPolicyMode, LeaseState,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
@@ -26,7 +30,7 @@ use tokio::time;
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, false).await?;
+    let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Container Doesn't Exist Scenario
@@ -64,7 +68,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
@@ -94,7 +98,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     let data = b"hello rusty world";
@@ -168,7 +172,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
@@ -191,7 +195,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_undelete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
@@ -218,7 +222,7 @@ async fn test_undelete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data = b"hello rusty world";
 
@@ -251,7 +255,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     // Recording Setup
 
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data = b"hello rusty world";
 
@@ -299,7 +303,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
@@ -323,7 +327,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_name = get_blob_name(recording);
     let blob_client = container_client.blob_client(&blob_name.clone());
     let other_blob_client = container_client.blob_client(&blob_name);
@@ -379,7 +383,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
 async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_name = get_blob_name(recording);
     let blob_client = container_client.blob_client(&blob_name.clone());
     create_test_blob(&blob_client, None, None).await?;
@@ -469,7 +473,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     recording.set_matcher(Matcher::BodilessMatcher).await?;
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
@@ -502,7 +506,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
 
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Act
@@ -675,7 +679,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, false).await?;
+    let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     container_client.create_container(None).await?;
     create_test_blob(&blob_client, None, None).await?;
@@ -699,6 +703,83 @@ async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let legal_hold = response.legal_hold()?;
     assert!(!legal_hold.unwrap());
+
+    blob_client.delete(None).await?;
+
+    Ok(())
+}
+
+#[recorded::test(playback)]
+async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, false, StorageAccount::Versioned).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Set Immutability Policy (No Mode Specified, Default to Unlocked)
+    let expiry_1_str = recording.var(
+        "expiry_1",
+        Some(VarOptions {
+            default_value: Some(
+                to_rfc3339(&(OffsetDateTime::now_utc() + Duration::from_secs(5))).into(),
+            ),
+            ..Default::default()
+        }),
+    );
+    let expiry_1 = parse_rfc3339(&expiry_1_str)?;
+
+    blob_client.set_immutability_policy(&expiry_1, None).await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+    assert_eq!(ImmutabilityPolicyMode::Unlocked, mode.unwrap());
+    // Need to ignore nanoseconds due to Service truncation
+    assert_eq!(expiry_1.replace_nanosecond(0)?, expires_on.unwrap());
+
+    // Delete Immutability Policy
+    blob_client.delete_immutability_policy(None).await?;
+    let response = blob_client.get_properties(None).await?;
+
+    // Assert
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+    assert!(mode.is_none());
+    assert!(expires_on.is_none());
+
+    // Set Immutability Policy (Locked Mode)
+    let expiry_2_str = recording.var(
+        "expiry_2",
+        Some(VarOptions {
+            default_value: Some(
+                to_rfc3339(&(OffsetDateTime::now_utc() + Duration::from_secs(5))).into(),
+            ),
+            ..Default::default()
+        }),
+    );
+    let expiry_2 = parse_rfc3339(&expiry_2_str)?;
+    let immutability_policy_options = BlobClientSetImmutabilityPolicyOptions {
+        immutability_policy_mode: Some(ImmutabilityPolicyMode::Locked),
+        ..Default::default()
+    };
+    blob_client
+        .set_immutability_policy(&expiry_2, Some(immutability_policy_options))
+        .await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let mode = response.immutability_policy_mode()?;
+    let expires_on = response.immutability_policy_expires_on()?;
+    assert_eq!(ImmutabilityPolicyMode::Locked, mode.unwrap());
+    // Need to ignore nanoseconds due to Service truncation
+    assert_eq!(expiry_2.replace_nanosecond(0)?, expires_on.unwrap());
+
+    // Sleep to allow immutability policy to expire
+    time::sleep(Duration::from_secs(5)).await;
 
     blob_client.delete(None).await?;
 

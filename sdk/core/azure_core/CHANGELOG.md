@@ -5,11 +5,16 @@
 ### Features Added
 
 - Added `continuation_token` to `PagerOptions`.
+- Added extensible request authorization and authentication challenge handling to `BearerTokenAuthorizationPolicy`.
+  - `OnRequest`, `OnChallenge`, and `Authorizer` traits define callbacks for these features.
+  - `with_on_request()` and `with_on_challenge()` builder methods set callbacks for a policy instance.
+- Added `Request::body_mut()`.
 - Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
 
 ### Breaking Changes
 
 - Changed `Pager::with_callback` to take a `PagerOptions` as the second parameter rather than a `Context` parameter.
+- Moved `BearerTokenAuthorizationPolicy` into `azure_core::http::policies::auth`.
 - Removed `ItemIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
 - Removed `PageIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
 
