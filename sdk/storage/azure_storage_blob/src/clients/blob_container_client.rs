@@ -25,7 +25,7 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
-        policies::{BearerTokenAuthorizationPolicy, Policy},
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         NoFormat, Pager, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     tracing, Result,
