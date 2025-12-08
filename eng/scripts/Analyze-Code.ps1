@@ -28,6 +28,10 @@ if ($Deny) {
   Invoke-LoggedCommand "cargo install cargo-deny --locked"
 }
 
+$cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
+Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')"
+Invoke-LoggedCommand "cargo audit"
+
 Invoke-LoggedCommand "cargo check --package azure_core --all-features --all-targets --keep-going"
 
 Invoke-LoggedCommand "cargo fmt --all -- --check"

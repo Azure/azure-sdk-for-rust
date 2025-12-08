@@ -43,17 +43,9 @@ function Get-OutputPackageNames($workspacePackages) {
 $packages = Get-CargoPackages
 $outputPackageNames = Get-OutputPackageNames $packages
 
-# Read version from cgmanifest.json. If ignored the currently installed or
-# "latest" version is used.
 $versionParams = @()
 if (!$IgnoreCgManifestVersion) {
-  $versionParams += '--version'
-  $cgManifest = Get-Content ([System.IO.Path]::Combine($PSScriptRoot, '..', 'cgmanifest.json')) `
-  | ConvertFrom-Json
-  $versionParams += $cgManifest.
-  registrations.
-  Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq 'cargo-semver-checks' }).
-  component.cargo.version
+  $versionParams = Get-VersionParamsFromCgManifest cargo-semver-checks
 }
 
 LogGroupStart "cargo install cargo-semver-checks --locked $($versionParams -join ' ')"
