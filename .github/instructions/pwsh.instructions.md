@@ -1,6 +1,8 @@
-# PowerShell Script Instructions
+---
+applyTo: "**/*.ps1"
+---
 
-These rules apply to all PowerShell scripts (`**/*.ps1`) in the repository.
+# PowerShell Script Instructions
 
 ## Path Handling
 
@@ -43,6 +45,17 @@ These rules apply to all PowerShell scripts (`**/*.ps1`) in the repository.
   - Functions should have clear parameters and return values
   - Example: Extract test execution logic into a shared function rather than duplicating it
 
+## Parameter Defaults
+
+- **Use default parameter values when sensible defaults are available**
+  - Set default values directly in the parameter declaration instead of checking and setting in the script body
+  - Example:
+    ```powershell
+    param(
+      [string]$OutputDirectory = ([System.IO.Path]::Combine($PSScriptRoot, '..', 'output'))
+    )
+    ```
+
 ## Error Handling
 
 - **Use `LogError` for error messages if common.ps1 is imported**
@@ -63,6 +76,9 @@ These rules apply to all PowerShell scripts (`**/*.ps1`) in the repository.
       exit 1
     }
     ```
+- **Use `LogWarning` for warning messages if common.ps1 is imported**
+  - If you've imported common.ps1, use `LogWarning` instead of `Write-Warning`
+  - Example: `LogWarning "Test results directory not found"`
 - **Fail fast on errors**
   - Exit immediately when a critical operation fails
-  - Don't accumulate errors and summarize at the end
+  - Unless otherwise specified, don't accumulate errors and summarize at the end

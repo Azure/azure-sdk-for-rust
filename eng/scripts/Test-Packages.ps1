@@ -70,31 +70,33 @@ function Write-TestSummary {
 # Helper function to run cargo test with JSON output
 function Invoke-CargoTestWithJsonOutput {
   param(
-    [string]$TestType,
-    [string]$PackageName,
+    [string]$TestParams,
+    [string]$TestDescription,
     [string]$OutputFile
   )
   
-  Write-Host "Running $TestType tests with JSON output to: $OutputFile"
+  Write-Host "Running $TestDescription with JSON output to: $OutputFile"
   
   # Use cargo +nightly test with --format json and -Z unstable-options
-  $testCommand = if ($TestType -eq "doc") {
-    "cargo +nightly test --doc --no-fail-fast -- --format json -Z unstable-options"
-  } else {
-    "cargo +nightly test --all-targets --no-fail-fast -- --format json -Z unstable-options"
-  }
+  $testCommand = "cargo +nightly test $TestParams --no-fail-fast -- --format json -Z unstable-options"
   
-  # Redirect output to file
-  Invoke-LoggedCommand "$testCommand > `"$OutputFile`"" -GroupOutput -DoNotExitOnFailedExitCode
-  $exitCode = $LASTEXITCODE
+  # Run the test command and capture output
+  $result = Invoke-LoggedCommand $testCommand -GroupOutput -DoNotExitOnFailedExitCode
+  
+  LogGroupStart 'Test result JSON'
+  $result | Write-Host 
+  LogGroupEnd
+  
+  # Write JSON to file
+  $result | Out-File -FilePath $OutputFile -Encoding utf8
   
   # Parse and display summary
-  $results = Write-TestSummary -JsonFile $OutputFile -PackageName "$PackageName ($TestType tests)"
+  $results = Write-TestSummary -JsonFile $OutputFile -PackageName $TestDescription
   
   # Exit immediately if tests failed
-  if ($exitCode -ne 0) {
-    LogError "Tests failed for package '$PackageName' ($TestType tests)"
-    exit $exitCode
+  if ($LASTEXITCODE -ne 0) {
+    LogError "Tests failed for $TestDescription"
+    exit $LASTEXITCODE
   }
   
   return $results
@@ -163,11 +165,11 @@ foreach ($package in $packagesToTest) {
     
     # Run doc tests
     $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-doctest-$timestamp.json"))
-    Invoke-CargoTestWithJsonOutput -TestType "doc" -PackageName $package.Name -OutputFile $docTestOutput
+    Invoke-CargoTestWithJsonOutput -TestParams "--doc" -TestDescription "$($package.Name) (doc tests)" -OutputFile $docTestOutput
     
     # Run all-targets tests
     $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-alltargets-$timestamp.json"))
-    Invoke-CargoTestWithJsonOutput -TestType "all-targets" -PackageName $package.Name -OutputFile $allTargetsOutput
+    Invoke-CargoTestWithJsonOutput -TestParams "--all-targets" -TestDescription "$($package.Name) (all targets)" -OutputFile $allTargetsOutput
 
     $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
     if (Test-Path $cleanupScript) {

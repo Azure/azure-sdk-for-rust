@@ -31,7 +31,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 
-# Set default directories
+# Set default directories (must be after sourcing common.ps1 which defines $RepoRoot)
 if (!$TestResultsDirectory) {
   $TestResultsDirectory = ([System.IO.Path]::Combine($RepoRoot, 'test-results'))
 }
@@ -46,7 +46,7 @@ Write-Host "  Output directory: $OutputDirectory"
 
 # Check if test results directory exists
 if (!(Test-Path $TestResultsDirectory)) {
-  Write-Warning "Test results directory not found: $TestResultsDirectory"
+  LogWarning "Test results directory not found: $TestResultsDirectory"
   Write-Host "No test results to convert."
   exit 0
 }
@@ -68,7 +68,7 @@ if (!$cargo2junitPath) {
 $jsonFiles = @(Get-ChildItem -Path $TestResultsDirectory -Filter "*.json" -File)
 
 if ($jsonFiles.Count -eq 0) {
-  Write-Warning "No JSON files found in $TestResultsDirectory"
+  LogWarning "No JSON files found in $TestResultsDirectory"
   Write-Host "No test results to convert."
   exit 0
 }
@@ -89,7 +89,7 @@ foreach ($jsonFile in $jsonFiles) {
     Get-Content $jsonFile.FullName | cargo2junit > $junitFile
     
     if ($LASTEXITCODE -ne 0) {
-      Write-Warning "    cargo2junit returned exit code $LASTEXITCODE for $($jsonFile.Name)"
+      LogWarning "    cargo2junit returned exit code $LASTEXITCODE for $($jsonFile.Name)"
       $failedCount++
     }
     else {
@@ -97,7 +97,7 @@ foreach ($jsonFile in $jsonFiles) {
     }
   }
   catch {
-    Write-Warning "    Failed to convert $($jsonFile.Name): $_"
+    LogWarning "    Failed to convert $($jsonFile.Name): $_"
     $failedCount++
   }
 }
