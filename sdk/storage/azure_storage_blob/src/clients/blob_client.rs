@@ -19,7 +19,7 @@ use crate::{
         BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
         BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
+        BlobClientUndeleteOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -478,5 +478,17 @@ impl BlobClient {
         options: Option<BlobClientSetLegalHoldOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.set_legal_hold(legal_hold, options).await
+    }
+
+    /// Undeletes a blob that was previously soft-deleted.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn undelete(
+        &self,
+        options: Option<BlobClientUndeleteOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        self.client.undelete(options).await
     }
 }

@@ -57,4 +57,20 @@ resource storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
   }
 }
 
+resource blobServices 'Microsoft.Storage/storageAccounts/blobServices@2024-01-01' = {
+  parent: storage
+  name: 'default'
+  properties: {
+    deleteRetentionPolicy: {
+      enabled: true
+      days: 1 // Number of days to retain deleted blobs (1-365)
+      allowPermanentDelete: false
+    }
+    containerDeleteRetentionPolicy: {
+      enabled: true
+      days: 1 // Number of days to retain deleted containers (1-365)
+    }
+  }
+}
+
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.name

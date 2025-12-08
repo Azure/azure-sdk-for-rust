@@ -7,6 +7,9 @@
 - Added support for `set_access_policy` to `BlobContainerClient`.
 - Added support for `get_access_policy` to `BlobContainerClient`.
 - Added support for `set_legal_hold` to `BlobClient`.
+- Added support for `set_immutability_policy` to `BlobClient`.
+- Added support for `delete_immutability_policy` to `BlobClient`.
+- Added support for `undelete` to `BlobClient`.
 
 ### Breaking Changes
 
