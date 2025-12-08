@@ -10,7 +10,7 @@ The Engineering System provides a set of [standard checks](https://dev.azure.com
 
 ### Checks included in `cargo`
 
-These following checks are included in the Rust toolchain or are part of cargo.
+The following checks are included in the Rust toolchain or are part of cargo.
 
 #### Fmt
 
@@ -68,7 +68,7 @@ cargo +nightly docs-rs --package <pkg>
 
 ### Checks installed as tools
 
-Additional checks can be installed as tools by `cargo install` and run in relvant parts of the build system.
+Additional checks can be installed as tools by `cargo install` and run in relevant parts of the build system.
 
 ### Deny
 
