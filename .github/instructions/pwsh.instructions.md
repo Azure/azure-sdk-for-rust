@@ -21,12 +21,11 @@ These rules apply to all PowerShell scripts (`**/*.ps1`) in the repository.
 ## Output Grouping
 
 - **Use `LogGroupStart` and `LogGroupEnd` to collapse verbose output**
-  - Use for summaries or output that's not relevant in most cases
+  - Use for output that is verbose or not relevant in most cases (e.g., large JSON dumps, detailed test output)
   - Example:
     ```powershell
-    LogGroupStart "Test Summary"
-    Write-Host "Passed: $passed"
-    Write-Host "Failed: $failed"
+    LogGroupStart "Raw JSON Output"
+    Get-Content $jsonFile | ForEach-Object { Write-Host $_ }
     LogGroupEnd
     ```
 
@@ -46,21 +45,24 @@ These rules apply to all PowerShell scripts (`**/*.ps1`) in the repository.
 
 ## Error Handling
 
+- **Use `LogError` for error messages if common.ps1 is imported**
+  - If you've imported common.ps1, use `LogError` followed by `exit 1`
+  - If you're not sure if common.ps1 is imported, use `Write-Host` with red color
+  - Never use `Write-Error`
+  - Example with common.ps1: 
+    ```powershell
+    if ($exitCode -ne 0) {
+      LogError "Operation failed"
+      exit 1
+    }
+    ```
+  - Example without common.ps1:
+    ```powershell
+    if ($exitCode -ne 0) {
+      Write-Host "Operation failed" -ForegroundColor Red
+      exit 1
+    }
+    ```
 - **Fail fast on errors**
   - Exit immediately when a critical operation fails
   - Don't accumulate errors and summarize at the end
-  - Use `Write-Error` and `exit` for fatal errors
-  - Example: 
-    ```powershell
-    if ($exitCode -ne 0) {
-      Write-Error "Operation failed"
-      exit $exitCode
-    }
-    ```
-
-## Script Scoping
-
-- **Remove unnecessary conditional logic**
-  - If a script only runs in one context (e.g., CI only), remove switches and conditionals for other contexts
-  - Keep scripts focused on a single purpose
-  - Example: Don't add a `-CI` switch if the script only runs in CI environments

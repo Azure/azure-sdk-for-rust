@@ -93,7 +93,7 @@ function Invoke-CargoTestWithJsonOutput {
   
   # Exit immediately if tests failed
   if ($exitCode -ne 0) {
-    Write-Error "Tests failed for package '$PackageName' ($TestType tests)"
+    LogError "Tests failed for package '$PackageName' ($TestType tests)"
     exit $exitCode
   }
   
@@ -120,7 +120,7 @@ Write-Host "Test results will be saved to: $testResultsDir"
 
 if ($PackageInfoDirectory) {
   if (!(Test-Path $PackageInfoDirectory)) {
-    Write-Error "Package info path '$PackageInfoDirectory' does not exist."
+    LogError "Package info path '$PackageInfoDirectory' does not exist."
     exit 1
   }
 
@@ -147,7 +147,7 @@ foreach ($package in $packagesToTest) {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
       Invoke-LoggedCommand $setupScript -GroupOutput
       if (!$? -ne 0) {
-        Write-Error "Test setup script failed for package: '$($package.Name)'"
+        LogError "Test setup script failed for package: '$($package.Name)'"
         exit 1
       }
     }
