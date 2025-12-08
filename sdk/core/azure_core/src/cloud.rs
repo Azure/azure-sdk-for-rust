@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// Trivial change to run CI for core
+
 //! Azure cloud configuration.
 
 use std::{any::TypeId, collections::HashMap};
