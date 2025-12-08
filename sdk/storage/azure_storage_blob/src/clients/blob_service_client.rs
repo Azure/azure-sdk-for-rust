@@ -7,9 +7,10 @@ use crate::{
     generated::models::BlobServiceClientGetAccountInfoResult,
     models::{
         BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
-        ListContainersSegmentResponse,
+        BlobServiceClientGetPropertiesOptions, BlobServiceClientGetStatisticsOptions,
+        BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
+        BlobServiceProperties, FilterBlobSegment, ListContainersSegmentResponse,
+        StorageServiceStats,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -207,5 +208,18 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
     ) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
+    }
+
+    /// Retrieves statistics related to replication for the Blob service. It is only available on the secondary location endpoint
+    /// when read-access geo-redundant replication is enabled for the storage account.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_statistics(
+        &self,
+        options: Option<BlobServiceClientGetStatisticsOptions<'_>>,
+    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
+        self.client.get_statistics(options).await
     }
 }

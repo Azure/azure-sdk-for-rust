@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `continuation_token` to `PagerOptions`.
+- Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
 
 ### Breaking Changes
 

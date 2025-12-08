@@ -151,10 +151,6 @@ pub struct BlobClientSetExpiryResult;
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
 
-/// Contains results for `BlobClient::undelete()`
-#[derive(SafeDebug)]
-pub struct BlobClientUndeleteResult;
-
 /// Contains results for `BlobContainerClient::acquire_lease()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientAcquireLeaseResult;

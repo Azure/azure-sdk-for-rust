@@ -17,7 +17,7 @@ use crate::generated::models::{
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
     BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
     BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
-    BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
+    BlobClientUndeleteOptions, BlobExpiryOptions, BlobTags,
 };
 use azure_core::{
     base64::encode,
@@ -2041,34 +2041,11 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientUndeleteResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientUndeleteResult, BlobClientUndeleteResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientUndeleteResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientUndeleteResultHeaders::date) - Date
-    ///
-    /// [`BlobClientUndeleteResultHeaders`]: crate::generated::models::BlobClientUndeleteResultHeaders
     #[tracing::function("Storage.Blob.Blob.undelete")]
     pub async fn undelete(
         &self,
         options: Option<BlobClientUndeleteOptions<'_>>,
-    ) -> Result<Response<BlobClientUndeleteResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
