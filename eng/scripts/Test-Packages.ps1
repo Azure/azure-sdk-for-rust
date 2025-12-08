@@ -84,7 +84,7 @@ function Invoke-CargoTestWithJsonOutput {
   $result = Invoke-LoggedCommand $testCommand -GroupOutput -DoNotExitOnFailedExitCode
   
   LogGroupStart 'Test result JSON'
-  $result | Write-Host 
+  $result | Write-Host
   LogGroupEnd
   
   # Write JSON to file
