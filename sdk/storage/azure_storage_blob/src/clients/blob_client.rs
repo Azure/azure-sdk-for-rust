@@ -13,11 +13,13 @@ use crate::{
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
-        BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetLegalHoldOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
-        BlobClientSetTierOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
+        BlobClientChangeLeaseOptions, BlobClientDeleteImmutabilityPolicyOptions,
+        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
+        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
+        BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
+        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -29,6 +31,7 @@ use azure_core::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
+    time::OffsetDateTime,
     tracing, Bytes, Result,
 };
 use std::collections::HashMap;
@@ -435,6 +438,32 @@ impl BlobClient {
             },
             Err(e) => Err(e),
         }
+    }
+
+    /// Sets the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `expiry` - Specifies the date time when the blob's immutability policy is set to expire.
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_immutability_policy(
+        &self,
+        expiry: &OffsetDateTime,
+        options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        self.client.set_immutability_policy(expiry, options).await
+    }
+
+    /// Deletes the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn delete_immutability_policy(
+        &self,
+        options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        self.client.delete_immutability_policy(options).await
     }
 
     /// Sets a legal hold on the blob.
