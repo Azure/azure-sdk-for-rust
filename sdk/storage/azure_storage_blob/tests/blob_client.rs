@@ -198,11 +198,9 @@ async fn test_undelete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Existence Check
     blob_client.get_properties(None).await?;
 
+    // Delete Blob
     blob_client.delete(None).await?;
-
     let response = blob_client.download(None).await;
-
-    // Assert
     let error = response.unwrap_err().http_status();
     assert_eq!(StatusCode::NotFound, error.unwrap());
 

@@ -14,9 +14,6 @@ param(
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
 function Get-OutputPackageNames($workspacePackages) {
-  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
-  $packablePackageNames = $packablePackages.name
-
   $names = @()
   switch ($PsCmdlet.ParameterSetName) {
     'Named' {
@@ -28,12 +25,13 @@ function Get-OutputPackageNames($workspacePackages) {
     }
 
     default {
-      return $packablePackageNames
+      return $workspacePackages.name
+
     }
   }
 
   foreach ($name in $names) {
-    if (-not $packablePackageNames.Contains($name)) {
+    if (-not $workspacePackages.name.Contains($name)) {
       Write-Error "Package '$name' is not in the workspace or does not publish"
       exit 1
     }
