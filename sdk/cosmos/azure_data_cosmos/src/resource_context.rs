@@ -5,7 +5,7 @@ use url::Url;
 
 use crate::utils::url_encode;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[allow(dead_code)] // For the variants. Can be removed when we have them all implemented.
 pub enum ResourceType {
     Databases,
@@ -53,7 +53,7 @@ impl ResourceType {
 ///
 /// This value is URL encoded, and can be [`Url::join`]ed to the endpoint root to produce the full absolute URL for a Cosmos DB resource.
 /// It's also intended for use by the signature algorithm used when authenticating with a primary key.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ResourceLink {
     parent: Option<String>,
     item_id: Option<String>,

@@ -8,3 +8,4 @@ pub(crate) mod partition_key_range;
 pub(crate) mod collection_routing_map;
 pub(crate) mod range;
 pub mod service_identity;
+pub mod collection_cache;

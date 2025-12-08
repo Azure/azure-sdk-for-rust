@@ -15,6 +15,7 @@ use std::sync::Arc;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use azure_core::http::response::Response;
+use crate::routing::collection_cache::CollectionCache;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -29,10 +30,11 @@ pub struct DatabaseClient {
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str, partition_key_range_cache: &PartitionKeyRangeCache) -> Self {
+    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str, collection_cache: &mut CollectionCache, partition_key_range_cache: &PartitionKeyRangeCache) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
+        collection_cache.set_database_link(link.clone());
         let partition_key_range_cache = partition_key_range_cache.clone();
         Self {
             link,

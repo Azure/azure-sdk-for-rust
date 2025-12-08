@@ -21,6 +21,7 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 use azure_core::http::RetryOptions;
+use crate::routing::collection_cache::CollectionCache;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 
 /// Client for Azure Cosmos DB.
@@ -28,6 +29,7 @@ use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
+    collection_cache: CollectionCache,
     partition_key_range_cache: PartitionKeyRangeCache,
 }
 
@@ -75,7 +77,8 @@ impl CosmosClient {
             pipeline_core.clone(),
         );
 
-        let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline_core.clone(), Arc::from(global_endpoint_manager.clone()));
+        let collection_cache = CollectionCache::new(pipeline_core.clone());
+        let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline_core.clone(), Arc::from(collection_cache.clone()), Arc::from(global_endpoint_manager.clone()));
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
@@ -86,6 +89,7 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            collection_cache,
             partition_key_range_cache,
         })
     }
@@ -131,7 +135,8 @@ impl CosmosClient {
             pipeline_core.clone(),
         );
 
-        let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline_core.clone(), Arc::from(global_endpoint_manager.clone()));
+        let collection_cache = CollectionCache::new(pipeline_core.clone());
+        let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline_core.clone(), Arc::from(collection_cache.clone()), Arc::from(global_endpoint_manager.clone()));
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
@@ -142,6 +147,7 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            collection_cache,
             partition_key_range_cache,
         })
     }
@@ -181,7 +187,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id, &self.partition_key_range_cache.clone())
+        DatabaseClient::new(self.pipeline.clone(), id, &mut self.collection_cache.clone(), &self.partition_key_range_cache.clone())
     }
 
     /// Gets the endpoint of the database account this client is connected to.

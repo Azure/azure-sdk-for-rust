@@ -16,7 +16,9 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
+use azure_core::http::RawResponse;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
+use crate::routing::collection_cache::{CollectionCache, ContainerMetadata};
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 
@@ -70,6 +72,20 @@ impl ContainerClient {
     /// # }
     /// ```
     pub async fn read(
+        &self,
+        options: Option<ReadContainerOptions<'_>>,
+    ) -> azure_core::Result<Response<ContainerProperties>> {
+        let response: RawResponse = self.read_properties(options).await?.into();
+
+        // Read the properties and cache the stable metadata (things that don't change for the life of a container)
+        // TODO: Replace with `response.body().json()` when that becomes borrowing.
+        let properties = serde_json::from_slice::<ContainerProperties>(response.body())?;
+        let metadata = ContainerMetadata::from_properties(&properties, self.link.clone())?;
+
+        Ok(response.into())
+    }
+
+    async fn read_properties(
         &self,
         options: Option<ReadContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
@@ -263,7 +279,7 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
-        let pk_range_link = self.link.feed(ResourceType::PartitionKeyRanges);
+        // let pk_range_link = self.link.feed(ResourceType::PartitionKeyRanges);
         // let pk_range = self.partition_key_range_cache.execute_partition_key_range_read_change_feed(&*self.container_id, pk_range_link.clone()).await?.into_body().into_string();
         let pk_range = self.partition_key_range_cache.try_get_partition_key_range_by_id(&*self.container_id, "0", false).await;
         let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())

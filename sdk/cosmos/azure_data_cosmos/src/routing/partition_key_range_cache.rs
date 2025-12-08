@@ -18,6 +18,7 @@ use serde::Deserialize;
 use crate::ReadDatabaseOptions;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
+use crate::routing::collection_cache::CollectionCache;
 use crate::routing::collection_routing_map::CollectionRoutingMap;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
@@ -51,7 +52,7 @@ pub struct PartitionKeyRangeCache {
     routing_map_cache: Arc<RwLock<HashMap<String, Arc<CollectionRoutingMap>>>>,
     // authorization_token_provider: Arc<dyn CosmosAuthorizationTokenProvider>,
     pipeline: Pipeline,
-    // collection_cache: Arc<CollectionCache>,
+    collection_cache: Arc<CollectionCache>,
     endpoint_manager: Arc<GlobalEndpointManager>,
     // pk_range_link: ResourceLink,
 }
@@ -61,14 +62,14 @@ impl PartitionKeyRangeCache {
         // authorization_token_provider: Arc<CosmosAuthorizationTokenProvider>,
         pipeline: Pipeline,
         // pk_range_link: ResourceLink,
-        // collection_cache: Arc<CollectionCache>,
+        collection_cache: Arc<CollectionCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
         Self {
             routing_map_cache: Arc::new(RwLock::new(HashMap::new())),
             // authorization_token_provider,
             pipeline,
-            // collection_cache,
+            collection_cache,
             endpoint_manager,
             // pk_range_link,
         }
@@ -224,7 +225,8 @@ impl PartitionKeyRangeCache {
                 headers.insert("if-none-match".to_string(), etag.clone());
             }
 
-            let pk_range_link = ResourceLink::root(ResourceType::Databases).item("sdk_rust_db").feed(ResourceType::Containers).item(collection_rid).feed(ResourceType::PartitionKeyRanges);
+            let mut database_link = self.collection_cache.get_database_link().await;
+            let pk_range_link = database_link.unwrap().feed(ResourceType::Containers).item(collection_rid).feed(ResourceType::PartitionKeyRanges);
             let response = self.execute_partition_key_range_read_change_feed(
                 collection_rid,
                 pk_range_link,
