@@ -34,7 +34,7 @@ function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
 
 function Get-VersionParamsFromCgManifest(
   $packageName,
-  $cgManifestPath = ([System.IO.Path]::Combine($PSScriptRoot, '..', 'cgmanifest.json'))
+  $cgManifestPath = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'cgmanifest.json'))
 ) {
   $cgManifest = Get-Content $cgManifestPath `
   | ConvertFrom-Json
