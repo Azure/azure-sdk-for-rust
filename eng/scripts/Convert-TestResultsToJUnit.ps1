@@ -29,17 +29,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-
-# Get repo root
-$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot .. ..)
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 
 # Set default directories
 if (!$TestResultsDirectory) {
-  $TestResultsDirectory = Join-Path $RepoRoot "test-results"
+  $TestResultsDirectory = ([System.IO.Path]::Combine($RepoRoot, 'test-results'))
 }
 
 if (!$OutputDirectory) {
-  $OutputDirectory = Join-Path $RepoRoot "test-results" "junit"
+  $OutputDirectory = ([System.IO.Path]::Combine($RepoRoot, 'test-results', 'junit'))
 }
 
 Write-Host "Converting test results from JSON to JUnit XML using cargo2junit"
@@ -63,12 +61,7 @@ if (!(Test-Path $OutputDirectory)) {
 $cargo2junitPath = Get-Command cargo2junit -ErrorAction SilentlyContinue
 if (!$cargo2junitPath) {
   Write-Host "cargo2junit not found. Installing..."
-  cargo install cargo2junit
-  if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to install cargo2junit"
-    exit 1
-  }
-  Write-Host "cargo2junit installed successfully"
+  Invoke-LoggedCommand "cargo install cargo2junit" -GroupOutput
 }
 
 # Get all JSON files in the test results directory
@@ -87,7 +80,7 @@ $failedCount = 0
 
 foreach ($jsonFile in $jsonFiles) {
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jsonFile.Name)
-  $junitFile = Join-Path $OutputDirectory "$baseName.xml"
+  $junitFile = ([System.IO.Path]::Combine($OutputDirectory, "$baseName.xml"))
   
   Write-Host "  Converting: $($jsonFile.Name) -> $([System.IO.Path]::GetFileName($junitFile))"
   

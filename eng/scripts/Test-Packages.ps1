@@ -2,8 +2,7 @@
 
 #Requires -Version 7.0
 param(
-  [string]$PackageInfoDirectory,
-  [switch]$CI
+  [string]$PackageInfoDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -47,9 +46,7 @@ function Write-TestSummary {
     }
   }
   
-  Write-Host "`n========================================" -ForegroundColor Cyan
-  Write-Host "Test Summary: $PackageName" -ForegroundColor Cyan
-  Write-Host "========================================" -ForegroundColor Cyan
+  LogGroupStart "Test Summary: $PackageName"
   Write-Host "Passed:  $passed" -ForegroundColor Green
   Write-Host "Failed:  $failed" -ForegroundColor $(if ($failed -gt 0) { "Red" } else { "Green" })
   Write-Host "Ignored: $ignored" -ForegroundColor Yellow
@@ -59,9 +56,9 @@ function Write-TestSummary {
     foreach ($test in $failedTests) {
       Write-Host "  - $test" -ForegroundColor Red
     }
-    Write-Host "`nℹ️  Additional details are available in the test tab for the build." -ForegroundColor Yellow
+    Write-Host "`nAdditional details are available in the test tab for the build." -ForegroundColor Yellow
   }
-  Write-Host "========================================`n" -ForegroundColor Cyan
+  LogGroupEnd
   
   return @{
     Passed = $passed
@@ -70,10 +67,42 @@ function Write-TestSummary {
   }
 }
 
+# Helper function to run cargo test with JSON output
+function Invoke-CargoTestWithJsonOutput {
+  param(
+    [string]$TestType,
+    [string]$PackageName,
+    [string]$OutputFile
+  )
+  
+  Write-Host "Running $TestType tests with JSON output to: $OutputFile"
+  
+  # Use cargo +nightly test with --format json and -Z unstable-options
+  $testCommand = if ($TestType -eq "doc") {
+    "cargo +nightly test --doc --no-fail-fast -- --format json -Z unstable-options"
+  } else {
+    "cargo +nightly test --all-targets --no-fail-fast -- --format json -Z unstable-options"
+  }
+  
+  # Redirect output to file
+  Invoke-LoggedCommand "$testCommand > `"$OutputFile`"" -GroupOutput -DoNotExitOnFailedExitCode
+  $exitCode = $LASTEXITCODE
+  
+  # Parse and display summary
+  $results = Write-TestSummary -JsonFile $OutputFile -PackageName "$PackageName ($TestType tests)"
+  
+  # Exit immediately if tests failed
+  if ($exitCode -ne 0) {
+    Write-Error "Tests failed for package '$PackageName' ($TestType tests)"
+    exit $exitCode
+  }
+  
+  return $results
+}
+
 Write-Host @"
 Testing packages with
     PackageInfoDirectory: '$PackageInfoDirectory'
-    CI Mode: $CI
     RUSTFLAGS: '$env:RUSTFLAGS'
     RUSTDOCFLAGS: '$env:RUSTDOCFLAGS'
     RUST_LOG: '$env:RUST_LOG'
@@ -82,15 +111,12 @@ Testing packages with
     ARM_OIDC_TOKEN: $($env:ARM_OIDC_TOKEN ? 'present' : 'not present')
 "@
 
-# Create directory for test results if in CI mode
-$testResultsDir = $null
-if ($CI) {
-  $testResultsDir = Join-Path $RepoRoot "test-results"
-  if (!(Test-Path $testResultsDir)) {
-    New-Item -ItemType Directory -Path $testResultsDir | Out-Null
-  }
-  Write-Host "Test results will be saved to: $testResultsDir"
+# Create directory for test results
+$testResultsDir = ([System.IO.Path]::Combine($RepoRoot, 'test-results'))
+if (!(Test-Path $testResultsDir)) {
+  New-Item -ItemType Directory -Path $testResultsDir | Out-Null
 }
+Write-Host "Test results will be saved to: $testResultsDir"
 
 if ($PackageInfoDirectory) {
   if (!(Test-Path $PackageInfoDirectory)) {
@@ -111,15 +137,12 @@ foreach ($package in $packagesToTest) {
   Write-Host "  '$($package.Name)' in '$($package.DirectoryPath)'"
 }
 
-$allTestResults = @()
-$hasFailures = $false
-
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
     $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
 
-    $setupScript = Join-Path $packageDirectory "Test-Setup.ps1"
+    $setupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Setup.ps1'))
     if (Test-Path $setupScript) {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
       Invoke-LoggedCommand $setupScript -GroupOutput
@@ -134,61 +157,19 @@ foreach ($package in $packagesToTest) {
     Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
     Write-Host "`n`n"
 
-    # Generate unique filenames for test outputs if in CI mode
+    # Generate unique filenames for test outputs
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
     $sanitizedPackageName = $package.Name -replace '[^a-zA-Z0-9_-]', '_'
     
     # Run doc tests
-    if ($CI) {
-      $docTestOutput = Join-Path $testResultsDir "$sanitizedPackageName-doctest-$timestamp.json"
-      Write-Host "Running doc tests with JSON output to: $docTestOutput"
-      
-      # Use cargo +nightly test with --format json and -Z unstable-options
-      $output = & cargo +nightly test --doc --no-fail-fast -- --format json -Z unstable-options 2>&1
-      $exitCode = $LASTEXITCODE
-      
-      # Write JSON output to file
-      $output | Out-File -FilePath $docTestOutput -Encoding utf8
-      
-      # Also display the output
-      $output | ForEach-Object { Write-Host $_ }
-      
-      # Parse and display summary
-      $docResults = Write-TestSummary -JsonFile $docTestOutput -PackageName "$($package.Name) (doc tests)"
-      if ($exitCode -ne 0) { $hasFailures = $true }
-      $allTestResults += @{ Package = $package.Name; Type = "doc"; Results = $docResults }
-    }
-    else {
-      Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
-    }
-    Write-Host "`n`n"
-
+    $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-doctest-$timestamp.json"))
+    Invoke-CargoTestWithJsonOutput -TestType "doc" -PackageName $package.Name -OutputFile $docTestOutput
+    
     # Run all-targets tests
-    if ($CI) {
-      $allTargetsOutput = Join-Path $testResultsDir "$sanitizedPackageName-alltargets-$timestamp.json"
-      Write-Host "Running all-targets tests with JSON output to: $allTargetsOutput"
-      
-      # Use cargo +nightly test with --format json and -Z unstable-options
-      $output = & cargo +nightly test --all-targets --no-fail-fast -- --format json -Z unstable-options 2>&1
-      $exitCode = $LASTEXITCODE
-      
-      # Write JSON output to file
-      $output | Out-File -FilePath $allTargetsOutput -Encoding utf8
-      
-      # Also display the output
-      $output | ForEach-Object { Write-Host $_ }
-      
-      # Parse and display summary
-      $allTargetsResults = Write-TestSummary -JsonFile $allTargetsOutput -PackageName "$($package.Name) (all targets)"
-      if ($exitCode -ne 0) { $hasFailures = $true }
-      $allTestResults += @{ Package = $package.Name; Type = "all-targets"; Results = $allTargetsResults }
-    }
-    else {
-      Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
-    }
-    Write-Host "`n`n"
+    $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-alltargets-$timestamp.json"))
+    Invoke-CargoTestWithJsonOutput -TestType "all-targets" -PackageName $package.Name -OutputFile $allTargetsOutput
 
-    $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
+    $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
     if (Test-Path $cleanupScript) {
       Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
       Invoke-LoggedCommand $cleanupScript -GroupOutput
@@ -197,40 +178,5 @@ foreach ($package in $packagesToTest) {
   }
   finally {
     Pop-Location
-  }
-}
-
-# Print overall summary if in CI mode
-if ($CI -and $allTestResults.Count -gt 0) {
-  Write-Host "`n`n"
-  Write-Host "========================================" -ForegroundColor Cyan
-  Write-Host "OVERALL TEST SUMMARY" -ForegroundColor Cyan
-  Write-Host "========================================" -ForegroundColor Cyan
-  
-  $totalPassed = 0
-  $totalFailed = 0
-  $totalIgnored = 0
-  
-  foreach ($result in $allTestResults) {
-    if ($result.Results) {
-      $totalPassed += $result.Results.Passed
-      $totalFailed += $result.Results.Failed
-      $totalIgnored += $result.Results.Ignored
-    }
-  }
-  
-  Write-Host "Total Passed:  $totalPassed" -ForegroundColor Green
-  Write-Host "Total Failed:  $totalFailed" -ForegroundColor $(if ($totalFailed -gt 0) { "Red" } else { "Green" })
-  Write-Host "Total Ignored: $totalIgnored" -ForegroundColor Yellow
-  
-  if ($totalFailed -gt 0) {
-    Write-Host "`nℹ️  Additional details are available in the test tab for the build." -ForegroundColor Yellow
-  }
-  
-  Write-Host "========================================`n" -ForegroundColor Cyan
-  
-  # Exit with error if there were failures
-  if ($hasFailures) {
-    exit 1
   }
 }
