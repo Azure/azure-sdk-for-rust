@@ -43,7 +43,7 @@ function Get-VersionParamsFromCgManifest(
   Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq $packageName }).
   component.cargo.version
 
-  if ($versions -is [Array] -and $versions.Count -gt 1) {
+  if ($versions -is [Array] -and $versions.Count -ne 1) {
     Write-Error "Multiple versions found for package '$packageName' in cgmanifest.json"
     exit 1
   }
