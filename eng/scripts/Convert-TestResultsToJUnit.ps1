@@ -59,10 +59,6 @@ if (!$cargo2junitPath) {
 }
 
 Write-Host "`nConverting $($jsonFiles.Count) JSON file(s) to JUnit XML..."
-
-$convertedCount = 0
-$failedCount = 0
-
 foreach ($jsonFile in $jsonFiles) {
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jsonFile.Name)
   $junitFile = ([System.IO.Path]::Combine($OutputDirectory, "$baseName.xml"))
