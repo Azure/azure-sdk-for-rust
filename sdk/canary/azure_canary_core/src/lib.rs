@@ -43,9 +43,4 @@ mod tests {
         let result = add(2, 2);
         assert_eq!(result, 4);
     }
-
-    #[test]
-    fn fails() {
-        assert_eq!(1, 0);
-    }
 }
