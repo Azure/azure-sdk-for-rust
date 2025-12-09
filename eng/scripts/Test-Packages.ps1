@@ -15,17 +15,17 @@ function Write-TestSummary {
     [string]$JsonFile,
     [string]$PackageName
   )
-  
+
   if (!(Test-Path $JsonFile)) {
     Write-Warning "Test results file not found: $JsonFile"
     return
   }
-  
+
   $passed = 0
   $failed = 0
   $ignored = 0
   $failedTests = @()
-  
+
   # Parse JSON output (newline-delimited JSON)
   Get-Content $JsonFile | ForEach-Object {
     try {
@@ -33,7 +33,7 @@ function Write-TestSummary {
       if ($event.type -eq "test" -and $event.event) {
         switch ($event.event) {
           "ok" { $passed++ }
-          "failed" { 
+          "failed" {
             $failed++
             $failedTests += $event.name
           }
@@ -45,12 +45,12 @@ function Write-TestSummary {
       # Ignore lines that aren't valid JSON
     }
   }
-  
+
   LogGroupStart "Test Summary: $PackageName"
   Write-Host "Passed:  $passed" -ForegroundColor Green
   Write-Host "Failed:  $failed" -ForegroundColor $(if ($failed -gt 0) { "Red" } else { "Green" })
   Write-Host "Ignored: $ignored" -ForegroundColor Yellow
-  
+
   if ($failed -gt 0) {
     Write-Host "`nFailed tests:" -ForegroundColor Red
     foreach ($test in $failedTests) {
@@ -59,10 +59,10 @@ function Write-TestSummary {
     Write-Host "`nAdditional details are available in the test tab for the build." -ForegroundColor Yellow
   }
   LogGroupEnd
-  
+
   return @{
-    Passed = $passed
-    Failed = $failed
+    Passed  = $passed
+    Failed  = $failed
     Ignored = $ignored
   }
 }
@@ -74,31 +74,31 @@ function Invoke-CargoTestWithJsonOutput {
     [string]$TestDescription,
     [string]$OutputFile
   )
-  
+
   Write-Host "Running $TestDescription with JSON output to: $OutputFile"
-  
+
   # Use cargo +nightly test with --format json and -Z unstable-options
   $testCommand = "cargo +nightly test $TestParams --no-fail-fast -- --format json -Z unstable-options"
-  
+
   # Run the test command and capture output
   $result = Invoke-LoggedCommand $testCommand -GroupOutput -DoNotExitOnFailedExitCode
-  
+
   LogGroupStart 'Test result JSON'
   $result | Write-Host
   LogGroupEnd
-  
+
   # Write JSON to file
   $result | Out-File -FilePath $OutputFile -Encoding utf8
-  
+
   # Parse and display summary
   $results = Write-TestSummary -JsonFile $OutputFile -PackageName $TestDescription
-  
+
   # Exit immediately if tests failed
   if ($LASTEXITCODE -ne 0) {
     LogError "Tests failed for $TestDescription"
     exit $LASTEXITCODE
   }
-  
+
   return $results
 }
 
@@ -162,11 +162,11 @@ foreach ($package in $packagesToTest) {
     # Generate unique filenames for test outputs
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
     $sanitizedPackageName = $package.Name -replace '[^a-zA-Z0-9_-]', '_'
-    
+
     # Run doc tests
     $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-doctest-$timestamp.json"))
     Invoke-CargoTestWithJsonOutput -TestParams "--doc" -TestDescription "$($package.Name) (doc tests)" -OutputFile $docTestOutput
-    
+
     # Run all-targets tests
     $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-alltargets-$timestamp.json"))
     Invoke-CargoTestWithJsonOutput -TestParams "--all-targets" -TestDescription "$($package.Name) (all targets)" -OutputFile $allTargetsOutput
