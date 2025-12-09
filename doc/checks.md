@@ -12,6 +12,16 @@ The Engineering System provides a set of [standard checks](https://dev.azure.com
 
 The following checks are included in the Rust toolchain or are part of cargo.
 
+#### Audit 
+
+Documentation: [cargo-audit](https://github.com/rustsec/rustsec/tree/main/cargo-audit)
+
+Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
+
+```
+cargo audit
+```
+
 #### Fmt
 
 Documentation: [cargo-fmt](https://doc.rust-lang.org/cargo/commands/cargo-fmt.html)
