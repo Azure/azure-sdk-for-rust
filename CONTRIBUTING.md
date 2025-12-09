@@ -365,6 +365,34 @@ There are samples of performance tests under `sdk/core/azure_core/benches` folde
 To execute the performance tests in `azure_core` folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
 The output of the tests will be presented in the command line as well as saved under the `target/criterion` folder.
 
+## Releases
+
+### Versions
+
+To provide a helpful versioning experience, the Azure SDK for Rust libraries follow conventions similar to other Azure SDKs.
+
+Release builds will fail if a library depends on another Azure SDK for Rust library which has not been released and is not included in the current release build.
+
+#### Workspace dependencies
+
+The root `Cargo.toml` file represents released versions of crates which can be used by other Azure SDK for Rust libraries. To use a released version of a library, use `workspace = true` in your library's `Cargo.toml`.
+
+```toml
+azure_core = { workspace = true }
+```
+
+If an SDK library depends on an unreleased SDK library, specify that dependency using a path-based dependency (`version` is required for the library to release):
+
+```toml
+azure_core = { path = "../../core/azure_core", version = "0.31.0" }
+```
+
+#### Version increment on release
+
+When a release to crates.io completes, the Engineering System opens a pull request to increment versions of released packages. This PR should be merged as soon as possible to put the `main` branch in a "releasable" state and to provide context that code at the HEAD of `main` may not reflect code in a previously released version of a library.
+
+The incremented version will be a "beta" of an incrementally higher release. This incremented version in the PR is a placeholder. The version can be updated in another PR to reflect the intended release version.
+
 ## Samples
 
 ### Third-party dependencies
