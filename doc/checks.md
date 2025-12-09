@@ -29,7 +29,7 @@ Documentation: [cargo-clippy](https://doc.rust-lang.org/cargo/commands/cargo-cli
 Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
 ```
-cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps
+cargo clippy --workspace --keep-going --no-deps
 ```
 
 #### Check
