@@ -70,5 +70,5 @@ foreach ($jsonFile in $jsonFiles) {
 }
 
 # cargo2junit exits with a nonzero exit code on failures. Exit 0 to prevent a
-# pipeline failure from $LASTEXITCODE, exit 0.
+# pipeline failure from $LASTEXITCODE.
 exit 0
