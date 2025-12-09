@@ -26,9 +26,9 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        policies::{BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -117,11 +117,11 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientAcquireLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_id) = response.lease_id()? {
     ///         println!("x-ms-lease-id: {:?}", lease_id);
@@ -131,8 +131,8 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobContainerClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders
@@ -145,14 +145,15 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("acquire")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
@@ -162,7 +163,7 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-lease-action", "acquire");
         request.insert_header("x-ms-lease-duration", duration.to_string());
-        if let Some(proposed_lease_id) = options.proposed_lease_id {
+        if let Some(proposed_lease_id) = options.proposed_lease_id.as_ref() {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -200,11 +201,11 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientBreakLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_time) = response.lease_time()? {
     ///         println!("x-ms-lease-time: {:?}", lease_time);
@@ -214,8 +215,8 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_time`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::lease_time) - x-ms-lease-time
     ///
     /// [`BlobContainerClientBreakLeaseResultHeaders`]: crate::generated::models::BlobContainerClientBreakLeaseResultHeaders
@@ -227,14 +228,15 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("break")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
@@ -284,11 +286,11 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientChangeLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_id) = response.lease_id()? {
     ///         println!("x-ms-lease-id: {:?}", lease_id);
@@ -298,8 +300,8 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobContainerClientChangeLeaseResultHeaders`]: crate::generated::models::BlobContainerClientChangeLeaseResultHeaders
@@ -313,14 +315,15 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("change")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
@@ -363,17 +366,18 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("restype", "container");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(access) = options.access {
+        if let Some(access) = options.access.as_ref() {
             request.insert_header("x-ms-blob-public-access", access.to_string());
         }
-        if let Some(default_encryption_scope) = options.default_encryption_scope {
+        if let Some(default_encryption_scope) = options.default_encryption_scope.as_ref() {
             request.insert_header("x-ms-default-encryption-scope", default_encryption_scope);
         }
         if let Some(prevent_encryption_scope_override) = options.prevent_encryption_scope_override {
@@ -382,8 +386,8 @@ impl BlobContainerClient {
                 prevent_encryption_scope_override.to_string(),
             );
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
@@ -418,11 +422,12 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("restype", "container");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
@@ -431,7 +436,7 @@ impl BlobContainerClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -467,32 +472,31 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "blobs")
             .append_pair("restype", "container");
-        if let Some(include) = options.include {
-            url.query_pairs_mut().append_pair(
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
                 "include",
-                &include
+                include
                     .iter()
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(","),
             );
         }
-        if let Some(marker) = options.marker {
-            url.query_pairs_mut().append_pair("marker", &marker);
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
         }
         if let Some(maxresults) = options.maxresults {
-            url.query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        url.query_pairs_mut()
-            .append_pair("where", filter_expression);
+        query_builder.set_pair("where", filter_expression);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
@@ -530,11 +534,11 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<SignedIdentifiers, XmlFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(access) = response.access()? {
     ///         println!("x-ms-blob-public-access: {:?}", access);
@@ -544,8 +548,8 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::SignedIdentifiersHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::SignedIdentifiersHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::SignedIdentifiersHeaders::last_modified) - last-modified
     /// * [`access`()](crate::generated::models::SignedIdentifiersHeaders::access) - x-ms-blob-public-access
     ///
     /// [`SignedIdentifiersHeaders`]: crate::generated::models::SignedIdentifiersHeaders
@@ -557,17 +561,18 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "acl")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -605,7 +610,7 @@ impl BlobContainerClient {
     ///     let response: Response<BlobContainerClientGetAccountInfoResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     if let Some(account_kind) = response.account_kind()? {
     ///         println!("x-ms-account-kind: {:?}", account_kind);
@@ -618,7 +623,7 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::date) - date
     /// * [`account_kind`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::account_kind) - x-ms-account-kind
     /// * [`is_hierarchical_namespace_enabled`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::is_hierarchical_namespace_enabled) - x-ms-is-hns-enabled
     /// * [`sku_name`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
@@ -632,13 +637,14 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "properties")
             .append_pair("restype", "account");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
@@ -676,11 +682,11 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientGetPropertiesResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(access) = response.access()? {
     ///         println!("x-ms-blob-public-access: {:?}", access);
@@ -690,8 +696,8 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::last_modified) - last-modified
     /// * [`access`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::access) - x-ms-blob-public-access
     /// * [`default_encryption_scope`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::default_encryption_scope) - x-ms-default-encryption-scope
     /// * [`prevent_encryption_scope_override`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::prevent_encryption_scope_override) - x-ms-deny-encryption-scope-override
@@ -712,14 +718,15 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("restype", "container");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("content-type", "application/xml");
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -757,14 +764,14 @@ impl BlobContainerClient {
     ///     let response: Response<ListBlobsFlatSegmentResponse, XmlFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListBlobsFlatSegmentResponseHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::ListBlobsFlatSegmentResponseHeaders::date) - date
     ///
     /// [`ListBlobsFlatSegmentResponseHeaders`]: crate::generated::models::ListBlobsFlatSegmentResponseHeaders
     #[tracing::function("Storage.Blob.Container.listBlobFlatSegment")]
@@ -775,51 +782,42 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
-        first_url
-            .query_pairs_mut()
+        let mut query_builder = first_url.query_builder();
+        query_builder
             .append_pair("comp", "list")
             .append_key_only("flat")
             .append_pair("restype", "container");
-        if let Some(include) = options.include {
-            first_url.query_pairs_mut().append_pair(
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
                 "include",
-                &include
+                include
                     .iter()
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(","),
             );
         }
-        if let Some(marker) = options.marker {
-            first_url.query_pairs_mut().append_pair("marker", &marker);
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
         }
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
-        if let Some(prefix) = options.prefix {
-            first_url.query_pairs_mut().append_pair("prefix", &prefix);
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
         }
         if let Some(timeout) = options.timeout {
-            first_url
-                .query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let version = self.version.clone();
         Ok(Pager::from_callback(
             move |marker: PagerState<String>, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
-                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
-                        let mut new_url = url.clone();
-                        new_url
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
-                        url = new_url;
-                    }
-                    url.query_pairs_mut().append_pair("marker", &marker);
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", &marker);
+                    query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
@@ -877,14 +875,14 @@ impl BlobContainerClient {
     ///     let response: Response<ListBlobsHierarchySegmentResponse, XmlFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListBlobsHierarchySegmentResponseHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::ListBlobsHierarchySegmentResponseHeaders::date) - date
     ///
     /// [`ListBlobsHierarchySegmentResponseHeaders`]: crate::generated::models::ListBlobsHierarchySegmentResponseHeaders
     #[tracing::function("Storage.Blob.Container.listBlobHierarchySegment")]
@@ -896,54 +894,43 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
-        first_url
-            .query_pairs_mut()
+        let mut query_builder = first_url.query_builder();
+        query_builder
             .append_pair("comp", "list")
             .append_key_only("hierarchy")
             .append_pair("restype", "container");
-        first_url
-            .query_pairs_mut()
-            .append_pair("delimiter", delimiter);
-        if let Some(include) = options.include {
-            first_url.query_pairs_mut().append_pair(
+        query_builder.set_pair("delimiter", delimiter);
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
                 "include",
-                &include
+                include
                     .iter()
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(","),
             );
         }
-        if let Some(marker) = options.marker {
-            first_url.query_pairs_mut().append_pair("marker", &marker);
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
         }
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
-        if let Some(prefix) = options.prefix {
-            first_url.query_pairs_mut().append_pair("prefix", &prefix);
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
         }
         if let Some(timeout) = options.timeout {
-            first_url
-                .query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let version = self.version.clone();
         Ok(Pager::from_callback(
             move |marker: PagerState<String>, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
-                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
-                        let mut new_url = url.clone();
-                        new_url
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
-                        url = new_url;
-                    }
-                    url.query_pairs_mut().append_pair("marker", &marker);
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", &marker);
+                    query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
@@ -999,19 +986,19 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientReleaseLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders::last_modified) - last-modified
     ///
     /// [`BlobContainerClientReleaseLeaseResultHeaders`]: crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders
     #[tracing::function("Storage.Blob.Container.releaseLease")]
@@ -1023,14 +1010,15 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "lease")
             .append_key_only("release")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
@@ -1077,14 +1065,14 @@ impl BlobContainerClient {
     ///     let response: Response<BlobContainerClientRenameResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientRenameResultHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::BlobContainerClientRenameResultHeaders::date) - date
     ///
     /// [`BlobContainerClientRenameResultHeaders`]: crate::generated::models::BlobContainerClientRenameResultHeaders
     #[tracing::function("Storage.Blob.Container.rename")]
@@ -1096,17 +1084,18 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "rename")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-source-container-name", source_container_name);
-        if let Some(source_lease_id) = options.source_lease_id {
+        if let Some(source_lease_id) = options.source_lease_id.as_ref() {
             request.insert_header("x-ms-source-lease-id", source_lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1145,11 +1134,11 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientRenewLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_id) = response.lease_id()? {
     ///         println!("x-ms-lease-id: {:?}", lease_id);
@@ -1159,8 +1148,8 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobContainerClientRenewLeaseResultHeaders`]: crate::generated::models::BlobContainerClientRenewLeaseResultHeaders
@@ -1173,14 +1162,15 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "lease")
             .append_key_only("renew")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
@@ -1226,14 +1216,14 @@ impl BlobContainerClient {
     ///     let response: Response<BlobContainerClientRestoreResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientRestoreResultHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::BlobContainerClientRestoreResultHeaders::date) - date
     ///
     /// [`BlobContainerClientRestoreResultHeaders`]: crate::generated::models::BlobContainerClientRestoreResultHeaders
     #[tracing::function("Storage.Blob.Container.restore")]
@@ -1244,19 +1234,20 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "undelete")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(deleted_container_name) = options.deleted_container_name {
+        if let Some(deleted_container_name) = options.deleted_container_name.as_ref() {
             request.insert_header("x-ms-deleted-container-name", deleted_container_name);
         }
-        if let Some(deleted_container_version) = options.deleted_container_version {
+        if let Some(deleted_container_version) = options.deleted_container_version.as_ref() {
             request.insert_header("x-ms-deleted-container-version", deleted_container_version);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1292,13 +1283,14 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "acl")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
@@ -1307,10 +1299,10 @@ impl BlobContainerClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(access) = options.access {
+        if let Some(access) = options.access.as_ref() {
             request.insert_header("x-ms-blob-public-access", access.to_string());
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1346,19 +1338,20 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "metadata")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         for (k, v) in metadata {
