@@ -537,7 +537,7 @@ where
 
 impl<P, C> Stream for ItemIterator<P, C>
 where
-    P: Page + Send,
+    P: Page + ConditionalSend,
     C: AsRef<str> + Clone + ConditionalSend + 'static,
 {
     type Item = crate::Result<P::Item>;
@@ -998,12 +998,13 @@ mod tests {
     use super::{ItemIterator, PageIterator, Pager, PagerOptions, PagerResult, PagerState};
     use crate::http::{
         headers::{HeaderName, HeaderValue},
+        pager::BoxedFuture,
         JsonFormat, RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};
     use serde::Deserialize;
-    use std::{collections::HashMap, future::Future, pin::Pin};
+    use std::collections::HashMap;
 
     #[derive(Deserialize, Debug, PartialEq, Eq)]
     struct Page {
@@ -1576,13 +1577,9 @@ mod tests {
     }
 
     #[allow(clippy::type_complexity)]
-    fn make_three_page_callback() -> impl Fn(
-        PagerState<String>,
-        PagerOptions<'_, String>,
-    ) -> Pin<
-        Box<dyn Future<Output = crate::Result<PagerResult<Response<Page>, String>>> + Send>,
-    > + Send
-           + 'static {
+    fn make_three_page_callback(
+    ) -> impl Fn(PagerState<String>, PagerOptions<'_, String>) -> BoxedFuture<Response<Page>, String>
+    {
         |continuation: PagerState<String>, _options| {
             Box::pin(async move {
                 match continuation.as_deref() {
