@@ -101,6 +101,7 @@ mod tests {
     #[derive(Debug, Clone, Copy)]
     enum BodyType {
         Bytes,
+        #[cfg(not(target_arch = "wasm32"))]
         SeekableStream,
     }
 
@@ -130,6 +131,7 @@ mod tests {
         async fn transfer_oneshot(&self, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
                 Body::Bytes(_) => BodyType::Bytes,
+                #[cfg(not(target_arch = "wasm32"))]
                 Body::SeekableStream(_) => BodyType::SeekableStream,
             };
             let bytes = content.collect_bytes().await?;
@@ -142,6 +144,7 @@ mod tests {
         async fn transfer_partition(&self, offset: usize, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
                 Body::Bytes(_) => BodyType::Bytes,
+                #[cfg(not(target_arch = "wasm32"))]
                 Body::SeekableStream(_) => BodyType::SeekableStream,
             };
             let bytes = content.collect_bytes().await?;
@@ -219,6 +222,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(not(target_arch = "wasm32"))]
     async fn one_shot_stream_when_within_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
         let partition_size: usize = data_size;
@@ -241,6 +245,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(not(target_arch = "wasm32"))]
     async fn partition_stream_when_over_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
         let partition_size: usize = 50;
