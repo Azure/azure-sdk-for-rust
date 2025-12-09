@@ -23,8 +23,8 @@ The directory where JUnit XML files should be written. Defaults to test-results/
 #>
 
 param(
-  [string]$TestResultsDirectory,
-  [string]$OutputDirectory
+  [string]$TestResultsDirectory = "$PSScriptRoot../../test-results",
+  [string]$OutputDirectory = "$PSScriptRoot../../test-results/junit"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -81,13 +81,13 @@ $failedCount = 0
 foreach ($jsonFile in $jsonFiles) {
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jsonFile.Name)
   $junitFile = ([System.IO.Path]::Combine($OutputDirectory, "$baseName.xml"))
-  
+
   Write-Host "  Converting: $($jsonFile.Name) -> $([System.IO.Path]::GetFileName($junitFile))"
-  
+
   try {
     # Convert JSON to JUnit XML using cargo2junit
     Get-Content $jsonFile.FullName | cargo2junit > $junitFile
-    
+
     if ($LASTEXITCODE -ne 0) {
       LogWarning "    cargo2junit returned exit code $LASTEXITCODE for $($jsonFile.Name)"
       $failedCount++
