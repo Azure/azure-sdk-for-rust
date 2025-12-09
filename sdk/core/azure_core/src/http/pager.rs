@@ -594,7 +594,7 @@ where
         f.debug_struct("ItemIterator")
             .field("iter", &self.iter)
             .field(
-                "next_token",
+                "continuation_token",
                 &self.continuation_token.as_ref().map(AsRef::as_ref),
             )
             .finish_non_exhaustive()
