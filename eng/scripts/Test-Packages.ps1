@@ -9,64 +9,6 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . "$PSScriptRoot/../common/scripts/common.ps1"
 
-function Write-TestResult($lineJson) {
-  $line = $lineJson | ConvertFrom-Json
-  if ($line.type -eq "test" -and $line.event) {
-    switch ($line.event) {
-      "ok" {
-        Write-Host "test $($line.Name) ... ok"
-      }
-      "failed" {
-        Write-Host "test $($line.name) ... FAILED" -ForegroundColor Red
-      }
-      "ignored" {
-        Write-Host "test $($line.name) ... ignored"
-      }
-      "started" { } # Ignore started tests, results are important
-      default {
-        Write-Warning "Unknown test event type: $($line.event). Line: $lineJson"
-      }
-    }
-  }
-
-  # Put $lineJson in the output stream for downstream processing
-  $lineJson
-}
-
-function Write-TestSummary (
-  [string]$JsonFile,
-  [string]$PackageName
-) {
-  $failedTests = @()
-
-  foreach ($lineJson in Get-Content $JsonFile) {
-    $line = $lineJson | ConvertFrom-Json
-    if ($line.type -eq "test" -and $line.event -eq "failed") {
-      $failedTests += $line
-    }
-
-    if ($line.type -eq 'suite' -and $line.event -ne 'started') {
-      $result = $line
-    }
-  }
-
-  Write-Host "`ntest result: $($result.event). $($result.passed) passed; $($result.failed) failed; $($result.ignored) ignored; $($result.measured) measured; $($result.filtered_out) filtered out; finished in $($result.exec_time)s"
-
-  if ($failedTests.Count -gt 0) {
-    Write-Host "`nfailures"
-    foreach ($test in $failedTests) {
-      Write-Host "---- $($test.name) stdout ----"
-      Write-Host $test.stdout
-    }
-
-    Write-Host "failures:"
-    foreach ($test in $failedTests) {
-      Write-Host "    $($test.name)"
-    }
-    Write-Host "`nAdditional details are available in the test tab for the build."
-  }
-}
-
 # Helper function to run cargo test with JSON output
 function Invoke-CargoTestWithJsonOutput (
   [string]$TestParams,
@@ -77,14 +19,11 @@ function Invoke-CargoTestWithJsonOutput (
   $result = Invoke-LoggedCommand `
     "cargo +nightly test $TestParams --package $PackageName --no-fail-fast -- --format json -Z unstable-options" `
     -GroupOutput `
-    -DoNotExitOnFailedExitCode `
-    -OutputProcessor { Write-TestResult $_ }
+    -DoNotExitOnFailedExitCode
 
   LogGroupStart 'Test result JSON'
   $result | Tee-Object -FilePath $OutputFile
   LogGroupEnd
-
-  Write-TestSummary -JsonFile $OutputFile -PackageName $PackageName
 
   if ($LASTEXITCODE -ne 0) {
     LogError "Tests failed for $PackageName"
