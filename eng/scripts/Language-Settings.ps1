@@ -53,7 +53,11 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
-    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and "test" -notin ($_.name -split '_') }
+    | Where-Object {
+      $_.manifest_path.StartsWith($searchPath) `
+        -and ("test" -notin ($_.name -split '_')) `
+        -and ($null -eq $_.publish)
+    }
 
     if (!$packages) {
       LogWarning "No publishable packages found in service directory: $ServiceDirectory"
