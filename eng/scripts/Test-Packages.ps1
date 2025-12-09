@@ -9,97 +9,87 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . "$PSScriptRoot/../common/scripts/common.ps1"
 
-# Helper function to parse test results from JSON and output human-readable summary
-function Write-TestSummary {
-  param(
-    [string]$JsonFile,
-    [string]$PackageName
-  )
-
-  if (!(Test-Path $JsonFile)) {
-    Write-Warning "Test results file not found: $JsonFile"
-    return
-  }
-
-  $passed = 0
-  $failed = 0
-  $ignored = 0
-  $failedTests = @()
-
-  # Parse JSON output (newline-delimited JSON)
-  Get-Content $JsonFile | ForEach-Object {
-    try {
-      $event = $_ | ConvertFrom-Json -ErrorAction SilentlyContinue
-      if ($event.type -eq "test" -and $event.event) {
-        switch ($event.event) {
-          "ok" { $passed++ }
-          "failed" {
-            $failed++
-            $failedTests += $event.name
-          }
-          "ignored" { $ignored++ }
-        }
+function Write-TestResult($lineJson) {
+  $line = $lineJson | ConvertFrom-Json
+  if ($line.type -eq "test" -and $line.event) {
+    switch ($line.event) {
+      "ok" {
+        Write-Host "test $($line.Name) ... ok"
+      }
+      "failed" {
+        Write-Host "test $($line.name) ... FAILED" -ForegroundColor Red
+      }
+      "ignored" {
+        Write-Host "test $($line.name) ... ignored"
+      }
+      "started" { } # Ignore started tests, results are important
+      default {
+        Write-Warning "Unknown test event type: $($line.event). Line: $lineJson"
       }
     }
-    catch {
-      # Ignore lines that aren't valid JSON
+  }
+
+  # Put $lineJson in the output stream for downstream processing
+  $lineJson
+}
+
+function Write-TestSummary (
+  [string]$JsonFile,
+  [string]$PackageName
+) {
+  $failedTests = @()
+
+  foreach ($lineJson in Get-Content $JsonFile) {
+    $line = $lineJson | ConvertFrom-Json
+    if ($line.type -eq "test" -and $line.event -eq "failed") {
+      $failedTests += $line
+    }
+
+    if ($line.type -eq 'suite' -and $line.event -ne 'started') {
+      $result = $line
     }
   }
 
-  LogGroupStart "Test Summary: $PackageName"
-  Write-Host "Passed:  $passed" -ForegroundColor Green
-  Write-Host "Failed:  $failed" -ForegroundColor $(if ($failed -gt 0) { "Red" } else { "Green" })
-  Write-Host "Ignored: $ignored" -ForegroundColor Yellow
+  Write-Host "`ntest result: $($result.event). $($result.passed) passed; $($result.failed) failed; $($result.ignored) ignored; $($result.measured) measured; $($result.filtered_out) filtered out; finished in $($result.exec_time)s"
 
-  if ($failed -gt 0) {
-    Write-Host "`nFailed tests:" -ForegroundColor Red
+  if ($failedTests.Count -gt 0) {
+    Write-Host "`nfailures"
     foreach ($test in $failedTests) {
-      Write-Host "  - $test" -ForegroundColor Red
+      Write-Host "---- $($test.name) stdout ----"
+      Write-Host $test.stdout
     }
-    Write-Host "`nAdditional details are available in the test tab for the build." -ForegroundColor Yellow
-  }
-  LogGroupEnd
 
-  return @{
-    Passed  = $passed
-    Failed  = $failed
-    Ignored = $ignored
+    Write-Host "failures:"
+    foreach ($test in $failedTests) {
+      Write-Host "    $($test.name)"
+    }
+    Write-Host "`nAdditional details are available in the test tab for the build."
   }
 }
 
 # Helper function to run cargo test with JSON output
-function Invoke-CargoTestWithJsonOutput {
-  param(
-    [string]$TestParams,
-    [string]$TestDescription,
-    [string]$OutputFile
-  )
-
-  Write-Host "Running $TestDescription with JSON output to: $OutputFile"
-
-  # Use cargo +nightly test with --format json and -Z unstable-options
-  $testCommand = "cargo +nightly test $TestParams --no-fail-fast -- --format json -Z unstable-options"
-
-  # Run the test command and capture output
-  $result = Invoke-LoggedCommand $testCommand -GroupOutput -DoNotExitOnFailedExitCode
+function Invoke-CargoTestWithJsonOutput (
+  [string]$TestParams,
+  [string]$PackageName,
+  [string]$OutputFile
+) {
+  Write-Host "Running tests for $PackageName"
+  $result = Invoke-LoggedCommand `
+    "cargo +nightly test $TestParams --package $PackageName --no-fail-fast -- --format json -Z unstable-options" `
+    -GroupOutput `
+    -DoNotExitOnFailedExitCode `
+    -OutputProcessor { Write-TestResult $_ }
 
   LogGroupStart 'Test result JSON'
-  $result | Write-Host
+  $result | Tee-Object -FilePath $OutputFile
   LogGroupEnd
 
-  # Write JSON to file
-  $result | Out-File -FilePath $OutputFile -Encoding utf8
+  Write-TestSummary -JsonFile $OutputFile -PackageName $PackageName
 
-  # Parse and display summary
-  $results = Write-TestSummary -JsonFile $OutputFile -PackageName $TestDescription
-
-  # Exit immediately if tests failed
   if ($LASTEXITCODE -ne 0) {
-    LogError "Tests failed for $TestDescription"
+    LogError "Tests failed for $PackageName"
     exit $LASTEXITCODE
   }
-
-  return $results
 }
 
 Write-Host @"
@@ -113,7 +103,6 @@ Testing packages with
     ARM_OIDC_TOKEN: $($env:ARM_OIDC_TOKEN ? 'present' : 'not present')
 "@
 
-# Create directory for test results
 $testResultsDir = ([System.IO.Path]::Combine($RepoRoot, 'test-results'))
 if (!(Test-Path $testResultsDir)) {
   New-Item -ItemType Directory -Path $testResultsDir | Out-Null
@@ -140,45 +129,41 @@ foreach ($package in $packagesToTest) {
 }
 
 foreach ($package in $packagesToTest) {
-  Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
-  try {
-    $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
+  $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
 
-    $setupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Setup.ps1'))
-    if (Test-Path $setupScript) {
-      Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $setupScript -GroupOutput
-      if (!$? -ne 0) {
-        LogError "Test setup script failed for package: '$($package.Name)'"
-        exit 1
-      }
-    }
-
-    Write-Host "`n`nTesting package: '$($package.Name)'`n"
-
-    Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
-    Write-Host "`n`n"
-
-    # Generate unique filenames for test outputs
-    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
-    $sanitizedPackageName = $package.Name -replace '[^a-zA-Z0-9_-]', '_'
-
-    # Run doc tests
-    $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-doctest-$timestamp.json"))
-    Invoke-CargoTestWithJsonOutput -TestParams "--doc" -TestDescription "$($package.Name) (doc tests)" -OutputFile $docTestOutput
-
-    # Run all-targets tests
-    $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$sanitizedPackageName-alltargets-$timestamp.json"))
-    Invoke-CargoTestWithJsonOutput -TestParams "--all-targets" -TestDescription "$($package.Name) (all targets)" -OutputFile $allTargetsOutput
-
-    $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
-    if (Test-Path $cleanupScript) {
-      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $cleanupScript -GroupOutput
-      # We ignore the exit code of the cleanup script.
+  $setupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Setup.ps1'))
+  if (Test-Path $setupScript) {
+    Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
+    Invoke-LoggedCommand $setupScript -GroupOutput
+    if (!$? -ne 0) {
+      LogError "Test setup script failed for package: '$($package.Name)'"
+      exit 1
     }
   }
-  finally {
-    Pop-Location
+
+  Write-Host "`n`nTesting package: '$($package.Name)'`n"
+
+  Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
+  Write-Host "`n`n"
+
+  $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+
+  $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
+  Invoke-CargoTestWithJsonOutput `
+    -TestParams "--doc" `
+    -PackageName $package.Name `
+    -OutputFile $docTestOutput
+
+  $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
+  Invoke-CargoTestWithJsonOutput `
+    -TestParams "--all-targets" `
+    -PackageName $package.Name `
+    -OutputFile $allTargetsOutput
+
+  $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
+  if (Test-Path $cleanupScript) {
+    Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
+    Invoke-LoggedCommand $cleanupScript -GroupOutput -DoNotExitOnFailedExitCode
+    # We ignore the exit code of the cleanup script.
   }
 }
