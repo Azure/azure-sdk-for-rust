@@ -43,7 +43,6 @@ pub(crate) async fn upload(
     Ok(())
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 async fn upload_bytes_partitions(
     content: Bytes,
     parallel: NonZero<usize>,
@@ -63,6 +62,7 @@ async fn upload_bytes_partitions(
     Ok(())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 async fn upload_stream_partitions(
     content: Box<dyn SeekableStream>,
     parallel: NonZero<usize>,
