@@ -29,7 +29,7 @@ Documentation: [cargo-fmt](https://doc.rust-lang.org/cargo/commands/cargo-fmt.ht
 Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
 ```
-cargo fmt --all -- --check
+cargo fmt
 ```
 
 #### Clippy
@@ -39,7 +39,7 @@ Documentation: [cargo-clippy](https://doc.rust-lang.org/cargo/commands/cargo-cli
 Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
 ```
-cargo clippy --workspace --keep-going --no-deps
+cargo clippy
 ```
 
 #### Check
@@ -52,7 +52,7 @@ Documentation: [cargo-check](https://doc.rust-lang.org/cargo/commands/cargo-chec
 Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
 ```
-cargo check --package azure_core --all-features --all-targets --keep-going
+cargo check
 ```
 
 #### Doc
@@ -62,7 +62,7 @@ Documentation: [cargo-doc](https://doc.rust-lang.org/cargo/commands/cargo-doc.ht
 Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
 ```
-cargo doc --workspace --no-deps --all-features
+cargo doc
 ```
 
 #### Docs-rs
@@ -73,7 +73,7 @@ Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/mai
 
 ```
 cargo install --locked cargo-docs-rs
-cargo +nightly docs-rs --package <pkg>
+cargo +nightly docs-rs
 ```
 
 ### Checks installed as tools
@@ -88,7 +88,7 @@ Runs in [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main
 
 ```
 cargo install cargo-deny
-cargo deny --all-features check
+cargo deny
 ```
 
 ### Semver
@@ -99,5 +99,5 @@ Runs in [Test-Semver.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/
 
 ```
 cargo install cargo-semver-checks
-cargo semver-checks --package <pkg1> --package <pkg2> ...
+cargo semver-checks
 ```
