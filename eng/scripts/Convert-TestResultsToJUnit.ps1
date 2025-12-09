@@ -30,7 +30,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'common', 'scripts', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
 Write-Host "Converting test results from JSON to JUnit XML using cargo2junit"
 Write-Host "  Input directory:  $TestResultsDirectory"
