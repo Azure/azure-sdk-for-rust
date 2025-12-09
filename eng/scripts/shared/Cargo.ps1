@@ -31,3 +31,25 @@ function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
 
   return $names
 }
+
+function Get-VersionParamsFromCgManifest(
+  $packageName,
+  $cgManifestPath = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'cgmanifest.json'))
+) {
+  $cgManifest = Get-Content $cgManifestPath `
+  | ConvertFrom-Json
+  $versions = $cgManifest.
+  registrations.
+  Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq $packageName }).
+  component.cargo.version
+
+  if (!$versions) {
+    Write-Error "No versions found for package '$packageName' in cgmanifest.json"
+  }
+
+  if ($versions -is [Array] -and $versions.Count -ne 1) {
+    Write-Error "Multiple versions found for package '$packageName' in cgmanifest.json"
+  }
+
+  return @('--version', $versions)
+}

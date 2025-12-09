@@ -8,6 +8,13 @@
         "cargo": { "name": "cargo-semver-checks", "version": "0.45.0" }
       },
       "developmentDependency": true
+    },
+    {
+      "component": {
+        "type": "cargo",
+        "cargo": { "name": "cargo-audit", "version": "0.22.0" }
+      },
+      "developmentDependency": true
     }
   ]
 }
