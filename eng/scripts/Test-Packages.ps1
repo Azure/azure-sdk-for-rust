@@ -26,7 +26,7 @@ function Invoke-CargoTestWithJsonOutput (
   LogGroupEnd
 
   if ($LASTEXITCODE -ne 0) {
-    LogError "Tests failed for $PackageName"
+    LogError "Tests failed for $PackageName. For more information see the pipeline Tests tab."
     exit $LASTEXITCODE
   }
 }
