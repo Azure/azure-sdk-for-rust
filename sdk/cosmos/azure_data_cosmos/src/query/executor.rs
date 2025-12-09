@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![allow(unused)]
+#![allow(dead_code)]
 
-use azure_core::http::{
-    headers::Headers, pager::PagerResult, Context, Method, RawResponse, Request,
-};
+use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
