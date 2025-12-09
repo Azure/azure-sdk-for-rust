@@ -49,7 +49,8 @@ Use the same commands outlined in the base guide—`tsp-client init` for brand-n
 tsp-client update https://github.com/Azure/azure-rest-api-specs/blob/<commit>/specification/<service>/<project>/tspconfig.yaml
 
 # Local iteration
-$spec = "C:/Repos/Azure/azure-rest-api-specs/specification/<service>/<project>"
+$spec = "<your-repo-path>/Azure/azure-rest-api-specs/specification/<service>/<project>"
+tsp-client update "$spec/tspconfig.yaml"
 
 ```
 
