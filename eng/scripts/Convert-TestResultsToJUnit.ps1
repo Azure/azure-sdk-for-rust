@@ -30,6 +30,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'Cargo.ps1'))
 
 Write-Host "Converting test results from JSON to JUnit XML using cargo2junit"
 Write-Host "  Input directory:  $TestResultsDirectory"
@@ -55,7 +56,8 @@ if (!(Test-Path $OutputDirectory)) {
 
 $cargo2junitPath = Get-Command cargo2junit -ErrorAction SilentlyContinue
 if (!$cargo2junitPath) {
-  Invoke-LoggedCommand "cargo install cargo2junit" -GroupOutput
+  $cargo2junitVersionParams = Get-VersionParamsFromCgManifest cargo2junit
+  Invoke-LoggedCommand "cargo install cargo2junit $($cargo2junitVersionParams -join ' ')" -GroupOutput
 }
 
 Write-Host "`nConverting $($jsonFiles.Count) JSON file(s) to JUnit XML..."
