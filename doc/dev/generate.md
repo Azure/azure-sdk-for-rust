@@ -1,3 +1,5 @@
+<!-- cspell: ignore tspconfig mgmt -->
+
 # Generating Management Plane Crates from TypeSpec
 
 This document complements [Creating a TypeSpec-Based Rust SDK Client](../new-typespec-based-client.md). Read that guide first for the canonical, step-by-step walkthrough; use this page to layer on the management plane specifics that keep our Resource Manager crates consistent with the rest of the Azure SDK.
