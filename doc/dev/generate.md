@@ -2,7 +2,7 @@
 
 # Generating Management Plane Crates from TypeSpec
 
-This document complements [Creating a TypeSpec-Based Rust SDK Client](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/new-typespec-based-client.md). Read that guide first for the canonical, step-by-step walkthrough; use this page to layer on the management plane specifics that keep our Resource Manager crates consistent with the rest of the Azure SDK.
+This document complements [Creating a TypeSpec-Based Rust SDK Client](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/new-typespec-based-client.md). Read that guide first for the canonical, step-by-step walkthrough; use this page to layer on the management plane specifics that keep our Resource Manager crates consistent with the rest of the Azure SDK.
 
 ## When to reach for this guide
 
@@ -10,7 +10,7 @@ You are in the right place if all of the following are true:
 
 -   Your TypeSpec project targets Resource Manager APIs (`import "@azure-tools/typespec-azure-resource-manager";`).
 -   You plan to ship the resulting crate under the `azure_mgmt_*` naming pattern in this repository.
--   You already understand the base TypeSpec → Rust workflow described in [new-typespec-based-client.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/new-typespec-based-client.md) and only need the management-plane adjustments.
+-   You already understand the base TypeSpec → Rust workflow described in [new-typespec-based-client.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/new-typespec-based-client.md) and only need the management-plane adjustments.
 
 ## Management-plane prerequisites
 
@@ -90,7 +90,7 @@ As always, fix issues in TypeSpec or the emitter rather than editing generated R
 
 ## Related reading
 
--   [Creating a TypeSpec-Based Rust SDK Client](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/new-typespec-based-client.md)
+-   [Creating a TypeSpec-Based Rust SDK Client](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/new-typespec-based-client.md)
 -   [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)
 -   [TypeSpec Client Generator CLI](https://github.com/Azure/azure-sdk-tools/tree/main/tools/tsp-client)
 -   [Azure REST API Specs Repository](https://github.com/Azure/azure-rest-api-specs)

@@ -1,3 +1,5 @@
+<!-- cspell: ignore tspconfig mgmt -->
+
 # Azure SDK for Rust Documentation
 
 This directory curates engineering guidance, design notes, and process documentation for contributors to the Azure SDK for Rust. Use these pages to understand repository conventions, service onboarding workflows, and supporting infrastructure.
