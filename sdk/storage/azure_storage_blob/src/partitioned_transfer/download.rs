@@ -2,7 +2,6 @@ use std::{collections::VecDeque, ops::Range, task::Poll};
 
 use azure_core::http::AsyncRawResponse;
 use bytes::Bytes;
-use futures::FutureExt;
 
 use crate::models::content_range::ContentRange;
 
@@ -22,6 +21,7 @@ enum PollPersist<Out, Fut> {
     Ready(Out),
     Pending(Fut),
 }
+type OpsFuture = Pin<Box<dyn Future<Output = Result<Bytes, azure_core::Error>>>>;
 
 /// Returns a stream that runs up to parallel-many ranged downloads at a time.
 ///
@@ -45,17 +45,20 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
     let mut ranges =
         (1..total_ranges).map(move |i| i * partition_size..i * partition_size + partition_size);
 
-    let mut ops = VecDeque::from([PollPersist::Pending(
-        initial_response.into_body().collect().boxed(),
-    )]);
+    // the first operation has a different type from the others.
+    // fully type this variable out to specify dyn.
+    let fut: Pin<Box<dyn Future<Output = AzureResult<Bytes>>>> =
+        Box::pin(initial_response.into_body().collect());
+    let mut ops: VecDeque<PollPersist<Bytes, OpsFuture>> =
+        VecDeque::from([PollPersist::Pending(fut)]);
 
     let stream = futures::stream::poll_fn(move |cx| {
         // fill to max parallel ops
         while ops.len() < parallel {
             match ranges.next() {
-                Some(range) => ops.push_back(PollPersist::Pending(
-                    download_range_to_bytes(client, range).boxed(),
-                )),
+                Some(range) => ops.push_back(PollPersist::Pending(Box::pin(
+                    download_range_to_bytes(client, range),
+                ))),
                 None => break,
             }
         }
