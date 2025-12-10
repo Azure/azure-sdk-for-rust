@@ -10,7 +10,7 @@ You are in the right place if all of the following are true:
 
 -   Your TypeSpec project targets Resource Manager APIs (`import "@azure-tools/typespec-azure-resource-manager";`).
 -   You plan to ship the resulting crate under the `azure_mgmt_*` naming pattern in this repository.
--   You already understand the base TypeSpec → Rust workflow described in `new-typespec-based-client.md` and only need the management-plane adjustments.
+-   You already understand the base TypeSpec → Rust workflow described in [new-typespec-based-client.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/new-typespec-based-client.md) and only need the management-plane adjustments.
 
 ## Management-plane prerequisites
 
