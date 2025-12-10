@@ -415,7 +415,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_servicebus"
-version = "0.1.0"
+version = "0.22.0"
 dependencies = [
  "async-lock",
  "async-stream",
