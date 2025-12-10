@@ -526,10 +526,11 @@ where
 
         // Start with the current page until after all items are iterated.
         iter.options.continuation_token = self.continuation_token;
-        iter.state = match iter.options.continuation_token {
-            Some(ref n) => State::More(n.clone()),
-            None => State::Init,
-        };
+        iter.state = iter
+            .options
+            .continuation_token
+            .as_ref()
+            .map_or_else(|| State::Init, |_| State::More);
 
         iter
     }
@@ -769,10 +770,10 @@ where
         options: Option<PagerOptions<'static, C>>,
     ) -> Self {
         let options = options.unwrap_or_default();
-        let state = match options.continuation_token {
-            Some(ref n) => State::More(n.clone()),
-            None => State::Init,
-        };
+        let state = options
+            .continuation_token
+            .as_ref()
+            .map_or_else(|| State::Init, |_| State::More);
 
         Self {
             make_request: Box::new(make_request),
@@ -858,10 +859,19 @@ where
                 }
             }
             State::Pending(ref mut fut) => task::ready!(fut.poll_unpin(cx)),
-            State::More(ref n) => {
-                tracing::debug!("subsequent page request to {:?}", AsRef::<str>::as_ref(n));
+            State::More => {
                 let options = this.options.clone();
-                let mut fut = (this.make_request)(PagerState::More(n.clone()), options);
+                let continuation_token = options
+                    .continuation_token
+                    .clone()
+                    // We should always have a continuation_token with `State::More`.
+                    .expect("expected continuation_token");
+                tracing::debug!(
+                    "subsequent page request to {:?}",
+                    &continuation_token.as_ref(),
+                );
+
+                let mut fut = (this.make_request)(PagerState::More(continuation_token), options);
 
                 match fut.poll_unpin(cx) {
                     task::Poll::Ready(result) => result,
@@ -902,8 +912,8 @@ where
                 continuation: continuation_token,
             }) => {
                 // Set the `continuation_token` to the next page.
-                this.options.continuation_token = Some(continuation_token.clone());
-                *this.state = State::More(continuation_token);
+                this.options.continuation_token = Some(continuation_token);
+                *this.state = State::More;
                 task::Poll::Ready(Some(Ok(response)))
             }
 
@@ -968,7 +978,7 @@ where
 enum State<P, C: AsRef<str>> {
     Init,
     Pending(BoxedFuture<P, C>),
-    More(C),
+    More,
     Done,
 }
 
@@ -977,7 +987,7 @@ impl<P, C: AsRef<str>> fmt::Debug for State<P, C> {
         match self {
             State::Init => f.write_str("Init"),
             State::Pending(..) => f.debug_tuple("Pending").finish_non_exhaustive(),
-            State::More(c) => f.debug_tuple("More").field(&c.as_ref()).finish(),
+            State::More => f.write_str("More"),
             State::Done => f.write_str("Done"),
         }
     }
