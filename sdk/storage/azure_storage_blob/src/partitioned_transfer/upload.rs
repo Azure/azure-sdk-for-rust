@@ -75,10 +75,10 @@ async fn upload_stream_partitions(
     let partitions =
         PartitionedStream::new(content, partition_size).scan(0, |enumerated_bytes, result| {
             match result {
-                Ok(seekable_stream) => {
+                Ok(bytes) => {
                     let offset = *enumerated_bytes;
-                    *enumerated_bytes += seekable_stream.len();
-                    future::ready(Some(Ok((offset, seekable_stream))))
+                    *enumerated_bytes += bytes.len();
+                    future::ready(Some(Ok((offset, bytes))))
                 }
                 Err(e) => future::ready(Some(Err(e))),
             }
@@ -273,24 +273,6 @@ mod tests {
         );
 
         Ok(())
-    }
-
-    fn assert_upload_invocations(
-        mock: &MockPartitionedUploadBehavior,
-        original_data: &[u8],
-        partition_size: usize,
-        expected_body_type: BodyType,
-    ) {
-        if original_data.len() <= partition_size {
-            assert_upload_oneshot_invocations(mock, original_data, expected_body_type);
-        } else {
-            assert_upload_partitioned_invocations(
-                mock,
-                original_data,
-                partition_size,
-                expected_body_type,
-            );
-        }
     }
 
     fn assert_upload_oneshot_invocations(
