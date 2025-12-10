@@ -43,7 +43,7 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
     let total_ranges = content_range.total_length().div_ceil(partition_size);
 
     let mut ranges =
-        (1..total_ranges).map(move |i| (i * partition_size..i * partition_size + partition_size));
+        (1..total_ranges).map(move |i| i * partition_size..i * partition_size + partition_size);
 
     let mut ops = VecDeque::from([PollPersist::Pending(
         initial_response.into_body().collect().boxed(),
