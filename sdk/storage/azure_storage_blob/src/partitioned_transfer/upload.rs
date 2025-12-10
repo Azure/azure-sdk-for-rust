@@ -1,5 +1,3 @@
-use std::future;
-
 use azure_core::http::Body;
 use bytes::Bytes;
 
@@ -8,6 +6,7 @@ use azure_core::stream::SeekableStream;
 #[cfg(not(target_arch = "wasm32"))]
 use futures::StreamExt;
 
+#[cfg(not(target_arch = "wasm32"))]
 use crate::streams::partitioned_stream::PartitionedStream;
 
 use super::*;
