@@ -18,7 +18,7 @@ use std::{fmt, future::Future, ops::Deref, pin::Pin, sync::Arc, task};
 
 /// Represents the state of a [`Pager`] or [`PageIterator`].
 #[derive(Debug, Default, PartialEq, Eq)]
-pub enum PagerState<C: AsRef<str> = Url> {
+pub enum PagerState<C = Url> {
     /// The pager should fetch the initial page.
     #[default]
     Initial,
@@ -26,12 +26,11 @@ pub enum PagerState<C: AsRef<str> = Url> {
     More(C),
 }
 
-impl<C: AsRef<str>> PagerState<C> {
+impl<C> PagerState<C> {
     /// Maps a `PagerState<C>` to a `PagerState<U>` by applying a function to a next link/continuation token `C` (if `PagerState::More`) or returns `PagerState::Initial` (if `PagerState::Initial`).
     #[inline]
     pub fn map<U, F>(self, f: F) -> PagerState<U>
     where
-        U: AsRef<str>,
         F: FnOnce(C) -> U,
     {
         match self {
@@ -57,13 +56,12 @@ impl<C: AsRef<str>> PagerState<C> {
     pub fn as_deref(&self) -> PagerState<&C::Target>
     where
         C: Deref,
-        C::Target: AsRef<str>,
     {
         self.as_ref().map(|t| t.deref())
     }
 }
 
-impl<C: AsRef<str> + Clone> Clone for PagerState<C> {
+impl<C: Clone> Clone for PagerState<C> {
     #[inline]
     fn clone(&self) -> Self {
         match self {
@@ -74,7 +72,7 @@ impl<C: AsRef<str> + Clone> Clone for PagerState<C> {
 }
 
 /// The result of fetching a single page from a [`Pager`], whether there are more pages or paging is done.
-pub enum PagerResult<P, C: AsRef<str> = Url> {
+pub enum PagerResult<P, C = Url> {
     /// There are more pages the [`Pager`] may fetch using the `continuation` token.
     More {
         /// The response for the current page.
@@ -105,12 +103,12 @@ impl<P, F> PagerResult<Response<P, F>, String> {
     }
 }
 
-impl<P, C: AsRef<str>> fmt::Debug for PagerResult<P, C> {
+impl<P, C: fmt::Debug> fmt::Debug for PagerResult<P, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::More { continuation, .. } => f
                 .debug_struct("More")
-                .field("continuation", &continuation.as_ref())
+                .field("continuation", continuation)
                 .finish_non_exhaustive(),
             Self::Done { .. } => f.debug_struct("Done").finish_non_exhaustive(),
         }
@@ -217,7 +215,7 @@ type PagerFn<P, C> = Box<dyn Fn(PagerState<C>, PagerOptions<'static, C>) -> Boxe
 
 /// Options for configuring the behavior of a [`Pager`].
 #[derive(Clone)]
-pub struct PagerOptions<'a, C: AsRef<str> = Url> {
+pub struct PagerOptions<'a, C = Url> {
     /// Context for HTTP requests made by the [`Pager`].
     pub context: Context<'a>,
 
@@ -260,19 +258,16 @@ pub struct PagerOptions<'a, C: AsRef<str> = Url> {
     pub continuation_token: Option<C>,
 }
 
-impl<'a, C: AsRef<str>> fmt::Debug for PagerOptions<'a, C> {
+impl<'a, C: fmt::Debug> fmt::Debug for PagerOptions<'a, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PagerOptions")
             .field("context", &self.context)
-            .field(
-                "continuation_token",
-                &self.continuation_token.as_ref().map(AsRef::as_ref),
-            )
+            .field("continuation_token", &self.continuation_token)
             .finish()
     }
 }
 
-impl<'a, C: AsRef<str>> Default for PagerOptions<'a, C> {
+impl<'a, C> Default for PagerOptions<'a, C> {
     fn default() -> Self {
         PagerOptions {
             context: Context::new(),
@@ -338,7 +333,7 @@ impl<'a, C: AsRef<str>> Default for PagerOptions<'a, C> {
 pub struct ItemIterator<P, C = Url>
 where
     P: Page + ConditionalSend,
-    C: AsRef<str> + ConditionalSend,
+    C: ConditionalSend,
 {
     #[pin]
     iter: PageIterator<P, C>,
@@ -354,7 +349,7 @@ where
 impl<P, C> ItemIterator<P, C>
 where
     P: Page + ConditionalSend,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    C: Clone + ConditionalSend + 'static,
 {
     /// Creates a [`ItemIterator`] from a callback that will be called repeatedly to request each page.
     ///
@@ -539,7 +534,7 @@ where
 impl<P, C> Stream for ItemIterator<P, C>
 where
     P: Page + ConditionalSend,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    C: Clone + ConditionalSend + fmt::Debug + 'static,
 {
     type Item = crate::Result<P::Item>;
 
@@ -562,8 +557,8 @@ where
             // Set the current_token to the next page only after iterating through all items.
             tracing::trace!(
                 "updating continuation_token from {:?} to {:?}",
-                this.continuation_token.as_ref().map(AsRef::as_ref),
-                iter.continuation_token().map(AsRef::as_ref),
+                &this.continuation_token,
+                iter.continuation_token(),
             );
             *this.continuation_token = iter.options.continuation_token.clone();
 
@@ -588,24 +583,21 @@ where
 
 impl<P, C> fmt::Debug for ItemIterator<P, C>
 where
-    P: Page + ConditionalSend + 'static,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    P: Page + ConditionalSend,
+    C: fmt::Debug + ConditionalSend,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ItemIterator")
             .field("iter", &self.iter)
-            .field(
-                "continuation_token",
-                &self.continuation_token.as_ref().map(AsRef::as_ref),
-            )
+            .field("continuation_token", &self.continuation_token)
             .finish_non_exhaustive()
     }
 }
 
 impl<P, C> FusedStream for ItemIterator<P, C>
 where
-    P: Page + ConditionalSend + 'static,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    P: Page + ConditionalSend,
+    C: Clone + ConditionalSend + fmt::Debug + 'static,
 {
     fn is_terminated(&self) -> bool {
         self.iter.is_terminated()
@@ -619,7 +611,7 @@ where
 unsafe impl<P, C> Send for ItemIterator<P, C>
 where
     P: Page + ConditionalSend + 'static,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    C: Clone + ConditionalSend + fmt::Debug + 'static,
 {
 }
 
@@ -658,7 +650,7 @@ where
 pub struct PageIterator<P, C = Url>
 where
     P: ConditionalSend,
-    C: AsRef<str> + ConditionalSend,
+    C: ConditionalSend,
 {
     #[pin]
     make_request: PagerFn<P, C>,
@@ -670,7 +662,7 @@ where
 impl<P, C> PageIterator<P, C>
 where
     P: ConditionalSend,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    C: Clone + ConditionalSend + 'static,
 {
     /// Creates a [`PageIterator`] from a callback that will be called repeatedly to request each page.
     ///
@@ -821,7 +813,7 @@ where
 impl<P, C> Stream for PageIterator<P, C>
 where
     P: ConditionalSend,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    C: Clone + ConditionalSend + fmt::Debug + 'static,
 {
     type Item = crate::Result<P>;
 
@@ -866,10 +858,7 @@ where
                     .clone()
                     // We should always have a continuation_token with `State::More`.
                     .expect("expected continuation_token");
-                tracing::debug!(
-                    "subsequent page request to {:?}",
-                    &continuation_token.as_ref(),
-                );
+                tracing::debug!("subsequent page request to {:?}", &continuation_token,);
 
                 let mut fut = (this.make_request)(PagerState::More(continuation_token), options);
 
@@ -939,14 +928,11 @@ where
 impl<P, C> fmt::Debug for PageIterator<P, C>
 where
     P: ConditionalSend,
-    C: AsRef<str> + ConditionalSend,
+    C: fmt::Debug + ConditionalSend,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PageIterator")
-            .field(
-                "continuation_token",
-                &self.options.continuation_token.as_ref().map(AsRef::as_ref),
-            )
+            .field("continuation_token", &self.options.continuation_token)
             .field("options", &self.options)
             .field("state", &self.state)
             .field("added_span", &self.added_span)
@@ -957,7 +943,7 @@ where
 impl<P, C> FusedStream for PageIterator<P, C>
 where
     P: ConditionalSend,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    C: Clone + ConditionalSend + fmt::Debug + 'static,
 {
     fn is_terminated(&self) -> bool {
         self.state == State::Done
@@ -971,18 +957,18 @@ where
 unsafe impl<P, C> Send for PageIterator<P, C>
 where
     P: ConditionalSend,
-    C: AsRef<str> + Clone + ConditionalSend + 'static,
+    C: Clone + ConditionalSend + fmt::Debug + 'static,
 {
 }
 
-enum State<P, C: AsRef<str>> {
+enum State<P, C> {
     Init,
     Pending(BoxedFuture<P, C>),
     More,
     Done,
 }
 
-impl<P, C: AsRef<str>> fmt::Debug for State<P, C> {
+impl<P, C: fmt::Debug> fmt::Debug for State<P, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             State::Init => f.write_str("Init"),
@@ -993,7 +979,7 @@ impl<P, C: AsRef<str>> fmt::Debug for State<P, C> {
     }
 }
 
-impl<P, C: AsRef<str>> PartialEq for State<P, C> {
+impl<P, C> PartialEq for State<P, C> {
     fn eq(&self, other: &Self) -> bool {
         // Only needs to compare if both states are Init or Done; internally, we don't care about any other states.
         matches!(
