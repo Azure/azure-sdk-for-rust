@@ -8,18 +8,20 @@ use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
+        BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
+        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+        BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientDeleteImmutabilityPolicyOptions,
-        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
-        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
-        BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobClientUndeleteOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
+        BlobClientChangeLeaseOptions, BlobClientCreateSnapshotOptions,
+        BlobClientDeleteImmutabilityPolicyOptions, BlobClientDeleteOptions,
+        BlobClientDownloadOptions, BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions,
+        BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+        BlobClientSetTierOptions, BlobClientUndeleteOptions, BlobTags,
+        BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -532,5 +534,17 @@ impl BlobClient {
         options: Option<BlobClientUndeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.undelete(options).await
+    }
+
+    /// Creates a read-only snapshot of a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn create_snapshot(
+        &self,
+        options: Option<BlobClientCreateSnapshotOptions<'_>>,
+    ) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>> {
+        self.client.create_snapshot(options).await
     }
 }
