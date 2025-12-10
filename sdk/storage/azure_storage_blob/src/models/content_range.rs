@@ -8,7 +8,7 @@ use std::str::FromStr;
 const PREFIX: &str = "bytes ";
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct ContentRange {
+pub(crate) struct ContentRange {
     start: u64,
     end: u64,
     total_length: u64,
@@ -33,10 +33,6 @@ impl ContentRange {
 
     pub fn total_length(&self) -> u64 {
         self.total_length
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.end == self.start
     }
 }
 
@@ -125,11 +121,11 @@ impl fmt::Display for ContentRange {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
-    fn test_parse() {
+    fn parse() {
         let range = "bytes 172032-172489/172490"
             .parse::<ContentRange>()
             .unwrap();
@@ -140,22 +136,22 @@ mod test {
     }
 
     #[test]
-    fn test_parse_no_starting_token() {
+    fn parse_no_starting_token() {
         "something else".parse::<ContentRange>().unwrap_err();
     }
 
     #[test]
-    fn test_parse_no_dash() {
+    fn parse_no_dash() {
         "bytes 100".parse::<ContentRange>().unwrap_err();
     }
 
     #[test]
-    fn test_parse_no_slash() {
+    fn parse_no_slash() {
         "bytes 100-500".parse::<ContentRange>().unwrap_err();
     }
 
     #[test]
-    fn test_display() {
+    fn display() {
         let range = ContentRange {
             start: 100,
             end: 501,
