@@ -7,11 +7,9 @@ use crate::models::content_range::ContentRange;
 
 use super::*;
 
-pub(crate) trait PartitionedDownloadBehavior: Sync {
-    fn transfer_range(
-        &self,
-        range: Range<u64>,
-    ) -> impl Future<Output = AzureResult<AsyncRawResponse>> + Send;
+#[async_trait::async_trait]
+pub(crate) trait PartitionedDownloadBehavior {
+    async fn transfer_range(&self, range: Range<u64>) -> AzureResult<AsyncRawResponse>;
 }
 
 /// Holds either a future to be polled or its output to be persisted.
@@ -134,6 +132,7 @@ mod tests {
         }
     }
 
+    #[async_trait::async_trait]
     impl PartitionedDownloadBehavior for MockPartitionedDownloadBehavior {
         async fn transfer_range(&self, range: Range<u64>) -> AzureResult<AsyncRawResponse> {
             {
