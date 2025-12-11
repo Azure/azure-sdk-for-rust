@@ -4,7 +4,6 @@ mod framework;
 
 use std::error::Error;
 
-use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     models::{
         ContainerProperties, IndexingMode, IndexingPolicy, PartitionKeyKind, PropertyPath,
@@ -14,15 +13,12 @@ use azure_data_cosmos::{
 };
 use futures::TryStreamExt;
 
-use framework::{test_data, TestAccount};
+use framework::{test_data, TestClient};
 
 #[tokio::test]
-pub async fn container_crud() -> Result<(), Box<dyn Error>> {
-    TestAccount::run(|account: &TestAccount| {
+pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_db(|_, db_client| {
         Box::pin(async move {
-            let cosmos_client = account.connect_with_key(None)?;
-            let db_client = test_data::create_database(account, &cosmos_client).await?;
-
             // Create the container
             let properties = ContainerProperties {
                 id: "TheContainer".into(),
@@ -147,95 +143,93 @@ pub async fn container_crud() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-// #[recorded::test]
-// pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dyn Error>> {
-//     let account = TestAccount::from_env(context, None).await?;
-//     let cosmos_client = account.connect_with_key(None)?;
-//     let db_client = test_data::create_database(&account, &cosmos_client).await?;
+#[tokio::test]
+pub async fn container_crud_autoscale() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_db(|_, db_client| {
+        Box::pin(async move {
+            // Create the container
+            let properties = ContainerProperties {
+                id: "TheContainer".into(),
+                partition_key: "/id".into(),
+                indexing_policy: Some(IndexingPolicy {
+                    included_paths: vec!["/*".into()],
+                    excluded_paths: vec![r#"/"_etag"/?"#.into()],
+                    automatic: true,
+                    indexing_mode: Some(IndexingMode::Consistent),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
 
-//     // Create the container
-//     let properties = ContainerProperties {
-//         id: "TheContainer".into(),
-//         partition_key: "/id".into(),
-//         indexing_policy: Some(IndexingPolicy {
-//             included_paths: vec!["/*".into()],
-//             excluded_paths: vec![r#"/"_etag"/?"#.into()],
-//             automatic: true,
-//             indexing_mode: Some(IndexingMode::Consistent),
-//             ..Default::default()
-//         }),
-//         ..Default::default()
-//     };
+            let throughput = ThroughputProperties::autoscale(5000, Some(42));
 
-//     let throughput = ThroughputProperties::autoscale(5000, Some(42));
+            db_client
+                .create_container(
+                    properties.clone(),
+                    Some(CreateContainerOptions {
+                        throughput: Some(throughput),
+                        ..Default::default()
+                    }),
+                )
+                .await?
+                .into_model()?;
+            let container_client = db_client.container_client(&properties.id);
 
-//     db_client
-//         .create_container(
-//             properties.clone(),
-//             Some(CreateContainerOptions {
-//                 throughput: Some(throughput),
-//                 ..Default::default()
-//             }),
-//         )
-//         .await?
-//         .into_model()?;
-//     let container_client = db_client.container_client(&properties.id);
+            let current_throughput = container_client
+                .read_throughput(None)
+                .await?
+                .expect("throughput should be present")
+                .into_model()?;
 
-//     let current_throughput = container_client
-//         .read_throughput(None)
-//         .await?
-//         .expect("throughput should be present")
-//         .into_model()?;
+            assert_eq!(Some(500), current_throughput.throughput());
+            assert_eq!(Some(5000), current_throughput.autoscale_maximum());
+            assert_eq!(Some(42), current_throughput.autoscale_increment());
 
-//     assert_eq!(Some(500), current_throughput.throughput());
-//     assert_eq!(Some(5000), current_throughput.autoscale_maximum());
-//     assert_eq!(Some(42), current_throughput.autoscale_increment());
+            Ok(())
+        })
+    })
+    .await
+}
 
-//     account.cleanup().await?;
+#[tokio::test]
+pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_db(|_, db_client| {
+        Box::pin(async move {
+            // Create the container
+            let properties = ContainerProperties {
+                id: "TheContainer".into(),
+                partition_key: ("/parent", "/child", "/grandchild").into(),
+                indexing_policy: Some(IndexingPolicy {
+                    included_paths: vec!["/*".into()],
+                    excluded_paths: vec![r#"/"_etag"/?"#.into()],
+                    automatic: true,
+                    indexing_mode: Some(IndexingMode::Consistent),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
 
-//     Ok(())
-// }
+            let created_properties = db_client
+                .create_container(properties.clone(), None)
+                .await?
+                .into_model()?;
 
-// #[recorded::test]
-// pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), Box<dyn Error>> {
-//     let account = TestAccount::from_env(context, None).await?;
-//     let cosmos_client = account.connect_with_key(None)?;
-//     let db_client = test_data::create_database(&account, &cosmos_client).await?;
+            assert_eq!(&properties.id, &created_properties.id);
+            assert_eq!(
+                vec![
+                    String::from("/parent"),
+                    String::from("/child"),
+                    String::from("/grandchild")
+                ],
+                created_properties.partition_key.paths
+            );
+            assert_eq!(
+                PartitionKeyKind::MultiHash,
+                created_properties.partition_key.kind
+            );
 
-//     // Create the container
-//     let properties = ContainerProperties {
-//         id: "TheContainer".into(),
-//         partition_key: ("/parent", "/child", "/grandchild").into(),
-//         indexing_policy: Some(IndexingPolicy {
-//             included_paths: vec!["/*".into()],
-//             excluded_paths: vec![r#"/"_etag"/?"#.into()],
-//             automatic: true,
-//             indexing_mode: Some(IndexingMode::Consistent),
-//             ..Default::default()
-//         }),
-//         ..Default::default()
-//     };
-
-//     let created_properties = db_client
-//         .create_container(properties.clone(), None)
-//         .await?
-//         .into_model()?;
-
-//     assert_eq!(&properties.id, &created_properties.id);
-//     assert_eq!(
-//         vec![
-//             String::from("/parent"),
-//             String::from("/child"),
-//             String::from("/grandchild")
-//         ],
-//         created_properties.partition_key.paths
-//     );
-//     assert_eq!(
-//         PartitionKeyKind::MultiHash,
-//         created_properties.partition_key.kind
-//     );
-
-//     account.cleanup().await?;
-
-//     Ok(())
-// }
+            Ok(())
+        })
+    })
+    .await
+}

@@ -132,6 +132,19 @@ impl ResourceLink {
     }
 }
 
+impl std::fmt::Display for ResourceLink {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}[{:?}, parent: {:?}, item: {:?}]",
+            self.path(),
+            self.resource_type,
+            self.parent.as_deref(),
+            self.item_id.as_deref(),
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::resource_context::{ResourceLink, ResourceType};
