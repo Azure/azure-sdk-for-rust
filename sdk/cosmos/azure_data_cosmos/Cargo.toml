@@ -14,6 +14,7 @@ keywords = ["sdk", "azure", "rest", "cloud", "cosmos"]
 categories = ["api-bindings"]
 
 [dependencies]
+uuid.workspace = true
 async-trait.workspace = true
 azure_core.workspace = true
 futures.workspace = true

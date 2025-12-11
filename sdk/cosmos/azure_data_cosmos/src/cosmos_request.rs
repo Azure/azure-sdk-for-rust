@@ -115,14 +115,14 @@ impl CosmosRequest {
     /// and attaches the body bytes. Panics if location routing information is
     /// missing from `request_context`.
     pub fn into_raw_request(self) -> Request {
-        let mut req = Request::new(
-            self.request_context
-                .location_endpoint_to_route
-                .as_ref()
-                .unwrap()
-                .clone(),
-            self.http_method(),
-        );
+        let endpoint = self
+            .request_context
+            .location_endpoint_to_route
+            .as_ref()
+            .unwrap()
+            .clone();
+        let url = format!("{}{}", endpoint, self.resource_link.path());
+        let mut req = Request::new(url.parse().unwrap(), self.http_method());
 
         for (name, value) in self.headers.clone() {
             req.insert_header(name, value);

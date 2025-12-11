@@ -103,7 +103,6 @@ impl ResourceLink {
     }
 
     /// Gets the [`ResourceType`] identified by this link, for use when generating the authentication signature.
-    #[cfg_attr(not(feature = "key_auth"), allow(dead_code))] // REASON: Currently only used in key_auth feature but we don't want to conditional-compile it.
     pub fn resource_type(&self) -> ResourceType {
         self.resource_type
     }
