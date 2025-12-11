@@ -118,8 +118,9 @@ impl SecretClient {
         let mut path = String::from("/secrets/{secret-name}/backup");
         path = path.replace("{secret-name}", secret_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -165,8 +166,9 @@ impl SecretClient {
         let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -212,8 +214,9 @@ impl SecretClient {
         let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -257,17 +260,17 @@ impl SecretClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
-        path = match options.secret_version {
-            Some(secret_version) => path.replace("{secret-version}", &secret_version),
+        path = match options.secret_version.as_ref() {
+            Some(secret_version) => path.replace("{secret-version}", secret_version),
             None => path.replace("{secret-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
-        if let Some(out_content_type) = options.out_content_type {
-            url.query_pairs_mut()
-                .append_pair("outContentType", out_content_type.as_ref());
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        if let Some(out_content_type) = options.out_content_type.as_ref() {
+            query_builder.set_pair("outContentType", out_content_type.as_ref());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -303,28 +306,21 @@ impl SecretClient {
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/deletedsecrets");
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -379,28 +375,21 @@ impl SecretClient {
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/secrets");
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -464,28 +453,21 @@ impl SecretClient {
         let mut path = String::from("/secrets/{secret-name}/versions");
         path = path.replace("{secret-name}", secret_name);
         first_url.append_path(&path);
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -549,8 +531,9 @@ impl SecretClient {
         let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         let rsp = self
             .pipeline
@@ -595,8 +578,9 @@ impl SecretClient {
         let mut path = String::from("/deletedsecrets/{secret-name}/recover");
         path = path.replace("{secret-name}", secret_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -633,8 +617,9 @@ impl SecretClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.append_path("/secrets/restore");
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -685,8 +670,9 @@ impl SecretClient {
         let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -735,13 +721,14 @@ impl SecretClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
-        path = match options.secret_version {
-            Some(secret_version) => path.replace("{secret-version}", &secret_version),
+        path = match options.secret_version.as_ref() {
+            Some(secret_version) => path.replace("{secret-version}", secret_version),
             None => path.replace("{secret-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Patch);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");

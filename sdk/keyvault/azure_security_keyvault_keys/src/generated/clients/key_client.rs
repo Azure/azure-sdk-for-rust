@@ -130,8 +130,9 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}/backup");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -181,8 +182,9 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}/create");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -236,13 +238,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/decrypt");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -291,8 +294,9 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -343,13 +347,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/encrypt");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -397,8 +402,9 @@ impl KeyClient {
         let mut path = String::from("/deletedkeys/{key-name}");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -443,13 +449,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -494,13 +501,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/attestation");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -546,8 +554,9 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}/rotationpolicy");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -584,8 +593,9 @@ impl KeyClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.append_path("/rng");
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -636,8 +646,9 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -677,28 +688,21 @@ impl KeyClient {
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/deletedkeys");
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -753,28 +757,21 @@ impl KeyClient {
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/keys");
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -837,28 +834,21 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}/versions");
         path = path.replace("{key-name}", key_name);
         first_url.append_path(&path);
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -922,8 +912,9 @@ impl KeyClient {
         let mut path = String::from("/deletedkeys/{key-name}");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         let rsp = self
             .pipeline
@@ -969,8 +960,9 @@ impl KeyClient {
         let mut path = String::from("/deletedkeys/{key-name}/recover");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -1017,13 +1009,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/release");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1069,8 +1062,9 @@ impl KeyClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.append_path("/keys/restore");
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1117,8 +1111,9 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}/rotate");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -1165,13 +1160,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/sign");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1221,13 +1217,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/unwrapkey");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1277,13 +1274,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Patch);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1332,8 +1330,9 @@ impl KeyClient {
         let mut path = String::from("/keys/{key-name}/rotationpolicy");
         path = path.replace("{key-name}", key_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1384,13 +1383,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/verify");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1442,13 +1442,14 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/wrapkey");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version {
-            Some(key_version) => path.replace("{key-version}", &key_version),
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
             None => path.replace("{key-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
