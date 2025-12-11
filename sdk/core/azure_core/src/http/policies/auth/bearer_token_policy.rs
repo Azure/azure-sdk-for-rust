@@ -3,24 +3,19 @@
 
 use crate::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
+    error::ErrorKind,
     http::{
-        headers::{AUTHORIZATION, WWW_AUTHENTICATE},
+        headers::{Headers, AUTHORIZATION, WWW_AUTHENTICATE},
         policies::{Policy, PolicyResult, ERROR_TYPE_ATTRIBUTE},
+        ClientMethodOptions, Context, Request, StatusCode,
     },
+    time::{Duration, OffsetDateTime},
+    tracing::Span,
     Error, Result,
 };
 use async_lock::RwLock;
 use async_trait::async_trait;
 use std::sync::Arc;
-use typespec::{
-    error::ErrorKind,
-    http::{headers::Headers, StatusCode},
-};
-use typespec_client_core::{
-    http::{ClientMethodOptions, Context, Request},
-    time::{Duration, OffsetDateTime},
-    tracing::Span,
-};
 
 /// Authentication policy for a bearer token.
 #[derive(Debug, Clone)]
@@ -293,11 +288,11 @@ mod tests {
     use crate::{
         credentials::{Secret, TokenCredential, TokenRequestOptions},
         http::{
-            headers::{HeaderName, Headers, AUTHORIZATION},
+            headers::{HeaderName, HeaderValue, Headers, AUTHORIZATION},
             policies::{Policy, TransportPolicy},
-            Request, StatusCode,
+            AsyncRawResponse, ClientMethodOptions, Method, Request, StatusCode, Transport,
         },
-        time::OffsetDateTime,
+        time::{Duration, OffsetDateTime},
         Bytes, Result,
     };
     use async_trait::async_trait;
@@ -306,11 +301,6 @@ mod tests {
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
-    };
-    use typespec::http::headers::HeaderValue;
-    use typespec_client_core::{
-        http::{AsyncRawResponse, ClientMethodOptions, Method, Transport},
-        time::Duration,
     };
 
     #[derive(Debug, Clone)]
@@ -769,9 +759,8 @@ mod tests {
 
     #[cfg_attr(not(target_arch = "wasm32"), tokio::test)]
     async fn resets_stream_for_retry_after_challenge() {
+        use crate::{http::Body, stream::BytesStream};
         use futures::StreamExt;
-        use typespec_client_core::http::Body;
-        use typespec_client_core::stream::BytesStream;
 
         let on_challenge_calls = Arc::new(AtomicUsize::new(0));
         let on_challenge = Arc::new(TestOnChallenge {
