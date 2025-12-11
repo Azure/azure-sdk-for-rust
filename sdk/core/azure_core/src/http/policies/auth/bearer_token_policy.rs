@@ -293,10 +293,17 @@ mod tests {
             AsyncRawResponse, ClientMethodOptions, Method, Request, StatusCode, Transport,
         },
         time::{Duration, OffsetDateTime},
+        tracing::{SpanKind, TracerProvider},
         Bytes, Result,
     };
     use async_trait::async_trait;
-    use azure_core_test::http::MockHttpClient;
+    use azure_core_test::{
+        http::MockHttpClient,
+        tracing::{
+            check_instrumentation_result, ExpectedSpanInformation, ExpectedTracerInformation,
+            MockTracingProvider,
+        },
+    };
     use futures::FutureExt;
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
@@ -838,5 +845,66 @@ mod tests {
         assert_eq!(StatusCode::Ok, res.status());
         assert_eq!(1, on_challenge_calls.load(Ordering::SeqCst));
         assert_eq!(2, request_count.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn challenged_request_tracing() {
+        let on_challenge = Arc::new(TestOnChallenge {
+            calls: Arc::new(AtomicUsize::new(0)),
+            error: None,
+        });
+        let credential = Arc::new(MockCredential::new(
+            &(0..2)
+                .map(|_| AccessToken {
+                    token: Secret::new("token".to_string()),
+                    expires_on: OffsetDateTime::now_utc() + Duration::seconds(3600),
+                })
+                .collect::<Vec<_>>(),
+        ));
+        let policy = BearerTokenAuthorizationPolicy::new(credential, ["scope"])
+            .with_on_challenge(on_challenge);
+        let client = MockHttpClient::new(|_| {
+            async {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Unauthorized,
+                    Headers::from(std::collections::HashMap::from([(
+                        WWW_AUTHENTICATE,
+                        HeaderValue::from("Bearer challenge".to_string()),
+                    )])),
+                    Bytes::new(),
+                ))
+            }
+            .boxed()
+        });
+        let transport = Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
+        let provider = Arc::new(MockTracingProvider::new());
+        let tracer = provider.get_tracer(None, "test_crate", None);
+        {
+            let span = tracer.start_span("test_span".into(), SpanKind::Internal, vec![]);
+            let mut ctx = Context::default();
+            ctx.insert(span);
+            policy
+                .send(
+                    &ctx,
+                    &mut Request::new("https://localhost".parse().unwrap(), Method::Get),
+                    std::slice::from_ref(&(transport as Arc<dyn Policy>)),
+                )
+                .await
+                .expect("successful request");
+        }
+        check_instrumentation_result(
+            provider,
+            vec![ExpectedTracerInformation {
+                name: "test_crate",
+                version: None,
+                namespace: None,
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "test_span",
+                    kind: SpanKind::Internal,
+                    attributes: vec![(ERROR_TYPE_ATTRIBUTE, "401".into())],
+                    ..Default::default()
+                }],
+            }],
+        );
     }
 }
