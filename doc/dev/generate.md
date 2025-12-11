@@ -64,7 +64,7 @@ Most polish items match the data-plane flow, but a few deserve special emphasis 
 -   **Cargo metadata** – Ensure `Cargo.toml` advertises the crate as “Azure Resource Manager” in `description` and includes:
     ```toml
     [lints]
-    workspace = true`.
+    workspace = true
     ```
 -   **Credential surface** – Make sure the public constructors accept `azure_identity` credentials and expose subscription-scoped builders, matching existing management plane crates.
 -   **Integration tests** – Provision test resources with `eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>` and record with `#[recorded::test]`. Management plane tests frequently require role assignments, so verify the Bicep template grants the test application proper `Microsoft.Authorization/roleAssignments` permissions.
