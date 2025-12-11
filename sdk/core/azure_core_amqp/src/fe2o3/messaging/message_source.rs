@@ -177,9 +177,13 @@ fn message_source_conversion_fe2o3_amqp() {
         }
     }
 
-    if let (Some(original_default_outcome), Some(round_trip_default_outcome)) =
-        (fe2o3_source.default_outcome, round_trip.default_outcome)
-    {
+    assert_eq!(
+        fe2o3_source.default_outcome.is_some(),
+        round_trip.default_outcome.is_some()
+    );
+
+    if let Some(original_default_outcome) = fe2o3_source.default_outcome {
+        let round_trip_default_outcome = round_trip.default_outcome.unwrap();
         assert_eq!(
             original_default_outcome.is_accepted(),
             round_trip_default_outcome.is_accepted(),
@@ -196,8 +200,6 @@ fn message_source_conversion_fe2o3_amqp() {
             original_default_outcome.is_modified(),
             round_trip_default_outcome.is_modified(),
         );
-    } else {
-        panic!("Expected default outcomes");
     }
 }
 
