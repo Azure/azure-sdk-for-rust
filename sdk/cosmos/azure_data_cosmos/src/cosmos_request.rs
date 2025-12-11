@@ -121,8 +121,8 @@ impl CosmosRequest {
             .as_ref()
             .unwrap()
             .clone();
-        let url = format!("{}{}", endpoint, self.resource_link.path());
-        let mut req = Request::new(url.parse().unwrap(), self.http_method());
+        let url = self.resource_link.url(&endpoint);
+        let mut req = Request::new(url, self.http_method());
 
         for (name, value) in self.headers.clone() {
             req.insert_header(name, value);
