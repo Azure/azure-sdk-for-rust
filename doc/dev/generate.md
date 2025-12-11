@@ -38,9 +38,9 @@ In addition to the standard tooling covered in the base guide, keep these points
 
 The base client guide covers initialization in detail. For management plane, double-check these repo-specific tasks once your service directory exists:
 
--   Add `sdk/<service>/<crate-name>` to the workspace members in the root `Cargo.toml`, but keep it out of `default-members`.
+-   Add `sdk/<service>/<crate-name>` to the workspace members in the root `Cargo.toml`.
 -   Drop a `ci.yml` into `sdk/<service>/` if the service folder is new so the CI pipeline can pick the crate up. Copy an existing management plane `ci.yml` as the starting point.
--   Create `tsp-location.yaml` beside the crate with `repo`, `commit`, and `directory` keys pointing at the Resource Manager TypeSpec project.
+-   Create `tsp-location.yaml` in the crate folder with `repo`, `commit`, and `directory` keys pointing at the Resource Manager TypeSpec project.
 
 ## Running `tsp-client`
 
@@ -51,8 +51,7 @@ Use the same commands outlined in the base guide—`tsp-client init` for brand-n
 tsp-client update https://github.com/Azure/azure-rest-api-specs/blob/<commit>/specification/<service>/<project>/tspconfig.yaml
 
 # Local iteration
-$spec = "<your-repo-path>/Azure/azure-rest-api-specs/specification/<service>/<project>"
-tsp-client update "$spec/tspconfig.yaml"
+tsp-client update "<your-repo-path>/Azure/azure-rest-api-specs/specification/<service>/<project>/tspconfig.yaml"
 
 ```
 
