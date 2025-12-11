@@ -4,7 +4,7 @@
 //! Unit tests for the blob checkpoint store models and utilities.
 
 use azure_core::{http::Etag, time::OffsetDateTime, Result};
-use azure_core_test::{recorded, Matcher, Recording, TestContext};
+use azure_core_test::{recorded, CustomDefaultMatcher, Matcher, Recording, TestContext};
 use azure_messaging_eventhubs::{models::Ownership, CheckpointStore};
 mod checkpoint_unit_tests;
 use checkpoint_unit_tests::create_test_checkpoint_store;
@@ -18,7 +18,12 @@ fn create_test_namespace(recording: &Recording) -> String {
 #[recorded::test]
 async fn list_ownerships(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording.set_matcher(Matcher::BodilessMatcher).await?;
+    recording
+        .set_matcher(Matcher::CustomDefaultMatcher(CustomDefaultMatcher {
+            ignore_query_ordering: Some(true),
+            ..Default::default()
+        }))
+        .await?;
     const TEST_PARTITION_ID: &str = "list_ownerships";
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
