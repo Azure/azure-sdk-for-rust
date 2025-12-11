@@ -31,7 +31,8 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
+        AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
+        XmlFormat,
     },
     time::OffsetDateTime,
     tracing, Bytes, Result,
@@ -196,9 +197,11 @@ impl BlobClient {
     /// * `version_id` - The version ID of the blob to target.
     pub fn with_version_id(&self, version_id: &str) -> Result<Self> {
         let mut versioned_endpoint = self.client.endpoint.clone();
-        versioned_endpoint
-            .query_pairs_mut()
-            .append_pair("versionid", version_id);
+        {
+            let mut query_builder = versioned_endpoint.query_builder();
+            query_builder.set_pair("versionid", version_id);
+            query_builder.build();
+        }
 
         Ok(Self {
             client: GeneratedBlobClient {
@@ -217,9 +220,11 @@ impl BlobClient {
     /// * `snapshot` - The snapshot ID of the blob to target.
     pub fn with_snapshot(&self, snapshot: &str) -> Result<Self> {
         let mut snapshot_endpoint = self.client.endpoint.clone();
-        snapshot_endpoint
-            .query_pairs_mut()
-            .append_pair("snapshot", snapshot);
+        {
+            let mut query_builder = snapshot_endpoint.query_builder();
+            query_builder.set_pair("snapshot", snapshot);
+            query_builder.build();
+        }
 
         Ok(Self {
             client: GeneratedBlobClient {
