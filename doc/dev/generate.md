@@ -1,4 +1,4 @@
-<!-- cspell: ignore tspconfig mgmt -->
+<!-- cspell: ignore tspconfig resourcemanager -->
 
 # Generating Management Plane Crates from TypeSpec
 
@@ -9,7 +9,7 @@ This document complements [Creating a TypeSpec-Based Rust SDK Client](https://gi
 You are in the right place if all of the following are true:
 
 -   Your TypeSpec project targets Resource Manager APIs (`import "@azure-tools/typespec-azure-resource-manager";`).
--   You plan to ship the resulting crate under the `azure_mgmt_*` naming pattern in this repository.
+-   You plan to ship the resulting crate under the `azure_resourcemanager_*` naming pattern in this repository.
 -   You already understand the base TypeSpec → Rust workflow described in [new-typespec-based-client.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/new-typespec-based-client.md) and only need the management-plane adjustments.
 
 ## Management-plane prerequisites
@@ -25,13 +25,13 @@ In addition to the standard tooling covered in the base guide, keep these points
     options:
         "@azure-tools/typespec-rust":
             emitter-output-dir: "{output-dir}/{service-dir}/{crate-name}"
-            crate-name: "azure_mgmt_<service>"
+            crate-name: "azure_resourcemanager_<service>"
             crate-version: "0.1.0"
         "@azure-tools/typespec-azure-core":
             azure-resource-provider: "Microsoft.<ProviderName>"
     ```
 
--   **Naming** – Follow the `azure_mgmt_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`). When in doubt, look at the Go SDK’s management plane docs for a matching service and port the structure.
+-   **Naming** – Follow the `azure_resourcemanager_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`).
 -   **Spec changes** – Capture the `azure-rest-api-specs` commit SHA (or PR branch commit) that contains the TypeSpec updates; you will reference it from `tsp-location.yaml`.
 
 ## Repository setup checklist
@@ -56,7 +56,7 @@ tsp-client update "$spec/tspconfig.yaml"
 
 ```
 
-Generation writes into `src/generated/`; keep the directory read-only and place any ergonomic layers or custom entry points next to `lib.rs`, exactly as described in the shared guide.
+Generation writes into `src/generated/`; keep the directory read-only and place any ergonomic layers or custom entry points next to `lib.rs`, exactly as described in the [guidelines](https://azure.github.io/azure-sdk/rust_implementation.html#rust-client-convenience).
 
 ## Management-plane finishing work
 
