@@ -4,7 +4,7 @@
 //! Unit tests for the blob checkpoint store models and utilities.
 
 use azure_core::Result;
-use azure_core_test::{recorded, Recording, TestContext};
+use azure_core_test::{recorded, Matcher, Recording, TestContext};
 use azure_messaging_eventhubs::{models::Checkpoint, CheckpointStore};
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
 use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
