@@ -60,6 +60,7 @@ if (!$cargo2junitPath) {
   Invoke-LoggedCommand "cargo install cargo2junit --locked $($cargo2junitVersionParams -join ' ')" -GroupOutput
 }
 
+$succeeded = $true
 Write-Host "`nConverting $($jsonFiles.Count) JSON file(s) to JUnit XML..."
 foreach ($jsonFile in $jsonFiles) {
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jsonFile.Name)
@@ -67,8 +68,13 @@ foreach ($jsonFile in $jsonFiles) {
 
   Write-Host "  Converting: $($jsonFile.Name) -> $([System.IO.Path]::GetFileName($junitFile))"
   Get-Content $jsonFile.FullName | cargo2junit > $junitFile
+  if ($LASTEXITCODE) {
+    LogError "Failed to convert $($jsonFile.Name) to JUnit XML."
+    $succeeded = $false
+  }
 }
 
-# cargo2junit exits with a nonzero exit code on failures. Exit 0 to prevent a
-# pipeline failure from $LASTEXITCODE.
+if (-not $succeeded) {
+  exit 1
+}
 exit 0

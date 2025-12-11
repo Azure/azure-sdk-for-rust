@@ -16,6 +16,9 @@ function Invoke-CargoTestWithJsonOutput (
   [string]$OutputFile
 ) {
   Write-Host "Running tests for $PackageName"
+  # Use nightly toolchain to enable JSON output format which can be converted
+  # and uploaded to DevOps for display in the Tests tab
+  # (requires -Z unstable-options)
   $result = Invoke-LoggedCommand `
     "cargo +nightly test $TestParams --package $PackageName --no-fail-fast -- --format json -Z unstable-options" `
     -GroupOutput `
@@ -25,7 +28,7 @@ function Invoke-CargoTestWithJsonOutput (
   $result | Tee-Object -FilePath $OutputFile
   LogGroupEnd
 
-  if ($LASTEXITCODE -ne 0) {
+  if ($LASTEXITCODE) {
     LogError "Tests failed for $PackageName. For more information see the pipeline Tests tab."
     exit $LASTEXITCODE
   }
