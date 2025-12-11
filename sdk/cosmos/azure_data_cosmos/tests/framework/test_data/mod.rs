@@ -65,7 +65,7 @@ pub async fn create_database(
     cosmos_client: &CosmosClient,
 ) -> azure_core::Result<DatabaseClient> {
     // The TestAccount has a unique context_id that includes the test name.
-    let db_name = account.unique_db("TestData");
+    let db_name = account.db_name();
     let response = match cosmos_client.create_database(&db_name, None).await {
         // The database creation was successful.
         Ok(props) => props,
