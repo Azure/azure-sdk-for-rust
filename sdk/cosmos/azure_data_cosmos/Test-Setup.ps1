@@ -28,6 +28,9 @@ if ($IsWindows) {
         -Emulator:$EmulatorPath `
         -Stage "Launch"
     LogGroupEnd
+
+    # Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
+    $global:LASTEXITCODE = 0
 } elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
     Write-Host "Docker detected. Using Cosmos DB Emulator in Docker."
 

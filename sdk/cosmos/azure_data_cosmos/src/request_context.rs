@@ -59,11 +59,6 @@ impl RequestContext {
     /// Routes the request to a region by its index within the preferred
     /// locations list. Clears any explicit endpoint routing state.
     pub fn route_to_location_index(&mut self, location_index: i32, use_preferred_locations: bool) {
-        tracing::trace!(
-            location_index,
-            use_preferred_locations,
-            "routing to location index"
-        );
         self.location_index_to_route = Some(location_index);
         self.use_preferred_locations = Some(use_preferred_locations);
         self.location_endpoint_to_route = None;
@@ -72,7 +67,6 @@ impl RequestContext {
     /// Routes the request to an explicit regional endpoint URL, disabling
     /// index-based preferred location routing for this attempt.
     pub fn route_to_location_endpoint(&mut self, location_endpoint: Url) {
-        tracing::trace!(?location_endpoint, "routing to location endpoint");
         self.location_endpoint_to_route = Some(location_endpoint);
         self.location_index_to_route = None;
         self.use_preferred_locations = None;
@@ -80,7 +74,6 @@ impl RequestContext {
 
     /// Removes any explicit routing decisions, allowing default resolution.
     pub fn clear_route_to_location(&mut self) {
-        tracing::trace!("clearing route to location");
         self.location_index_to_route = None;
         self.location_endpoint_to_route = None;
         self.use_preferred_locations = None;

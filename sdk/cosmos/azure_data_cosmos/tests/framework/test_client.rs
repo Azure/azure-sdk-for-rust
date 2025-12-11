@@ -2,20 +2,9 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::{
-    borrow::Cow,
-    future::Future,
-    pin::Pin,
-    str::FromStr,
-    sync::{Arc, OnceLock},
-};
+use std::sync::{Arc, OnceLock};
 
-use azure_core::{
-    credentials::Secret,
-    http::{StatusCode, Transport},
-    test::TestMode,
-};
-use azure_core_test::TestContext;
+use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, Query,
 };
@@ -107,11 +96,7 @@ impl TestClient {
     /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
     pub async fn run<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: for<'a> FnOnce(
-            &'a TestRunContext,
-        ) -> Pin<
-            Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + 'a>,
-        >,
+        F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
         // Initialize tracing subscriber for logging, if not already initialized.
         // The error is ignored because it only happens if the subscriber is already initialized.
@@ -139,18 +124,11 @@ impl TestClient {
 
     pub async fn run_with_db<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: for<'a> FnOnce(
-                &'a TestRunContext,
-                &'a DatabaseClient,
-            ) -> Pin<
-                Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + 'a>,
-            > + 'static,
+        F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
-        Self::run(|run_context| {
-            Box::pin(async move {
-                let db_client = run_context.create_db().await?;
-                test(run_context, &db_client).await
-            })
+        Self::run(async |run_context| {
+            let db_client = run_context.create_db().await?;
+            test(run_context, &db_client).await
         })
         .await
     }
