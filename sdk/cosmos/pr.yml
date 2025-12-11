@@ -1,0 +1,69 @@
+# Runs Cosmos-specific tests (Emulator, etc.) when changes occur in 'sdk/cosmos/'
+
+trigger:
+  branches:
+    include:
+    - main
+    - hotfix/*
+    - release/*
+  paths:
+    include:
+    - sdk/cosmos/
+
+variables:
+  AZURE_TEST_MODE: live
+  AZURE_COSMOS_CONNECTION_STRING: emulator
+
+stages:
+  - stage: Emulator
+    displayName: 'Cosmos Emulator Tests'
+    variables:
+    - template: /eng/pipelines/templates/variables/globals.yml@self
+    - template: /eng/pipelines/templates/variables/image.yml@self
+    jobs:
+    - job: DownloadAndRunCosmosEmulator
+      displayName: Download and run Cosmos Emulator
+
+      pool:
+        name: $(WINDOWSPOOL)
+        image: $(WINDOWSVMIMAGE)
+        os: windows
+
+      steps:
+      - template: /eng/common/pipelines/templates/steps/cosmos-emulator.yml@self
+        parameters:
+          StartParameters: '/noexplorer /noui /enablepreview /disableratelimiting /enableaadauthentication /partitioncount=50 /consistency=Strong /EnableSqlComputeEndpoint'
+      - powershell: |
+          $Key = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='
+          $password = ConvertTo-SecureString -String $Key -Force -AsPlainText
+          $cert = Get-ChildItem cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq "DocumentDbEmulatorCertificate" }
+          Export-PfxCertificate -Cert $cert -FilePath ".\CosmosDbEmulatorCert.pfx" -Password $password | Out-Null
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+          $cert.Import(".\CosmosDbEmulatorCert.pfx", $Key, "DefaultKeySet")
+          $cert | Export-Certificate -FilePath "$env:temp\CosmosDbEmulatorCert.cer" -Type CERT
+        displayName: 'Export Cosmos DB Emulator Certificate'
+
+      - template: /eng/common/pipelines/templates/steps/verify-agent-os.yml@self
+        parameters:
+          AgentImage: windows
+
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: $(RustToolchainName)
+
+      - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+        parameters:
+          ServiceDirectory: cosmos
+          PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+      - task: Powershell@2
+        displayName: "Test Packages"
+        condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+        timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+        env:
+          CIBW_BUILD_VERBOSITY: 3
+        inputs:
+          pwsh: true
+          filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
+          arguments: >
+            -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
