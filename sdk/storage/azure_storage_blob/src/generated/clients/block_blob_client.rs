@@ -20,7 +20,7 @@ use azure_core::{
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         AsyncResponse, ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions,
-        PipelineStreamOptions, Request, RequestContent, Response, Url, XmlFormat,
+        PipelineStreamOptions, Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
@@ -113,22 +113,22 @@ impl BlockBlobClient {
     ///     let response: Response<BlockBlobClientCommitBlockListResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(content_md5) = response.content_md5()? {
-    ///         println!("Content-MD5: {:?}", content_md5);
-    ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
+    ///         println!("content-md5: {:?}", content_md5);
     ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::content_md5) - Content-MD5
-    /// * [`last_modified`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::last_modified) - Last-Modified
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::content_md5) - content-md5
     /// * [`etag`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::last_modified) - last-modified
     /// * [`content_crc64`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::encryption_scope) - x-ms-encryption-scope
@@ -145,71 +145,72 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "blocklist");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "blocklist");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(tier) = options.tier {
+        if let Some(tier) = options.tier.as_ref() {
             request.insert_header("x-ms-access-tier", tier.to_string());
         }
-        if let Some(blob_cache_control) = options.blob_cache_control {
+        if let Some(blob_cache_control) = options.blob_cache_control.as_ref() {
             request.insert_header("x-ms-blob-cache-control", blob_cache_control);
         }
-        if let Some(blob_content_disposition) = options.blob_content_disposition {
+        if let Some(blob_content_disposition) = options.blob_content_disposition.as_ref() {
             request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
         }
-        if let Some(blob_content_encoding) = options.blob_content_encoding {
+        if let Some(blob_content_encoding) = options.blob_content_encoding.as_ref() {
             request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
         }
-        if let Some(blob_content_language) = options.blob_content_language {
+        if let Some(blob_content_language) = options.blob_content_language.as_ref() {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
         if let Some(blob_content_md5) = options.blob_content_md5 {
             request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
         }
-        if let Some(blob_content_type) = options.blob_content_type {
+        if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+        if let Some(immutability_policy_mode) = options.immutability_policy_mode.as_ref() {
             request.insert_header(
                 "x-ms-immutability-policy-mode",
                 immutability_policy_mode.to_string(),
@@ -221,18 +222,18 @@ impl BlockBlobClient {
                 to_rfc7231(&immutability_policy_expiry),
             );
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         if let Some(legal_hold) = options.legal_hold {
             request.insert_header("x-ms-legal-hold", legal_hold.to_string());
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
-        if let Some(blob_tags_string) = options.blob_tags_string {
+        if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -272,11 +273,11 @@ impl BlockBlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlockList, XmlFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(blob_content_length) = response.blob_content_length()? {
     ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
@@ -286,8 +287,8 @@ impl BlockBlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlockListHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlockListHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlockListHeaders::last_modified) - last-modified
     /// * [`blob_content_length`()](crate::generated::models::BlockListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`BlockListHeaders`]: crate::generated::models::BlockListHeaders
@@ -300,23 +301,23 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "blocklist");
-        url.query_pairs_mut()
-            .append_pair("blocklisttype", list_type.as_ref());
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "blocklist");
+        query_builder.set_pair("blocklisttype", list_type.as_ref());
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -355,30 +356,30 @@ impl BlockBlobClient {
     ///     let response: AsyncResponse<BlockBlobClientQueryResult> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(accept_ranges) = response.accept_ranges()? {
-    ///         println!("Accept-Ranges: {:?}", accept_ranges);
+    ///         println!("accept-ranges: {:?}", accept_ranges);
     ///     }
     ///     if let Some(cache_control) = response.cache_control()? {
-    ///         println!("Cache-Control: {:?}", cache_control);
+    ///         println!("cache-control: {:?}", cache_control);
     ///     }
     ///     if let Some(content_disposition) = response.content_disposition()? {
-    ///         println!("Content-Disposition: {:?}", content_disposition);
+    ///         println!("content-disposition: {:?}", content_disposition);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`accept_ranges`()](crate::generated::models::BlockBlobClientQueryResultHeaders::accept_ranges) - Accept-Ranges
-    /// * [`cache_control`()](crate::generated::models::BlockBlobClientQueryResultHeaders::cache_control) - Cache-Control
-    /// * [`content_disposition`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_disposition) - Content-Disposition
-    /// * [`content_encoding`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_encoding) - Content-Encoding
-    /// * [`content_language`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_language) - Content-Language
-    /// * [`content_length`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_length) - Content-Length
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_md5) - Content-MD5
-    /// * [`content_range`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_range) - Content-Range
-    /// * [`date`()](crate::generated::models::BlockBlobClientQueryResultHeaders::date) - Date
-    /// * [`last_modified`()](crate::generated::models::BlockBlobClientQueryResultHeaders::last_modified) - Last-Modified
+    /// * [`accept_ranges`()](crate::generated::models::BlockBlobClientQueryResultHeaders::accept_ranges) - accept-ranges
+    /// * [`cache_control`()](crate::generated::models::BlockBlobClientQueryResultHeaders::cache_control) - cache-control
+    /// * [`content_disposition`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_disposition) - content-disposition
+    /// * [`content_encoding`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_encoding) - content-encoding
+    /// * [`content_language`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_language) - content-language
+    /// * [`content_length`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_length) - content-length
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_md5) - content-md5
+    /// * [`content_range`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_range) - content-range
+    /// * [`date`()](crate::generated::models::BlockBlobClientQueryResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlockBlobClientQueryResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientQueryResultHeaders::last_modified) - last-modified
     /// * [`blob_committed_block_count`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
     /// * [`blob_content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_content_md5) - x-ms-blob-content-md5
     /// * [`blob_sequence_number`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
@@ -408,45 +409,46 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "query");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "query");
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/octet-stream");
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -490,7 +492,7 @@ impl BlockBlobClient {
     ///     let response: Response<BlockBlobClientStageBlockResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(content_md5) = response.content_md5()? {
-    ///         println!("Content-MD5: {:?}", content_md5);
+    ///         println!("content-md5: {:?}", content_md5);
     ///     }
     ///     if let Some(content_crc64) = response.content_crc64()? {
     ///         println!("x-ms-content-crc64: {:?}", content_crc64);
@@ -503,7 +505,7 @@ impl BlockBlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_md5) - Content-MD5
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_md5) - content-md5
     /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_scope) - x-ms-encryption-scope
@@ -521,13 +523,13 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "block");
-        url.query_pairs_mut()
-            .append_pair("blockid", &encode(block_id));
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "block");
+        query_builder.set_pair("blockid", encode(block_id));
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
@@ -537,25 +539,25 @@ impl BlockBlobClient {
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(structured_body_type) = options.structured_body_type {
+        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
             request.insert_header("x-ms-structured-body", structured_body_type);
         }
         if let Some(structured_content_length) = options.structured_content_length {
@@ -606,10 +608,10 @@ impl BlockBlobClient {
     ///     let response: Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(content_md5) = response.content_md5()? {
-    ///         println!("Content-MD5: {:?}", content_md5);
+    ///         println!("content-md5: {:?}", content_md5);
     ///     }
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     if let Some(content_crc64) = response.content_crc64()? {
     ///         println!("x-ms-content-crc64: {:?}", content_crc64);
@@ -619,8 +621,8 @@ impl BlockBlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_md5) - Content-MD5
-    /// * [`date`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::date) - Date
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_md5) - content-md5
+    /// * [`date`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::date) - date
     /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
@@ -638,41 +640,41 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "block")
             .append_key_only("fromURL");
-        url.query_pairs_mut()
-            .append_pair("blockid", &encode(block_id));
+        query_builder.set_pair("blockid", encode(block_id));
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-copy-source", source_url);
-        if let Some(copy_source_authorization) = options.copy_source_authorization {
+        if let Some(copy_source_authorization) = options.copy_source_authorization.as_ref() {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(file_request_intent) = options.file_request_intent {
+        if let Some(file_request_intent) = options.file_request_intent.as_ref() {
             request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         if let Some(source_content_crc64) = options.source_content_crc64 {
@@ -681,7 +683,7 @@ impl BlockBlobClient {
         if let Some(source_content_md5) = options.source_content_md5 {
             request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
         }
-        if let Some(source_if_match) = options.source_if_match {
+        if let Some(source_if_match) = options.source_if_match.as_ref() {
             request.insert_header("x-ms-source-if-match", source_if_match);
         }
         if let Some(source_if_modified_since) = options.source_if_modified_since {
@@ -690,7 +692,7 @@ impl BlockBlobClient {
                 to_rfc7231(&source_if_modified_since),
             );
         }
-        if let Some(source_if_none_match) = options.source_if_none_match {
+        if let Some(source_if_none_match) = options.source_if_none_match.as_ref() {
             request.insert_header("x-ms-source-if-none-match", source_if_none_match);
         }
         if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
@@ -699,7 +701,7 @@ impl BlockBlobClient {
                 to_rfc7231(&source_if_unmodified_since),
             );
         }
-        if let Some(source_range) = options.source_range {
+        if let Some(source_range) = options.source_range.as_ref() {
             request.insert_header("x-ms-source-range", source_range);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -742,22 +744,22 @@ impl BlockBlobClient {
     ///     let response: Response<BlockBlobClientUploadResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(content_md5) = response.content_md5()? {
-    ///         println!("Content-MD5: {:?}", content_md5);
-    ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
+    ///         println!("content-md5: {:?}", content_md5);
     ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadResultHeaders::content_md5) - Content-MD5
-    /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadResultHeaders::last_modified) - Last-Modified
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadResultHeaders::content_md5) - content-md5
     /// * [`etag`()](crate::generated::models::BlockBlobClientUploadResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadResultHeaders::last_modified) - last-modified
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientUploadResultHeaders::encryption_scope) - x-ms-encryption-scope
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientUploadResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
@@ -774,72 +776,73 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(tier) = options.tier {
+        if let Some(tier) = options.tier.as_ref() {
             request.insert_header("x-ms-access-tier", tier.to_string());
         }
-        if let Some(blob_cache_control) = options.blob_cache_control {
+        if let Some(blob_cache_control) = options.blob_cache_control.as_ref() {
             request.insert_header("x-ms-blob-cache-control", blob_cache_control);
         }
-        if let Some(blob_content_disposition) = options.blob_content_disposition {
+        if let Some(blob_content_disposition) = options.blob_content_disposition.as_ref() {
             request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
         }
-        if let Some(blob_content_encoding) = options.blob_content_encoding {
+        if let Some(blob_content_encoding) = options.blob_content_encoding.as_ref() {
             request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
         }
-        if let Some(blob_content_language) = options.blob_content_language {
+        if let Some(blob_content_language) = options.blob_content_language.as_ref() {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
         if let Some(blob_content_md5) = options.blob_content_md5 {
             request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
         }
-        if let Some(blob_content_type) = options.blob_content_type {
+        if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
         request.insert_header("x-ms-blob-type", "BlockBlob");
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+        if let Some(immutability_policy_mode) = options.immutability_policy_mode.as_ref() {
             request.insert_header(
                 "x-ms-immutability-policy-mode",
                 immutability_policy_mode.to_string(),
@@ -851,18 +854,18 @@ impl BlockBlobClient {
                 to_rfc7231(&immutability_policy_expiry),
             );
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         if let Some(legal_hold) = options.legal_hold {
             request.insert_header("x-ms-legal-hold", legal_hold.to_string());
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
-        if let Some(structured_body_type) = options.structured_body_type {
+        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
             request.insert_header("x-ms-structured-body", structured_body_type);
         }
         if let Some(structured_content_length) = options.structured_content_length {
@@ -871,7 +874,7 @@ impl BlockBlobClient {
                 structured_content_length.to_string(),
             );
         }
-        if let Some(blob_tags_string) = options.blob_tags_string {
+        if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -916,23 +919,23 @@ impl BlockBlobClient {
     ///     let response: Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(content_md5) = response.content_md5()? {
-    ///         println!("Content-MD5: {:?}", content_md5);
+    ///         println!("content-md5: {:?}", content_md5);
     ///     }
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::content_md5) - Content-MD5
-    /// * [`date`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::date) - Date
-    /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::last_modified) - Last-Modified
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::content_md5) - content-md5
+    /// * [`date`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::last_modified) - last-modified
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
@@ -948,54 +951,55 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("BlockBlob")
             .append_key_only("fromUrl");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", "0");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(tier) = options.tier {
+        if let Some(tier) = options.tier.as_ref() {
             request.insert_header("x-ms-access-tier", tier.to_string());
         }
-        if let Some(blob_cache_control) = options.blob_cache_control {
+        if let Some(blob_cache_control) = options.blob_cache_control.as_ref() {
             request.insert_header("x-ms-blob-cache-control", blob_cache_control);
         }
-        if let Some(blob_content_disposition) = options.blob_content_disposition {
+        if let Some(blob_content_disposition) = options.blob_content_disposition.as_ref() {
             request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
         }
-        if let Some(blob_content_encoding) = options.blob_content_encoding {
+        if let Some(blob_content_encoding) = options.blob_content_encoding.as_ref() {
             request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
         }
-        if let Some(blob_content_language) = options.blob_content_language {
+        if let Some(blob_content_language) = options.blob_content_language.as_ref() {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
         if let Some(blob_content_md5) = options.blob_content_md5 {
             request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
         }
-        if let Some(blob_content_type) = options.blob_content_type {
+        if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
         request.insert_header("x-ms-blob-type", "BlockBlob");
         request.insert_header("x-ms-copy-source", copy_source);
-        if let Some(copy_source_authorization) = options.copy_source_authorization {
+        if let Some(copy_source_authorization) = options.copy_source_authorization.as_ref() {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
         }
         if let Some(copy_source_blob_properties) = options.copy_source_blob_properties {
@@ -1004,42 +1008,42 @@ impl BlockBlobClient {
                 copy_source_blob_properties.to_string(),
             );
         }
-        if let Some(copy_source_tags) = options.copy_source_tags {
+        if let Some(copy_source_tags) = options.copy_source_tags.as_ref() {
             request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(file_request_intent) = options.file_request_intent {
+        if let Some(file_request_intent) = options.file_request_intent.as_ref() {
             request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         if let Some(source_content_md5) = options.source_content_md5 {
             request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
         }
-        if let Some(source_if_match) = options.source_if_match {
+        if let Some(source_if_match) = options.source_if_match.as_ref() {
             request.insert_header("x-ms-source-if-match", source_if_match);
         }
         if let Some(source_if_modified_since) = options.source_if_modified_since {
@@ -1048,10 +1052,10 @@ impl BlockBlobClient {
                 to_rfc7231(&source_if_modified_since),
             );
         }
-        if let Some(source_if_none_match) = options.source_if_none_match {
+        if let Some(source_if_none_match) = options.source_if_none_match.as_ref() {
             request.insert_header("x-ms-source-if-none-match", source_if_none_match);
         }
-        if let Some(source_if_tags) = options.source_if_tags {
+        if let Some(source_if_tags) = options.source_if_tags.as_ref() {
             request.insert_header("x-ms-source-if-tags", source_if_tags);
         }
         if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
@@ -1060,7 +1064,7 @@ impl BlockBlobClient {
                 to_rfc7231(&source_if_unmodified_since),
             );
         }
-        if let Some(blob_tags_string) = options.blob_tags_string {
+        if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
