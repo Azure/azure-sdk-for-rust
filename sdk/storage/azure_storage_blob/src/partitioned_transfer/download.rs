@@ -36,7 +36,7 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
     parallel: usize,
     partition_size: usize,
     client: &'a T,
-) -> AzureResult<Box<dyn Stream<Item = AzureResult<Bytes>> + Unpin + 'a>> {
+) -> AzureResult<Pin<Box<dyn Stream<Item = AzureResult<Bytes>> + Unpin + 'a>>> {
     let partition_size = partition_size as u64;
     let initial_response = client.transfer_range(0..partition_size).await?;
     let content_range: ContentRange = initial_response.headers().get_as(&"content-range".into())?;
@@ -86,7 +86,7 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
         }
     });
 
-    Ok(Box::new(stream))
+    Ok(Box::pin(stream))
 }
 
 async fn download_range_to_bytes<Client: PartitionedDownloadBehavior>(
