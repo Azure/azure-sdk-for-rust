@@ -62,7 +62,6 @@ Generation writes into `src/generated/`; keep the directory read-only and place 
 Most polish items match the data-plane flow, but a few deserve special emphasis for Resource Manager crates:
 
 -   **Cargo metadata** – Ensure `Cargo.toml` advertises the crate as “Azure Resource Manager” in `description` and includes `[lints] workspace = true`.
--   **Feature gating** – Resource Manager specs often bundle GA and preview APIs. Expose preview-only operations behind an opt-in feature (`cfg(feature = "preview")`). Document the feature in the crate README.
 -   **Credential surface** – Make sure the public constructors accept `azure_identity` credentials and expose subscription-scoped builders, matching existing management plane crates.
 -   **Integration tests** – Provision test resources with `eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>` and record with `#[recorded::test]`. Management plane tests frequently require role assignments, so verify the Bicep template grants the test application proper `Microsoft.Authorization/roleAssignments` permissions.
 
@@ -74,7 +73,7 @@ When new API versions land:
 
 1. Update the TypeSpec inputs in `azure-rest-api-specs` and grab the merge commit.
 2. Refresh `tsp-location.yaml` with that commit.
-3. Re-run `tsp-client update` and inspect changes outside `generated/` for breaking edits, especially in manual subscription helpers or feature-gated modules.
+3. At the location of `tsp-location.yaml`, Re-run `tsp-client update` and inspect changes outside `generated/` for breaking changes, especially in manual subscription helpers or feature-gated modules.
 4. Update tests, recordings, and documentation to track any surface changes.
 
 As always, fix issues in TypeSpec or the emitter rather than editing generated Rust by hand.
