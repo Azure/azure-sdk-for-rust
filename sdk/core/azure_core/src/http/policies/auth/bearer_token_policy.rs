@@ -5,7 +5,7 @@ use crate::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     http::{
         headers::{AUTHORIZATION, WWW_AUTHENTICATE},
-        policies::{Policy, PolicyResult},
+        policies::{Policy, PolicyResult, ERROR_TYPE_ATTRIBUTE},
     },
     Error, Result,
 };
@@ -16,10 +16,11 @@ use typespec::{
     error::ErrorKind,
     http::{headers::Headers, StatusCode},
 };
-#[cfg(not(target_arch = "wasm32"))]
-use typespec_client_core::http::Body::SeekableStream;
-use typespec_client_core::http::{ClientMethodOptions, Context, Request};
-use typespec_client_core::time::{Duration, OffsetDateTime};
+use typespec_client_core::{
+    http::{ClientMethodOptions, Context, Request},
+    time::{Duration, OffsetDateTime},
+    tracing::Span,
+};
 
 /// Authentication policy for a bearer token.
 #[derive(Debug, Clone)]
@@ -86,9 +87,15 @@ impl Policy for BearerTokenAuthorizationPolicy {
                     callback
                         .on_challenge(&ctx, request, self.authorizer.as_ref(), response.headers())
                         .await?;
-                    #[cfg(not(target_arch = "wasm32"))]
-                    if let SeekableStream(stream) = request.body_mut() {
-                        stream.reset().await?;
+                    request.body_mut().reset().await?;
+                    if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+                        // this span covers the request which received the 401 response
+                        if span.is_recording() {
+                            span.set_attribute(
+                                ERROR_TYPE_ATTRIBUTE,
+                                response.status().to_string().into(),
+                            );
+                        }
                     }
                     response = next[0].send(&ctx, request, &next[1..]).await?
                 }
