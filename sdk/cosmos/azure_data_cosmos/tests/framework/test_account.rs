@@ -4,6 +4,8 @@
 
 use std::{
     borrow::Cow,
+    future::Future,
+    pin::Pin,
     str::FromStr,
     sync::{Arc, OnceLock},
 };
@@ -47,10 +49,13 @@ fn is_azure_pipelines() -> bool {
 }
 
 impl TestAccount {
-    pub async fn run<F, Fut>(test: F) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: FnOnce(TestAccount) -> Fut,
-        Fut: std::future::Future<Output = Result<(), Box<dyn std::error::Error>>>,
+        F: for<'a> FnOnce(
+            &'a TestAccount,
+        ) -> Pin<
+            Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + 'a>,
+        >,
     {
         if let Some(account) = Self::from_env().await? {
             // Initialize tracing subscriber for logging, if not already initialized.
@@ -59,7 +64,8 @@ impl TestAccount {
                 .with_env_filter(EnvFilter::from_default_env())
                 .try_init();
 
-            let result = test(account).await;
+            let result = test(&account).await;
+            account.cleanup().await?;
             result
         } else if is_azure_pipelines() {
             // Everything should be set up in Azure Pipelines, so we treat missing connection string as an error.
@@ -159,7 +165,7 @@ impl TestAccount {
     ///
     /// Call this at the end of every test using the [`TestAccount`].
     #[cfg(feature = "key_auth")]
-    pub async fn cleanup(self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn cleanup(&self) -> Result<(), Box<dyn std::error::Error>> {
         use futures::TryStreamExt;
 
         let cosmos_client = self.connect_with_key(None)?;
