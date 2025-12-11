@@ -13,10 +13,13 @@
 
 ### Breaking Changes
 
-- Changed `Pager::with_callback` to take a `PagerOptions` as the second parameter rather than a `Context` parameter.
+- Added type parameter `C` to `Pager` declaration, defaulting to `Url` so it can be elided in most existing declarations.
+- Changed `Pager::from_callback` to take a `PagerOptions` as the second parameter rather than a `Context` parameter.
+- Changed `Pager::from_callback` to `Pager::new` which now requires the caller to return a `Pin<Box<dyn Future>>`.
 - Moved `BearerTokenAuthorizationPolicy` into `azure_core::http::policies::auth`.
 - Removed `ItemIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
 - Removed `PageIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
+- Removed `Pager::from_stream`.
 
 ### Bugs Fixed
 

@@ -152,7 +152,7 @@ impl BlobServiceClient {
     pub fn list_containers(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
+    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat, String>> {
         self.client.list_containers_segment(options)
     }
 

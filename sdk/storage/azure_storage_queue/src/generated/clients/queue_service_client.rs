@@ -16,7 +16,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        pager::{PagerResult, PagerState},
+        pager::{PagerOptions, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, XmlFormat,
@@ -216,7 +216,7 @@ impl QueueServiceClient {
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
-    ) -> Result<Pager<ListQueuesResponse, XmlFormat>> {
+    ) -> Result<Pager<ListQueuesResponse, XmlFormat, String>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -248,8 +248,8 @@ impl QueueServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(Pager::from_callback(
-            move |marker: PagerState<String>, pager_options| {
+        Ok(Pager::new(
+            move |marker: PagerState<String>, pager_options: PagerOptions<'_, String>| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
@@ -267,7 +267,7 @@ impl QueueServiceClient {
                 request.insert_header("content-type", "application/xml");
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -290,7 +290,7 @@ impl QueueServiceClient {
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
