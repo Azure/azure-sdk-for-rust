@@ -11,6 +11,7 @@ use crate::streams::partitioned_stream::PartitionedStream;
 
 use super::*;
 
+#[async_trait::async_trait]
 pub(crate) trait PartitionedUploadBehavior {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()>;
     async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()>;
@@ -91,13 +92,14 @@ async fn upload_stream_partitions(
 
 #[cfg(test)]
 mod tests {
-    use std::{cell::RefCell, mem::discriminant};
+    use std::mem::discriminant;
 
     use azure_core::{http::Body, stream::BytesStream};
     use bytes::Bytes;
+    use tokio::sync::Mutex;
 
     use super::*;
-    use crate::test_extensions::{body::BodyTestExt, ref_cell::RefCellTestExt};
+    use crate::test_extensions::body::BodyTestExt;
 
     /// The possible body types for a body passed to a PartitionedUploadBehavior.
     /// For call history tracking purposes.
@@ -119,17 +121,18 @@ mod tests {
 
     /// Mock of a PartitionedUploadBehavior. Keeps a record of all calls made to it.
     struct MockPartitionedUploadBehavior {
-        pub invocations: RefCell<Vec<MockPartitionedUploadBehaviorInvocation>>,
+        pub invocations: Mutex<Vec<MockPartitionedUploadBehaviorInvocation>>,
     }
 
     impl MockPartitionedUploadBehavior {
         pub fn new() -> Self {
             Self {
-                invocations: RefCell::new(vec![]),
+                invocations: Mutex::new(vec![]),
             }
         }
     }
 
+    #[async_trait::async_trait]
     impl PartitionedUploadBehavior for MockPartitionedUploadBehavior {
         async fn transfer_oneshot(&self, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
@@ -138,7 +141,7 @@ mod tests {
                 Body::SeekableStream(_) => BodyType::SeekableStream,
             };
             let bytes = content.collect_bytes().await?;
-            self.invocations.wait_borrow_mut().await.push(
+            self.invocations.lock().await.push(
                 MockPartitionedUploadBehaviorInvocation::TransferOneshot(bytes, body_type),
             );
             Ok(())
@@ -151,7 +154,7 @@ mod tests {
                 Body::SeekableStream(_) => BodyType::SeekableStream,
             };
             let bytes = content.collect_bytes().await?;
-            self.invocations.wait_borrow_mut().await.push(
+            self.invocations.lock().await.push(
                 MockPartitionedUploadBehaviorInvocation::TransferPartition(
                     offset, bytes, body_type,
                 ),
@@ -160,7 +163,7 @@ mod tests {
         }
 
         async fn initialize(&self, content_len: usize) -> AzureResult<()> {
-            self.invocations.wait_borrow_mut().await.push(
+            self.invocations.lock().await.push(
                 MockPartitionedUploadBehaviorInvocation::Initialize(content_len),
             );
             Ok(())
@@ -168,7 +171,7 @@ mod tests {
 
         async fn finalize(&self) -> AzureResult<()> {
             self.invocations
-                .wait_borrow_mut()
+                .lock()
                 .await
                 .push(MockPartitionedUploadBehaviorInvocation::Finalize());
             Ok(())
@@ -192,7 +195,7 @@ mod tests {
         )
         .await?;
 
-        assert_upload_oneshot_invocations(&mock, &src_data[..], BodyType::Bytes);
+        assert_upload_oneshot_invocations(&mock, &src_data[..], BodyType::Bytes).await;
 
         Ok(())
     }
@@ -219,7 +222,8 @@ mod tests {
             &src_data[..],
             partition_size,
             BodyType::Bytes,
-        );
+        )
+        .await;
 
         Ok(())
     }
@@ -242,7 +246,7 @@ mod tests {
         )
         .await?;
 
-        assert_upload_oneshot_invocations(&mock, &src_data[..], BodyType::SeekableStream);
+        assert_upload_oneshot_invocations(&mock, &src_data[..], BodyType::SeekableStream).await;
 
         Ok(())
     }
@@ -270,17 +274,18 @@ mod tests {
             &src_data[..],
             partition_size,
             BodyType::Bytes,
-        );
+        )
+        .await;
 
         Ok(())
     }
 
-    fn assert_upload_oneshot_invocations(
+    async fn assert_upload_oneshot_invocations(
         mock: &MockPartitionedUploadBehavior,
         original_data: &[u8],
         expected_body_type: BodyType,
     ) {
-        let invocations = mock.invocations.borrow();
+        let invocations = mock.invocations.lock().await;
         assert_eq!(invocations.len(), 1);
         assert!(matches!(
             &invocations[0],
@@ -289,14 +294,14 @@ mod tests {
         ));
     }
 
-    fn assert_upload_partitioned_invocations(
+    async fn assert_upload_partitioned_invocations(
         mock: &MockPartitionedUploadBehavior,
         original_data: &[u8],
         partition_size: usize,
         expected_body_type: BodyType,
     ) {
         let expected_partitions = original_data.len().div_ceil(partition_size);
-        let invocations = mock.invocations.borrow();
+        let invocations = mock.invocations.lock().await;
 
         assert_eq!(invocations.len(), expected_partitions + 2);
         assert!(matches!(
@@ -324,7 +329,7 @@ mod tests {
 
         assert_eq!(
             sorted_transfer_partition_invocations.len(),
-            mock.invocations.borrow().len() - 2
+            invocations.len() - 2
         );
 
         for (i, (offset, body, body_type)) in
