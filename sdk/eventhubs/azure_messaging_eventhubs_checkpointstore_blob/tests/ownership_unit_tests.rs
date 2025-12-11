@@ -18,6 +18,7 @@ fn create_test_namespace(recording: &Recording) -> String {
 #[recorded::test]
 async fn list_ownerships(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    recording.set_matcher(Matcher::BodilessMatcher).await?;
     const TEST_PARTITION_ID: &str = "list_ownerships";
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 

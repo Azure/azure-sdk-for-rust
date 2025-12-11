@@ -28,6 +28,7 @@ pub fn create_test_checkpoint_store(recording: &Recording) -> Result<Arc<BlobChe
 #[recorded::test]
 async fn list_checkpoints(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    recording.set_matcher(Matcher::BodilessMatcher).await?;
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
     let namespace = recording.var("EVENTHUBS_HOST", None);
@@ -232,6 +233,7 @@ async fn update_checkpoint_multiple_updates(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn update_checkpoint_verify_in_list_checkpoints(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    recording.set_matcher(Matcher::BodilessMatcher).await?;
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
     let namespace = recording.var("EVENTHUBS_HOST", None);
