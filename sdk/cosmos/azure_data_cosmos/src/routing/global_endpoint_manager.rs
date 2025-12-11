@@ -272,48 +272,40 @@ impl GlobalEndpointManager {
     /// # Returns
     /// `Ok(())` if refresh succeeded, `Err` if fetching account properties failed
     pub async fn refresh_location(&self, force_refresh: bool) -> Result<(), Error> {
-        // Create a span for this operation for better tracing
-        // Because the operation is async, in order to properly associate the span with the async work,
-        // we create the entire future, THEN call .instrument(span) on it before awaiting.
-        let span = tracing::trace_span!("refresh_location", force_refresh);
-        async move {
-            // If force_refresh is true, invalidate the cache to ensure a fresh fetch
-            if force_refresh {
-                self.account_properties_cache
-                    .invalidate(&ACCOUNT_PROPERTIES_KEY)
-                    .await;
-            }
-
-            // When TTL expires or cache is invalidated, the async block executes and updates location cache
-            _ = self
-                .account_properties_cache
-                .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
-                    // Fetch latest account properties from service
-                    let account_properties: AccountProperties =
-                        self.get_database_account().await?.into_body().json()?;
-
-                    // Update location cache with the fetched account properties (only on fresh fetch)
-                    {
-                        let mut cache = self.location_cache.lock().unwrap();
-                        cache.on_database_account_read(account_properties.clone());
-                    }
-
-                    Ok(account_properties)
-                })
-                .await
-                .map_err(|e: Arc<Error>| {
-                    Arc::try_unwrap(e).unwrap_or_else(|e| {
-                        Error::new(
-                            azure_core::error::ErrorKind::Other,
-                            format!("Failed to fetch account properties: {}", e),
-                        )
-                    })
-                })?;
-
-            Ok(())
+        // If force_refresh is true, invalidate the cache to ensure a fresh fetch
+        if force_refresh {
+            self.account_properties_cache
+                .invalidate(&ACCOUNT_PROPERTIES_KEY)
+                .await;
         }
-        .instrument(span)
-        .await
+
+        // When TTL expires or cache is invalidated, the async block executes and updates location cache
+        _ = self
+            .account_properties_cache
+            .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
+                // Fetch latest account properties from service
+                let account_properties: AccountProperties =
+                    self.get_database_account().await?.into_body().json()?;
+
+                // Update location cache with the fetched account properties (only on fresh fetch)
+                {
+                    let mut cache = self.location_cache.lock().unwrap();
+                    cache.on_database_account_read(account_properties.clone());
+                }
+
+                Ok(account_properties)
+            })
+            .await
+            .map_err(|e: Arc<Error>| {
+                Arc::try_unwrap(e).unwrap_or_else(|e| {
+                    Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        format!("Failed to fetch account properties: {}", e),
+                    )
+                })
+            })?;
+
+        Ok(())
     }
 
     /// Returns a map of write endpoints indexed by location name.

@@ -14,7 +14,6 @@ keywords = ["sdk", "azure", "rest", "cloud", "cosmos"]
 categories = ["api-bindings"]
 
 [dependencies]
-uuid.workspace = true
 async-trait.workspace = true
 azure_core.workspace = true
 futures.workspace = true
@@ -25,6 +24,7 @@ url.workspace = true
 moka.workspace = true
 
 [dev-dependencies]
+uuid.workspace = true
 azure_identity.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 clap.workspace = true
