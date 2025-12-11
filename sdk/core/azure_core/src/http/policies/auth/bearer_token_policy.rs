@@ -3,23 +3,19 @@
 
 use crate::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
+    error::ErrorKind,
     http::{
-        headers::{AUTHORIZATION, WWW_AUTHENTICATE},
-        policies::{Policy, PolicyResult},
+        headers::{Headers, AUTHORIZATION, WWW_AUTHENTICATE},
+        policies::{Policy, PolicyResult, ERROR_TYPE_ATTRIBUTE},
+        ClientMethodOptions, Context, Request, StatusCode,
     },
+    time::{Duration, OffsetDateTime},
+    tracing::Span,
     Error, Result,
 };
 use async_lock::RwLock;
 use async_trait::async_trait;
 use std::sync::Arc;
-use typespec::{
-    error::ErrorKind,
-    http::{headers::Headers, StatusCode},
-};
-#[cfg(not(target_arch = "wasm32"))]
-use typespec_client_core::http::Body::SeekableStream;
-use typespec_client_core::http::{ClientMethodOptions, Context, Request};
-use typespec_client_core::time::{Duration, OffsetDateTime};
 
 /// Authentication policy for a bearer token.
 #[derive(Debug, Clone)]
@@ -86,9 +82,15 @@ impl Policy for BearerTokenAuthorizationPolicy {
                     callback
                         .on_challenge(&ctx, request, self.authorizer.as_ref(), response.headers())
                         .await?;
-                    #[cfg(not(target_arch = "wasm32"))]
-                    if let SeekableStream(stream) = request.body_mut() {
-                        stream.reset().await?;
+                    request.body_mut().reset().await?;
+                    if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+                        // this span covers the request which received the 401 response
+                        if span.is_recording() {
+                            span.set_attribute(
+                                ERROR_TYPE_ATTRIBUTE,
+                                response.status().to_string().into(),
+                            );
+                        }
                     }
                     response = next[0].send(&ctx, request, &next[1..]).await?
                 }
@@ -286,24 +288,26 @@ mod tests {
     use crate::{
         credentials::{Secret, TokenCredential, TokenRequestOptions},
         http::{
-            headers::{HeaderName, Headers, AUTHORIZATION},
+            headers::{HeaderName, HeaderValue, Headers, AUTHORIZATION},
             policies::{Policy, TransportPolicy},
-            Request, StatusCode,
+            AsyncRawResponse, ClientMethodOptions, Method, Request, StatusCode, Transport,
         },
-        time::OffsetDateTime,
+        time::{Duration, OffsetDateTime},
+        tracing::{SpanKind, TracerProvider},
         Bytes, Result,
     };
     use async_trait::async_trait;
-    use azure_core_test::http::MockHttpClient;
+    use azure_core_test::{
+        http::MockHttpClient,
+        tracing::{
+            check_instrumentation_result, ExpectedSpanInformation, ExpectedTracerInformation,
+            MockTracingProvider,
+        },
+    };
     use futures::FutureExt;
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
-    };
-    use typespec::http::headers::HeaderValue;
-    use typespec_client_core::{
-        http::{AsyncRawResponse, ClientMethodOptions, Method, Transport},
-        time::Duration,
     };
 
     #[derive(Debug, Clone)]
@@ -762,9 +766,8 @@ mod tests {
 
     #[cfg_attr(not(target_arch = "wasm32"), tokio::test)]
     async fn resets_stream_for_retry_after_challenge() {
+        use crate::{http::Body, stream::BytesStream};
         use futures::StreamExt;
-        use typespec_client_core::http::Body;
-        use typespec_client_core::stream::BytesStream;
 
         let on_challenge_calls = Arc::new(AtomicUsize::new(0));
         let on_challenge = Arc::new(TestOnChallenge {
@@ -842,5 +845,66 @@ mod tests {
         assert_eq!(StatusCode::Ok, res.status());
         assert_eq!(1, on_challenge_calls.load(Ordering::SeqCst));
         assert_eq!(2, request_count.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn challenged_request_tracing() {
+        let on_challenge = Arc::new(TestOnChallenge {
+            calls: Arc::new(AtomicUsize::new(0)),
+            error: None,
+        });
+        let credential = Arc::new(MockCredential::new(
+            &(0..2)
+                .map(|_| AccessToken {
+                    token: Secret::new("token".to_string()),
+                    expires_on: OffsetDateTime::now_utc() + Duration::seconds(3600),
+                })
+                .collect::<Vec<_>>(),
+        ));
+        let policy = BearerTokenAuthorizationPolicy::new(credential, ["scope"])
+            .with_on_challenge(on_challenge);
+        let client = MockHttpClient::new(|_| {
+            async {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Unauthorized,
+                    Headers::from(std::collections::HashMap::from([(
+                        WWW_AUTHENTICATE,
+                        HeaderValue::from("Bearer challenge".to_string()),
+                    )])),
+                    Bytes::new(),
+                ))
+            }
+            .boxed()
+        });
+        let transport = Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
+        let provider = Arc::new(MockTracingProvider::new());
+        let tracer = provider.get_tracer(None, "test_crate", None);
+        {
+            let span = tracer.start_span("test_span".into(), SpanKind::Internal, vec![]);
+            let mut ctx = Context::default();
+            ctx.insert(span);
+            policy
+                .send(
+                    &ctx,
+                    &mut Request::new("https://localhost".parse().unwrap(), Method::Get),
+                    std::slice::from_ref(&(transport as Arc<dyn Policy>)),
+                )
+                .await
+                .expect("successful request");
+        }
+        check_instrumentation_result(
+            provider,
+            vec![ExpectedTracerInformation {
+                name: "test_crate",
+                version: None,
+                namespace: None,
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "test_span",
+                    kind: SpanKind::Internal,
+                    attributes: vec![(ERROR_TYPE_ATTRIBUTE, "401".into())],
+                    ..Default::default()
+                }],
+            }],
+        );
     }
 }

@@ -11,7 +11,7 @@ mod request_instrumentation;
 // and [Azure conventions for open telemetry spans](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md)
 const AZ_NAMESPACE_ATTRIBUTE: &str = "az.namespace";
 const AZ_CLIENT_REQUEST_ID_ATTRIBUTE: &str = "az.client_request_id";
-const ERROR_TYPE_ATTRIBUTE: &str = "error.type";
+pub(crate) const ERROR_TYPE_ATTRIBUTE: &str = "error.type";
 const AZ_SERVICE_REQUEST_ID_ATTRIBUTE: &str = "az.service_request.id";
 const HTTP_REQUEST_RESEND_COUNT_ATTRIBUTE: &str = "http.request.resend_count";
 const HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE: &str = "http.response.status_code";
