@@ -13,7 +13,7 @@ use azure_data_cosmos::{
 };
 use futures::TryStreamExt;
 
-use framework::{test_data, TestClient};
+use framework::TestClient;
 
 #[tokio::test]
 pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
