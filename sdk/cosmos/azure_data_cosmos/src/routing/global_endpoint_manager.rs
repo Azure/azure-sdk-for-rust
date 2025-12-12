@@ -14,7 +14,6 @@ use moka::future::Cache;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::Instrument;
 use url::Url;
 
 /// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
