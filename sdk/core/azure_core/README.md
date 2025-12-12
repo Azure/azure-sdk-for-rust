@@ -47,7 +47,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Features
 
-- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
+- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation and no PII sanitization.
 - `decimal`: enables support for `rust_decimal::Decimal` type.
 - `derive`: enable derive macros e.g., `SafeDebug`.
 - `hmac_openssl`: enables HMAC signing using `openssl`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.

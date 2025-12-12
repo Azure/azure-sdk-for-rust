@@ -94,7 +94,11 @@ mod tests {
         let patterns = HashSet::from([Cow::Borrowed("key"), Cow::Borrowed("admin")]);
 
         let sanitized = url.sanitize(&patterns);
-        assert_eq!(sanitized, "https://example.com/api?foo=REDACTED");
+        if cfg!(feature = "debug") {
+            assert_eq!(sanitized, "https://example.com/api?foo=bar");
+        } else {
+            assert_eq!(sanitized, "https://example.com/api?foo=REDACTED");
+        }
     }
 
     #[test]
