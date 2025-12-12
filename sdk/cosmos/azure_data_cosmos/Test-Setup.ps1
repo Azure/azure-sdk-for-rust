@@ -5,8 +5,16 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
-if($env:AGENT_HOMEDIRECTORY) {
+$IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
+if($IsAzDo) {
     $AzDoEmulatorPath = Join-Path $env:AGENT_HOMEDIRECTORY "..\..\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
+
+    # We only run Cosmos DB tests on Windows agents in Azure DevOps
+    if ($IsWindows) {
+        $env:AZURE_COSMOS_TEST_MODE = "required"
+    } else {
+        $env:AZURE_COSMOS_TEST_MODE = "skipped"
+    }
 }
 
 if ($IsWindows) {
@@ -32,6 +40,9 @@ if ($IsWindows) {
 
     # Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
     $global:LASTEXITCODE = 0
+
+    # Set environment variables for the tests
+    $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
 } elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
     Write-Host "Docker detected. Using Cosmos DB Emulator in Docker."
 
@@ -79,5 +90,7 @@ if ($IsWindows) {
 
     Write-Host "Cosmos DB Emulator is running in Docker."
 } else {
-    throw "Docker is not available. Cannot start Cosmos DB Emulator."
+    # We're running a local build or we're on a macOS agent.
+    # We can't run the emulator on the macOS agent, and we don't want to fail local builds because the emulator isn't installed.
+    Write-Host "Cosmos DB Emulator is not available on this platform. Skipping test setup."
 }
