@@ -6,6 +6,7 @@
 
 - Added `Request::body_mut()`.
 - Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
+- Preserve query parameter order in `QueryBuilder`.
 
 ### Breaking Changes
 

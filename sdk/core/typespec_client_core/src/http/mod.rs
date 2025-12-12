@@ -463,14 +463,17 @@ mod test {
         let mut url = Url::parse("https://contoso.com?x=1&a=old&y=2&z=3").unwrap();
         let mut builder = url.query_builder();
         builder.set_pair("a", "new");
+        builder.set_pair("b", "4");
         builder.build();
 
         let params: Vec<_> = url.query_pairs().collect();
-        assert!(params.contains(&("a".into(), "new".into())));
-        assert!(params.contains(&("x".into(), "1".into())));
-        assert!(params.contains(&("y".into(), "2".into())));
-        assert!(params.contains(&("z".into(), "3".into())));
-        assert_eq!(params.len(), 4);
+        assert_eq!(params.len(), 5);
+        assert_eq!(params[0], ("x".into(), "1".into()));
+        assert_eq!(params[1], ("a".into(), "new".into()));
+        assert_eq!(params[2], ("y".into(), "2".into()));
+        assert_eq!(params[3], ("z".into(), "3".into()));
+        assert_eq!(params[4], ("b".into(), "4".into()));
+
     }
 
     #[test]
