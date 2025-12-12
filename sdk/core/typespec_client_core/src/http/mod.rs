@@ -458,6 +458,7 @@ mod test {
         assert_eq!(params.len(), 2);
     }
 
+    // cspell: ignore btreemap
     #[test]
     fn test_query_builder_with_btreemap() {
         let mut url = Url::parse("https://contoso.com?x=1&a=old&y=2&z=3").unwrap();
