@@ -115,6 +115,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
+#[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/3441"]
 async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

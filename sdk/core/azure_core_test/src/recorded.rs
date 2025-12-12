@@ -38,6 +38,8 @@ pub async fn start(
 
     #[cfg(not(target_arch = "wasm32"))]
     let proxy = {
+        use crate::proxy::ProxyExt;
+
         match mode {
             TestMode::Live => {
                 ONLY_TRACE.get_or_init(init_tracing);
@@ -46,10 +48,29 @@ pub async fn start(
             _ => Some(
                 TEST_PROXY
                     .get_or_init(|| async move {
+                        use crate::CustomDefaultMatcher;
+
                         init_tracing();
-                        crate::proxy::start(Some(mode), crate_dir, options)
+                        let proxy = crate::proxy::start(Some(mode), crate_dir, options)
                             .await
-                            .map(Arc::new)
+                            .map(Arc::new)?;
+
+                        // Work around change to query parameter ordering introduced in https://github.com/Azure/azure-sdk-for-rust/pull/3437.
+                        // Tracking reversion: https://github.com/Azure/azure-sdk-for-rust/issues/3438.
+                        proxy
+                            .client()
+                            .expect("expected test-proxy Client")
+                            .set_matcher(
+                                CustomDefaultMatcher {
+                                    ignore_query_ordering: Some(true),
+                                    ..Default::default()
+                                }
+                                .into(),
+                                None,
+                            )
+                            .await?;
+
+                        Ok(proxy)
                     })
                     .await
                     .as_ref()

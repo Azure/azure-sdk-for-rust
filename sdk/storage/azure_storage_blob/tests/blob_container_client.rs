@@ -5,7 +5,7 @@ use azure_core::{
     http::{RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
-use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
+use azure_core_test::{recorded, TestContext, TestMode, VarOptions};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
@@ -341,9 +341,21 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 #[recorded::test]
 async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
+
+    // Work around change to query parameter ordering introduced in https://github.com/Azure/azure-sdk-for-rust/pull/3437.
+    // Tracking reversion: https://github.com/Azure/azure-sdk-for-rust/issues/3438.
+    // Revert to `Matcher::HeaderlessMatcher`.
     ctx.recording()
-        .set_matcher(Matcher::HeaderlessMatcher)
+        .set_matcher(
+            azure_core_test::CustomDefaultMatcher {
+                excluded_headers: vec!["x-ms-tags"],
+                ignore_query_ordering: Some(true),
+                ..Default::default()
+            }
+            .into(),
+        )
         .await?;
+
     let container_client =
         get_container_client(ctx.recording(), true, StorageAccount::Standard).await?;
 
@@ -410,7 +422,21 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
 async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    recording.set_matcher(Matcher::BodilessMatcher).await?;
+
+    // Work around change to query parameter ordering introduced in https://github.com/Azure/azure-sdk-for-rust/pull/3437.
+    // Tracking reversion: https://github.com/Azure/azure-sdk-for-rust/issues/3438.
+    // Revert to `Matcher::Matcher::BodilessMatcher`.
+    recording
+        .set_matcher(
+            azure_core_test::CustomDefaultMatcher {
+                compare_bodies: Some(false),
+                ignore_query_ordering: Some(true),
+                ..Default::default()
+            }
+            .into(),
+        )
+        .await?;
+
     let container_client = get_container_client(recording, false, StorageAccount::Standard).await?;
     container_client.create_container(None).await?;
 
