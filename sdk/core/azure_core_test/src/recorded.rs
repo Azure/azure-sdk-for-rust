@@ -3,7 +3,7 @@
 
 //! Live recording and playing back of client library tests.
 use crate::{
-    proxy::{Proxy, ProxyExt as _, ProxyOptions},
+    proxy::{Proxy, ProxyOptions},
     recording::Recording,
     TestContext,
 };
@@ -38,6 +38,8 @@ pub async fn start(
 
     #[cfg(not(target_arch = "wasm32"))]
     let proxy = {
+        use crate::proxy::ProxyExt;
+
         match mode {
             TestMode::Live => {
                 ONLY_TRACE.get_or_init(init_tracing);
