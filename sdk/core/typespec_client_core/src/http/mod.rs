@@ -473,7 +473,6 @@ mod test {
         assert_eq!(params[2], ("y".into(), "2".into()));
         assert_eq!(params[3], ("z".into(), "3".into()));
         assert_eq!(params[4], ("b".into(), "4".into()));
-
     }
 
     #[test]
