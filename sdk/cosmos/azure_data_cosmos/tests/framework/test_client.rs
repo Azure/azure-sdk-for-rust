@@ -1,4 +1,7 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
+// cspell:ignore: TEAMPROJECTID
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
