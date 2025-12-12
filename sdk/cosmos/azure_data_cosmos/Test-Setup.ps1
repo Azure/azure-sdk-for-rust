@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+# cSpell: ignore HOMEDIRECTORY noui noexplorer disableratelimiting enableaadauthentication partitioncount LASTEXITCODE
 
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
