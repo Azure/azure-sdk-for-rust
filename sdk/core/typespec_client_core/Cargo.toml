@@ -16,6 +16,7 @@ base64.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
 gloo-timers = { workspace = true, optional = true }
+indexmap.workspace = true
 pin-project.workspace = true
 rand.workspace = true
 reqwest = { workspace = true, optional = true }

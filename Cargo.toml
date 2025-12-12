@@ -110,6 +110,7 @@ getrandom = { version = "0.3" }
 gloo-timers = { version = "0.3" }
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }
+indexmap = { version = "2.12.1", features = ["std"] }
 openssl = { version = "0.10.72" }
 opentelemetry = { version = "0.30", features = ["trace"] }
 opentelemetry_sdk = "0.30"

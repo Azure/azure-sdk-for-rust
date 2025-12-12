@@ -27,8 +27,8 @@ pub use request::{Body, Request, RequestContent};
 pub use response::{AsyncRawResponse, RawResponse, Response};
 pub use sanitizer::*;
 
+use indexmap::IndexMap;
 use std::borrow::Cow::{self, Borrowed, Owned};
-use std::collections::HashMap;
 
 // Re-export important types.
 pub use typespec::http::StatusCode;
@@ -142,13 +142,13 @@ impl UrlExt for Url {
 /// values with the same key. Call [`build()`](QueryBuilder::build) to apply the changes.
 pub struct QueryBuilder<'a> {
     url: &'a mut Url,
-    values: HashMap<Cow<'a, str>, Vec<Cow<'a, str>>>,
+    values: IndexMap<Cow<'a, str>, Vec<Cow<'a, str>>>,
     dirty: bool,
 }
 
 impl<'a> QueryBuilder<'a> {
     fn new(url: &'a mut Url) -> Self {
-        let mut values = HashMap::new();
+        let mut values = IndexMap::new();
 
         // Parse existing query params into values
         for (key, value) in url.query_pairs() {
@@ -293,7 +293,7 @@ impl<'a> QueryBuilder<'a> {
             return;
         }
 
-        // Rebuild the query string with all values from the HashMap
+        // Rebuild the query string with all values from the IndexMap
         self.url.query_pairs_mut().clear();
 
         let mut serializer = self.url.query_pairs_mut();
@@ -459,7 +459,7 @@ mod test {
     }
 
     #[test]
-    fn test_query_builder_with_hashmap() {
+    fn test_query_builder_with_indexmap() {
         let mut url = Url::parse("https://contoso.com?x=1&a=old&y=2&z=3").unwrap();
         let mut builder = url.query_builder();
         builder.set_pair("a", "new");
