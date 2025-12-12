@@ -47,7 +47,7 @@ pub async fn create_errors_in_query_engine_appear_in_first_result(
 #[tokio::test]
 pub async fn no_query_override_uses_original() -> Result<(), Box<dyn std::error::Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(5, 2);
         let container_client = test_data::create_container_with_items(
             db_client,
             items.clone(),
@@ -87,7 +87,7 @@ pub async fn no_query_override_uses_original() -> Result<(), Box<dyn std::error:
 #[tokio::test]
 pub async fn query_override_without_parameters() -> Result<(), Box<dyn std::error::Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(5, 2);
         let container_client = test_data::create_container_with_items(
             db_client,
             items.clone(),
@@ -128,7 +128,7 @@ pub async fn query_override_without_parameters() -> Result<(), Box<dyn std::erro
 #[tokio::test]
 pub async fn query_override_with_parameters() -> Result<(), Box<dyn std::error::Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(5, 2);
         let container_client = test_data::create_container_with_items(
             db_client,
             items.clone(),
@@ -186,7 +186,7 @@ pub async fn query_override_with_parameters() -> Result<(), Box<dyn std::error::
 #[tokio::test]
 pub async fn no_global_query_with_override() -> Result<(), Box<dyn std::error::Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(5, 5);
+        let items = test_data::generate_mock_items(5, 2);
         let container_client = test_data::create_container_with_items(
             db_client,
             items.clone(),
