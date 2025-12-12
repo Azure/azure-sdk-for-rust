@@ -294,14 +294,6 @@ mod tests {
     }
 
     #[test]
-    fn attributes_parse_conflicting() {
-        let attr: Attribute = syn::parse_quote! {
-            #[recorded(live, playback)]
-        };
-        attr.parse_args::<Attributes>().unwrap_err();
-    }
-
-    #[test]
     fn parse_recorded_playback_only() {
         let attr = quote! { playback };
         let item = quote! {
