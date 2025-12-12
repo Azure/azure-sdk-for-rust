@@ -5,7 +5,10 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::sync::{Arc, OnceLock};
+use std::{
+    str::FromStr,
+    sync::{Arc, OnceLock},
+};
 
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::{
@@ -27,9 +30,35 @@ pub struct TestClientOptions {
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
+const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 
 static IS_AZURE_PIPELINES: OnceLock<bool> = OnceLock::new();
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+enum CosmosTestMode {
+    /// Tests are enabled and will fail if the env vars are not set
+    Required,
+
+    /// Tests are disabled and will not attempt to run.
+    Skipped,
+
+    /// Tests can run if the env vars are set, but will not fail if they are not.
+    Allowed,
+}
+
+impl FromStr for CosmosTestMode {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "required" => Ok(CosmosTestMode::Required),
+            "skipped" => Ok(CosmosTestMode::Skipped),
+            "allowed" => Ok(CosmosTestMode::Allowed),
+            _ => Err(()),
+        }
+    }
+}
 
 fn is_azure_pipelines() -> bool {
     *IS_AZURE_PIPELINES.get_or_init(|| std::env::var("SYSTEM_TEAMPROJECTID").is_ok())
@@ -101,6 +130,25 @@ impl TestClient {
     where
         F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
+        let test_mode = if let Ok(s) = std::env::var(TEST_MODE_ENV_VAR) {
+            CosmosTestMode::from_str(&s).map_err(|_| {
+                format!(
+                    "Invalid value for {}: {}. Expected 'required', 'skipped', or 'allowed'.",
+                    TEST_MODE_ENV_VAR, s
+                )
+            })?
+        } else {
+            CosmosTestMode::Allowed
+        };
+
+        if test_mode == CosmosTestMode::Skipped {
+            println!(
+                "Skipping Cosmos DB tests because {} is set to 'skipped'.",
+                TEST_MODE_ENV_VAR
+            );
+            return Ok(());
+        }
+
         // Initialize tracing subscriber for logging, if not already initialized.
         // The error is ignored because it only happens if the subscriber is already initialized.
         _ = tracing_subscriber::fmt()
@@ -115,12 +163,11 @@ impl TestClient {
             let result = test(&run).await;
             run.cleanup().await?;
             result
-        } else if is_azure_pipelines() {
-            // Everything should be set up in Azure Pipelines, so we treat missing connection string as an error.
-            panic!("AZURE_COSMOS_CONNECTION_STRING environment variable is not set, but is required when running tests in Azure Pipelines.");
+        } else if test_mode == CosmosTestMode::Required {
+            panic!("Cosmos Test Mode is 'required' but no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
         } else {
-            // No connection string provided, so we'll skip tests that require it.
-            eprintln!("NOTE: Skipping emulator/live tests because no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
+            // Test mode is 'allowed' but no connection string was provided, so we skip the test.
+            eprintln!("Skipping emulator/live tests because no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
             Ok(())
         }
     }
