@@ -1,13 +1,15 @@
 // cSpell:ignore smol
 
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
-use moka::future::Cache;
+use url::Url;
 use azure_core::http::{Pipeline, Response};
 use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadContainerOptions};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::resource_context::ResourceType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 
 #[derive(Debug)]
 pub enum CacheError {
@@ -54,29 +56,28 @@ impl std::error::Error for CacheError {
 #[derive(Clone, Debug)]
 pub struct CollectionCache {
     pipeline: Pipeline,
-    database_link: Option<ResourceLink>,
-    container_properties_cache: Cache<ResourceLink, Arc<ContainerProperties>>,
+    database_link: Arc<RwLock<Option<ResourceLink>>>,
+    global_endpoint_manager: GlobalEndpointManager,
+    container_properties_cache: Arc<RwLock<HashMap<String, ContainerProperties>>>,
 }
 
 impl CollectionCache {
 
     pub(crate) fn new(
         pipeline: Pipeline,
+        global_endpoint_manager: GlobalEndpointManager
     ) -> Self {
-        // let link = database_link
-        //     .feed(ResourceType::Containers)
-        //     .item(container_id);
-        // let items_link = link.feed(ResourceType::Documents);
-        let container_properties_cache = Cache::new(MAX_CACHE_CAPACITY);
+        let container_properties_cache = Arc::new(RwLock::new(HashMap::new()));
         Self {
             pipeline,
-            database_link: None,
+            database_link: Arc::new(RwLock::new(None)),
+            global_endpoint_manager,
             container_properties_cache,
         }
     }
 
-    pub fn set_database_link(&mut self, database_link: ResourceLink) {
-        self.database_link = Some(database_link);
+    pub fn set_database_link(&self, database_link: ResourceLink) {
+        *self.database_link.write().unwrap() = Some(database_link);
     }
 
     pub async fn read_properties_by_id(
@@ -86,111 +87,73 @@ impl CollectionCache {
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let container_link = self.database_link
+            .read().unwrap()
             .clone()
             .unwrap()
             .feed(ResourceType::Containers)
             .item(container_id);
 
-        let cosmos_request =
+        let mut cosmos_request =
             CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
 
+        let location_endpoint = Some(
+            self.global_endpoint_manager
+                .resolve_service_endpoint(&cosmos_request),
+        );
+
+        if let Some(ref endpoint) = location_endpoint {
+            cosmos_request.request_context.route_to_location_endpoint(
+                cosmos_request.resource_link.url(&Url::parse(endpoint)?),
+            );
+        }
+
+        let ctx_owned = options
+            .method_options
+            .context
+            .with_value(container_link)
+            .into_owned();
+
         self.pipeline
-            .send(&options.method_options.context, &mut cosmos_request.into_raw_request(), None)
+            .send(&ctx_owned, &mut cosmos_request.into_raw_request(), None)
             .await
             .map(Into::into)
-//        self.pipeline
-//            .send(cosmos_request, options.method_options.context)
-//            .await
     }
-    
+
     pub async fn get_database_link(&self) -> Option<ResourceLink> {
-        self.database_link.clone()
-    }
-}
-
-/// A subset of container properties that are stable and suitable for caching.
-pub(crate) struct ContainerMetadata {
-    pub resource_id: String,
-    pub container_link: ResourceLink,
-}
-
-impl ContainerMetadata {
-    // We can't use From<ContainerProperties> because we also want the container link.
-    pub fn from_properties(
-        properties: &ContainerProperties,
-        container_link: ResourceLink,
-    ) -> azure_core::Result<Self> {
-        let resource_id = properties
-            .system_properties
-            .resource_id
-            .clone()
-            .ok_or_else(|| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    "container properties is missing expected value 'resource_id'",
-                )
-            })?;
-        Ok(Self {
-            resource_id,
-            container_link,
-        })
-    }
-}
-
-/// A cache for container metadata, including properties and routing information.
-///
-/// The cache can be cloned cheaply, and all clones share the same underlying cache data.
-#[derive(Clone)]
-pub struct ContainerMetadataCache {
-    /// Caches stable container metadata, mapping from container link to metadata.
-    container_properties_cache: Cache<ResourceLink, Arc<ContainerMetadata>>,
-}
-
-// TODO: Review this value.
-// Cosmos has a backend limit of 500 databases and containers per account by default.
-// This value affects when Moka will start evicting entries from the cache.
-// It could probably be much lower without much impact, but we need to do the research to be sure.
-const MAX_CACHE_CAPACITY: u64 = 500;
-
-impl ContainerMetadataCache {
-    /// Creates a new `ContainerMetadataCache` with default settings.
-    ///
-    /// Since the cache is designed to be shared, it is returned inside an `Arc`.
-    pub fn new() -> Self {
-        let
-            container_properties_cache = Cache::new(MAX_CACHE_CAPACITY);
-        Self {
-            container_properties_cache,
-        }
-    }
-
-    /// Unconditionally updates the cache with the provided container metadata.
-    pub async fn set_container_metadata(&self, metadata: ContainerMetadata) {
-        let metadata = Arc::new(metadata);
-
-        self.container_properties_cache
-            .insert(metadata.container_link.clone(), metadata)
-            .await;
+        self.database_link.read().unwrap().clone()
     }
 
     /// Gets the container metadata from the cache, or initializes it using the provided async function if not present.
     pub async fn get_container_metadata(
         &self,
-        key: &ResourceLink,
-        init: impl std::future::Future<Output = azure_core::Result<ContainerMetadata>>,
-    ) -> Result<Arc<ContainerMetadata>, CacheError> {
-        // TODO: Background refresh. We can do background refresh by storing an expiry time in the cache entry.
-        // Then, if the entry is stale, we can return the stale entry and spawn a background task to refresh it.
-        // There's a little trickiness here in that we can't directly spawn a task because that depends on a specific Async Runtime (tokio, smol, etc).
-        // The core SDK has an AsyncRuntime abstraction that we can use to spawn the task.
-        Ok(self
-            .container_properties_cache
-            .try_get_with_by_ref(key, async { init.await.map(Arc::new) })
-            .await?)
+        container_id: &str,
+    ) -> Result<ContainerProperties, CacheError> {
+        // Check if already in cache
+        {
+            let cache = self.container_properties_cache.read().unwrap();
+            if let Some(properties) = cache.get(container_id) {
+                return Ok(properties.clone());
+            }
+        }
+
+        // Not in cache, fetch from service
+        let response = self.read_properties_by_id(container_id, None)
+            .await
+            .map_err(Arc::new)?;
+
+        let properties = serde_json::from_slice::<ContainerProperties>(response.body()).unwrap();
+
+        // Update cache
+        self.container_properties_cache
+            .write()
+            .unwrap()
+            .insert(container_id.to_string(), properties.clone());
+
+        Ok(properties)
     }
 
     /// Removes the container metadata from the cache, forcing a refresh on the next access.
-    pub async fn remove_container_metadata(&self, key: &ResourceLink) {
-        self.container_properties_cache.invalidate(key).await;
+    pub async fn remove_container_metadata(&self, container_id: &str) {
+        self.container_properties_cache.write().unwrap().remove(container_id);
     }
 }

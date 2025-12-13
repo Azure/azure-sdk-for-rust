@@ -26,11 +26,12 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     pipeline: Arc<CosmosPipeline>,
+    collection_cache: CollectionCache,
     partition_key_range_cache: PartitionKeyRangeCache,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str, collection_cache: &mut CollectionCache, partition_key_range_cache: &PartitionKeyRangeCache) -> Self {
+    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str, collection_cache: &CollectionCache, partition_key_range_cache: &PartitionKeyRangeCache) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
@@ -41,6 +42,7 @@ impl DatabaseClient {
             containers_link,
             database_id,
             pipeline,
+            collection_cache: collection_cache.clone(),
             partition_key_range_cache,
         }
     }
@@ -50,7 +52,7 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: &str) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name, &self.partition_key_range_cache)
+        ContainerClient::new(self.pipeline.clone(), &self.link, name, &self.partition_key_range_cache, &self.collection_cache)
     }
 
     /// Returns the identifier of the Cosmos database.

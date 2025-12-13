@@ -15,7 +15,7 @@ use azure_core::Error;
 use azure_core::http::{Pipeline, RawResponse, Response, StatusCode};
 use azure_core::http::headers::HeaderName;
 use serde::Deserialize;
-use crate::ReadDatabaseOptions;
+use crate::{ReadContainerOptions, ReadDatabaseOptions};
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::routing::collection_cache::CollectionCache;
@@ -118,7 +118,6 @@ impl PartitionKeyRangeCache {
         &self,
         collection_resource_id: &str,
         partition_key_range_id: &str,
-        // pk_range_link: ResourceLink,
         force_refresh: bool,
     ) -> Option<PartitionKeyRange> {
         let mut routing_map = self.try_lookup(
@@ -225,12 +224,16 @@ impl PartitionKeyRangeCache {
                 headers.insert("if-none-match".to_string(), etag.clone());
             }
 
-            let mut database_link = self.collection_cache.get_database_link().await;
+            let read_container_options = ReadContainerOptions {
+                ..Default::default()
+            };
+            
+            let database_link = self.collection_cache.get_database_link().await;
+            let container_props = self.collection_cache.read_properties_by_id(collection_rid, Some(read_container_options)).await?;
             let pk_range_link = database_link.unwrap().feed(ResourceType::Containers).item(collection_rid).feed(ResourceType::PartitionKeyRanges);
             let response = self.execute_partition_key_range_read_change_feed(
                 collection_rid,
                 pk_range_link,
-                // self.pk_range_link.clone(),
                 // &retry_policy,
             ).await?;
 

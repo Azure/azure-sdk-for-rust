@@ -18,7 +18,7 @@ use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
 use azure_core::http::RawResponse;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
-use crate::routing::collection_cache::{CollectionCache, ContainerMetadata};
+use crate::routing::collection_cache::CollectionCache;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 
@@ -31,6 +31,7 @@ pub struct ContainerClient {
     items_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
     partition_key_range_cache: PartitionKeyRangeCache,
+    collection_cache: CollectionCache,
     container_id: String,
 }
 
@@ -40,6 +41,7 @@ impl ContainerClient {
         database_link: &ResourceLink,
         container_id: &str,
         partition_key_range_cache: &PartitionKeyRangeCache,
+        collection_cache: &CollectionCache,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
@@ -51,6 +53,7 @@ impl ContainerClient {
             items_link,
             pipeline,
             partition_key_range_cache: partition_key_range_cache.clone(),
+            collection_cache: collection_cache.clone(),
             container_id: container_id.to_string(),
         }
     }
@@ -74,27 +77,16 @@ impl ContainerClient {
     pub async fn read(
         &self,
         options: Option<ReadContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
-        let response: RawResponse = self.read_properties(options).await?.into();
+    ) -> azure_core::Result<ContainerProperties> {
+        // let response: RawResponse = self.read_properties(options).await?.into();
 
         // Read the properties and cache the stable metadata (things that don't change for the life of a container)
         // TODO: Replace with `response.body().json()` when that becomes borrowing.
-        let properties = serde_json::from_slice::<ContainerProperties>(response.body())?;
-        let metadata = ContainerMetadata::from_properties(&properties, self.link.clone())?;
-
-        Ok(response.into())
-    }
-
-    async fn read_properties(
-        &self,
-        options: Option<ReadContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
-        let options = options.unwrap_or_default();
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
-        self.pipeline
-            .send(cosmos_request, options.method_options.context)
-            .await
+        // let properties = serde_json::from_slice::<ContainerProperties>(response.body())?;
+        // let metadata = ContainerMetadata::from_properties(&properties, self.link.clone())?;
+        let properties = self.collection_cache.get_container_metadata(&*self.container_id.clone()).await?;
+        
+        Ok(properties)
     }
 
     /// Updates the indexing policy of the container.
@@ -154,7 +146,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
+        let db = self.read(None).await?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -178,7 +170,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
+        let db = self.read(None).await?;
         let resource_id = db
             .system_properties
             .resource_id

@@ -77,7 +77,7 @@ impl CosmosClient {
             pipeline_core.clone(),
         );
 
-        let collection_cache = CollectionCache::new(pipeline_core.clone());
+        let collection_cache = CollectionCache::new(pipeline_core.clone(), global_endpoint_manager.clone());
         let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline_core.clone(), Arc::from(collection_cache.clone()), Arc::from(global_endpoint_manager.clone()));
 
         let pipeline = Arc::new(CosmosPipeline::new(
@@ -135,7 +135,7 @@ impl CosmosClient {
             pipeline_core.clone(),
         );
 
-        let collection_cache = CollectionCache::new(pipeline_core.clone());
+        let collection_cache = CollectionCache::new(pipeline_core.clone(), global_endpoint_manager.clone());
         let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline_core.clone(), Arc::from(collection_cache.clone()), Arc::from(global_endpoint_manager.clone()));
 
         let pipeline = Arc::new(CosmosPipeline::new(
@@ -187,7 +187,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id, &mut self.collection_cache.clone(), &self.partition_key_range_cache.clone())
+        DatabaseClient::new(self.pipeline.clone(), id, &self.collection_cache, &self.partition_key_range_cache)
     }
 
     /// Gets the endpoint of the database account this client is connected to.
