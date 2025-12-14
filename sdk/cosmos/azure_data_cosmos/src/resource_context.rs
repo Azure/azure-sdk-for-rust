@@ -103,7 +103,6 @@ impl ResourceLink {
     }
 
     /// Gets the [`ResourceType`] identified by this link, for use when generating the authentication signature.
-    #[cfg_attr(not(feature = "key_auth"), allow(dead_code))] // REASON: Currently only used in key_auth feature but we don't want to conditional-compile it.
     pub fn resource_type(&self) -> ResourceType {
         self.resource_type
     }
@@ -130,6 +129,19 @@ impl ResourceLink {
         endpoint
             .join(&self.path())
             .expect("ResourceLink should always be url-safe")
+    }
+}
+
+impl std::fmt::Display for ResourceLink {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}[{:?}, parent: {:?}, item: {:?}]",
+            self.path(),
+            self.resource_type,
+            self.parent.as_deref(),
+            self.item_id.as_deref(),
+        )
     }
 }
 

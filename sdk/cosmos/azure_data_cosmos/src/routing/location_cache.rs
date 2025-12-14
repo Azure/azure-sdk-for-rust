@@ -13,6 +13,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tracing::info;
+use url::Url;
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
 
@@ -62,13 +63,13 @@ pub struct DatabaseAccountLocationsInfo {
     /// List of regions where read operations are supported
     pub account_read_locations: Vec<AccountRegion>,
     /// Map from location name to write endpoint URL
-    pub account_write_endpoints_by_location: HashMap<String, String>,
+    pub account_write_endpoints_by_location: HashMap<String, Url>,
     /// Map from location name to read endpoint URL
-    pub(crate) account_read_endpoints_by_location: HashMap<String, String>,
+    pub(crate) account_read_endpoints_by_location: HashMap<String, Url>,
     /// Ordered list of available write endpoint URLs (preferred first, unavailable last)
-    pub write_endpoints: Vec<String>,
+    pub write_endpoints: Vec<Url>,
     /// Ordered list of available read endpoint URLs (preferred first, unavailable last)
-    pub read_endpoints: Vec<String>,
+    pub read_endpoints: Vec<Url>,
 }
 
 /// Tracks when an endpoint was marked unavailable and for which operations.
@@ -85,14 +86,14 @@ pub struct LocationUnavailabilityInfo {
 /// Maintains endpoint lists for read and write operations, tracks endpoint availability,
 /// handles preferred location ordering, and resolves service endpoints based on request
 /// characteristics and regional preferences.
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct LocationCache {
     /// The primary default endpoint URL for the Cosmos DB account
-    pub default_endpoint: String,
+    pub default_endpoint: Url,
     /// Location and endpoint information including preferred regions and available endpoints
     pub locations_info: DatabaseAccountLocationsInfo,
     /// Thread-safe map tracking unavailable endpoints and when they were last checked
-    pub location_unavailability_info_map: RwLock<HashMap<String, LocationUnavailabilityInfo>>,
+    pub location_unavailability_info_map: RwLock<HashMap<Url, LocationUnavailabilityInfo>>,
 }
 
 impl LocationCache {
@@ -109,7 +110,7 @@ impl LocationCache {
     ///
     /// # Returns
     /// A new `LocationCache` instance ready for endpoint management
-    pub fn new(default_endpoint: String, preferred_locations: Vec<Cow<'static, str>>) -> Self {
+    pub fn new(default_endpoint: Url, preferred_locations: Vec<Cow<'static, str>>) -> Self {
         Self {
             default_endpoint,
             locations_info: DatabaseAccountLocationsInfo {
@@ -129,7 +130,7 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of read endpoint URLs
-    pub fn read_endpoints(&self) -> &[String] {
+    pub fn read_endpoints(&self) -> &[Url] {
         &self.locations_info.read_endpoints
     }
 
@@ -142,7 +143,7 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of write endpoint URLs
-    pub fn write_endpoints(&self) -> &[String] {
+    pub fn write_endpoints(&self) -> &[Url] {
         &self.locations_info.write_endpoints
     }
 
@@ -216,7 +217,7 @@ impl LocationCache {
     /// # Arguments
     /// * `endpoint` - The endpoint URL to mark unavailable
     /// * `operation` - The operation type (Read, Write, or All) for which endpoint is unavailable
-    pub fn mark_endpoint_unavailable(&mut self, endpoint: &str, operation: RequestOperation) {
+    pub fn mark_endpoint_unavailable(&mut self, endpoint: &Url, operation: RequestOperation) {
         let now = SystemTime::now();
 
         {
@@ -232,7 +233,7 @@ impl LocationCache {
             } else {
                 // If the endpoint is not in the map, insert it
                 location_unavailability_info_map.insert(
-                    endpoint.to_string(),
+                    endpoint.clone(),
                     LocationUnavailabilityInfo {
                         last_check_time: now,
                         unavailable_operation: operation,
@@ -263,7 +264,7 @@ impl LocationCache {
     ///
     /// # Returns
     /// `true` if endpoint is unavailable and not expired, `false` otherwise
-    pub fn is_endpoint_unavailable(&self, endpoint: &str, operation: RequestOperation) -> bool {
+    pub fn is_endpoint_unavailable(&self, endpoint: &Url, operation: RequestOperation) -> bool {
         let location_unavailability_info_map =
             self.location_unavailability_info_map.read().unwrap();
         if let Some(info) = location_unavailability_info_map.get(endpoint) {
@@ -291,7 +292,7 @@ impl LocationCache {
     ///
     /// # Returns
     /// The resolved endpoint URL as a String
-    pub fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
+    pub fn resolve_service_endpoint(&self, request: &CosmosRequest) -> Url {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
         let location_index = request.request_context.location_index_to_route.unwrap_or(0) as usize;
         let mut location_endpoint_to_route = None;
@@ -323,7 +324,16 @@ impl LocationCache {
             }
         }
 
-        location_endpoint_to_route.unwrap_or(self.default_endpoint.clone())
+        let endpoint = location_endpoint_to_route.unwrap_or(self.default_endpoint.clone());
+
+        tracing::trace!(
+            operation_type = ?request.operation_type,
+            resource_link = %request.resource_link,
+            ?endpoint,
+            "resolved service endpoint"
+        );
+
+        endpoint
     }
 
     /// Determines if the account supports multiple write locations.
@@ -353,7 +363,7 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn get_applicable_endpoints(&mut self, operation_type: OperationType) -> Vec<String> {
+    pub fn get_applicable_endpoints(&mut self, operation_type: OperationType) -> Vec<Url> {
         // Select endpoints based on operation type.
         if operation_type.is_read_only() {
             self.get_preferred_available_endpoints(
@@ -410,10 +420,10 @@ impl LocationCache {
     fn get_endpoints_by_location(
         &mut self,
         locations: Vec<AccountRegion>,
-    ) -> (HashMap<String, String>, Vec<AccountRegion>) {
+    ) -> (HashMap<String, Url>, Vec<AccountRegion>) {
         // Separates locations into a hashmap and list
-        let mut endpoints_by_location: HashMap<String, String> = HashMap::new();
-        let mut parsed_locations: Vec<AccountRegion> = Vec::new();
+        let mut endpoints_by_location = HashMap::new();
+        let mut parsed_locations = Vec::new();
 
         for location in locations {
             endpoints_by_location.insert(
@@ -443,12 +453,12 @@ impl LocationCache {
     /// An ordered vector of endpoint URLs (preferred available, preferred unavailable, default)
     fn get_preferred_available_endpoints(
         &self,
-        endpoints_by_location: &HashMap<String, String>,
+        endpoints_by_location: &HashMap<String, Url>,
         request: RequestOperation,
-        default_endpoint: &str,
-    ) -> Vec<String> {
-        let mut endpoints: Vec<String> = Vec::new();
-        let mut unavailable_endpoints: Vec<String> = Vec::new();
+        default_endpoint: &Url,
+    ) -> Vec<Url> {
+        let mut endpoints = Vec::new();
+        let mut unavailable_endpoints = Vec::new();
 
         for location in &self.locations_info.preferred_locations {
             // Checks if preferred location exists in endpoints_by_location
@@ -470,7 +480,7 @@ impl LocationCache {
 
         // If no preferred locations were found, use the default endpoint
         if endpoints.is_empty() {
-            endpoints.push(default_endpoint.to_string());
+            endpoints.push(default_endpoint.clone());
         }
 
         endpoints
@@ -503,28 +513,28 @@ mod tests {
     use std::{collections::HashSet, vec};
 
     fn create_test_data() -> (
-        String,
+        Url,
         Vec<AccountRegion>,
         Vec<AccountRegion>,
         Vec<Cow<'static, str>>,
     ) {
         // Setting up test database account data
-        let default_endpoint = "https://default.documents.example.com".to_string();
+        let default_endpoint = "https://default.documents.example.com".parse().unwrap();
 
         let location_1 = AccountRegion {
-            database_account_endpoint: "https://location1.documents.example.com".to_string(),
+            database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
             name: "Location 1".to_string(),
         };
         let location_2 = AccountRegion {
-            database_account_endpoint: "https://location2.documents.example.com".to_string(),
+            database_account_endpoint: "https://location2.documents.example.com".parse().unwrap(),
             name: "Location 2".to_string(),
         };
         let location_3 = AccountRegion {
-            database_account_endpoint: "https://location3.documents.example.com".to_string(),
+            database_account_endpoint: "https://location3.documents.example.com".parse().unwrap(),
             name: "Location 3".to_string(),
         };
         let location_4 = AccountRegion {
-            database_account_endpoint: "https://location4.documents.example.com".to_string(),
+            database_account_endpoint: "https://location4.documents.example.com".parse().unwrap(),
             name: "Location 4".to_string(),
         };
         let write_locations = Vec::from([location_1.clone(), location_2.clone()]);
@@ -559,7 +569,7 @@ mod tests {
 
         assert_eq!(
             cache.default_endpoint,
-            "https://default.documents.example.com"
+            Url::parse("https://default.documents.example.com").unwrap()
         );
 
         assert_eq!(
@@ -608,11 +618,11 @@ mod tests {
             HashMap::from([
                 (
                     "Location 1".to_string(),
-                    "https://location1.documents.example.com".to_string()
+                    Url::parse("https://location1.documents.example.com").unwrap()
                 ),
                 (
                     "Location 2".to_string(),
-                    "https://location2.documents.example.com".to_string()
+                    Url::parse("https://location2.documents.example.com").unwrap()
                 )
             ])
         );
@@ -622,19 +632,19 @@ mod tests {
             HashMap::from([
                 (
                     "Location 1".to_string(),
-                    "https://location1.documents.example.com".to_string()
+                    Url::parse("https://location1.documents.example.com").unwrap()
                 ),
                 (
                     "Location 2".to_string(),
-                    "https://location2.documents.example.com".to_string()
+                    Url::parse("https://location2.documents.example.com").unwrap()
                 ),
                 (
                     "Location 3".to_string(),
-                    "https://location3.documents.example.com".to_string()
+                    Url::parse("https://location3.documents.example.com").unwrap()
                 ),
                 (
                     "Location 4".to_string(),
-                    "https://location4.documents.example.com".to_string()
+                    Url::parse("https://location4.documents.example.com").unwrap()
                 )
             ])
         );
@@ -642,16 +652,16 @@ mod tests {
         assert_eq!(
             cache.locations_info.write_endpoints,
             vec![
-                "https://location1.documents.example.com".to_string(),
-                "https://location2.documents.example.com".to_string()
+                "https://location1.documents.example.com".parse().unwrap(),
+                "https://location2.documents.example.com".parse().unwrap()
             ]
         );
 
         assert_eq!(
             cache.locations_info.read_endpoints,
             vec![
-                "https://location1.documents.example.com".to_string(),
-                "https://location2.documents.example.com".to_string(),
+                "https://location1.documents.example.com".parse().unwrap(),
+                "https://location2.documents.example.com".parse().unwrap(),
             ]
         );
     }
@@ -661,16 +671,13 @@ mod tests {
         let (default_endpoint, write_locations, read_locations, preferred_locations) =
             create_test_data();
 
-        let mut cache = LocationCache::new(
-            default_endpoint.to_string(),
-            vec![preferred_locations[0].clone()],
-        );
+        let mut cache = LocationCache::new(default_endpoint, vec![preferred_locations[0].clone()]);
 
         let _ = cache.update(write_locations, read_locations);
 
         assert_eq!(
             cache.default_endpoint,
-            "https://default.documents.example.com"
+            Url::parse("https://default.documents.example.com").unwrap()
         );
 
         assert_eq!(
@@ -680,12 +687,12 @@ mod tests {
 
         assert_eq!(
             cache.locations_info.write_endpoints,
-            vec!["https://location1.documents.example.com".to_string()]
+            vec![Url::parse("https://location1.documents.example.com").unwrap()]
         );
 
         assert_eq!(
             cache.locations_info.read_endpoints,
-            vec!["https://location1.documents.example.com".to_string()]
+            vec![Url::parse("https://location1.documents.example.com").unwrap()]
         );
     }
 
@@ -695,16 +702,16 @@ mod tests {
         let mut cache = create_test_location_cache();
 
         // mark location 1 as unavailable endpoint for read operation
-        let unavailable_endpoint = "https://location1.documents.example.com";
+        let unavailable_endpoint = "https://location1.documents.example.com".parse().unwrap();
         let operation = RequestOperation::Read;
-        cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
+        cache.mark_endpoint_unavailable(&unavailable_endpoint, operation);
 
         // check that endpoint is last option in read endpoints and it is in the location unavailability info map
         assert_eq!(
             cache.locations_info.read_endpoints,
             vec![
-                "https://location2.documents.example.com".to_string(),
-                unavailable_endpoint.to_string()
+                Url::parse("https://location2.documents.example.com").unwrap(),
+                unavailable_endpoint.clone(),
             ]
         );
 
@@ -715,11 +722,11 @@ mod tests {
 
         let cosmos_request = builder.build().ok().unwrap();
 
-        assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
+        assert!(cache.is_endpoint_unavailable(&unavailable_endpoint, operation));
 
         assert_eq!(
             cache.resolve_service_endpoint(&cosmos_request),
-            "https://location2.documents.example.com".to_string()
+            Url::parse("https://location2.documents.example.com").unwrap()
         );
     }
 
@@ -729,14 +736,14 @@ mod tests {
         let mut cache = create_test_location_cache();
 
         // mark location 1 as unavailable endpoint for write operation
-        let unavailable_endpoint = "https://location1.documents.example.com";
+        let unavailable_endpoint = "https://location1.documents.example.com".parse().unwrap();
         let operation = RequestOperation::Write;
-        cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
+        cache.mark_endpoint_unavailable(&unavailable_endpoint, operation);
 
         // check that endpoint is last option in write endpoints, and it is in the location unavailability info map
         assert_eq!(
             cache.locations_info.write_endpoints.last(),
-            Some(&unavailable_endpoint.to_string())
+            Some(&unavailable_endpoint)
         );
 
         let builder = CosmosRequest::builder(
@@ -746,11 +753,11 @@ mod tests {
 
         let cosmos_request = builder.build().ok().unwrap();
 
-        assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
+        assert!(cache.is_endpoint_unavailable(&unavailable_endpoint, operation));
 
         assert_eq!(
             cache.resolve_service_endpoint(&cosmos_request),
-            "https://location2.documents.example.com".to_string()
+            Url::parse("https://location2.documents.example.com").unwrap()
         );
     }
 
@@ -759,29 +766,29 @@ mod tests {
         // set up test cache
         let mut cache = create_test_location_cache();
 
-        let endpoint1 = "https://location1.documents.example.com";
+        let endpoint1 = "https://location1.documents.example.com".parse().unwrap();
 
-        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
-        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Write);
 
         let before_marked_unavailable_time = SystemTime::now() - Duration::from_secs(10);
 
         {
             let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
-            if let Some(info) = unavailability_map.get_mut(endpoint1) {
+            if let Some(info) = unavailability_map.get_mut(&endpoint1) {
                 info.last_check_time = before_marked_unavailable_time;
             }
         }
 
-        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
-        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Write);
 
         assert!(
             cache
                 .location_unavailability_info_map
                 .read()
                 .unwrap()
-                .get(endpoint1)
+                .get(&endpoint1)
                 .map(|info| info.last_check_time)
                 > Some(before_marked_unavailable_time)
         );
@@ -791,7 +798,7 @@ mod tests {
                 .location_unavailability_info_map
                 .read()
                 .unwrap()
-                .get(endpoint1)
+                .get(&endpoint1)
                 .map(|info| info.unavailable_operation),
             Some(RequestOperation::All)
         );
@@ -803,15 +810,15 @@ mod tests {
         let mut cache = create_test_location_cache();
 
         // mark endpoint 1 and endpoint 2 as unavailable
-        let endpoint1 = "https://location1.documents.example.com";
-        let endpoint2 = "https://location2.documents.example.com";
-        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
-        cache.mark_endpoint_unavailable(endpoint2, RequestOperation::Read);
+        let endpoint1 = "https://location1.documents.example.com".parse().unwrap();
+        let endpoint2 = "https://location2.documents.example.com".parse().unwrap();
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(&endpoint2, RequestOperation::Read);
 
         // simulate stale entry
         {
             let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
-            if let Some(info) = unavailability_map.get_mut(endpoint1) {
+            if let Some(info) = unavailability_map.get_mut(&endpoint1) {
                 info.last_check_time = SystemTime::now() - Duration::from_secs(500);
             }
         }
@@ -820,7 +827,7 @@ mod tests {
         cache.refresh_stale_endpoints();
 
         // check that endpoint 1 is marked as available again
-        assert!(!cache.is_endpoint_unavailable(endpoint1, RequestOperation::Read));
+        assert!(!cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Read));
     }
 
     #[test]
@@ -839,16 +846,16 @@ mod tests {
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
         assert_eq!(
             endpoint,
-            "https://location1.documents.example.com".to_string()
+            Url::parse("https://location1.documents.example.com").unwrap()
         );
     }
 
     #[test]
     fn resolve_service_endpoint_second_location() {
         // create test cache
-        let endpoint1 = "https://location1.documents.example.com";
+        let endpoint1 = "https://location1.documents.example.com".parse().unwrap();
         let mut cache = create_test_location_cache();
-        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
 
         let builder = CosmosRequest::builder(
             OperationType::Read,
@@ -861,7 +868,7 @@ mod tests {
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
         assert_eq!(
             endpoint,
-            "https://location2.documents.example.com".to_string()
+            Url::parse("https://location2.documents.example.com").unwrap()
         );
     }
 }
