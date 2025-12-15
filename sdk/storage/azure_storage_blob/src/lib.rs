@@ -19,4 +19,4 @@ pub use parsers::*;
 pub mod models;
 
 #[cfg(test)]
-mod test_extensions;
+mod test;

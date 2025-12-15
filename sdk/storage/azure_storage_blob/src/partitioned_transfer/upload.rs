@@ -102,7 +102,7 @@ mod tests {
     use tokio::sync::Mutex;
 
     use super::*;
-    use crate::test_extensions::body::BodyTestExt;
+    use crate::test::body::BodyTestExt;
 
     /// The possible body types for a body passed to a PartitionedUploadBehavior.
     /// For call history tracking purposes.

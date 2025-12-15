@@ -4,7 +4,7 @@
 use azure_core::http::Body;
 use bytes::{Bytes, BytesMut};
 
-use crate::test_extensions::streams::AsyncReadTestExt;
+use crate::test::streams::AsyncReadTestExt;
 
 pub(crate) trait BodyTestExt {
     async fn collect_bytes(&mut self) -> azure_core::Result<Bytes>;
