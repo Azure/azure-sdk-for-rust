@@ -14,7 +14,7 @@ if($IsAzDo) {
 if ($IsWindows) {
     if (Test-Path $AzDoEmulatorPath) {
         Write-Host "Detected Azure DevOps Agent environment with Cosmos DB Emulator. Stopping Cosmos DB Emulator."
-        Invoke-LoggedCommand "`"$AzDoEmulatorPath`" /shutdown" | Out-Null
+        Invoke-LoggedCommand "& `"$AzDoEmulatorPath`" /shutdown" | Out-Null
     } else {
         Write-Host "Unable to confirm Cosmos DB Emulator location, skipping cleanup."
     }
