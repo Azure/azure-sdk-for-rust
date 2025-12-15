@@ -98,11 +98,11 @@ mod tests {
     use std::mem::discriminant;
 
     use azure_core::{http::Body, stream::BytesStream};
+    use azure_storage_blob_test::*;
     use bytes::Bytes;
     use tokio::sync::Mutex;
 
     use super::*;
-    use crate::test::body::BodyTestExt;
 
     /// The possible body types for a body passed to a PartitionedUploadBehavior.
     /// For call history tracking purposes.

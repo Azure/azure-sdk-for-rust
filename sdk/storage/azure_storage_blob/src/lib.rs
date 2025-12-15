@@ -17,6 +17,3 @@ mod streams;
 pub use clients::*;
 pub use parsers::*;
 pub mod models;
-
-#[cfg(test)]
-mod test;
