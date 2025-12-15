@@ -18,7 +18,7 @@ if ($IsWindows) {
     } else {
         Write-Host "Unable to confirm Cosmos DB Emulator location, skipping cleanup."
     }
-} else if (Get-Command docker -ErrorAction SilentlyContinue) {
+} elseif (Get-Command docker -ErrorAction SilentlyContinue) {
     Write-Host "Docker detected. Stopping Cosmos DB Emulator container."
 
     $containerName = "cosmosdb-emulator-test"

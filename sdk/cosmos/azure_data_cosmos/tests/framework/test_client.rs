@@ -65,7 +65,7 @@ fn is_azure_pipelines() -> bool {
 }
 
 impl TestClient {
-    /// Creates a new [`TestAccount`] from local environment variables.
+    /// Creates a new [`TestClient`] from local environment variables.
     ///
     /// If the environment variables are not set, this client will contain no underlying [`CosmosClient`].
     /// Calling `run` on such a client will skip running the closure (thus skipping the test), except when
@@ -195,9 +195,9 @@ impl TestRunContext {
         Self { run_id, client }
     }
 
-    /// Generates a unique database ID including the [`TestAccount::context_id`].
+    /// Generates a unique database ID including the [`TestRunContext::run_id`].
     ///
-    /// This database will be automatically deleted when [`TestAccount::cleanup`] is called.
+    /// This database will be automatically deleted when [`TestRunContext::cleanup`] is called (which will happen automatically if [`TestClient::run`] is used).
     pub fn db_name(&self) -> String {
         format!("auto-test-{}", self.run_id)
     }
@@ -235,9 +235,10 @@ impl TestRunContext {
         Ok(db_client)
     }
 
-    /// Cleans up test resources, then drops the [`TestAccount`].
+    /// Cleans up test resources.
     ///
-    /// Call this at the end of every test using the [`TestAccount`].
+    /// This should be called at the end of a test run to delete any databases created during the test.
+    /// If using [`TestClient::run`], this will be called automatically.
     pub async fn cleanup(&self) -> Result<(), Box<dyn std::error::Error>> {
         let query = Query::from(format!(
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
