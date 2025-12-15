@@ -139,7 +139,7 @@ impl CosmosPipeline {
         &self,
         context: Context<'_>,
         resource_id: &str,
-    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+    ) -> azure_core::Result<Option<ThroughputProperties>> {
         // We only have to into_owned here in order to call send_query_request below,
         // since it returns `Pager` which must own it's data.
         // See https://github.com/Azure/azure-sdk-for-rust/issues/1911 for further discussion
@@ -157,19 +157,9 @@ impl CosmosPipeline {
             |_| Ok(()),
         )?;
 
-        let Some(offer) = results.try_next().await? else {
-            return Ok(None);
-        };
-
-        let offer_link = offers_link.item(&offer.offer_id);
-        let offer_url = self.url(&offer_link);
-
-        // Now we can read the offer itself
-        let mut req = Request::new(offer_url, Method::Get);
-        self.send_raw(context, &mut req, offer_link)
-            .await
-            .map(Into::into)
-            .map(Some)
+        // There should only be one offer for a given resource ID.
+        let offer = results.try_next().await?;
+        Ok(offer)
     }
 
     /// Helper function to update a throughput offer given a resource ID.
@@ -188,7 +178,7 @@ impl CosmosPipeline {
             .read_throughput_offer(context.clone(), resource_id)
             .await?;
         let mut current_throughput = match response {
-            Some(r) => r.into_model()?,
+            Some(r) => r,
             None => Default::default(),
         };
         current_throughput.offer = throughput.offer;

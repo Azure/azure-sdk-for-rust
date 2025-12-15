@@ -178,7 +178,7 @@ impl DatabaseClient {
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions<'_>>,
-    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+    ) -> azure_core::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.

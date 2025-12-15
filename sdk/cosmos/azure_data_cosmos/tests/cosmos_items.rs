@@ -44,7 +44,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
 }
 
 #[tokio::test]
-pub async fn item_create_content_response_on_write() -> Result<(), Box<dyn Error>> {
+pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
         let container_client = create_container(run_context).await?;
 

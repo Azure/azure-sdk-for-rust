@@ -111,8 +111,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
         let current_throughput = container_client
             .read_throughput(None)
             .await?
-            .expect("throughput should be present")
-            .into_model()?;
+            .expect("throughput should be present");
 
         assert_eq!(Some(400), current_throughput.throughput());
 
@@ -175,8 +174,7 @@ pub async fn container_crud_autoscale() -> Result<(), Box<dyn Error>> {
         let current_throughput = container_client
             .read_throughput(None)
             .await?
-            .expect("throughput should be present")
-            .into_model()?;
+            .expect("throughput should be present");
 
         assert_eq!(Some(500), current_throughput.throughput());
         assert_eq!(Some(5000), current_throughput.autoscale_maximum());

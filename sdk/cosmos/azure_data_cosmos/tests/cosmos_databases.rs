@@ -85,8 +85,7 @@ pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
         let current_throughput = db_client
             .read_throughput(None)
             .await?
-            .ok_or("expected a throughput offer")?
-            .into_model()?;
+            .ok_or("expected a throughput offer")?;
         assert_eq!(Some(400), current_throughput.throughput());
         assert!(current_throughput.autoscale_increment().is_none());
         assert!(current_throughput.autoscale_maximum().is_none());
