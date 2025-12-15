@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
-    BlockBlobClientUploadOptions, PageBlobClientCreateOptions,
+    AccessPolicy, AppendBlobClientCreateOptions, BlobTag, BlobTags,
+    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions,
+    PageBlobClientCreateOptions, SignedIdentifier, SignedIdentifiers,
 };
 use std::collections::HashMap;
 
@@ -67,29 +68,18 @@ impl BlockBlobClientUploadOptions<'_> {
 }
 
 /// Converts a `BlobTags` struct into `HashMap<String, String>`.
-impl TryFrom<BlobTags> for HashMap<String, String> {
-    type Error = azure_core::Error;
-
-    fn try_from(blob_tags: BlobTags) -> Result<Self, azure_core::Error> {
+impl From<BlobTags> for HashMap<String, String> {
+    fn from(blob_tags: BlobTags) -> Self {
         let mut map = HashMap::new();
 
         if let Some(tags) = blob_tags.blob_tag_set {
             for tag in tags {
-                match (tag.key, tag.value) {
-                    (Some(k), Some(v)) => {
-                        map.insert(k, v);
-                    }
-                    _ => {
-                        return Err(azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::DataConversion,
-                            "BlobTag missing key or value",
-                        ));
-                    }
+                if let (Some(key), Some(value)) = (tag.key, tag.value) {
+                    map.insert(key, value);
                 }
             }
         }
-
-        Ok(map)
+        map
     }
 }
 
@@ -105,6 +95,27 @@ impl From<HashMap<String, String>> for BlobTags {
             .collect();
         BlobTags {
             blob_tag_set: Some(blob_tags),
+        }
+    }
+}
+
+/// Converts a `HashMap<String, AccessPolicy>` into a `SignedIdentifiers` struct.
+impl From<HashMap<String, AccessPolicy>> for SignedIdentifiers {
+    fn from(policies: HashMap<String, AccessPolicy>) -> Self {
+        if policies.is_empty() {
+            return SignedIdentifiers { items: None };
+        }
+
+        let signed_identifiers: Vec<SignedIdentifier> = policies
+            .into_iter()
+            .map(|(id, access_policy)| SignedIdentifier {
+                id: Some(id),
+                access_policy: Some(access_policy),
+            })
+            .collect();
+
+        SignedIdentifiers {
+            items: Some(signed_identifiers),
         }
     }
 }

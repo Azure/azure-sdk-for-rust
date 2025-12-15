@@ -22,11 +22,13 @@ RAGRS
 restype
 ruleid
 secondtag
+subsecond
 testblob1
 testblob2
 testblob3
 testblob4
 testcontainer
 uncommittedblobs
+Undeletes
 westus
 yourtagname

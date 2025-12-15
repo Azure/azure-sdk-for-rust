@@ -4,7 +4,7 @@
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
 use azure_core::{
-    http::{InstrumentationOptions, StatusCode},
+    http::{pager::PagerOptions, InstrumentationOptions, StatusCode},
     Result,
 };
 use azure_core_test::{
@@ -13,7 +13,10 @@ use azure_core_test::{
     TestContext, TestMode,
 };
 use azure_security_keyvault_secrets::{
-    models::{SecretClientGetSecretOptions, SetSecretParameters, UpdateSecretPropertiesParameters},
+    models::{
+        SecretClientGetSecretOptions, SecretClientListSecretPropertiesOptions, SetSecretParameters,
+        UpdateSecretPropertiesParameters,
+    },
     ResourceExt as _, SecretClient, SecretClientOptions,
 };
 use azure_security_keyvault_test::Retry;
@@ -145,7 +148,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     assert_eq!(secret2.value, Some("secret-value-2".into()));
 
     // List secrets.
-    let mut pager = client.list_secret_properties(None)?.into_stream();
+    let mut pager = client.list_secret_properties(None)?;
     while let Some(secret) = pager.try_next().await? {
         // Get the secret name from the ID.
         let name = secret.resource_id()?.name;
@@ -198,11 +201,11 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
     loop {
         match client.purge_deleted_secret(name.as_ref(), None).await {
             Ok(_) => {
-                println!("{name} has been purged");
+                tracing::debug!("{name} has been purged");
                 break;
             }
             Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
-                println!(
+                tracing::debug!(
                     "Retrying in {} seconds",
                     retry.duration().unwrap_or_default().as_secs_f32()
                 );
@@ -301,7 +304,10 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
 
     let recording = ctx.recording();
 
-    {
+    if recording.test_mode() != TestMode::Playback {
+        // Do not record creation of a bunch of secrets.
+        let _skip = recording.skip(azure_core_test::Skip::RequestResponse);
+
         let secret_client = {
             let mut options = SecretClientOptions::default();
             recording.instrument(&mut options.client_options);
@@ -381,7 +387,10 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
 
     let recording = ctx.recording();
 
-    {
+    if recording.test_mode() != TestMode::Playback {
+        // Do not record creation of a bunch of secrets.
+        let _skip = recording.skip(azure_core_test::Skip::RequestResponse);
+
         let secret_client = {
             let mut options = SecretClientOptions::default();
             recording.instrument(&mut options.client_options);
@@ -464,7 +473,10 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
 
     let recording = ctx.recording();
 
-    {
+    if recording.test_mode() != TestMode::Playback {
+        // Do not record creation of a bunch of secrets.
+        let _skip = recording.skip(azure_core_test::Skip::RequestResponse);
+
         let secret_client = {
             let mut options = SecretClientOptions::default();
             recording.instrument(&mut options.client_options);
@@ -524,13 +536,17 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 }
 
                 first_pager
-                    .continuation_token()
+                    .into_continuation_token()
                     .expect("expected continuation token to be created after first page")
             };
-            let mut rehydrated_pager = client
-                .list_secret_properties(None)?
-                .into_pages()
-                .with_continuation_token(rehydration_token);
+            let options = SecretClientListSecretPropertiesOptions {
+                method_options: PagerOptions {
+                    continuation_token: Some(rehydration_token),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut rehydrated_pager = client.list_secret_properties(Some(options))?.into_pages();
 
             while let Some(secret_page) = rehydrated_pager.try_next().await? {
                 let secrets = secret_page.into_model()?;

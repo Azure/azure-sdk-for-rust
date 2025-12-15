@@ -223,6 +223,12 @@ pub(crate) trait ProxyExt<'a> {
     fn client(&'a self) -> Option<&'a Client>;
 }
 
+impl<'a> ProxyExt<'a> for Arc<Proxy> {
+    fn client(&'a self) -> Option<&'a Client> {
+        self.client.as_ref()
+    }
+}
+
 impl<'a> ProxyExt<'a> for Option<Arc<Proxy>> {
     fn client(&'a self) -> Option<&'a Client> {
         self.as_ref().and_then(|proxy| proxy.client.as_ref())

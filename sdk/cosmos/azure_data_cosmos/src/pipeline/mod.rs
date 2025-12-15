@@ -9,15 +9,15 @@ use azure_core::http::{
     pager::{PagerOptions, PagerState},
     request::{options::ContentType, Request},
     response::Response,
-    ClientOptions, Context, Method, RawResponse, RetryOptions,
+    Context, Method, RawResponse,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use std::sync::Arc;
 use url::Url;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
     constants,
     models::ThroughputProperties,
@@ -36,19 +36,10 @@ pub struct CosmosPipeline {
 impl CosmosPipeline {
     pub fn new(
         endpoint: Url,
-        auth_policy: AuthorizationPolicy,
-        mut client_options: ClientOptions,
+        pipeline: azure_core::http::Pipeline,
+        global_endpoint_manager: GlobalEndpointManager,
     ) -> Self {
-        client_options.retry = RetryOptions::none();
-        let pipeline = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            client_options,
-            Vec::new(),
-            vec![Arc::new(auth_policy)],
-            None,
-        );
-        let retry_handler = BackOffRetryHandler;
+        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
         CosmosPipeline {
             endpoint,
             pipeline,
@@ -80,17 +71,13 @@ impl CosmosPipeline {
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,
-        resource_link: ResourceLink,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        cosmos_request.request_context.location_endpoint_to_route =
-            Some(resource_link.url(&self.endpoint));
-
         // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
             let ctx = context.clone();
+            let url = req.resource_link.clone();
             let mut raw_req = req.clone().into_raw_request();
-            let url = resource_link.clone();
             async move { self.send_raw(ctx, &mut raw_req, url).await }
         };
 
@@ -117,25 +104,27 @@ impl CosmosPipeline {
         let pipeline = self.pipeline.clone();
         let options = PagerOptions {
             context: ctx.with_value(resource_link).into_owned(),
+            ..Default::default()
         };
-        Ok(FeedPager::from_callback(
-            move |continuation, ctx| {
+        Ok(FeedPager::new(
+            move |continuation, pager_options| {
                 // Then we have to clone it again to pass it in to the async block.
                 // This is because Pageable can't borrow any data, it has to own it all.
                 // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
                 let pipeline = pipeline.clone();
                 let mut req = base_request.clone();
-                let ctx = ctx.clone();
-                async move {
+                Box::pin(async move {
                     if let PagerState::More(continuation) = continuation {
                         req.insert_header(constants::CONTINUATION, continuation);
                     }
 
-                    let resp = pipeline.send(&ctx, &mut req, None).await?;
+                    let resp = pipeline
+                        .send(&pager_options.context, &mut req, None)
+                        .await?;
                     let page = FeedPage::<T>::from_response(resp).await?;
 
                     Ok(page.into())
-                }
+                })
             },
             Some(options),
         ))

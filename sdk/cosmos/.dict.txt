@@ -8,6 +8,13 @@ udfs
 backoff
 pluggable
 cloneable
+moka
+substatus
+retryable
+upsert
+upserts
+upserted
+upserting
 
 # Here at Cosmos DB, we upserts, they're the best ;)
 upsert

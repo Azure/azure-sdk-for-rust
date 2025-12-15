@@ -17,7 +17,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        policies::{BearerTokenAuthorizationPolicy, Policy},
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
         Response, Url, UrlExt, XmlFormat,
     },
@@ -141,13 +141,14 @@ impl QueueClient {
         let mut path = String::from("/{queueName}");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
@@ -184,13 +185,14 @@ impl QueueClient {
         let mut path = String::from("/{queueName}");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
@@ -239,7 +241,9 @@ impl QueueClient {
         path = path.replace("{messageId}", message_id);
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
-        url.query_pairs_mut().append_pair("popReceipt", pop_receipt);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("popReceipt", pop_receipt);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -276,14 +280,14 @@ impl QueueClient {
     ///     let response: Response<ListOfSignedIdentifier, XmlFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListOfSignedIdentifierHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::ListOfSignedIdentifierHeaders::date) - date
     ///
     /// [`ListOfSignedIdentifierHeaders`]: crate::generated::models::ListOfSignedIdentifierHeaders
     #[tracing::function("Storage.Queues.Queue.getAccessPolicy")]
@@ -297,11 +301,12 @@ impl QueueClient {
         let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
-        url.query_pairs_mut().append_pair("comp", "acl");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "acl");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
@@ -359,11 +364,12 @@ impl QueueClient {
         let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
-        url.query_pairs_mut().append_pair("comp", "metadata");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "metadata");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -399,11 +405,12 @@ impl QueueClient {
         let mut path = String::from("/{queueName}/messages");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
-        url.query_pairs_mut().append_pair("peekonly", "true");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("peekonly", "true");
         if let Some(number_of_messages) = options.number_of_messages {
-            url.query_pairs_mut()
-                .append_pair("numofmessages", &number_of_messages.to_string());
+            query_builder.set_pair("numofmessages", number_of_messages.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
@@ -441,18 +448,17 @@ impl QueueClient {
         let mut path = String::from("/{queueName}/messages");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(number_of_messages) = options.number_of_messages {
-            url.query_pairs_mut()
-                .append_pair("numofmessages", &number_of_messages.to_string());
+            query_builder.set_pair("numofmessages", number_of_messages.to_string());
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(visibility_timeout) = options.visibility_timeout {
-            url.query_pairs_mut()
-                .append_pair("visibilityTimeout", &visibility_timeout.to_string());
+            query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
@@ -496,14 +502,14 @@ impl QueueClient {
         let mut path = String::from("/{queueName}/messages");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(message_time_to_live) = options.message_time_to_live {
-            url.query_pairs_mut()
-                .append_pair("messageTtl", &message_time_to_live.to_string());
+            query_builder.set_pair("messageTtl", message_time_to_live.to_string());
         }
         if let Some(visibility_timeout) = options.visibility_timeout {
-            url.query_pairs_mut()
-                .append_pair("visibilityTimeout", &visibility_timeout.to_string());
+            query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
@@ -544,14 +550,14 @@ impl QueueClient {
     ///     let response: Response<QueueClientSetAccessPolicyResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::QueueClientSetAccessPolicyResultHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::QueueClientSetAccessPolicyResultHeaders::date) - date
     ///
     /// [`QueueClientSetAccessPolicyResultHeaders`]: crate::generated::models::QueueClientSetAccessPolicyResultHeaders
     #[tracing::function("Storage.Queues.Queue.setAccessPolicy")]
@@ -566,11 +572,12 @@ impl QueueClient {
         let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
-        url.query_pairs_mut().append_pair("comp", "acl");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "acl");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
@@ -609,11 +616,12 @@ impl QueueClient {
         let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
-        url.query_pairs_mut().append_pair("comp", "metadata");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "metadata");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         for (k, v) in metadata {
             request.insert_header(format!("x-ms-meta-{k}"), v);
@@ -672,9 +680,10 @@ impl QueueClient {
         path = path.replace("{messageId}", message_id);
         path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
-        url.query_pairs_mut().append_pair("popReceipt", pop_receipt);
-        url.query_pairs_mut()
-            .append_pair("visibilityTimeout", &visibility_timeout.to_string());
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("popReceipt", pop_receipt);
+        query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);

@@ -17,9 +17,9 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
-        policies::{BearerTokenAuthorizationPolicy, Policy},
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     tracing, xml, Result,
 };
@@ -101,13 +101,14 @@ impl QueueServiceClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "properties")
             .append_pair("restype", "service");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
@@ -162,14 +163,14 @@ impl QueueServiceClient {
     ///     let response: Response<QueueServiceStats, XmlFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::QueueServiceStatsHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::QueueServiceStatsHeaders::date) - date
     ///
     /// [`QueueServiceStatsHeaders`]: crate::generated::models::QueueServiceStatsHeaders
     #[tracing::function("Storage.Queues.getStatistics")]
@@ -180,13 +181,14 @@ impl QueueServiceClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "stats")
             .append_pair("restype", "service");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
@@ -216,61 +218,53 @@ impl QueueServiceClient {
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
-    ) -> Result<Pager<ListQueuesResponse, XmlFormat>> {
+    ) -> Result<Pager<ListQueuesResponse, XmlFormat, String>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
-        first_url.query_pairs_mut().append_pair("comp", "list");
-        if let Some(include) = options.include {
-            first_url.query_pairs_mut().append_pair(
+        let mut query_builder = first_url.query_builder();
+        query_builder.append_pair("comp", "list");
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
                 "include",
-                &include
+                include
                     .iter()
                     .map(|i| i.to_string())
                     .collect::<Vec<String>>()
                     .join(","),
             );
         }
-        if let Some(marker) = options.marker {
-            first_url.query_pairs_mut().append_pair("marker", &marker);
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
         }
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
-        if let Some(prefix) = options.prefix {
-            first_url.query_pairs_mut().append_pair("prefix", &prefix);
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
         }
         if let Some(timeout) = options.timeout {
-            first_url
-                .query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let version = self.version.clone();
-        Ok(Pager::from_callback(
-            move |marker: PagerState<String>, ctx| {
+        Ok(Pager::new(
+            move |marker: PagerState<String>, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
-                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
-                        let mut new_url = url.clone();
-                        new_url
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
-                        url = new_url;
-                    }
-                    url.query_pairs_mut().append_pair("marker", &marker);
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", &marker);
+                    query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
                 request.insert_header("content-type", "application/xml");
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
-                            &ctx,
+                            &pager_options.context,
                             &mut request,
                             Some(PipelineSendOptions {
                                 check_success: CheckSuccessOptions {
@@ -290,7 +284,7 @@ impl QueueServiceClient {
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
@@ -312,13 +306,14 @@ impl QueueServiceClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "properties")
             .append_pair("restype", "service");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);

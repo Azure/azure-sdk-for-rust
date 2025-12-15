@@ -3,15 +3,15 @@
 
 use azure_core::http::{RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
-use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-    BlobServiceProperties, BlockBlobClientUploadOptions,
+    BlobServiceProperties, BlockBlobClientUploadOptions, GeoReplicationStatusType,
 };
+use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name,
+    get_container_name, recorded_test_setup, StorageAccount,
 };
 use futures::StreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -21,7 +21,7 @@ use tokio::time;
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
 
     let response = service_client
         .get_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
@@ -38,7 +38,7 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
 async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
     let mut container_names = HashMap::from([
         (get_container_name(recording), 0),
         (get_container_name(recording), 0),
@@ -82,7 +82,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
     let mut container_names = HashMap::from([
         (get_container_name(recording), 0),
         (get_container_name(recording), 0),
@@ -136,7 +136,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
 async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
 
     // Storage Service Properties
     let blob_service_properties = BlobServiceProperties {
@@ -160,7 +160,7 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording)?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
 
     // Act
     let response = service_client.get_account_info(None).await?;
@@ -176,12 +176,15 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
+#[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/3440"]
 async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let service_client = get_blob_service_client(recording)?;
-    let container_client_1 = get_container_client(recording, true).await?;
-    let container_client_2 = get_container_client(recording, true).await?;
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard)?;
+    let container_client_1 =
+        get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client_2 =
+        get_container_client(recording, true, StorageAccount::Standard).await?;
 
     // Create Test Blobs with Tags
     let blob1_name = get_blob_name(recording);
@@ -259,5 +262,38 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
     container_client_1.delete_container(None).await?;
     container_client_2.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test(playback)]
+async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording, StorageAccount::Standard);
+    let endpoint = endpoint.replace(
+        ".blob.core.windows.net/",
+        "-secondary.blob.core.windows.net/",
+    );
+    let service_client_options = BlobServiceClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let service_client = BlobServiceClient::new(
+        &endpoint,
+        Some(recording.credential()),
+        Some(service_client_options),
+    )?;
+
+    let service_stats = service_client.get_statistics(None).await?;
+
+    // Assert
+    let stats = service_stats.into_model()?;
+    assert!(stats.geo_replication.is_some());
+    assert_eq!(
+        GeoReplicationStatusType::Live,
+        stats.clone().geo_replication.unwrap().status.unwrap()
+    );
+    assert!(stats.geo_replication.unwrap().last_sync_time.is_some());
+
     Ok(())
 }

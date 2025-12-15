@@ -28,3 +28,5 @@ pub const PREFER: HeaderName = HeaderName::from_static_standard("prefer");
 pub const RETRY_AFTER: HeaderName = HeaderName::from_static_standard("retry-after");
 /// "user-agent" HTTP header. See <https://www.rfc-editor.org/rfc/rfc9110#section-10.1.5>.
 pub const USER_AGENT: HeaderName = HeaderName::from_static_standard("user-agent");
+/// "www-authenticate" HTTP header. See <https://www.rfc-editor.org/rfc/rfc9110#section-11.6.1>.
+pub const WWW_AUTHENTICATE: HeaderName = HeaderName::from_static_standard("www-authenticate");

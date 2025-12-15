@@ -9,16 +9,15 @@ use crate::generated::models::{
     BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
     BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
     BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyOptions,
-    BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions, BlobClientDownloadOptions,
-    BlobClientDownloadResult, BlobClientGetAccountInfoOptions, BlobClientGetAccountInfoResult,
+    BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientDownloadResult,
+    BlobClientGetAccountInfoOptions, BlobClientGetAccountInfoResult,
     BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult, BlobClientGetTagsOptions,
     BlobClientReleaseLeaseOptions, BlobClientReleaseLeaseResult, BlobClientRenewLeaseOptions,
     BlobClientRenewLeaseResult, BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
-    BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
-    BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-    BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions,
-    BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
+    BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
+    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+    BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
+    BlobClientUndeleteOptions, BlobExpiryOptions, BlobTags,
 };
 use azure_core::{
     base64::encode,
@@ -26,11 +25,11 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        policies::{BearerTokenAuthorizationPolicy, Policy},
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         AsyncResponse, ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions,
-        PipelineStreamOptions, Request, RequestContent, Response, Url, XmlFormat,
+        PipelineStreamOptions, Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
-    time::to_rfc7231,
+    time::{to_rfc7231, OffsetDateTime},
     tracing, Result,
 };
 use std::{collections::HashMap, sync::Arc};
@@ -117,14 +116,14 @@ impl BlobClient {
     ///     let response: Response<BlobClientAbortCopyFromUrlResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientAbortCopyFromUrlResultHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::BlobClientAbortCopyFromUrlResultHeaders::date) - date
     ///
     /// [`BlobClientAbortCopyFromUrlResultHeaders`]: crate::generated::models::BlobClientAbortCopyFromUrlResultHeaders
     #[tracing::function("Storage.Blob.Blob.abortCopyFromUrl")]
@@ -136,18 +135,19 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "copy")
             .append_key_only("copyid");
-        url.query_pairs_mut().append_pair("copyid", copy_id);
+        query_builder.set_pair("copyid", copy_id);
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-copy-action", "abort");
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -187,11 +187,11 @@ impl BlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobClientAcquireLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_id) = response.lease_id()? {
     ///         println!("x-ms-lease-id: {:?}", lease_id);
@@ -201,8 +201,8 @@ impl BlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobClientAcquireLeaseResultHeaders
@@ -215,32 +215,33 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("acquire")
             .append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-action", "acquire");
         request.insert_header("x-ms-lease-duration", duration.to_string());
-        if let Some(proposed_lease_id) = options.proposed_lease_id {
+        if let Some(proposed_lease_id) = options.proposed_lease_id.as_ref() {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -278,11 +279,11 @@ impl BlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobClientBreakLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_time) = response.lease_time()? {
     ///         println!("x-ms-lease-time: {:?}", lease_time);
@@ -292,8 +293,8 @@ impl BlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_time`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::lease_time) - x-ms-lease-time
     ///
     /// [`BlobClientBreakLeaseResultHeaders`]: crate::generated::models::BlobClientBreakLeaseResultHeaders
@@ -305,28 +306,29 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("break")
             .append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-action", "break");
@@ -370,11 +372,11 @@ impl BlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobClientChangeLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_id) = response.lease_id()? {
     ///         println!("x-ms-lease-id: {:?}", lease_id);
@@ -384,8 +386,8 @@ impl BlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobClientChangeLeaseResultHeaders`]: crate::generated::models::BlobClientChangeLeaseResultHeaders
@@ -399,28 +401,29 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("change")
             .append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-action", "change");
@@ -465,23 +468,23 @@ impl BlobClient {
     ///     let response: Response<BlobClientCopyFromUrlResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(content_md5) = response.content_md5()? {
-    ///         println!("Content-MD5: {:?}", content_md5);
+    ///         println!("content-md5: {:?}", content_md5);
     ///     }
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`content_md5`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::content_md5) - Content-MD5
-    /// * [`date`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::date) - Date
-    /// * [`last_modified`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::last_modified) - Last-Modified
+    /// * [`content_md5`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::content_md5) - content-md5
+    /// * [`date`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::last_modified) - last-modified
     /// * [`content_crc64`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`copy_id`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::copy_id) - x-ms-copy-id
     /// * [`encryption_scope`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
@@ -497,47 +500,48 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "copy")
             .append_key_only("sync");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(tier) = options.tier {
+        if let Some(tier) = options.tier.as_ref() {
             request.insert_header("x-ms-access-tier", tier.to_string());
         }
         request.insert_header("x-ms-copy-source", copy_source);
-        if let Some(copy_source_authorization) = options.copy_source_authorization {
+        if let Some(copy_source_authorization) = options.copy_source_authorization.as_ref() {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
         }
-        if let Some(copy_source_tags) = options.copy_source_tags {
+        if let Some(copy_source_tags) = options.copy_source_tags.as_ref() {
             request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(file_request_intent) = options.file_request_intent {
+        if let Some(file_request_intent) = options.file_request_intent.as_ref() {
             request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+        if let Some(immutability_policy_mode) = options.immutability_policy_mode.as_ref() {
             request.insert_header(
                 "x-ms-immutability-policy-mode",
                 immutability_policy_mode.to_string(),
@@ -549,14 +553,14 @@ impl BlobClient {
                 to_rfc7231(&immutability_policy_expiry),
             );
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         if let Some(legal_hold) = options.legal_hold {
             request.insert_header("x-ms-legal-hold", legal_hold.to_string());
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
@@ -564,7 +568,7 @@ impl BlobClient {
         if let Some(source_content_md5) = options.source_content_md5 {
             request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
         }
-        if let Some(source_if_match) = options.source_if_match {
+        if let Some(source_if_match) = options.source_if_match.as_ref() {
             request.insert_header("x-ms-source-if-match", source_if_match);
         }
         if let Some(source_if_modified_since) = options.source_if_modified_since {
@@ -573,7 +577,7 @@ impl BlobClient {
                 to_rfc7231(&source_if_modified_since),
             );
         }
-        if let Some(source_if_none_match) = options.source_if_none_match {
+        if let Some(source_if_none_match) = options.source_if_none_match.as_ref() {
             request.insert_header("x-ms-source-if-none-match", source_if_none_match);
         }
         if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
@@ -582,7 +586,7 @@ impl BlobClient {
                 to_rfc7231(&source_if_unmodified_since),
             );
         }
-        if let Some(blob_tags_string) = options.blob_tags_string {
+        if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -620,22 +624,22 @@ impl BlobClient {
     ///     let response: Response<BlobClientCreateSnapshotResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::date) - Date
-    /// * [`last_modified`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::last_modified) - Last-Modified
+    /// * [`date`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::last_modified) - last-modified
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     /// * [`snapshot`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::snapshot) - x-ms-snapshot
     /// * [`version_id`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::version_id) - x-ms-version-id
@@ -649,48 +653,49 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "snapshot");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "snapshot");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
@@ -732,41 +737,41 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        if let Some(blob_delete_type) = options.blob_delete_type {
-            url.query_pairs_mut()
-                .append_pair("deletetype", blob_delete_type.as_ref());
+        let mut query_builder = url.query_builder();
+        if let Some(blob_delete_type) = options.blob_delete_type.as_ref() {
+            query_builder.set_pair("deletetype", blob_delete_type.as_ref());
         }
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(delete_snapshots) = options.delete_snapshots {
+        if let Some(delete_snapshots) = options.delete_snapshots.as_ref() {
             request.insert_header("x-ms-delete-snapshots", delete_snapshots.to_string());
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -791,49 +796,26 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientDeleteImmutabilityPolicyResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteImmutabilityPolicyResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientDeleteImmutabilityPolicyResultHeaders::date) - Date
-    ///
-    /// [`BlobClientDeleteImmutabilityPolicyResultHeaders`]: crate::generated::models::BlobClientDeleteImmutabilityPolicyResultHeaders
     #[tracing::function("Storage.Blob.Blob.deleteImmutabilityPolicy")]
     pub async fn delete_immutability_policy(
         &self,
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
-            .append_pair("comp", "immutabilityPolicies");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "immutabilityPolicies");
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
@@ -872,28 +854,28 @@ impl BlobClient {
     ///     let response: AsyncResponse<BlobClientDownloadResult> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(cache_control) = response.cache_control()? {
-    ///         println!("Cache-Control: {:?}", cache_control);
+    ///         println!("cache-control: {:?}", cache_control);
     ///     }
     ///     if let Some(content_disposition) = response.content_disposition()? {
-    ///         println!("Content-Disposition: {:?}", content_disposition);
+    ///         println!("content-disposition: {:?}", content_disposition);
     ///     }
     ///     if let Some(content_encoding) = response.content_encoding()? {
-    ///         println!("Content-Encoding: {:?}", content_encoding);
+    ///         println!("content-encoding: {:?}", content_encoding);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`cache_control`()](crate::generated::models::BlobClientDownloadResultHeaders::cache_control) - Cache-Control
-    /// * [`content_disposition`()](crate::generated::models::BlobClientDownloadResultHeaders::content_disposition) - Content-Disposition
-    /// * [`content_encoding`()](crate::generated::models::BlobClientDownloadResultHeaders::content_encoding) - Content-Encoding
-    /// * [`content_language`()](crate::generated::models::BlobClientDownloadResultHeaders::content_language) - Content-Language
-    /// * [`content_length`()](crate::generated::models::BlobClientDownloadResultHeaders::content_length) - Content-Length
-    /// * [`content_md5`()](crate::generated::models::BlobClientDownloadResultHeaders::content_md5) - Content-MD5
-    /// * [`content_range`()](crate::generated::models::BlobClientDownloadResultHeaders::content_range) - Content-Range
-    /// * [`last_modified`()](crate::generated::models::BlobClientDownloadResultHeaders::last_modified) - Last-Modified
+    /// * [`cache_control`()](crate::generated::models::BlobClientDownloadResultHeaders::cache_control) - cache-control
+    /// * [`content_disposition`()](crate::generated::models::BlobClientDownloadResultHeaders::content_disposition) - content-disposition
+    /// * [`content_encoding`()](crate::generated::models::BlobClientDownloadResultHeaders::content_encoding) - content-encoding
+    /// * [`content_language`()](crate::generated::models::BlobClientDownloadResultHeaders::content_language) - content-language
+    /// * [`content_length`()](crate::generated::models::BlobClientDownloadResultHeaders::content_length) - content-length
+    /// * [`content_md5`()](crate::generated::models::BlobClientDownloadResultHeaders::content_md5) - content-md5
+    /// * [`content_range`()](crate::generated::models::BlobClientDownloadResultHeaders::content_range) - content-range
     /// * [`etag`()](crate::generated::models::BlobClientDownloadResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientDownloadResultHeaders::last_modified) - last-modified
     /// * [`blob_committed_block_count`()](crate::generated::models::BlobClientDownloadResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
     /// * [`blob_content_md5`()](crate::generated::models::BlobClientDownloadResultHeaders::blob_content_md5) - x-ms-blob-content-md5
     /// * [`is_sealed`()](crate::generated::models::BlobClientDownloadResultHeaders::is_sealed) - x-ms-blob-sealed
@@ -933,49 +915,50 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/octet-stream");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(range) = options.range {
+        if let Some(range) = options.range.as_ref() {
             request.insert_header("range", range);
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         if let Some(range_get_content_crc64) = options.range_get_content_crc64 {
@@ -990,7 +973,7 @@ impl BlobClient {
                 range_get_content_md5.to_string(),
             );
         }
-        if let Some(structured_body_type) = options.structured_body_type {
+        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
             request.insert_header("x-ms-structured-body", structured_body_type);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1028,7 +1011,7 @@ impl BlobClient {
     ///     let response: Response<BlobClientGetAccountInfoResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     if let Some(account_kind) = response.account_kind()? {
     ///         println!("x-ms-account-kind: {:?}", account_kind);
@@ -1041,7 +1024,7 @@ impl BlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::date) - date
     /// * [`account_kind`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::account_kind) - x-ms-account-kind
     /// * [`is_hierarchical_namespace_enabled`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::is_hierarchical_namespace_enabled) - x-ms-is-hns-enabled
     /// * [`sku_name`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
@@ -1055,14 +1038,15 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("blob")
             .append_pair("comp", "properties")
             .append_pair("restype", "account");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
@@ -1101,27 +1085,27 @@ impl BlobClient {
     ///     let response: Response<BlobClientGetPropertiesResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(cache_control) = response.cache_control()? {
-    ///         println!("Cache-Control: {:?}", cache_control);
+    ///         println!("cache-control: {:?}", cache_control);
     ///     }
     ///     if let Some(content_disposition) = response.content_disposition()? {
-    ///         println!("Content-Disposition: {:?}", content_disposition);
+    ///         println!("content-disposition: {:?}", content_disposition);
     ///     }
     ///     if let Some(content_encoding) = response.content_encoding()? {
-    ///         println!("Content-Encoding: {:?}", content_encoding);
+    ///         println!("content-encoding: {:?}", content_encoding);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`cache_control`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::cache_control) - Cache-Control
-    /// * [`content_disposition`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_disposition) - Content-Disposition
-    /// * [`content_encoding`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_encoding) - Content-Encoding
-    /// * [`content_language`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_language) - Content-Language
-    /// * [`content_length`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_length) - Content-Length
-    /// * [`content_md5`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_md5) - Content-MD5
-    /// * [`last_modified`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::last_modified) - Last-Modified
+    /// * [`cache_control`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::cache_control) - cache-control
+    /// * [`content_disposition`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_disposition) - content-disposition
+    /// * [`content_encoding`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_encoding) - content-encoding
+    /// * [`content_language`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_language) - content-language
+    /// * [`content_length`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_length) - content-length
+    /// * [`content_md5`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_md5) - content-md5
     /// * [`etag`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::last_modified) - last-modified
     /// * [`access_tier`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::access_tier) - x-ms-access-tier
     /// * [`access_tier_change_time`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::access_tier_change_time) - x-ms-access-tier-change-time
     /// * [`access_tier_inferred`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::access_tier_inferred) - x-ms-access-tier-inferred
@@ -1167,45 +1151,46 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Head);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1243,14 +1228,14 @@ impl BlobClient {
     ///     let response: Response<BlobTags, XmlFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobTagsHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::BlobTagsHeaders::date) - date
     ///
     /// [`BlobTagsHeaders`]: crate::generated::models::BlobTagsHeaders
     #[tracing::function("Storage.Blob.Blob.getTags")]
@@ -1261,24 +1246,25 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "tags");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "tags");
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1318,19 +1304,19 @@ impl BlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobClientReleaseLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobClientReleaseLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobClientReleaseLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientReleaseLeaseResultHeaders::last_modified) - last-modified
     ///
     /// [`BlobClientReleaseLeaseResultHeaders`]: crate::generated::models::BlobClientReleaseLeaseResultHeaders
     #[tracing::function("Storage.Blob.Blob.releaseLease")]
@@ -1342,28 +1328,29 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "lease")
             .append_key_only("release");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-action", "release");
@@ -1404,11 +1391,11 @@ impl BlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobClientRenewLeaseResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     if let Some(lease_id) = response.lease_id()? {
     ///         println!("x-ms-lease-id: {:?}", lease_id);
@@ -1418,8 +1405,8 @@ impl BlobClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`last_modified`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobClientRenewLeaseResultHeaders`]: crate::generated::models::BlobClientRenewLeaseResultHeaders
@@ -1432,28 +1419,29 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_pair("comp", "lease")
             .append_key_only("renew");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-action", "renew");
@@ -1494,22 +1482,22 @@ impl BlobClient {
     ///     let response: Response<BlobClientSetExpiryResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientSetExpiryResultHeaders::date) - Date
-    /// * [`last_modified`()](crate::generated::models::BlobClientSetExpiryResultHeaders::last_modified) - Last-Modified
+    /// * [`date`()](crate::generated::models::BlobClientSetExpiryResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlobClientSetExpiryResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientSetExpiryResultHeaders::last_modified) - last-modified
     ///
     /// [`BlobClientSetExpiryResultHeaders`]: crate::generated::models::BlobClientSetExpiryResultHeaders
     #[tracing::function("Storage.Blob.Blob.setExpiry")]
@@ -1521,11 +1509,12 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "expiry");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "expiry");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-expiry-option", expiry_options.to_string());
@@ -1553,75 +1542,41 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `expiry` - Specifies the date time when the blobs immutability policy is set to expire.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientSetImmutabilityPolicyResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientSetImmutabilityPolicyResult, BlobClientSetImmutabilityPolicyResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientSetImmutabilityPolicyResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     if let Some(immutability_policy_mode) = response.immutability_policy_mode()? {
-    ///         println!("x-ms-immutability-policy-mode: {:?}", immutability_policy_mode);
-    ///     }
-    ///     if let Some(immutability_policy_expires_on) = response.immutability_policy_expires_on()? {
-    ///         println!("x-ms-immutability-policy-until-date: {:?}", immutability_policy_expires_on);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::date) - Date
-    /// * [`immutability_policy_mode`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::immutability_policy_mode) - x-ms-immutability-policy-mode
-    /// * [`immutability_policy_expires_on`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::immutability_policy_expires_on) - x-ms-immutability-policy-until-date
-    ///
-    /// [`BlobClientSetImmutabilityPolicyResultHeaders`]: crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders
     #[tracing::function("Storage.Blob.Blob.setImmutabilityPolicy")]
     pub async fn set_immutability_policy(
         &self,
+        expiry: &OffsetDateTime,
         options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
-            .append_pair("comp", "immutabilityPolicies");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "immutabilityPolicies");
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+        if let Some(immutability_policy_mode) = options.immutability_policy_mode.as_ref() {
             request.insert_header(
                 "x-ms-immutability-policy-mode",
                 immutability_policy_mode.to_string(),
             );
         }
-        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
-            request.insert_header(
-                "x-ms-immutability-policy-until-date",
-                to_rfc7231(&immutability_policy_expiry),
-            );
-        }
+        request.insert_header("x-ms-immutability-policy-until-date", to_rfc7231(expiry));
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1645,53 +1600,27 @@ impl BlobClient {
     ///
     /// * `legal_hold` - Required. Specifies the legal hold status to set on the blob.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientSetLegalHoldResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientSetLegalHoldResult, BlobClientSetLegalHoldResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientSetLegalHoldResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     if let Some(legal_hold) = response.legal_hold()? {
-    ///         println!("x-ms-legal-hold: {:?}", legal_hold);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientSetLegalHoldResultHeaders::date) - Date
-    /// * [`legal_hold`()](crate::generated::models::BlobClientSetLegalHoldResultHeaders::legal_hold) - x-ms-legal-hold
-    ///
-    /// [`BlobClientSetLegalHoldResultHeaders`]: crate::generated::models::BlobClientSetLegalHoldResultHeaders
     #[tracing::function("Storage.Blob.Blob.setLegalHold")]
     pub async fn set_legal_hold(
         &self,
         legal_hold: bool,
         options: Option<BlobClientSetLegalHoldOptions<'_>>,
-    ) -> Result<Response<BlobClientSetLegalHoldResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "legalhold");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "legalhold");
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-legal-hold", legal_hold.to_string());
@@ -1727,44 +1656,45 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "metadata");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "metadata");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
                 "x-ms-encryption-algorithm",
                 encryption_algorithm.to_string(),
             );
         }
-        if let Some(encryption_key) = options.encryption_key {
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
             request.insert_header("x-ms-encryption-key", encryption_key);
         }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
             request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
         }
-        if let Some(encryption_scope) = options.encryption_scope {
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         for (k, v) in metadata {
@@ -1800,49 +1730,50 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut()
+        let mut query_builder = url.query_builder();
+        query_builder
             .append_key_only("SetHTTPHeaders")
             .append_pair("comp", "properties");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(blob_cache_control) = options.blob_cache_control {
+        if let Some(blob_cache_control) = options.blob_cache_control.as_ref() {
             request.insert_header("x-ms-blob-cache-control", blob_cache_control);
         }
-        if let Some(blob_content_disposition) = options.blob_content_disposition {
+        if let Some(blob_content_disposition) = options.blob_content_disposition.as_ref() {
             request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
         }
-        if let Some(blob_content_encoding) = options.blob_content_encoding {
+        if let Some(blob_content_encoding) = options.blob_content_encoding.as_ref() {
             request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
         }
-        if let Some(blob_content_language) = options.blob_content_language {
+        if let Some(blob_content_language) = options.blob_content_language.as_ref() {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
         if let Some(blob_content_md5) = options.blob_content_md5 {
             request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
         }
-        if let Some(blob_content_type) = options.blob_content_type {
+        if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1877,14 +1808,15 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "tags");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "tags");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
@@ -1893,10 +1825,10 @@ impl BlobClient {
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1934,27 +1866,28 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "tier");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "tier");
+        if let Some(snapshot) = options.snapshot.as_ref() {
+            query_builder.set_pair("snapshot", snapshot);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
+        if let Some(version_id) = options.version_id.as_ref() {
+            query_builder.set_pair("versionid", version_id);
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-access-tier", tier.to_string());
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(rehydrate_priority) = options.rehydrate_priority {
+        if let Some(rehydrate_priority) = options.rehydrate_priority.as_ref() {
             request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1995,22 +1928,22 @@ impl BlobClient {
     ///     let response: Response<BlobClientStartCopyFromUrlResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("Last-Modified: {:?}", last_modified);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::date) - Date
-    /// * [`last_modified`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::last_modified) - Last-Modified
+    /// * [`date`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::last_modified) - last-modified
     /// * [`copy_id`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::copy_id) - x-ms-copy-id
     /// * [`copy_status`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::copy_status) - x-ms-copy-status
     /// * [`version_id`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::version_id) - x-ms-version-id
@@ -2025,32 +1958,33 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
-        if let Some(tier) = options.tier {
+        if let Some(tier) = options.tier.as_ref() {
             request.insert_header("x-ms-access-tier", tier.to_string());
         }
         request.insert_header("x-ms-copy-source", copy_source);
-        if let Some(if_tags) = options.if_tags {
+        if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+        if let Some(immutability_policy_mode) = options.immutability_policy_mode.as_ref() {
             request.insert_header(
                 "x-ms-immutability-policy-mode",
                 immutability_policy_mode.to_string(),
@@ -2062,25 +1996,25 @@ impl BlobClient {
                 to_rfc7231(&immutability_policy_expiry),
             );
         }
-        if let Some(lease_id) = options.lease_id {
+        if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         if let Some(legal_hold) = options.legal_hold {
             request.insert_header("x-ms-legal-hold", legal_hold.to_string());
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
-        if let Some(rehydrate_priority) = options.rehydrate_priority {
+        if let Some(rehydrate_priority) = options.rehydrate_priority.as_ref() {
             request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
         }
         request.insert_header("x-ms-requires-sync", "true");
         if let Some(seal_blob) = options.seal_blob {
             request.insert_header("x-ms-seal-blob", seal_blob.to_string());
         }
-        if let Some(source_if_match) = options.source_if_match {
+        if let Some(source_if_match) = options.source_if_match.as_ref() {
             request.insert_header("x-ms-source-if-match", source_if_match);
         }
         if let Some(source_if_modified_since) = options.source_if_modified_since {
@@ -2089,10 +2023,10 @@ impl BlobClient {
                 to_rfc7231(&source_if_modified_since),
             );
         }
-        if let Some(source_if_none_match) = options.source_if_none_match {
+        if let Some(source_if_none_match) = options.source_if_none_match.as_ref() {
             request.insert_header("x-ms-source-if-none-match", source_if_none_match);
         }
-        if let Some(source_if_tags) = options.source_if_tags {
+        if let Some(source_if_tags) = options.source_if_tags.as_ref() {
             request.insert_header("x-ms-source-if-tags", source_if_tags);
         }
         if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
@@ -2101,7 +2035,7 @@ impl BlobClient {
                 to_rfc7231(&source_if_unmodified_since),
             );
         }
-        if let Some(blob_tags_string) = options.blob_tags_string {
+        if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -2126,42 +2060,20 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientUndeleteResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientUndeleteResult, BlobClientUndeleteResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientUndeleteResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientUndeleteResultHeaders::date) - Date
-    ///
-    /// [`BlobClientUndeleteResultHeaders`]: crate::generated::models::BlobClientUndeleteResultHeaders
     #[tracing::function("Storage.Blob.Blob.undelete")]
     pub async fn undelete(
         &self,
         options: Option<BlobClientUndeleteOptions<'_>>,
-    ) -> Result<Response<BlobClientUndeleteResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "undelete");
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "undelete");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);

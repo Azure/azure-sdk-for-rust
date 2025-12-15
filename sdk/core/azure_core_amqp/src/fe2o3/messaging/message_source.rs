@@ -182,10 +182,8 @@ fn message_source_conversion_fe2o3_amqp() {
         round_trip.default_outcome.is_some()
     );
 
-    if fe2o3_source.default_outcome.is_some() {
-        let original_default_outcome = fe2o3_source.default_outcome.unwrap();
+    if let Some(original_default_outcome) = fe2o3_source.default_outcome {
         let round_trip_default_outcome = round_trip.default_outcome.unwrap();
-
         assert_eq!(
             original_default_outcome.is_accepted(),
             round_trip_default_outcome.is_accepted(),

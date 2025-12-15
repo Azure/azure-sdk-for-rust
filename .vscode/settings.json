@@ -13,7 +13,10 @@
     }
   ],
   "markdownlint.config": {
-    "MD024": false
+    "MD024": false,
+    "MD046": {
+      "style": "consistent"
+    }
   },
   "rust-analyzer.cargo.features": "all",
   "rust-analyzer.check.command": "clippy",

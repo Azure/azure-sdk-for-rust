@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -35,6 +35,26 @@ pub mod tracing {
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
+
+#[cfg(not(target_arch = "wasm32"))]
+mod conditional_send {
+    /// Conditionally implements [`Send`] based on the `target_arch`.
+    ///
+    /// This implementation requires `Send`.
+    pub trait ConditionalSend: Send {}
+
+    impl<T> ConditionalSend for T where T: Send {}
+}
+
+#[cfg(target_arch = "wasm32")]
+mod conditional_send {
+    /// Conditionally implements [`Send`] based on the `target_arch`.
+    ///
+    /// This implementation does not require `Send`.
+    pub trait ConditionalSend {}
+
+    impl<T> ConditionalSend for T {}
+}
 
 mod private {
     pub trait Sealed {}

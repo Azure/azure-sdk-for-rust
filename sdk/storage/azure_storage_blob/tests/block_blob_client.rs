@@ -10,14 +10,16 @@ use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlockBlobClientUploadBlobFromUrlOptions, BlockListType,
     BlockLookupList,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+};
 use std::error::Error;
 
 #[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let block_blob_client = blob_client.block_blob_client();
 
@@ -113,10 +115,11 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
+#[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/3441"]
 async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
     let source_blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(
         &source_blob_client,
