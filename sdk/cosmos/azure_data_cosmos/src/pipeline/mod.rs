@@ -177,10 +177,7 @@ impl CosmosPipeline {
         let response = self
             .read_throughput_offer(context.clone(), resource_id)
             .await?;
-        let mut current_throughput = match response {
-            Some(r) => r,
-            None => Default::default(),
-        };
+        let mut current_throughput = response.unwrap_or_default();
         current_throughput.offer = throughput.offer;
 
         // NOTE: Offers API doesn't allow Enable Content Response On Write to be false, so once we support that option, we'll need to ignore it here.
