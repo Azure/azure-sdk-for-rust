@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::{collections::VecDeque, ops::Range, task::Poll};
 
 use azure_core::http::AsyncRawResponse;
