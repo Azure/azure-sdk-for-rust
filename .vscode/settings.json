@@ -24,5 +24,4 @@
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
   },
-  "cmake.sourceDirectory": "/home/ashleyst/code/Azure/azure-sdk-for-rust/sdk/cosmos/azure_data_cosmos_native",
 }
