@@ -163,7 +163,10 @@ typedef struct cosmos_query_options {
 } cosmos_query_options;
 
 typedef struct cosmos_client_options {
-
+  /**
+   * If true, disables certificate validation. Use only for testing.
+   */
+  bool danger_allow_invalid_certificates;
 } cosmos_client_options;
 
 typedef struct cosmos_create_database_options {
@@ -393,6 +396,27 @@ cosmos_error_code cosmos_client_create_with_key(struct cosmos_call_context *ctx,
                                                 const char *key,
                                                 const struct cosmos_client_options *options,
                                                 struct cosmos_client **out_client);
+
+/**
+ * Creates a new CosmosClient using a connection string and returns a pointer to it via the out parameter.
+ *
+ * # Arguments
+ * * `ctx` - Pointer to a [`CallContext`] to use for this call.
+ * * `connection_string` - The Cosmos DB connection string, as a nul-terminated C string.
+ *                         Can be "emulator" to use the well-known emulator endpoint and key,
+ *                         or a full connection string in the format:
+ *                         `AccountEndpoint=https://...;AccountKey=...;`
+ * * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
+ * * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
+ *
+ * # Returns
+ * * Returns [`CosmosErrorCode::Success`] on success.
+ * * Returns [`CosmosErrorCode::InvalidArgument`] if any input pointer is null or if the input string is invalid.
+ */
+cosmos_error_code cosmos_client_create_with_connection_string(struct cosmos_call_context *ctx,
+                                                              const char *connection_string,
+                                                              const struct cosmos_client_options *options,
+                                                              struct cosmos_client **out_client);
 
 /**
  * Releases the memory associated with a [`CosmosClient`].

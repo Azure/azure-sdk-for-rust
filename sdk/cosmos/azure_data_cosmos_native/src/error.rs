@@ -15,6 +15,7 @@ pub mod messages {
     pub static INVALID_JSON: &CStr = c"Invalid JSON data";
     pub static INVALID_ENDPOINT: &CStr = c"Invalid endpoint string";
     pub static INVALID_KEY: &CStr = c"Invalid key string";
+    pub static INVALID_CONNECTION_STRING: &CStr = c"Invalid connection string";
     pub static INVALID_DATABASE_ID: &CStr = c"Invalid database ID string";
     pub static INVALID_CONTAINER_ID: &CStr = c"Invalid container ID string";
     pub static INVALID_PARTITION_KEY: &CStr = c"Invalid partition key string";
