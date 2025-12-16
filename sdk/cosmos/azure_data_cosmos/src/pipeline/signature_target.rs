@@ -58,7 +58,7 @@ impl<'a> SignatureTarget<'a> {
                 _ => "extension",
             },
             self.link.resource_type().path_segment(),
-            self.link.resource_link(),
+            self.link.link_for_signing(),
             self.date_string,
         )
     }
