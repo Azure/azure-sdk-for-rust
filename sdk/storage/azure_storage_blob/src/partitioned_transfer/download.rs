@@ -34,11 +34,12 @@ type OpsFuture = Pin<Box<dyn Future<Output = Result<Bytes, azure_core::Error>>>>
 /// stream will still count when determining current running operations. This is so the stream can
 /// promise its buffered bytes do not exceed parallel * partition_size.
 pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
-    parallel: usize,
-    partition_size: usize,
+    parallel: NonZero<usize>,
+    partition_size: NonZero<usize>,
     client: &'a T,
 ) -> AzureResult<Pin<Box<dyn Stream<Item = AzureResult<Bytes>> + Unpin + 'a>>> {
-    let partition_size = partition_size as u64;
+    let parallel = parallel.get();
+    let partition_size = partition_size.get() as u64;
     let initial_response = client.transfer_range(0..partition_size).await?;
     let content_range: ContentRange = initial_response.headers().get_as(&"content-range".into())?;
     let total_ranges = content_range.total_length().div_ceil(partition_size);
@@ -168,8 +169,8 @@ mod tests {
     #[tokio::test]
     async fn download_single_range_oversized() -> AzureResult<()> {
         let data_size: usize = 123;
-        let partition_size: usize = 1024;
-        let parallel: usize = 2;
+        let partition_size = NonZero::new(1024).unwrap();
+        let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
@@ -188,8 +189,8 @@ mod tests {
     #[tokio::test]
     async fn download_single_range_exact() -> AzureResult<()> {
         let data_size: usize = 1024;
-        let partition_size: usize = 1024;
-        let parallel: usize = 2;
+        let partition_size = NonZero::new(1024).unwrap();
+        let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
@@ -209,8 +210,8 @@ mod tests {
     async fn download_multi_range_exact() -> AzureResult<()> {
         let segments = 8;
         let data_size: usize = 1024 * segments;
-        let partition_size: usize = 1024;
-        let parallel: usize = 2;
+        let partition_size = NonZero::new(1024).unwrap();
+        let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
@@ -230,8 +231,8 @@ mod tests {
     async fn download_multi_range_partial() -> AzureResult<()> {
         let segments = 8;
         let data_size: usize = 1024 * (segments - 1) + 123;
-        let partition_size: usize = 1024;
-        let parallel: usize = 2;
+        let partition_size = NonZero::new(1024).unwrap();
+        let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
@@ -250,9 +251,9 @@ mod tests {
     #[tokio::test]
     async fn download_ranges_sequential() -> AzureResult<()> {
         let segments: usize = 8;
-        let partition_size: usize = 1024;
-        let data_size: usize = partition_size * segments;
-        let parallel: usize = 1;
+        let partition_size = NonZero::new(1024).unwrap();
+        let parallel = NonZero::new(2).unwrap();
+        let data_size: usize = partition_size.get() * segments;
 
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
@@ -271,9 +272,9 @@ mod tests {
     #[tokio::test]
     async fn download_ranges_parallel_maintain_order() -> AzureResult<()> {
         let segments: usize = 20;
-        let partition_size: usize = 3;
-        let data_size: usize = partition_size * segments;
-        let parallel: usize = 16;
+        let partition_size = NonZero::new(3).unwrap();
+        let parallel = NonZero::new(16).unwrap();
+        let data_size: usize = partition_size.get() * segments;
 
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), Some(1..5));
