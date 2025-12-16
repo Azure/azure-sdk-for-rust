@@ -536,9 +536,12 @@ dependencies = [
 name = "azure_storage_blob_test"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "azure_core",
  "azure_core_test",
  "azure_storage_blob",
+ "bytes",
+ "futures",
  "tokio",
 ]
 
