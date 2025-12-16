@@ -9,7 +9,6 @@ use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadCon
 use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
 use std::time::Duration;
-use url::Url;
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
@@ -73,9 +72,9 @@ impl CollectionCache {
         );
 
         if let Some(ref endpoint) = location_endpoint {
-            cosmos_request.request_context.route_to_location_endpoint(
-                cosmos_request.resource_link.url(&Url::parse(endpoint)?),
-            );
+            cosmos_request
+                .request_context
+                .route_to_location_endpoint(cosmos_request.resource_link.url(endpoint));
         }
 
         let ctx_owned = options
