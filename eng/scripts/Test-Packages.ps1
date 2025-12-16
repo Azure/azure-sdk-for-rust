@@ -54,7 +54,7 @@ foreach ($package in $packagesToTest) {
       }
     }
 
-    $featuresList = Join-Path $packageDirectory "Test-Features.txt"
+    $featuresList = Join-Path $packageDirectory "test-features.txt"
     $featuresArg = ""
     if (Test-Path $featuresList) {
       $features = Get-Content $featuresList | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object { $_.Trim() }
