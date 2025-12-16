@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{cmp::min, collections::VecDeque, ops::Range, task::Poll};
+use std::{cmp::min, ops::Range};
 
 use azure_core::http::AsyncRawResponse;
 use bytes::Bytes;
+use futures::{stream::FuturesOrdered, StreamExt};
 
 use crate::models::content_range::ContentRange;
 
@@ -14,15 +15,6 @@ use super::*;
 pub(crate) trait PartitionedDownloadBehavior {
     async fn transfer_range(&self, range: Range<u64>) -> AzureResult<AsyncRawResponse>;
 }
-
-/// Holds either a future to be polled or its output to be persisted.
-/// Allows tracking pending futures and their completed results in the
-/// same data structure.
-enum PollPersist<Out, Fut> {
-    Ready(Out),
-    Pending(Fut),
-}
-type OpsFuture = Pin<Box<dyn Future<Output = Result<Bytes, azure_core::Error>>>>;
 
 /// Returns a stream that runs up to parallel-many ranged downloads at a time.
 ///
@@ -56,41 +48,19 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
     // fully type this variable out to specify dyn.
     let fut: Pin<Box<dyn Future<Output = AzureResult<Bytes>>>> =
         Box::pin(initial_response.into_body().collect());
-    let mut ops: VecDeque<PollPersist<Bytes, OpsFuture>> =
-        VecDeque::from([PollPersist::Pending(fut)]);
+    let mut ops = FuturesOrdered::new();
+    ops.push_back(fut);
 
     let stream = futures::stream::poll_fn(move |cx| {
         // fill to max parallel ops
         while ops.len() < parallel {
             match ranges.next() {
-                Some(range) => ops.push_back(PollPersist::Pending(Box::pin(
-                    download_range_to_bytes(client, range),
-                ))),
+                Some(range) => ops.push_back(Box::pin(download_range_to_bytes(client, range))),
                 None => break,
             }
         }
 
-        // poll each op that's still running, saving the possible resulting Bytes or propagating failure
-        for op in ops.iter_mut() {
-            if let PollPersist::Pending(fut) = op {
-                if let Poll::Ready(res) = fut.as_mut().poll(cx) {
-                    match res {
-                        Ok(bytes) => *op = PollPersist::Ready(bytes),
-                        Err(e) => return Poll::Ready(Some(Err(e))),
-                    }
-                }
-            }
-        }
-
-        // if the first op is done, return it
-        match ops.pop_front() {
-            Some(PollPersist::Ready(output)) => Poll::Ready(Some(Ok(output))),
-            Some(transfer_op) => {
-                ops.push_front(transfer_op);
-                Poll::Pending
-            }
-            None => Poll::Ready(None),
-        }
+        ops.poll_next_unpin(cx)
     });
 
     Ok(Box::pin(stream))
