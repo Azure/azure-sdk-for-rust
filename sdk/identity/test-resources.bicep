@@ -126,6 +126,75 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-06-01' = if (deplo
   }
 }
 
+resource functionStorageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = if (deployResources) {
+  name: 'fnst${uniqueString(baseName)}'
+  location: location
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    supportsHttpsTrafficOnly: true
+    minimumTlsVersion: 'TLS1_2'
+  }
+}
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = if (deployResources) {
+  name: 'asp-${baseName}'
+  location: location
+  sku: {
+    name: 'P1V2'
+    tier: 'PremiumV2'
+  }
+  kind: 'linux'
+  properties: {
+    reserved: true
+  }
+}
+
+resource functionApp 'Microsoft.Web/sites@2023-12-01' = if (deployResources) {
+  name: 'func-${baseName}'
+  location: location
+  kind: 'functionapp,linux'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${usermgdid.id}': {}
+    }
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    reserved: true
+    siteConfig: {
+      linuxFxVersion: 'CUSTOM'
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${functionStorageAccount.name};AccountKey=${functionStorageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+        }
+        {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: 'custom'
+        }
+        {
+          name: 'FUNCTIONS_EXTENSION_VERSION'
+          value: '~4'
+        }
+      ]
+    }
+  }
+}
+
+resource blobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
+  name: guid(saUserAssigned.id, usermgdid.id, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+  scope: saUserAssigned
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalId: usermgdid.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 output IDENTITY_ACR_LOGIN_SERVER string = deployResources ? containerRegistry.properties.loginServer : ''
 output IDENTITY_ACR_NAME string = deployResources ? containerRegistry.name : ''
 output IDENTITY_AKS_NAME string = deployResources ? aks.name : ''
@@ -136,3 +205,5 @@ output IDENTITY_USER_ASSIGNED_IDENTITY string = deployResources ? usermgdid.id :
 output IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID string = deployResources ? usermgdid.properties.clientId : ''
 output IDENTITY_USER_ASSIGNED_IDENTITY_NAME string = deployResources ? usermgdid.name : ''
 output IDENTITY_USER_ASSIGNED_IDENTITY_OBJECT_ID string = deployResources ? usermgdid.properties.principalId : ''
+output IDENTITY_FUNCTIONAPP_NAME string = deployResources ? functionApp.name : ''
+output IDENTITY_FUNCTIONAPP_DEFAULT_HOSTNAME string = deployResources ? functionApp.properties.defaultHostName : ''
