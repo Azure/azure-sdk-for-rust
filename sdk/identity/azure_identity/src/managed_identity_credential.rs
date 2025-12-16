@@ -193,9 +193,15 @@ mod tests {
             UserAssignedId::ObjectId(id) => format!("object-id={id}&"),
             UserAssignedId::ResourceId(id) => format!("resource-id={id}&"),
         });
-        let url = format!(
-            "http://{authority}/api?test=managed-identity&{id_param}storage-name={storage_name}"
-        );
+        let url = if authority.starts_with("http://") || authority.starts_with("https://") {
+            format!(
+                "{authority}/api/probe?test=managed-identity&{id_param}storage-name={storage_name}"
+            )
+        } else {
+            format!(
+                "http://{authority}/api?test=managed-identity&{id_param}storage-name={storage_name}"
+            )
+        };
         let u = Url::parse(&url).expect("invalid URL");
         let client = azure_core::http::new_http_client();
         let req = Request::new(u, Method::Get);
@@ -378,6 +384,23 @@ mod tests {
             Some(UserAssignedId::ClientId(client_id)),
         )
         .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn function_app_user_assigned_live() -> azure_core::Result<()> {
+        if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
+            println!("Skipped: Function App live tests require deployed resources");
+            return Ok(());
+        }
+        let url = env::var("IDENTITY_FUNCTIONAPP_URL").expect("IDENTITY_FUNCTIONAPP_URL");
+        let storage_name = env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED")
+            .expect("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
+        let client_id = env::var("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID")
+            .expect("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID");
+        run_deployed_test(&url, &storage_name, Some(UserAssignedId::ClientId(client_id)))
+            .await?;
 
         Ok(())
     }

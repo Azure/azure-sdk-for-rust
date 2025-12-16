@@ -145,3 +145,53 @@ if (-not $serviceIP) {
 }
 Write-Host "##vso[task.setvariable variable=IDENTITY_AKS_IP;]$serviceIP"
 Write-Host "##[endgroup]"
+
+# Deploy Azure Function App
+if ($DeploymentOutputs['IDENTITY_FUNCTIONAPP_NAME']) {
+  Write-Host "##[group]Deploy Azure Function App"
+
+  $functionAppName = $DeploymentOutputs['IDENTITY_FUNCTIONAPP_NAME']
+  $functionAppHostname = $DeploymentOutputs['IDENTITY_FUNCTIONAPP_DEFAULT_HOSTNAME']
+
+  # Build the probe for Linux
+  Push-Location "$PSScriptRoot/azure_identity/tests/tools/deployed_live_test"
+  try {
+    Write-Host "Building probe binary for Linux..."
+    cargo build --release --target x86_64-unknown-linux-musl
+
+    # Create deployment package
+    $tempDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name "func-deploy-$(New-Guid)"
+    try {
+      Copy-Item "target/x86_64-unknown-linux-musl/release/deployed_live_test" -Destination $tempDir
+      Copy-Item "host.json" -Destination $tempDir
+      Copy-Item "probe" -Destination $tempDir -Recurse
+
+      $zipPath = Join-Path ([System.IO.Path]::GetTempPath()) "func-deploy-$(New-Guid).zip"
+      Write-Host "Creating deployment package..."
+      Compress-Archive -Path "$tempDir/*" -DestinationPath $zipPath -Force
+
+      # Deploy to Function App
+      Write-Host "Deploying to Function App..."
+      az functionapp deployment source config-zip `
+          --resource-group $ResourceGroupName `
+          --name $functionAppName `
+          --src $zipPath
+
+      Remove-Item $zipPath -Force
+
+      # Set output variable for test
+      $functionAppUrl = "https://$functionAppHostname"
+      Write-Host "##vso[task.setvariable variable=IDENTITY_FUNCTIONAPP_URL;]$functionAppUrl"
+
+      Write-Host "Function App deployed successfully: $functionAppUrl"
+    }
+    finally {
+      Remove-Item $tempDir -Recurse -Force
+    }
+  }
+  finally {
+    Pop-Location
+  }
+
+  Write-Host "##[endgroup]"
+}
