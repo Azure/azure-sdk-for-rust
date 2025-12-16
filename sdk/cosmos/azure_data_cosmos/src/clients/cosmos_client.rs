@@ -214,6 +214,7 @@ impl CosmosClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    #[tracing::instrument(skip_all)]
     pub fn query_databases(
         &self,
         query: impl Into<Query>,
@@ -238,6 +239,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all)]
     pub async fn create_database(
         &self,
         id: &str,

@@ -25,6 +25,7 @@ moka.workspace = true
 async-lock = "3.0.0"
 
 [dev-dependencies]
+uuid.workspace = true
 azure_identity.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 clap.workspace = true

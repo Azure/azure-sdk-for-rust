@@ -315,7 +315,6 @@ dependencies = [
 name = "azure_data_cosmos"
 version = "0.30.0"
 dependencies = [
- "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",
@@ -331,6 +330,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
+ "uuid",
 ]
 
 [[package]]

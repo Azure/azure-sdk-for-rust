@@ -66,6 +66,7 @@ impl ContainerClient {
     ///     .into_model()?;
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read(
         &self,
         options: Option<ReadContainerOptions<'_>>,
@@ -107,6 +108,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace(
         &self,
         properties: ContainerProperties,
@@ -127,10 +129,11 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions<'_>>,
-    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+    ) -> azure_core::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
@@ -150,6 +153,7 @@ impl ContainerClient {
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
@@ -175,6 +179,7 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete(
         &self,
         options: Option<DeleteContainerOptions<'_>>,
@@ -252,6 +257,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -335,6 +341,7 @@ impl ContainerClient {
     ///     .into_body().json::<Product>()?;
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -423,6 +430,7 @@ impl ContainerClient {
     ///     .into_body().json::<Product>()?;
     /// Ok(())
     /// # }
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -471,6 +479,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -513,6 +522,7 @@ impl ContainerClient {
     ///     .await?;
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -586,6 +596,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -665,6 +676,7 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
