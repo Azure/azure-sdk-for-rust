@@ -7,13 +7,16 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use url::Url;
 
 /// Represents a single regional endpoint for the Cosmos DB account (readable or writable).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountRegion {
     pub name: String,
-    pub database_account_endpoint: String,
+
+    #[serde(with = "crate::serde::url")]
+    pub database_account_endpoint: Url,
 }
 
 /// Describes replica set sizing characteristics for user/system replication policies.

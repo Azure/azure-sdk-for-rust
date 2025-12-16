@@ -1,11 +1,10 @@
-use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     models::{ContainerProperties, ThroughputProperties},
-    CosmosClient, CreateContainerOptions,
+    CreateContainerOptions,
 };
 
-use super::{MockItem, TestAccount};
+use super::MockItem;
 
 const ITEMS_PER_PARTITION: usize = 10;
 const PARTITION_COUNT: usize = 10;
@@ -31,7 +30,7 @@ pub fn generate_mock_items(partition_count: usize, items_per_partition: usize) -
 
 /// Creates a batch of simple mock items
 pub async fn create_container_with_items(
-    db: DatabaseClient,
+    db: &DatabaseClient,
     items: Vec<MockItem>,
     throughput: Option<ThroughputProperties>,
 ) -> azure_core::Result<ContainerClient> {
@@ -58,35 +57,4 @@ pub async fn create_container_with_items(
     }
 
     Ok(container_client)
-}
-
-pub async fn create_database(
-    account: &TestAccount,
-    cosmos_client: &CosmosClient,
-) -> azure_core::Result<DatabaseClient> {
-    // The TestAccount has a unique context_id that includes the test name.
-    let db_name = account.unique_db("TestData");
-    let response = match cosmos_client.create_database(&db_name, None).await {
-        // The database creation was successful.
-        Ok(props) => props,
-        Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
-            // The database already exists, from a previous test run.
-            // Delete it and re-create it.
-            let db_client = cosmos_client.database_client(&db_name);
-            db_client.delete(None).await?;
-
-            // Re-create the database.
-
-            cosmos_client.create_database(&db_name, None).await?
-        }
-        Err(e) => {
-            // Some other error occurred.
-            return Err(e);
-        }
-    };
-
-    let props = response.into_model()?;
-
-    let db_client = cosmos_client.database_client(&props.id);
-    Ok(db_client)
 }
