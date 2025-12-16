@@ -17,7 +17,7 @@ pub struct ThroughputProperties {
     #[serde(rename = "content")]
     pub(crate) offer: Offer,
     #[serde(rename = "id")]
-    pub(crate) offer_id: String,
+    pub offer_id: String,
     offer_resource_id: String,
     offer_type: String,
     offer_version: Cow<'static, str>, // When we serialize, this is always going to be a constant.

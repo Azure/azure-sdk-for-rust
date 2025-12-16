@@ -58,6 +58,7 @@ pub struct ResourceLink {
     parent: Option<String>,
     item_id: Option<String>,
     resource_type: ResourceType,
+    is_rid_based: bool,
 }
 
 impl ResourceLink {
@@ -66,6 +67,7 @@ impl ResourceLink {
             parent: None,
             resource_type,
             item_id: None,
+            is_rid_based: false,
         }
     }
 
@@ -74,6 +76,7 @@ impl ResourceLink {
             parent: Some(self.path()),
             resource_type,
             item_id: None,
+            is_rid_based: false,
         }
     }
 
@@ -83,6 +86,17 @@ impl ResourceLink {
             parent: self.parent.clone(),
             resource_type: self.resource_type,
             item_id: Some(item_id),
+            is_rid_based: false,
+        }
+    }
+
+    pub fn item_by_rid(&self, rid: &str) -> Self {
+        // RIDs are not URL encoded
+        Self {
+            parent: self.parent.clone(),
+            resource_type: self.resource_type,
+            item_id: Some(rid.to_string()),
+            is_rid_based: true,
         }
     }
 
@@ -157,6 +171,7 @@ mod tests {
                 parent: None,
                 resource_type: ResourceType::Databases,
                 item_id: None,
+                is_rid_based: false,
             },
             link
         );
@@ -177,6 +192,7 @@ mod tests {
                 parent: None,
                 resource_type: ResourceType::Databases,
                 item_id: Some("TestDB".to_string()),
+                is_rid_based: false,
             },
             link
         );
@@ -199,6 +215,7 @@ mod tests {
                 parent: Some("dbs/TestDB".to_string()),
                 resource_type: ResourceType::Containers,
                 item_id: None,
+                is_rid_based: false,
             },
             link
         );
@@ -222,6 +239,7 @@ mod tests {
                 parent: Some("dbs/TestDB".to_string()),
                 resource_type: ResourceType::Containers,
                 item_id: Some("TestContainer".to_string()),
+                is_rid_based: false,
             },
             link
         );
@@ -244,7 +262,8 @@ mod tests {
             ResourceLink {
                 parent: Some("dbs/Test+DB".to_string()),
                 resource_type: ResourceType::Containers,
-                item_id: Some("Test%2FContainer".to_string())
+                item_id: Some("Test%2FContainer".to_string()),
+                is_rid_based: false,
             },
             link
         );
@@ -255,5 +274,101 @@ mod tests {
         );
         assert_eq!("dbs/Test+DB/colls/Test%2FContainer", link.resource_link());
         assert_eq!(ResourceType::Containers, link.resource_type());
+    }
+
+    #[test]
+    pub fn rid_based_item_link() {
+        let link = ResourceLink::root(ResourceType::Databases).item_by_rid("ABCDEF==");
+        assert_eq!(
+            ResourceLink {
+                parent: None,
+                resource_type: ResourceType::Databases,
+                item_id: Some("ABCDEF==".to_string()),
+                is_rid_based: true,
+            },
+            link
+        );
+        assert_eq!(
+            "https://example.com/dbs/ABCDEF==",
+            link.url(&"https://example.com/".parse().unwrap())
+                .to_string()
+        );
+        assert_eq!("dbs/ABCDEF==", link.resource_link());
+        assert_eq!(ResourceType::Databases, link.resource_type());
+    }
+
+    #[test]
+    pub fn rid_based_child_item_link() {
+        let link = ResourceLink::root(ResourceType::Databases)
+            .item_by_rid("DatabaseRID==")
+            .feed(ResourceType::Containers)
+            .item_by_rid("ContainerRID+=");
+        assert_eq!(
+            ResourceLink {
+                parent: Some("dbs/DatabaseRID==".to_string()),
+                resource_type: ResourceType::Containers,
+                item_id: Some("ContainerRID+=".to_string()),
+                is_rid_based: true,
+            },
+            link
+        );
+        assert_eq!(
+            "https://example.com/dbs/DatabaseRID==/colls/ContainerRID+=",
+            link.url(&"https://example.com/".parse().unwrap())
+                .to_string()
+        );
+        assert_eq!(
+            "dbs/DatabaseRID==/colls/ContainerRID+=",
+            link.resource_link()
+        );
+        assert_eq!(ResourceType::Containers, link.resource_type());
+    }
+
+    #[test]
+    pub fn rid_based_links_are_not_url_encoded() {
+        let link = ResourceLink::root(ResourceType::Databases)
+            .item_by_rid("ABC+DEF=")
+            .feed(ResourceType::Containers)
+            .item_by_rid("XYZ/123==");
+        // Verify that special characters like +, /, and = are NOT encoded in RID-based links
+        assert_eq!(
+            ResourceLink {
+                parent: Some("dbs/ABC+DEF=".to_string()),
+                resource_type: ResourceType::Containers,
+                item_id: Some("XYZ/123==".to_string()),
+                is_rid_based: true,
+            },
+            link
+        );
+        assert_eq!(
+            "https://example.com/dbs/ABC+DEF=/colls/XYZ/123==",
+            link.url(&"https://example.com/".parse().unwrap())
+                .to_string()
+        );
+        assert_eq!("dbs/ABC+DEF=/colls/XYZ/123==", link.resource_link());
+    }
+
+    #[test]
+    pub fn mixed_rid_and_regular_links() {
+        // Test that mixing RID-based and regular items works correctly
+        let link = ResourceLink::root(ResourceType::Databases)
+            .item("TestDB")
+            .feed(ResourceType::Containers)
+            .item_by_rid("ContainerRID==");
+        assert_eq!(
+            ResourceLink {
+                parent: Some("dbs/TestDB".to_string()),
+                resource_type: ResourceType::Containers,
+                item_id: Some("ContainerRID==".to_string()),
+                is_rid_based: true,
+            },
+            link
+        );
+        assert_eq!(
+            "https://example.com/dbs/TestDB/colls/ContainerRID==",
+            link.url(&"https://example.com/".parse().unwrap())
+                .to_string()
+        );
+        assert_eq!("dbs/TestDB/colls/ContainerRID==", link.resource_link());
     }
 }

@@ -100,4 +100,29 @@ mon, 01 jan 1900 01:00:00 gmt
 "
         );
     }
+
+    #[test]
+    fn into_signable_string_does_not_url_encode_rid_links() {
+        let time_nonce = time::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = time::to_rfc7231(&time_nonce).to_lowercase();
+
+        let ret = SignatureTarget::new(
+            Method::Get,
+            &ResourceLink::root(ResourceType::Databases)
+                .item_by_rid("ABCDEF==")
+                .feed(ResourceType::Containers)
+                .item_by_rid("XYZ123+="),
+            &date_string,
+        )
+        .into_signable_string();
+        assert_eq!(
+            ret,
+            "get
+colls
+dbs/ABCDEF==/colls/XYZ123+=
+mon, 01 jan 1900 01:00:00 gmt
+
+"
+        );
+    }
 }
