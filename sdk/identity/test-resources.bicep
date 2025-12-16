@@ -18,12 +18,17 @@ var storageAccountContributor = subscriptionResourceId(
   '17d1049b-9a84-46fb-8f53-869881c3d3ab'
 )
 
+var blobDataOwnerRoleId = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+var queueDataContributorRoleId = '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
+var tableDataContributorRoleId = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+
 resource saSystemAssigned 'Microsoft.Storage/storageAccounts@2021-08-01' = if (deployResources) {
   kind: 'StorageV2'
   location: location
   name: 'sa${uniqueString(baseName)}'
   properties: {
     accessTier: 'Hot'
+    allowSharedKeyAccess: false
   }
   sku: {
     name: 'Standard_LRS'
@@ -36,6 +41,7 @@ resource saUserAssigned 'Microsoft.Storage/storageAccounts@2021-08-01' = if (dep
   name: 'sa2${uniqueString(baseName)}'
   properties: {
     accessTier: 'Hot'
+    allowSharedKeyAccess: false
   }
   sku: {
     name: 'Standard_LRS'
@@ -54,19 +60,6 @@ resource storageRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-0
     principalId: deployResources ? usermgdid.properties.principalId : ''
     principalType: 'ServicePrincipal'
     roleDefinitionId: storageAccountContributor
-  }
-}
-
-resource functionStorageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = if (deployResources) {
-  name: 'fnst${uniqueString(baseName)}'
-  location: location
-  sku: {
-    name: 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-  properties: {
-    supportsHttpsTrafficOnly: true
-    minimumTlsVersion: 'TLS1_2'
   }
 }
 
@@ -100,8 +93,24 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = if (deployResources) {
       linuxFxVersion: 'CUSTOM'
       appSettings: [
         {
-          name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${functionStorageAccount.name};AccountKey=${functionStorageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+          name: 'AzureWebJobsStorage__blobServiceUri'
+          value: 'https://${saUserAssigned.name}.blob.${environment().suffixes.storage}'
+        }
+        {
+          name: 'AzureWebJobsStorage__queueServiceUri'
+          value: 'https://${saUserAssigned.name}.queue.${environment().suffixes.storage}'
+        }
+        {
+          name: 'AzureWebJobsStorage__tableServiceUri'
+          value: 'https://${saUserAssigned.name}.table.${environment().suffixes.storage}'
+        }
+        {
+          name: 'AzureWebJobsStorage__credential'
+          value: 'managedidentity'
+        }
+        {
+          name: 'AzureWebJobsStorage__clientId'
+          value: usermgdid.properties.clientId
         }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
@@ -117,10 +126,30 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = if (deployResources) {
 }
 
 resource blobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
-  name: guid(saUserAssigned.id, usermgdid.id, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+  name: guid(saUserAssigned.id, usermgdid.id, blobDataOwnerRoleId)
   scope: saUserAssigned
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', blobDataOwnerRoleId)
+    principalId: usermgdid.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource queueRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
+  name: guid(saUserAssigned.id, usermgdid.id, queueDataContributorRoleId)
+  scope: saUserAssigned
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', queueDataContributorRoleId)
+    principalId: usermgdid.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource tableRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
+  name: guid(saUserAssigned.id, usermgdid.id, tableDataContributorRoleId)
+  scope: saUserAssigned
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', tableDataContributorRoleId)
     principalId: usermgdid.properties.principalId
     principalType: 'ServicePrincipal'
   }
