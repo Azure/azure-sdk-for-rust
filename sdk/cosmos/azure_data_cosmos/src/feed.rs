@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use async_trait::async_trait;
 use azure_core::http::{
     headers::Headers,
@@ -117,4 +120,4 @@ impl<T: DeserializeOwned + Send> Page for FeedPage<T> {
 /// Represents a stream of pages from a Cosmos DB feed.
 ///
 /// See [`FeedPage`] for more details on Cosmos DB feeds.
-pub type FeedPager<T> = ItemIterator<FeedPage<T>>;
+pub type FeedPager<T> = ItemIterator<FeedPage<T>, String>;

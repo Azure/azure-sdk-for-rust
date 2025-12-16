@@ -130,8 +130,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/backup");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -177,8 +178,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -224,8 +226,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/pending");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -261,8 +264,9 @@ impl CertificateClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.append_path("/certificates/contacts");
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -308,8 +312,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -353,15 +358,14 @@ impl CertificateClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/{certificate-version}");
         path = path.replace("{certificate-name}", certificate_name);
-        path = match options.certificate_version {
-            Some(certificate_version) => {
-                path.replace("{certificate-version}", &certificate_version)
-            }
+        path = match options.certificate_version.as_ref() {
+            Some(certificate_version) => path.replace("{certificate-version}", certificate_version),
             None => path.replace("{certificate-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -406,8 +410,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/pending");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -453,8 +458,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/policy");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -490,8 +496,9 @@ impl CertificateClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.append_path("/certificates/contacts");
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -538,8 +545,9 @@ impl CertificateClient {
         let mut path = String::from("/deletedcertificates/{certificate-name}");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -585,8 +593,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -636,8 +645,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/import");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -675,33 +685,24 @@ impl CertificateClient {
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/certificates");
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(include_pending) = options.include_pending {
-            first_url
-                .query_pairs_mut()
-                .append_pair("includePending", &include_pending.to_string());
+            query_builder.set_pair("includePending", include_pending.to_string());
         }
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -709,7 +710,7 @@ impl CertificateClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -732,7 +733,7 @@ impl CertificateClient {
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
@@ -765,28 +766,21 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/versions");
         path = path.replace("{certificate-name}", certificate_name);
         first_url.append_path(&path);
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -794,7 +788,7 @@ impl CertificateClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -817,7 +811,7 @@ impl CertificateClient {
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
@@ -841,33 +835,24 @@ impl CertificateClient {
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/deletedcertificates");
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(include_pending) = options.include_pending {
-            first_url
-                .query_pairs_mut()
-                .append_pair("includePending", &include_pending.to_string());
+            query_builder.set_pair("includePending", include_pending.to_string());
         }
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -875,7 +860,7 @@ impl CertificateClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -898,7 +883,7 @@ impl CertificateClient {
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
@@ -921,28 +906,21 @@ impl CertificateClient {
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/certificates/issuers");
-        first_url
-            .query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = first_url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
-            first_url
-                .query_pairs_mut()
-                .append_pair("maxresults", &maxresults.to_string());
+            query_builder.set_pair("maxresults", maxresults.to_string());
         }
+        query_builder.build();
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(
+        Ok(Pager::new(
             move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let qp = next_link
-                            .query_pairs()
-                            .filter(|(name, _)| name.ne("api-version"));
                         let mut next_link = next_link.clone();
-                        next_link
-                            .query_pairs_mut()
-                            .clear()
-                            .extend_pairs(qp)
-                            .append_pair("api-version", &api_version);
+                        let mut query_builder = next_link.query_builder();
+                        query_builder.set_pair("api-version", &api_version);
+                        query_builder.build();
                         next_link
                     }
                     PagerState::Initial => first_url.clone(),
@@ -950,7 +928,7 @@ impl CertificateClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -973,7 +951,7 @@ impl CertificateClient {
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
@@ -1008,8 +986,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/pending/merge");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1058,8 +1037,9 @@ impl CertificateClient {
         let mut path = String::from("/deletedcertificates/{certificate-name}");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
         let rsp = self
             .pipeline
@@ -1105,8 +1085,9 @@ impl CertificateClient {
         let mut path = String::from("/deletedcertificates/{certificate-name}/recover");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -1143,8 +1124,9 @@ impl CertificateClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.append_path("/certificates/restore");
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1183,8 +1165,9 @@ impl CertificateClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.append_path("/certificates/contacts");
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1235,8 +1218,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1286,8 +1270,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/pending");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Patch);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1337,8 +1322,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/{certificate-name}/policy");
         path = path.replace("{certificate-name}", certificate_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Patch);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1387,15 +1373,14 @@ impl CertificateClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/{certificate-version}");
         path = path.replace("{certificate-name}", certificate_name);
-        path = match options.certificate_version {
-            Some(certificate_version) => {
-                path.replace("{certificate-version}", &certificate_version)
-            }
+        path = match options.certificate_version.as_ref() {
+            Some(certificate_version) => path.replace("{certificate-version}", certificate_version),
             None => path.replace("{certificate-version}", ""),
         };
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Patch);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
@@ -1445,8 +1430,9 @@ impl CertificateClient {
         let mut path = String::from("/certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
         url.append_path(&path);
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
         let mut request = Request::new(url, Method::Patch);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");

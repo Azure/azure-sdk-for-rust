@@ -31,7 +31,7 @@ const META: &str = "x-ms-meta-";
 ///     let response: Response<ListOfSignedIdentifier, XmlFormat> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
+///         println!("date: {:?}", date);
 ///     }
 ///     Ok(())
 /// }
@@ -90,7 +90,7 @@ impl QueueClientGetMetadataResultHeaders for Response<QueueClientGetMetadataResu
 ///     let response: Response<QueueClientSetAccessPolicyResult, NoFormat> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
+///         println!("date: {:?}", date);
 ///     }
 ///     Ok(())
 /// }
@@ -119,7 +119,7 @@ impl QueueClientSetAccessPolicyResultHeaders
 ///     let response: Response<QueueServiceStats, XmlFormat> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
+///         println!("date: {:?}", date);
 ///     }
 ///     Ok(())
 /// }

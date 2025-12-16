@@ -14,6 +14,7 @@ use moka::future::Cache;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use url::Url;
 
 /// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
 ///
@@ -24,7 +25,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Debug, Clone)]
 pub struct GlobalEndpointManager {
     /// The primary default endpoint URL for the Cosmos DB account
-    default_endpoint: String,
+    default_endpoint: Url,
 
     /// Thread-safe cache of location information including read/write endpoints and availability status
     location_cache: Arc<Mutex<LocationCache>>,
@@ -54,7 +55,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A new `GlobalEndpointManager` instance ready for request routing
     pub fn new(
-        default_endpoint: String,
+        default_endpoint: Url,
         preferred_locations: Vec<Cow<'static, str>>,
         pipeline: Pipeline,
     ) -> Self {
@@ -84,7 +85,7 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// The default endpoint URL as a String
-    pub fn hub_uri(&self) -> &str {
+    pub fn hub_uri(&self) -> &Url {
         &self.default_endpoint
     }
 
@@ -98,7 +99,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A vector of endpoint URLs available for read operations
     #[allow(dead_code)]
-    pub fn read_endpoints(&self) -> Vec<String> {
+    pub fn read_endpoints(&self) -> Vec<Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -116,7 +117,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A vector of endpoint URLs available for read operations
     #[allow(dead_code)]
-    pub fn account_read_endpoints(&self) -> Vec<String> {
+    pub fn account_read_endpoints(&self) -> Vec<Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -136,7 +137,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A vector of endpoint URLs available for write operations
     #[allow(dead_code)]
-    pub fn write_endpoints(&self) -> Vec<String> {
+    pub fn write_endpoints(&self) -> Vec<Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -175,7 +176,7 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// The resolved endpoint URL as a String
-    pub(crate) fn resolve_service_endpoint(&self, request: &CosmosRequest) -> String {
+    pub(crate) fn resolve_service_endpoint(&self, request: &CosmosRequest) -> Url {
         self.location_cache
             .lock()
             .unwrap()
@@ -195,7 +196,7 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn applicable_endpoints(&self, operation_type: OperationType) -> Vec<String> {
+    pub fn applicable_endpoints(&self, operation_type: OperationType) -> Vec<Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -212,7 +213,7 @@ impl GlobalEndpointManager {
     ///
     /// # Arguments
     /// * `endpoint` - The endpoint URL to mark as unavailable for reads
-    pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &str) {
+    pub fn mark_endpoint_unavailable_for_read(&self, endpoint: &Url) {
         self.location_cache
             .lock()
             .unwrap()
@@ -229,7 +230,7 @@ impl GlobalEndpointManager {
     ///
     /// # Arguments
     /// * `endpoint` - The endpoint URL to mark as unavailable for writes
-    pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &str) {
+    pub fn mark_endpoint_unavailable_for_write(&self, endpoint: &Url) {
         self.location_cache
             .lock()
             .unwrap()
@@ -317,7 +318,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap mapping location names to write endpoint URLs
     #[allow(dead_code)]
-    fn available_write_endpoints_by_location(&self) -> HashMap<String, String> {
+    fn available_write_endpoints_by_location(&self) -> HashMap<String, Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -337,7 +338,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap mapping location names to read endpoint URLs
     #[allow(dead_code)]
-    fn available_read_endpoints_by_location(&self) -> HashMap<String, String> {
+    fn available_read_endpoints_by_location(&self) -> HashMap<String, Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -393,8 +394,7 @@ impl GlobalEndpointManager {
             .location_cache
             .lock()
             .unwrap()
-            .resolve_service_endpoint(&cosmos_request)
-            .parse()?;
+            .resolve_service_endpoint(&cosmos_request);
         cosmos_request.request_context.location_endpoint_to_route = Some(endpoint);
         let ctx_owned = options
             .method_options
@@ -426,7 +426,7 @@ mod tests {
 
     fn create_test_manager() -> GlobalEndpointManager {
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
             create_test_pipeline(),
         )
@@ -449,7 +449,7 @@ mod tests {
         let manager = create_test_manager();
         assert_eq!(
             manager.hub_uri(),
-            "https://test.documents.azure.com".to_string()
+            &Url::parse("https://test.documents.azure.com/").unwrap()
         );
         assert_eq!(manager.preferred_location_count(), 2);
     }
@@ -458,13 +458,16 @@ mod tests {
     fn test_hub_uri() {
         let manager = create_test_manager();
         let hub_uri = manager.hub_uri();
-        assert_eq!(hub_uri, "https://test.documents.azure.com");
+        assert_eq!(
+            hub_uri,
+            &Url::parse("https://test.documents.azure.com/").unwrap()
+        );
     }
 
     #[test]
     fn test_preferred_location_count() {
         let manager = GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com/".parse().unwrap(),
             vec![
                 Cow::Borrowed("West US"),
                 Cow::Borrowed("East US"),
@@ -478,7 +481,7 @@ mod tests {
     #[test]
     fn test_preferred_location_count_empty() {
         let manager = GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![],
             create_test_pipeline(),
         );
@@ -491,7 +494,10 @@ mod tests {
         let request = create_test_request(OperationType::Read);
         let endpoint = manager.resolve_service_endpoint(&request);
         // Should return default endpoint initially
-        assert!(!endpoint.is_empty());
+        assert_eq!(
+            endpoint,
+            Url::parse("https://test.documents.azure.com/").unwrap()
+        );
     }
 
     #[test]
@@ -515,10 +521,10 @@ mod tests {
     #[test]
     fn test_mark_endpoint_unavailable_for_read() {
         let manager = create_test_manager();
-        let endpoint = "https://test.documents.azure.com";
+        let endpoint = "https://test.documents.azure.com".parse().unwrap();
 
         // This should not panic
-        manager.mark_endpoint_unavailable_for_read(endpoint);
+        manager.mark_endpoint_unavailable_for_read(&endpoint);
 
         // The endpoint should still be in the system but marked unavailable
         let read_endpoints = manager.read_endpoints();
@@ -528,10 +534,10 @@ mod tests {
     #[test]
     fn test_mark_endpoint_unavailable_for_write() {
         let manager = create_test_manager();
-        let endpoint = "https://test.documents.azure.com";
+        let endpoint = "https://test.documents.azure.com".parse().unwrap();
 
         // This should not panic
-        manager.mark_endpoint_unavailable_for_write(endpoint);
+        manager.mark_endpoint_unavailable_for_write(&endpoint);
 
         // The endpoint should still be in the system but marked unavailable
         let write_endpoints = manager.write_endpoints();

@@ -330,6 +330,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -456,6 +457,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -478,6 +480,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -497,6 +500,7 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -532,9 +536,12 @@ dependencies = [
 name = "azure_storage_blob_test"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "azure_core",
  "azure_core_test",
  "azure_storage_blob",
+ "bytes",
+ "futures",
  "tokio",
 ]
 

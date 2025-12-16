@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::slice;
+
 use azure_core::{
-    http::{ClientOptions, NoFormat, RequestContent, Response},
+    http::{Body, ClientOptions, NoFormat, RequestContent, Response},
     Bytes, Result,
 };
 use azure_core_test::Recording;
@@ -11,6 +13,8 @@ use azure_storage_blob::{
     BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
     BlobServiceClientOptions,
 };
+use bytes::BytesMut;
+use futures::{AsyncRead, AsyncReadExt};
 
 /// Specifies which storage account to use for testing.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -148,6 +152,61 @@ pub async fn create_test_blob(
                     options,
                 )
                 .await
+        }
+    }
+}
+
+#[async_trait::async_trait]
+pub trait AsyncReadTestExt {
+    async fn read_into_spare_capacity(
+        &mut self,
+        buffer: &mut BytesMut,
+    ) -> futures::io::Result<usize>;
+}
+
+#[async_trait::async_trait]
+impl<Stream: AsyncRead + Unpin + Send> AsyncReadTestExt for Stream {
+    async fn read_into_spare_capacity(
+        &mut self,
+        buffer: &mut BytesMut,
+    ) -> futures::io::Result<usize> {
+        let spare_capacity = buffer.spare_capacity_mut();
+        let spare_capacity = unsafe {
+            // spare_capacity_mut() gives us the known remaining capacity of BytesMut.
+            // Those bytes are valid reserved memory but have had no values written
+            // to them. Those are the exact bytes we want to write into.
+            // MaybeUninit<u8> can be safely cast into u8, and so this pointer cast
+            // is safe. Since the spare capacity length is safely known, we can
+            // provide those to from_raw_parts without worry.
+            slice::from_raw_parts_mut(spare_capacity.as_mut_ptr() as *mut u8, spare_capacity.len())
+        };
+        let bytes_read = self.read(spare_capacity).await?;
+        // read() wrote bytes_read-many bytes into the spare capacity.
+        // those values are therefore initialized and we can add them to
+        // the existing buffer length
+        unsafe { buffer.set_len(buffer.len() + bytes_read) };
+        Ok(bytes_read)
+    }
+}
+
+#[async_trait::async_trait]
+pub trait BodyTestExt {
+    async fn collect_bytes(&mut self) -> azure_core::Result<Bytes>;
+}
+
+#[async_trait::async_trait]
+impl BodyTestExt for Body {
+    async fn collect_bytes(&mut self) -> azure_core::Result<Bytes> {
+        match self {
+            Body::Bytes(bytes) => Ok(bytes.clone()),
+            #[cfg(not(target_arch = "wasm32"))]
+            Body::SeekableStream(seekable_stream) => {
+                seekable_stream.reset().await?;
+                let mut bytes = BytesMut::with_capacity(seekable_stream.len());
+                while seekable_stream.read_into_spare_capacity(&mut bytes).await? != 0 {}
+                seekable_stream.reset().await?;
+                Ok(bytes.freeze())
+            }
         }
     }
 }

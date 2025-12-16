@@ -64,7 +64,7 @@ pub struct ClientRetryPolicy {
     is_multi_master_write_request: bool,
 
     /// The resolved endpoint URL for the current or next request attempt
-    location_endpoint: Option<String>,
+    location_endpoint: Option<Url>,
 
     /// Context information for routing the next retry attempt to a specific location
     retry_context: Option<RetryContext>,
@@ -147,7 +147,7 @@ impl ClientRetryPolicy {
                 req_ctx.route_to_location_endpoint(
                     request
                         .resource_link
-                        .url(&Url::parse(self.global_endpoint_manager.hub_uri()).unwrap()),
+                        .url(self.global_endpoint_manager.hub_uri()),
                 );
             } else {
                 req_ctx.route_to_location_index(
@@ -164,10 +164,15 @@ impl ClientRetryPolicy {
                 .resolve_service_endpoint(request),
         );
 
+        tracing::trace!(
+            ?self.location_endpoint,
+            "routed request to endpoint"
+        );
+
         if let Some(ref endpoint) = self.location_endpoint {
-            request.request_context.route_to_location_endpoint(
-                request.resource_link.url(&Url::parse(endpoint).unwrap()),
-            );
+            request
+                .request_context
+                .route_to_location_endpoint(endpoint.clone());
         }
     }
 
@@ -524,7 +529,7 @@ mod tests {
         );
 
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
             pipeline,
         )
@@ -541,7 +546,7 @@ mod tests {
         );
 
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![],
             pipeline,
         )
@@ -558,7 +563,7 @@ mod tests {
         );
 
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![
                 regions::EAST_ASIA.into(),
                 regions::WEST_US.into(),
@@ -739,7 +744,7 @@ mod tests {
     async fn test_should_retry_write_forbidden() {
         let mut policy = create_test_policy();
         policy.operation_type = Some(OperationType::Create);
-        policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
+        policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
         let error = create_error_with_substatus(
             StatusCode::Forbidden,
             SubStatusCode::WriteForbidden as u32,
@@ -950,7 +955,7 @@ mod tests {
     #[tokio::test]
     async fn test_endpoint_failover_increments_count() {
         let mut policy = create_test_policy();
-        policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
+        policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
 
         let result = policy
             .should_retry_on_endpoint_failure(true, false, false, false, false)
@@ -999,7 +1004,7 @@ mod tests {
     async fn test_endpoint_failover_with_overwrite_discovery() {
         let mut policy = create_test_policy();
         policy.enable_endpoint_discovery = false;
-        policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
+        policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
 
         let result = policy
             .should_retry_on_endpoint_failure(true, false, false, false, true)
@@ -1016,7 +1021,7 @@ mod tests {
     #[tokio::test]
     async fn test_endpoint_failover_write_delay() {
         let mut policy = create_test_policy();
-        policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
+        policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
         policy.failover_retry_count = 1;
 
         let result = policy
@@ -1035,7 +1040,7 @@ mod tests {
     #[tokio::test]
     async fn test_endpoint_failover_first_write_no_delay() {
         let mut policy = create_test_policy();
-        policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
+        policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
 
         let result = policy
             .should_retry_on_endpoint_failure(false, false, false, false, false)
@@ -1053,7 +1058,7 @@ mod tests {
     #[tokio::test]
     async fn test_endpoint_failover_read_always_has_delay() {
         let mut policy = create_test_policy();
-        policy.location_endpoint = Some("https://test.documents.azure.com".to_string());
+        policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
 
         let result = policy
             .should_retry_on_endpoint_failure(true, false, false, false, false)

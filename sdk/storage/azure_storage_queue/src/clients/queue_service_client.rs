@@ -126,7 +126,7 @@ impl QueueServiceClient {
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
-    ) -> Result<Pager<ListQueuesResponse, XmlFormat>> {
+    ) -> Result<Pager<ListQueuesResponse, XmlFormat, String>> {
         self.client.list_queues(options)
     }
 

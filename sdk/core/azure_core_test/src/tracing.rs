@@ -735,11 +735,10 @@ where
                 ));
             }
             // If we have no public API information, we won't have a namespace in the HTTP attributes.
-            if api_call.api_name.is_some() && api_information.package_namespace.is_some() {
-                http_request_attributes.push((
-                    "az.namespace",
-                    api_information.package_namespace.unwrap().into(),
-                ));
+            if api_call.api_name.is_some() {
+                if let Some(package_namespace) = api_information.package_namespace {
+                    http_request_attributes.push(("az.namespace", package_namespace.into()));
+                }
             }
             expected_spans.push(ExpectedSpanInformation {
                 span_name: rest_api_call.api_verb.as_str(),
