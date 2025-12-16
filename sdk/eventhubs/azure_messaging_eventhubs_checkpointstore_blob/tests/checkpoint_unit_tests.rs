@@ -28,12 +28,6 @@ pub fn create_test_checkpoint_store(recording: &Recording) -> Result<Arc<BlobChe
 #[recorded::test]
 async fn list_checkpoints(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording
-        .set_matcher(Matcher::CustomDefaultMatcher(CustomDefaultMatcher {
-            ignore_query_ordering: Some(true),
-            ..Default::default()
-        }))
-        .await?;
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
     let namespace = recording.var("EVENTHUBS_HOST", None);
