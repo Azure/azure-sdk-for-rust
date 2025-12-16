@@ -4,7 +4,7 @@
 //! Unit tests for the blob checkpoint store models and utilities.
 
 use azure_core::{http::Etag, time::OffsetDateTime, Result};
-use azure_core_test::{recorded, CustomDefaultMatcher, Matcher, Recording, TestContext};
+use azure_core_test::{recorded, Recording, TestContext};
 use azure_messaging_eventhubs::{models::Ownership, CheckpointStore};
 mod checkpoint_unit_tests;
 use checkpoint_unit_tests::create_test_checkpoint_store;
