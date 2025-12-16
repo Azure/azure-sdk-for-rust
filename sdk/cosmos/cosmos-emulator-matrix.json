@@ -1,0 +1,34 @@
+{
+  "displayNames": {
+    "clean verify": ""
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      },
+      "windows": {
+        "OSVmImage": "env:WINDOWSVMIMAGE",
+        "Pool": "env:WINDOWSPOOL"
+      },
+      "macos": {
+        "OSVmImage": "env:MACVMIMAGE",
+        "Pool": "env:MACPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "stable",
+      "msrv",
+      "nightly"
+    ],
+    "EmulatorConfig": {
+      "Emulator Azure Data Cosmos": {
+        // this should run rust tests in azure data cosmos folder
+      },
+      "Emulator Azure Data Cosmos Native": {
+        // this should run c tests in azure data cosmos native folder
+      }
+    }
+  }
+}
