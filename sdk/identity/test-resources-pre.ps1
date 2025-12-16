@@ -13,8 +13,3 @@ param (
     [Parameter(ValueFromRemainingArguments = $true)]
     $RemainingArguments
 )
-
-if (-not (Test-Path "$PSScriptRoot/sshkey.pub")) {
-    ssh-keygen -t rsa -b 4096 -f "$PSScriptRoot/sshkey" -N '' -C ''
-}
-$templateFileParameters['sshPubKey'] = Get-Content "$PSScriptRoot/sshkey.pub"
