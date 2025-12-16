@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
+use crate::routing::collection_cache::CollectionCache;
 use azure_core::http::response::Response;
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -24,19 +25,26 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     pipeline: Arc<CosmosPipeline>,
+    collection_cache: CollectionCache,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str) -> Self {
+    pub(crate) fn new(
+        pipeline: Arc<CosmosPipeline>,
+        database_id: &str,
+        collection_cache: &CollectionCache,
+    ) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
+        // collection_cache.set_database_link(link.clone());
 
         Self {
             link,
             containers_link,
             database_id,
             pipeline,
+            collection_cache: collection_cache.clone(),
         }
     }
 
@@ -45,7 +53,12 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: &str) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name)
+        ContainerClient::new(
+            self.pipeline.clone(),
+            &self.link,
+            name,
+            &self.collection_cache,
+        )
     }
 
     /// Returns the identifier of the Cosmos database.

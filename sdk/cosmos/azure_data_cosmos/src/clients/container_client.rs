@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
+use crate::routing::collection_cache::CollectionCache;
 use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -24,6 +25,8 @@ pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
+    collection_cache: CollectionCache,
+    container_id: String,
 }
 
 impl ContainerClient {
@@ -31,6 +34,7 @@ impl ContainerClient {
         pipeline: Arc<CosmosPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
+        collection_cache: &CollectionCache,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
@@ -41,6 +45,8 @@ impl ContainerClient {
             link,
             items_link,
             pipeline,
+            collection_cache: collection_cache.clone(),
+            container_id: container_id.to_string(),
         }
     }
 
@@ -63,13 +69,12 @@ impl ContainerClient {
     pub async fn read(
         &self,
         options: Option<ReadContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
-        let options = options.unwrap_or_default();
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
-        self.pipeline
-            .send(cosmos_request, options.method_options.context)
-            .await
+    ) -> azure_core::Result<ContainerProperties> {
+        let properties = self
+            .collection_cache
+            .resolve_by_id(self.container_id.clone(), self.link.clone(), options)
+            .await?;
+        Ok(properties)
     }
 
     /// Updates the indexing policy of the container.
@@ -129,7 +134,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
+        let db = self.read(None).await?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -153,7 +158,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
+        let db = self.read(None).await?;
         let resource_id = db
             .system_properties
             .resource_id
