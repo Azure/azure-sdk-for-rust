@@ -63,95 +63,83 @@ resource storageRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-0
   }
 }
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = if (deployResources) {
-  name: 'asp-${baseName}'
+
+resource farm 'Microsoft.Web/serverfarms@2021-03-01' = if (deployResources) {
+  kind: 'app'
   location: location
+  name: '${baseName}_asp'
+  properties: {}
   sku: {
-    name: 'P1V2'
-    tier: 'PremiumV2'
-  }
-  kind: 'linux'
-  properties: {
-    reserved: true
+    capacity: 1
+    family: 'B'
+    name: 'B1'
+    size: 'B1'
+    tier: 'Basic'
   }
 }
 
-resource functionApp 'Microsoft.Web/sites@2023-12-01' = if (deployResources) {
-  name: 'func-${baseName}'
-  location: location
-  kind: 'functionapp,linux'
+resource functionApp 'Microsoft.Web/sites@2021-03-01' = if (deployResources) {
   identity: {
-    type: 'UserAssigned'
+    type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: {
-      '${usermgdid.id}': {}
+      '${deployResources ? usermgdid.id : ''}': {}
     }
   }
+  kind: 'functionapp'
+  location: location
+  name: '${baseName}func'
   properties: {
-    serverFarmId: appServicePlan.id
-    reserved: true
+    enabled: true
+    httpsOnly: true
+    keyVaultReferenceIdentity: 'SystemAssigned'
+    serverFarmId: farm.id
     siteConfig: {
-      linuxFxVersion: 'CUSTOM'
+      alwaysOn: true
       appSettings: [
         {
-          name: 'AzureWebJobsStorage__blobServiceUri'
-          value: 'https://${saUserAssigned.name}.blob.${environment().suffixes.storage}'
+          name: 'AZIDENTITY_STORAGE_NAME'
+          value: deployResources ? saSystemAssigned.name : null
         }
         {
-          name: 'AzureWebJobsStorage__queueServiceUri'
-          value: 'https://${saUserAssigned.name}.queue.${environment().suffixes.storage}'
+          name: 'AZIDENTITY_STORAGE_NAME_USER_ASSIGNED'
+          value: deployResources ? saUserAssigned.name : null
         }
         {
-          name: 'AzureWebJobsStorage__tableServiceUri'
-          value: 'https://${saUserAssigned.name}.table.${environment().suffixes.storage}'
+          name: 'AZIDENTITY_USER_ASSIGNED_IDENTITY'
+          value: deployResources ? usermgdid.id : null
         }
         {
-          name: 'AzureWebJobsStorage__credential'
-          value: 'managedidentity'
+          name: 'AZIDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID'
+          value: deployResources ? usermgdid.properties.clientId : null
         }
         {
-          name: 'AzureWebJobsStorage__clientId'
-          value: usermgdid.properties.clientId
+          name: 'AZIDENTITY_USER_ASSIGNED_IDENTITY_OBJECT_ID'
+          value: deployResources ? usermgdid.properties.principalId : null
+        }
+        {
+          name: 'AzureWebJobsStorage'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${deployResources ? saSystemAssigned.name : ''};EndpointSuffix=${deployResources ? environment().suffixes.storage : ''};AccountKey=${deployResources ? saSystemAssigned.listKeys().keys[0].value : ''}'
+        }
+        {
+          name: 'FUNCTIONS_EXTENSION_VERSION'
+          value: '~4'
         }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: 'custom'
         }
         {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
+          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${deployResources ? saSystemAssigned.name : ''};EndpointSuffix=${deployResources ? environment().suffixes.storage : ''};AccountKey=${deployResources ? saSystemAssigned.listKeys().keys[0].value : ''}'
+        }
+        {
+          name: 'WEBSITE_CONTENTSHARE'
+          value: toLower('${baseName}-func')
         }
       ]
+      http20Enabled: true
+      minTlsVersion: '1.2'
     }
-  }
-}
-
-resource blobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
-  name: guid(saUserAssigned.id, usermgdid.id, blobDataOwnerRoleId)
-  scope: saUserAssigned
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', blobDataOwnerRoleId)
-    principalId: usermgdid.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource queueRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
-  name: guid(saUserAssigned.id, usermgdid.id, queueDataContributorRoleId)
-  scope: saUserAssigned
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', queueDataContributorRoleId)
-    principalId: usermgdid.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource tableRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
-  name: guid(saUserAssigned.id, usermgdid.id, tableDataContributorRoleId)
-  scope: saUserAssigned
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', tableDataContributorRoleId)
-    principalId: usermgdid.properties.principalId
-    principalType: 'ServicePrincipal'
   }
 }
 
