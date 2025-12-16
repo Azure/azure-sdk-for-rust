@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{collections::VecDeque, ops::Range, task::Poll};
+use std::{cmp::min, collections::VecDeque, ops::Range, task::Poll};
 
 use azure_core::http::AsyncRawResponse;
 use bytes::Bytes;
@@ -44,8 +44,13 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
     let content_range: ContentRange = initial_response.headers().get_as(&"content-range".into())?;
     let total_ranges = content_range.total_length().div_ceil(partition_size);
 
-    let mut ranges =
-        (1..total_ranges).map(move |i| i * partition_size..i * partition_size + partition_size);
+    let mut ranges = (1..total_ranges).map(move |i| {
+        i * partition_size
+            ..min(
+                i * partition_size + partition_size,
+                content_range.total_length(),
+            )
+    });
 
     // the first operation has a different type from the others.
     // fully type this variable out to specify dyn.
