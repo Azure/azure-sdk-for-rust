@@ -25,7 +25,7 @@ extends:
         releaseInBatch: ${{ parameters.release_azure_identity }}
 
     ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
-      Location: uksouth
+      Location: westus3
       RunLiveTests: true
       PersistOidcToken: true
       MatrixConfigs:
