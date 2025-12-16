@@ -290,10 +290,9 @@ mod tests {
     #[cfg(not(target_os = "macos"))]
     #[tokio::test]
     async fn amqp_connection_open() {
-        let address = std::env::var("TEST_BROKER_ADDRESS");
-        if address.is_ok() {
+        if let Ok(address) = std::env::var("TEST_BROKER_ADDRESS") {
             let connection = AmqpConnection::new();
-            let url = Url::parse(&address.unwrap()).unwrap();
+            let url = Url::parse(&address).unwrap();
             connection
                 .open("test".to_string(), url, None)
                 .await
@@ -305,8 +304,7 @@ mod tests {
 
     #[tokio::test]
     async fn amqp_connection_open_with_error() {
-        let address = std::env::var("TEST_BROKER_ADDRESS");
-        if address.is_ok() {
+        if std::env::var("TEST_BROKER_ADDRESS").is_ok() {
             let connection = AmqpConnection::new();
             let url = Url::parse("amqp://localhost:32767").unwrap();
             assert!(connection
@@ -321,10 +319,9 @@ mod tests {
     #[cfg(not(target_os = "macos"))]
     #[tokio::test]
     async fn amqp_connection_close() {
-        let address = std::env::var("TEST_BROKER_ADDRESS");
-        if address.is_ok() {
+        if let Ok(address) = std::env::var("TEST_BROKER_ADDRESS") {
             let connection = AmqpConnection::new();
-            let url = Url::parse(&address.unwrap()).unwrap();
+            let url = Url::parse(&address).unwrap();
             connection
                 .open("test".to_string(), url, None)
                 .await
@@ -339,10 +336,9 @@ mod tests {
     #[tokio::test]
     async fn amqp_connection_close_with_error() {
         tracing_subscriber::fmt::init();
-        let address = std::env::var("TEST_BROKER_ADDRESS");
-        if address.is_ok() {
+        if let Ok(address) = std::env::var("TEST_BROKER_ADDRESS") {
             let connection = AmqpConnection::new();
-            let url = Url::parse(&address.unwrap()).unwrap();
+            let url = Url::parse(&address).unwrap();
             connection
                 .open("test".to_string(), url, None)
                 .await

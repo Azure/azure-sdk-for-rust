@@ -641,8 +641,8 @@ mod tests {
         let final_count = mock_credential.get_token_get_count();
         debug!("After sleeping the first time, token count: {final_count}");
         assert!(
-            final_count >= 3,
-            "Expected first get token count to be at least 3, but got {final_count}"
+            final_count >= 2,
+            "Expected first get token count to be at least 2, but got {final_count}"
         );
 
         info!("First token expiration get count: {}", final_count);

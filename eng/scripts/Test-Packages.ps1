@@ -54,15 +54,24 @@ foreach ($package in $packagesToTest) {
       }
     }
 
+    $featuresList = Join-Path $packageDirectory "test-features.txt"
+    $featuresArg = ""
+    if (Test-Path $featuresList) {
+      $features = Get-Content $featuresList | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object { $_.Trim() }
+      if ($features.Count -gt 0) {
+        $featuresArg = "--features " + ($features -join ",")
+      }
+    }
+
     Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-    Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
+    Invoke-LoggedCommand "cargo build --keep-going $featuresArg" -GroupOutput
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
+    Invoke-LoggedCommand "cargo test --doc --no-fail-fast $featuresArg" -GroupOutput
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
+    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast $featuresArg" -GroupOutput
     Write-Host "`n`n"
 
     $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"

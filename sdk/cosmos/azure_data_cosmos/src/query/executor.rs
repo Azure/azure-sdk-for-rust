@@ -1,3 +1,8 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+#![allow(dead_code)]
+
 use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
@@ -52,13 +57,14 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     }
 
     pub fn into_stream(self) -> azure_core::Result<FeedPager<T>> {
-        Ok(FeedPager::from_stream(futures::stream::try_unfold(
-            self,
-            |mut state| async move {
-                let val = state.step().await?;
-                Ok(val.map(|item| (item, state)))
-            },
-        )))
+        // Ok(FeedPager::from_stream(futures::stream::try_unfold(
+        //     self,
+        //     |mut state| async move {
+        //         let val = state.step().await?;
+        //         Ok(val.map(|item| (item, state)))
+        //     },
+        // )))
+        unimplemented!("See https://github.com/Azure/azure-sdk-for-rust/issues/3413")
     }
 
     /// Executes a single step of the query execution.
