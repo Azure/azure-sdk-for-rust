@@ -105,7 +105,7 @@ impl MetadataRequestRetryPolicy {
 
         request
             .request_context
-            .route_to_location_endpoint(metadata_location_endpoint.parse().unwrap());
+            .route_to_location_endpoint(metadata_location_endpoint);
     }
 
     /// Determines whether an HTTP request should be retried based on the response or error
@@ -281,7 +281,7 @@ mod tests {
         );
 
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
             pipeline,
         )
@@ -298,7 +298,7 @@ mod tests {
         );
 
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![],
             pipeline,
         )
@@ -315,7 +315,7 @@ mod tests {
         );
 
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com".parse().unwrap(),
             vec![
                 regions::EAST_ASIA.into(),
                 regions::WEST_US.into(),
