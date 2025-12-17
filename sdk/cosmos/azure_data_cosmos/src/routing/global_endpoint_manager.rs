@@ -10,11 +10,12 @@ use crate::routing::location_cache::{LocationCache, RequestOperation};
 use crate::ReadDatabaseOptions;
 use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
-use moka::future::Cache;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use url::Url;
+use crate::routing::async_cache::AsyncCache;
 
 /// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
 ///
@@ -34,7 +35,7 @@ pub struct GlobalEndpointManager {
     pipeline: Pipeline,
 
     /// Cache for account properties with 600 second TTL to reduce redundant service calls
-    account_properties_cache: Cache<&'static str, AccountProperties>,
+    account_properties_cache: AsyncCache<&'static str, AccountProperties>,
 }
 
 impl GlobalEndpointManager {
@@ -63,10 +64,10 @@ impl GlobalEndpointManager {
             default_endpoint.clone(),
             preferred_locations.clone(),
         )));
-        let account_properties_cache = Cache::builder()
-            .max_capacity(1)
-            .time_to_live(std::time::Duration::from_secs(600))
-            .build();
+
+        let account_properties_cache = AsyncCache::new(
+            Duration::from_secs(600), // Default 5 minutes TTL
+        );
 
         Self {
             default_endpoint,
@@ -274,14 +275,13 @@ impl GlobalEndpointManager {
         // If force_refresh is true, invalidate the cache to ensure a fresh fetch
         if force_refresh {
             self.account_properties_cache
-                .invalidate(&ACCOUNT_PROPERTIES_KEY)
+                .remove(&ACCOUNT_PROPERTIES_KEY)
                 .await;
         }
 
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        _ = self
-            .account_properties_cache
-            .try_get_with(ACCOUNT_PROPERTIES_KEY, async {
+        _ = self.account_properties_cache
+            .get(ACCOUNT_PROPERTIES_KEY, || async {
                 // Fetch latest account properties from service
                 let account_properties: AccountProperties =
                     self.get_database_account().await?.into_body().json()?;
@@ -292,31 +292,23 @@ impl GlobalEndpointManager {
                     cache.on_database_account_read(account_properties.clone());
                 }
 
-                Ok(account_properties)
+                Ok::<AccountProperties, Error>(account_properties)
             })
-            .await
-            .map_err(|e: Arc<Error>| {
-                Arc::try_unwrap(e).unwrap_or_else(|e| {
-                    Error::new(
-                        azure_core::error::ErrorKind::Other,
-                        format!("Failed to fetch account properties: {}", e),
-                    )
-                })
-            })?;
-
+            .await;
+        
         Ok(())
     }
 
     /// Returns a map of write endpoints indexed by location name.
     ///
     /// # Summary
-    /// Retrieves a mapping from Azure region names to their corresponding write endpoint URLs.
+    /// Retrieves a mapping from Azure region names to their corresponding to write endpoint URLs.
     /// This provides direct lookup of write endpoints by location, useful for diagnostic
     /// and monitoring scenarios. The map reflects the current account configuration and
     /// may be empty until account properties are fetched.
     ///
     /// # Returns
-    /// A HashMap mapping location names to write endpoint URLs
+    /// A HashMap containing the location names with their corresponding to write endpoint URLs
     #[allow(dead_code)]
     fn available_write_endpoints_by_location(&self) -> HashMap<String, Url> {
         self.location_cache

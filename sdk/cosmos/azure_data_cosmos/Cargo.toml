@@ -21,7 +21,6 @@ serde_json.workspace = true
 serde.workspace = true
 tracing.workspace = true
 url.workspace = true
-moka.workspace = true
 async-lock.workspace = true
 
 [dev-dependencies]
