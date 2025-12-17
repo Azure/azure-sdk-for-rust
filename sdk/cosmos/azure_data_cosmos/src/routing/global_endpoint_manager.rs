@@ -6,6 +6,7 @@ use crate::cosmos_request::CosmosRequest;
 use crate::models::AccountProperties;
 use crate::operation_context::OperationType;
 use crate::resource_context::{ResourceLink, ResourceType};
+use crate::routing::async_cache::AsyncCache;
 use crate::routing::location_cache::{LocationCache, RequestOperation};
 use crate::ReadDatabaseOptions;
 use azure_core::http::{Pipeline, Response};
@@ -15,7 +16,6 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use url::Url;
-use crate::routing::async_cache::AsyncCache;
 
 /// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
 ///
@@ -280,7 +280,8 @@ impl GlobalEndpointManager {
         }
 
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        _ = self.account_properties_cache
+        _ = self
+            .account_properties_cache
             .get(ACCOUNT_PROPERTIES_KEY, || async {
                 // Fetch latest account properties from service
                 let account_properties: AccountProperties =
@@ -295,7 +296,7 @@ impl GlobalEndpointManager {
                 Ok::<AccountProperties, Error>(account_properties)
             })
             .await;
-        
+
         Ok(())
     }
 
