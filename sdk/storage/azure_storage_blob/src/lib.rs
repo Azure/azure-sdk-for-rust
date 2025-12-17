@@ -7,6 +7,7 @@
 #![allow(dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub mod client_impl;
 pub mod clients;
 #[allow(unused_imports)]
 mod generated;
@@ -14,6 +15,7 @@ mod parsers;
 mod partitioned_transfer;
 mod pipeline;
 mod streams;
+pub use client_impl::*;
 pub use clients::*;
 pub use parsers::*;
 pub mod models;
