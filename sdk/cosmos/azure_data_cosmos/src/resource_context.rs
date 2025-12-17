@@ -139,9 +139,18 @@ impl ResourceLink {
 
     /// Helper method to create a LinkSegment representing the current path (for use as parent).
     fn path_segment(&self) -> LinkSegment {
+        // If this link is RID-based, don't encode the parent path
+        let is_rid_based = self
+            .item_id
+            .as_ref()
+            .map_or(false, |id| id.encoded.is_none());
         LinkSegment {
             unencoded: self.unencoded_path(),
-            encoded: Some(self.path()),
+            encoded: if is_rid_based {
+                None
+            } else {
+                Some(self.path())
+            },
         }
     }
 
@@ -276,7 +285,7 @@ mod tests {
                 resource_type: ResourceType::Databases,
                 item_id: Some(LinkSegment {
                     unencoded: "TestDB".to_string(),
-                    encoded: "TestDB".to_string(),
+                    encoded: Some("TestDB".to_string()),
                 }),
             },
             link
@@ -299,7 +308,7 @@ mod tests {
             ResourceLink {
                 parent: Some(LinkSegment {
                     unencoded: "dbs/TestDB".to_string(),
-                    encoded: "dbs/TestDB".to_string(),
+                    encoded: Some("dbs/TestDB".to_string()),
                 }),
                 resource_type: ResourceType::Containers,
                 item_id: None,
@@ -325,12 +334,12 @@ mod tests {
             ResourceLink {
                 parent: Some(LinkSegment {
                     unencoded: "dbs/TestDB".to_string(),
-                    encoded: "dbs/TestDB".to_string(),
+                    encoded: Some("dbs/TestDB".to_string()),
                 }),
                 resource_type: ResourceType::Containers,
                 item_id: Some(LinkSegment {
                     unencoded: "TestContainer".to_string(),
-                    encoded: "TestContainer".to_string(),
+                    encoded: Some("TestContainer".to_string()),
                 }),
             },
             link
@@ -354,12 +363,12 @@ mod tests {
             ResourceLink {
                 parent: Some(LinkSegment {
                     unencoded: "dbs/Test DB".to_string(),
-                    encoded: "dbs/Test+DB".to_string(),
+                    encoded: Some("dbs/Test+DB".to_string()),
                 }),
                 resource_type: ResourceType::Containers,
                 item_id: Some(LinkSegment {
                     unencoded: "Test/Container".to_string(),
-                    encoded: "Test%2FContainer".to_string(),
+                    encoded: Some("Test%2FContainer".to_string()),
                 }),
             },
             link
@@ -383,7 +392,7 @@ mod tests {
                 resource_type: ResourceType::Databases,
                 item_id: Some(LinkSegment {
                     unencoded: "ABCDEF==".to_string(),
-                    encoded: "ABCDEF==".to_string(),
+                    encoded: None,
                 }),
             },
             link
@@ -407,12 +416,12 @@ mod tests {
             ResourceLink {
                 parent: Some(LinkSegment {
                     unencoded: "dbs/DatabaseRID==".to_string(),
-                    encoded: "dbs/DatabaseRID==".to_string(),
+                    encoded: None,
                 }),
                 resource_type: ResourceType::Containers,
                 item_id: Some(LinkSegment {
                     unencoded: "ContainerRID+=".to_string(),
-                    encoded: "ContainerRID+=".to_string(),
+                    encoded: None,
                 }),
             },
             link
@@ -440,12 +449,12 @@ mod tests {
             ResourceLink {
                 parent: Some(LinkSegment {
                     unencoded: "dbs/ABC+DEF=".to_string(),
-                    encoded: "dbs/ABC+DEF=".to_string(),
+                    encoded: None,
                 }),
                 resource_type: ResourceType::Containers,
                 item_id: Some(LinkSegment {
                     unencoded: "XYZ/123==".to_string(),
-                    encoded: "XYZ/123==".to_string(),
+                    encoded: None,
                 }),
             },
             link
@@ -469,12 +478,12 @@ mod tests {
             ResourceLink {
                 parent: Some(LinkSegment {
                     unencoded: "dbs/TestDB".to_string(),
-                    encoded: "dbs/TestDB".to_string(),
+                    encoded: Some("dbs/TestDB".to_string()),
                 }),
                 resource_type: ResourceType::Containers,
                 item_id: Some(LinkSegment {
                     unencoded: "ContainerRID==".to_string(),
-                    encoded: "ContainerRID==".to_string(),
+                    encoded: None,
                 }),
             },
             link
