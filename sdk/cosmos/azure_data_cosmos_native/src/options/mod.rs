@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::sync::Arc;
-
-use azure_core::http::Transport;
 use azure_data_cosmos::CosmosClientOptions;
 
 #[repr(C)]
@@ -17,6 +14,10 @@ pub struct ClientOptions {
 impl TryFrom<&ClientOptions> for CosmosClientOptions {
     type Error = azure_core::Error;
 
+    #[cfg_attr(
+        target_family = "wasm",
+        allow(unused_variables, reason = "used in other targets")
+    )]
     fn try_from(value: &ClientOptions) -> Result<Self, Self::Error> {
         #[cfg(not(target_family = "wasm"))]
         if value.danger_allow_invalid_certificates {
@@ -34,7 +35,7 @@ impl TryFrom<&ClientOptions> for CosmosClientOptions {
             #[cfg(not(feature = "reqwest"))]
             panic!("at least one HTTP transport feature must be enabled");
 
-            let transport = Transport::new(Arc::new(client));
+            let transport = azure_core_http::Transport::new(std::sync::Arc::new(client));
             Ok(Self {
                 client_options: azure_core::http::ClientOptions {
                     transport: Some(transport),
