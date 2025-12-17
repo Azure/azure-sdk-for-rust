@@ -79,8 +79,7 @@ impl ReadCommand {
 
                 match resp {
                     None => println!("Database does not have provisioned throughput"),
-                    Some(r) => {
-                        let throughput = r.into_model()?;
+                    Some(throughput) => {
                         println!("Throughput:");
                         crate::utils::print_throughput(throughput);
                     }
@@ -101,8 +100,7 @@ impl ReadCommand {
 
                 match resp {
                     None => println!("Container does not have provisioned throughput"),
-                    Some(r) => {
-                        let throughput = r.into_model()?;
+                    Some(throughput) => {
                         println!("Throughput:");
                         crate::utils::print_throughput(throughput);
                     }
