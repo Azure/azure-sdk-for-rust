@@ -14,7 +14,6 @@ use crate::{
         BlockBlobClientStageBlockOptions, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
-    ConcurrencyControlStrategy,
 };
 
 type AzureResult<T> = azure_core::Result<T>;
@@ -43,17 +42,13 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
-        let concurrency_control = options.concurrency_control_strategy.unwrap_or_default();
         // construct exhaustively to ensure we catch new options when added
         let stage_block_options = BlockBlobClientStageBlockOptions {
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key.clone(),
             encryption_key_sha256: options.encryption_key_sha256.clone(),
             encryption_scope: options.encryption_scope.clone(),
-            lease_id: match concurrency_control {
-                ConcurrencyControlStrategy::Lease(ref lease_id) => Some(lease_id.clone()),
-                _ => None,
-            },
+            lease_id: options.lease_id.clone(),
             method_options: options.method_options.clone(),
             structured_body_type: None,
             structured_content_length: None,
@@ -61,7 +56,7 @@ impl BlockBlobClient {
             transactional_content_crc64: None,
             transactional_content_md5: None,
         };
-        let commit_blocklist_options = BlockBlobClientCommitBlockListOptions {
+        let commit_block_list_options = BlockBlobClientCommitBlockListOptions {
             blob_cache_control: options.blob_cache_control,
             blob_content_disposition: options.blob_content_disposition,
             blob_content_encoding: options.blob_content_encoding,
@@ -73,17 +68,14 @@ impl BlockBlobClient {
             encryption_key: options.encryption_key,
             encryption_key_sha256: options.encryption_key_sha256,
             encryption_scope: options.encryption_scope,
-            if_match: None,
-            if_modified_since: None,
-            if_none_match: None,
-            if_tags: None,
-            if_unmodified_since: None,
+            if_match: options.if_match,
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match,
+            if_tags: options.if_tags,
+            if_unmodified_since: options.if_unmodified_since,
             immutability_policy_expiry: options.immutability_policy_expiry,
             immutability_policy_mode: options.immutability_policy_mode,
-            lease_id: match concurrency_control {
-                ConcurrencyControlStrategy::Lease(ref lease_id) => Some(lease_id.clone()),
-                _ => None,
-            },
+            lease_id: options.lease_id,
             legal_hold: options.legal_hold,
             metadata: options.metadata,
             method_options: options.method_options,
@@ -99,7 +91,7 @@ impl BlockBlobClient {
             &BlockBlobClientUploadBehavior::new(
                 self,
                 stage_block_options,
-                commit_blocklist_options,
+                commit_block_list_options,
             ),
         )
         .await
@@ -113,21 +105,21 @@ struct BlockInfo {
 
 struct BlockBlobClientUploadBehavior<'c, 'opt> {
     client: &'c BlockBlobClient,
-    base_stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
-    base_commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
+    stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
+    commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     blocks: Mutex<Vec<BlockInfo>>,
 }
 
 impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
     fn new(
         client: &'c BlockBlobClient,
-        base_stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
-        base_commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
+        stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
+        commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     ) -> Self {
         Self {
             client,
-            base_stage_block_options,
-            base_commit_block_list_options,
+            stage_block_options,
+            commit_block_list_options,
             blocks: Mutex::new(vec![]),
         }
     }
@@ -146,16 +138,18 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()> {
         let block_id = Uuid::new_v4();
         let content_len = content.len().try_into().unwrap();
-        self.blocks.lock().await.push(BlockInfo {
-            offset: offset as u64,
-            block_id,
-        });
+        {
+            self.blocks.lock().await.push(BlockInfo {
+                offset: offset as u64,
+                block_id,
+            });
+        }
         self.client
             .stage_block(
                 block_id.as_bytes(),
                 content_len,
                 content.into(),
-                Some(self.base_stage_block_options.clone()),
+                Some(self.stage_block_options.clone()),
             )
             .await?;
         Ok(())
@@ -166,29 +160,24 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     }
 
     async fn finalize(&self) -> AzureResult<()> {
-        commit_block_list(self).await
+        let mut blocks = self.blocks.lock().await;
+        blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
+        let blocklist = BlockLookupList {
+            latest: Some(
+                blocks
+                    .iter()
+                    .map(|bi| bi.block_id.as_bytes().to_vec())
+                    .collect(),
+            ),
+            ..Default::default()
+        };
+        self.client
+            .commit_block_list(
+                blocklist.try_into()?,
+                Some(self.commit_block_list_options.clone()),
+            )
+            .await?;
+
+        Ok(())
     }
-}
-
-async fn commit_block_list(behavior: &BlockBlobClientUploadBehavior<'_, '_>) -> AzureResult<()> {
-    let mut blocks = behavior.blocks.lock().await;
-    blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
-    let blocklist = BlockLookupList {
-        latest: Some(
-            blocks
-                .iter()
-                .map(|bi| bi.block_id.as_bytes().to_vec())
-                .collect(),
-        ),
-        ..Default::default()
-    };
-    behavior
-        .client
-        .commit_block_list(
-            blocklist.try_into()?,
-            Some(behavior.base_commit_block_list_options.clone()),
-        )
-        .await?;
-
-    Ok(())
 }
