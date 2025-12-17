@@ -140,10 +140,7 @@ impl ResourceLink {
     /// Helper method to create a LinkSegment representing the current path (for use as parent).
     fn path_segment(&self) -> LinkSegment {
         // If this link is RID-based, don't encode the parent path
-        let is_rid_based = self
-            .item_id
-            .as_ref()
-            .map_or(false, |id| id.encoded.is_none());
+        let is_rid_based = self.item_id.as_ref().is_some_and(|id| id.encoded.is_none());
         LinkSegment {
             unencoded: self.unencoded_path(),
             encoded: if is_rid_based {
