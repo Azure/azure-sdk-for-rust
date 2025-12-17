@@ -1,3 +1,5 @@
+# cSpell:disable
+
 prefix=@CMAKE_INSTALL_PREFIX@
 libdir=${prefix}/lib
 includedir=${prefix}/include

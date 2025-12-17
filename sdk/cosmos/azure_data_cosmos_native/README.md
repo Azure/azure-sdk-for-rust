@@ -1,3 +1,5 @@
+<!-- cSpell:ignore DCMAKE -->
+
 # Azure Cosmos DB Native C Bindings
 
 This package provides C language bindings (FFI) for the Azure Cosmos DB Rust SDK (`azure_data_cosmos`). It enables C/C++ applications to interact with Azure Cosmos DB through a native C API backed by the Rust implementation.

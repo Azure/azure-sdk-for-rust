@@ -23,3 +23,9 @@ autoscale
 azurecosmos
 cosmosclient
 cstring
+libazurecosmos
+msvc
+winget
+makefiles
+ctest
+cmake

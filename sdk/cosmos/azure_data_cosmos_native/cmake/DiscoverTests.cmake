@@ -1,6 +1,7 @@
 # Test discovery script for CMake
 # This script runs each test executable with --discover to get the list of tests
 # and generates a CTestTestfile.cmake with all discovered tests
+# cSpell:ignore STREQUAL endforeach
 
 file(GLOB test_executables "${TEST_DIR}/*")
 set(test_file "${CMAKE_CURRENT_BINARY_DIR}/DiscoveredTests.cmake")

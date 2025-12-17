@@ -1,4 +1,4 @@
-# cSpell:ignore cosmosctest CRATETYPES endforeach pkgconfig libdir includedir
+# cSpell:ignore cosmosctest CRATETYPES endforeach pkgconfig libdir includedir TOUPPER MSVC COPYONLY lazurecosmos CFLAGS DTEST DCMAKE DLIBRARY
 
 cmake_minimum_required(VERSION 4.1)
 
