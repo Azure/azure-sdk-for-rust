@@ -81,7 +81,6 @@ pub use crate::generated::models::{
     SignedIdentifiers, SignedIdentifiersHeaders, SkuName, StaticWebsite, StorageErrorCode,
     StorageServiceStats, UserDelegationKey,
 };
-use crate::ConcurrencyControlStrategy;
 
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientManagedUploadOptions<'a> {
@@ -111,10 +110,6 @@ pub struct BlockBlobClientManagedUploadOptions<'a> {
     /// Optional. Used to set blob tags in various blob operations.
     pub blob_tags_string: Option<String>,
 
-    /// Optional. The strategy used by this operation to avoid race conditions from other operations attempting to modify the remote
-    /// resource. See [`ConcurrencyControlStrategy`] for more information on individual strategies.
-    pub concurrency_control_strategy: Option<ConcurrencyControlStrategy>,
-
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -137,6 +132,30 @@ pub struct BlockBlobClientManagedUploadOptions<'a> {
 
     /// Optional. Specifies the immutability policy mode to set on the blob.
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
+
+    /// Optional. Applied only to the final commit of the new block blob.
+    /// A condition that must be met in order for the request to be processed.
+    pub if_match: Option<String>,
+
+    /// Optional. Applied only to the final commit of the new block blob.
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// Optional. Applied only to the final commit of the new block blob.
+    /// A condition that must be met in order for the request to be processed.
+    pub if_none_match: Option<String>,
+
+    /// Optional. Applied only to the final commit of the new block blob.
+    /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
+    pub if_tags: Option<String>,
+
+    /// Optional. Applied only to the final commit of the new block blob.
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Optional. Applied to all requests.
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
 
     /// Optional. Specified if a legal hold should be set on the blob.
     pub legal_hold: Option<bool>,
