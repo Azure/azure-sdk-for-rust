@@ -14,6 +14,7 @@ use crate::{
         BlockBlobClientStageBlockOptions, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
+    ConcurrencyControlStrategy,
 };
 
 type AzureResult<T> = azure_core::Result<T>;
@@ -42,17 +43,21 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+        let concurrency_control = options.concurrency_control_strategy.unwrap_or_default();
         // construct exhaustively to ensure we catch new options when added
         let stage_block_options = BlockBlobClientStageBlockOptions {
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key.clone(),
             encryption_key_sha256: options.encryption_key_sha256.clone(),
             encryption_scope: options.encryption_scope.clone(),
-            lease_id: None,
+            lease_id: match concurrency_control {
+                ConcurrencyControlStrategy::Lease(ref lease_id) => Some(lease_id.clone()),
+                _ => None,
+            },
             method_options: options.method_options.clone(),
             structured_body_type: None,
             structured_content_length: None,
-            timeout: None,
+            timeout: options.per_request_timeout,
             transactional_content_crc64: None,
             transactional_content_md5: None,
         };
@@ -75,12 +80,15 @@ impl BlockBlobClient {
             if_unmodified_since: None,
             immutability_policy_expiry: options.immutability_policy_expiry,
             immutability_policy_mode: options.immutability_policy_mode,
-            lease_id: None,
+            lease_id: match concurrency_control {
+                ConcurrencyControlStrategy::Lease(ref lease_id) => Some(lease_id.clone()),
+                _ => None,
+            },
             legal_hold: options.legal_hold,
             metadata: options.metadata,
             method_options: options.method_options,
             tier: options.tier,
-            timeout: None,
+            timeout: options.per_request_timeout,
             transactional_content_crc64: None,
             transactional_content_md5: None,
         };
