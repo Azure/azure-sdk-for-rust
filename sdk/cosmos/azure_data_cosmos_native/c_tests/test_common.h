@@ -108,8 +108,10 @@ static inline int test_context_create_container(test_context *ctx, const char *c
 
 // Generate unique database name with prefix
 static inline void test_generate_database_name(char *buffer, size_t size, const char *prefix) {
-    time_t current_time = time(NULL);
-    snprintf(buffer, size, "%s-%ld", prefix, current_time);
+    // Cast to long long to avoid warnings on platforms in which time_t is 64 bits.
+    // When time_t is 32 bits, this cast just extends it out to 64 bits without changing the value.
+    long long current_time = (long long)time(NULL);
+    snprintf(buffer, size, "%s-%lld", prefix, current_time);
 }
 
 // Cleanup test context - safe to call regardless of which resources were initialized
@@ -209,8 +211,7 @@ static inline int print_test_summary(const char *suite_name) {
 
 // Assert error code matches expected, continue on failure
 #define ASSERT_ERROR_CODE(actual, expected, message, ...) \
-    ASSERT((actual) == (expected), message " (expected: %d, got: %d)", \
-           ##__VA_ARGS__, (int)(expected), (int)(actual))
+    ASSERT((actual) == (expected), message " (expected: %d, got: %d)", ##__VA_ARGS__, (int)(expected), (int)(actual))
 
 // Require error code matches expected, goto cleanup on failure
 #define REQUIRE_ERROR_CODE(actual, expected, message, ...) \

@@ -46,42 +46,53 @@ impl TryFrom<&ClientOptions> for CosmosClientOptions {
     }
 }
 
+// Empty structs are not permitted in standard C (though GNU/Clang allow it).
+// So, several of these structs have placeholder fields for future expansion.
+
 #[repr(C)]
 pub struct QueryOptions {
-    // Placeholder for future query options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 #[repr(C)]
 pub struct CreateDatabaseOptions {
-    // Placeholder for future create database options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 #[repr(C)]
 pub struct ReadDatabaseOptions {
-    // Placeholder for future read database options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 #[repr(C)]
 pub struct DeleteDatabaseOptions {
-    // Placeholder for future delete database options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 #[repr(C)]
 pub struct CreateContainerOptions {
-    // Placeholder for future create container options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 #[repr(C)]
 pub struct ReadContainerOptions {
-    // Placeholder for future read container options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 #[repr(C)]
 pub struct DeleteContainerOptions {
-    // Placeholder for future delete container options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 #[repr(C)]
 pub struct ItemOptions {
-    // Placeholder for future item options
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }

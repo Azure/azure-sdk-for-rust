@@ -55,7 +55,7 @@ Use [https://rustup.rs/](https://rustup.rs/) to install Rust.
 
 - **CMake**
   - Download from [https://cmake.org/download/](https://cmake.org/download/)
-  - Or install via `winget install Kitware.CMake`
+  - Or install via `winget install cmake`
 
 ## Building the Library
 
@@ -68,22 +68,61 @@ mkdir build
 cd build
 
 # Configure
-# (Defaults to a DEBUG build using shared libraries, add `-DCMAKE_BUILD_TYPE=Release` for release build)
-# Changing the CMAKE_BUILD_TYPE requires deleting and re-creating the build directory.
+# On Windows, this generates a Visual Studio solution with multi-configuration support.
+# On Linux/macOS, this generates Makefiles for single-configuration builds, depending on CMAKE_BUILD_TYPE (see below).
 cmake ..
 
-# Build
+# Build (defaulting to Debug on multi-configuration generators, like MSBuild)
 cmake --build .
 
 # Test (after building)
 ctest
 ```
 
+### Platform-Specific Build Notes
+
+#### Linux/macOS - Release Builds
+
+By default, CMake generates Debug builds. For optimized Release builds:
+
+```bash
+mkdir build
+cd build
+
+# Configure for Release build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+
+# Build
+cmake --build .
+```
+
+**Note**: Changing `CMAKE_BUILD_TYPE` requires deleting and recreating the build directory.
+
+#### Windows/MSVC - Debug and Release Builds
+
+On Windows with Visual Studio, CMake generates a multi-configuration solution supporting both Debug and Release:
+
+```bash
+mkdir build
+cd build
+
+# Configure (generates solution with both Debug and Release)
+cmake ..
+
+# Build Debug configuration
+cmake --build . --config Debug
+
+# Build Release configuration
+cmake --build . --config Release
+```
+
+No need to delete the build directory when switching between Debug and Release.
+
 Build artifacts:
-- `build/lib/` - Compiled libraries (libazurecosmos.so/dylib/dll)
-- `build/test/` - Test executables
+- `build/lib/[Debug|Release]/` - Compiled libraries (libazurecosmos.so/dylib/dll)
+- `build/test/[Debug|Release]/` - Test executables
 - `build/include/` - Header files
-- `build/azurecosmos.pc` - pkg-config file
+- `build/azurecosmos.pc` - pkg-config file (non-Windows only)
 
 ## Running Tests
 
@@ -116,6 +155,23 @@ ctest --verbose
 
 # Run with output only on failure
 ctest --output-on-failure
+```
+
+#### Windows
+
+On Windows with multi-configuration generators (MSBuild), you MUST specify the configuration:
+
+```bash
+cd build
+
+# Run tests using Debug configuration
+ctest -C Debug
+
+# Run tests using Release configuration
+ctest -C Release
+
+# Run with verbose output
+ctest -C Debug --verbose
 ```
 
 ### Running Specific Tests
@@ -153,18 +209,18 @@ int test_my_new_test() {
     int result = TEST_PASS;
     test_context ctx;
     test_context_init(&ctx);
-    
+
     // Setup - use REQUIRE macros for setup that must succeed or the test cannot continue
     REQUIRE(test_context_create_runtime(&ctx), "Failed to create runtime");
     REQUIRE(test_context_create_client(&ctx), "Failed to create client");
-    
+
     // Your test logic here
     // Use ASSERT for non-critical checks. The test continues even if they fail, but will report failure.
     ASSERT(some_condition, "Condition should be true");
-    
+
     // Use REQUIRE for critical checks (jump to cleanup on failure)
     REQUIRE_SUCCESS(cosmos_operation(&ctx.call_ctx, ...), "Operation failed");
-    
+
 cleanup:
     test_context_cleanup(&ctx);
     return result;
@@ -221,11 +277,11 @@ int test_first() {
     int result = TEST_PASS;
     test_context ctx;
     test_context_init(&ctx);
-    
+
     REQUIRE(test_context_create_runtime(&ctx), "Failed to create runtime");
-    
+
     // Your test logic
-    
+
 cleanup:
     test_context_cleanup(&ctx);
     return result;

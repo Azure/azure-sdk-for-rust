@@ -147,19 +147,31 @@ typedef struct cosmos_call_context_options {
 } cosmos_call_context_options;
 
 typedef struct cosmos_item_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_item_options;
 
 typedef struct cosmos_read_container_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_read_container_options;
 
 typedef struct cosmos_delete_container_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_delete_container_options;
 
 typedef struct cosmos_query_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_query_options;
 
 typedef struct cosmos_client_options {
@@ -170,23 +182,38 @@ typedef struct cosmos_client_options {
 } cosmos_client_options;
 
 typedef struct cosmos_create_database_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_create_database_options;
 
 typedef struct cosmos_read_database_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_read_database_options;
 
 typedef struct cosmos_delete_database_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_delete_database_options;
 
 typedef struct cosmos_create_container_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_create_container_options;
 
 typedef struct cosmos_runtime_options {
-
+  /**
+   * Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+   */
+  uint8_t _unused;
 } cosmos_runtime_options;
 
 
