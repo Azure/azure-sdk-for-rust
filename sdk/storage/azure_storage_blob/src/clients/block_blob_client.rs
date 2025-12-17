@@ -27,7 +27,7 @@ use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage Block blob, although that blob may not yet exist.
 pub struct BlockBlobClient {
-    pub(super) client: GeneratedBlockBlobClient,
+    pub(crate) client: GeneratedBlockBlobClient,
 }
 
 impl GeneratedBlockBlobClient {
