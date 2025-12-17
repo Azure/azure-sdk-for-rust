@@ -8,30 +8,38 @@ use crate::utils::url_encode;
 /// Represents a segment of a resource link path, storing both encoded and unencoded forms.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct LinkSegment {
+    /// Unencoded form of the segment.
     unencoded: String,
-    encoded: String,
+
+    /// URL-encoded form of the segment. If this is `None`, the segment does not require encoding.
+    encoded: Option<String>,
 }
 
 impl LinkSegment {
     /// Creates a new `LinkSegment` by encoding the provided value.
     fn new(value: impl Into<String>) -> Self {
         let unencoded = value.into();
+
+        // TODO: There are probably ways we can optimize this to avoid storing both forms all the time, especially when encoding is unnecessary in most cases.
         let encoded = url_encode(unencoded.as_bytes());
-        Self { unencoded, encoded }
+
+        Self {
+            unencoded,
+            encoded: Some(encoded),
+        }
     }
 
     /// Creates a new `LinkSegment` without encoding (e.g., for RIDs).
     fn identity(value: impl Into<String>) -> Self {
-        let value = value.into();
         Self {
-            unencoded: value.clone(),
-            encoded: value,
+            unencoded: value.into(),
+            encoded: None,
         }
     }
 
     /// Gets the URL-encoded form of this segment.
     fn encoded(&self) -> &str {
-        &self.encoded
+        self.encoded.as_deref().unwrap_or(&self.unencoded)
     }
 
     /// Gets the unencoded (original) form of this segment.
@@ -133,7 +141,7 @@ impl ResourceLink {
     fn path_segment(&self) -> LinkSegment {
         LinkSegment {
             unencoded: self.unencoded_path(),
-            encoded: self.path(),
+            encoded: Some(self.path()),
         }
     }
 
