@@ -682,19 +682,97 @@ try {
             }
         }
 
+        function WriteArmResourceGroupDeploymentOperations {
+            param(
+                [Parameter(Mandatory = $true)]
+                [string]$resource_group_name
+            )
+
+            $deployments = $null
+            try {
+                $deployments = Get-AzResourceGroupDeployment -ResourceGroupName $resource_group_name -ErrorAction Stop
+            }
+            catch {
+                Write-Host "Failed to list ARM deployments in resource group '$resource_group_name'."
+                Write-Host (($_ | Format-List * -Force) | Out-String)
+                return
+            }
+
+            if (!$deployments -or $deployments.Count -eq 0) {
+                Write-Host "No ARM deployments found in resource group '$resource_group_name'."
+                return
+            }
+
+            Write-Host "ARM deployments and operations in resource group '$resource_group_name':"
+
+            foreach ($deployment_details in ($deployments | Sort-Object -Property Timestamp -Descending)) {
+                Write-Host "Deployment '$($deployment_details.DeploymentName)' status: '$($deployment_details.ProvisioningState)' CorrelationId: '$($deployment_details.CorrelationId)' Timestamp: '$($deployment_details.Timestamp)'"
+
+                $operations = $null
+                try {
+                    $operations = Get-AzResourceGroupDeploymentOperation -ResourceGroupName $resource_group_name -DeploymentName $deployment_details.DeploymentName -ErrorAction Stop
+                }
+                catch {
+                    Write-Host "Failed to query ARM deployment operations for '$($deployment_details.DeploymentName)'."
+                    Write-Host (($_ | Format-List * -Force) | Out-String)
+                    continue
+                }
+
+                if (!$operations -or $operations.Count -eq 0) {
+                    Write-Host "(no operations)"
+                    continue
+                }
+
+                foreach ($op in $operations) {
+                    $target = $op.Properties.TargetResource
+                    $target_id = if ($target -and $target.Id) { $target.Id } else { $null }
+                    $target_name = if ($target -and $target.ResourceName) { $target.ResourceName } else { $null }
+                    $target_type = if ($target -and $target.ResourceType) { $target.ResourceType } else { $null }
+                    $op_state = if ($op.Properties -and $op.Properties.ProvisioningState) { $op.Properties.ProvisioningState } else { $null }
+                    $op_id = if ($op.OperationId) { $op.OperationId } else { $null }
+
+                    $target_label = if ($target_id) {
+                        $target_id
+                    }
+                    elseif ($target_type -and $target_name) {
+                        "${target_type}/${target_name}"
+                    }
+                    elseif ($target_name) {
+                        $target_name
+                    }
+                    else {
+                        "(unknown target)"
+                    }
+
+                    Write-Host "- OperationId: '$op_id' State: '$op_state' Target: '$target_label'"
+
+                    if ($op_state -and $op_state -match 'Failed') {
+                        if ($op.Properties -and $op.Properties.StatusMessage) {
+                            Write-Host (($op.Properties.StatusMessage | ConvertTo-Json -Depth 50 -Compress) | Out-String)
+                        }
+                        else {
+                            Write-Host (($op | ConvertTo-Json -Depth 20 -Compress) | Out-String)
+                        }
+                    }
+                }
+            }
+        }
+
         # Deployment fails if we pass in more parameters than are defined.
         Write-Verbose "Removing unnecessary parameters from template '$($templateFile.jsonFilePath)'"
         $templateJson = Get-Content -LiteralPath $templateFile.jsonFilePath | ConvertFrom-Json
         $templateParameterNames = $templateJson.parameters.PSObject.Properties.Name
-
+                    Write-Host ((($_.Exception) | Format-List * -Force) | Out-String)
         $templateFileParameters = $templateParameters.Clone()
         foreach ($key in $templateParameters.Keys) {
+                WriteArmResourceGroupDeploymentOperations -resource_group_name $resourceGroup.ResourceGroupName
             if ($templateParameterNames -notcontains $key) {
                 Write-Verbose "Removing unnecessary parameter '$key'"
                 $templateFileParameters.Remove($key)
             }
         }
 
+            WriteArmResourceGroupDeploymentOperations -resource_group_name $resourceGroup.ResourceGroupName
         $preDeploymentScript = $templateFile.originalFilePath | Split-Path | Join-Path -ChildPath "$ResourceType-resources-pre.ps1"
         if (Test-Path $preDeploymentScript) {
             Log "Invoking pre-deployment script '$preDeploymentScript'"
