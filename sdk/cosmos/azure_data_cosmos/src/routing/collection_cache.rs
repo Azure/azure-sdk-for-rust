@@ -3,6 +3,7 @@
 
 use super::async_cache::AsyncCache;
 use crate::cosmos_request::CosmosRequest;
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadContainerOptions};
@@ -18,6 +19,7 @@ pub struct CollectionCache {
     pipeline: Pipeline,
     global_endpoint_manager: GlobalEndpointManager,
     container_properties_cache: AsyncCache<String, ContainerProperties>,
+    retry_handler: BackOffRetryHandler,
 }
 
 impl CollectionCache {
@@ -25,11 +27,13 @@ impl CollectionCache {
         let container_properties_cache = AsyncCache::new(
             Duration::from_secs(300), // Default 5 minutes TTL
         );
+        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager.clone());
 
         Self {
             pipeline,
             global_endpoint_manager,
             container_properties_cache,
+            retry_handler,
         }
     }
 
@@ -83,10 +87,16 @@ impl CollectionCache {
             .with_value(container_link)
             .into_owned();
 
-        self.pipeline
-            .send(&ctx_owned, &mut cosmos_request.into_raw_request(), None)
-            .await
-            .map(Into::into)
+        // Prepare a callback delegate to invoke the http request.
+        let sender = move |req: &mut CosmosRequest| {
+            let mut raw_req = req.clone().into_raw_request();
+            let ctx = ctx_owned.clone();
+            async move { self.pipeline.send(&ctx, &mut raw_req, None).await }
+        };
+
+        // Delegate to the retry handler, providing the sender callback
+        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
+        res.map(Into::into)
     }
 }
 
@@ -95,6 +105,7 @@ mod tests {
     use super::*;
     use azure_core::http::ClientOptions;
     use std::borrow::Cow;
+    use url::Url;
 
     // Helper function to create a test pipeline
     fn create_test_pipeline() -> Pipeline {
@@ -111,18 +122,16 @@ mod tests {
     // Helper function to create a test GlobalEndpointManager
     fn create_test_endpoint_manager() -> GlobalEndpointManager {
         let pipeline = create_test_pipeline();
-        GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
-            vec![],
-            pipeline,
-        )
+        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
+        GlobalEndpointManager::new(endpoint, vec![], pipeline)
     }
 
     // Helper function to create a test GlobalEndpointManager with preferred locations
     fn create_test_endpoint_manager_with_locations() -> GlobalEndpointManager {
         let pipeline = create_test_pipeline();
+        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
         GlobalEndpointManager::new(
-            "https://test.documents.azure.com".to_string(),
+            endpoint,
             vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
             pipeline,
         )
