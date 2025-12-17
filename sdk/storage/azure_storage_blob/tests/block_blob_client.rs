@@ -7,13 +7,13 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobClientDownloadResultHeaders, BlockBlobClientUploadBlobFromUrlOptions, BlockListType,
-    BlockLookupList,
+    BlobClientDownloadResultHeaders, BlockBlobClientManagedUploadOptions,
+    BlockBlobClientUploadBlobFromUrlOptions, BlockListType, BlockLookupList,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
 };
-use std::error::Error;
+use std::{error::Error, num::NonZero};
 
 #[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -199,5 +199,40 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let data: [u8; 1024] = recording.random();
+
+    for (parallel, partition_size) in [(1, 2048), (2, 1024), (2, 512), (1, 256), (8, 31)] {
+        let options = BlockBlobClientManagedUploadOptions {
+            parallel: Some(NonZero::new(parallel).unwrap()),
+            partition_size: Some(NonZero::new(partition_size).unwrap()),
+            ..Default::default()
+        };
+        block_blob_client
+            .managed_upload(data.to_vec().into(), Some(options))
+            .await?;
+        assert_eq!(
+            blob_client
+                .download(None)
+                .await?
+                .into_body()
+                .collect()
+                .await?[..],
+            data,
+            "Failed parallel={},partition_size={}",
+            parallel,
+            partition_size
+        )
+    }
+
     Ok(())
 }
