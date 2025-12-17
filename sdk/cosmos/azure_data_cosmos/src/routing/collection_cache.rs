@@ -11,9 +11,13 @@ use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
 use std::time::Duration;
 
-/// A client for working with a specific container in a Cosmos DB account.
+/// Cache for Cosmos DB container metadata and properties.
 ///
-/// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
+/// # Summary
+/// Maintains an in-memory cache of container properties (partition keys, indexing policies, etc.)
+/// to minimize redundant metadata requests to the Cosmos DB service. Uses a 5-minute TTL by default
+/// to balance freshness with performance. Integrates with retry handler for resilient metadata fetching
+/// across regional endpoints.
 #[derive(Clone, Debug)]
 pub struct CollectionCache {
     pipeline: Pipeline,
@@ -23,6 +27,19 @@ pub struct CollectionCache {
 }
 
 impl CollectionCache {
+    /// Creates a new `CollectionCache` with default configuration.
+    ///
+    /// # Summary
+    /// Initializes a collection cache with a 5-minute TTL for container properties.
+    /// Sets up retry handler for resilient metadata operations across Azure regions.
+    /// The cache automatically refreshes stale entries when accessed after expiration.
+    ///
+    /// # Arguments
+    /// * `pipeline` - HTTP pipeline for making requests to Cosmos DB service
+    /// * `global_endpoint_manager` - Manager for multi-region endpoint routing and failover
+    ///
+    /// # Returns
+    /// A new `CollectionCache` instance ready for caching container metadata
     pub(crate) fn new(pipeline: Pipeline, global_endpoint_manager: GlobalEndpointManager) -> Self {
         let container_properties_cache = AsyncCache::new(
             Duration::from_secs(300), // Default 5 minutes TTL
@@ -37,7 +54,21 @@ impl CollectionCache {
         }
     }
 
-    /// Gets the container metadata from the cache, or initializes it using the provided async function if not present.
+    /// Retrieves container properties from cache or fetches from service if not cached.
+    ///
+    /// # Summary
+    /// Returns container metadata (partition key definition, indexing policy, etc.) for the
+    /// specified container. Checks the cache first; if not found or expired, fetches fresh
+    /// metadata from the Cosmos DB service and updates the cache. Uses retry handler for
+    /// resilience against transient failures and regional outages.
+    ///
+    /// # Arguments
+    /// * `container_id` - Unique identifier of the container (used as cache key)
+    /// * `container_link` - Resource link to the container in Cosmos DB
+    /// * `options` - Optional request options including consistency level and context
+    ///
+    /// # Returns
+    /// `Ok(ContainerProperties)` with container metadata, or `Err` if fetch fails
     pub async fn resolve_by_id(
         &self,
         container_id: String,
@@ -54,13 +85,36 @@ impl CollectionCache {
             .await
     }
 
-    /// Removes the container metadata from the cache, forcing a refresh on the next access.
+    /// Removes container metadata from the cache, forcing refresh on next access.
+    ///
+    /// # Summary
+    /// Invalidates the cached container properties for the specified container ID.
+    /// The next call to `resolve_by_id` for this container will fetch fresh metadata
+    /// from the service. Useful when container configuration changes (e.g., partition
+    /// key updates, indexing policy modifications) and stale cache must be cleared.
+    ///
+    /// # Arguments
+    /// * `container_id` - Unique identifier of the container to remove from cache
     pub async fn remove_by_id(&self, container_id: &str) {
         self.container_properties_cache
             .remove(&container_id.to_string())
             .await;
     }
 
+    /// Fetches container properties directly from the Cosmos DB service.
+    ///
+    /// # Summary
+    /// Executes an HTTP GET request to retrieve container metadata from the service.
+    /// Resolves the appropriate regional endpoint using the global endpoint manager,
+    /// constructs the request with proper routing context, and delegates to the retry
+    /// handler for resilient execution with automatic failover on errors.
+    ///
+    /// # Arguments
+    /// * `container_link` - Resource link identifying the target container
+    /// * `options` - Optional request options including consistency level and context
+    ///
+    /// # Returns
+    /// `Ok(Response<ContainerProperties>)` on success, or `Err` if request fails
     async fn read_container_properties_by_id(
         &self,
         container_link: ResourceLink,
