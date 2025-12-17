@@ -35,7 +35,7 @@ impl TryFrom<&ClientOptions> for CosmosClientOptions {
             #[cfg(not(feature = "reqwest"))]
             panic!("at least one HTTP transport feature must be enabled");
 
-            let transport = azure_core_http::Transport::new(std::sync::Arc::new(client));
+            let transport = azure_core::http::Transport::new(std::sync::Arc::new(client));
             Ok(Self {
                 client_options: azure_core::http::ClientOptions {
                     transport: Some(transport),
