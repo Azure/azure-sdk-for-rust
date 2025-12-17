@@ -341,11 +341,13 @@ dependencies = [
  "azure_data_cosmos",
  "cbindgen",
  "futures",
+ "getrandom 0.3.3",
  "reqwest",
  "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

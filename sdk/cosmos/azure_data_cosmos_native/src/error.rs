@@ -157,7 +157,6 @@ impl std::error::Error for Error {}
 
 /// External representation of an error across the FFI boundary.
 #[repr(C)]
-#[derive(Default)]
 pub struct CosmosError {
     /// The error code representing the type of error.
     pub code: CosmosErrorCode,
@@ -169,6 +168,19 @@ pub struct CosmosError {
     /// This is only set if [`include_error_details`](crate::context::CallContext::include_error_details) is true.
     /// If this pointer is non-null, it must be freed by the caller using [`cosmos_string_free`](crate::string::cosmos_string_free).
     pub detail: *const std::ffi::c_char,
+}
+
+// Remove this manual impl and replace with #[derive(Default)] when MSRV moves to 1.88, which impls Default for raw pointers
+// See https://github.com/rust-lang/rust/pull/139535
+impl Default for CosmosError {
+    fn default() -> Self {
+        // Make sure the default is the same as all-zeros, which is what the caller might produce if they initialize with zeroed memory.
+        Self {
+            code: CosmosErrorCode::default(),
+            message: std::ptr::null(),
+            detail: std::ptr::null(),
+        }
+    }
 }
 
 impl CosmosError {

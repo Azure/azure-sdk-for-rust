@@ -23,8 +23,10 @@ tracing.workspace = true
 tracing-subscriber = { workspace = true, optional = true, features = ["fmt", "env-filter"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-# The 'rt-multi-thread' feature is not supported in wasm targets
+# Configure dependencies in the tree to work in wasm environments
 tokio = { workspace = true, optional = true, features = ["rt", "macros"] }
+uuid = { workspace = true, features = ["v4", "js"] }
+getrandom = { workspace = true, features = ["wasm_js"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "macros"] }
