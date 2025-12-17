@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{RequestContent, XmlFormat};
+use azure_core::http::{ClientOptions, RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
@@ -269,7 +269,8 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording, StorageAccount::Standard, None);
+    let mut options = ClientOptions::default();
+    let endpoint = recorded_test_setup(recording, StorageAccount::Standard, &mut options);
     let endpoint = endpoint.replace(
         ".blob.core.windows.net/",
         "-secondary.blob.core.windows.net/",

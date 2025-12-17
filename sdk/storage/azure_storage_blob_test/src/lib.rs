@@ -34,22 +34,19 @@ pub enum StorageAccount {
 pub fn recorded_test_setup(
     recording: &Recording,
     account_type: StorageAccount,
-    client_options: Option<ClientOptions>,
-) -> (ClientOptions, String) {
-    let mut client_options = client_options.unwrap_or_default();
-    recording.instrument(&mut client_options);
+    client_options: &mut ClientOptions,
+) -> String {
+    recording.instrument(client_options);
 
     let account_name_var = match account_type {
         StorageAccount::Standard => "AZURE_STORAGE_ACCOUNT_NAME",
         StorageAccount::Versioned => "VERSIONED_AZURE_STORAGE_ACCOUNT_NAME",
     };
 
-    let endpoint = format!(
+    format!(
         "https://{}.blob.core.windows.net/",
         recording.var(account_name_var, None).as_str()
-    );
-
-    (client_options, endpoint)
+    )
 }
 
 /// Takes in a Recording instance and returns a randomized blob name with prefix "blob" of length 16.
@@ -86,12 +83,11 @@ pub fn get_blob_service_client(
     service_client_options: Option<BlobServiceClientOptions>,
 ) -> Result<BlobServiceClient> {
     let mut service_client_options = service_client_options.unwrap_or_default();
-    let (options, endpoint) = recorded_test_setup(
+    let endpoint = recorded_test_setup(
         recording,
         account_type,
-        Some(service_client_options.client_options),
+        &mut service_client_options.client_options,
     );
-    service_client_options.client_options = options;
     BlobServiceClient::new(
         &endpoint,
         Some(recording.credential()),
@@ -114,12 +110,11 @@ pub async fn get_container_client(
 ) -> Result<BlobContainerClient> {
     let container_name = get_container_name(recording);
     let mut container_client_options = container_client_options.unwrap_or_default();
-    let (options, endpoint) = recorded_test_setup(
+    let endpoint = recorded_test_setup(
         recording,
         account_type,
-        Some(container_client_options.client_options),
+        &mut container_client_options.client_options,
     );
-    container_client_options.client_options = options;
     let container_client = BlobContainerClient::new(
         &endpoint,
         &container_name,
