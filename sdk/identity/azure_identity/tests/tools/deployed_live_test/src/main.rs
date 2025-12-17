@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use axum::{
-    extract::Query,
+    extract::{Path, Query},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get,
@@ -31,7 +31,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
     println!("Listening on http://{}", listener.local_addr()?);
 
-    let router = Router::new().route("/api", get(handle_request));
+    let router = Router::new()
+        .route("/api", get(handle_request));
+        // .route("/{*path}", get(handle_request));
+        // .route("/{*wildcard}", get(handle_any_path));
     axum::serve(listener, router)
         .with_graceful_shutdown(async {
             tokio::signal::ctrl_c()
@@ -90,12 +93,20 @@ async fn handle_request(Query(params): Query<Params>) -> Response {
                 }
             }
         }
-        test => return (StatusCode::BAD_REQUEST, format!("Unknown test '{test}'")).into_response(),
+        test => return (StatusCode::BAD_REQUEST, format!("Unknown test '{test}' path ''")).into_response(),
     };
 
     match try_storage(credential, &params.storage_name).await {
         Ok(_) => StatusCode::OK.into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+async fn handle_any_path(Path(path): Path<String>) -> impl IntoResponse {
+    if path.is_empty() {
+        "/".to_string()
+    } else {
+        format!("/{path}")
     }
 }
 

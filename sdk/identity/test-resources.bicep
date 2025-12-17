@@ -65,13 +65,14 @@ resource storageRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-0
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = if (deployResources) {
   name: 'asp-${baseName}'
   location: location
-  sku: {
-    name: 'P1V2'
-    tier: 'PremiumV2'
-  }
   kind: 'linux'
-  properties: {
-    reserved: true
+  properties: {}
+  sku: {
+    capacity: 1
+    family: 'B'
+    name: 'B1'
+    size: 'B1'
+    tier: 'Basic'
   }
 }
 
@@ -88,8 +89,11 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = if (deployResources) {
   properties: {
     serverFarmId: appServicePlan.id
     reserved: true
+    enabled: true
+    httpsOnly: true
+    http20Enabled: true
+    minTlsVersion: '1.2'
     siteConfig: {
-      linuxFxVersion: 'CUSTOM'
       appSettings: [
         {
           name: 'AzureWebJobsStorage__blobServiceUri'
