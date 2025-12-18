@@ -1,10 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::slice;
+use std::{
+    slice,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
+use async_trait::async_trait;
 use azure_core::{
-    http::{Body, ClientOptions, NoFormat, RequestContent, Response},
+    http::{
+        policies::{Policy, PolicyResult},
+        AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
+        Response,
+    },
     Bytes, Result,
 };
 use azure_core_test::Recording;
@@ -210,5 +221,82 @@ impl BodyTestExt for Body {
                 Ok(bytes.freeze())
             }
         }
+    }
+}
+
+pub struct AssertionScope {
+    counter: Arc<AtomicUsize>,
+}
+
+impl Drop for AssertionScope {
+    fn drop(&mut self) {
+        self.counter.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
+type Check<T> = Arc<dyn Fn(&T) -> Result<()> + Send + Sync>;
+pub struct AssertionPolicy {
+    check_request_counter: Arc<AtomicUsize>,
+    check_response_counter: Arc<AtomicUsize>,
+    check_request: Check<Request>,
+    check_response: Check<AsyncRawResponse>,
+}
+
+impl AssertionPolicy {
+    pub fn new(
+        check_request: Option<Check<Request>>,
+        check_response: Option<Check<AsyncRawResponse>>,
+    ) -> Self {
+        AssertionPolicy {
+            check_request_counter: Arc::new(AtomicUsize::new(0)),
+            check_response_counter: Arc::new(AtomicUsize::new(0)),
+            check_request: check_request.unwrap_or(Arc::new(|_| Ok(()))),
+            check_response: check_response.unwrap_or(Arc::new(|_| Ok(()))),
+        }
+    }
+
+    /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
+    pub fn check_request_scope(&self) -> AssertionScope {
+        self.check_request_counter.fetch_add(1, Ordering::Relaxed);
+        AssertionScope {
+            counter: self.check_request_counter.clone(),
+        }
+    }
+
+    /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
+    pub fn check_response_scope(&self) -> AssertionScope {
+        self.check_response_counter.fetch_add(1, Ordering::Relaxed);
+        AssertionScope {
+            counter: self.check_response_counter.clone(),
+        }
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+impl Policy for AssertionPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        if self.check_request_counter.load(Ordering::Relaxed) > 0 {
+            (self.check_request)(request)?;
+        }
+        let response = next[0].send(ctx, request, &next[1..]).await?;
+        if self.check_response_counter.load(Ordering::Relaxed) > 0 {
+            (self.check_response)(&response)?;
+        }
+        Ok(response)
+    }
+}
+
+impl std::fmt::Debug for AssertionPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AssertionPolicy")
+            .field("check_request_counter", &self.check_request_counter)
+            .field("check_response_counter", &self.check_response_counter)
+            .finish()
     }
 }
