@@ -58,7 +58,8 @@ impl ContainerClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let response = container_client.read(None)
-    ///     .await?;
+    ///     .await?
+    ///     .into_model()?;
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.container_id))]

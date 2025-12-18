@@ -92,7 +92,7 @@ impl ReadCommand {
             } => {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container);
-                let response = container_client.read(None).await?;
+                let response = container_client.read(None).await?.into_model()?;
                 println!("Container:");
                 println!("  {:#?}", response);
 
