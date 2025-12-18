@@ -7,7 +7,7 @@
 #![allow(dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-pub mod client_impl;
+mod client_impl;
 pub mod clients;
 #[allow(unused_imports)]
 mod generated;

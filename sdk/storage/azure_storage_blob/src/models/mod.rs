@@ -82,6 +82,7 @@ pub use crate::generated::models::{
     StorageServiceStats, UserDelegationKey,
 };
 
+/// Options to be passed to `BlockBlobClient::managed_upload()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientManagedUploadOptions<'a> {
     /// Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read
