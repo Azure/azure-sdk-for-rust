@@ -433,10 +433,10 @@ mod tests {
         let keys = vec![
             PartitionKeyValue::from("tenant1"),
             PartitionKeyValue::from(42i64),
-            PartitionKeyValue::from(3.14f64),
+            PartitionKeyValue::from(123.45f64),
         ];
         let partition_key = PartitionKey::from(keys);
-        assert_eq!(key_to_string(partition_key), r#"["tenant1",42,3.14]"#);
+        assert_eq!(key_to_string(partition_key), r#"["tenant1",42,123.45]"#);
     }
 
     #[test]
