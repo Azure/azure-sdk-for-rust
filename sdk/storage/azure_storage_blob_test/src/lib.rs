@@ -235,68 +235,68 @@ impl Drop for AssertionScope {
 }
 
 type Check<T> = Arc<dyn Fn(&T) -> Result<()> + Send + Sync>;
-pub struct AssertionPolicy {
-    check_request_counter: Arc<AtomicUsize>,
-    check_response_counter: Arc<AtomicUsize>,
-    check_request: Check<Request>,
-    check_response: Check<AsyncRawResponse>,
+pub struct TestPolicy {
+    request_scope_counter: Arc<AtomicUsize>,
+    response_scope_counter: Arc<AtomicUsize>,
+    on_request: Check<Request>,
+    on_response: Check<AsyncRawResponse>,
 }
 
-impl AssertionPolicy {
+impl TestPolicy {
     pub fn new(
-        check_request: Option<Check<Request>>,
-        check_response: Option<Check<AsyncRawResponse>>,
+        on_request: Option<Check<Request>>,
+        on_response: Option<Check<AsyncRawResponse>>,
     ) -> Self {
-        AssertionPolicy {
-            check_request_counter: Arc::new(AtomicUsize::new(0)),
-            check_response_counter: Arc::new(AtomicUsize::new(0)),
-            check_request: check_request.unwrap_or(Arc::new(|_| Ok(()))),
-            check_response: check_response.unwrap_or(Arc::new(|_| Ok(()))),
+        TestPolicy {
+            request_scope_counter: Arc::new(AtomicUsize::new(0)),
+            response_scope_counter: Arc::new(AtomicUsize::new(0)),
+            on_request: on_request.unwrap_or(Arc::new(|_| Ok(()))),
+            on_response: on_response.unwrap_or(Arc::new(|_| Ok(()))),
         }
     }
 
     /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
     pub fn check_request_scope(&self) -> AssertionScope {
-        self.check_request_counter.fetch_add(1, Ordering::Relaxed);
+        self.request_scope_counter.fetch_add(1, Ordering::Relaxed);
         AssertionScope {
-            counter: self.check_request_counter.clone(),
+            counter: self.request_scope_counter.clone(),
         }
     }
 
     /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
     pub fn check_response_scope(&self) -> AssertionScope {
-        self.check_response_counter.fetch_add(1, Ordering::Relaxed);
+        self.response_scope_counter.fetch_add(1, Ordering::Relaxed);
         AssertionScope {
-            counter: self.check_response_counter.clone(),
+            counter: self.response_scope_counter.clone(),
         }
     }
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-impl Policy for AssertionPolicy {
+impl Policy for TestPolicy {
     async fn send(
         &self,
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        if self.check_request_counter.load(Ordering::Relaxed) > 0 {
-            (self.check_request)(request)?;
+        if self.request_scope_counter.load(Ordering::Relaxed) > 0 {
+            (self.on_request)(request)?;
         }
         let response = next[0].send(ctx, request, &next[1..]).await?;
-        if self.check_response_counter.load(Ordering::Relaxed) > 0 {
-            (self.check_response)(&response)?;
+        if self.response_scope_counter.load(Ordering::Relaxed) > 0 {
+            (self.on_response)(&response)?;
         }
         Ok(response)
     }
 }
 
-impl std::fmt::Debug for AssertionPolicy {
+impl std::fmt::Debug for TestPolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AssertionPolicy")
-            .field("check_request_counter", &self.check_request_counter)
-            .field("check_response_counter", &self.check_response_counter)
+            .field("check_request_counter", &self.request_scope_counter)
+            .field("check_response_counter", &self.response_scope_counter)
             .finish()
     }
 }
