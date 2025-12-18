@@ -3,7 +3,10 @@
 
 use std::borrow::Cow;
 
-use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::{
+    fmt::SafeDebug,
+    http::headers::{AsHeaders, HeaderName, HeaderValue},
+};
 
 use crate::constants;
 
@@ -74,7 +77,7 @@ use crate::constants;
 /// let partition_key_1 = PartitionKey::from("simple_string");
 /// let partition_key_2 = PartitionKey::from(("parent", "child", 42));
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(SafeDebug, Clone, PartialEq, Eq)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
 impl PartitionKey {
@@ -161,11 +164,11 @@ impl AsHeaders for PartitionKey {
 /// Represents a value for a single partition key.
 ///
 /// You shouldn't need to construct this type directly. The various implementations of [`Into<PartitionKey>`] will handle it for you.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(SafeDebug, Clone, PartialEq, Eq)]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
 
 // We don't want to expose the implementation details of PartitionKeyValue (specifically the use of serde_json::Number), so we use this inner private enum to store the data.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(SafeDebug, Clone, PartialEq, Eq)]
 enum InnerPartitionKeyValue {
     Null,
     String(Cow<'static, str>),
