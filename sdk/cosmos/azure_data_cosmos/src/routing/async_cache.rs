@@ -40,7 +40,7 @@ where
     K: Eq + Hash + Clone + Send + Sync + 'static,
     V: Clone + Send + Sync + 'static,
 {
-    /// Creates a new `AsyncCache` with the specified TTL and expiration callback
+    /// Creates a new `AsyncCache` with the specified TTL.
     pub fn new(ttl: Duration) -> Self {
         Self {
             store: Arc::new(RwLock::new(HashMap::new())),
@@ -52,13 +52,19 @@ where
     ///
     /// When the entry is expired, the expiration callback is invoked before computing the new value.
     /// The cache is automatically updated with the computed value.
-    pub async fn get<F, Fut, E>(&self, key: K, compute: F) -> Result<V, E>
+    ///
+    /// # Arguments
+    /// * `key` - The cache key to look up
+    /// * `force_refresh` - If true, bypass cache and compute fresh value even if cached value is valid
+    /// * `compute` - Async function to compute the value if not cached or force refresh is requested
+    pub async fn get<F, Fut, E>(&self, key: K, force_refresh: bool, compute: F) -> Result<V, E>
     where
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<V, E>>,
     {
         // Fast path: check if value exists and is not expired (read lock)
-        {
+        // Skip this if force_refresh is true
+        if !force_refresh {
             let store = self.store.read().await;
             if let Some(entry) = store.get(&key) {
                 if !entry.is_expired() {
@@ -67,18 +73,24 @@ where
             }
         }
 
-        // Slow path: value missing or expired, need to compute (write lock)
+        // Slow path: value missing, expired, or force refresh requested - need to compute (write lock)
         let mut store = self.store.write().await;
 
         // Double-check after acquiring write lock (another task might have updated it)
-        if let Some(entry) = store.get(&key) {
-            if entry.is_expired() {
-                // Remove the entry from the cache.
-                store.remove(&key);
-            } else {
-                // Another task updated it while we waited for the lock
-                return Ok(entry.value.clone());
+        // Only skip recompute if not force_refresh and entry is still valid
+        if !force_refresh {
+            if let Some(entry) = store.get(&key) {
+                if entry.is_expired() {
+                    // Remove the entry from the cache.
+                    store.remove(&key);
+                } else {
+                    // Another task updated it while we waited for the lock
+                    return Ok(entry.value.clone());
+                }
             }
+        } else {
+            // force_refresh is true, remove existing entry to ensure fresh computation
+            store.remove(&key);
         }
 
         // Release lock while computing the new value
@@ -127,7 +139,7 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[tokio::test]
-    async fn test_basic_get_and_compute() {
+    async fn get_and_compute() {
         let cache = AsyncCache::new(Duration::from_secs(60));
 
         let compute_count = Arc::new(AtomicUsize::new(0));
@@ -135,7 +147,7 @@ mod tests {
 
         // First get - should compute
         let value = cache
-            .get("key1".to_string(), || async {
+            .get("key1".to_string(), false, || async {
                 count_clone.fetch_add(1, Ordering::SeqCst);
                 Ok::<String, &str>("value1".to_string())
             })
@@ -147,7 +159,7 @@ mod tests {
 
         // Second get - should return cached value
         let value = cache
-            .get("key1".to_string(), || async {
+            .get("key1".to_string(), false, || async {
                 count_clone.fetch_add(1, Ordering::SeqCst);
                 Ok::<String, &str>("value2".to_string())
             })
@@ -159,12 +171,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_expiration() {
+    async fn key_expiration() {
         let cache = AsyncCache::new(Duration::from_millis(100));
 
         // Add entry
         cache
-            .get("key1".to_string(), || async {
+            .get("key1".to_string(), false, || async {
                 Ok::<String, &str>("value1".to_string())
             })
             .await
@@ -175,7 +187,7 @@ mod tests {
 
         // Get again - should recompute after expiration
         let value = cache
-            .get("key1".to_string(), || async {
+            .get("key1".to_string(), false, || async {
                 Ok::<String, &str>("value2".to_string())
             })
             .await
@@ -185,12 +197,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_remove() {
+    async fn key_remove() {
         let cache = AsyncCache::new(Duration::from_secs(60));
 
         // Add entry
         cache
-            .get("key1".to_string(), || async {
+            .get("key1".to_string(), false, || async {
                 Ok::<String, &str>("value1".to_string())
             })
             .await
@@ -205,7 +217,7 @@ mod tests {
         let count_clone = compute_count.clone();
 
         cache
-            .get("key1".to_string(), || async {
+            .get("key1".to_string(), false, || async {
                 count_clone.fetch_add(1, Ordering::SeqCst);
                 Ok::<String, &str>("value2".to_string())
             })
@@ -213,5 +225,61 @@ mod tests {
             .unwrap();
 
         assert_eq!(compute_count.load(Ordering::SeqCst), 1); // Recomputed
+    }
+
+    #[tokio::test]
+    async fn force_refresh() {
+        let cache = AsyncCache::new(Duration::from_secs(60));
+
+        let compute_count = Arc::new(AtomicUsize::new(0));
+        let count_clone = compute_count.clone();
+
+        // First get - should compute
+        let value = cache
+            .get("key1".to_string(), false, || async {
+                count_clone.fetch_add(1, Ordering::SeqCst);
+                Ok::<String, &str>("value1".to_string())
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(value, "value1");
+        assert_eq!(compute_count.load(Ordering::SeqCst), 1);
+
+        // Second get without force_refresh - should return cached value
+        let value = cache
+            .get("key1".to_string(), false, || async {
+                count_clone.fetch_add(1, Ordering::SeqCst);
+                Ok::<String, &str>("value2".to_string())
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(value, "value1");
+        assert_eq!(compute_count.load(Ordering::SeqCst), 1); // Not incremented
+
+        // Third get WITH force_refresh - should recompute even though cached value is valid
+        let value = cache
+            .get("key1".to_string(), true, || async {
+                count_clone.fetch_add(1, Ordering::SeqCst);
+                Ok::<String, &str>("value3".to_string())
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(value, "value3");
+        assert_eq!(compute_count.load(Ordering::SeqCst), 2); // Incremented due to force_refresh
+
+        // Fourth get without force_refresh - should return newly cached value
+        let value = cache
+            .get("key1".to_string(), false, || async {
+                count_clone.fetch_add(1, Ordering::SeqCst);
+                Ok::<String, &str>("value4".to_string())
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(value, "value3");
+        assert_eq!(compute_count.load(Ordering::SeqCst), 2); // Not incremented
     }
 }

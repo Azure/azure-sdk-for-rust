@@ -66,7 +66,7 @@ impl GlobalEndpointManager {
         )));
 
         let account_properties_cache = AsyncCache::new(
-            Duration::from_secs(600), // Default 5 minutes TTL
+            Duration::from_secs(600), // Default 10 minutes TTL
         );
 
         Self {
@@ -282,7 +282,7 @@ impl GlobalEndpointManager {
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
         _ = self
             .account_properties_cache
-            .get(ACCOUNT_PROPERTIES_KEY, || async {
+            .get(ACCOUNT_PROPERTIES_KEY, force_refresh, || async {
                 // Fetch latest account properties from service
                 let account_properties: AccountProperties =
                     self.get_database_account().await?.into_body().json()?;
@@ -303,13 +303,13 @@ impl GlobalEndpointManager {
     /// Returns a map of write endpoints indexed by location name.
     ///
     /// # Summary
-    /// Retrieves a mapping from Azure region names to their corresponding to write endpoint URLs.
+    /// Retrieves a mapping from Azure region names to their corresponding write endpoint URLs.
     /// This provides direct lookup of write endpoints by location, useful for diagnostic
     /// and monitoring scenarios. The map reflects the current account configuration and
     /// may be empty until account properties are fetched.
     ///
     /// # Returns
-    /// A HashMap containing the location names with their corresponding to write endpoint URLs
+    /// A HashMap containing the location names with their corresponding write endpoint URLs
     #[allow(dead_code)]
     fn available_write_endpoints_by_location(&self) -> HashMap<String, Url> {
         self.location_cache

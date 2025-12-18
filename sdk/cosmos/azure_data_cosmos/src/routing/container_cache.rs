@@ -19,18 +19,18 @@ use std::time::Duration;
 /// to balance freshness with performance. Integrates with retry handler for resilient metadata fetching
 /// across regional endpoints.
 #[derive(Clone, Debug)]
-pub struct CollectionCache {
+pub struct ContainerCache {
     pipeline: Pipeline,
     global_endpoint_manager: GlobalEndpointManager,
     container_properties_cache: AsyncCache<String, ContainerProperties>,
     retry_handler: BackOffRetryHandler,
 }
 
-impl CollectionCache {
-    /// Creates a new `CollectionCache` with default configuration.
+impl ContainerCache {
+    /// Creates a new `ContainerCache` with default configuration.
     ///
     /// # Summary
-    /// Initializes a collection cache with a 5-minute TTL for container properties.
+    /// Initializes a container cache with a 5-minute TTL for container properties.
     /// Sets up retry handler for resilient metadata operations across Azure regions.
     /// The cache automatically refreshes stale entries when accessed after expiration.
     ///
@@ -39,7 +39,7 @@ impl CollectionCache {
     /// * `global_endpoint_manager` - Manager for multi-region endpoint routing and failover
     ///
     /// # Returns
-    /// A new `CollectionCache` instance ready for caching container metadata
+    /// A new `ContainerCache` instance ready for caching container metadata
     pub(crate) fn new(pipeline: Pipeline, global_endpoint_manager: GlobalEndpointManager) -> Self {
         let container_properties_cache = AsyncCache::new(
             Duration::from_secs(300), // Default 5 minutes TTL
@@ -74,9 +74,10 @@ impl CollectionCache {
         container_id: String,
         container_link: ResourceLink,
         options: Option<ReadContainerOptions<'_>>,
+        force_refresh: bool,
     ) -> Result<ContainerProperties, Error> {
         self.container_properties_cache
-            .get(container_id, || async {
+            .get(container_id, force_refresh, || async {
                 let response = self
                     .read_container_properties_by_id(container_link, options)
                     .await?;
@@ -192,10 +193,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_remove_by_id() {
+    async fn remove_by_id() {
         let pipeline = create_test_pipeline();
         let global_endpoint_manager = create_test_endpoint_manager();
-        let cache = CollectionCache::new(pipeline, global_endpoint_manager);
+        let cache = ContainerCache::new(pipeline, global_endpoint_manager);
 
         // Test that remove_by_id doesn't panic when removing non-existent items
         cache.remove_by_id("non-existent-container").await;
@@ -204,20 +205,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_new_collection_cache() {
+    async fn new_container_cache() {
         let pipeline = create_test_pipeline();
         let global_endpoint_manager = create_test_endpoint_manager();
-        let cache = CollectionCache::new(pipeline, global_endpoint_manager);
+        let cache = ContainerCache::new(pipeline, global_endpoint_manager);
 
         // Verify the cache was created successfully
         assert!(std::mem::size_of_val(&cache) > 0);
     }
 
     #[tokio::test]
-    async fn test_new_collection_cache_with_preferred_locations() {
+    async fn new_container_cache_with_preferred_locations() {
         let pipeline = create_test_pipeline();
         let global_endpoint_manager = create_test_endpoint_manager_with_locations();
-        let cache = CollectionCache::new(pipeline, global_endpoint_manager);
+        let cache = ContainerCache::new(pipeline, global_endpoint_manager);
 
         // Verify the cache can be cloned (Debug trait is implemented)
         let cloned_cache = cache.clone();
@@ -225,11 +226,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_remove_by_id_idempotency() {
+    async fn remove_by_id_idempotency() {
         // Test that removing the same item multiple times is safe
         let pipeline = create_test_pipeline();
         let global_endpoint_manager = create_test_endpoint_manager();
-        let cache = CollectionCache::new(pipeline, global_endpoint_manager);
+        let cache = ContainerCache::new(pipeline, global_endpoint_manager);
         let container_id = "test-container";
 
         // Remove the same ID multiple times
@@ -241,11 +242,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_collection_cache_clone() {
-        // Test that CollectionCache can be cloned properly
+    async fn container_cache_clone() {
+        // Test that ContainerCache can be cloned properly
         let pipeline = create_test_pipeline();
         let global_endpoint_manager = create_test_endpoint_manager();
-        let cache = CollectionCache::new(pipeline, global_endpoint_manager);
+        let cache = ContainerCache::new(pipeline, global_endpoint_manager);
 
         let cloned_cache = cache.clone();
 
@@ -255,11 +256,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_remove_by_id_with_different_ids() {
+    async fn remove_by_id_with_different_ids() {
         // Test removing different container IDs
         let pipeline = create_test_pipeline();
         let global_endpoint_manager = create_test_endpoint_manager();
-        let cache = CollectionCache::new(pipeline, global_endpoint_manager);
+        let cache = ContainerCache::new(pipeline, global_endpoint_manager);
 
         cache.remove_by_id("container1").await;
         cache.remove_by_id("container2").await;

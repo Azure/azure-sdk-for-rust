@@ -17,7 +17,6 @@ use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use crate::routing::collection_cache::CollectionCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
@@ -28,7 +27,6 @@ use azure_core::http::RetryOptions;
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
-    collection_cache: CollectionCache,
 }
 
 impl CosmosClient {
@@ -75,9 +73,6 @@ impl CosmosClient {
             pipeline_core.clone(),
         );
 
-        let collection_cache =
-            CollectionCache::new(pipeline_core.clone(), global_endpoint_manager.clone());
-
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
             pipeline_core,
@@ -87,7 +82,6 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            collection_cache,
         })
     }
 
@@ -132,9 +126,6 @@ impl CosmosClient {
             pipeline_core.clone(),
         );
 
-        let collection_cache =
-            CollectionCache::new(pipeline_core.clone(), global_endpoint_manager.clone());
-
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
             pipeline_core,
@@ -144,7 +135,6 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            collection_cache,
         })
     }
 
@@ -183,7 +173,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id, &self.collection_cache)
+        DatabaseClient::new(self.pipeline.clone(), id)
     }
 
     /// Gets the endpoint of the database account this client is connected to.
