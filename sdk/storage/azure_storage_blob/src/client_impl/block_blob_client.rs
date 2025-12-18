@@ -3,6 +3,7 @@
 
 use std::num::NonZero;
 
+use async_trait::async_trait;
 use azure_core::http::Body;
 use futures::lock::Mutex;
 use uuid::Uuid;
@@ -125,7 +126,8 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
     }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()> {
         let content_len = content.len().try_into().unwrap();
