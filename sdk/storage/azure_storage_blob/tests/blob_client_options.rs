@@ -47,8 +47,8 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
     let response = blob_client.get_properties(None).await?;
     let version_2 = response.version_id()?.unwrap();
 
-    // Download Version 1 Using with_version_id()
-    let version_1_client = blob_client.with_version_id(&version_1)?;
+    // Download Version 1 Using with_version()
+    let version_1_client = blob_client.with_version(&version_1)?;
     let download_response = version_1_client.download(None).await?;
     let (status_code, _, response_body) = download_response.deconstruct();
     assert!(status_code.is_success());
@@ -57,7 +57,7 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
     // Download Version 1 Using Options (Test query parameter replaces)
 
     // Create blob_client w/ version_2 with intention to actually download version_1 with options bag
-    let version_2_client = blob_client.with_version_id(&version_2)?;
+    let version_2_client = blob_client.with_version(&version_2)?;
     let download_options = BlobClientDownloadOptions {
         version_id: Some(version_1.clone()),
         ..Default::default()
@@ -114,10 +114,10 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
     let version_2 = response.version_id()?.unwrap();
 
     // Verify metadata matches corresponding version
-    let version_1_client = blob_client.with_version_id(&version_1)?;
+    let version_1_client = blob_client.with_version(&version_1)?;
     let props_v1 = version_1_client.get_properties(None).await?;
     assert_eq!(metadata_v1, props_v1.metadata()?);
-    let version_2_client = blob_client.with_version_id(&version_2)?;
+    let version_2_client = blob_client.with_version(&version_2)?;
     let props_v2 = version_2_client.get_properties(None).await?;
     assert_eq!(metadata_v2, props_v2.metadata()?);
     assert_ne!(version_1, version_2);
@@ -182,7 +182,7 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
     let version_2 = response.version_id()?.unwrap();
 
     // Set Tier on Version 1 (Non-Current)
-    let version_1_client = blob_client.with_version_id(&version_1)?;
+    let version_1_client = blob_client.with_version(&version_1)?;
     let set_tier_options = BlobClientSetTierOptions {
         version_id: Some(version_1.clone()),
         ..Default::default()
@@ -197,7 +197,7 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
         AccessTier::Cool.to_string(),
         props_v1.access_tier()?.unwrap()
     );
-    let version_2_client = blob_client.with_version_id(&version_2)?;
+    let version_2_client = blob_client.with_version(&version_2)?;
     let props_v2 = version_2_client.get_properties(None).await?;
     assert_eq!(
         AccessTier::Hot.to_string(),
@@ -331,7 +331,7 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     let lease_id = acquire_response.lease_id()?.unwrap();
 
     // Verify Older Version is Still Accessible Without Lease
-    let lease_version_1_client = lease_blob_client.with_version_id(&lease_version_1)?;
+    let lease_version_1_client = lease_blob_client.with_version(&lease_version_1)?;
     let props = lease_version_1_client.get_properties(None).await?;
     assert_eq!(2, props.content_length()?.unwrap());
 
@@ -375,13 +375,13 @@ async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(
     let version_2 = response.version_id()?.unwrap();
 
     // Set Legal Hold on Version 1
-    let version_1_client = blob_client.with_version_id(&version_1)?;
+    let version_1_client = blob_client.with_version(&version_1)?;
     version_1_client.set_legal_hold(true, None).await?;
     let props_v1 = version_1_client.get_properties(None).await?;
     assert!(props_v1.legal_hold()?.unwrap());
 
     // Verify Version 2 Does Not Have Legal Hold
-    let version_2_client = blob_client.with_version_id(&version_2)?;
+    let version_2_client = blob_client.with_version(&version_2)?;
     let props_v2 = version_2_client.get_properties(None).await?;
     assert!(!props_v2.legal_hold()?.unwrap_or(false));
 
@@ -437,13 +437,13 @@ async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn E
     let valid_version = response.version_id()?.unwrap();
 
     // Test: Invalid Version ID Format
-    let invalid_version_client = blob_client.with_version_id("invalid-version-id")?;
+    let invalid_version_client = blob_client.with_version("invalid-version-id")?;
     let result = invalid_version_client.get_properties(None).await;
     assert!(result.is_err());
 
     // Test: Non-Existent Version ID
     let fake_version = "2000-05-11T00:00:00.0000000Z";
-    let fake_version_client = blob_client.with_version_id(fake_version)?;
+    let fake_version_client = blob_client.with_version(fake_version)?;
     let result = fake_version_client.get_properties(None).await;
     assert!(result.is_err());
     let error = result.unwrap_err().http_status();
@@ -451,7 +451,7 @@ async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn E
 
     // Test: Delete Non-Current Version and Verify It's Gone
     create_test_blob(&blob_client, Some(RequestContent::from(b"v2".into())), None).await?;
-    let version_1_client = blob_client.with_version_id(&valid_version)?;
+    let version_1_client = blob_client.with_version(&valid_version)?;
     let delete_options = BlobClientDeleteOptions {
         version_id: Some(valid_version.clone()),
         ..Default::default()

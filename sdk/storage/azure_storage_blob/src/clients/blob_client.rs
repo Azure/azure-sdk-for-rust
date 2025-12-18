@@ -195,7 +195,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `version_id` - The version ID of the blob to target.
-    pub fn with_version_id(&self, version_id: &str) -> Result<Self> {
+    pub fn with_version(&self, version_id: &str) -> Result<Self> {
         let mut versioned_endpoint = self.client.endpoint.clone();
         {
             let mut query_builder = versioned_endpoint.query_builder();
