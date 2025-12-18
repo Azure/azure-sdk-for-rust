@@ -386,7 +386,7 @@ mod tests {
     }
 
     #[test]
-    pub fn from_vec_empty() {
+    fn from_vec_empty() {
         let keys: Vec<PartitionKeyValue> = vec![];
         let partition_key = PartitionKey::from(keys);
         assert_eq!(Vec::<PartitionKeyValue>::new(), partition_key.0);
@@ -398,14 +398,14 @@ mod tests {
     }
 
     #[test]
-    pub fn from_vec_single() {
+    fn from_vec_single() {
         let keys = vec![PartitionKeyValue::from("tenant1")];
         let partition_key = PartitionKey::from(keys);
         assert_eq!(key_to_string(partition_key), r#"["tenant1"]"#);
     }
 
     #[test]
-    pub fn from_vec_double() {
+    fn from_vec_double() {
         let keys = vec![
             PartitionKeyValue::from("tenant1"),
             PartitionKeyValue::from("region1"),
@@ -415,7 +415,7 @@ mod tests {
     }
 
     #[test]
-    pub fn from_vec_triple() {
+    fn from_vec_triple() {
         let keys = vec![
             PartitionKeyValue::from("tenant1"),
             PartitionKeyValue::from("region1"),
@@ -429,7 +429,7 @@ mod tests {
     }
 
     #[test]
-    pub fn from_vec_mixed_types() {
+    fn from_vec_mixed_types() {
         let keys = vec![
             PartitionKeyValue::from("tenant1"),
             PartitionKeyValue::from(42i64),
@@ -441,7 +441,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Partition keys can have at most 3 levels, got 4")]
-    pub fn from_vec_too_many() {
+    fn from_vec_too_many() {
         let keys = vec![
             PartitionKeyValue::from("a"),
             PartitionKeyValue::from("b"),
@@ -452,7 +452,7 @@ mod tests {
     }
 
     #[test]
-    pub fn null_value() {
+    fn null_value() {
         assert_eq!(key_to_string(PartitionKey::NULL), r#"[null]"#);
         assert_eq!(
             key_to_string((PartitionKey::NULL, PartitionKey::NULL, PartitionKey::NULL)),
