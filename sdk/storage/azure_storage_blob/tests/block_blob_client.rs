@@ -6,14 +6,24 @@ use azure_core::{
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::models::{
-    BlobClientDownloadResultHeaders, BlockBlobClientManagedUploadOptions,
-    BlockBlobClientUploadBlobFromUrlOptions, BlockListType, BlockLookupList,
+use azure_storage_blob::{
+    models::{
+        BlobClientDownloadResultHeaders, BlockBlobClientManagedUploadOptions,
+        BlockBlobClientUploadBlobFromUrlOptions, BlockListType, BlockLookupList,
+    },
+    BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+    create_test_blob, get_blob_name, get_container_client, StorageAccount, TestPolicy,
 };
-use std::{error::Error, num::NonZero};
+use std::{
+    error::Error,
+    num::NonZero,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 #[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -204,22 +214,58 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
 #[recorded::test]
 async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let stage_count = Arc::new(AtomicUsize::new(0));
+    // Pipeline policy to count stage block requests going through the pipeline through stage_count
+    let policy_count_ref = stage_count.clone();
+    let count_policy = Arc::new(TestPolicy::new(
+        Some(Arc::new(move |request| {
+            if let Some(url_query) = request.url().query() {
+                if url_query.contains("comp=block") && !url_query.contains("blocklist") {
+                    policy_count_ref.fetch_add(1, Ordering::Relaxed);
+                }
+            }
+            Ok(())
+        })),
+        None,
+    ));
+    let mut client_options = BlobContainerClientOptions::default();
+    client_options
+        .client_options
+        .per_call_policies
+        .push(count_policy.clone());
+
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(client_options),
+    )
+    .await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let block_blob_client = blob_client.block_blob_client();
 
     let data: [u8; 1024] = recording.random();
 
-    for (parallel, partition_size) in [(1, 2048), (2, 1024), (2, 512), (1, 256), (8, 31)] {
+    for (parallel, partition_size, expected_stage_block_calls) in [
+        (1, 2048, 0), // put blob expected
+        (2, 1024, 0), // put blob expected
+        (2, 512, 2),
+        (1, 256, 4),
+        (8, 31, 34),
+    ] {
+        stage_count.store(0, Ordering::Relaxed);
         let options = BlockBlobClientManagedUploadOptions {
             parallel: Some(NonZero::new(parallel).unwrap()),
             partition_size: Some(NonZero::new(partition_size).unwrap()),
             ..Default::default()
         };
-        block_blob_client
-            .managed_upload(data.to_vec().into(), Some(options))
-            .await?;
+        {
+            let _scope = count_policy.check_request_scope();
+            block_blob_client
+                .managed_upload(data.to_vec().into(), Some(options))
+                .await?;
+        }
         assert_eq!(
             blob_client
                 .download(None)
@@ -231,7 +277,14 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             "Failed parallel={},partition_size={}",
             parallel,
             partition_size
-        )
+        );
+        assert_eq!(
+            stage_count.load(Ordering::Relaxed),
+            expected_stage_block_calls,
+            "Failed parallel={},partition_size={}",
+            parallel,
+            partition_size
+        );
     }
 
     Ok(())
