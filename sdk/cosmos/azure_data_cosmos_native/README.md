@@ -252,7 +252,7 @@ The test framework automatically discovers the new test during the build process
 
 ### Available Assertion Macros
 
-The test framework provides several assertion macros in [c_tests/test_common.h](c_tests/test_common.h):
+The test framework provides several assertion macros in `c_tests/test_common.h`:
 
 - **`ASSERT(condition, message)`** - Check condition, continue on failure
 - **`REQUIRE(condition, message)`** - Check condition, goto cleanup on failure
