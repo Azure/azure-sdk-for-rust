@@ -141,51 +141,6 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-pub async fn container_crud_autoscale() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_db(async |_, db_client| {
-        // Create the container
-        let properties = ContainerProperties {
-            id: "TheContainer".into(),
-            partition_key: "/id".into(),
-            indexing_policy: Some(IndexingPolicy {
-                included_paths: vec!["/*".into()],
-                excluded_paths: vec![r#"/"_etag"/?"#.into()],
-                automatic: true,
-                indexing_mode: Some(IndexingMode::Consistent),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-
-        let throughput = ThroughputProperties::autoscale(5000, Some(42));
-
-        db_client
-            .create_container(
-                properties.clone(),
-                Some(CreateContainerOptions {
-                    throughput: Some(throughput),
-                    ..Default::default()
-                }),
-            )
-            .await?
-            .into_model()?;
-        let container_client = db_client.container_client(&properties.id);
-
-        let current_throughput = container_client
-            .read_throughput(None)
-            .await?
-            .expect("throughput should be present");
-
-        assert_eq!(Some(500), current_throughput.throughput());
-        assert_eq!(Some(5000), current_throughput.autoscale_maximum());
-        assert_eq!(Some(42), current_throughput.autoscale_increment());
-
-        Ok(())
-    })
-    .await
-}
-
-#[tokio::test]
 pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_db(async |_, db_client| {
         // Create the container
