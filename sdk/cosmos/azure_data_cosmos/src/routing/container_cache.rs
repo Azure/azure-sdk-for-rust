@@ -125,16 +125,12 @@ impl ContainerCache {
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
 
-        let location_endpoint = Some(
-            self.global_endpoint_manager
-                .resolve_service_endpoint(&cosmos_request),
-        );
-
-        if let Some(ref endpoint) = location_endpoint {
-            cosmos_request
-                .request_context
-                .route_to_location_endpoint(cosmos_request.resource_link.url(endpoint));
-        }
+        let location_endpoint = self
+            .global_endpoint_manager
+            .resolve_service_endpoint(&cosmos_request);
+        cosmos_request
+            .request_context
+            .route_to_location_endpoint(cosmos_request.resource_link.url(&location_endpoint));
 
         let ctx_owned = options
             .method_options

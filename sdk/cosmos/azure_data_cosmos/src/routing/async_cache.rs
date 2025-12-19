@@ -24,7 +24,7 @@ impl<V> CacheEntry<V> {
     }
 }
 
-/// A generic async cache with TTL support and expiration callbacks
+/// A generic async cache with TTL support.
 #[derive(Clone)]
 pub struct AsyncCache<K, V>
 where
@@ -50,8 +50,8 @@ where
 
     /// Gets a value from the cache, or computes it using the provided async function if not present or expired
     ///
-    /// When the entry is expired, the expiration callback is invoked before computing the new value.
-    /// The cache is automatically updated with the computed value.
+    /// When the entry is expired or a force_refresh is requested, the cache is automatically updated
+    /// with the newly computed value.
     ///
     /// # Arguments
     /// * `key` - The cache key to look up
@@ -93,15 +93,12 @@ where
             store.remove(&key);
         }
 
-        // Release lock while computing the new value
-        drop(store);
-
         // Compute new value
         let value = compute().await?;
 
         // Update cache with new value
         let entry = CacheEntry::new(value.clone(), self.ttl);
-        self.store.write().await.insert(key, entry);
+        store.insert(key, entry);
 
         Ok(value)
     }
