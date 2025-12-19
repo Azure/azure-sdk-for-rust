@@ -45,6 +45,13 @@ impl GeneratedBlobContainerClient {
     /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
+    ///
+    /// # Azurite Support
+    ///
+    /// When the `azurite` feature is enabled, setting the environment variable
+    /// `AZURE_STORAGE_USE_AZURITE=true` will use the well-known Azurite development
+    /// credentials with Shared Key authentication instead of the provided credential.
+    /// This is intended for local development only and allows HTTP connections.
     #[tracing::new("Storage.Blob.Container")]
     pub fn from_url(
         container_url: Url,
@@ -59,6 +66,34 @@ impl GeneratedBlobContainerClient {
             .per_call_policies
             .push(storage_headers_policy);
 
+        #[cfg(feature = "azurite")]
+        let per_retry_policies = {
+            let use_azurite = std::env::var("AZURE_STORAGE_USE_AZURITE")
+                .map(|v| v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false);
+
+            if use_azurite {
+                use crate::pipeline::SharedKeyPolicy;
+                let auth_policy: Arc<dyn Policy> = Arc::new(SharedKeyPolicy::new_azurite()?);
+                vec![auth_policy]
+            } else if let Some(token_credential) = credential {
+                if !container_url.scheme().starts_with("https") {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!("{container_url} must use https"),
+                    ));
+                }
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+                    token_credential,
+                    vec!["https://storage.azure.com/.default"],
+                ));
+                vec![auth_policy]
+            } else {
+                Vec::default()
+            }
+        };
+
+        #[cfg(not(feature = "azurite"))]
         let per_retry_policies = if let Some(token_credential) = credential {
             if !container_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
@@ -101,6 +136,42 @@ impl BlobContainerClient {
     /// * `container_name` - The name of the container.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
+    ///
+    /// # Azurite Support
+    ///
+    /// When the `azurite` feature is enabled, setting the environment variable
+    /// `AZURE_STORAGE_USE_AZURITE=true` will use the well-known Azurite development
+    /// credentials with Shared Key authentication instead of the provided credential.
+    /// This is intended for local development only and allows HTTP connections.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+    /// # use azure_identity::DefaultAzureCredential;
+    /// # use std::sync::Arc;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// // Production usage with Entra ID
+    /// let credential = Arc::new(DefaultAzureCredential::new()?);
+    /// let client = BlobContainerClient::new(
+    ///     "https://myaccount.blob.core.windows.net",
+    ///     "mycontainer",
+    ///     Some(credential),
+    ///     None,
+    /// )?;
+    ///
+    /// // Local development with Azurite (requires "azurite" feature)
+    /// // Set environment variable: AZURE_STORAGE_USE_AZURITE=true
+    /// // let client = BlobContainerClient::new(
+    /// //     "http://127.0.0.1:10000/devstoreaccount1",
+    /// //     "mycontainer",
+    /// //     None,  // credential is ignored when AZURE_STORAGE_USE_AZURITE=true
+    /// //     None,
+    /// // )?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn new(
         endpoint: &str,
         container_name: &str,

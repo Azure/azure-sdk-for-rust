@@ -15,6 +15,7 @@ categories = ["api-bindings"]
 
 [features]
 default = ["azure_core/default"]
+azurite = ["azure_core/hmac_rust"]
 
 [dependencies]
 async-trait.workspace = true
