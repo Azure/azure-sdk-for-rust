@@ -182,7 +182,7 @@ impl CosmosPipeline {
 
         // NOTE: Offers API doesn't allow Enable Content Response On Write to be false, so once we support that option, we'll need to ignore it here.
         let offer_link =
-            ResourceLink::root(ResourceType::Offers).item(&current_throughput.offer_id);
+            ResourceLink::root(ResourceType::Offers).item_by_rid(&current_throughput.offer_id);
         let mut req = Request::new(self.url(&offer_link), Method::Put);
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&current_throughput)?;
