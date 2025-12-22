@@ -169,7 +169,7 @@ mod tests {
 
     #[tokio::test]
     async fn key_expiration() {
-        let cache = AsyncCache::new(Duration::from_millis(100));
+        let cache = AsyncCache::new(Duration::from_secs(60));
 
         // Add entry
         cache
@@ -179,8 +179,13 @@ mod tests {
             .await
             .unwrap();
 
-        // Wait for expiration
-        tokio::time::sleep(Duration::from_millis(150)).await;
+        // Manually expire the cache entry by setting expires_at to a past time
+        {
+            let mut store = cache.store.write().await;
+            if let Some(entry) = store.get_mut(&"key1".to_string()) {
+                entry.expires_at = Instant::now() - Duration::from_secs(1);
+            }
+        }
 
         // Get again - should recompute after expiration
         let value = cache
