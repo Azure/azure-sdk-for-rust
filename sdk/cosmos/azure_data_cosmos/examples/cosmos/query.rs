@@ -23,7 +23,7 @@ enum Subcommands {
         /// The query to execute.
         query: String,
 
-        /// The partition key to use when querying the container. Currently this only supports a single string partition key.
+        /// The partition key to use when querying the container. Currently, this only supports a single string partition key.
         #[arg(long, short)]
         partition_key: Option<String>,
     },
