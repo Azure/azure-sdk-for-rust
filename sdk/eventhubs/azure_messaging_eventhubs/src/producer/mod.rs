@@ -3,6 +3,7 @@
 
 use crate::{
     common::{
+        authorizer::AuthorizerCredential,
         recoverable::{RecoverableConnection, RecoverableSender},
         ManagementInstance,
     },
@@ -95,7 +96,7 @@ impl ProducerClient {
     pub(crate) fn new(
         endpoint: Url,
         eventhub: String,
-        credential: Arc<dyn azure_core::credentials::TokenCredential>,
+        credential: AuthorizerCredential,
         application_id: Option<String>,
         retry_options: RetryOptions,
         custom_endpoint: Option<Url>,
@@ -442,8 +443,8 @@ impl ProducerClient {
 
 pub mod builders {
     use super::ProducerClient;
-    use crate::{Result, RetryOptions};
-    use azure_core::{http::Url, Error};
+    use crate::{common::authorizer::AuthorizerCredential, Result, RetryOptions};
+    use azure_core::{credentials::Secret, http::Url, Error};
     use std::sync::Arc;
 
     /// A builder for creating a [`ProducerClient`].
@@ -555,7 +556,50 @@ pub mod builders {
             let client = ProducerClient::new(
                 url.clone(),
                 eventhub.to_string(),
-                credential,
+                AuthorizerCredential::TokenCredential { credential },
+                self.application_id,
+                self.retry_options.unwrap_or_default(),
+                custom_endpoint,
+            );
+
+            // Open a connection to the Event Hub to ensure that the client is ready to send messages.
+            client.ensure_connection().await?;
+            Ok(client)
+        }
+
+        /// Opens the connection to the Event Hub with a SAS token.
+        ///
+        /// # Arguments
+        /// * `fully_qualified_namespace` - The fully qualified namespace of the Event Hubs instance.
+        /// * `eventhub` - The name of the Event Hub.
+        /// * `key_name` - The name of the SAS key.
+        /// * `key_value` - The value of the SAS key.
+        ///
+        /// # Returns
+        /// A new instance of [`ProducerClient`].
+        ///
+        pub async fn open_sas(
+            self,
+            fully_qualified_namespace: &str,
+            eventhub: &str,
+            key_name: String,
+            key_value: impl Into<Secret>,
+        ) -> Result<ProducerClient> {
+            let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);
+            let url = Url::parse(&url).map_err(azure_core::Error::from)?;
+
+            let custom_endpoint = match self.custom_endpoint {
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(Error::from)?),
+                None => None,
+            };
+
+            let client = ProducerClient::new(
+                url.clone(),
+                eventhub.to_string(),
+                AuthorizerCredential::SasToken {
+                    key_name,
+                    key_value: key_value.into(),
+                },
                 self.application_id,
                 self.retry_options.unwrap_or_default(),
                 custom_endpoint,
