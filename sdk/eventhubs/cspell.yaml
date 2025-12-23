@@ -1,0 +1,9 @@
+import:
+  - ../../.vscode/cspell.json
+
+overrides:
+  - filename: "**/sdk/eventhubs/azure_messaging_eventhubs/src/common/authorizer.rs"
+    words:
+      # URL encoding in unit tests
+      - Fexample
+      - Feventhub

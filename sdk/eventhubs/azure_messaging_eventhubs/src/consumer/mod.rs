@@ -6,12 +6,14 @@
 pub(crate) mod event_receiver;
 
 use crate::{
-    common::{recoverable::RecoverableConnection, ManagementInstance},
+    common::{
+        authorizer::AuthorizerCredential, recoverable::RecoverableConnection, ManagementInstance,
+    },
     error::Result,
     models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
     EventHubsError, RetryOptions,
 };
-use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
+use azure_core::{http::Url, time::Duration, Uuid};
 #[cfg(test)]
 use azure_core_amqp::AmqpError;
 use azure_core_amqp::{
@@ -79,7 +81,7 @@ impl ConsumerClient {
         fully_qualified_namespace: &str,
         eventhub_name: String,
         consumer_group: Option<String>,
-        credential: Arc<dyn TokenCredential>,
+        credential: AuthorizerCredential,
         options: ConsumerClientOptions,
     ) -> Result<Self> {
         let consumer_group = consumer_group.unwrap_or("$Default".into());
@@ -541,6 +543,8 @@ impl StartPosition {
 }
 
 pub mod builders {
+    use azure_core::credentials::Secret;
+
     use super::*;
     use crate::Result;
     use std::sync::Arc;
@@ -692,7 +696,73 @@ pub mod builders {
                 fully_qualified_namespace,
                 eventhub_name,
                 self.consumer_group,
-                credential,
+                AuthorizerCredential::TokenCredential { credential },
+                ConsumerClientOptions {
+                    application_id: self.application_id,
+                    instance_id: self.instance_id,
+                    retry_options: self.retry_options,
+                    custom_endpoint,
+                },
+            )?;
+            consumer.ensure_connection().await?;
+            Ok(consumer)
+        }
+
+        /// Opens a connection to the Event Hub using a SAS token.
+        ///
+        /// This method establishes a connection to the Event Hubs instance associated
+        /// with the [`ConsumerClientBuilder`]. It returns a `Result` indicating whether the
+        /// operation was successful or not.
+        ///
+        /// # Returns
+        ///
+        /// A `Result` indicating whether the operation was successful or not.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use azure_messaging_eventhubs::ConsumerClient;
+        /// use azure_identity::DeveloperToolsCredential;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+        ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
+        ///     let result = ConsumerClient::builder()
+        ///         .open_sas("my_namespace", "my_eventhub".to_string(), "my_token_name".to_string(), "my_token_value".to_string()).await;
+        ///
+        ///     match result {
+        ///         Ok(_connection) => {
+        ///             // Connection opened successfully
+        ///             println!("Connection opened successfully");
+        ///         }
+        ///         Err(err) => {
+        ///             // Handle the error
+        ///             eprintln!("Error opening connection: {:?}", err);
+        ///         }
+        ///     }
+        ///     Ok(())
+        /// }
+        /// ```
+        pub async fn open_sas(
+            self,
+            fully_qualified_namespace: &str,
+            eventhub_name: String,
+            key_name: String,
+            key_value: impl Into<Secret>,
+        ) -> Result<super::ConsumerClient> {
+            let custom_endpoint = match self.custom_endpoint {
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
+                None => None,
+            };
+            trace!("Opening consumer client on {fully_qualified_namespace}.");
+            let consumer = super::ConsumerClient::new(
+                fully_qualified_namespace,
+                eventhub_name,
+                self.consumer_group,
+                AuthorizerCredential::SasToken {
+                    key_name,
+                    key_value: key_value.into(),
+                },
                 ConsumerClientOptions {
                     application_id: self.application_id,
                     instance_id: self.instance_id,
