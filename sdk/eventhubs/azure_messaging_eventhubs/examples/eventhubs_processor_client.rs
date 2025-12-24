@@ -80,33 +80,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .expect("Failed to start background processor");
     println!("Started background processor");
-
-    let partition_client = processor.next_partition_client().await?;
-    println!(
-        "Received a partition client for partition : {}",
-        partition_client.get_partition_id()
-    );
-
-    let mut event_stream = partition_client.stream_events();
-    let mut event_count = 0;
-    while let Some(event) = event_stream.next().await {
-        println!("Received message {event_count}");
-        event_count += 1;
-        if event_count > 10 {
-            println!("Received 10 events, stopping the processor.");
+    let mut event_count_limit = 0;
+    while let Ok(partition_client) = processor.next_partition_client().await {
+        println!(
+            "Received a partition client for partition : {}",
+            partition_client.get_partition_id()
+        );
+        // Check event count limit before processing
+        if event_count_limit > 100 {
+            println!("Event count limit reached, stopping processor.");
             break;
         }
-        match event {
-            Ok(event) => {
-                println!("Received event: {:?}", event);
-                // Process the received event
-                println!("Partition key: {:?}", event.partition_key());
-                println!("Event offset: {:?}", event.offset());
-                println!("Event sequence number: {:?}", event.sequence_number());
+        let mut event_stream = partition_client.stream_events();
+        let mut event_count = 0;
+        while let Some(event) = event_stream.next().await {
+            println!("Received message {event_count_limit}");
+            event_count += 1;
+            event_count_limit += 1;
+            if event_count > 10 {
+                println!("Received 10 events, stopping the processor.");
+                break;
             }
-            Err(err) => {
-                // Handle the error
-                eprintln!("Error receiving event: {:?}", err);
+            match event {
+                Ok(event) => {
+                    println!("Received event: {:?}", event);
+                    // Process the received event
+                    println!("Partition key: {:?}", event.partition_key());
+                    println!("Event offset: {:?}", event.offset());
+                    println!("Event sequence number: {:?}", event.sequence_number());
+                }
+                Err(err) => {
+                    // Handle the error
+                    eprintln!("Error receiving event: {:?}", err);
+                }
             }
         }
     }
