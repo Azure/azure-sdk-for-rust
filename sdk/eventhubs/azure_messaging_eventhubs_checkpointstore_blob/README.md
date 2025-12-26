@@ -156,16 +156,14 @@ Security issues and bugs should be reported privately, via email, to the Microso
 Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-cpp/blob/main/LICENSE.txt) license.
 
 <!-- LINKS -->
-<!--[API reference documentation]: https://docs.rs/azure_messaging_eventhubs_checkpointstore_blob/latest/azure_messaging_eventhubs_checkpointstore_blob-->
-[API reference documentation]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
+[API reference documentation]: https://docs.rs/azure_messaging_eventhubs_checkpointstore_blob/latest/azure_messaging_eventhubs_checkpointstore_blob/
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [Azure subscription]: https://azure.microsoft.com/free/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
 [Product documentation]: https://learn.microsoft.com/azure/event-hubs/
 [Cargo]: https://crates.io/
-<!--[Package (crates.io)]: https://crates.io/crates/azure_messaging_eventhubs_checkpointstore_blob-->
-[Package (crates.io)]: https://crates.io/crates/azure_messaging_eventhubs
+[Package (crates.io)]: https://crates.io/crates/azure_messaging_eventhubs_checkpointstore_blob
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/src
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
