@@ -280,7 +280,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Some(Env::from(
                 &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],
@@ -363,7 +362,6 @@ To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#apc"#,
                     transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Some(Env::from(
                 &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],

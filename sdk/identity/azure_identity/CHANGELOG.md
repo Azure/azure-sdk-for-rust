@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed unused `additionally_allowed_tenants` and `disable_instance_discovery` options for `AzureCliCredential` and `ClientAssertionCredential`.
+
 ### Bugs Fixed
 
 ### Other Changes
