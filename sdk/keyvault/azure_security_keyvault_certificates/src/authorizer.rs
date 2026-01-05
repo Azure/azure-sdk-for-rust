@@ -108,9 +108,9 @@ impl OnRequest for KeyVaultAuthorizer {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl OnChallenge for KeyVaultAuthorizer {
     /// Runs when a request receives an authentication challenge.
-    ////
-    /// This function extracts authentication parameters from the challenge, restores body data
-    /// body saved by [`Self::on_request`], if any, and authorizes the request.
+    ///
+    /// This function extracts authentication parameters from the challenge, restores the body
+    /// saved by [`Self::on_request`], if any, and authorizes the request.
     async fn on_challenge(
         &self,
         context: &Context,
