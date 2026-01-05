@@ -20,6 +20,7 @@ pub enum CloudConfiguration {
     AzureChina,
 
     /// A custom cloud.
+    /// More Text
     ///
     /// # Example
     ///
