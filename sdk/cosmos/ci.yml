@@ -8,11 +8,15 @@ trigger:
     - release/*
   paths:
     include:
-    - sdk/cosmos/
+      - sdk/cosmos/
 
 parameters:
 - name: release_azure_data_cosmos
   displayName: azure_data_cosmos
+  type: boolean
+  default: false
+- name: release_azure_data_cosmos_native
+  displayName: azure_data_cosmos_native
   type: boolean
   default: false
 
@@ -23,3 +27,5 @@ extends:
     Artifacts:
     - name: azure_data_cosmos
       releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
+    - name: azure_data_cosmos_native
+      releaseInBatch: ${{ parameters.release_azure_data_cosmos_native }}

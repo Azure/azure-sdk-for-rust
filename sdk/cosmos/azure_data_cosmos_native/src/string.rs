@@ -1,6 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
+
+use crate::error::{CosmosErrorCode, Error};
+
+#[macro_export]
 macro_rules! c_str {
     ($s:expr) => {
         const {
@@ -23,4 +29,29 @@ macro_rules! c_str {
             }
         }
     };
+}
+
+// Safe CString conversion helper that handles NUL bytes gracefully
+pub fn safe_cstring_new(s: &str) -> CString {
+    CString::new(s).expect("FFI boundary strings must not contain NUL bytes")
+}
+
+pub fn parse_cstr<'a>(ptr: *const c_char, error_msg: &'static CStr) -> Result<&'a str, Error> {
+    if ptr.is_null() {
+        return Err(Error::new(CosmosErrorCode::InvalidArgument, error_msg));
+    }
+    unsafe { CStr::from_ptr(ptr) }
+        .to_str()
+        .map_err(|_| Error::new(CosmosErrorCode::InvalidArgument, error_msg))
+}
+
+/// Releases the memory associated with a C string obtained from Rust.
+#[no_mangle]
+pub extern "C" fn cosmos_string_free(str: *const c_char) {
+    if !str.is_null() {
+        tracing::trace!(?str, "freeing string");
+        unsafe {
+            drop(CString::from_raw(str as *mut c_char));
+        }
+    }
 }
