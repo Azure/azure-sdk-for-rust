@@ -6,6 +6,7 @@ mod signature_target;
 
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
+    headers::AsHeaders,
     pager::{PagerOptions, PagerState},
     request::{options::ContentType, Request},
     response::Response,
@@ -22,6 +23,7 @@ use crate::{
     constants,
     models::ThroughputProperties,
     resource_context::{ResourceLink, ResourceType},
+    CosmosClientOptions,
     FeedPage, FeedPager, Query,
 };
 
@@ -31,6 +33,7 @@ pub struct CosmosPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,
+    options: CosmosClientOptions,
 }
 
 impl CosmosPipeline {
@@ -38,12 +41,14 @@ impl CosmosPipeline {
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
         global_endpoint_manager: GlobalEndpointManager,
+        options: CosmosClientOptions
     ) -> Self {
         let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
         CosmosPipeline {
             endpoint,
             pipeline,
             retry_handler,
+            options
         }
     }
 
@@ -73,6 +78,7 @@ impl CosmosPipeline {
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
+        cosmos_request.client_headers(&self.options);
         // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
             let ctx = context.clone();
@@ -98,6 +104,18 @@ impl CosmosPipeline {
     ) -> azure_core::Result<FeedPager<T>> {
         let mut base_request = create_base_query_request(url, &query)?;
         apply_request_headers(&mut base_request)?;
+
+        // Only apply client-level headers if they aren't already present on the request.
+        // Caller-provided request headers must take precedence.
+        for (name, value) in self.options.as_headers().expect("CosmosClientOptions is infallible") {
+            let exists = base_request
+                .headers()
+                .iter()
+                .any(|(existing_name, _)| *existing_name == name);
+            if !exists {
+                base_request.insert_header(name, value);
+            }
+        }
 
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure

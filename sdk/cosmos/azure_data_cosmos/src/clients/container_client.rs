@@ -60,6 +60,7 @@ impl ContainerClient {
     /// let response = container_client.read(None)
     ///     .await?
     ///     .into_model()?;
+    /// # Ok(())
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
@@ -217,6 +218,7 @@ impl ContainerClient {
     /// container_client
     ///     .create_item("category1", p, None)
     ///     .await?;
+    /// # Ok(())
     /// # }
     /// ```
     ///
@@ -263,7 +265,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())
-            .headers(&options)
+            .request_headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
             .build()?;
@@ -349,7 +351,7 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
-            .headers(&options)
+            .request_headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
             .build()?;
@@ -436,7 +438,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
-            .headers(&options)
+            .request_headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
             .build()?;
@@ -491,7 +493,7 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let cosmos_request = CosmosRequest::builder(OperationType::Read, link)
             .partition_key(partition_key.into())
-            .headers(&options)
+            .request_headers(&options)
             .build()?;
 
         self.pipeline
@@ -530,7 +532,7 @@ impl ContainerClient {
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
-            .headers(&options)
+            .request_headers(&options)
             .build()?;
 
         self.pipeline
@@ -605,7 +607,7 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let cosmos_request = CosmosRequest::builder(OperationType::Patch, link)
             .partition_key(partition_key.into())
-            .headers(&options)
+            .request_headers(&options)
             .json(&patch)
             .build()?;
 
@@ -684,6 +686,7 @@ impl ContainerClient {
         let mut options = options.unwrap_or_default();
         let partition_key = partition_key.into();
         let query = query.into();
+        let ctx = options.method_options.context.clone();
 
         #[cfg(feature = "preview_query_engine")]
         if partition_key.is_empty() {
@@ -701,11 +704,15 @@ impl ContainerClient {
 
         let url = self.pipeline.url(&self.items_link);
         self.pipeline.send_query_request(
-            options.method_options.context,
+            ctx,
             query,
             url,
             self.items_link.clone(),
-            |r| r.insert_headers(&partition_key),
+            |r| {
+                r.insert_headers(&partition_key)?;
+                r.insert_headers(&options)?;
+                Ok(())
+            },
         )
     }
 }
