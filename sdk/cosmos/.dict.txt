@@ -16,12 +16,6 @@ upserts
 upserted
 upserting
 
-# Here at Cosmos DB, we upserts, they're the best ;)
-upsert
-upserts
-upserted
-upserting
-
 # Cosmos' docs all use "Autoscale" as a single word, rather than a compound "AutoScale" or "Auto Scale"
 autoscale
 
@@ -29,3 +23,9 @@ autoscale
 azurecosmos
 cosmosclient
 cstring
+libazurecosmos
+msvc
+winget
+makefiles
+ctest
+cmake

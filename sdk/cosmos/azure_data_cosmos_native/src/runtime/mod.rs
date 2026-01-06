@@ -19,7 +19,8 @@ use crate::error::CosmosError;
 
 #[repr(C)]
 pub struct RuntimeOptions {
-    // Reserved for future use.
+    /// Placeholder field used to avoid an empty struct (which is not valid in standard C). This field may be removed at any time.
+    _unused: u8,
 }
 
 /// Creates a new [`RuntimeContext`] for Cosmos DB Client API calls.

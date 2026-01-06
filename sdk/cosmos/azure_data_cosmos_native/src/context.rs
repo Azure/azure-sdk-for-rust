@@ -28,7 +28,6 @@ pub struct CallContextOptions {
 /// When reusing a [`CallContext`] the [`CallContext::error`] field will be overwritten with the error from the most recent call.
 /// Error details will NOT be freed if the context is reused; the caller is responsible for freeing any error details if needed.
 #[repr(C)]
-#[derive(Default)]
 pub struct CallContext {
     /// Pointer to a RuntimeContext created by [`cosmos_runtime_context_create`](crate::runtime::cosmos_runtime_context_create).
     pub runtime_context: *const RuntimeContext,
@@ -48,6 +47,19 @@ pub struct CallContext {
     /// The string associated with the error (if any) will be allocated by the SDK and must be freed
     /// by the caller using the appropriate function.
     pub error: CosmosError,
+}
+
+// Remove this manual impl and replace with #[derive(Default)] when MSRV moves to 1.88, which impls Default for raw pointers
+// See https://github.com/rust-lang/rust/pull/139535
+impl Default for CallContext {
+    fn default() -> Self {
+        // Make sure the default is the same as all-zeros, which is what the caller might produce if they initialize with zeroed memory.
+        Self {
+            runtime_context: std::ptr::null(),
+            include_error_details: false,
+            error: CosmosError::default(),
+        }
+    }
 }
 
 /// Creates a new [`CallContext`] and returns a pointer to it.

@@ -8,11 +8,11 @@ use azure_core::credentials::Secret;
 use azure_data_cosmos::{clients::DatabaseClient, query::Query, CosmosClient, QueryOptions};
 use futures::TryStreamExt;
 
-use crate::context::CallContext;
 use crate::error::{self, CosmosErrorCode, Error};
 use crate::options::{ClientOptions, CreateDatabaseOptions};
 use crate::string::parse_cstr;
 use crate::unwrap_required_ptr;
+use crate::{context::CallContext, convert_optional_ptr};
 
 /// Creates a new CosmosClient and returns a pointer to it via the out parameter.
 ///
@@ -42,7 +42,52 @@ pub extern "C" fn cosmos_client_create_with_key(
     context!(ctx).run_sync_with_output(out_client, || {
         let endpoint = parse_cstr(endpoint, error::messages::INVALID_ENDPOINT)?;
         let key = parse_cstr(key, error::messages::INVALID_KEY)?.to_string();
-        let client = azure_data_cosmos::CosmosClient::with_key(endpoint, Secret::new(key), None)?;
+        let options = convert_optional_ptr(options)?;
+
+        let client =
+            azure_data_cosmos::CosmosClient::with_key(endpoint, Secret::new(key), options)?;
+
+        Ok(Box::new(client))
+    })
+}
+
+/// Creates a new CosmosClient using a connection string and returns a pointer to it via the out parameter.
+///
+/// # Arguments
+/// * `ctx` - Pointer to a [`CallContext`] to use for this call.
+/// * `connection_string` - The Cosmos DB connection string, as a nul-terminated C string.
+///                         Can be "emulator" to use the well-known emulator endpoint and key,
+///                         or a full connection string in the format:
+///                         `AccountEndpoint=https://...;AccountKey=...;`
+/// * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
+/// * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
+///
+/// # Returns
+/// * Returns [`CosmosErrorCode::Success`] on success.
+/// * Returns [`CosmosErrorCode::InvalidArgument`] if any input pointer is null or if the input string is invalid.
+#[no_mangle]
+#[tracing::instrument(level = "debug", skip_all, fields(ctx = ?ctx))]
+pub extern "C" fn cosmos_client_create_with_connection_string(
+    ctx: *mut CallContext,
+    connection_string: *const c_char,
+    #[allow(
+        unused_variables,
+        reason = "options parameter is reserved for future use, and prefixing with '_' appears in docs"
+    )]
+    options: *const ClientOptions,
+    out_client: *mut *mut CosmosClient,
+) -> CosmosErrorCode {
+    context!(ctx).run_sync_with_output(out_client, || {
+        let connection_string_str = parse_cstr(
+            connection_string,
+            error::messages::INVALID_CONNECTION_STRING,
+        )?;
+        let options = convert_optional_ptr(options)?;
+
+        let client = azure_data_cosmos::CosmosClient::with_connection_string(
+            Secret::new(connection_string_str.to_string()),
+            options,
+        )?;
 
         Ok(Box::new(client))
     })
