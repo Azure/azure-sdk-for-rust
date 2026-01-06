@@ -13,6 +13,7 @@ use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::sync::Arc;
 use url::Url;
+use crate::constants;
 
 /// An integer indicating the default retry intervals between two retry attempts.
 const RETRY_INTERVAL_MS: i64 = 1000;
@@ -137,6 +138,12 @@ impl ClientRetryPolicy {
                     request.resource_type,
                     request.operation_type,
                 );
+
+        if self.is_multi_master_write_request {
+           request.headers.insert(constants::ALLOW_TENTATIVE_WRITES, "true");
+        } else {
+           request.headers.remove(constants::ALLOW_TENTATIVE_WRITES);
+        }
 
         // Clear previous location-based routing directive
         request.request_context.clear_route_to_location();

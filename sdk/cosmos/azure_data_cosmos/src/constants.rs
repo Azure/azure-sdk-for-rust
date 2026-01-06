@@ -38,6 +38,9 @@ pub const INDEXING_DIRECTIVE: HeaderName = HeaderName::from_static("x-ms-indexin
 pub const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
 pub const THROUGHPUT_BUCKET: HeaderName = HeaderName::from_static("x-ms-cosmos-throughput-bucket");
 pub const PRIORITY_LEVEL: HeaderName = HeaderName::from_static("x-ms-cosmos-priority-level");
+// Used to allow tentative writes in multi-write accounts.
+pub const ALLOW_TENTATIVE_WRITES: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-allow-tentative-writes");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 
