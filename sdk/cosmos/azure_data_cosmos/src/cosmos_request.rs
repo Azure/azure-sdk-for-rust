@@ -389,7 +389,7 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::Session),
             throughput_bucket: Some(1),
             priority: Some(PriorityLevel::Low),
-            additional_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
             ..Default::default()
         };
         let req = CosmosRequest::builder(
@@ -407,7 +407,7 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::Strong),
             throughput_bucket: Some(5),
             priority: Some(PriorityLevel::High),
-            additional_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value-2"))],
+            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value-2"))],
             ..Default::default()
         };
         req_with_client_headers.client_headers(&client_options);

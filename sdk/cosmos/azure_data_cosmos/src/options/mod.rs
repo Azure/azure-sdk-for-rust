@@ -44,7 +44,7 @@ pub struct CosmosClientOptions {
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
     /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    pub additional_headers: Vec<(HeaderName, HeaderValue)>,
+    pub custom_headers: Vec<(HeaderName, HeaderValue)>,
 }
 
 impl AsHeaders for CosmosClientOptions {
@@ -74,12 +74,8 @@ impl AsHeaders for CosmosClientOptions {
                 throughput_bucket.to_string().into(),
             ));
         }
-
-        if !self.additional_headers.is_empty() {
-            for (name, value) in &self.additional_headers {
-                headers.push((name.clone(), value.clone()));
-            }
-        }
+        
+        add_custom_headers(&mut headers, &self.custom_headers);
 
         Ok(headers.into_iter())
     }
@@ -241,7 +237,7 @@ pub struct ItemOptions<'a> {
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
     /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    pub additional_headers: Vec<(HeaderName, HeaderValue)>,
+    pub custom_headers: Vec<(HeaderName, HeaderValue)>,
 }
 
 impl AsHeaders for ItemOptions<'_> {
@@ -305,13 +301,21 @@ impl AsHeaders for ItemOptions<'_> {
             headers.push((headers::PREFER, constants::PREFER_MINIMAL));
         }
 
-        if !self.additional_headers.is_empty() {
-            for (name, value) in &self.additional_headers {
-                headers.push((name.clone(), value.clone()));
-            }
-        }
+        add_custom_headers(&mut headers, &self.custom_headers);
 
         Ok(headers.into_iter())
+    }
+}
+
+fn add_custom_headers(
+    headers: &mut Vec<(HeaderName, HeaderValue)>,
+    additional_headers: &[(HeaderName, HeaderValue)],
+) {
+    // custom headers should not override existing headers
+    for (name, value) in additional_headers {
+        if !headers.iter().any(|(existing_name, _)| existing_name == name) {
+            headers.push((name.clone(), value.clone()));
+        }
     }
 }
 
@@ -362,7 +366,7 @@ pub struct QueryOptions<'a> {
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
     /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    pub additional_headers: Vec<(HeaderName, HeaderValue)>
+    pub custom_headers: Vec<(HeaderName, HeaderValue)>
 }
 
 impl QueryOptions<'_> {
@@ -377,7 +381,7 @@ impl QueryOptions<'_> {
             consistency_level: self.consistency_level,
             throughput_bucket: self.throughput_bucket,
             priority: self.priority,
-            additional_headers: self.additional_headers,
+            custom_headers: self.custom_headers,
         }
     }
 }
@@ -413,12 +417,8 @@ impl AsHeaders for QueryOptions<'_> {
                 throughput_bucket.to_string().into(),
             ));
         }
-
-        if !self.additional_headers.is_empty() {
-            for (name, value) in &self.additional_headers {
-                headers.push((name.clone(), value.clone()));
-            }
-        }
+        
+        add_custom_headers(&mut headers, &self.custom_headers);
 
         Ok(headers.into_iter())
     }
@@ -458,7 +458,7 @@ mod tests {
             enable_content_response_on_write: false,
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(2),
-            additional_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
             ..Default::default()
         };
 
@@ -493,7 +493,7 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::Eventual),
             throughput_bucket: Some(5),
             priority: Some(PriorityLevel::Low),
-            additional_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
             ..Default::default()
         };
 
@@ -517,7 +517,7 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::BoundedStaleness),
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(10),
-            additional_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
             ..Default::default()
         };
         let headers_result: Vec<(HeaderName, HeaderValue)> =

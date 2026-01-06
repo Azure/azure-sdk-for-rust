@@ -60,7 +60,6 @@ impl ContainerClient {
     /// let response = container_client.read(None)
     ///     .await?
     ///     .into_model()?;
-    /// # Ok(())
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
@@ -218,7 +217,6 @@ impl ContainerClient {
     /// container_client
     ///     .create_item("category1", p, None)
     ///     .await?;
-    /// # Ok(())
     /// # }
     /// ```
     ///
