@@ -40,10 +40,12 @@ pub struct CosmosClientOptions {
     ///
     /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
     pub priority: Option<PriorityLevel>,
-    /// Additional headers to be included in each request. This allows for custom headers beyond those natively supported.
+    /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
-    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
-    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
+    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
+    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
+    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
+    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     pub custom_headers: Vec<(HeaderName, HeaderValue)>,
 }
 
@@ -74,7 +76,6 @@ impl AsHeaders for CosmosClientOptions {
                 throughput_bucket.to_string().into(),
             ));
         }
-        
         add_custom_headers(&mut headers, &self.custom_headers);
 
         Ok(headers.into_iter())
@@ -224,7 +225,7 @@ pub struct ItemOptions<'a> {
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
     pub enable_content_response_on_write: bool,
-    /// The desired throughput bucket for the client
+    /// The desired throughput bucket for this request
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
     pub throughput_bucket: Option<i32>,
@@ -233,10 +234,12 @@ pub struct ItemOptions<'a> {
     ///
     /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
     pub priority: Option<PriorityLevel>,
-    /// Additional headers to be included in the item request. This allows for custom headers beyond those natively supported.
+    /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
-    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
-    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
+    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
+    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
+    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
+    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     pub custom_headers: Vec<(HeaderName, HeaderValue)>,
 }
 
@@ -353,7 +356,7 @@ pub struct QueryOptions<'a> {
     /// The default value is the consistency level set on the Cosmos DB account.
     /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
     pub consistency_level: Option<ConsistencyLevel>,
-    /// The desired throughput bucket for the client
+    /// The desired throughput bucket for this query operation
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
     pub throughput_bucket: Option<i32>,
@@ -364,8 +367,10 @@ pub struct QueryOptions<'a> {
     pub priority: Option<PriorityLevel>,
     /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
-    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
-    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache" - See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
+    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
+    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
+    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
+    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     pub custom_headers: Vec<(HeaderName, HeaderValue)>
 }
 
@@ -417,7 +422,6 @@ impl AsHeaders for QueryOptions<'_> {
                 throughput_bucket.to_string().into(),
             ));
         }
-        
         add_custom_headers(&mut headers, &self.custom_headers);
 
         Ok(headers.into_iter())
