@@ -65,14 +65,59 @@ foreach ($package in $packagesToTest) {
 
     Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-    Invoke-LoggedCommand "cargo build --keep-going $featuresArg" -GroupOutput
-    Write-Host "`n`n"
+    if ($package.Name -eq "azure_data_cosmos_native") {
+      Write-Host "Detected native C package; running CMake-based tests"
 
-    Invoke-LoggedCommand "cargo test --doc --no-fail-fast $featuresArg" -GroupOutput
-    Write-Host "`n`n"
+      $cmakeLists = Join-Path $packageDirectory "CMakeLists.txt"
+      if (!(Test-Path $cmakeLists)) {
+        Write-Error "CMakeLists.txt not found in '$packageDirectory'. Cannot run native tests."
+        exit 1
+      }
 
-    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast $featuresArg" -GroupOutput
-    Write-Host "`n`n"
+      $buildDir = Join-Path $packageDirectory "build"
+      if (!(Test-Path $buildDir)) {
+        New-Item -ItemType Directory -Path $buildDir | Out-Null
+      }
+
+      Push-Location $buildDir
+      try {
+        # Configure
+        Invoke-LoggedCommand "cmake .." -GroupOutput
+        Write-Host "`n`n"
+
+        # Build and run tests (handle single vs multi-config generators)
+        if ($IsWindows) {
+          $config = $env:BUILD_CONFIGURATION
+          if (-not $config) { $config = "Debug" }
+
+          Invoke-LoggedCommand "cmake --build . --config $config" -GroupOutput
+          Write-Host "`n`n"
+
+          Invoke-LoggedCommand "ctest -C $config --output-on-failure" -GroupOutput
+          Write-Host "`n`n"
+        }
+        else {
+          Invoke-LoggedCommand "cmake --build ." -GroupOutput
+          Write-Host "`n`n"
+
+          Invoke-LoggedCommand "ctest --output-on-failure" -GroupOutput
+          Write-Host "`n`n"
+        }
+      }
+      finally {
+        Pop-Location
+      }
+    }
+    else {
+      Invoke-LoggedCommand "cargo build --keep-going $featuresArg" -GroupOutput
+      Write-Host "`n`n"
+
+      Invoke-LoggedCommand "cargo test --doc --no-fail-fast $featuresArg" -GroupOutput
+      Write-Host "`n`n"
+
+      Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast $featuresArg" -GroupOutput
+      Write-Host "`n`n"
+    }
 
     $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
     if (Test-Path $cleanupScript) {
