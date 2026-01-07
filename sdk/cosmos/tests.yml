@@ -1,0 +1,16 @@
+trigger: none
+
+extends:
+  template: /eng/pipelines/templates/stages/archetype-sdk-tests.yml
+  parameters:
+    CloudConfig:
+      Public:
+        ServiceConnection: azure-sdk-tests-cosmos
+    MatrixConfigs:
+      - Name: Cosmos_live_test
+        Path: sdk/cosmos/live-platform-matrix.json
+        Selection: all
+        GenerateVMJobs: true
+    MaxParallel: 8
+    BuildTargetingString: azure_data_cosmos
+    ServiceDirectory: cosmos
