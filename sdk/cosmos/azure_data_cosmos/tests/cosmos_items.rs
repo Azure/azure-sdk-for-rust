@@ -48,10 +48,10 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
         let container_client = create_container(run_context).await?;
 
-        // Create an item
+        // Create an item with @ in both ID and partition key
         let mut item = TestItem {
-            id: "Item1".into(),
-            partition_key: Some("Partition1".into()),
+            id: "Item@1".into(),
+            partition_key: Some("Partition@1".into()),
             value: 42,
             nested: NestedItem {
                 nested_value: "Nested".into(),
@@ -60,14 +60,14 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
         };
 
         let response = container_client
-            .create_item("Partition1", &item, None)
+            .create_item("Partition@1", &item, None)
             .await?;
         let body = response.into_body().into_string()?;
         assert_eq!("", body);
 
         // Try to read the item
         let read_item: TestItem = container_client
-            .read_item("Partition1", "Item1", None)
+            .read_item("Partition@1", "Item@1", None)
             .await?
             .into_model()?;
         assert_eq!(item, read_item);
@@ -77,7 +77,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
         item.nested.nested_value = "Updated".into();
 
         let response = container_client
-            .replace_item("Partition1", "Item1", &item, None)
+            .replace_item("Partition@1", "Item@1", &item, None)
             .await?;
         let body = response.into_body().into_string()?;
         assert_eq!("", body);
@@ -87,8 +87,8 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
         item.nested.nested_value = "UpdatedAgain".into();
         let updated_item: TestItem = container_client
             .replace_item(
-                "Partition1",
-                "Item1",
+                "Partition@1",
+                "Item@1",
                 &item,
                 Some(ItemOptions {
                     enable_content_response_on_write: true,
@@ -102,14 +102,14 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 
         // Delete the item
         let response = container_client
-            .delete_item("Partition1", "Item1", None)
+            .delete_item("Partition@1", "Item@1", None)
             .await?;
         let body = response.into_body().into_string()?;
         assert_eq!("", body);
 
         // Try to read the item again, expecting a 404
         let result = container_client
-            .read_item::<TestItem>("Partition1", "Item1", None)
+            .read_item::<TestItem>("Partition@1", "Item@1", None)
             .await;
         match result {
             Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
