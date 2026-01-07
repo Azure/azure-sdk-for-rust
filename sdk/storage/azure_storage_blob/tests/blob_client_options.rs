@@ -24,7 +24,8 @@ use std::{collections::HashMap, error::Error, time::Duration};
 async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Versioned).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Create Multiple Versions
@@ -89,7 +90,8 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
 async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Versioned).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Create Version 1 with Metadata
@@ -159,7 +161,8 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
 async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Versioned).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Create Version 1 in Hot Tier
@@ -220,7 +223,8 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
 async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Versioned).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
 
     // Create Blob 1 with Multiple Versions
     let blob_1_name = get_blob_name(recording);
@@ -288,7 +292,8 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
 async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Versioned).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
     let source_blob_name = format!("{}-source", get_blob_name(recording));
     let source_blob_client = container_client.blob_client(&source_blob_name);
 
@@ -357,7 +362,7 @@ async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
-        get_container_client(recording, false, StorageAccount::Versioned).await?;
+        get_container_client(recording, false, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     container_client.create_container(None).await?;
 
@@ -428,7 +433,8 @@ async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(
 async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Versioned).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Create a Blob with One Version
@@ -472,7 +478,8 @@ async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn E
 async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data_v1 = b"snapshot version 1";
 
@@ -550,7 +557,8 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
 async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Create Blob with Metadata
@@ -609,7 +617,8 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
 async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
     // Create Blob 1 with Multiple Snapshots
     let blob_1_name = get_blob_name(recording);
@@ -678,7 +687,8 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
 async fn test_blob_snapshot_delete_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
@@ -742,7 +752,8 @@ async fn test_blob_snapshot_delete_operations(ctx: TestContext) -> Result<(), Bo
 async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_name = get_blob_name(recording);
     let blob_client = container_client.blob_client(&blob_name);
     create_test_blob(&blob_client, None, None).await?;
@@ -797,7 +808,8 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
 async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true, StorageAccount::Standard).await?;
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Test Snapshot Non-Existent Blob Fails
