@@ -27,6 +27,7 @@ use azure_core::http::RetryOptions;
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<CosmosPipeline>,
+    global_endpoint_manager: GlobalEndpointManager,
 }
 
 impl CosmosClient {
@@ -76,12 +77,13 @@ impl CosmosClient {
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint.parse()?,
             pipeline_core,
-            global_endpoint_manager,
+            global_endpoint_manager.clone(),
         ));
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            global_endpoint_manager,
         })
     }
 
@@ -135,6 +137,7 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            global_endpoint_manager,
         })
     }
 
@@ -173,7 +176,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id)
+        DatabaseClient::new(self.pipeline.clone(), id, self.global_endpoint_manager.clone())
     }
 
     /// Gets the endpoint of the database account this client is connected to.
