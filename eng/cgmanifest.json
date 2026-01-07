@@ -5,7 +5,7 @@
     {
       "component": {
         "type": "cargo",
-        "cargo": { "name": "cargo2junit", "version": "0.1.14" }
+        "cargo": { "name": "cargo2junit", "version": "0.1.15" }
       }
     },
     {
