@@ -22,9 +22,9 @@ parameters:
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
-  RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
   parameters:
     ServiceDirectory: cosmos
+    RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
     Artifacts:
     - name: azure_data_cosmos
       releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
