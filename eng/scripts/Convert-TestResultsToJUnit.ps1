@@ -69,7 +69,7 @@ foreach ($jsonFile in $jsonFiles) {
   Write-Host "  Converting: $($jsonFile.Name) -> $([System.IO.Path]::GetFileName($junitFile))"
   Get-Content $jsonFile.FullName | cargo2junit > $junitFile
   if ($LASTEXITCODE) {
-    LogError "Failed to convert $($jsonFile.Name) to JUnit XML."
+    LogError "Failure during conversion of $($jsonFile.Name) to JUnit XML."
     $succeeded = $false
   }
 }
