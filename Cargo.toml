@@ -41,32 +41,32 @@ rust-version = "1.85"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/core/typespec"
-version = "0.10.0"
+version = "0.11.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/core/typespec_client_core"
-version = "0.9.0"
+version = "0.10.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.9.0"
+version = "0.10.0"
 path = "sdk/core/typespec_macros"
 
 [workspace.dependencies.azure_core]
 default-features = false
-version = "0.30.0"
+version = "0.31.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_macros]
-version = "0.4.0"
+version = "0.5.0"
 path = "sdk/core/azure_core_macros"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.9.0"
+version = "0.10.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_messaging_eventhubs]
-version = "0.9.0"
+version = "0.10.0"
 path = "sdk/eventhubs/azure_messaging_eventhubs"
 
 [workspace.dependencies.azure_core_opentelemetry]
@@ -87,7 +87,7 @@ path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
-version = "0.7.0"
+version = "0.8.0"
 
 [workspace.dependencies]
 async-lock = "3.0"
@@ -109,7 +109,7 @@ futures = "0.3"
 getrandom = { version = "0.3" }
 gloo-timers = { version = "0.3" }
 hmac = { version = "0.12" }
-litemap = "0.7.4"
+include-file = { version = "0.5.1", default-features = false }
 openssl = { version = "0.10.72" }
 opentelemetry = { version = "0.30", features = ["trace"] }
 opentelemetry_sdk = "0.30"
@@ -150,7 +150,6 @@ url = "2.2"
 uuid = { version = "1.18", features = ["v4"] }
 wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
-zerofrom = "0.1.5"
 zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]

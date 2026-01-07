@@ -3,10 +3,9 @@
 
 use super::recoverable::RecoverableConnection;
 use crate::{
-    error::{ErrorKind, EventHubsError},
+    error::{ErrorKind, EventHubsError, Result},
     models::{EventHubPartitionProperties, EventHubProperties},
 };
-use azure_core::error::Result;
 use azure_core_amqp::{
     AmqpManagementApis, AmqpOrderedMap, AmqpSimpleValue, AmqpTimestamp, AmqpValue,
 };
@@ -62,12 +61,11 @@ impl ManagementInstance {
         let response = self
             .recoverable_connection
             .get_management_client()
-            .await?
             .call(EVENTHUB_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 
         if !response.contains_key(EVENTHUB_PROPERTY_PARTITION_COUNT) {
-            return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into());
+            return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse));
         }
         let name: String = response
             .get(EVENTHUB_PROPERTY_NAME)
@@ -90,10 +88,10 @@ impl ManagementInstance {
                 .iter()
                 .map(|id| match id {
                     AmqpValue::String(id) => Ok(id.clone()),
-                    _ => Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into()),
+                    _ => Err(EventHubsError::from(ErrorKind::InvalidManagementResponse)),
                 })
                 .collect::<Result<Vec<String>>>()?,
-            _ => return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into()),
+            _ => return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse)),
         };
         Ok(EventHubProperties {
             name,
@@ -115,7 +113,6 @@ impl ManagementInstance {
         let response = self
             .recoverable_connection
             .get_management_client()
-            .await?
             .call(PARTITION_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 
@@ -124,7 +121,7 @@ impl ManagementInstance {
             || !response
                 .contains_key(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER_EPOCH)
         {
-            return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into());
+            return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse));
         }
 
         Ok(EventHubPartitionProperties {

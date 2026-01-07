@@ -46,8 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Instantiate a blob client with OpenTelemetry instrumentation enabled
     let blob_container_client = BlobContainerClient::new(
         &storage_account_url,
-        container,
-        credential,
+        &container,
+        Some(credential),
         Some(BlobContainerClientOptions {
             client_options: ClientOptions {
                 instrumentation: InstrumentationOptions {

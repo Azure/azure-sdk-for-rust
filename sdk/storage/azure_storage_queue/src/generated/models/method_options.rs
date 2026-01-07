@@ -6,16 +6,13 @@
 use super::{ListQueuesIncludeType, QueueMessage};
 use azure_core::{
     fmt::SafeDebug,
-    http::{ClientMethodOptions, RequestContent, XmlFormat},
+    http::{pager::PagerOptions, ClientMethodOptions, RequestContent, XmlFormat},
 };
 use std::collections::HashMap;
 
 /// Options to be passed to `QueueClient::clear()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientClearOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -23,9 +20,6 @@ pub struct QueueClientClearOptions<'a> {
 /// Options to be passed to `QueueClient::create()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientCreateOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// The metadata headers.
     pub metadata: Option<HashMap<String, String>>,
 
@@ -39,9 +33,6 @@ pub struct QueueClientCreateOptions<'a> {
 /// Options to be passed to `QueueClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientDeleteOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// The metadata headers.
     pub metadata: Option<HashMap<String, String>>,
 
@@ -55,9 +46,6 @@ pub struct QueueClientDeleteOptions<'a> {
 /// Options to be passed to `QueueClient::delete_message()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientDeleteMessageOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -65,9 +53,6 @@ pub struct QueueClientDeleteMessageOptions<'a> {
 /// Options to be passed to `QueueClient::get_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientGetAccessPolicyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -78,9 +63,6 @@ pub struct QueueClientGetAccessPolicyOptions<'a> {
 /// Options to be passed to `QueueClient::get_metadata()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientGetMetadataOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -91,9 +73,6 @@ pub struct QueueClientGetMetadataOptions<'a> {
 /// Options to be passed to `QueueClient::peek_messages()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientPeekMessagesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -107,9 +86,6 @@ pub struct QueueClientPeekMessagesOptions<'a> {
 /// Options to be passed to `QueueClient::receive_messages()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientReceiveMessagesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -132,9 +108,6 @@ pub struct QueueClientReceiveMessagesOptions<'a> {
 /// Options to be passed to `QueueClient::send_message()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientSendMessageOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Optional. Specifies the time-to-live interval for the message, in seconds.
     /// Prior to version 2017-07-29, the maximum time-to-live allowed is 7 days. For
     /// version 2017-07-29 or later, the maximum time-to-live can be any positive
@@ -155,9 +128,6 @@ pub struct QueueClientSendMessageOptions<'a> {
 /// Options to be passed to `QueueClient::set_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientSetAccessPolicyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -168,9 +138,6 @@ pub struct QueueClientSetAccessPolicyOptions<'a> {
 /// Options to be passed to `QueueClient::set_metadata()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientSetMetadataOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -181,9 +148,6 @@ pub struct QueueClientSetMetadataOptions<'a> {
 /// Options to be passed to `QueueClient::update()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientUpdateOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -194,9 +158,6 @@ pub struct QueueClientUpdateOptions<'a> {
 /// Options to be passed to `QueueServiceClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientGetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -207,9 +168,6 @@ pub struct QueueServiceClientGetPropertiesOptions<'a> {
 /// Options to be passed to `QueueServiceClient::get_statistics()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientGetStatisticsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -220,9 +178,6 @@ pub struct QueueServiceClientGetStatisticsOptions<'a> {
 /// Options to be passed to `QueueServiceClient::list_queues()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientListQueuesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Include this parameter to specify that the queue's metadata be returned as part of the response body.
     pub include: Option<Vec<ListQueuesIncludeType>>,
 
@@ -237,7 +192,7 @@ pub struct QueueServiceClientListQueuesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a, String>,
 
     /// Filters the results to return only queues whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -250,12 +205,12 @@ impl QueueServiceClientListQueuesOptions<'_> {
     /// Transforms this [`QueueServiceClientListQueuesOptions`] into a new `QueueServiceClientListQueuesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> QueueServiceClientListQueuesOptions<'static> {
         QueueServiceClientListQueuesOptions {
-            client_request_id: self.client_request_id,
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
+            method_options: PagerOptions {
                 context: self.method_options.context.into_owned(),
+                ..self.method_options
             },
             prefix: self.prefix,
             timeout: self.timeout,
@@ -266,9 +221,6 @@ impl QueueServiceClientListQueuesOptions<'_> {
 /// Options to be passed to `QueueServiceClient::set_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientSetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 

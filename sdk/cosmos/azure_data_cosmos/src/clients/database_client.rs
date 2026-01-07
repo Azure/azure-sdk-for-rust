@@ -10,12 +10,11 @@ use crate::{
     CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
     ThroughputOptions,
 };
+use std::sync::Arc;
 
-use azure_core::http::{
-    request::{options::ContentType, Request},
-    response::Response,
-    Method,
-};
+use crate::cosmos_request::CosmosRequest;
+use crate::operation_context::OperationType;
+use azure_core::http::response::Response;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -24,11 +23,11 @@ pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
     database_id: String,
-    pipeline: CosmosPipeline,
+    pipeline: Arc<CosmosPipeline>,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, database_id: &str) -> Self {
+    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
@@ -68,18 +67,19 @@ impl DatabaseClient {
     /// # let database_client: DatabaseClient = panic!("this is a non-running example");
     /// let response = database_client.read(None)
     ///     .await?
-    ///     .into_body()?;
+    ///     .into_model()?;
     /// # }
     /// ```
+    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Get);
+        let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
+
         self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+            .send(cosmos_request?, options.method_options.context)
             .await
     }
 
@@ -106,6 +106,7 @@ impl DatabaseClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     pub fn query_containers(
         &self,
         query: impl Into<Query>,
@@ -130,24 +131,21 @@ impl DatabaseClient {
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     pub async fn create_container(
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.containers_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options.throughput)?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&properties)?;
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
+                .headers(&options.throughput)
+                .json(&properties)
+                .build()?;
 
         self.pipeline
-            .send(
-                options.method_options.context,
-                &mut req,
-                self.containers_link.clone(),
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 
@@ -157,15 +155,16 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Delete);
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
         self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+            .send(cosmos_request?, options.method_options.context)
             .await
     }
 
@@ -175,14 +174,15 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions<'_>>,
-    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+    ) -> azure_core::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body()?;
+        let db = self.read(None).await?.into_model()?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -198,6 +198,7 @@ impl DatabaseClient {
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
@@ -206,7 +207,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body()?;
+        let db = self.read(None).await?.into_model()?;
         let resource_id = db
             .system_properties
             .resource_id

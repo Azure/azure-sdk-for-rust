@@ -112,7 +112,7 @@ fn test_perf_runner_new_with_empty_tests() {
     assert_eq!(runner.options.parallel, 1);
     assert_eq!(runner.options.duration, Duration::seconds(30));
     assert_eq!(runner.options.warmup, Duration::seconds(5));
-    assert_eq!(runner.options.test_results_filename, "./tests/results.json");
+    assert_eq!(runner.options.test_results_filename, "./results.json");
     assert!(!runner.options.no_cleanup);
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.29.0"
+version = "0.30.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -20,10 +20,11 @@ futures.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 tracing.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
+async-lock.workspace = true
 
 [dev-dependencies]
+uuid.workspace = true
 azure_identity.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 clap.workspace = true

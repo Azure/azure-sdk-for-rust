@@ -1,14 +1,27 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
 
 ### Features Added
 
+- Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+
 ### Breaking Changes
+
+- Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.9.0 (2025-11-10)
+
+### Breaking Changes
+
+- `SecretClientListDeletedSecretPropertiesOptions::method_options` is now `PagerOptions`.
+- `SecretClientListSecretPropertiesOptions::method_options` is now `PagerOptions`.
+- `SecretClientListSecretPropertiesVersionsOptions::method_options` is now `PagerOptions`.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 
 ## 0.8.0 (2025-10-07)
 

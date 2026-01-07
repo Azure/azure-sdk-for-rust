@@ -74,7 +74,7 @@ use crate::constants;
 /// let partition_key_1 = PartitionKey::from("simple_string");
 /// let partition_key_2 = PartitionKey::from(("parent", "child", 42));
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
 impl PartitionKey {
@@ -295,7 +295,7 @@ impl_from_tuple!(0 A 1 B 2 C);
 #[cfg(test)]
 mod tests {
     use crate::{constants, PartitionKey, PartitionKeyValue};
-    use typespec_client_core::http::headers::AsHeaders;
+    use azure_core::http::headers::AsHeaders;
 
     fn key_to_string(v: impl Into<PartitionKey>) -> String {
         let key = v.into();

@@ -1,5 +1,11 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+#![allow(dead_code)]
+
 use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
+use std::sync::Arc;
 
 use crate::{
     constants,
@@ -10,7 +16,7 @@ use crate::{
 };
 
 pub struct QueryExecutor<T: DeserializeOwned> {
-    http_pipeline: CosmosPipeline,
+    http_pipeline: Arc<CosmosPipeline>,
     container_link: ResourceLink,
     items_link: ResourceLink,
     context: Context<'static>,
@@ -29,13 +35,13 @@ pub struct QueryExecutor<T: DeserializeOwned> {
 
 impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub fn new(
-        http_pipeline: CosmosPipeline,
+        http_pipeline: Arc<CosmosPipeline>,
         container_link: ResourceLink,
         query: Query,
         options: QueryOptions<'_>,
         query_engine: QueryEngineRef,
     ) -> azure_core::Result<Self> {
-        let items_link = container_link.feed(ResourceType::Items);
+        let items_link = container_link.feed(ResourceType::Documents);
         let context = options.method_options.context.into_owned();
         Ok(Self {
             http_pipeline,
@@ -51,13 +57,14 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     }
 
     pub fn into_stream(self) -> azure_core::Result<FeedPager<T>> {
-        Ok(FeedPager::from_stream(futures::stream::try_unfold(
-            self,
-            |mut state| async move {
-                let val = state.step().await?;
-                Ok(val.map(|item| (item, state)))
-            },
-        )))
+        // Ok(FeedPager::from_stream(futures::stream::try_unfold(
+        //     self,
+        //     |mut state| async move {
+        //         let val = state.step().await?;
+        //         Ok(val.map(|item| (item, state)))
+        //     },
+        // )))
+        unimplemented!("See https://github.com/Azure/azure-sdk-for-rust/issues/3413")
     }
 
     /// Executes a single step of the query execution.
@@ -67,13 +74,8 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     /// An item to yield, or None if execution is complete.
     #[tracing::instrument(skip_all)]
     async fn step(&mut self) -> azure_core::Result<Option<FeedPage<T>>> {
-        let (pipeline, base_request) = match self.pipeline.as_mut() {
-            Some(pipeline) => (
-                pipeline,
-                self.base_request
-                    .as_ref()
-                    .expect("base_request should be set when pipeline is set"),
-            ),
+        let pipeline = match self.pipeline.as_mut() {
+            Some(pipeline) => pipeline,
             None => {
                 // Initialize the pipeline.
                 let query_plan = get_query_plan(
@@ -96,16 +98,16 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                 let pipeline =
                     self.query_engine
                         .create_pipeline(&self.query.text, &query_plan, &pkranges)?;
-                self.query.text = pipeline.query().into();
-                self.base_request = Some(crate::pipeline::create_base_query_request(
-                    self.http_pipeline.url(&self.items_link),
-                    &self.query,
-                )?);
+                if let Some(query) = pipeline.query() {
+                    let query = Query::from(query).with_parameters_from(&self.query);
+                    self.base_request = Some(crate::pipeline::create_base_query_request(
+                        self.http_pipeline.url(&self.items_link),
+                        &query,
+                    )?);
+                }
+
                 self.pipeline = Some(pipeline);
-                (
-                    self.pipeline.as_mut().unwrap(),
-                    self.base_request.as_ref().unwrap(),
-                )
+                self.pipeline.as_mut().unwrap()
             }
         };
 
@@ -128,36 +130,71 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             }
 
             // No items, so make any requests we need to make and provide them to the pipeline.
+            // TODO: We can absolutely parallelize these requests.
             for request in results.requests {
-                let mut query_request = base_request.clone();
+                let mut query_request = if let Some(query) = request.query {
+                    let mut query = Query::from(query);
+                    if request.include_parameters {
+                        query = query.with_parameters_from(&self.query)
+                    }
+                    crate::pipeline::create_base_query_request(
+                        self.http_pipeline.url(&self.items_link),
+                        &query,
+                    )?
+                } else if let Some(base_request) = &self.base_request {
+                    base_request.clone()
+                } else {
+                    if cfg!(debug_assertions) {
+                        panic!(
+                            "internal error: base_request should be set if no query is provided"
+                        );
+                    }
+                    return Err(azure_core::error::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "internal error: pipeline had no query, and neither did the query request",
+                    ));
+                };
+
                 query_request.insert_header(
                     constants::PARTITION_KEY_RANGE_ID,
                     request.partition_key_range_id.clone(),
                 );
-                if let Some(continuation) = request.continuation {
-                    query_request.insert_header(constants::CONTINUATION, continuation);
+
+                let mut fetch_more_pages = true;
+                while fetch_more_pages {
+                    if let Some(c) = request.continuation.clone() {
+                        query_request.insert_header(constants::CONTINUATION, c);
+                    } else {
+                        // Make sure we don't send a continuation header if we don't have one, even if we did on a previous iteration.
+                        query_request.headers_mut().remove(constants::CONTINUATION);
+                    }
+
+                    let resp = self
+                        .http_pipeline
+                        .send_raw(
+                            self.context.to_borrowed(),
+                            &mut query_request,
+                            self.items_link.clone(),
+                        )
+                        .await?;
+
+                    let next_continuation =
+                        resp.headers().get_optional_string(&constants::CONTINUATION);
+
+                    fetch_more_pages = request.drain && next_continuation.is_some();
+
+                    let body = resp.into_body();
+                    let result = QueryResult {
+                        partition_key_range_id: &request.partition_key_range_id,
+                        request_id: request.id,
+                        next_continuation,
+                        result: &body,
+                    };
+
+                    // For now, just provide a single result at a time.
+                    // When we parallelize requests, we can more easily provide multiple results at once.
+                    pipeline.provide_data(vec![result])?;
                 }
-
-                let resp = self
-                    .http_pipeline
-                    .send_raw(
-                        self.context.to_borrowed(),
-                        &mut query_request,
-                        self.items_link.clone(),
-                    )
-                    .await?;
-
-                let next_continuation =
-                    resp.headers().get_optional_string(&constants::CONTINUATION);
-                let body = resp.into_body();
-
-                let result = QueryResult {
-                    partition_key_range_id: &request.partition_key_range_id,
-                    next_continuation,
-                    result: &body,
-                };
-
-                pipeline.provide_data(result)?;
             }
 
             // No items, but we provided more data (probably), so continue the loop.

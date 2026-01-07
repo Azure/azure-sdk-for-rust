@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.30.0"
+version = "0.31.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -45,6 +45,8 @@ azure_security_keyvault_certificates.path = "../../keyvault/azure_security_keyva
 azure_security_keyvault_secrets.path = "../../keyvault/azure_security_keyvault_secrets"
 criterion.workspace = true
 http = "1.3.1"
+include-file.workspace = true
+json-patch = "4.1.0"
 reqwest.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

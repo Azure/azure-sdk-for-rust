@@ -17,9 +17,9 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
-        Response, Url, XmlFormat,
+        Response, Url, UrlExt, XmlFormat,
     },
     tracing, Result,
 };
@@ -67,7 +67,7 @@ impl QueueClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));
@@ -95,7 +95,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.clear")]
     pub async fn clear(
         &self,
@@ -104,13 +104,10 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages");
+        let mut path = String::from("/{queueName}/messages");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
         let mut request = Request::new(url, Method::Delete);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -132,7 +129,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.create")]
     pub async fn create(
         &self,
@@ -141,17 +138,17 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url = url.join(&self.queue_name)?;
+        let mut path = String::from("/{queueName}");
+        path = path.replace("{queueName}", &self.queue_name);
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
@@ -176,7 +173,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.delete")]
     pub async fn delete(
         &self,
@@ -185,17 +182,17 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        url = url.join(&self.queue_name)?;
+        let mut path = String::from("/{queueName}");
+        path = path.replace("{queueName}", &self.queue_name);
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
+        if let Some(metadata) = options.metadata.as_ref() {
+            for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
@@ -223,7 +220,7 @@ impl QueueClient {
     /// * `message_id` - The id of the queue message.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
     ///   Update Message operation.
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.deleteMessage")]
     pub async fn delete_message(
         &self,
@@ -240,15 +237,14 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages/{messageId}");
+        let mut path = String::from("/{queueName}/messages/{messageId}");
         path = path.replace("{messageId}", message_id);
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("popReceipt", pop_receipt);
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("popReceipt", pop_receipt);
+        query_builder.build();
         let mut request = Request::new(url, Method::Delete);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -270,7 +266,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
     ///
@@ -284,14 +280,14 @@ impl QueueClient {
     ///     let response: Response<ListOfSignedIdentifier, XmlFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListOfSignedIdentifierHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::ListOfSignedIdentifierHeaders::date) - date
     ///
     /// [`ListOfSignedIdentifierHeaders`]: crate::generated::models::ListOfSignedIdentifierHeaders
     #[tracing::function("Storage.Queues.Queue.getAccessPolicy")]
@@ -302,20 +298,18 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/");
+        let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "acl");
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "acl");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -337,7 +331,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
     ///
@@ -367,18 +361,16 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/");
+        let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "metadata");
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "metadata");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -401,7 +393,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.peekMessages")]
     pub async fn peek_messages(
         &self,
@@ -410,20 +402,18 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages");
+        let mut path = String::from("/{queueName}/messages");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("peekonly", "true");
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("peekonly", "true");
         if let Some(number_of_messages) = options.number_of_messages {
-            url.query_pairs_mut()
-                .append_pair("numofmessages", &number_of_messages.to_string());
+            query_builder.set_pair("numofmessages", number_of_messages.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -446,7 +436,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.receiveMessages")]
     pub async fn receive_messages(
         &self,
@@ -455,27 +445,23 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages");
+        let mut path = String::from("/{queueName}/messages");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(number_of_messages) = options.number_of_messages {
-            url.query_pairs_mut()
-                .append_pair("numofmessages", &number_of_messages.to_string());
+            query_builder.set_pair("numofmessages", number_of_messages.to_string());
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(visibility_timeout) = options.visibility_timeout {
-            url.query_pairs_mut()
-                .append_pair("visibilityTimeout", &visibility_timeout.to_string());
+            query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -503,7 +489,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `queue_message` - A Message object which can be stored in a Queue
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.sendMessage")]
     pub async fn send_message(
         &self,
@@ -513,23 +499,20 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages");
+        let mut path = String::from("/{queueName}/messages");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
         if let Some(message_time_to_live) = options.message_time_to_live {
-            url.query_pairs_mut()
-                .append_pair("messageTtl", &message_time_to_live.to_string());
+            query_builder.set_pair("messageTtl", message_time_to_live.to_string());
         }
         if let Some(visibility_timeout) = options.visibility_timeout {
-            url.query_pairs_mut()
-                .append_pair("visibilityTimeout", &visibility_timeout.to_string());
+            query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_message);
         let rsp = self
@@ -553,7 +536,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `queue_acl` - The access control list for the queue.
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
     ///
@@ -567,14 +550,14 @@ impl QueueClient {
     ///     let response: Response<QueueClientSetAccessPolicyResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
+    ///         println!("date: {:?}", date);
     ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::QueueClientSetAccessPolicyResultHeaders::date) - Date
+    /// * [`date`()](crate::generated::models::QueueClientSetAccessPolicyResultHeaders::date) - date
     ///
     /// [`QueueClientSetAccessPolicyResultHeaders`]: crate::generated::models::QueueClientSetAccessPolicyResultHeaders
     #[tracing::function("Storage.Queues.Queue.setAccessPolicy")]
@@ -586,19 +569,17 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/");
+        let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "acl");
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "acl");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_acl);
         let rsp = self
@@ -622,29 +603,27 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `metadata` - The metadata headers.
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.setMetadata")]
     pub async fn set_metadata(
         &self,
-        metadata: HashMap<String, String>,
+        metadata: &HashMap<String, String>,
         options: Option<QueueClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/");
+        let mut path = String::from("/{queueName}/");
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "metadata");
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "metadata");
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
+            query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        for (k, v) in &metadata {
+        for (k, v) in metadata {
             request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);
@@ -679,7 +658,7 @@ impl QueueClient {
     ///   value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days, or
     ///   larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be
     ///   set to a value later than the expiry time.
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.update")]
     pub async fn update(
         &self,
@@ -697,18 +676,16 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages/{messageId}");
+        let mut path = String::from("/{queueName}/messages/{messageId}");
         path = path.replace("{messageId}", message_id);
         path = path.replace("{queueName}", &self.queue_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("popReceipt", pop_receipt);
-        url.query_pairs_mut()
-            .append_pair("visibilityTimeout", &visibility_timeout.to_string());
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("popReceipt", pop_receipt);
+        query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
+        query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         if let Some(queue_message) = options.queue_message {
             request.set_body(queue_message);

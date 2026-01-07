@@ -2,22 +2,22 @@
 // Licensed under the MIT License.
 
 use crate::{
+    generated::clients::BlobClient as GeneratedBlobClient,
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::{
-        BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseResult,
-    },
-    models::{
-        BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
-        BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientFindBlobsByTagsOptions,
-        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
+        BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
+        BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
+        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
         BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
-        FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode,
+        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
+        BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
+        BlobContainerClientSetMetadataOptions, SignedIdentifiers,
     },
+    models::{FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode},
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
 };
@@ -25,32 +25,30 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, PageIterator, Pager, Response, StatusCode, Url, XmlFormat,
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        NoFormat, Pager, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
-    Result,
+    tracing, Result,
 };
 use std::{collections::HashMap, sync::Arc};
 
-/// A client to interact with a specified Azure storage container.
+/// A client to interact with a specified Azure storage container, although that container may not yet exist.
 pub struct BlobContainerClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobContainerClient,
 }
 
-impl BlobContainerClient {
-    /// Creates a new BlobContainerClient, using Entra ID authentication.
+impl GeneratedBlobContainerClient {
+    /// Creates a new GeneratedBlobContainerClient from a container URL.
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        container_name: String,
-        credential: Arc<dyn TokenCredential>,
+    #[tracing::new("Storage.Blob.Container")]
+    pub fn from_url(
+        container_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
@@ -61,17 +59,85 @@ impl BlobContainerClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedBlobContainerClient::new(
-            endpoint,
-            credential.clone(),
-            container_name.clone(),
-            Some(options),
-        )?;
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !container_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{container_url} must use https"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
 
         Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
+            endpoint: container_url,
+            version: options.version,
+            pipeline,
         })
+    }
+}
+
+impl BlobContainerClient {
+    /// Creates a new BlobContainerClient, using Entra ID authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `container_name` - The name of the container.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn new(
+        endpoint: &str,
+        container_name: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let mut url = Url::parse(endpoint)?;
+
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name]);
+        }
+
+        let client = GeneratedBlobContainerClient::from_url(url, credential, options)?;
+        Ok(Self { client })
+    }
+
+    /// Creates a new BlobContainerClient from a container URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_url(
+        container_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedBlobContainerClient::from_url(container_url, credential, options)?;
+
+        Ok(Self { client })
     }
 
     /// Returns a new instance of BlobClient.
@@ -79,21 +145,27 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `blob_name` - The name of the blob.
-    pub fn blob_client(&self, blob_name: String) -> BlobClient {
-        BlobClient {
-            endpoint: self.client.endpoint.clone(),
-            client: self.client.get_blob_client(blob_name),
-        }
+    pub fn blob_client(&self, blob_name: &str) -> BlobClient {
+        let mut blob_url = self.url().clone();
+        blob_url
+            .path_segments_mut()
+            // This should not fail as container URL has already been validated on client construction.
+            .expect("Invalid endpoint URL: Cannot append blob_name to the blob endpoint.")
+            .extend([blob_name]);
+
+        let client = GeneratedBlobClient {
+            endpoint: blob_url,
+            pipeline: self.client.pipeline.clone(),
+            version: self.client.version.clone(),
+            tracer: self.client.tracer.clone(),
+        };
+
+        BlobClient { client }
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// Gets the container name of the Storage account this client is connected to.
-    pub fn container_name(&self) -> &str {
-        &self.client.container_name
+    /// Gets the URL of the resource this client is configured for.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Creates a new container under the specified account. If the container with the same name already exists, the operation fails.
@@ -121,7 +193,7 @@ impl BlobContainerClient {
         metadata: HashMap<String, String>,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(metadata, options).await
+        self.client.set_metadata(&metadata, options).await
     }
 
     /// Marks the specified container for deletion. The container and any blobs contained within are later deleted during garbage collection.
@@ -157,7 +229,7 @@ impl BlobContainerClient {
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListBlobsFlatSegmentResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat, String>> {
         self.client.list_blob_flat_segment(options)
     }
 
@@ -293,5 +365,52 @@ impl BlobContainerClient {
             },
             Err(e) => Err(e),
         }
+    }
+
+    /// Sets the permissions for the specified container. The permissions indicate whether blobs in a
+    /// container may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_acl` - The access control list for the container. You can create this from a
+    ///   [`HashMap<String, AccessPolicy>`] using [`SignedIdentifiers::from()`] and then wrapping it into a RequestContent.
+    /// * `options` - Optional configuration for the request.
+    ///
+    /// # Example
+    ///
+    /// ```rust, ignore
+    /// use azure_core::http::RequestContent;
+    /// use azure_storage_blob::models::{AccessPolicy, SignedIdentifiers};
+    /// use typespec_client_core::time::OffsetDateTime;
+    ///
+    /// let mut policies = HashMap::new();
+    /// policies.insert("some_policy_id".to_string(), AccessPolicy {
+    ///     start: Some(OffsetDateTime::now_utc()),
+    ///     expiry: Some(OffsetDateTime::now_utc() + Duration::from_secs(10)),
+    ///     permission: Some("rwd".to_string()),
+    /// });
+    ///
+    /// let request_content = RequestContent::try_from(SignedIdentifiers::from(policies))?;
+    /// container_client.set_access_policy(request_content, None).await?;
+    /// ```
+    pub async fn set_access_policy(
+        &self,
+        container_acl: RequestContent<SignedIdentifiers, XmlFormat>,
+        options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        self.client.set_access_policy(container_acl, options).await
+    }
+
+    /// Gets the permissions for the specified container. The permissions indicate whether container data
+    /// may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_access_policy(
+        &self,
+        options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<SignedIdentifiers, XmlFormat>> {
+        self.client.get_access_policy(options).await
     }
 }

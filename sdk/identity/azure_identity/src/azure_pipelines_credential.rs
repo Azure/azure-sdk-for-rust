@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    authentication_error, env::Env, ClientAssertion, ClientAssertionCredential,
-    ClientAssertionCredentialOptions,
+    env::Env, ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -109,6 +108,7 @@ impl AzurePipelinesCredential {
             tenant_id,
             client_id,
             client,
+            stringify!(AzurePipelinesCredential),
             Some(options.credential_options),
         )?;
 
@@ -124,10 +124,7 @@ impl TokenCredential for AzurePipelinesCredential {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
-        self.0
-            .get_token(scopes, options)
-            .await
-            .map_err(authentication_error::<Self>)
+        self.0.get_token(scopes, options).await
     }
 }
 
@@ -163,16 +160,19 @@ impl ClientAssertion for Client {
                 }),
             )
             .await?;
-        if resp.status() != StatusCode::Ok {
-            let status_code = resp.status();
+        let status = resp.status();
+        if status != StatusCode::Ok {
             let err_headers: ErrorHeaders = resp.headers().get()?;
-
-            return Err(
-                azure_core::Error::with_message(
-                    ErrorKind::HttpResponse { status: status_code, error_code: Some(status_code.canonical_reason().to_string()), raw_response: None },
-                     format!("{status_code} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"),
-                )
-            );
+            return Err(azure_core::Error::with_message(
+                ErrorKind::HttpResponse {
+                    status,
+                    error_code: Some(status.canonical_reason().to_string()),
+                    raw_response: Some(Box::new(resp)),
+                },
+                format!(
+                "{status} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"
+            ),
+            ));
         }
 
         let assertion: Assertion = resp.into_body().json()?;
@@ -226,9 +226,9 @@ impl fmt::Display for ErrorHeaders {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::Env, TSG_LINK_ERROR_TEXT};
+    use crate::env::Env;
     use azure_core::{
-        http::{BufResponse, ClientOptions, Transport},
+        http::{AsyncRawResponse, ClientOptions, RawResponse, Transport},
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
@@ -254,24 +254,25 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn error_headers() {
-        let mock_client = MockHttpClient::new(|req| {
+    async fn error_response() {
+        let expected_status = StatusCode::Forbidden;
+        let body = Bytes::from_static(b"content");
+        let mut headers = Headers::new();
+        headers.insert(MSEDGE_REF, "foo");
+        headers.insert(VSS_E2EID, "bar");
+        let expected_response =
+            RawResponse::from_bytes(expected_status, headers.clone(), body.clone());
+        let headers_for_mock = headers.clone();
+        let body_for_mock = body.clone();
+        let mock_client = MockHttpClient::new(move |req| {
             assert_eq!(
                 req.url().as_str(),
                 "http://localhost/get_token?api-version=7.1&serviceConnectionId=c"
             );
-            let mut headers = Headers::new();
-            headers.insert(MSEDGE_REF, "foo");
-            headers.insert(VSS_E2EID, "bar");
+            let headers = headers_for_mock.clone();
+            let body = body_for_mock.clone();
 
-            async move {
-                Ok(BufResponse::from_bytes(
-                    StatusCode::Forbidden,
-                    headers,
-                    Vec::new(),
-                ))
-            }
-            .boxed()
+            async move { Ok(AsyncRawResponse::from_bytes(expected_status, headers, body)) }.boxed()
         });
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
@@ -279,31 +280,40 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Some(Env::from(
                 &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],
             )),
         };
-        let credential =
-            AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options))
-                .expect("valid AzurePipelinesCredential");
-        let err = credential
+        let err = AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options))
+            .expect("credential")
             .get_token(&["default"], None)
             .await
             .expect_err("expected error");
-        assert!(matches!(
-            err.kind(),
-            ErrorKind::HttpResponse { status, .. }
-                if *status == StatusCode::Forbidden &&
-                    err.to_string().contains("foo") &&
-                    err.to_string().contains("bar"),
-        ));
-        assert!(
-            err.to_string()
-                .contains(&format!("{TSG_LINK_ERROR_TEXT}#apc")),
-            "expected error to contain a link to the troubleshooting guide, got '{err}'",
+
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            r#"AzurePipelinesCredential authentication failed. 403 response from the OIDC endpoint. Check service connection ID and pipeline configuration. Headers { x-msedge-ref: "foo", x-vss-e2eid: "bar" }
+To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#apc"#,
+            err.to_string(),
         );
+        match err
+            .downcast_ref::<azure_core::Error>()
+            .expect("returned error should wrap an azure_core::Error")
+            .kind()
+        {
+            ErrorKind::HttpResponse {
+                error_code: Some(reason),
+                raw_response: Some(response),
+                status,
+                ..
+            } => {
+                assert_eq!(status.canonical_reason(), reason.as_str());
+                assert_eq!(&expected_response, response.as_ref());
+                assert_eq!(expected_status, *status);
+            }
+            err => panic!("unexpected {:?}", err),
+        };
     }
 
     #[tokio::test]
@@ -326,7 +336,7 @@ mod tests {
                     headers.insert(MSEDGE_REF, "foo");
                     headers.insert(VSS_E2EID, "bar");
 
-                    return Ok(BufResponse::from_bytes(
+                    return Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         headers,
                         Bytes::from_static(br#"{"oidcToken":"baz"}"#),
@@ -334,7 +344,7 @@ mod tests {
                 }
 
                 if req.url().as_str() == "https://login.microsoftonline.com/a/oauth2/v2.0/token" {
-                    return Ok(BufResponse::from_bytes(
+                    return Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         Bytes::from_static(
@@ -352,7 +362,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Some(Env::from(
                 &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],

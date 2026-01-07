@@ -1,3 +1,5 @@
+# cSpell:ignore envrc
+
 # Build output.
 target/
 
@@ -7,6 +9,7 @@ Cargo.lock
 
 # User secrets.
 .env
+.envrc
 
 # Test artifacts.
 .assets/
@@ -20,6 +23,7 @@ vcpkg_installed/
 
 # Editor user customizations.
 .vscode/launch.json
+.vscode/mcp.json
 .idea/
 
 # Editor temp files.
@@ -32,3 +36,4 @@ vcpkg_installed/
 
 # Temporary folder to refresh SDK with TypeSpec.
 TempTypeSpecFiles/
+test-results/

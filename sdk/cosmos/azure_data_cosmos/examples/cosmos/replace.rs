@@ -90,7 +90,7 @@ impl ReplaceCommand {
                         println!("Replaced item successfully");
 
                         if show_updated {
-                            let created: serde_json::Value = r.into_raw_body().json()?;
+                            let created: serde_json::Value = r.into_body().json()?;
                             println!("Newly replaced item:");
                             println!("{:#?}", created);
                         }
@@ -108,7 +108,7 @@ impl ReplaceCommand {
                 let new_throughput = db_client
                     .replace_throughput(throughput_properties, None)
                     .await?
-                    .into_body()?;
+                    .into_model()?;
                 println!("New Throughput:");
                 crate::utils::print_throughput(new_throughput);
                 Ok(())
@@ -124,7 +124,7 @@ impl ReplaceCommand {
                 let new_throughput = container_client
                     .replace_throughput(throughput_properties, None)
                     .await?
-                    .into_body()?;
+                    .into_model()?;
                 println!("New Throughput:");
                 crate::utils::print_throughput(new_throughput);
                 Ok(())

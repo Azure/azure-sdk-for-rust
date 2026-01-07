@@ -193,7 +193,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let send_message = sent_message_response.into_body()?;
+        let send_message = sent_message_response.into_model()?;
 
         let delete_response = queue_client
             .delete_message(
@@ -236,7 +236,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let sent_message = send_message_response.into_body()?;
+        let sent_message = send_message_response.into_model()?;
 
         // Update the message in the queue
         let option = Some(QueueClientUpdateOptions {
@@ -287,7 +287,7 @@ async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
         let response = queue_client.peek_messages(None).await?;
         assert_successful_response(&response);
 
-        let messages = response.into_body()?;
+        let messages = response.into_model()?;
 
         assert!(
             messages.items.is_none(),
@@ -361,7 +361,7 @@ async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
         let response = queue_client.receive_messages(None).await?;
         assert_successful_response(&response);
 
-        let messages = response.into_body()?;
+        let messages = response.into_model()?;
 
         assert!(
             messages.items.is_none(),
@@ -398,7 +398,7 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
         let response = queue_client.receive_messages(options).await?;
         assert_successful_response(&response);
 
-        let messages = response.into_body()?;
+        let messages = response.into_model()?;
         let messages = messages.items.unwrap();
 
         assert_eq!(
@@ -455,9 +455,7 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     recording.instrument(&mut client_options);
     let endpoint = format!(
         "https://{}.queue.core.windows.net/",
-        recording
-            .var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME", None)
-            .as_str()
+        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
     );
 
     (client_options, endpoint)
@@ -511,7 +509,7 @@ async fn peek_and_assert(
     let response = queue_client.peek_messages(options).await?;
     assert_successful_response(&response);
 
-    let messages = response.into_body()?;
+    let messages = response.into_model()?;
     let messages = messages.items.unwrap();
 
     assert_eq!(

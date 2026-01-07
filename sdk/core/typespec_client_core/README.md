@@ -4,7 +4,7 @@ This is the runtime for [TypeSpec](https://typespec.io)-generated clients.
 
 ## Features
 
-- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
+- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation and no PII sanitization.
 - `decimal`: enables support for `rust_decimal::Decimal` type.
 - `derive`: enable derive macros e.g., `SafeDebug`.
 - `http` (default): enables HTTP support.

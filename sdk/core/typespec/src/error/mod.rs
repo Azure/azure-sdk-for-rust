@@ -16,9 +16,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// The classification of error is intentionally fairly coarse.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ErrorKind {
-    /// An error from the AMQP protocol.
-    #[cfg(feature = "amqp")]
-    Amqp,
     /// An HTTP status code that was not expected.
     #[cfg(feature = "http")]
     HttpResponse {
@@ -63,8 +60,6 @@ impl Display for ErrorKind {
             ErrorKind::DataConversion => f.write_str("DataConversion"),
             ErrorKind::Credential => f.write_str("Credential"),
             ErrorKind::Other => f.write_str("Other"),
-            #[cfg(feature = "amqp")]
-            ErrorKind::Amqp => f.write_str("Amqp"),
         }
     }
 }

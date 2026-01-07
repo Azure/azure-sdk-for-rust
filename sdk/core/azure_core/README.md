@@ -47,7 +47,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Features
 
-- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
+- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation and no PII sanitization.
 - `decimal`: enables support for `rust_decimal::Decimal` type.
 - `derive`: enable derive macros e.g., `SafeDebug`.
 - `hmac_openssl`: enables HMAC signing using `openssl`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
@@ -109,28 +109,22 @@ These client types can be instantiated by calling a simple `new` function that t
 Various service specific options are usually added to its subclasses, but a set of SDK-wide options are
 available directly on `ClientOptions`.
 
-```rust no_run
-use azure_core::http::ClientOptions;
+```rust ignore new-client
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
+let credential = DeveloperToolsCredential::new(None)?;
 
-    let options = SecretClientOptions {
-        api_version: "7.5".to_string(),
-        ..Default::default()
-    };
+let options = SecretClientOptions {
+    api_version: "7.5".to_string(),
+    ..Default::default()
+};
 
-    let client = SecretClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        Some(options),
-    )?;
-
-    Ok(())
-}
+let client = SecretClient::new(
+    "https://<your-key-vault-name>.vault.azure.net/",
+    credential.clone(),
+    Some(options),
+)?;
 ```
 
 ### Accessing HTTP response details using `Response<T>`
@@ -139,43 +133,28 @@ _Service clients_ have methods that can be used to call Azure services. We refer
 _Service methods_ return a shared `azure_core` type `Response<T>` where `T` is either a `Model` type or a `ResponseBody` representing a raw stream of bytes.
 This type provides access to both the deserialized result of the service call, and to the details of the HTTP response returned from the server.
 
-```rust no_run
-use azure_core::http::Response;
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{models::Secret, SecretClient};
+Using the `client` we instantiated above:
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // create a client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+```rust ignore response
+// Call a service method, which returns `Response<T>`.
+let response = client.get_secret("secret-name", None).await?;
 
-    // call a service method, which returns Response<T>
-    let response = client.get_secret("secret-name", None).await?;
+// `Response<T>` has two main accessors:
+// 1. The `into_model()` function consumes self to deserialize into a model type defined by the client library.
+let secret = response.into_model()?;
 
-    // Response<T> has two main accessors:
-    // 1. The `into_body()` function consumes self to deserialize into a model type
-    let secret = response.into_body()?;
+// Get response again because it was moved in above statement.
+let response = client.get_secret("secret-name", None).await?;
 
-    // get response again because it was moved in above statement
-    let response: Response<Secret> = client.get_secret("secret-name", None).await?;
+// 2. The `deconstruct()` method for accessing all the details of the HTTP response.
+let (status, headers, body) = response.deconstruct();
 
-    // 2. The deconstruct() method for accessing all the details of the HTTP response
-    let (status, headers, body) = response.deconstruct();
+// For example, you can access HTTP status.
+println!("Status: {}", status);
 
-    // for example, you can access HTTP status
-    println!("Status: {}", status);
-
-    // or the headers
-    for (header_name, header_value) in headers.iter() {
-        println!("{}: {}", header_name.as_str(), header_value.as_str());
-    }
-
-    Ok(())
+// ...or the headers.
+for (header_name, header_value) in headers.iter() {
+    println!("{}: {}", header_name.as_str(), header_value.as_str());
 }
 ```
 
@@ -183,213 +162,198 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 When a service call fails, the returned `Result` will contain an `Error`. The `Error` type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
 
-```rust no_run
-use azure_core::{error::ErrorKind, http::{Response, StatusCode}};
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::SecretClient;
+Using the `client` we instantiated above:
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // create a client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+```rust ignore errors
+use azure_core::{error::ErrorKind, http::StatusCode};
 
-    match client.get_secret("secret-name", None).await {
-        Ok(secret) => println!("Secret: {:?}", secret.into_body()?.value),
-        Err(e) => match e.kind() {
-            ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
-                // handle not found error
-                if let Some(code) = error_code {
-                    println!("ErrorCode: {}", code);
-                } else {
-                    println!("Secret not found, but no error code provided.");
-                }
-            },
-            _ => println!("An error occurred: {e:?}"),
+match client.get_secret("secret-name", None).await {
+    Ok(secret) => println!("Secret: {:?}", secret.into_model()?.value),
+    Err(e) => match e.kind() {
+        ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
+            // Handle not found error.
+            if let Some(code) = error_code {
+                println!("ErrorCode: {}", code);
+            } else {
+                println!("Secret not found, but no error code provided.");
+            }
         },
-    }
-
-    Ok(())
+        _ => println!("An error occurred: {e:?}"),
+    },
 }
 ```
 
+Most Azure services return a standard error response model, which will populate the `status` and `error_code` with more specific information.
+The `raw_response` field (elided above) will always contain the `RawResponse` including the error response body in its entirety,
+and you can [deserialize](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_error_response.rs) the standard error response model to get more information.
+
 ### Consuming service methods returning `Pager<T>`
 
-If a service call returns multiple values in pages, it should return `Result<Pager<T>>` as a result. You can iterate all items from all pages.
+When a service returns a pageable collection, it will return `Result<Pager<T>>` as a result. You can iterate all items from all pages.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
-use futures::TryStreamExt;
+Using the `client` we instantiated above:
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // create a client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+```rust ignore item-pager
+use azure_security_keyvault_secrets::ResourceExt;
+use futures::TryStreamExt as _;
 
-    // get a stream of items
-    let mut pager = client.list_secret_properties(None)?;
-
-    // poll the pager until there are no more SecretListResults
-    while let Some(secret) = pager.try_next().await? {
-        // get the secret name from the ID
-        let name = secret.resource_id()?.name;
-        println!("Found secret with name: {}", name);
-    }
-
-    Ok(())
+// Get a stream of items.
+let mut pager = client.list_secret_properties(None)?;
+while let Some(secret) = pager.try_next().await? {
+    // Get the secret name from the ID.
+    let name = secret.resource_id()?.name;
+    println!("Found secret with name: {}", name);
 }
 ```
 
 To instead iterate over all pages, call `into_pages()` on the returned `Pager`.
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
-use futures::TryStreamExt;
+```rust ignore page-pager
+use azure_security_keyvault_secrets::ResourceExt;
+use futures::TryStreamExt as _;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // create a client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+// Get a stream of pages.
+let mut pager = client.list_secret_properties(None)?.into_pages();
 
-    // get a stream of pages
-    let mut pager = client.list_secret_properties(None)?.into_pages();
-
-    // poll the pager until there are no more SecretListResults
-    while let Some(secrets) = pager.try_next().await? {
-        let secrets = secrets.into_body()?.value;
-        // loop through secrets in SecretsListResults
-        for secret in secrets {
-            // get the secret name from the ID
-            let name = secret.resource_id()?.name;
-            println!("Found secret with name: {}", name);
-        }
+// Poll the pager until there are no more `SecretListResults`.
+while let Some(secrets) = pager.try_next().await? {
+    let secrets = secrets.into_model()?.value;
+    // Loop through secrets in `SecretsListResults`.
+    for secret in secrets {
+        // Get the secret name from the ID.
+        let name = secret.resource_id()?.name;
+        println!("Found secret with name: {}", name);
     }
-
-    Ok(())
 }
 ```
 
 ### Consuming service methods returning `Poller<T>`
 
 If a service call may take a while to process, it should return `Result<Poller<T>>` as a result, representing a long-running operation (LRO).
-The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
+The `Poller<T>` implements `std::future::IntoFuture` so you can `await` it to get the final result:
+
+Using a `CertificateClient` created similarly to the `client` we instantiated above:
+
+```rust ignore poller-future
 use azure_security_keyvault_certificates::{
-    CertificateClient,
+    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
+};
+
+// Create a self-signed certificate.
+let policy = CertificatePolicy {
+    x509_certificate_properties: Some(X509CertificateProperties {
+        subject: Some("CN=DefaultPolicy".into()),
+        ..Default::default()
+    }),
+    issuer_parameters: Some(IssuerParameters {
+        name: Some("Self".into()),
+        ..Default::default()
+    }),
+    ..Default::default()
+};
+let body = CreateCertificateParameters {
+    certificate_policy: Some(policy),
+    ..Default::default()
+};
+
+// Wait for the certificate operation to complete and get the certificate.
+let certificate = client
+    .create_certificate("certificate-name", body.try_into()?, None)?
+    .await?
+    .into_model()?;
+```
+
+The `Poller<T>` also implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
+
+```rust ignore poller-stream
+use azure_security_keyvault_certificates::{
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 use futures::stream::TryStreamExt as _;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Create a self-signed certificate.
-    let policy = CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
+// Create a self-signed certificate.
+let policy = CertificatePolicy {
+    x509_certificate_properties: Some(X509CertificateProperties {
+        subject: Some("CN=DefaultPolicy".into()),
         ..Default::default()
-    };
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(policy),
+    }),
+    issuer_parameters: Some(IssuerParameters {
+        name: Some("Self".into()),
         ..Default::default()
-    };
-
-    // Wait for the certificate operation to complete.
-    // The Poller implements futures::Stream and automatically waits between polls.
-    let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
-    while let Some(operation) = poller.try_next().await? {
-        let operation = operation.into_body()?;
-        match operation.status.as_deref().unwrap_or("unknown") {
-            "inProgress" => continue,
-            "completed" => {
-                let target = operation.target.ok_or("expected target")?;
-                println!("Created certificate {}", target);
-                break;
-            },
-            status => Err(format!("operation terminated with status {status}"))?,
-        }
-    }
-
-    Ok(())
-}
-```
-
-If you just want to wait until the `Poller<T>` is complete and get the last status monitor, you can await `wait()`:
-
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::{
-    CertificateClient,
-    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
+    }),
+    ..Default::default()
+};
+let body = CreateCertificateParameters {
+    certificate_policy: Some(policy),
+    ..Default::default()
 };
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
-
-    // Create a self-signed certificate.
-    let policy = CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
-        ..Default::default()
-    };
-    let body = CreateCertificateParameters {
-        certificate_policy: Some(policy),
-        ..Default::default()
-    };
-
-    // Wait for the certificate operation to complete and get the certificate.
-    let certificate = client
-        .begin_create_certificate("certificate-name", body.try_into()?, None)?
-        .await?
-        .into_body()?;
-
-    Ok(())
+// Wait for the certificate operation to complete.
+// The Poller implements futures::Stream and automatically waits between polls.
+let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
+while let Some(operation) = poller.try_next().await? {
+    let operation = operation.into_model()?;
+    match operation.status.as_deref().unwrap_or("unknown") {
+        "inProgress" => continue,
+        "completed" => {
+            let target = operation.target.ok_or("expected target")?;
+            println!("Created certificate {}", target);
+            break;
+        },
+        status => Err(format!("operation terminated with status {status}"))?,
+    }
 }
 ```
 
-Awaiting `wait()` will only fail if the HTTP status code does not indicate successfully fetching the status monitor.
+### Adding HTTP policies
+
+You can add custom HTTP policies for each client method (per-call) or request attempt (per-try) by implementing `Policy` and adding it to the appropriate field on `ClientOptions`.
+For example, to remove the `user-agent` header entirely:
+
+```rust ignore custom-policy
+use azure_core::http::{
+    policies::{Policy, PolicyResult},
+    ClientOptions, Context, Request,
+};
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct RemoveUserAgent;
+
+#[async_trait::async_trait]
+impl Policy for RemoveUserAgent {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let headers = request.headers_mut();
+        headers.remove("user-agent");
+
+        next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+let remove_user_agent = Arc::new(RemoveUserAgent);
+let mut options = SecretClientOptions::default();
+options
+    .client_options
+    .per_call_policies
+    .push(remove_user_agent);
+
+let credential = DeveloperToolsCredential::new(None)?;
+let client = SecretClient::new(
+    "https://your-key-vault-name.vault.azure.net/",
+    credential.clone(),
+    Some(options),
+)?;
+```
+
+See the [example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_remove_user_agent.rs) for a full sample implementation.
 
 ### Replacing the HTTP client
 
@@ -427,13 +391,13 @@ reqwest = { version = "0.12.23", default-features = false, features = [
 In many cases with `reqwest`, importing features may be enough. See their [documentation][`reqwest`] for more information.
 If you do need to write code to customize the `reqwest::Client`, you can pass it in `ClientOptions` to our client libraries:
 
-```rust no_run
+```rust ignore custom-reqwest
 use azure_core::http::{ClientOptions, Transport};
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 use std::sync::Arc;
 
-let http_client = Arc::new(reqwest::ClientBuilder::new().gzip(true).build().unwrap());
+let http_client = Arc::new(reqwest::ClientBuilder::new().gzip(true).build()?);
 
 let options = SecretClientOptions {
     client_options: ClientOptions {
@@ -443,13 +407,12 @@ let options = SecretClientOptions {
     ..Default::default()
 };
 
-let credential = DeveloperToolsCredential::new(None).unwrap();
+let credential = DeveloperToolsCredential::new(None)?;
 let client = SecretClient::new(
     "https://your-key-vault-name.vault.azure.net/",
     credential.clone(),
     Some(options),
-)
-.unwrap();
+)?;
 ```
 
 #### Other HTTP client
@@ -475,7 +438,7 @@ ureq = { version = "3", default-features = false, features = [
 Then we need to implement `HttpClient` for another HTTP client like [`ureq`](https://docs.rs/ureq):
 
 ```rust no_run
-use azure_core::{error::{ErrorKind, ResultExt as _}, http::{HttpClient, BufResponse, Request}};
+use azure_core::{error::{ErrorKind, ResultExt as _}, http::{HttpClient, AsyncRawResponse, Request}};
 use ureq::tls::{TlsConfig, TlsProvider};
 
 #[derive(Debug)]
@@ -499,7 +462,7 @@ impl Default for Agent {
 
 #[async_trait::async_trait]
 impl HttpClient for Agent {
-    async fn execute_request(&self, request: &Request) -> azure_core::Result<BufResponse> {
+    async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         let request: ::http::request::Request<Vec<u8>> = todo!("convert our request into their request");
         let response = self
             .0
@@ -534,17 +497,17 @@ struct CustomRuntime;
 
 impl AsyncRuntime for CustomRuntime {
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
-      unimplemented!("Custom spawn not implemented");
+        unimplemented!("custom spawn not implemented");
     }
     fn sleep(&self, duration: Duration) -> TaskFuture {
-      unimplemented!("Custom sleep not implemented");
+        unimplemented!("custom sleep not implemented");
     }
     fn yield_now(&self) -> TaskFuture {
-        unimplemented!("Custom yield not implemented");
+        unimplemented!("custom yield not implemented");
     }
-  }
+}
 
-  set_async_runtime(Arc::new(CustomRuntime)).expect("Failed to set async runtime");
+set_async_runtime(Arc::new(CustomRuntime)).expect("failed to set async runtime");
 ```
 
 There can only be one async runtime set in a given process, so attempts to set the async runtime multiple times will fail.
@@ -555,29 +518,14 @@ There can only be one async runtime set in a given process, so attempts to set t
 
 To help protected end users from accidental Personally-Identifiable Information (PII) from leaking into logs or traces, models' default implementation of `core::fmt::Debug` formats as non-exhaustive structure tuple e.g.,
 
-```rust no_run
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
+Using the `client` we instantiated above:
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // create a client
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new(
-        "https://<your-key-vault-name>.vault.azure.net/",
-        credential.clone(),
-        None,
-    )?;
+```rust ignore safe-debug
+let secret = client.get_secret("secret-name", None)
+    .await?
+    .into_model()?;
 
-    // get a secret
-    let secret = client.get_secret("secret-name", None)
-        .await?
-        .into_body()?;
-
-    println!("{secret:#?}");
-
-    Ok(())
-}
+println!("{secret:#?}");
 ```
 
 By default this will print:
@@ -603,17 +551,16 @@ The recommended workaround is to disable connection pooling in a custom `reqwest
 If you are encountering this issue, you can construct an `HttpClient` which disables HTTP connection pooling
 and set that as the transport in any `ClientOptions` used to configure your Azure SDK clients:
 
-```rust no_run
+```rust ignore reqwest-hang
 use std::sync::Arc;
-use azure_core::http::{HttpClient, ClientOptions, Transport};
+use azure_core::http::{ClientOptions, Transport};
 use azure_security_keyvault_secrets::SecretClientOptions;
 
 let client = Arc::new(
     ::reqwest::ClientBuilder::new()
         // Note that reqwest does not support `pool_max_idle_per_host` on WASM.
         .pool_max_idle_per_host(0)
-        .build()
-        .expect("failed to build `reqwest` client"),
+        .build()?,
 );
 
 let options = SecretClientOptions {

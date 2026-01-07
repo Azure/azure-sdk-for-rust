@@ -50,8 +50,10 @@ pub(crate) use virtual_machine_managed_identity_credential::*;
 use crate::env::Env;
 use azure_core::{
     cloud::CloudConfiguration,
-    error::{ErrorKind, ResultExt},
+    credentials::AccessToken,
+    error::ErrorKind,
     http::{RawResponse, Url},
+    time::{Duration, OffsetDateTime},
     Error, Result,
 };
 use serde::Deserialize;
@@ -59,8 +61,9 @@ use std::borrow::Cow;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
-struct EntraIdErrorResponse {
-    error_description: String,
+struct EntraIdErrorResponse<'a> {
+    error_codes: Vec<i32>,
+    error_description: &'a str,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -74,20 +77,46 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
+fn deserialize<'a, T>(res: &'a RawResponse) -> Result<T>
 where
-    T: serde::de::DeserializeOwned,
+    T: serde::Deserialize<'a>,
 {
-    let t: T = res
-        .into_body()
-        .json()
-        .with_context_fn(ErrorKind::Credential, || {
-            format!(
-                "{} authentication failed: invalid response",
-                credential_name
-            )
-        })?;
-    Ok(t)
+    serde_json::from_slice(res.body().as_ref()).map_err(Into::into)
+}
+
+fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
+    let status = response.status();
+    if status.is_success() {
+        let token_response: EntraIdTokenResponse = deserialize(&response)?;
+        return Ok(AccessToken::new(
+            token_response.access_token,
+            OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
+        ));
+    }
+
+    let error_response: EntraIdErrorResponse<'_> = deserialize(&response)?;
+    let error_code = if error_response.error_codes.is_empty() {
+        None
+    } else {
+        Some(
+            error_response
+                .error_codes
+                .iter()
+                .map(i32::to_string)
+                .collect::<Vec<_>>()
+                .join(","),
+        )
+    };
+    let error_description = error_response.error_description.to_owned();
+
+    Err(Error::new(
+        ErrorKind::HttpResponse {
+            status,
+            error_code,
+            raw_response: Some(Box::new(response)),
+        },
+        error_description,
+    ))
 }
 
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>
@@ -134,30 +163,27 @@ fn get_authority_host(env: Option<Env>, cloud: Option<&CloudConfiguration>) -> R
 }
 
 const TSG_LINK_ERROR_TEXT: &str =
-    ". To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot";
+    "\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot";
 
 /// Map an error from a credential's get_token() method to an ErrorKind::Credential error, appending
 /// a link to the troubleshooting guide entry for that credential, if it has one.
-///
-/// TODO: decide whether to map to ErrorKind::Credential here (https://github.com/Azure/azure-sdk-for-rust/issues/3127)
-fn authentication_error<T: 'static>(e: azure_core::Error) -> azure_core::Error {
-    azure_core::Error::with_message_fn(e.kind().clone(), || {
-        let type_name = std::any::type_name::<T>();
-        let short_name = type_name.rsplit("::").next().unwrap_or(type_name); // cspell:ignore rsplit
-        let link = match short_name {
-            "AzureCliCredential" => format!("{TSG_LINK_ERROR_TEXT}#azure-cli"),
-            "AzureDeveloperCliCredential" => format!("{TSG_LINK_ERROR_TEXT}#azd"),
-            "AzurePipelinesCredential" => format!("{TSG_LINK_ERROR_TEXT}#apc"),
-            #[cfg(feature = "client_certificate")]
-            "ClientCertificateCredential" => format!("{TSG_LINK_ERROR_TEXT}#client-cert"),
-            "ClientSecretCredential" => format!("{TSG_LINK_ERROR_TEXT}#client-secret"),
-            "ManagedIdentityCredential" => format!("{TSG_LINK_ERROR_TEXT}#managed-id"),
-            "WorkloadIdentityCredential" => format!("{TSG_LINK_ERROR_TEXT}#workload"),
-            _ => "".to_string(),
-        };
-
-        format!("{short_name} authentication failed: {e}{link}")
-    })
+fn authentication_error(credential_name: &str, err: Error) -> Error {
+    let link_fragment = match credential_name {
+        stringify!(AzureCliCredential) => "#azure-cli",
+        stringify!(AzureDeveloperCliCredential) => "#azd",
+        stringify!(AzurePipelinesCredential) => "#apc",
+        stringify!(ClientCertificateCredential) => "#client-cert",
+        stringify!(ClientSecretCredential) => "#client-secret",
+        stringify!(ManagedIdentityCredential) => "#managed-id",
+        stringify!(WorkloadIdentityCredential) => "#workload",
+        _ => "",
+    };
+    let mut message = format!("{credential_name} authentication failed. {err}");
+    if !link_fragment.is_empty() {
+        message.push_str(TSG_LINK_ERROR_TEXT);
+        message.push_str(link_fragment);
+    }
+    Error::with_error(ErrorKind::Credential, err, message)
 }
 
 #[test]
@@ -246,7 +272,7 @@ mod tests {
     use azure_core::{
         cloud::{CloudConfiguration, CustomConfiguration},
         error::ErrorKind,
-        http::{headers::Headers, BufResponse, Request, StatusCode},
+        http::{headers::Headers, AsyncRawResponse, RawResponse, Request, StatusCode},
         Bytes, Error, Result,
     };
     use std::{
@@ -343,8 +369,8 @@ mod tests {
         }
     }
 
-    pub fn token_response() -> BufResponse {
-        BufResponse::from_bytes(
+    pub fn token_response() -> AsyncRawResponse {
+        AsyncRawResponse::from_bytes(
             StatusCode::Ok,
             Headers::default(),
             Bytes::from(format!(
@@ -356,7 +382,7 @@ mod tests {
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
-        responses: Mutex<Vec<BufResponse>>,
+        responses: Mutex<Vec<AsyncRawResponse>>,
         on_request: Option<RequestCallback>,
     }
 
@@ -367,7 +393,7 @@ mod tests {
     }
 
     impl MockSts {
-        pub fn new(responses: Vec<BufResponse>, on_request: Option<RequestCallback>) -> Self {
+        pub fn new(responses: Vec<AsyncRawResponse>, on_request: Option<RequestCallback>) -> Self {
             Self {
                 responses: Mutex::new(responses),
                 on_request,
@@ -377,7 +403,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<BufResponse> {
+        async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {
@@ -448,5 +474,31 @@ mod tests {
         let cloud = CloudConfiguration::Custom(config);
         let err = get_authority_host(None, Some(&cloud)).unwrap_err();
         assert!(err.to_string().contains("HTTPS"));
+    }
+
+    #[test]
+    fn entra_error() {
+        let response = RawResponse::from_bytes(
+            StatusCode::BadRequest,
+            Headers::default(),
+            Bytes::from_static(br#"{"error_codes":[123,456],"error_description":"bad news"}"#),
+        );
+
+        let err = handle_entra_response(response).unwrap_err();
+        match err.kind() {
+            ErrorKind::HttpResponse {
+                status,
+                error_code,
+                raw_response,
+            } => {
+                assert_eq!(*status, StatusCode::BadRequest);
+                assert_eq!(error_code.as_deref(), Some("123,456"));
+                assert!(raw_response.is_some());
+            }
+            other => panic!("unexpected error kind: {other:?}"),
+        }
+
+        let inner = err.into_inner().expect("expected inner error");
+        assert_eq!(inner.to_string(), "bad news");
     }
 }

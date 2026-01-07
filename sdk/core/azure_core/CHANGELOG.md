@@ -1,30 +1,75 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.31.0 (Unreleased)
 
 ### Features Added
 
-- Added `Response::to_raw_response()` function to create a `RawResponse` from cloned data.
-- Added `UrlExt::append_path()`.
-- Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
+- Added `continuation_token` to `PagerOptions`.
+- Added extensible request authorization and authentication challenge handling to `BearerTokenAuthorizationPolicy`.
+  - `OnRequest`, `OnChallenge`, and `Authorizer` traits define callbacks for these features.
+  - `with_on_request()` and `with_on_challenge()` builder methods set callbacks for a policy instance.
+- Added `Request::body_mut()`.
+- Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
+- Sort query parameters lexicographically in `QueryBuilder`.
 
 ### Breaking Changes
 
-- Added `F: Format` type parameter to `Poller` and `PollerResult`.
-- Added `Format` associated type to `StatusMonitor`.
-- Added `Format::deserialize()` function to `Format` trait.
-- Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
-- Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
-- Removed `constants` module.
-- Removed `CustomHeaders` policy.
-- Removed `ErrorKind::MockFramework`.
-- Removed `Poller::wait()` function. Call `await` on a `Poller` to wait for it to complete and, upon success, return the final model.
-- Removed `xml::read_xml_str()`.
-- Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
+- Added type parameter `C` to `Pager` declaration, defaulting to `Url` so it can be elided in most existing declarations.
+- Changed `Pager::from_callback` to take a `PagerOptions` as the second parameter rather than a `Context` parameter.
+- Changed `Pager::from_callback` to `Pager::new` which now requires the caller to return a `Pin<Box<dyn Future>>`.
+- Moved `BearerTokenAuthorizationPolicy` into `azure_core::http::policies::auth`.
+- Removed `ItemIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
+- Removed `PageIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
+- Removed `Pager::from_stream`.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.30.1 (2025-11-09)
+
+### Other Changes
+
+- Increment version for re-release following a fix to publishing.
+
+## 0.30.0 (2025-11-07)
+
+### Features Added
+
+- Added `Context::to_owned()` to create a newly owned `Context` from an existing `Context`.
+- Added `ItemIterator::continuation_token()` and `with_continuation_token()` to resume paging items. The current page is restarted until _after_ all items have been iterated.
+- Added `PipelineOptions::retry_status_codes` for configuring which status codes should trigger a retry.
+- Added `Response<T, F>::body(&self) -> &ResponseBody`.
+- Added `Response<T, F>::to_raw_response()` function to create a `RawResponse` from cloned data.
+- Added `UrlExt::append_path()`.
+- Implemented `IntoFuture` for a `Poller`. Call `await` on a Poller to get the final model, or `into_stream()` to get a `futures::Stream` to poll the operation manually.
+- Re-exported `serde_json::Value` as `azure_core::Value` ([#1687](https://github.com/Azure/azure-sdk-for-rust/issues/1687))
+
+### Breaking Changes
+
+- Added `Context` field to `PollerOptions`. Client methods which return `Poller` objects should accept a `PollerOptions` in their `method_options` field instead of a `ClientMethodOptions`.
+- Added `F: Format` type parameter to `Poller` and `PollerResult`.
+- Added `Format` associated type to `StatusMonitor`.
+- Added `Format::deserialize()` function to `Format` trait.
+- Added `S` type parameter to `xml::from_xml` congruent with `json::from_json()`.
+- Changed `PollerOptions::frequency` from `Option<Duration>` to `Duration`.
+- Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
+- Removed `constants` module.
+- Removed `credentials::DEFAULT_SCOPE_SUFFIX`.
+- Removed `CustomHeaders` policy.
+- Removed `ErrorKind::MockFramework`.
+- Removed `Poller::wait()` function. Call `await` on a `Poller` to wait for it to complete and, upon success, return the final model.
+- Removed `xml::read_xml_str()`.
+- Renamed `BearerTokenCredentialPolicy` to `BearerTokenAuthorizationPolicy`.
+- Renamed `BufResponse` to `AsyncRawResponse` so that `AsyncRawResponse` is to `RawResponse` as `AsyncIterator` is to `Iterator`.
+- Renamed `BufResponseBody` to `AsyncResponseBody` so that `AsyncResponseBody` is to `ResponseBody` as `AsyncIterator` is to `Iterator`.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
+- Renamed `RetryPolicy::get_retry_headers()` to `RetryPolicy::retry_headers()`
+- Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
+
+### Bugs Fixed
+
+- `ItemIterator::into_pages()` now properly supports resuming from the current page until _after_ all items have been iterated.
 
 ## 0.29.1 (2025-10-06)
 

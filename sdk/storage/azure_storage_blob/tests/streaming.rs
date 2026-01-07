@@ -5,7 +5,7 @@
 
 use azure_core_test::{recorded, stream::GeneratedStream, TestContext};
 use azure_storage_blob::BlobClient;
-use azure_storage_blob_test::{get_blob_name, get_container_client};
+use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt as _;
 use std::error::Error;
 
@@ -13,8 +13,9 @@ use std::error::Error;
 async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Upload from a stream.
     const CONTENT_LENGTH: usize = 40_960_000;

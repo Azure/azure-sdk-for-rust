@@ -10,23 +10,23 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{
-        request::{options::ContentType, Request},
-        response::Response,
-        Method, Url,
-    },
+    http::{response::Response, Url},
 };
 use serde::Serialize;
 use std::sync::Arc;
 
+use crate::cosmos_request::CosmosRequest;
+use crate::operation_context::OperationType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
+use azure_core::http::RetryOptions;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     databases_link: ResourceLink,
-    pipeline: CosmosPipeline,
+    pipeline: Arc<CosmosPipeline>,
 }
 
 impl CosmosClient {
@@ -53,13 +53,35 @@ impl CosmosClient {
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
+        let mut client_options = options.client_options;
+        client_options.retry = RetryOptions::none();
+
+        let pipeline_core = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::new(),
+            vec![Arc::new(AuthorizationPolicy::from_token_credential(
+                credential,
+            ))],
+            None,
+        );
+
+        let global_endpoint_manager = GlobalEndpointManager::new(
+            endpoint.parse()?,
+            options.application_preferred_regions,
+            pipeline_core.clone(),
+        );
+
+        let pipeline = Arc::new(CosmosPipeline::new(
+            endpoint.parse()?,
+            pipeline_core,
+            global_endpoint_manager,
+        ));
+
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline: CosmosPipeline::new(
-                endpoint.parse()?,
-                AuthorizationPolicy::from_token_credential(credential),
-                options.client_options,
-            ),
+            pipeline,
         })
     }
 
@@ -86,13 +108,33 @@ impl CosmosClient {
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
+        let mut client_options = options.client_options;
+        client_options.retry = RetryOptions::none();
+
+        let pipeline_core = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::new(),
+            vec![Arc::new(AuthorizationPolicy::from_shared_key(key))],
+            None,
+        );
+
+        let global_endpoint_manager = GlobalEndpointManager::new(
+            endpoint.parse()?,
+            options.application_preferred_regions,
+            pipeline_core.clone(),
+        );
+
+        let pipeline = Arc::new(CosmosPipeline::new(
+            endpoint.parse()?,
+            pipeline_core,
+            global_endpoint_manager.clone(),
+        ));
+
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline: CosmosPipeline::new(
-                endpoint.parse()?,
-                AuthorizationPolicy::from_shared_key(key),
-                options.client_options,
-            ),
+            pipeline,
         })
     }
 
@@ -110,7 +152,7 @@ impl CosmosClient {
     /// use azure_core::credentials::Secret;
     ///
     /// let client = CosmosClient::with_connection_string(
-    ///     "AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey",
+    ///     Secret::from("AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey"),
     ///     None)
     ///     .unwrap();
     /// ```
@@ -162,6 +204,7 @@ impl CosmosClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    #[tracing::instrument(skip_all)]
     pub fn query_databases(
         &self,
         query: impl Into<Query>,
@@ -186,6 +229,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
+    #[tracing::instrument(skip_all)]
     pub async fn create_database(
         &self,
         id: &str,
@@ -198,18 +242,14 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let url = self.pipeline.url(&self.databases_link);
-        let mut req = Request::new(url, Method::Post);
-        req.insert_headers(&options.throughput)?;
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&RequestBody { id })?;
+        let cosmos_request =
+            CosmosRequest::builder(OperationType::Create, self.databases_link.clone())
+                .headers(&options.throughput)
+                .json(&RequestBody { id })
+                .build()?;
 
         self.pipeline
-            .send(
-                options.method_options.context,
-                &mut req,
-                self.databases_link.clone(),
-            )
+            .send(cosmos_request, options.method_options.context)
             .await
     }
 }

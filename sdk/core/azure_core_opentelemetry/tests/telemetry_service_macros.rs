@@ -180,7 +180,7 @@ mod tests {
     use super::*;
     use ::tracing::{info, trace};
     use azure_core::{
-        http::{ExponentialRetryOptions, RetryOptions},
+        http::{ExponentialRetryOptions, RetryOptions, StatusCode},
         tracing::TracerProvider,
         Result,
     };
@@ -193,7 +193,6 @@ mod tests {
         SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus,
     };
     use opentelemetry::Value as OpenTelemetryAttributeValue;
-    use typespec_client_core::http;
 
     fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
         let otel_exporter = InMemorySpanExporter::default();
@@ -686,10 +685,7 @@ mod tests {
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
-            |client| {
-                let client = client;
-                Box::pin(async move { client.get("get", None).await })
-            },
+            async move |client| client.get("get", None).await,
             ExpectedInstrumentation {
                 package_name,
                 package_version,
@@ -707,14 +703,11 @@ mod tests {
 
     #[recorded::test()]
     async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
-        let package_name = env!("CARGO_PKG_NAME").to_string();
+        let package_name = ctx.recording().var("CARGO_PKG_NAME", None).to_string();
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
-            |client| {
-                let client = client;
-                Box::pin(async move { client.get_with_function_tracing("get", None).await })
-            },
+            async move |client| client.get_with_function_tracing("get", None).await,
             ExpectedInstrumentation {
                 package_name,
                 package_version,
@@ -736,27 +729,28 @@ mod tests {
     }
     #[recorded::test()]
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
-        let package_name = env!("CARGO_PKG_NAME").to_string();
+        use azure_core_test::tracing::ExpectedRestApiSpan;
+
+        let package_name = ctx.recording().var("CARGO_PKG_NAME", None).to_string();
         let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
-            |client| {
-                let client = client;
-                Box::pin(async move { client.get_with_function_tracing("index.htm", None).await })
-            },
+            async move |client| client.get_with_function_tracing("index.htm", None).await,
             ExpectedInstrumentation {
                 package_name,
                 package_version,
                 package_namespace: Some("Az.TestServiceClient"),
                 api_calls: vec![ExpectedApiInformation {
                     api_name: Some("macros_get_with_tracing"),
-                    expected_status_code: http::StatusCode::NotFound,
+                    api_children: vec![ExpectedRestApiSpan {
+                        expected_status_code: StatusCode::NotFound,
+                        ..Default::default()
+                    }],
                     additional_api_attributes: vec![
                         ("a.b", 1.into()),
                         ("az.telemetry", "Abc".into()),
                         ("string attribute", "index.htm".into()),
                     ],
-                    ..Default::default()
                 }],
             },
         )

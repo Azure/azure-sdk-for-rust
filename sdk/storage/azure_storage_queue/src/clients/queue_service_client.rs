@@ -10,7 +10,7 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{NoFormat, PageIterator, RequestContent, Response, Url, XmlFormat},
+    http::{NoFormat, Pager, RequestContent, Response, Url, XmlFormat},
     Result,
 };
 use std::sync::Arc;
@@ -126,7 +126,7 @@ impl QueueServiceClient {
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListQueuesResponse, XmlFormat>>> {
+    ) -> Result<Pager<ListQueuesResponse, XmlFormat, String>> {
         self.client.list_queues(options)
     }
 

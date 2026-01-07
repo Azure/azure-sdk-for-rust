@@ -7,12 +7,14 @@ use crate::{
     error::{ErrorKind, ErrorResponse},
     http::{
         headers::{HeaderName, Headers},
-        Format, JsonFormat, Response, StatusCode,
+        policies::create_public_api_span,
+        Context, Format, JsonFormat, Response, StatusCode,
     },
     sleep,
     time::{Duration, OffsetDateTime},
+    tracing::{Span, SpanStatus},
 };
-use futures::{stream::unfold, Stream, StreamExt};
+use futures::{channel::oneshot, stream::unfold, Stream, StreamExt};
 use serde::Deserialize;
 use std::{
     convert::Infallible,
@@ -20,7 +22,8 @@ use std::{
     future::{Future, IntoFuture},
     pin::Pin,
     str::FromStr,
-    task::{Context, Poll},
+    sync::Arc,
+    task::{Context as TaskContext, Poll},
 };
 
 /// Default retry time for long-running operations if no retry-after header is present
@@ -28,6 +31,8 @@ use std::{
 /// This value is the same as the default used in other Azure SDKs e.g.,
 /// <https://github.com/Azure/azure-sdk-for-python/blob/azure-core_1.35.0/sdk/core/azure-core/azure/core/polling/base_polling.py#L586>
 const DEFAULT_RETRY_TIME: Duration = Duration::seconds(30);
+
+/// Minimum retry time for long-running operations
 const MIN_RETRY_TIME: Duration = Duration::seconds(1);
 
 /// Represents the state of a [`Poller`].
@@ -145,18 +150,32 @@ impl<'de> Deserialize<'de> for PollerStatus {
 }
 
 /// Options to create the [`Poller`].
-#[derive(Debug, Clone, Copy)]
-pub struct PollerOptions {
+#[derive(Debug, Clone)]
+pub struct PollerOptions<'a> {
+    /// Allows customization of the method call.
+    pub context: Context<'a>,
     /// The time to wait between polling intervals in absence of a `retry-after` header.
     ///
     /// The default is 30 seconds. The minimum time enforced by [`Poller::from_callback`] is 1 second.
-    pub frequency: Option<Duration>,
+    pub frequency: Duration,
 }
 
-impl Default for PollerOptions {
+impl Default for PollerOptions<'_> {
     fn default() -> Self {
         Self {
-            frequency: Some(DEFAULT_RETRY_TIME),
+            frequency: DEFAULT_RETRY_TIME,
+            context: Context::new(),
+        }
+    }
+}
+
+impl<'a> PollerOptions<'a> {
+    /// Converts these poller options into an owned form so they can outlive the current scope.
+    #[must_use]
+    pub fn into_owned(self) -> PollerOptions<'static> {
+        PollerOptions {
+            context: self.context.into_owned(),
+            frequency: self.frequency,
         }
     }
 }
@@ -174,7 +193,7 @@ pub enum PollerResult<M: StatusMonitor, N, F: Format = JsonFormat> {
         /// The HTTP response with the status monitor.
         response: Response<M, F>,
         /// The optional client-specified [`Duration`] to wait before polling again.
-        retry_after: Option<Duration>,
+        retry_after: Duration,
         /// The next link / continuation token.
         next: N,
     },
@@ -297,9 +316,9 @@ type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 ///
 /// // Await the poller to get the final certificate.
 /// let certificate = client
-///     .begin_create_certificate("my-cert", params.try_into()?, None)?
+///     .create_certificate("my-cert", params.try_into()?, None)?
 ///     .await?
-///     .into_body()?;
+///     .into_model()?;
 /// # Ok(()) }
 /// ```
 ///
@@ -321,15 +340,15 @@ type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 ///
 /// // Manually poll status updates.
 /// let mut poller = client
-///     .begin_create_certificate("my-cert", params.try_into()?, None)?;
+///     .create_certificate("my-cert", params.try_into()?, None)?;
 ///
 /// while let Some(status) = poller.try_next().await? {
-///     let status = status.into_body()?;
+///     let status = status.into_model()?;
 ///     println!("Status: {:?}", status.status);
 /// }
 ///
 /// // After the stream ends, await to get the final certificate.
-/// let certificate = poller.await?.into_body()?;
+/// let certificate = poller.await?.into_model()?;
 /// # Ok(()) }
 /// ```
 #[pin_project::pin_project]
@@ -389,7 +408,7 @@ where
     /// let url = "https://example.com/my_operation".parse().unwrap();
     /// let mut req = Request::new(url, Method::Post);
     ///
-    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>| {
+    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>,  poller_options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
@@ -406,7 +425,7 @@ where
     ///             .append_pair("api-version", &api_version);
     ///
     ///         let resp = pipeline
-    ///             .send(&Context::new(), &mut req, None)
+    ///             .send(&poller_options.context, &mut req, None)
     ///             .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let result: OperationResult = json::from_json(&body)?;
@@ -419,7 +438,7 @@ where
     ///                 let operation_url = format!("https://example.com/operations/{}", result.id).parse()?;
     ///                 Ok(PollerResult::InProgress {
     ///                     response: resp,
-    ///                     retry_after: None,
+    ///                     retry_after: poller_options.frequency,
     ///                     next: operation_url
     ///                 })
     ///             }
@@ -444,21 +463,22 @@ where
     /// }, None);
     /// ```
     pub fn from_callback<
-        #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] N: AsRef<str> + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, PollerOptions<'static>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] N: 'static,
-        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] N: AsRef<str> + 'static,
+        #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, PollerOptions<'static>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
     >(
         make_request: Fun,
-        options: Option<PollerOptions>,
+        options: Option<PollerOptions<'static>>,
     ) -> Self
     where
         M: Send + 'static,
         M::Output: Send + 'static,
         M::Format: Send + 'static,
     {
+        let options = options.unwrap_or_default();
         let (stream, target) = create_poller_stream(make_request, options);
         Self {
             stream: Box::pin(stream),
@@ -493,7 +513,7 @@ where
 {
     type Item = crate::Result<Response<M, F>>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut TaskContext<'_>) -> Poll<Option<Self::Item>> {
         let state = self.project().stream.poll_next(cx);
         if let Poll::Ready(Some(Ok(ref response))) = state {
             check_status_code(response)?;
@@ -579,18 +599,38 @@ enum State<N> {
     Done,
 }
 
+/// The type of the oneshot channel sender for the target future.
+type TargetTransmitterType<'a, M> = (Pin<BoxedFuture<M>>, Option<Context<'a>>);
+
+/// Represents the state used for each iteration through the poller stream.
+struct StreamState<'a, M, N, Fun>
+where
+    M: StatusMonitor,
+{
+    /// The current polling state (Init, InProgress, or Done)
+    state: State<N>,
+    /// The callback function to make requests
+    make_request: Fun,
+    /// Optional channel sender for the target future
+    target_tx: Option<oneshot::Sender<TargetTransmitterType<'a, M>>>,
+    /// The poller options
+    options: PollerOptions<'a>,
+    /// Whether a span was added to the context
+    added_span: bool,
+}
+
 fn create_poller_stream<
     M,
     F: Format,
-    #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] N: AsRef<str> + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] Fun: Fn(PollerState<N>, PollerOptions<'static>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + Send + 'static,
-    #[cfg(target_arch = "wasm32")] N: 'static,
-    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] N: AsRef<str> + 'static,
+    #[cfg(target_arch = "wasm32")] Fun: Fn(PollerState<N>, PollerOptions<'static>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N, F>>> + 'static,
 >(
     make_request: Fun,
-    options: Option<PollerOptions>,
+    options: PollerOptions<'static>,
 ) -> (
     impl Stream<Item = crate::Result<Response<M, F>>> + 'static,
     BoxedFuture<M>,
@@ -600,29 +640,72 @@ where
     M::Output: Send + 'static,
     M::Format: Send + 'static,
 {
-    use futures::channel::oneshot;
-
     let (target_tx, target_rx) = oneshot::channel();
-    let frequency = options
-        .unwrap_or_default()
-        .frequency
-        .unwrap_or(DEFAULT_RETRY_TIME);
+
     assert!(
-        frequency >= MIN_RETRY_TIME,
+        options.frequency >= MIN_RETRY_TIME,
         "minimum polling frequency is 1 second"
     );
-
     let stream = unfold(
         // We flow the `make_request` callback through the state value to avoid cloning.
-        (State::Init, make_request, Some(target_tx)),
-        move |(state, make_request, target_tx)| async move {
-            let result = match state {
-                State::Init => make_request(PollerState::Initial).await,
-                State::InProgress(n) => make_request(PollerState::More(n)).await,
-                State::Done => return None,
+        StreamState::<M, N, Fun> {
+            state: State::Init,
+            make_request,
+            target_tx: Some(target_tx),
+            options,
+            added_span: false,
+        },
+        move |mut poller_stream_state| async move {
+            let result = match poller_stream_state.state {
+                State::Init => {
+                    // At the very start of polling, create a span for the entire request, and attach it to the context
+                    let span =
+                        create_public_api_span(&poller_stream_state.options.context, None, None);
+                    if let Some(ref s) = span {
+                        poller_stream_state.added_span = true;
+                        poller_stream_state.options.context =
+                            poller_stream_state.options.context.with_value(s.clone());
+                    }
+                    (poller_stream_state.make_request)(
+                        PollerState::Initial,
+                        poller_stream_state.options.clone(),
+                    )
+                    .await
+                }
+                State::InProgress(n) => {
+                    tracing::debug!(
+                        "subsequent operation request to {:?}",
+                        AsRef::<str>::as_ref(&n)
+                    );
+                    (poller_stream_state.make_request)(
+                        PollerState::More(n),
+                        poller_stream_state.options.clone(),
+                    )
+                    .await
+                }
+                State::Done => {
+                    tracing::debug!("done");
+                    return None;
+                }
             };
             let (item, next_state) = match result {
-                Err(e) => return Some((Err(e), (State::Done, make_request, target_tx))),
+                Err(e) => {
+                    if poller_stream_state.added_span {
+                        if let Some(span) =
+                            poller_stream_state.options.context.value::<Arc<dyn Span>>()
+                        {
+                            // Mark the span as an error with an appropriate description.
+                            span.set_status(SpanStatus::Error {
+                                description: e.to_string(),
+                            });
+                            span.set_attribute("error.type", e.kind().to_string().into());
+                            span.end();
+                        }
+                    }
+
+                    poller_stream_state.state = State::Done;
+                    return Some((Err(e), poller_stream_state));
+                }
                 Ok(PollerResult::InProgress {
                     response,
                     retry_after,
@@ -630,35 +713,87 @@ where
                 }) => {
                     // Note that test-proxy automatically adds a transform that zeroes an existing `after-retry` header during playback, so don't check at runtime:
                     // <https://github.com/Azure/azure-sdk-tools/blob/a80b559d7682891f36a491b73f52fcb679d40923/tools/test-proxy/Azure.Sdk.Tools.TestProxy/RecordingHandler.cs#L1175>
-                    let duration = retry_after.unwrap_or(frequency);
-
-                    tracing::trace!("retry poller in {}s", duration.whole_seconds());
-                    sleep(duration).await;
+                    tracing::trace!("retry poller in {}s", retry_after.whole_seconds());
+                    sleep(retry_after).await;
 
                     (Ok(response), State::InProgress(n))
                 }
+                // Note that we will normally never reach this state. The normal progression of the `make_request` callback is to return `Succeeded` with a target future,
+                // and then the stream yields the final response and transitions to `Done` state.
+                // The only time that the `make_request` callback will normally enter the `Done` state directly is if the LRO fails or is canceled.
                 Ok(PollerResult::Done { response }) => (Ok(response), State::Done),
                 Ok(PollerResult::Succeeded {
                     response,
                     target: get_target,
                 }) => {
                     // Send the target callback through the channel
-                    if let Some(tx) = target_tx {
-                        let _ = tx.send(get_target());
+                    if let Some(tx) = poller_stream_state.target_tx.take() {
+                        let _ = tx.send((
+                            get_target(),
+                            if poller_stream_state.added_span {
+                                Some(poller_stream_state.options.context.clone())
+                            } else {
+                                None
+                            },
+                        ));
                     }
-                    // Also yield the final status response and set target_tx to None since we consumed it
-                    return Some((Ok(response), (State::Done, make_request, None)));
+                    // Also yield the final status response
+                    poller_stream_state.state = State::Done;
+                    return Some((Ok(response), poller_stream_state));
                 }
             };
 
-            // Flow 'make_request' and target_tx through to avoid cloning
-            Some((item, (next_state, make_request, target_tx)))
+            // Update state and return
+            poller_stream_state.state = next_state;
+            Some((item, poller_stream_state))
         },
     );
 
     let target = Box::new(async move {
         match target_rx.await {
-            Ok(fut) => fut.await,
+            Ok(target_state) => {
+                // Await the target future to get the final response from the poller.
+                let res = target_state.0.await;
+                // If we added a span to the target, take the result of the final target future to finalize the span.
+
+                if let Some(ctx) = target_state.1 {
+                    match &res {
+                        Ok(response) => {
+                            // When the result is done, finalize the span. Note that we only do that if we created the span in the first place,
+                            // otherwise it is the responsibility of the caller to end their span.
+                            if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+                                // 5xx status codes SHOULD set status to Error.
+                                // The description should not be set because it can be inferred from "http.response.status_code".
+                                if response.status().is_server_error() {
+                                    span.set_status(SpanStatus::Error {
+                                        description: "".to_string(),
+                                    });
+                                }
+                                if response.status().is_client_error()
+                                    || response.status().is_server_error()
+                                {
+                                    span.set_attribute(
+                                        "error.type",
+                                        response.status().to_string().into(),
+                                    );
+                                }
+
+                                span.end();
+                            }
+                        }
+                        Err(err) => {
+                            if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+                                span.set_status(SpanStatus::Error {
+                                    description: err.to_string(),
+                                });
+                                span.set_attribute("error.type", err.kind().to_string().into());
+                                span.end();
+                            }
+                        }
+                    }
+                }
+                res
+            }
             Err(err) => Err(crate::Error::with_error(
                 ErrorKind::Other,
                 err,
@@ -675,11 +810,11 @@ pub fn get_retry_after(
     headers: &Headers,
     retry_headers: &[HeaderName],
     options: &PollerOptions,
-) -> Option<Duration> {
+) -> Duration {
     #[cfg_attr(feature = "test", allow(unused_mut))]
     let duration =
         crate::http::policies::get_retry_after(headers, OffsetDateTime::now_utc, retry_headers)
-            .or(options.frequency);
+            .unwrap_or(options.frequency);
 
     #[cfg(feature = "test")]
     {
@@ -689,17 +824,14 @@ pub fn get_retry_after(
         // we need to override the frequency for services which do not send back supported headers in their response.
         if matches!(headers.get_optional::<RecordingMode>(), Ok(Some(mode)) if mode == RecordingMode::Playback)
         {
-            match duration {
-                Some(duration) if duration > Duration::ZERO => {
-                    tracing::debug!(
-                        "overriding {}s poller retry in playback",
-                        duration.whole_seconds()
-                    );
-                }
-                _ => {}
+            if duration > Duration::ZERO {
+                tracing::debug!(
+                    "overriding {}s poller retry in playback",
+                    duration.whole_seconds()
+                );
             }
 
-            return Some(Duration::ZERO);
+            return Duration::ZERO;
         }
     }
 
@@ -735,7 +867,7 @@ mod tests {
     #[cfg(feature = "xml")]
     use crate::http::XmlFormat;
     use crate::http::{
-        headers::Headers, BufResponse, HttpClient, Method, NoFormat, RawResponse, Request,
+        headers::Headers, AsyncRawResponse, HttpClient, Method, NoFormat, RawResponse, Request,
     };
     use azure_core_test::http::MockHttpClient;
     use futures::{FutureExt as _, TryStreamExt as _};
@@ -795,14 +927,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded"}"#.to_vec(),
@@ -814,7 +946,7 @@ mod tests {
         };
 
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -829,8 +961,8 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -844,7 +976,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().unwrap();
+        let first_body = first_response.into_model().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -852,7 +984,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().unwrap();
+        let second_body = second_response.into_model().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Succeeded);
 
         // Third poll should return None (end of stream)
@@ -877,14 +1009,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Failed status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Failed"}"#.to_vec(),
@@ -894,9 +1026,8 @@ mod tests {
                 .boxed()
             }))
         };
-
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -914,8 +1045,8 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -929,7 +1060,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().unwrap();
+        let first_body = first_response.into_model().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -937,7 +1068,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().unwrap();
+        let second_body = second_response.into_model().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Failed);
 
         // Third poll should return None (end of stream)
@@ -962,14 +1093,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 200 OK with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 429 Too Many Requests
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::TooManyRequests,
                             Headers::new(),
                             vec![],
@@ -981,7 +1112,7 @@ mod tests {
         };
 
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1000,8 +1131,8 @@ mod tests {
                         match test_status.status() {
                             PollerStatus::InProgress => Ok(PollerResult::InProgress {
                                 response,
-                                retry_after: Some(Duration::ZERO),
-                                next: (),
+                                retry_after: Duration::ZERO,
+                                next: "",
                             }),
                             _ => Ok(PollerResult::Done { response }),
                         }
@@ -1052,14 +1183,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","id":"op1","name":"Operation completed successfully"}"#.to_vec(),
@@ -1071,7 +1202,7 @@ mod tests {
         };
 
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1086,8 +1217,8 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback to fetch the final resource
@@ -1120,7 +1251,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let output = response.into_body().unwrap();
+        let output = response.into_model().unwrap();
         assert_eq!(output.id.as_deref(), Some("op1"));
         assert_eq!(
             output.name.as_deref(),
@@ -1146,14 +1277,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call to operation URL returns InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Accepted,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else if *count == 2 {
                         // Second call to operation URL returns Succeeded with target URL
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","target":"https://example.com/resources/123"}"#.to_vec(),
@@ -1161,7 +1292,7 @@ mod tests {
                     } else {
                         // Third call fetches the final resource from target URL
                         assert_eq!(url, "https://example.com/resources/123");
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"id":"123","name":"Test Resource"}"#.to_vec(),
@@ -1173,7 +1304,7 @@ mod tests {
         };
 
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new(
@@ -1191,8 +1322,8 @@ mod tests {
                     match operation_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback to fetch the final resource
@@ -1240,7 +1371,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let resource = response.into_body().unwrap();
+        let resource = response.into_model().unwrap();
         assert_eq!(resource.id.as_deref(), Some("123"));
         assert_eq!(resource.name.as_deref(), Some("Test Resource"));
 
@@ -1276,14 +1407,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 202 Accepted with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Accepted,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded"}"#.to_vec(),
@@ -1295,7 +1426,7 @@ mod tests {
         };
 
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1310,8 +1441,8 @@ mod tests {
                     match no_body_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback
@@ -1340,7 +1471,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        // For operations with no response body, we don't need to call into_body()
+        // For operations with no response body, we don't need to call into_model()
         // The important thing is that the poller completed successfully and returned Response<()>
 
         // Verify both calls were made
@@ -1362,14 +1493,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             b"<XmlTestStatus><status>InProgress</status></XmlTestStatus>".to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             b"<XmlTestStatus><status>Succeeded</status></XmlTestStatus>".to_vec(),
@@ -1381,7 +1512,7 @@ mod tests {
         };
 
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1396,8 +1527,8 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -1411,7 +1542,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().unwrap();
+        let first_body = first_response.into_model().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -1419,7 +1550,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().unwrap();
+        let second_body = second_response.into_model().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Succeeded);
 
         // Third poll should return None (end of stream)
@@ -1445,7 +1576,7 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             b"<XmlTestStatus><status>InProgress</status></XmlTestStatus>"
@@ -1454,7 +1585,7 @@ mod tests {
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result
                         // Note: The response contains both status and the final output fields
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             b"<XmlTestStatus><status>Succeeded</status><id>op1</id><name>Operation completed successfully</name></XmlTestStatus>"
@@ -1467,7 +1598,7 @@ mod tests {
         };
 
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1482,8 +1613,8 @@ mod tests {
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback
@@ -1514,7 +1645,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let output = response.into_body().unwrap();
+        let output = response.into_model().unwrap();
         assert_eq!(output.id.as_deref(), Some("op1"));
         assert_eq!(
             output.name.as_deref(),
@@ -1556,14 +1687,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress","id":"op1"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result in the same object
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","id":"op1","result":"Operation completed successfully"}"#.to_vec(),
@@ -1575,7 +1706,7 @@ mod tests {
         };
 
         let poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1590,8 +1721,8 @@ mod tests {
                     match self_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // The final result is already in the status response itself
@@ -1625,7 +1756,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::Ok);
-        let output = response.into_body().unwrap();
+        let output = response.into_model().unwrap();
         assert_eq!(output.id.as_deref(), Some("op1"));
         assert_eq!(
             output.result.as_deref(),
@@ -1668,14 +1799,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress","id":"op1"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status and final result in the same object
-                        Ok(BufResponse::from_bytes(
+                        Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded","id":"op1","result":"Operation completed successfully"}"#.to_vec(),
@@ -1687,7 +1818,7 @@ mod tests {
         };
 
         let mut poller = Poller::from_callback(
-            move |_| {
+            move |_, _| {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -1702,8 +1833,8 @@ mod tests {
                     match self_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
-                            retry_after: Some(Duration::ZERO),
-                            next: (),
+                            retry_after: Duration::ZERO,
+                            next: "",
                         }),
                         PollerStatus::Succeeded => {
                             // The final result is already in the status response itself
@@ -1734,7 +1865,7 @@ mod tests {
         // Use as a stream to monitor progress
         let mut statuses = Vec::new();
         while let Some(status_response) = poller.try_next().await.unwrap() {
-            let status = status_response.into_body().unwrap();
+            let status = status_response.into_model().unwrap();
             statuses.push(status);
         }
 

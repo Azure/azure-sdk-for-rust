@@ -44,8 +44,26 @@ Once changes are merged,
    cd sdk/keyvault/azure_security_keyvault_secrets
    ```
 
-2. Update `tsp-location.yml` with the commit in the `Azure/azure-sdk-for-rust` repository.
+2. Update `tsp-location.yaml` with the commit in the `Azure/azure-rest-api-specs` repository.
 3. Run `tsp-client update`.
+
+### Emitter updates
+
+If you require a change in the emitter, after a new version has been published:
+
+1. Update `eng/emitter-package.json` with the new version of `@azure-tools/typespec-rust`.
+2. Update any dependencies to match versions specified in the emitter's [package.json](https://github.com/Azure/typespec-rust/blob/main/packages/typespec-rust/package.json) file.
+3. Run `tsp-client update` in your crate directory or, to update all crates, run:
+
+   ```bash
+   # bash
+   find sdk -name tsp-location.yaml -execdir tsp-client update \;
+   ```
+
+   ```powershell
+   # powershell
+   Get-ChildItem sdk -Filter tsp-location.yaml -Recurse | ForEach-Object -Begin { Push-Location } -Process { Set-Location $_.DirectoryName; tsp-client update } -End { Pop-Location }
+   ```
 
 ## Coding
 
@@ -346,6 +364,34 @@ Performance testing is supported via [criterion](https://bheisler.github.io/crit
 There are samples of performance tests under `sdk/core/azure_core/benches` folder.
 To execute the performance tests in `azure_core` folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
 The output of the tests will be presented in the command line as well as saved under the `target/criterion` folder.
+
+## Releases
+
+### Versions
+
+To provide a helpful versioning experience, the Azure SDK for Rust libraries follow conventions similar to other Azure SDKs.
+
+Release builds will fail if a library depends on another Azure SDK for Rust library which has not been released and is not included in the current release build.
+
+#### Workspace dependencies
+
+The root `Cargo.toml` file represents released versions of crates which can be used by other Azure SDK for Rust libraries. To use a released version of a library, use `workspace = true` in your library's `Cargo.toml`.
+
+```toml
+azure_core = { workspace = true }
+```
+
+If an SDK library depends on an unreleased SDK library, specify that dependency using a path-based dependency (`version` is required for the library to release):
+
+```toml
+azure_core = { path = "../../core/azure_core", version = "0.31.0" }
+```
+
+#### Version increment on release
+
+When a release to crates.io completes, the Engineering System opens a pull request to increment versions of released packages. This PR should be merged as soon as possible to put the `main` branch in a "releasable" state and to provide context that code at the HEAD of `main` may not reflect code in a previously released version of a library.
+
+The incremented version will be a "beta" of an incrementally higher release. This incremented version in the PR is a placeholder. The version can be updated in another PR to reflect the intended release version.
 
 ## Samples
 

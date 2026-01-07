@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_queue"
-version = "0.2.0"
+version = "0.3.0"
 description = "Microsoft Azure Queue client library for Rust"
 readme = "README.md"
 authors.workspace = true
@@ -17,6 +17,7 @@ categories = ["api-bindings"]
 default = ["azure_core/default"]
 
 [dependencies]
+async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 serde = { workspace = true }
 

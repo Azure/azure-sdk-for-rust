@@ -1,14 +1,54 @@
 # Release History
 
-## 0.7.0 (Unreleased)
+## 0.8.0 (Unreleased)
 
 ### Features Added
 
+- Added support for `set_access_policy` to `BlobContainerClient`.
+- Added support for `get_access_policy` to `BlobContainerClient`.
+- Added support for `set_legal_hold` to `BlobClient`.
+- Added support for `set_immutability_policy` to `BlobClient`.
+- Added support for `delete_immutability_policy` to `BlobClient`.
+- Added support for `undelete` to `BlobClient`.
+
 ### Breaking Changes
+
+- Changed conversion implementation from `BlobTags` to `HashMap<String, String>` from `TryFrom` to `From`.
+- Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+- Renamed `content_length` to `size` for `PageBlobClient`'s `create()` method.
+
+### Breaking Changes
+
+- Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.7.0 (2025-11-11)
+
+### Features Added
+
+- Added support for client construction directly from URLs:
+  - `AppendBlobClient::from_url()`
+  - `BlobClient::from_url()`
+  - `BlobContainerClient::from_url()`
+  - `BlockBlobClient::from_url()`
+  - `PageBlobClient::from_url()`
+- Added support for SAS (shared access signature) URLs via the new `from_url()` methods.
+
+### Breaking Changes
+
+- Changed the following options structs' `method_options` from `ClientMethodOptions` to `PagerOptions`:
+  - `BlobContainerClientListBlobFlatSegmentOptions`
+  - `BlobContainerClientListBlobHierarchySegmentOptions`
+  - `BlobServiceClientListContainersSegmentOptions`
+
+- Removed the `container_name()` and `blob_name()` accessors on relevant clients.
+- Removed the `endpoint` struct field on all clients, as this value is now returned directly from the underlying generated client.
+- Changed the `container_name` and `blob_name` parameters from owned `String` to `&str` reference on relevant client constructor methods (`new()`).
+- The `credential` parameter is now `Optional` on `new()` client constructors, allowing for construction of public access clients.
+- Renamed `Response<T, F>::into_body(self) -> Result<Response<T>>` to `into_model(self) -> Result<Response<T>>`. `into_body(self)` now returns a `ResponseBody`.
 
 ## 0.6.0 (2025-10-06)
 

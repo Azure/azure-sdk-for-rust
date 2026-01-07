@@ -220,7 +220,7 @@ impl Recording {
     /// ```
     /// # let recording = azure_core_test::Recording::with_seed();
     /// let dek: [u8; 32] = recording.random();
-    /// # assert_eq!(typespec_client_core::base64::encode(dek), "HumPRAN6RqKWf0YhFV2CAFWu/8L/pwh0LRzeam5VlGo=");
+    /// # assert_eq!(azure_core::base64::encode(dek), "HumPRAN6RqKWf0YhFV2CAFWu/8L/pwh0LRzeam5VlGo=");
     /// ```
     ///
     /// Generate a UUID.
@@ -438,7 +438,7 @@ impl Recording {
             id: None,
             variables: RwLock::new(HashMap::from([(
                 RANDOM_SEED_NAME.into(),
-                "8S9UCR2yV8LU01tq+VNEwGssAXVUbL0Hd488GAYVosM=".into(),
+                (&"test8S9UCR2yV8LU01tq+VNEwGssAXVUbL0Hd488GAYVosM="[4..]).into(), // Prefix but then drop is to avoid CredScan false positives
             )])),
             rand: OnceLock::new(),
         }

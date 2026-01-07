@@ -13,7 +13,7 @@ use self::noop::new_noop_client;
 #[cfg(feature = "reqwest")]
 use self::reqwest::new_reqwest_client;
 
-use crate::http::{BufResponse, Request};
+use crate::http::{AsyncRawResponse, Request};
 use async_trait::async_trait;
 use std::sync::Arc;
 use typespec::error::Result;
@@ -44,5 +44,5 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// The built-in [`RetryPolicy`](crate::http::policies::RetryPolicy) will resend the [`Request`]
     /// for some [`ErrorKind::HttpResponse`](crate::error::ErrorKind::HttpResponse) status codes e.g., [`StatusCode::TooManyRequests`](crate::http::StatusCode::TooManyRequests) and
     /// for [`ErrorKind::Io`](crate::error::ErrorKind::Io) returned by your `HttpClient` for situations like connection resets.
-    async fn execute_request(&self, request: &Request) -> Result<BufResponse>;
+    async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse>;
 }

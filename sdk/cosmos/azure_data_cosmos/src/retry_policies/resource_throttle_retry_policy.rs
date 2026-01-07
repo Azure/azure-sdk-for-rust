@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{RetryPolicy, RetryResult};
-use async_trait::async_trait;
+use super::RetryResult;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 
@@ -121,7 +120,7 @@ impl ResourceThrottleRetryPolicy {
     /// # Note
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the error context.
-    fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
+    pub fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
         // Check if the error has an HTTP status code and if it's a valid throttle status
         // Early return for invalid or missing status codes
         if err.http_status() == Some(StatusCode::TooManyRequests) {
@@ -148,7 +147,7 @@ impl ResourceThrottleRetryPolicy {
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the response headers to respect
     /// server-suggested retry delays.
-    fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
+    pub fn should_retry_response(&mut self, response: &RawResponse) -> RetryResult {
         if response.status() == StatusCode::TooManyRequests {
             // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
             return self.should_retry_with_backoff(Some(Duration::milliseconds(500)));
@@ -158,8 +157,7 @@ impl ResourceThrottleRetryPolicy {
     }
 }
 
-#[async_trait]
-impl RetryPolicy for ResourceThrottleRetryPolicy {
+impl ResourceThrottleRetryPolicy {
     /// Determines whether an HTTP request should be retried based on the response or error
     ///
     /// This method evaluates the result of an HTTP request attempt and decides whether
@@ -174,7 +172,10 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
     /// # Returns
     ///
     /// A `RetryResult` indicating the retry decision.
-    async fn should_retry(&mut self, response: &azure_core::Result<RawResponse>) -> RetryResult {
+    pub(crate) async fn should_retry(
+        &mut self,
+        response: &azure_core::Result<RawResponse>,
+    ) -> RetryResult {
         match response {
             Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
                 self.should_retry_response(resp)
@@ -189,7 +190,6 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
 #[cfg(test)]
 mod tests {
     use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
-    use crate::retry_policies::RetryPolicy;
     use crate::retry_policies::RetryResult;
     use azure_core::{
         http::{headers::Headers, RawResponse, StatusCode},

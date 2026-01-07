@@ -49,7 +49,7 @@ pub fn parse_function(attr: TokenStream, item: TokenStream) -> Result<TokenStrea
             .into_iter()
             .map(|(name, value)| {
                 quote! {
-                    ::typespec_client_core::tracing::Attribute{key: #name.into(), value: #value.into()}
+                    ::azure_core::tracing::Attribute{key: #name.into(), value: #value.into()}
                 }
             })
             .collect::<Vec<_>>();
@@ -60,10 +60,7 @@ pub fn parse_function(attr: TokenStream, item: TokenStream) -> Result<TokenStrea
         let options = {
             let mut options = options.unwrap_or_default();
 
-            let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                api_name: #api_name,
-                attributes: #attributes,
-            };
+            let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new(#api_name, #attributes);
             // Add the span to the tracer.
             let mut ctx = options.method_options.context.with_value(public_api_info);
             // If the service has a tracer, we add it to the context.
@@ -203,11 +200,6 @@ fn is_function_declaration(item: &TokenStream) -> std::result::Result<(), String
             return Err(format!("Failed to parse function declaration: {e}"));
         }
     };
-
-    // Function must be public.
-    if !matches!(item_fn.vis, syn::Visibility::Public(_)) {
-        return Err("Function must be public".into());
-    }
 
     // Function must return a Result type.
     if let syn::ReturnType::Type(_, ty) = &item_fn.sig.output {
@@ -409,10 +401,7 @@ mod tests {
         pub async fn my_function(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
             let options = {
                 let mut options = options.unwrap_or_default();
-                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                    api_name: "TestFunction",
-                    attributes: Vec::new(),
-                };
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new("TestFunction", Vec::new());
                 let mut ctx = options.method_options.context.with_value(public_api_info);
                 if let Some(tracer) = &self.tracer {
                     ctx = ctx.with_value(tracer.clone());
@@ -477,9 +466,9 @@ mod tests {
                     .append_pair("maxresults", &maxresults.to_string());
             }
             let api_version = self.api_version.clone();
-            Ok(Pager::from_callback(move |next_link: Option<Url>| {
+            Ok(Pager::new(move |next_link: PagerState<Url>, pager_options| {
                 let url = match next_link {
-                    Some(next_link) => {
+                    PagerState::More(next_link) => {
                         let qp = next_link
                             .query_pairs()
                             .filter(|(name, _)| name.ne("api-version"));
@@ -491,18 +480,18 @@ mod tests {
                             .append_pair("api-version", &api_version);
                         next_link
                     }
-                    None => first_url.clone(),
+                    PagerState::Initial => first_url.clone(),
                 };
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
-                let ctx = options.method_options.context.clone();
+                let ctx = pager_options.context.clone();
                 let pipeline = pipeline.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline.send(&ctx, &mut request).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = AsyncRawResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
@@ -510,8 +499,8 @@ mod tests {
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }
-            }))
+                })
+            }, None))
         }
         };
 
@@ -523,10 +512,7 @@ mod tests {
         ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
             let options = {
                 let mut options = options.unwrap_or_default();
-                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-                    api_name: "TestFunction",
-                    attributes: Vec::new(),
-                };
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation::new("TestFunction", Vec::new());
                 let mut ctx = options.method_options.context.with_value(public_api_info);
                 if let Some(tracer) = &self.tracer {
                     ctx = ctx.with_value(tracer.clone());
@@ -548,9 +534,9 @@ mod tests {
                         .append_pair("maxresults", &maxresults.to_string());
                 }
                 let api_version = self.api_version.clone();
-                Ok(Pager::from_callback(move |next_link: Option<Url>| {
+                Ok(Pager::new(move |next_link: PagerState<Url>, pager_options| {
                     let url = match next_link {
-                        Some(next_link) => {
+                        PagerState::More(next_link) => {
                             let qp = next_link
                                 .query_pairs()
                                 .filter(|(name, _)| name.ne("api-version"));
@@ -562,18 +548,18 @@ mod tests {
                                 .append_pair("api-version", &api_version);
                             next_link
                         }
-                        None => first_url.clone(),
+                        PagerState::Initial => first_url.clone(),
                     };
                     let mut request = Request::new(url, Method::Get);
                     request.insert_header("accept", "application/json");
-                    let ctx = options.method_options.context.clone();
+                    let ctx = pager_options.context.clone();
                     let pipeline = pipeline.clone();
-                    async move {
+                    Box::pin(async move {
                         let rsp = pipeline.send(&ctx, &mut request).await?;
                         let (status, headers, body) = rsp.deconstruct();
                         let bytes = body.collect().await?;
                         let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
-                        let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                        let rsp = AsyncRawResponse::from_bytes(status, headers, bytes).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
@@ -581,8 +567,8 @@ mod tests {
                             },
                             _ => PagerResult::Done { response: rsp },
                         })
-                    }
-                }))
+                    })
+                }, None))
             }
         }
         };

@@ -1,6 +1,6 @@
 [package]
 name = "typespec"
-version = "0.10.0"
+version = "0.11.0"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -25,10 +25,9 @@ thiserror.workspace = true
 
 [features]
 default = ["http", "json"]
-amqp = []
 http = []
 json = ["dep:serde", "dep:serde_json"]
-xml = ["dep:quick-xml"]
+xml = ["dep:serde", "dep:quick-xml"]
 
 [package.metadata.docs.rs]
 all-features = true

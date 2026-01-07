@@ -2,7 +2,8 @@
 // Licensed under the MIT license.
 
 use super::session::AmqpSession;
-use azure_core::{credentials::Secret, error::Result, time::OffsetDateTime};
+use crate::error::Result;
+use azure_core::{credentials::Secret, time::OffsetDateTime};
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
@@ -18,12 +19,6 @@ pub trait AmqpClaimsBasedSecurityApis {
     ///
     /// This method is responsible for setting up the necessary AMQP links for CBS operations.
     /// It must be called before attempting to authorize any AMQP paths using the `authorize_path` method.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` which is:
-    /// - `Ok(())` on successful attachment of the CBS node.
-    /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
     async fn attach(&self) -> Result<()>;
 
@@ -41,12 +36,6 @@ pub trait AmqpClaimsBasedSecurityApis {
     /// - `token_type`: An optional string representing the type of token used for authorization. This is either "servicebus.windows.net:sastoken" or "jwt". If it is not supplied, "jwt" is assumed.
     /// - `secret`: A string representing the secret used for authorization. This is typically a JSON Web token.
     /// - `expires_on`: The expiration time of the authorization.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` which is:
-    /// - `Ok(())` on successful authorization of the AMQP path.
-    /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
     async fn authorize_path(
         &self,

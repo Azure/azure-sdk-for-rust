@@ -9,17 +9,17 @@ use super::{
         Blob_tag_setTag, BlobsBlob, Committed_blocksBlock, Container_itemsContainer, CorsCorsRule,
         SchemaField, Uncommitted_blocksBlock,
     },
-    AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
-    GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
+    AccessTier, ArchiveStatus, BlobType, CopyStatus, GeoReplicationStatusType,
+    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     QueryRequestType, QueryType, RehydratePriority,
 };
 use azure_core::{
     base64::option::{deserialize, serialize},
     fmt::SafeDebug,
     time::OffsetDateTime,
+    Value,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 
 /// Represents an access policy.
@@ -30,7 +30,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -43,7 +43,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub start: Option<OffsetDateTime>,
 }
@@ -123,10 +123,6 @@ pub struct BlobClientCopyFromUrlResult;
 #[derive(SafeDebug)]
 pub struct BlobClientCreateSnapshotResult;
 
-/// Contains results for `BlobClient::delete_immutability_policy()`
-#[derive(SafeDebug)]
-pub struct BlobClientDeleteImmutabilityPolicyResult;
-
 /// Contains results for `BlobClient::download()`
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult;
@@ -151,21 +147,9 @@ pub struct BlobClientRenewLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetExpiryResult;
 
-/// Contains results for `BlobClient::set_immutability_policy()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetImmutabilityPolicyResult;
-
-/// Contains results for `BlobClient::set_legal_hold()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetLegalHoldResult;
-
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
-
-/// Contains results for `BlobClient::undelete()`
-#[derive(SafeDebug)]
-pub struct BlobClientUndeleteResult;
 
 /// Contains results for `BlobContainerClient::acquire_lease()`
 #[derive(SafeDebug)]
@@ -203,10 +187,6 @@ pub struct BlobContainerClientRenewLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRestoreResult;
 
-/// Contains results for `BlobContainerClient::set_access_policy()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientSetAccessPolicyResult;
-
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -242,7 +222,7 @@ pub struct BlobItemInternal {
     #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
 
-    /// Whether the blog has versions only.
+    /// Whether the blob has versions only.
     #[serde(rename = "HasVersionsOnly", skip_serializing_if = "Option::is_none")]
     pub has_versions_only: Option<bool>,
 
@@ -450,7 +430,7 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "EncryptionScope", skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
 
-    /// The blog ETag.
+    /// The blob ETag.
     #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 
@@ -477,9 +457,9 @@ pub struct BlobPropertiesInternal {
         rename = "ImmutabilityPolicyMode",
         skip_serializing_if = "Option::is_none"
     )]
-    pub immutability_policy_mode: Option<BlobImmutabilityPolicyMode>,
+    pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
 
-    /// Whether the blog is incremental copy.
+    /// Whether the blob is incremental copy.
     #[serde(rename = "IncrementalCopy", skip_serializing_if = "Option::is_none")]
     pub incremental_copy: Option<bool>,
 
@@ -532,7 +512,7 @@ pub struct BlobPropertiesInternal {
     )]
     pub remaining_retention_days: Option<i32>,
 
-    /// Whether the blog is encrypted on the server.
+    /// Whether the blob is encrypted on the server.
     #[serde(rename = "ServerEncrypted", skip_serializing_if = "Option::is_none")]
     pub server_encrypted: Option<bool>,
 
@@ -1300,6 +1280,14 @@ pub struct SignedIdentifier {
     /// The unique ID for the signed identifier.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+
+/// Represents an array of signed identifiers
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct SignedIdentifiers {
+    /// The array of signed identifiers.
+    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SignedIdentifier>>,
 }
 
 /// The properties that enable an account to host a static website
