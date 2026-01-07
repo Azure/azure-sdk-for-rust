@@ -1,17 +1,17 @@
 name: Copilot Setup Steps
 
 # This workflow sets up the development environment for GitHub Copilot coding agent
-# It uses a pre-built container image with all the necessary tools already installed
+# It uses the official Rust container image and installs minimal required tools
 #
 # The workflow:
-# - Uses the heaths/azure-sdk-for-rust:latest container image with all dependencies
-# - Maps the repository into the standard devcontainer workspace location
+# - Uses the official rust:latest container image
+# - Installs only essential system dependencies needed for building
 # - Caches Cargo dependencies for improved performance
 # - Runs comprehensive workspace verification (check, clippy, fmt)
 # - Tests basic functionality to ensure the environment is ready
 #
-# This approach leverages a pre-built image that contains all the tools from
-# the devcontainer configuration, avoiding the need to install tools at runtime
+# This approach uses the official Rust image to stay current with tooling updates
+# and only installs minimal tools to keep setup time short
 #
 # Triggers:
 # - Manual execution via workflow_dispatch 
@@ -50,14 +50,16 @@ jobs:
       contents: read
     environment: Copilot
     container:
-      image: heaths/azure-sdk-for-rust:latest
-      volumes:
-        - ${{ github.workspace }}:/workspaces/azure-sdk-for-rust
-      options: --workdir /workspaces/azure-sdk-for-rust
+      image: rust:latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Install essential system dependencies
+        run: |
+          apt-get update
+          apt-get install -y pkg-config libssl-dev
       
       - name: Cache Cargo dependencies
         uses: actions/cache@v4
@@ -104,9 +106,6 @@ jobs:
           cargo --version
           echo "=== Installed Components ==="
           rustup component list --installed
-          echo "=== Available Tools ==="
-          which cargo-watch && cargo-watch --version || echo "cargo-watch not available"
-          which http-server && http-server --version || echo "http-server not available"
           echo "=== System Dependencies ==="
           openssl version
           pkg-config --exists openssl && echo "OpenSSL pkg-config: OK" || echo "OpenSSL pkg-config: NOT FOUND"
