@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Changed the type of the `certificate` parameter of `ClientCertificateCredential::new()` from `impl Into<Secret>` to `Secret`.
+
 ### Bugs Fixed
 
 ### Other Changes
