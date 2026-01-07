@@ -1,3 +1,6 @@
+mod download;
+mod upload;
+
 use std::{cmp::max, future::Future, num::NonZero, pin::Pin};
 
 use futures::{

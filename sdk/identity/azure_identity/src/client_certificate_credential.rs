@@ -69,7 +69,7 @@ impl ClientCertificateCredential {
     pub fn new(
         tenant_id: String,
         client_id: String,
-        certificate: impl Into<Secret>,
+        certificate: Secret,
         options: Option<ClientCertificateCredentialOptions>,
     ) -> azure_core::Result<Arc<ClientCertificateCredential>> {
         validate_tenant_id(&tenant_id)?;
@@ -77,7 +77,7 @@ impl ClientCertificateCredential {
 
         let options = options.unwrap_or_default();
 
-        let cert_bytes = base64::decode(certificate.into().secret())
+        let cert_bytes = base64::decode(certificate.secret())
             .with_context_fn(ErrorKind::Credential, || {
                 "failed to decode base64 certificate data"
             })?;
@@ -469,7 +469,7 @@ mod tests {
         let credential = ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_str().into(),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
@@ -519,7 +519,7 @@ mod tests {
         let credential = ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_str().into(),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
@@ -560,7 +560,7 @@ mod tests {
         ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            "not a certificate".to_string(),
+            "not a certificate".into(),
             None,
         )
         .expect_err("invalid certificate");
@@ -571,7 +571,7 @@ mod tests {
         ClientCertificateCredential::new(
             "not a valid tenant".to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_str().into(),
             None,
         )
         .expect_err("invalid tenant ID");
@@ -582,7 +582,7 @@ mod tests {
         ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_str().into(),
             None,
         )
         .expect("valid credential")
@@ -603,7 +603,7 @@ mod tests {
         let credential = ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_str().into(),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),

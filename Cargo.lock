@@ -315,13 +315,13 @@ dependencies = [
 name = "azure_data_cosmos"
 version = "0.30.0"
 dependencies = [
+ "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",
  "azure_identity",
  "clap",
  "futures",
- "moka",
  "reqwest",
  "serde",
  "serde_json",
@@ -330,7 +330,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
- "uuid",
 ]
 
 [[package]]
@@ -536,9 +535,12 @@ dependencies = [
 name = "azure_storage_blob_test"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "azure_core",
  "azure_core_test",
  "azure_storage_blob",
+ "bytes",
+ "futures",
  "tokio",
 ]
 
@@ -919,15 +921,6 @@ checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
 dependencies = [
  "cast",
  "itertools",
-]
-
-[[package]]
-name = "crossbeam-channel"
-version = "0.5.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82b8f8f868b36967f9606790d1903570de9ceaf870a7bf9fbbd3016d636a2cb2"
-dependencies = [
- "crossbeam-utils",
 ]
 
 [[package]]
@@ -1871,27 +1864,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moka"
-version = "0.12.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8261cd88c312e0004c1d51baad2980c66528dfdb2bee62003e643a4d8f86b077"
-dependencies = [
- "async-lock",
- "crossbeam-channel",
- "crossbeam-epoch",
- "crossbeam-utils",
- "equivalent",
- "event-listener",
- "futures-util",
- "parking_lot",
- "portable-atomic",
- "rustc_version",
- "smallvec",
- "tagptr",
- "uuid",
-]
-
-[[package]]
 name = "native-tls"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2192,12 +2164,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "portable-atomic"
-version = "1.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f84267b20a16ea918e43c6a88433c2d54fa145c92a811b5b047ccbe153674483"
-
-[[package]]
 name = "potential_utf"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2460,9 +2426,9 @@ dependencies = [
 
 [[package]]
 name = "rkyv"
-version = "0.7.45"
+version = "0.7.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9008cd6385b9e161d8229e1f6549dd23c3d022f132a2ea37ac3a10ac4935779b"
+checksum = "2297bf9c81a3f0dc96bc9521370b88f054168c29826a75e89c55ff196e7ed6a1"
 dependencies = [
  "bitvec",
  "bytecheck",
@@ -2478,9 +2444,9 @@ dependencies = [
 
 [[package]]
 name = "rkyv_derive"
-version = "0.7.45"
+version = "0.7.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "503d1d27590a2b0a3a4ca4c94755aa2875657196ecbf401a42eff41d7de532c0"
+checksum = "84d7b42d4b8d06048d3ac8db0eb31bcb942cbeb709f0b5f2b2ebde398d3038f5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2902,12 +2868,6 @@ dependencies = [
  "quote",
  "syn 2.0.110",
 ]
-
-[[package]]
-name = "tagptr"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
 
 [[package]]
 name = "tap"

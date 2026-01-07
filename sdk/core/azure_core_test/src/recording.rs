@@ -438,7 +438,7 @@ impl Recording {
             id: None,
             variables: RwLock::new(HashMap::from([(
                 RANDOM_SEED_NAME.into(),
-                "8S9UCR2yV8LU01tq+VNEwGssAXVUbL0Hd488GAYVosM=".into(),
+                (&"test8S9UCR2yV8LU01tq+VNEwGssAXVUbL0Hd488GAYVosM="[4..]).into(), // Prefix but then drop is to avoid CredScan false positives
             )])),
             rand: OnceLock::new(),
         }

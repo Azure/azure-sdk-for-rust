@@ -151,7 +151,6 @@ uuid = { version = "1.18", features = ["v4"] }
 wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
 zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
-moka = { version = "0.12", features = ["future"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"
