@@ -69,11 +69,8 @@ impl CosmosClient {
         );
 
         let preferred_regions = options.application_preferred_regions.clone();
-        let global_endpoint_manager = GlobalEndpointManager::new(
-            endpoint.clone(),
-            preferred_regions,
-            pipeline_core.clone(),
-        );
+        let global_endpoint_manager =
+            GlobalEndpointManager::new(endpoint.clone(), preferred_regions, pipeline_core.clone());
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint,
@@ -126,11 +123,8 @@ impl CosmosClient {
         );
 
         let preferred_regions = options.application_preferred_regions.clone();
-        let global_endpoint_manager = GlobalEndpointManager::new(
-            endpoint.clone(),
-            preferred_regions,
-            pipeline_core.clone(),
-        );
+        let global_endpoint_manager =
+            GlobalEndpointManager::new(endpoint.clone(), preferred_regions, pipeline_core.clone());
 
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint,

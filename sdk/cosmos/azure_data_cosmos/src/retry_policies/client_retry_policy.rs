@@ -5,6 +5,7 @@ use super::{
     get_substatus_code_from_error, get_substatus_code_from_response,
     resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
 };
+use crate::constants;
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
@@ -13,7 +14,6 @@ use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::sync::Arc;
 use url::Url;
-use crate::constants;
 
 /// An integer indicating the default retry intervals between two retry attempts.
 const RETRY_INTERVAL_MS: i64 = 1000;
@@ -140,9 +140,11 @@ impl ClientRetryPolicy {
                 );
 
         if self.is_multi_master_write_request {
-           request.headers.insert(constants::ALLOW_TENTATIVE_WRITES, "true");
+            request
+                .headers
+                .insert(constants::ALLOW_TENTATIVE_WRITES, "true");
         } else {
-           request.headers.remove(constants::ALLOW_TENTATIVE_WRITES);
+            request.headers.remove(constants::ALLOW_TENTATIVE_WRITES);
         }
 
         // Clear previous location-based routing directive

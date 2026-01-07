@@ -64,10 +64,7 @@ impl AsHeaders for CosmosClientOptions {
         }
 
         if let Some(priority) = &self.priority {
-            headers.push((
-                constants::PRIORITY_LEVEL,
-                priority.to_string().into(),
-            ));
+            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
         }
 
         if let Some(throughput_bucket) = &self.throughput_bucket {
@@ -287,10 +284,7 @@ impl AsHeaders for ItemOptions<'_> {
         }
 
         if let Some(priority) = &self.priority {
-            headers.push((
-                constants::PRIORITY_LEVEL,
-                priority.to_string().into(),
-            ));
+            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
         }
 
         if let Some(throughput_bucket) = &self.throughput_bucket {
@@ -316,7 +310,10 @@ fn add_custom_headers(
 ) {
     // custom headers should not override existing headers
     for (name, value) in additional_headers {
-        if !headers.iter().any(|(existing_name, _)| existing_name == name) {
+        if !headers
+            .iter()
+            .any(|(existing_name, _)| existing_name == name)
+        {
             headers.push((name.clone(), value.clone()));
         }
     }
@@ -371,7 +368,7 @@ pub struct QueryOptions<'a> {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
     /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    pub custom_headers: Vec<(HeaderName, HeaderValue)>
+    pub custom_headers: Vec<(HeaderName, HeaderValue)>,
 }
 
 impl QueryOptions<'_> {
@@ -410,10 +407,7 @@ impl AsHeaders for QueryOptions<'_> {
         }
 
         if let Some(priority) = &self.priority {
-            headers.push((
-                constants::PRIORITY_LEVEL,
-                priority.to_string().into(),
-            ));
+            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
         }
 
         if let Some(throughput_bucket) = &self.throughput_bucket {
@@ -462,7 +456,10 @@ mod tests {
             enable_content_response_on_write: false,
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(2),
-            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(
+                HeaderName::from_static("x-custom-header"),
+                HeaderValue::from_static("custom_value"),
+            )],
             ..Default::default()
         };
 
@@ -497,7 +494,10 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::Eventual),
             throughput_bucket: Some(5),
             priority: Some(PriorityLevel::Low),
-            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(
+                HeaderName::from_static("x-custom-header"),
+                HeaderValue::from_static("custom_value"),
+            )],
             ..Default::default()
         };
 
@@ -521,7 +521,10 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::BoundedStaleness),
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(10),
-            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(
+                HeaderName::from_static("x-custom-header"),
+                HeaderValue::from_static("custom_value"),
+            )],
             ..Default::default()
         };
         let headers_result: Vec<(HeaderName, HeaderValue)> =

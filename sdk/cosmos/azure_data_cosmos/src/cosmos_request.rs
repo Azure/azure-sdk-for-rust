@@ -275,7 +275,9 @@ mod tests {
     use super::*;
     use crate::operation_context::OperationType;
     use crate::resource_context::ResourceType;
-    use crate::{constants, ConsistencyLevel, CosmosClientOptions, ItemOptions, PartitionKey, PriorityLevel};
+    use crate::{
+        constants, ConsistencyLevel, CosmosClientOptions, ItemOptions, PartitionKey, PriorityLevel,
+    };
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
         let req = CosmosRequest::builder(op, ResourceLink::root(ResourceType::Documents))
@@ -384,12 +386,14 @@ mod tests {
 
     #[test]
     fn prioritize_request_headers_over_client_headers() {
-
         let item_options = ItemOptions {
             consistency_level: Some(ConsistencyLevel::Session),
             throughput_bucket: Some(1),
             priority: Some(PriorityLevel::Low),
-            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value"))],
+            custom_headers: vec![(
+                HeaderName::from_static("x-custom-header"),
+                HeaderValue::from_static("custom_value"),
+            )],
             ..Default::default()
         };
         let req = CosmosRequest::builder(
@@ -401,13 +405,17 @@ mod tests {
         .unwrap();
 
         let mut req_with_client_headers = req.clone();
-        req_with_client_headers.request_context.location_endpoint_to_route =
-            Some("https://example.com/".parse().unwrap());
+        req_with_client_headers
+            .request_context
+            .location_endpoint_to_route = Some("https://example.com/".parse().unwrap());
         let client_options = CosmosClientOptions {
             consistency_level: Some(ConsistencyLevel::Strong),
             throughput_bucket: Some(5),
             priority: Some(PriorityLevel::High),
-            custom_headers: vec![(HeaderName::from_static("x-custom-header"), HeaderValue::from_static("custom_value-2"))],
+            custom_headers: vec![(
+                HeaderName::from_static("x-custom-header"),
+                HeaderValue::from_static("custom_value-2"),
+            )],
             ..Default::default()
         };
         req_with_client_headers.client_headers(&client_options);
@@ -424,7 +432,10 @@ mod tests {
         assert_eq!(get_header(&constants::THROUGHPUT_BUCKET), "1");
         assert_eq!(get_header(&constants::PRIORITY_LEVEL), "Low");
         assert_eq!(get_header(&constants::CONSISTENCY_LEVEL), "Session");
-        assert_eq!(get_header(&HeaderName::from_static("x-custom-header")), "custom_value");
+        assert_eq!(
+            get_header(&HeaderName::from_static("x-custom-header")),
+            "custom_value"
+        );
     }
 
     #[test]
