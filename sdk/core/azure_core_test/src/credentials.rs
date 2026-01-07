@@ -69,7 +69,6 @@ pub fn from_env(options: Option<ClientOptions>) -> azure_core::Result<Arc<dyn To
                 Some(AzurePipelinesCredentialOptions {
                     credential_options: ClientAssertionCredentialOptions {
                         client_options: options.unwrap_or_default(),
-                        ..Default::default()
                     },
                 }),
             )? as Arc<dyn TokenCredential>);
