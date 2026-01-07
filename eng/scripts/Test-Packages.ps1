@@ -107,9 +107,13 @@ foreach ($package in $packagesToTest) {
 
   $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
   Invoke-CargoTestWithJsonOutput `
-    -TestParams "--all-targets $featuresArg" `
+    -TestParams "--lib --bins --tests --examples $featuresArg" `
     -PackageName $package.Name `
     -OutputFile $allTargetsOutput
+
+  Invoke-LoggedCommand `
+    "cargo test --benches --package $($package.Name) --no-fail-fast $featuresArg" `
+    -GroupOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
   if (Test-Path $cleanupScript) {
