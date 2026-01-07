@@ -70,7 +70,8 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     let version = certificate.resource_id()?.version;
 
     assert!(certificate.id.is_some());
-    assert!(version.is_some());
+    // TODO: Remove -- Testing failure
+    assert!(!version.is_some());
 
     Ok(())
 }
