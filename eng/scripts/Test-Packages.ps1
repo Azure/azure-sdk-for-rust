@@ -112,7 +112,7 @@ foreach ($package in $packagesToTest) {
     -OutputFile $allTargetsOutput
 
   Invoke-LoggedCommand `
-    "cargo  test --benches --package $($package.Name) --no-fail-fast $featuresArg" `
+    "cargo test --benches --package $($package.Name) --no-fail-fast $featuresArg" `
     -GroupOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
