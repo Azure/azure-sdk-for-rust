@@ -6,7 +6,7 @@
 pub mod options;
 
 #[cfg(not(target_arch = "wasm32"))]
-use crate::stream::SeekableStream;
+use crate::stream::{BytesStream, SeekableStream};
 #[cfg(feature = "json")]
 use crate::{http::JsonFormat, json::to_json};
 use crate::{
@@ -64,6 +64,18 @@ impl Body {
             Body::Bytes(_) => Ok(()),
             #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(stream) => stream.reset().await,
+        }
+    }
+
+    /// Takes the body, leaving an empty body in its place.
+    pub fn take(&mut self) -> Body {
+        match self {
+            Body::Bytes(_) => std::mem::replace(self, Body::Bytes(Bytes::new())),
+            #[cfg(not(target_arch = "wasm32"))]
+            Body::SeekableStream(_) => std::mem::replace(
+                self,
+                Body::SeekableStream(Box::new(BytesStream::new_empty())),
+            ),
         }
     }
 
@@ -712,5 +724,46 @@ mod tests {
     fn tryfrom_str() {
         let actual = r#"{"str":"test","num":1,"b":true}"#;
         assert_eq!(*EXPECTED, RequestContent::from_str(actual));
+    }
+
+    #[test]
+    fn body_take_bytes() {
+        let bytes = b"bytes";
+        let mut body = Body::from_static(bytes);
+
+        match body.take() {
+            Body::Bytes(b) => assert_eq!(bytes, b.as_ref()),
+            #[cfg(not(target_arch = "wasm32"))]
+            _ => panic!("expected Bytes"),
+        };
+
+        assert!(body.is_empty());
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn body_take_stream() {
+        use futures::TryStreamExt;
+
+        let bytes = b"bytes";
+        let mut body = Body::SeekableStream(Box::new(crate::stream::BytesStream::new(
+            Bytes::from_static(bytes),
+        )));
+
+        match body.take() {
+            Body::SeekableStream(stream) => {
+                let actual = stream
+                    .try_fold(Vec::new(), |mut acc, chunk| async move {
+                        acc.extend_from_slice(&chunk);
+                        Ok(acc)
+                    })
+                    .await
+                    .unwrap();
+                assert_eq!(bytes, actual.as_slice());
+            }
+            _ => panic!("expected SeekableStream"),
+        }
+
+        assert!(body.is_empty());
     }
 }

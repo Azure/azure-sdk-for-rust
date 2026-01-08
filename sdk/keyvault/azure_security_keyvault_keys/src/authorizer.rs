@@ -81,8 +81,8 @@ impl OnRequest for KeyVaultAuthorizer {
         let scope = self.scope.read().await;
         if scope.is_empty() {
             if !request.body().is_empty() {
-                ctx.insert(request.body().clone());
-                request.set_body(Vec::new());
+                let body = request.body_mut().take();
+                ctx.insert(body);
                 let headers = request.headers_mut();
                 headers.remove(CONTENT_LENGTH);
                 headers.remove(CONTENT_TYPE);
