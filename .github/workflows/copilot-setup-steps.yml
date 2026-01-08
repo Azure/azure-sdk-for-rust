@@ -46,25 +46,22 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Verify workspace setup
-        run: |
-          # Verify the workspace can be built
-          cargo check --workspace --all-targets
-
       - name: Setup environment variables
         run: |
           echo "RUST_BACKTRACE=1" >> $GITHUB_ENV
           echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
           echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
 
-      - name: Test basic functionality
+      - name: Verify workspace setup
         run: |
           # Test that we can run basic cargo commands
           cargo --version
-          cargo tree --workspace | head -20
 
-          # Verify that tests can be discovered
-          cargo test --workspace --no-run
+          # Verify core can be built
+          cargo check --package azure_core --all-targets
+
+          # Verify that core tests can be discovered
+          cargo test --package azure_core --no-run
 
       - name: Environment summary
         run: |
