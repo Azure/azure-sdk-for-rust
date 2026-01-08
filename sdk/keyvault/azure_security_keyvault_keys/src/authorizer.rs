@@ -54,7 +54,7 @@ impl KeyVaultAuthorizer {
         }
 
         Err(Error::with_message(
-            ErrorKind::Other,
+            ErrorKind::DataConversion,
             format!("authentication challenge doesn't contain scope or resource: {challenge}"),
         ))
     }
