@@ -4,7 +4,6 @@
 use std::sync::Arc;
 use super::async_cache::AsyncCache;
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadContainerOptions};
@@ -23,9 +22,9 @@ use crate::pipeline::CosmosPipeline;
 #[derive(Clone, Debug)]
 pub struct ContainerCache {
     pipeline: Arc<CosmosPipeline>,
+    container_link: ResourceLink,
     global_endpoint_manager: GlobalEndpointManager,
     container_properties_cache: AsyncCache<String, ContainerProperties>,
-    retry_handler: BackOffRetryHandler,
 }
 
 impl ContainerCache {
@@ -42,17 +41,16 @@ impl ContainerCache {
     ///
     /// # Returns
     /// A new `ContainerCache` instance ready for caching container metadata
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, container_link: ResourceLink, global_endpoint_manager: GlobalEndpointManager) -> Self {
         let container_properties_cache = AsyncCache::new(
             Duration::from_secs(300), // Default 5 minutes TTL
         );
-        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager.clone());
 
         Self {
             pipeline,
+            container_link,
             global_endpoint_manager,
             container_properties_cache,
-            retry_handler,
         }
     }
 
@@ -74,14 +72,13 @@ impl ContainerCache {
     pub async fn resolve_by_id(
         &self,
         container_id: String,
-        container_link: ResourceLink,
         options: Option<ReadContainerOptions<'_>>,
         force_refresh: bool,
     ) -> Result<ContainerProperties, Error> {
         self.container_properties_cache
             .get(container_id, force_refresh, || async {
                 let response = self
-                    .read_container_properties_by_id(container_link, options)
+                    .read_container_properties_by_id(self.container_link.clone(), options)
                     .await?;
                 response.into_model()
             })
@@ -156,32 +153,53 @@ impl ContainerCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::http::{ClientOptions, Pipeline};
+    use azure_core::http::ClientOptions;
     use std::borrow::Cow;
     use url::Url;
+    use crate::resource_context::ResourceType;
 
-    // Helper function to create a test pipeline
-    fn create_test_pipeline() -> Pipeline {
-        azure_core::http::Pipeline::new(
+    // Helper function to create a test CosmosPipeline
+    fn create_test_cosmos_pipeline(endpoint_manager: &GlobalEndpointManager) -> Arc<CosmosPipeline> {
+        let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             ClientOptions::default(),
             Vec::new(),
             Vec::new(),
             None,
-        )
+        );
+        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
+        Arc::new(CosmosPipeline::new(
+            endpoint,
+            pipeline_core,
+            endpoint_manager.clone(),
+        ))
     }
 
     // Helper function to create a test GlobalEndpointManager
     fn create_test_endpoint_manager() -> GlobalEndpointManager {
-        let pipeline = create_test_pipeline();
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
         GlobalEndpointManager::new(endpoint, vec![], pipeline)
     }
 
     // Helper function to create a test GlobalEndpointManager with preferred locations
     fn create_test_endpoint_manager_with_locations() -> GlobalEndpointManager {
-        let pipeline = create_test_pipeline();
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
         GlobalEndpointManager::new(
             endpoint,
@@ -189,82 +207,105 @@ mod tests {
             pipeline,
         )
     }
-    // 
-    // #[tokio::test]
-    // async fn remove_by_id() {
-    //     let pipeline = create_test_pipeline();
-    //     let global_endpoint_manager = create_test_endpoint_manager();
-    //     let cache = ContainerCache::new(pipeline, global_endpoint_manager);
-    // 
-    //     // Test that remove_by_id doesn't panic when removing non-existent items
-    //     cache.remove_by_id("non-existent-container").await;
-    // 
-    //     // Test passes if no panic occurs
-    // }
-    // 
-    // #[tokio::test]
-    // async fn new_container_cache() {
-    //     let pipeline = create_test_pipeline();
-    //     let global_endpoint_manager = create_test_endpoint_manager();
-    //     let cache = ContainerCache::new(pipeline, global_endpoint_manager);
-    // 
-    //     // Verify the cache was created successfully
-    //     assert!(std::mem::size_of_val(&cache) > 0);
-    // }
-    // 
-    // #[tokio::test]
-    // async fn new_container_cache_with_preferred_locations() {
-    //     let pipeline = create_test_pipeline();
-    //     let global_endpoint_manager = create_test_endpoint_manager_with_locations();
-    //     let cache = ContainerCache::new(pipeline, global_endpoint_manager);
-    // 
-    //     // Verify the cache can be cloned (Debug trait is implemented)
-    //     let cloned_cache = cache.clone();
-    //     assert!(std::mem::size_of_val(&cloned_cache) > 0);
-    // }
-    // 
-    // #[tokio::test]
-    // async fn remove_by_id_idempotency() {
-    //     // Test that removing the same item multiple times is safe
-    //     let pipeline = create_test_pipeline();
-    //     let global_endpoint_manager = create_test_endpoint_manager();
-    //     let cache = ContainerCache::new(pipeline, global_endpoint_manager);
-    //     let container_id = "test-container";
-    // 
-    //     // Remove the same ID multiple times
-    //     cache.remove_by_id(container_id).await;
-    //     cache.remove_by_id(container_id).await;
-    //     cache.remove_by_id(container_id).await;
-    // 
-    //     // Test passes if no panic occurs
-    // }
-    // 
-    // #[tokio::test]
-    // async fn container_cache_clone() {
-    //     // Test that ContainerCache can be cloned properly
-    //     let pipeline = create_test_pipeline();
-    //     let global_endpoint_manager = create_test_endpoint_manager();
-    //     let cache = ContainerCache::new(pipeline, global_endpoint_manager);
-    // 
-    //     let cloned_cache = cache.clone();
-    // 
-    //     // Both should be valid instances
-    //     cache.remove_by_id("test1").await;
-    //     cloned_cache.remove_by_id("test2").await;
-    // }
-    // 
-    // #[tokio::test]
-    // async fn remove_by_id_with_different_ids() {
-    //     // Test removing different container IDs
-    //     let pipeline = create_test_pipeline();
-    //     let global_endpoint_manager = create_test_endpoint_manager();
-    //     let cache = ContainerCache::new(pipeline, global_endpoint_manager);
-    // 
-    //     cache.remove_by_id("container1").await;
-    //     cache.remove_by_id("container2").await;
-    //     cache.remove_by_id("container-with-dashes").await;
-    //     cache.remove_by_id("container_with_underscores").await;
-    // 
-    //     // Test passes if no panic occurs
-    // }
+
+    #[tokio::test]
+    async fn remove_by_id() {
+        let global_endpoint_manager = create_test_endpoint_manager();
+        let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
+        let container_link = ResourceLink::root(ResourceType::Databases)
+            .item("testdb")
+            .feed(ResourceType::Containers)
+            .item("testcontainer");
+        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
+
+        // Test that remove_by_id doesn't panic when removing non-existent items
+        cache.remove_by_id("non-existent-container").await;
+
+        // Test passes if no panic occurs
+    }
+
+    #[tokio::test]
+    async fn new_container_cache() {
+        let global_endpoint_manager = create_test_endpoint_manager();
+        let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
+        let container_link = ResourceLink::root(ResourceType::Databases)
+            .item("testdb")
+            .feed(ResourceType::Containers)
+            .item("testcontainer");
+        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
+
+        // Verify the cache was created successfully
+        assert!(std::mem::size_of_val(&cache) > 0);
+    }
+
+    #[tokio::test]
+    async fn new_container_cache_with_preferred_locations() {
+        let global_endpoint_manager = create_test_endpoint_manager();
+        let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
+        let container_link = ResourceLink::root(ResourceType::Databases)
+            .item("testdb")
+            .feed(ResourceType::Containers)
+            .item("testcontainer");        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
+
+        // Verify the cache can be cloned (Debug trait is implemented)
+        let cloned_cache = cache.clone();
+        assert!(std::mem::size_of_val(&cloned_cache) > 0);
+    }
+
+    #[tokio::test]
+    async fn remove_by_id_idempotency() {
+        // Test that removing the same item multiple times is safe
+        let global_endpoint_manager = create_test_endpoint_manager();
+        let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
+        let container_link = ResourceLink::root(ResourceType::Databases)
+            .item("testdb")
+            .feed(ResourceType::Containers)
+            .item("testcontainer");
+        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
+        let container_id = "test-container";
+
+        // Remove the same ID multiple times
+        cache.remove_by_id(container_id).await;
+        cache.remove_by_id(container_id).await;
+        cache.remove_by_id(container_id).await;
+
+        // Test passes if no panic occurs
+    }
+
+    #[tokio::test]
+    async fn container_cache_clone() {
+        // Test that ContainerCache can be cloned properly
+        let global_endpoint_manager = create_test_endpoint_manager();
+        let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
+        let container_link = ResourceLink::root(ResourceType::Databases)
+            .item("testdb")
+            .feed(ResourceType::Containers)
+            .item("testcontainer");
+        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
+
+        let cloned_cache = cache.clone();
+
+        // Both should be valid instances
+        cache.remove_by_id("test1").await;
+        cloned_cache.remove_by_id("test2").await;
+    }
+
+    #[tokio::test]
+    async fn remove_by_id_with_different_ids() {
+        // Test removing different container IDs
+        let global_endpoint_manager = create_test_endpoint_manager();
+        let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
+        let container_link = ResourceLink::root(ResourceType::Databases)
+            .item("testdb")
+            .feed(ResourceType::Containers)
+            .item("testcontainer");
+        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
+
+        cache.remove_by_id("container1").await;
+        cache.remove_by_id("container2").await;
+        cache.remove_by_id("container-with-dashes").await;
+        cache.remove_by_id("container_with_underscores").await;
+
+        // Test passes if no panic occurs
+    }
 }

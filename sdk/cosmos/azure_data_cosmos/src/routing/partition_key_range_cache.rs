@@ -6,19 +6,19 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use std::{
     collections::HashMap,
-    sync::RwLock,
 };
 use tracing::info;
 use std::sync::Arc;
+use std::time::Duration;
 use async_trait::async_trait;
 use azure_core::Error;
-use azure_core::http::{Pipeline, RawResponse, Response, StatusCode};
+use azure_core::http::{Response, StatusCode};
 use azure_core::http::headers::HeaderName;
 use serde::Deserialize;
 use crate::{ReadContainerOptions, ReadDatabaseOptions};
 use crate::pipeline::CosmosPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
-use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
+use crate::routing::async_cache::AsyncCache;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::collection_routing_map::CollectionRoutingMap;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -50,8 +50,7 @@ pub trait CollectionRoutingMapCache: Send + Sync {
 
 #[derive(Clone, Debug)]
 pub struct PartitionKeyRangeCache {
-    routing_map_cache: Arc<RwLock<HashMap<String, Arc<CollectionRoutingMap>>>>,
-    // authorization_token_provider: Arc<dyn CosmosAuthorizationTokenProvider>,
+    routing_map_cache: AsyncCache<String, CollectionRoutingMap>,
     pipeline: Arc<CosmosPipeline>,
     container_cache: Arc<ContainerCache>,
     endpoint_manager: Arc<GlobalEndpointManager>,
@@ -60,45 +59,42 @@ pub struct PartitionKeyRangeCache {
 
 impl PartitionKeyRangeCache {
     pub fn new(
-        // authorization_token_provider: Arc<CosmosAuthorizationTokenProvider>,
         pipeline: Arc<CosmosPipeline>,
         database_link: ResourceLink,
-        collection_cache: Arc<ContainerCache>,
+        container_cache: Arc<ContainerCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
+        let routing_map_cache = AsyncCache::new(
+            Duration::from_secs(300), // Default 5 minutes TTL
+        );
         Self {
-            routing_map_cache: Arc::new(RwLock::new(HashMap::new())),
-            // authorization_token_provider,
+            routing_map_cache,
             pipeline,
-            container_cache: collection_cache,
+            container_cache,
             endpoint_manager,
             database_link,
         }
     }
 
-    pub async fn try_get_overlapping_ranges(
+    pub async fn resolve_overlapping_ranges(
         &self,
         collection_rid: &str,
         range: Range<String>,
         force_refresh: bool,
     ) -> Result<Option<Vec<PartitionKeyRange>>, Error> {
-        // let child_trace = trace.start_child(
-        //     "Try Get Overlapping Ranges",
-        //     TraceComponent::Routing,
-        //     TraceLevel::Info,
-        // );
 
         let mut routing_map = self.try_lookup(
             collection_rid,
             None,
         ).await?;
 
-        if force_refresh && routing_map.is_some() {
-            let previous = routing_map.clone();
-            routing_map = self.try_lookup(
-                collection_rid,
-                previous,
-            ).await?;
+        if force_refresh {
+            if let Some(previous) = routing_map.clone() {
+                routing_map = self.try_lookup(
+                    collection_rid,
+                    Some(previous),
+                ).await?;
+            }
         }
 
         match routing_map {
@@ -115,7 +111,7 @@ impl PartitionKeyRangeCache {
         }
     }
 
-    pub async fn try_get_partition_key_range_by_id(
+    pub async fn resolve_partition_key_range_by_id(
         &self,
         collection_resource_id: &str,
         partition_key_range_id: &str,
@@ -124,15 +120,15 @@ impl PartitionKeyRangeCache {
         let mut routing_map = self.try_lookup(
             collection_resource_id,
             None,
-        ).await.unwrap();
+        ).await.ok()?;
 
-        // if force_refresh && routing_map.is_some() {
         if force_refresh {
-            let previous = routing_map.clone();
-            routing_map = self.try_lookup(
-                collection_resource_id,
-                previous,
-            ).await.unwrap();
+            if let Some(previous) = routing_map.clone() {
+                routing_map = self.try_lookup(
+                    collection_resource_id,
+                    Some(previous),
+                ).await.ok()?;
+            }
         }
 
         match routing_map {
@@ -152,44 +148,32 @@ impl PartitionKeyRangeCache {
     async fn try_lookup(
         &self,
         collection_rid: &str,
-        previous_value: Option<Arc<CollectionRoutingMap>>,
-    ) -> Result<Option<Arc<CollectionRoutingMap>>, Error> {
-        // Check if we need to force refresh
-        let should_refresh = {
-            let cache = self.routing_map_cache.read().unwrap();
-            if let Some(prev) = &previous_value {
-                if let Some(current) = cache.get(collection_rid) {
-                    Self::should_force_refresh(Some(prev.clone()), Some(current.clone()))
-                } else {
-                    true
+        previous_value: Option<CollectionRoutingMap>,
+    ) -> Result<Option<CollectionRoutingMap>, Error> {
+        // Determine if we need to force refresh based on whether we have a previous value
+        let should_refresh = previous_value.is_some();
+        let routing_map = self.routing_map_cache
+            .get(collection_rid.to_string(), should_refresh, || async {
+                let routing_map = self.get_routing_map_for_collection(
+                    collection_rid,
+                    previous_value.as_ref().map(|v| v.clone()),
+                ).await?;
+                match routing_map {
+                    Some(map) => Ok(map),
+                    None => Err(Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        "Failed to get routing map for collection"
+                    ))
                 }
-            } else {
-                !cache.contains_key(collection_rid)
-            }
-        };
+            })
+            .await;
 
-        if should_refresh {
-            // let client_stats = request.as_ref()
-            //     .and_then(|r| r.request_context.as_ref())
-            //     .and_then(|ctx| ctx.client_request_statistics.clone());
-
-            let routing_map = self.get_routing_map_for_collection(
-                collection_rid,
-                previous_value.clone(),
-                // client_stats,
-            ).await?;
-
-            let mut cache = self.routing_map_cache.write().unwrap();
-            cache.insert(collection_rid.to_string(), Arc::new(routing_map.unwrap()));
-        }
-
-        let cache = self.routing_map_cache.read().unwrap();
-        Ok(cache.get(collection_rid).cloned())
+        Ok(routing_map.ok())
     }
 
     fn should_force_refresh(
-        previous_value: Option<Arc<CollectionRoutingMap>>,
-        current_value: Option<Arc<CollectionRoutingMap>>,
+        previous_value: Option<CollectionRoutingMap>,
+        current_value: Option<CollectionRoutingMap>,
     ) -> bool {
         match (previous_value, current_value) {
             (Some(prev), Some(curr)) => {
@@ -202,46 +186,33 @@ impl PartitionKeyRangeCache {
     async fn get_routing_map_for_collection(
         &self,
         collection_rid: &str,
-        previous_routing_map: Option<Arc<CollectionRoutingMap>>,
-        // client_side_request_statistics: Option<Arc<dyn std::any::Any>>,
+        previous_routing_map: Option<CollectionRoutingMap>,
     ) -> Result<Option<CollectionRoutingMap>, Error> {
         let mut ranges = Vec::new();
         let mut change_feed_next_if_none_match = previous_routing_map
             .as_ref()
             .and_then(|m| m.change_feed_next_if_none_match.clone());
 
-        // let retry_policy = MetadataRequestRetryPolicy::new(
-        //     *self.endpoint_manager.clone()
-        // );
-
-        let mut last_status_code = StatusCode::Ok; // HttpStatusCode::OK
+        let mut _last_status_code: StatusCode;
 
         loop {
-            let mut headers = HashMap::new();
-            headers.insert("x-ms-max-item-count".to_string(), PAGE_SIZE_STRING.to_string());
-            headers.insert("a-iam".to_string(), "Incremental feed".to_string());
-
+            let mut if_none_match = false;
             if let Some(ref etag) = change_feed_next_if_none_match {
-                headers.insert("if-none-match".to_string(), etag.clone());
+                if_none_match = true;
+                // headers.insert("if-none-match".to_string(), etag.clone());
             }
 
-            let read_container_options = ReadContainerOptions {
-                ..Default::default()
-            };
-            
-            // let container_props = self.container_cache.read_properties_by_id(collection_rid, Some(read_container_options)).await?;
             let pk_range_link = self.database_link.feed(ResourceType::Containers).item(collection_rid).feed(ResourceType::PartitionKeyRanges);
             let response = self.execute_partition_key_range_read_change_feed(
                 collection_rid,
                 pk_range_link,
-                // &retry_policy,
             ).await?;
 
-            last_status_code = response.status();
+            _last_status_code = response.status();
             change_feed_next_if_none_match = response.headers().get_optional_string(&HeaderName::from_static("etag"));
 
             // Deserialize the response body to extract Vec<PartitionKeyRange>
-            if last_status_code == StatusCode::Ok {
+            if _last_status_code == StatusCode::Ok {
                 let body_string = response.into_body().into_string()?;
                 
                 // Cosmos DB wraps partition key ranges in a "PartitionKeyRanges" field
@@ -298,23 +269,22 @@ impl PartitionKeyRangeCache {
         &self,
         collection_rid: &str,
         resource_link: ResourceLink,
-        // retry_policy: &mut MetadataRequestRetryPolicy,
     ) -> azure_core::Result<Response<()>> {
 
         let options = ReadDatabaseOptions {
             ..Default::default()
         };
-        // let resource_link = ResourceLink::root(ResourceType::PartitionKeyRanges);
         let builder = CosmosRequest::builder(OperationType::ReadFeed, resource_link.clone());
         let mut cosmos_request = builder
             .resource_id(collection_rid.to_string())
+            .header("x-ms-max-item-count".to_string(), PAGE_SIZE_STRING.to_string())
+            .header("A-IM".to_string(), "Incremental Feed".to_string())
             .build()?;
 
         let endpoint = self
             .endpoint_manager
             .resolve_service_endpoint(&cosmos_request);
 
-        // retry_policy.before_send_request(&mut cosmos_request).await;
         let pk_endpoint = resource_link.url(&endpoint);
 
         cosmos_request.request_context.location_endpoint_to_route = Some(pk_endpoint);

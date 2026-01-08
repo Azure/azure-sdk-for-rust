@@ -44,9 +44,9 @@ impl ContainerClient {
             .item(container_id);
         let items_link = link.feed(ResourceType::Documents);
 
-        let collection_cache = ContainerCache::new(pipeline.clone(), global_endpoint_manager.clone());
+        let collection_cache = ContainerCache::new(pipeline.clone(), link.clone(), global_endpoint_manager.clone());
         let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline.clone(), database_link.clone(), Arc::from(collection_cache.clone()), Arc::from(global_endpoint_manager.clone()));
-        let transport_handler = Arc::from(TransportHandler::new(pipeline.clone(), Arc::from(partition_key_range_cache)));
+        let transport_handler = Arc::from(TransportHandler::new(pipeline.clone(), Arc::from(collection_cache), Arc::from(partition_key_range_cache)));
 
         Self {
             link,
