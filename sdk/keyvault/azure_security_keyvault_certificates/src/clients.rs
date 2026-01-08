@@ -3,7 +3,7 @@
 
 pub use crate::generated::clients::*;
 use crate::{
-    authorizer,
+    authorizer::KeyVaultAuthorizer,
     models::{
         CertificateClientCreateCertificateOptions, CertificateOperation,
         CreateCertificateParameters,
@@ -32,6 +32,9 @@ pub struct CertificateClientOptions {
     pub api_version: String,
     /// Allows customization of the client.
     pub client_options: ClientOptions,
+    /// Controls whether the client requires the resource specified in authentication
+    /// challenges to match the Key Vault or Managed HSM domain. True by default.
+    pub verify_challenge_resource: Option<bool>,
 }
 
 impl Default for CertificateClientOptions {
@@ -39,6 +42,7 @@ impl Default for CertificateClientOptions {
         Self {
             api_version: String::from("2025-07-01"),
             client_options: ClientOptions::default(),
+            verify_challenge_resource: Some(true),
         }
     }
 }
@@ -66,7 +70,7 @@ impl CertificateClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        let authorizer = authorizer::KeyVaultAuthorizer::new();
+        let authorizer = KeyVaultAuthorizer::new(options.verify_challenge_resource.unwrap_or(true));
         let auth_policy: Arc<dyn Policy> = Arc::new(
             BearerTokenAuthorizationPolicy::new(credential, Vec::<String>::new())
                 .with_on_request(authorizer.clone())

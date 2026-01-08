@@ -11,7 +11,7 @@ use azure_core::{
     http::{
         headers::{Headers, CONTENT_LENGTH, CONTENT_TYPE, WWW_AUTHENTICATE},
         policies::auth::{Authorizer, OnChallenge, OnRequest},
-        Body, Context, Request,
+        Body, Context, Request, Url,
     },
     Result,
 };
@@ -22,12 +22,14 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub(crate) struct KeyVaultAuthorizer {
     scope: RwLock<String>,
+    verify_challenge_resource: bool,
 }
 
 impl KeyVaultAuthorizer {
-    pub fn new() -> Arc<Self> {
+    pub fn new(verify_challenge_resource: bool) -> Arc<Self> {
         Arc::new(Self {
             scope: RwLock::new(String::new()),
+            verify_challenge_resource,
         })
     }
 
@@ -55,7 +57,7 @@ impl KeyVaultAuthorizer {
 
         Err(Error::with_message(
             ErrorKind::DataConversion,
-            format!("authentication challenge doesn't contain scope or resource: {challenge}"),
+            format!("no scope or resource in authentication challenge: {challenge}"),
         ))
     }
 }
@@ -123,6 +125,35 @@ impl OnChallenge for KeyVaultAuthorizer {
         {
             let mut cached_scope = self.scope.write().await;
             *cached_scope = scope.clone();
+        }
+        if self.verify_challenge_resource {
+            // the challenge resource's host must match the requested domain's host
+            let challenge_url = Url::parse(&scope).map_err(|_| {
+                Error::with_message(
+                    ErrorKind::DataConversion,
+                    format!("invalid audience in challenge: {challenge}"),
+                )
+            })?;
+            let challenge_host = challenge_url.host_str().ok_or_else(|| {
+                Error::with_message(
+                    ErrorKind::DataConversion,
+                    format!("invalid audience in challenge: {challenge}"),
+                )
+            })?;
+            let request_host = request.url().host_str().ok_or_else(|| {
+                // should be impossible because the client already sent the request and received a response
+                Error::with_message(
+                    ErrorKind::DataConversion,
+                    format!("invalid request URL: {}", request.url()),
+                )
+            })?;
+            if !request_host.ends_with(format!(".{challenge_host}").as_str()) {
+                return Err(Error::with_message(
+                    ErrorKind::Other,
+                    format!(
+                            "challenge resource '{scope}' doesn't match the requested domain '{request_host}'. Set verify_challenge_resource in client options to disable this validation if necessary. See https://aka.ms/azsdk/blog/vault-uri for more information`"
+                )));
+            }
         }
         if let Some(saved_body) = context.value::<Body>() {
             request.set_body(saved_body);
@@ -233,7 +264,7 @@ mod tests {
                     if attempt == 0 {
                         assert!(req.body().is_empty(), "first request should have empty body");
                         let mut headers = Headers::new();
-                        headers.insert("www-authenticate", r#"Bearer authorization="https://login.microsoftonline.com/tenant", resource="https://a.b""#);
+                        headers.insert(WWW_AUTHENTICATE, r#"Bearer authorization="https://login.microsoftonline.com/tenant", resource="https://a.b""#);
                         Ok(AsyncRawResponse::from_bytes(
                             StatusCode::Unauthorized,
                             headers,
@@ -259,7 +290,7 @@ mod tests {
             "https://a.b/.default".to_string(),
         ));
 
-        let authorizer = KeyVaultAuthorizer::new();
+        let authorizer = KeyVaultAuthorizer::new(true);
         let auth_policy: Arc<dyn Policy> = Arc::new(
             BearerTokenAuthorizationPolicy::new(mock_credential.clone(), Vec::<String>::new())
                 .with_on_request(authorizer.clone())
@@ -280,7 +311,7 @@ mod tests {
             None,
         );
 
-        let endpoint = Url::parse("https://localhost").expect("valid url");
+        let endpoint = Url::parse("https://vault.a.b").expect("valid url");
         let mut request = Request::new(endpoint, Method::Put);
         request.insert_header("content-type", "application/json");
         request.set_body(expected_bytes.clone());
@@ -314,6 +345,67 @@ mod tests {
             &bodies[1], &expected_bytes,
             "second request should have the expected body"
         );
+    }
+
+    #[tokio::test]
+    async fn challenge_resource_verification() {
+        let mock_credential = Arc::new(MockCredential::new(
+            vec![AccessToken {
+                token: Secret::new("token".to_string()),
+                expires_on: OffsetDateTime::now_utc() + Duration::seconds(3600),
+            }],
+            "https://a.b/.default".to_string(),
+        ));
+
+        let transport = Transport::new(Arc::new(MockHttpClient::new({
+            move |_| {
+                async move {
+                    let mut headers = Headers::new();
+                    headers.insert(WWW_AUTHENTICATE, r#"Bearer authorization="https://login.microsoftonline.com/tenant", resource="https://a.b""#);
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::Unauthorized,
+                        headers,
+                        Bytes::new(),
+                    ))
+                }
+                .boxed()
+            }
+        })));
+        let client_options = azure_core::http::ClientOptions {
+            transport: Some(transport),
+            ..Default::default()
+        };
+
+        let authorizer = KeyVaultAuthorizer::new(true);
+        let auth_policy: Arc<dyn Policy> = Arc::new(
+            BearerTokenAuthorizationPolicy::new(mock_credential.clone(), Vec::<String>::new())
+                .with_on_request(authorizer.clone())
+                .with_on_challenge(authorizer),
+        );
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::default(),
+            vec![auth_policy],
+            None,
+        );
+
+        let mut request = Request::new(
+            Url::parse("https://vault.c.d/keys/foo").unwrap(),
+            Method::Get,
+        );
+        let err = pipeline
+            .send(&Context::default(), &mut request, None)
+            .await
+            .unwrap_err();
+        match err.kind() {
+            ErrorKind::Other => {
+                let inner_message = err.into_inner().unwrap().to_string();
+                assert!(inner_message.contains("https://aka.ms/azsdk/blog/vault-uri"));
+            }
+            _ => panic!("unexpected error kind: {err:?}"),
+        }
     }
 
     #[tokio::test]
@@ -387,7 +479,7 @@ mod tests {
             "https://a.b/.default".to_string(),
         ));
 
-        let authorizer = KeyVaultAuthorizer::new();
+        let authorizer = KeyVaultAuthorizer::new(true);
         let auth_policy: Arc<dyn Policy> = Arc::new(
             BearerTokenAuthorizationPolicy::new(mock_credential.clone(), Vec::<String>::new())
                 .with_on_request(authorizer.clone())
@@ -412,7 +504,7 @@ mod tests {
         for i in 0..num_tasks {
             let pipeline = pipeline.clone();
             handles.push(tokio::spawn(async move {
-                let endpoint = Url::parse("https://localhost").expect("valid url");
+                let endpoint = Url::parse("https://vault.a.b").expect("valid url");
                 let mut request = Request::new(endpoint, Method::Put);
                 let request_id = format!("{i}");
                 request.insert_header("request-id", &request_id);
