@@ -336,8 +336,17 @@ dependencies = [
 name = "azure_data_cosmos_native"
 version = "0.27.0"
 dependencies = [
+ "azure_core",
  "azure_data_cosmos",
  "cbindgen",
+ "futures",
+ "getrandom 0.3.3",
+ "reqwest",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
