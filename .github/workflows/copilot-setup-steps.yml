@@ -33,8 +33,8 @@ jobs:
 
       - name: Install essential system dependencies
         run: |
-          apt-get update
-          apt-get install -y pkg-config libssl-dev
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
 
       - name: Cache cargo dependencies
         uses: actions/cache@v4
