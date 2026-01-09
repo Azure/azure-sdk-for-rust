@@ -15,11 +15,15 @@
         "Pool": "env:MACPOOL"
       }
     },
-    "RustToolchainName": [
-      "stable",
-      "msrv",
-      "nightly"
-    ]
+    "RustToolchainName": ["stable", "msrv", "nightly"],
+    "Consistency": {
+      "Session": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session' }"
+      },
+      "Invalid": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Invalid' }"
+      }
+    }
   },
   "include": []
 }
