@@ -50,7 +50,7 @@ pub struct CosmosClientOptions {
     /// The desired throughput bucket for the client
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<i32>,
+    pub throughput_bucket: Option<usize>,
     pub session_retry_options: SessionRetryOptions,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
@@ -248,7 +248,7 @@ pub struct ItemOptions<'a> {
     /// The desired throughput bucket for this request
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<u32>,
+    pub throughput_bucket: Option<usize>,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
     ///
@@ -369,7 +369,7 @@ pub struct QueryOptions<'a> {
     /// The desired throughput bucket for this query operation
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<u32>,
+    pub throughput_bucket: Option<usize>,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
     ///
