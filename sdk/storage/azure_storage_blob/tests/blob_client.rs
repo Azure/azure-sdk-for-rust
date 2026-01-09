@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
+    error::ErrorKind,
     http::{ClientOptions, RequestContent, StatusCode, Url},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
@@ -15,7 +16,7 @@ use azure_storage_blob::{
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-        ImmutabilityPolicyMode, LeaseState,
+        ImmutabilityPolicyMode, IntoStorageError, LeaseState, StorageError,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
@@ -796,5 +797,101 @@ async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     blob_client.delete(None).await?;
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Act
+    let response = blob_client.download(None).await;
+    let error_response = response.unwrap_err();
+
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+
+    let storage_error: StorageError = error_response.into_storage_error()?;
+    println!("Download Error Response:");
+    println!("{}", storage_error);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model_bodiless(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Act
+    let response = blob_client.get_properties(None).await;
+    let error_response = response.unwrap_err();
+
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+
+    let storage_error: StorageError = error_response.try_into()?;
+
+    println!("Get Properties Error Response:");
+    println!("{}", storage_error);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&source_blob_client, None, None).await?;
+
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    let blob_name = get_blob_name(recording);
+    let overwrite_blob_client = container_client.blob_client(&blob_name);
+    create_test_blob(
+        &overwrite_blob_client,
+        Some(RequestContent::from(b"overruled!".to_vec())),
+        None,
+    )
+    .await?;
+
+    // Inject an erroneous 'c' so we raise Copy Source Errors
+    let container_name = container_client
+        .url()
+        .path_segments()
+        .and_then(|mut segments| segments.next())
+        .unwrap();
+    let overwrite_url = format!(
+        "{}{}c/{}",
+        overwrite_blob_client.url(),
+        container_name,
+        blob_name
+    );
+
+    // Copy Source Error Scenario
+    let response = blob_client
+        .block_blob_client()
+        .upload_blob_from_url(overwrite_url.clone(), None)
+        .await;
+    // Assert
+    let error = response.unwrap_err();
+    assert_eq!(StatusCode::NotFound, error.http_status().unwrap());
+
+    let storage_error: StorageError = error.try_into()?;
+
+    println!("Upload Blob From URL w/ Contrived Failure Response:");
+    println!("{}", storage_error);
+
+    container_client.delete_container(None).await?;
     Ok(())
 }

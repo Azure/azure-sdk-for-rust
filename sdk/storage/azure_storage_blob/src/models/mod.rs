@@ -3,6 +3,7 @@
 
 pub(crate) mod content_range;
 mod extensions;
+mod storage_error;
 
 pub use crate::generated::models::{
     AccessPolicy, AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
@@ -81,3 +82,5 @@ pub use crate::generated::models::{
     SignedIdentifiers, SignedIdentifiersHeaders, SkuName, StaticWebsite, StorageErrorCode,
     StorageServiceStats, StorageServiceStatsHeaders, UserDelegationKey, UserDelegationKeyHeaders,
 };
+
+pub use storage_error::{IntoStorageError, StorageError};
