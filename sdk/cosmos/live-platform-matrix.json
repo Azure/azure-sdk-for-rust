@@ -9,16 +9,11 @@
       "windows": {
         "OSVmImage": "env:WINDOWSVMIMAGE",
         "Pool": "env:WINDOWSPOOL"
-      },
-      "macos": {
-        "OSVmImage": "env:MACVMIMAGE",
-        "Pool": "env:MACPOOL"
       }
     },
-    "RustToolchainName": ["stable", "msrv", "nightly"],
+    "RustToolchainName": ["stable"],
     "ArmTemplateParameters": {
       "Session": "@{ defaultConsistencyLevel = 'Session' }",
-      "Strong": "@{ defaultConsistencyLevel = 'Strong' }",
       "Invalid": "@{ defaultConsistencyLevel = 'Invalid' }"
     }
   }
