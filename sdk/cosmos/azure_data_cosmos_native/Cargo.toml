@@ -14,7 +14,29 @@ name = "azurecosmos"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-azure_data_cosmos = { path = "../azure_data_cosmos" }
+reqwest = { workspace = true, optional = true }
+futures.workspace = true
+serde_json = { workspace = true, features = ["raw_value"] }
+azure_core.workspace = true
+azure_data_cosmos = { path = "../azure_data_cosmos", features = [ "key_auth", "preview_query_engine" ] }
+tracing.workspace = true
+tracing-subscriber = { workspace = true, optional = true, features = ["fmt", "env-filter"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+# Configure dependencies in the tree to work in wasm environments
+tokio = { workspace = true, optional = true, features = ["rt", "macros"] }
+uuid = { workspace = true, features = ["v4", "js"] }
+getrandom = { workspace = true, features = ["wasm_js"] }
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "macros"] }
+
+[features]
+default = ["tokio", "reqwest", "reqwest_native_tls", "tracing"]
+tokio = ["dep:tokio"]
+reqwest = ["dep:reqwest", "azure_core/reqwest"]
+reqwest_native_tls = ["azure_core/reqwest_native_tls"]
+tracing = ["dep:tracing-subscriber"]
 
 [build-dependencies]
 cbindgen = "0.29.0"

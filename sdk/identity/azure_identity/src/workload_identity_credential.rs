@@ -254,7 +254,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Env::from(
                 &[
@@ -297,7 +296,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Env::from(
                 &[
@@ -426,7 +424,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Env::from(
                 &[

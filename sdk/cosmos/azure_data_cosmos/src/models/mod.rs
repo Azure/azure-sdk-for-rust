@@ -98,7 +98,7 @@ pub struct SystemProperties {
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,

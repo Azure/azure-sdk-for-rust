@@ -29,18 +29,6 @@ pub struct ClientAssertionCredential<C> {
 /// Options for constructing a new [`ClientAssertionCredential`].
 #[derive(Debug, Default)]
 pub struct ClientAssertionCredentialOptions {
-    /// Additional tenants for which the credential may acquire tokens.
-    ///
-    /// Add the wildcard value "*" to allow the credential to acquire tokens for any tenant in which the application is registered.
-    pub additionally_allowed_tenants: Vec<String>,
-
-    /// Should be set true only by applications authenticating in disconnected clouds, or private clouds such as Azure Stack.
-    ///
-    /// It determines whether the credential requests Microsoft Entra instance metadata
-    /// from <https://login.microsoft.com> before authenticating. Setting this to true will skip this request, making
-    /// the application responsible for ensuring the configured authority is valid and trustworthy.
-    pub disable_instance_discovery: bool,
-
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 }
@@ -266,7 +254,6 @@ pub(crate) mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             }),
         )
         .expect("valid credential");
@@ -316,7 +303,6 @@ pub(crate) mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             }),
         )
         .expect("valid credential");
@@ -358,7 +344,6 @@ pub(crate) mod tests {
                         cloud: Some(Arc::new(cloud)),
                         ..Default::default()
                     },
-                    ..Default::default()
                 }),
             )
             .expect("valid credential");
