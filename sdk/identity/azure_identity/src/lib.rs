@@ -61,9 +61,9 @@ use std::borrow::Cow;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
-struct EntraIdErrorResponse {
+struct EntraIdErrorResponse<'a> {
     error_codes: Vec<i32>,
-    error_description: String,
+    error_description: &'a str,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -77,11 +77,11 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-fn deserialize<T>(res: &RawResponse) -> Result<T>
+fn deserialize<'a, T>(res: &'a RawResponse) -> Result<T>
 where
-    T: serde::de::DeserializeOwned,
+    T: serde::Deserialize<'a>,
 {
-    res.body().json()
+    serde_json::from_slice(res.body().as_ref()).map_err(Into::into)
 }
 
 fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
@@ -94,7 +94,7 @@ fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
         ));
     }
 
-    let error_response: EntraIdErrorResponse = deserialize(&response)?;
+    let error_response: EntraIdErrorResponse<'_> = deserialize(&response)?;
     let error_code = if error_response.error_codes.is_empty() {
         None
     } else {
@@ -107,13 +107,15 @@ fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
                 .join(","),
         )
     };
+    let error_description = error_response.error_description.to_owned();
+
     Err(Error::new(
         ErrorKind::HttpResponse {
             status,
             error_code,
             raw_response: Some(Box::new(response)),
         },
-        error_response.error_description,
+        error_description,
     ))
 }
 
@@ -270,7 +272,7 @@ mod tests {
     use azure_core::{
         cloud::{CloudConfiguration, CustomConfiguration},
         error::ErrorKind,
-        http::{headers::Headers, AsyncRawResponse, Request, StatusCode},
+        http::{headers::Headers, AsyncRawResponse, RawResponse, Request, StatusCode},
         Bytes, Error, Result,
     };
     use std::{
@@ -472,5 +474,31 @@ mod tests {
         let cloud = CloudConfiguration::Custom(config);
         let err = get_authority_host(None, Some(&cloud)).unwrap_err();
         assert!(err.to_string().contains("HTTPS"));
+    }
+
+    #[test]
+    fn entra_error() {
+        let response = RawResponse::from_bytes(
+            StatusCode::BadRequest,
+            Headers::default(),
+            Bytes::from_static(br#"{"error_codes":[123,456],"error_description":"bad news"}"#),
+        );
+
+        let err = handle_entra_response(response).unwrap_err();
+        match err.kind() {
+            ErrorKind::HttpResponse {
+                status,
+                error_code,
+                raw_response,
+            } => {
+                assert_eq!(*status, StatusCode::BadRequest);
+                assert_eq!(error_code.as_deref(), Some("123,456"));
+                assert!(raw_response.is_some());
+            }
+            other => panic!("unexpected error kind: {other:?}"),
+        }
+
+        let inner = err.into_inner().expect("expected inner error");
+        assert_eq!(inner.to_string(), "bad news");
     }
 }

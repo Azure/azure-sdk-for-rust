@@ -1,1 +1,2 @@
+# Don't include the CMake build directory.
 build/
