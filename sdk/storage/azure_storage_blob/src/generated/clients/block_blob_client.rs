@@ -377,7 +377,6 @@ impl BlockBlobClient {
     /// * [`content_length`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_length) - content-length
     /// * [`content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_md5) - content-md5
     /// * [`content_range`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_range) - content-range
-    /// * [`date`()](crate::generated::models::BlockBlobClientQueryResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlockBlobClientQueryResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlockBlobClientQueryResultHeaders::last_modified) - last-modified
     /// * [`blob_committed_block_count`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
@@ -610,11 +609,11 @@ impl BlockBlobClient {
     ///     if let Some(content_md5) = response.content_md5()? {
     ///         println!("content-md5: {:?}", content_md5);
     ///     }
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(content_crc64) = response.content_crc64()? {
     ///         println!("x-ms-content-crc64: {:?}", content_crc64);
+    ///     }
+    ///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
+    ///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
     ///     }
     ///     Ok(())
     /// }
@@ -622,7 +621,6 @@ impl BlockBlobClient {
     ///
     /// ### Available headers
     /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_md5) - content-md5
-    /// * [`date`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::date) - date
     /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
@@ -921,11 +919,11 @@ impl BlockBlobClient {
     ///     if let Some(content_md5) = response.content_md5()? {
     ///         println!("content-md5: {:?}", content_md5);
     ///     }
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("last-modified: {:?}", last_modified);
     ///     }
     ///     Ok(())
     /// }
@@ -933,7 +931,6 @@ impl BlockBlobClient {
     ///
     /// ### Available headers
     /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::content_md5) - content-md5
-    /// * [`date`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::last_modified) - last-modified
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256

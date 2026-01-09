@@ -99,10 +99,6 @@ pub struct ArrowField {
     pub type_prop: Option<String>,
 }
 
-/// Contains results for `BlobClient::abort_copy_from_url()`
-#[derive(SafeDebug)]
-pub struct BlobClientAbortCopyFromUrlResult;
-
 /// Contains results for `BlobClient::acquire_lease()`
 #[derive(SafeDebug)]
 pub struct BlobClientAcquireLeaseResult;
@@ -175,17 +171,9 @@ pub struct BlobContainerClientGetPropertiesResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientReleaseLeaseResult;
 
-/// Contains results for `BlobContainerClient::rename()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRenameResult;
-
 /// Contains results for `BlobContainerClient::renew_lease()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenewLeaseResult;
-
-/// Contains results for `BlobContainerClient::restore()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRestoreResult;
 
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
