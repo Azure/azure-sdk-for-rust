@@ -17,6 +17,7 @@ categories = ["api-bindings"]
 default = ["azure_core/default"]
 
 [dependencies]
+async-lock = { workspace = true }
 async-trait = { workspace = true }
 azure_core = { workspace = true }
 futures = { workspace = true }
