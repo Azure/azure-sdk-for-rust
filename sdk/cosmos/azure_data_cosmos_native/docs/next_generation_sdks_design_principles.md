@@ -133,7 +133,7 @@ In our current SDKs by default we do not retry write operations when we can't gu
 
 In .Net for PPAF/PPCB we added an option to opt-into enabling automatic retries for writes - this comes with the consequence that applications need to be able to reasonably handle certain error conditions like 409/Conflict or 412/Pre-condition failed or 404/NotFound for delete operations. 
 
-In Java we allow customers as well to enable automatic retries for writes - but with two different flavors - one identical to .Net the other in addition allowing to use some SDK-injected system properties int he document to be able to transparently handle 409/412/404 when retries are happening see https://github.com/Azure/azure-sdk-for-java/pull/34227. 
+In Java we allow customers as well to enable automatic retries for writes - but with two different flavors - one identical to .Net the other in addition allowing to use some SDK-injected system properties in the document to be able to transparently handle 409/412/404 when retries are happening see https://github.com/Azure/azure-sdk-for-java/pull/34227. 
 
 **PREVIEW-BLOCKER**
 
