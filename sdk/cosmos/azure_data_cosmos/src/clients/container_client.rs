@@ -703,8 +703,8 @@ impl ContainerClient {
         let url = self.pipeline.url(&self.items_link);
         self.pipeline
             .send_query_request(ctx, query, url, self.items_link.clone(), |r| {
-                r.insert_headers(&partition_key)?;
                 r.insert_headers(&options)?;
+                r.insert_headers(&partition_key)?;
                 Ok(())
             })
     }

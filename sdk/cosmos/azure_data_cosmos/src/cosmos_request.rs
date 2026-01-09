@@ -386,14 +386,17 @@ mod tests {
 
     #[test]
     fn prioritize_request_headers_over_client_headers() {
+        let mut request_custom_headers = std::collections::HashMap::new();
+        request_custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value"),
+        );
+
         let item_options = ItemOptions {
             consistency_level: Some(ConsistencyLevel::Session),
             throughput_bucket: Some(1),
             priority: Some(PriorityLevel::Low),
-            custom_headers: vec![(
-                HeaderName::from_static("x-custom-header"),
-                HeaderValue::from_static("custom_value"),
-            )],
+            custom_headers: request_custom_headers,
             ..Default::default()
         };
         let req = CosmosRequest::builder(
@@ -408,14 +411,18 @@ mod tests {
         req_with_client_headers
             .request_context
             .location_endpoint_to_route = Some("https://example.com/".parse().unwrap());
+
+        let mut client_custom_headers = std::collections::HashMap::new();
+        client_custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value-2"),
+        );
+
         let client_options = CosmosClientOptions {
             consistency_level: Some(ConsistencyLevel::Strong),
             throughput_bucket: Some(5),
             priority: Some(PriorityLevel::High),
-            custom_headers: vec![(
-                HeaderName::from_static("x-custom-header"),
-                HeaderValue::from_static("custom_value-2"),
-            )],
+            custom_headers: client_custom_headers,
             ..Default::default()
         };
         req_with_client_headers.client_headers(&client_options);

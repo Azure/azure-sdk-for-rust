@@ -7,10 +7,27 @@ use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use azure_core::time::Duration;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Display;
+
+/// Session tokens are intended to be opaque. They are used to ensure session consistency.
+///
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct SessionToken(String);
+
+impl From<String> for SessionToken {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl Display for SessionToken {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 #[derive(Clone, Default, Debug)]
@@ -46,7 +63,9 @@ pub struct CosmosClientOptions {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
     /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    pub custom_headers: Vec<(HeaderName, HeaderValue)>,
+    ///
+    /// Custom headers will not override headers that are already set by the SDK.
+    pub custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl AsHeaders for CosmosClientOptions {
@@ -55,6 +74,11 @@ impl AsHeaders for CosmosClientOptions {
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         let mut headers = Vec::new();
+
+        // custom headers should be added first so that they don't override SDK-set headers
+        for (header_name, header_value) in &self.custom_headers {
+            headers.push((header_name.clone(), header_value.clone()));
+        }
 
         if let Some(consistency_level) = &self.consistency_level {
             headers.push((
@@ -73,7 +97,6 @@ impl AsHeaders for CosmosClientOptions {
                 throughput_bucket.to_string().into(),
             ));
         }
-        add_custom_headers(&mut headers, &self.custom_headers);
 
         Ok(headers.into_iter())
     }
@@ -206,7 +229,7 @@ pub struct ItemOptions<'a> {
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
     ///
     /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    pub session_token: Option<String>,
+    pub session_token: Option<SessionToken>,
     /// Used to specify the consistency level for the operation.
     ///
     /// The default value is the consistency level set on the Cosmos DB account.
@@ -225,7 +248,7 @@ pub struct ItemOptions<'a> {
     /// The desired throughput bucket for this request
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<i32>,
+    pub throughput_bucket: Option<u32>,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
     ///
@@ -237,7 +260,9 @@ pub struct ItemOptions<'a> {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
     /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    pub custom_headers: Vec<(HeaderName, HeaderValue)>,
+    ///
+    /// Custom headers will not override headers that are already set by the SDK.
+    pub custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl AsHeaders for ItemOptions<'_> {
@@ -246,6 +271,11 @@ impl AsHeaders for ItemOptions<'_> {
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         let mut headers = Vec::new();
+
+        // custom headers should be added first so that they don't override SDK-set headers
+        for (header_name, header_value) in &self.custom_headers {
+            headers.push((header_name.clone(), header_value.clone()));
+        }
 
         if let Some(pre_triggers) = &self.pre_triggers {
             headers.push((
@@ -262,7 +292,7 @@ impl AsHeaders for ItemOptions<'_> {
         }
 
         if let Some(session_token) = &self.session_token {
-            headers.push((constants::SESSION_TOKEN, session_token.into()));
+            headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
         }
 
         if let Some(consistency_level) = &self.consistency_level {
@@ -298,24 +328,7 @@ impl AsHeaders for ItemOptions<'_> {
             headers.push((headers::PREFER, constants::PREFER_MINIMAL));
         }
 
-        add_custom_headers(&mut headers, &self.custom_headers);
-
         Ok(headers.into_iter())
-    }
-}
-
-fn add_custom_headers(
-    headers: &mut Vec<(HeaderName, HeaderValue)>,
-    additional_headers: &[(HeaderName, HeaderValue)],
-) {
-    // custom headers should not override existing headers
-    for (name, value) in additional_headers {
-        if !headers
-            .iter()
-            .any(|(existing_name, _)| existing_name == name)
-        {
-            headers.push((name.clone(), value.clone()));
-        }
     }
 }
 
@@ -347,7 +360,7 @@ pub struct QueryOptions<'a> {
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
     ///
     /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    pub session_token: Option<String>,
+    pub session_token: Option<SessionToken>,
     /// Used to specify the consistency level for the operation.
     ///
     /// The default value is the consistency level set on the Cosmos DB account.
@@ -356,7 +369,7 @@ pub struct QueryOptions<'a> {
     /// The desired throughput bucket for this query operation
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<i32>,
+    pub throughput_bucket: Option<u32>,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
     ///
@@ -368,7 +381,9 @@ pub struct QueryOptions<'a> {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
     /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    pub custom_headers: Vec<(HeaderName, HeaderValue)>,
+    ///
+    /// Custom headers will not override headers that are already set by the SDK.
+    pub custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl QueryOptions<'_> {
@@ -395,8 +410,13 @@ impl AsHeaders for QueryOptions<'_> {
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         let mut headers = Vec::new();
 
+        // custom headers should be added first so that they don't override SDK-set headers
+        for (header_name, header_value) in &self.custom_headers {
+            headers.push((header_name.clone(), header_value.clone()));
+        }
+
         if let Some(session_token) = &self.session_token {
-            headers.push((constants::SESSION_TOKEN, session_token.into()));
+            headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
         }
 
         if let Some(consistency_level) = &self.consistency_level {
@@ -416,7 +436,6 @@ impl AsHeaders for QueryOptions<'_> {
                 throughput_bucket.to_string().into(),
             ));
         }
-        add_custom_headers(&mut headers, &self.custom_headers);
 
         Ok(headers.into_iter())
     }
@@ -444,22 +463,29 @@ pub struct ThroughputOptions<'a> {
 mod tests {
     use super::*;
 
+    fn headers_to_map(headers: Vec<(HeaderName, HeaderValue)>) -> HashMap<HeaderName, HeaderValue> {
+        headers.into_iter().collect()
+    }
+
     #[test]
     fn item_options_as_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value"),
+        );
+
         let item_options = ItemOptions {
             pre_triggers: Some(vec!["PreTrigger1".to_string(), "PreTrigger2".to_string()]),
             post_triggers: Some(vec!["PostTrigger1".to_string(), "PostTrigger2".to_string()]),
-            session_token: Some("SessionToken".to_string()),
+            session_token: Some("SessionToken".to_string().into()),
             consistency_level: Some(ConsistencyLevel::Session),
             indexing_directive: Some(IndexingDirective::Include),
             if_match_etag: Some(Etag::from("etag_value")),
             enable_content_response_on_write: false,
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(2),
-            custom_headers: vec![(
-                HeaderName::from_static("x-custom-header"),
-                HeaderValue::from_static("custom_value"),
-            )],
+            custom_headers,
             ..Default::default()
         };
 
@@ -475,29 +501,63 @@ mod tests {
                 constants::POST_TRIGGER_INCLUDE,
                 "PostTrigger1,PostTrigger2".into(),
             ),
-            (constants::SESSION_TOKEN, "SessionToken".into()),
+            ("x-custom-header".into(), "custom_value".into()),
             (constants::CONSISTENCY_LEVEL, "Session".into()),
-            (constants::INDEXING_DIRECTIVE, "Include".into()),
             (headers::IF_MATCH, "etag_value".into()),
+            (constants::SESSION_TOKEN, "SessionToken".into()),
+            (constants::INDEXING_DIRECTIVE, "Include".into()),
             (constants::PRIORITY_LEVEL, "High".into()),
             (constants::THROUGHPUT_BUCKET, "2".into()),
             (headers::PREFER, constants::PREFER_MINIMAL),
-            ("x-custom-header".into(), "custom_value".into()),
         ];
 
-        assert_eq!(headers_result, headers_expected);
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
+    }
+
+    #[test]
+    fn custom_headers_should_not_override_sdk_set_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            constants::CONSISTENCY_LEVEL,
+            HeaderValue::from_static("CustomConsistency"),
+        );
+
+        let item_options = ItemOptions {
+            consistency_level: Some(ConsistencyLevel::Strong),
+            custom_headers,
+            ..Default::default()
+        };
+
+        let headers_result: Vec<(HeaderName, HeaderValue)> =
+            item_options.as_headers().unwrap().collect();
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
+            (constants::CONSISTENCY_LEVEL, "Strong".into()),
+            (headers::PREFER, constants::PREFER_MINIMAL),
+        ];
+
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
     }
 
     #[test]
     fn client_options_as_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value"),
+        );
+
         let client_options = CosmosClientOptions {
             consistency_level: Some(ConsistencyLevel::Eventual),
             throughput_bucket: Some(5),
             priority: Some(PriorityLevel::Low),
-            custom_headers: vec![(
-                HeaderName::from_static("x-custom-header"),
-                HeaderValue::from_static("custom_value"),
-            )],
+            custom_headers,
             ..Default::default()
         };
 
@@ -505,38 +565,50 @@ mod tests {
             client_options.as_headers().unwrap().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
+            ("x-custom-header".into(), "custom_value".into()),
             (constants::CONSISTENCY_LEVEL, "Eventual".into()),
             (constants::PRIORITY_LEVEL, "Low".into()),
             (constants::THROUGHPUT_BUCKET, "5".into()),
-            ("x-custom-header".into(), "custom_value".into()),
         ];
 
-        assert_eq!(headers_result, headers_expected);
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
     }
 
     #[test]
     fn query_options_as_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value"),
+        );
+
         let query_options = QueryOptions {
-            session_token: Some("QuerySessionToken".to_string()),
+            session_token: Some("QuerySessionToken".to_string().into()),
             consistency_level: Some(ConsistencyLevel::BoundedStaleness),
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(10),
-            custom_headers: vec![(
-                HeaderName::from_static("x-custom-header"),
-                HeaderValue::from_static("custom_value"),
-            )],
+            custom_headers,
             ..Default::default()
         };
+
         let headers_result: Vec<(HeaderName, HeaderValue)> =
             query_options.as_headers().unwrap().collect();
+
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
+            ("x-custom-header".into(), "custom_value".into()),
             (constants::SESSION_TOKEN, "QuerySessionToken".into()),
             (constants::CONSISTENCY_LEVEL, "BoundedStaleness".into()),
             (constants::PRIORITY_LEVEL, "High".into()),
             (constants::THROUGHPUT_BUCKET, "10".into()),
-            ("x-custom-header".into(), "custom_value".into()),
         ];
-        assert_eq!(headers_result, headers_expected);
+
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
     }
 
     #[test]

@@ -111,11 +111,8 @@ impl CosmosPipeline {
             .as_headers()
             .expect("CosmosClientOptions is infallible")
         {
-            let exists = base_request
-                .headers()
-                .iter()
-                .any(|(existing_name, _)| *existing_name == name);
-            if !exists {
+            let header_val = base_request.headers().get_optional_str(&name);
+            if header_val.is_none() {
                 base_request.insert_header(name, value);
             }
         }
