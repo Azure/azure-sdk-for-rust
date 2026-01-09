@@ -12,9 +12,13 @@
       }
     },
     "RustToolchainName": ["stable"],
-    "ArmTemplateParameters": {
-      "Session": "@{ defaultConsistencyLevel = 'Session' }",
-      "Invalid": "@{ defaultConsistencyLevel = 'Invalid' }"
+    "Consistency": {
+      "Session": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session' }"
+      },
+      "Invalid": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Invalid' }"
+      }
     }
   }
 }
