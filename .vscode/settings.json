@@ -4,16 +4,17 @@
   "editor.formatOnSave": true,
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
-      "file": "doc/git-commit-instructions.md"
+      "file": ".github/instructions/git-commit.instructions.md"
     }
   ],
   "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
     {
-      "file": "doc/github-pullrequest-instructions.md"
+      "file": ".github/instructions/github-pullrequest.instructions.md"
     }
   ],
   "markdownlint.config": {
     "MD024": false,
+    "MD034": false,
     "MD046": {
       "style": "consistent"
     }
