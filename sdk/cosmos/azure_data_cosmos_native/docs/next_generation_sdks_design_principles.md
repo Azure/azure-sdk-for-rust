@@ -172,7 +172,7 @@ Unlike direct mode with Gateway mode the caller has not much context to allow id
 
 ### Lazy serialization
 
-In .Net and Java in direct mode it is absolutely critical today that we only serialize the diagnostics context into Json when requested (lazily) - serializing teh diagnostic context into json would otherwise have a too high burden on CPU usage. On the other hand we also use the diagnostics context for example in Java to generate OTel traces and metrics - which means we pretty much always collect the diagnostics - and only make the json serialization conditional. 
+In .Net and Java in direct mode it is absolutely critical today that we only serialize the diagnostics context into Json when requested (lazily) - serializing the diagnostic context into json would otherwise have a too high burden on CPU usage. On the other hand we also use the diagnostics context for example in Java to generate OTel traces and metrics - which means we pretty much always collect the diagnostics - and only make the json serialization conditional. 
 
 In the RUST driver we need to design the native API in a way that allows a similar model. We have to expose expose enough info in a typed contract to allow making the decision whether to serialize the full diagnostics or not (usually this would happen on error, when latency or RU-usage exceeds certain thresholds and/or based on sampling) - but in general we would probably want to keep the actual diagnostics content as an opaque string.
 
