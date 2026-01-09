@@ -140,7 +140,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
-                .headers(&options.throughput)
+                .request_headers(&options.throughput)
                 .json(&properties)
                 .build()?;
 
