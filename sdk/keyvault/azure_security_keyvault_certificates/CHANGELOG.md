@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+- Added support for sovereign and private clouds. Clients now discover authentication parameters at runtime by eliciting a challenge from Key Vault by sending their first request without an access token. You may see this request and Key Vault's 401 response in logs, followed by a successful retry.
 
 ### Breaking Changes
 
