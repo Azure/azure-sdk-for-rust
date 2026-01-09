@@ -623,21 +623,20 @@ impl BlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobClientCreateSnapshotResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
     ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
+    ///     if let Some(is_server_encrypted) = response.is_server_encrypted()? {
+    ///         println!("x-ms-request-server-encrypted: {:?}", is_server_encrypted);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::last_modified) - last-modified
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
