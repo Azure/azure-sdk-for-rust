@@ -3,9 +3,9 @@
 ## Scope
 
 This document defines the versioning relationship between the Native Driver and wrapping SDKs. It does not cover:
-- What constitutes a breaking change in the C FFI API (see Breaking Changes document)
+- What constitutes a breaking change in the C FFI API (see other design documents for that)
 - Specific support lifecycle timelines
-- Static vs. dynamic linking deployment decisions (TBD)
+- When static vs. dynamic linking deployment decisions are made
 
 ## Customer Support Policy
 
