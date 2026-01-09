@@ -166,7 +166,7 @@ Unlike direct mode with Gateway mode the caller has not much context to allow id
 - Service-Node (at least from Gateway/Proxy)
 - ActivityId + CorrelatedActivityId
 - The service has started to use OTel based tracing and Otel correlation vector - this could become a pretty pwoerful tool when wired up with OTEL telemetry emitted from applications - we should sync-up with owners of this in the service to udnerstand how sampling works today and what we would need to ensure to allow correlation between client-side Otel traces and service
-- UserAgent (suffix) needs to still be reflected inservice-telemetry since that is the only available option today for adding end-to-end correlation between application and service entrypoint - there are open issues in the service because we loose this correlation when Compute/Proxy call Backend - but hopefully that correlation link can be maintained in the future (basically original UserAgent fwded to Backend somehow)
+- UserAgent (suffix) needs to still be reflected in service telemetry since that is the only available option today for adding end-to-end correlation between application and service entrypoint - there are open issues in the service because we loose this correlation when Compute/Proxy call Backend - but hopefully that correlation link can be maintained in the future (basically original UserAgent fwded to Backend somehow)
 
 
 
