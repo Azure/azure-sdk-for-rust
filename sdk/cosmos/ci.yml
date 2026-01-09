@@ -28,3 +28,8 @@ extends:
     Artifacts:
     - name: azure_data_cosmos
       releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
+    MatrixConfigs:
+      - Name: Cosmos_live_test
+        Path: sdk/cosmos/live-platform-matrix.json
+        Selection: all
+        GenerateVMJobs: true
