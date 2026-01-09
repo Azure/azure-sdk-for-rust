@@ -25,7 +25,7 @@ Rust (MSRV: 1.85)
 
 ## Repository Structure
 
-```
+```text
 .
 ├── sdk/                       # Service-specific crates organized by service
 │   └── <service>/            # Service directory (e.g., "keyvault", "storage")
@@ -35,7 +35,7 @@ Rust (MSRV: 1.85)
 │       └── tsp-location.yaml # Pointer to TypeSpec in azure-rest-api-specs (may be under <crate>/)
 ├── eng/                      # Engineering system scripts and common tooling
 ├── doc/                      # Additional documentation
-├── .github/              
+├── .github/
 │   ├── copilot-instructions.md # Copilot-specific Rust coding guidelines
 │   ├── instructions/         # Agent instruction files for specific tasks
 │   └── prompts/              # Reusable Copilot prompts
@@ -169,7 +169,7 @@ cargo run --package <crate-name> --example <example-name>
 
 Agents should follow guidelines in `.github/copilot-instructions.md` and `CONTRIBUTING.md`, including:
 
-- **Naming Conventions**: 
+- **Naming Conventions**:
   - Types/variants: `PascalCase`
   - Functions/fields/parameters: `snake_case`
   - Constants: `UPPER_SNAKE_CASE`
@@ -200,6 +200,7 @@ Agents should follow guidelines in `.github/copilot-instructions.md` and `CONTRI
 ## CI/CD Integration
 
 All pull requests trigger:
+
 - `cargo build` - Compilation check
 - `cargo test` - Unit and integration tests
 - `cargo clippy` - Lint checks
@@ -224,13 +225,15 @@ For detailed guidance, see:
 - **Rust Coding Guidelines**: `.github/copilot-instructions.md`
 - **Contribution Workflows**: `CONTRIBUTING.md`
 - **Changelog Guidelines**: `.github/instructions/changelog.instructions.md`
-- **Git Commit Standards**: `doc/git-commit-instructions.md`
+- **Git Commit Standards**: `.github/instructions/git-commit.instructions.md`
+- **GitHub Pull Request Standards**: `.github/instructions/github-pullrequest.instructions.md`
 - **Deprecation Process**: `doc/deprecation-process.md`
 - **Azure SDK Design Guidelines**: https://azure.github.io/azure-sdk/rust_introduction.html
 
 ## Agent-Specific Instructions
 
 Additional specialized instructions for specific workflows can be found in:
+
 - `.github/instructions/` - Task-specific agent instructions
 - `.github/prompts/` - Reusable Copilot prompts (use `#prompt` in Copilot)
 
@@ -250,6 +253,6 @@ All contributions are licensed under the MIT License. See `LICENSE.txt`.
 
 ---
 
-**Last Updated**: 2025-01-20  
-**Version**: 1.0  
+**Last Updated**: 2026-01-08
+**Version**: 1.0
 **Canonical Spec**: https://agents.md
