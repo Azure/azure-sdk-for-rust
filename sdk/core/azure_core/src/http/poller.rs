@@ -188,13 +188,13 @@ where
     M: StatusMonitor,
     F: Format,
 {
-    /// The long-running operation (LRO) is in progress and the next status monitor update may be fetched from `next`.
+    /// The long-running operation (LRO) is in progress and the next status monitor update may be fetched from `continuation_token`.
     ///
     /// # Fields
     ///
     /// * `response` contains the HTTP response with the status monitor.
     /// * `retry_after` is the optional client-specified [`Duration`] to wait. The default is 30 seconds.
-    /// * `next` is the next link / continuation token.
+    /// * `continuation_token` is the next link / continuation token.
     InProgress {
         /// The HTTP response with the status monitor.
         response: Response<M, F>,
@@ -434,7 +434,7 @@ where
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
     ///     let mut req = req.clone();
-    ///     async move {
+    ///     Box::pin(async move {
     ///         if let PollerState::More(operation_url) = operation_url {
     ///             // Use the operation URL for polling
     ///             *req.url_mut() = operation_url;
@@ -480,7 +480,7 @@ where
     ///             }
     ///             _ => Ok(PollerResult::Done { response: resp })
     ///         }
-    ///     }
+    ///     })
     /// }, None);
     /// ```
     pub fn new<
