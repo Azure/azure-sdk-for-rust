@@ -201,17 +201,18 @@ pub type Pager<P, F = JsonFormat, C = Url> = ItemIterator<Response<P, F>, C>;
 ///
 /// Intended only for [`ItemIterator`] and [`PageIterator`].
 #[cfg(not(target_arch = "wasm32"))]
-pub type BoxedFuture<P, C> =
+pub type PagerResultFuture<P, C> =
     Pin<Box<dyn Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static>>;
 
 /// A pinned boxed [`Future`] that can be stored and called dynamically.
 ///
 /// Intended only for [`ItemIterator`] and [`PageIterator`].
 #[cfg(target_arch = "wasm32")]
-pub type BoxedFuture<P, C> =
+pub type PagerResultFuture<P, C> =
     Pin<Box<dyn Future<Output = crate::Result<PagerResult<P, C>>> + 'static>>;
 
-type PagerFn<P, C> = Box<dyn Fn(PagerState<C>, PagerOptions<'static, C>) -> BoxedFuture<P, C>>;
+type PagerFn<P, C> =
+    Box<dyn Fn(PagerState<C>, PagerOptions<'static, C>) -> PagerResultFuture<P, C>>;
 
 /// Options for configuring the behavior of a [`Pager`].
 #[derive(Clone)]
@@ -459,7 +460,7 @@ where
     /// }, None);
     /// ```
     pub fn new<
-        F: Fn(PagerState<C>, PagerOptions<'static, C>) -> BoxedFuture<P, C>
+        F: Fn(PagerState<C>, PagerOptions<'static, C>) -> PagerResultFuture<P, C>
             + ConditionalSend
             + 'static,
     >(
@@ -754,7 +755,7 @@ where
     /// }, None);
     /// ```
     pub fn new<
-        F: Fn(PagerState<C>, PagerOptions<'static, C>) -> BoxedFuture<P, C>
+        F: Fn(PagerState<C>, PagerOptions<'static, C>) -> PagerResultFuture<P, C>
             + ConditionalSend
             + 'static,
     >(
@@ -963,7 +964,7 @@ where
 
 enum State<P, C> {
     Init,
-    Pending(BoxedFuture<P, C>),
+    Pending(PagerResultFuture<P, C>),
     More,
     Done,
 }
@@ -994,7 +995,7 @@ mod tests {
     use super::{ItemIterator, PageIterator, Pager, PagerOptions, PagerResult, PagerState};
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        pager::BoxedFuture,
+        pager::PagerResultFuture,
         JsonFormat, RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
@@ -1574,7 +1575,7 @@ mod tests {
 
     #[allow(clippy::type_complexity)]
     fn make_three_page_callback(
-    ) -> impl Fn(PagerState<String>, PagerOptions<'_, String>) -> BoxedFuture<Response<Page>, String>
+    ) -> impl Fn(PagerState<String>, PagerOptions<'_, String>) -> PagerResultFuture<Response<Page>, String>
     {
         |continuation: PagerState<String>, _options| {
             Box::pin(async move {
