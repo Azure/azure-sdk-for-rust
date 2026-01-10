@@ -158,7 +158,7 @@ pub struct PollerOptions<'a> {
     pub context: Context<'a>,
     /// The time to wait between polling intervals in absence of a `retry-after` header.
     ///
-    /// The default is 30 seconds. The minimum time enforced by [`Poller::from_callback`] is 1 second.
+    /// The default is 30 seconds. The minimum time enforced by [`Poller::new`] is 1 second.
     pub frequency: Duration,
 }
 
@@ -304,7 +304,7 @@ mod types {
 
     /// A pinned boxed [`Future`] that can be stored and called dynamically.
     pub type PollerResultFuture<M, F, C> =
-        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F, C>>> + Send + 'static>>;
+        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F, C>>> + 'static>>;
 }
 
 pub use types::PollerResultFuture;
@@ -533,7 +533,12 @@ where
     C: 'static,
 {
     type Output = crate::Result<Response<M::Output, M::Format>>;
+
+    #[cfg(not(target_arch = "wasm32"))]
     type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send>>;
+
+    #[cfg(target_arch = "wasm32")]
+    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output>>>;
 
     fn into_future(mut self) -> Self::IntoFuture {
         Box::pin(async move {
