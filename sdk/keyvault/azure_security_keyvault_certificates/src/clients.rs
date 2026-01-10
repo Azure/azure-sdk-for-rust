@@ -165,7 +165,7 @@ impl CertificateClient {
 
         let parameters: Body = parameters.into();
 
-        Ok(Poller::from_callback(
+        Ok(Poller::new(
             move |next_link: PollerState<Url>, poller_options| {
                 let (mut request, next_link) = match next_link {
                     PollerState::More(next_link) => {
@@ -203,7 +203,7 @@ impl CertificateClient {
                 let pipeline = pipeline.clone();
                 let api_version = api_version.clone();
                 let ctx = poller_options.context.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
@@ -218,7 +218,7 @@ impl CertificateClient {
                         PollerStatus::InProgress => PollerResult::InProgress {
                             response: rsp,
                             retry_after,
-                            next: next_link,
+                            continuation_token: next_link,
                         },
                         PollerStatus::Succeeded => {
                             PollerResult::Succeeded {
@@ -259,7 +259,7 @@ impl CertificateClient {
                         }
                         _ => PollerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
