@@ -67,7 +67,7 @@ For the next generation of SDKs IMO we should consider dynamically tuning defaul
 
 Today binary encoding is only supported in the .Net SDK - all other SDKs depend on transcoding happening in the backend. For the next generation of SDKs we have the following options
 
-1) Implement an option to apply transcoding in the RUST driver - as such providing this capability across all SDKs using the RUST driver - but it would mean there is still transcoding happening (not ideal from a latency/efficiency perspective)
+1) Implement an option to apply transcoding in the Rust driver - as such providing this capability across all SDKs using the Rust driver - but it would mean there is still transcoding happening (not ideal from a latency/efficiency perspective)
 2) Implement transcoding where appropriate in the actual SDKs - really allowing to avoid transcoding (ideal for latency) - but relatively expensive because a binary encoding implementation in a SDK is non-trivial and pretty risky.
 3) Not implementing binary encoding in SDKs or driver and purely rely on transcoding to happen in the service
 
@@ -79,7 +79,7 @@ My recommendation would be to start with #3 for the initial preview
 
 **GA-BLOCKER**
 
-but then implement #1 for sure (automatically providing #2 for RUST as well) and adding #2 on a need-base in other SDKs. Shifting transcoding from service to RUST driver still has benefits especially for query (network density can be increased), any possible RU-benefits can be realized and we shift the COGs out of the service.
+but then implement #1 for sure (automatically providing #2 for Rust as well) and adding #2 on a need-base in other SDKs. Shifting transcoding from service to Rust driver still has benefits especially for query (network density can be increased), any possible RU-benefits can be realized and we shift the COGs out of the service.
 
 
 
@@ -105,7 +105,7 @@ My recommendation to normalize on a consistent way to configure this is
 
 **PREVIEW-BLOCKER for strong consistency**
 
-Like in .Net and Java PPAF enablement should purely depend on service-side config. If the account topology indicates PPAF is enabled, the RUST driver should enable the feature - there is no need for any client-side option to disable PPAF (it actually would be dangerous to enable PPAF only service-side)
+Like in .Net and Java PPAF enablement should purely depend on service-side config. If the account topology indicates PPAF is enabled, the Rust driver should enable the feature - there is no need for any client-side option to disable PPAF (it actually would be dangerous to enable PPAF only service-side)
 
 
 
@@ -123,7 +123,7 @@ Same as PPCB - IMO we should force-enable hedging - but we probably need to allo
 
 **PREVIEW-BLOCKER**
 
-Bottom-line - I strongly believe we have to enable this by default - maybe even prevent disallowing it - but we need to take the RU-impact concern from customers seriously - so, I don't think porting whatever we have in .Net, Java or Python right now is sufficient for RUST driver V1
+Bottom-line - I strongly believe we have to enable this by default - maybe even prevent disallowing it - but we need to take the RU-impact concern from customers seriously - so, I don't think porting whatever we have in .Net, Java or Python right now is sufficient for Rust driver V1
 
 
 
@@ -154,13 +154,13 @@ My 2 cents - while I would love the idea of refactoring APIs to always be idempo
 
 ### Motivation
 
-For all cases where we will wrap the RUST driver in another SDK (Python, Go, Java, .Net) we have to assume that the application developer has no context/knowledge of RUST. We can't expect them to debug into the RUST code etc. This means the native C-APIs in the RUST driver we use have to act as a black-box. If any non-happy-path situation happens (errors but also increased latency etc.) we have to return enough context to allow debugging the root cause. Luckily we do not plan to support direct mode - so, the service interactions are simpler. 
+For all cases where we will wrap the Rust driver in another SDK (Python, Go, Java, .Net) we have to assume that the application developer has no context/knowledge of Rust. We can't expect them to debug into the Rust code etc. This means the native C-APIs in the Rust driver we use have to act as a black-box. If any non-happy-path situation happens (errors but also increased latency etc.) we have to return enough context to allow debugging the root cause. Luckily we do not plan to support direct mode - so, the service interactions are simpler. 
 
 
 
 ### Correlation
 
-Unlike direct mode with Gateway mode the caller has not much context to allow identifying an RCA. The benefit is that we should have that info in Gateway service telemetry - but for many debugging scenarios you have to correlate client-specific dimensions (which POD/VM is the caller) with server-side dimensions (region, partition, cluster/tenant etc.). So, whenever possible the diagnostcis exposed form the RUST driver to allow correlation witha t least these dimensions
+Unlike direct mode with Gateway mode the caller has not much context to allow identifying an RCA. The benefit is that we should have that info in Gateway service telemetry - but for many debugging scenarios you have to correlate client-specific dimensions (which POD/VM is the caller) with server-side dimensions (region, partition, cluster/tenant etc.). So, whenever possible the diagnostcis exposed form the Rust driver to allow correlation witha t least these dimensions
 
 - PartitionId
 - Service-Node (at least from Gateway/Proxy)
@@ -172,9 +172,9 @@ Unlike direct mode with Gateway mode the caller has not much context to allow id
 
 ### Lazy serialization
 
-In .Net and Java in direct mode it is absolutely critical today that we only serialize the diagnostics context into Json when requested (lazily) - serializing the diagnostic context into json would otherwise have a too high burden on CPU usage. On the other hand we also use the diagnostics context for example in Java to generate OTel traces and metrics - which means we pretty much always collect the diagnostics - and only make the json serialization conditional. 
+In .Net and Java in direct mode it is absolutely critical today that we only serialize the diagnostics context into Json when requested (lazily) - serializing hediagnostic context into json would otherwise have a too high burden on CPU usage. On the other hand we also use the diagnostics context for example in Java to generate OTel traces and metrics - which means we pretty much always collect the diagnostics - and only make the json serialization conditional. 
 
-In the RUST driver we need to design the native API in a way that allows a similar model. We have to expose expose enough info in a typed contract to allow making the decision whether to serialize the full diagnostics or not (usually this would happen on error, when latency or RU-usage exceeds certain thresholds and/or based on sampling) - but in general we would probably want to keep the actual diagnostics content as an opaque string.
+In the Rust driver we need to design the native API in a way that allows a similar model. We have to expose expose enough info in a typed contract to allow making the decision whether to serialize the full diagnostics or not (usually this would happen on error, when latency or RU-usage exceeds certain thresholds and/or based on sampling) - but in general we would probably want to keep the actual diagnostics content as an opaque string.
 
 **PREVIEW-BLOCKER**
 
@@ -182,7 +182,7 @@ My recommendation would be to use a similar model as in the Java SDK - CosmosDia
 
 **GA-BLOCKER**
 
-While I think technically we should keep the diagnostics content opaque (as in no hard model-contract because then we would not be able to iterate on it within a major version flexible enough) the single RUST driver also would provide us the opportunity to have consistent diagnostics - which would make using generative AI (or traditional TSGs) to self-diagnose certain issues much easier. So, we should probably still invest in adding documentation (targeting humans / gen AI - not applications) about the diagnostics content. Setting expectations there is critical to allow iterating on diagnostics content while making better use of the know how.
+While I think technically we should keep the diagnostics content opaque (as in no hard model-contract because then we would not be able to iterate on it within a major version flexible enough) the single Rust driver also would provide us the opportunity to have consistent diagnostics - which would make using generative AI (or traditional TSGs) to self-diagnose certain issues much easier. So, we should probably still invest in adding documentation (targeting humans / gen AI - not applications) about the diagnostics content. Setting expectations there is critical to allow iterating on diagnostics content while making better use of the know how.
 
 
 
@@ -194,11 +194,31 @@ One lesson learned form our Otel endeavors in .Net and Java is that we have to b
 
 
 
+## Consistency
+
+### ReadConsistencyStrategy vs. ConsistencyLevel
+
+Traditionally Cosmos DB as a service (and the SDKs) have only allowed to change consistency level for read operations by lowering the consistency. So, for a Strong account you could downgrade consistency on a per client or per-request level for individual operations to Session or Eventual - but for an account with Eventual Consistency as the default consistency level it was not possible to force quorum reads (from any region or hub region) for example. Several customers (internal and external) have asked for more flexibility when making the trade-offs between consistency and latency and availability. As a result in Java and .Net SDK we introduced the ReadConsistencyStrategy - allowing to also force quorum reads (in Java SDK for direct mode only for now) with the idea of eventually also allowing to force quorum reads from hub-region. In the Java and .Net SDK we have competing APIs because ConsistencyLevel API only allows downgrading - while ReadConsistencyStrategy allows more flexible overrides. 
+
+**PREVIEW-BLOCKER**
+
+In the new generation of SDK we should stick to only one API - ReadConsistencyStrategy and start enabling the individual strategies when the service-capabilities become available.
+
+
+
+### Session Token Container
+
+Unfortunately Session Consistency with Session Token Container has been the default consistency level and as such is used by at least 90 percent of clients. This is a problem, because it is a terrible default value - it is only really helpful in a very small number of use cases. For most use cases customers would either need cross-pod/machine consistency guarantees (which STC can't provide because the session is scoped to CosmosClient instance) or stick with eventual consistency and get better perf/availability. Ideally we would change the default consistency in new SDKs to not be Session - but Eventual and I would even go so far to ask for making Session Token Container an external API (maybe even separate library) to force customers to not stick with the bad default behavior of Session with STC. 
+
+**GA-BLOCKER**
+
+This would become a significant adoption blocker - so, my hunch is that we will have to support STC and keep it as the default. But we should probably have more conversations about this to re-evaluate my assessment.
+
 ## Configuration
 
 **PREVIEW-BLOCKER** (probably also debatable whether sufficient for GA - same argument as for Thresholds above)
 
-In both .Net as well as Java SDK we have a series of config knobs that are not exposed in public API but can be tuned as a fail-safe via environment variable (or system properties in Java). For the RUST driver we need to expose a clean API to modify these internal plan-B config overrides - how that gets exposed in each SDK really depends on the typical config approach there - but the APIs need to exist to do this cleanly - and we need to have documentation for all the internal knobs in place. Part of the work should be that diagnostics (for example shown in errors) should include a list of all config overrides - and we should also be specific in documentation whether using any such knob voids SLAs/supportability
+In both .Net as well as Java SDK we have a series of config knobs that are not exposed in public API but can be tuned as a fail-safe via environment variable (or system properties in Java). For the Rust driver we need to expose a clean API to modify these internal plan-B config overrides - how that gets exposed in each SDK really depends on the typical config approach there - but the APIs need to exist to do this cleanly - and we need to have documentation for all the internal knobs in place. Part of the work should be that diagnostics (for example shown in errors) should include a list of all config overrides - and we should also be specific in documentation whether using any such knob voids SLAs/supportability
 
 
 
