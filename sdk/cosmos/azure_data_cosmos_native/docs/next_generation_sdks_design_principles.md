@@ -160,19 +160,19 @@ For all cases where we will wrap the Rust driver in another SDK (Python, Go, Jav
 
 ### Correlation
 
-Unlike direct mode with Gateway mode the caller has not much context to allow identifying an RCA. The benefit is that we should have that info in Gateway service telemetry - but for many debugging scenarios you have to correlate client-specific dimensions (which POD/VM is the caller) with server-side dimensions (region, partition, cluster/tenant etc.). So, whenever possible the diagnostcis exposed form the Rust driver to allow correlation witha t least these dimensions
+Unlike direct mode with Gateway mode the caller has not much context to allow identifying an RCA. The benefit is that we should have that info in Gateway service telemetry - but for many debugging scenarios you have to correlate client-specific dimensions (which POD/VM is the caller) with server-side dimensions (region, partition, cluster/tenant etc.). So, whenever possible the diagnostics exposed form the Rust driver to allow correlation with at least these dimensions
 
 - PartitionId
 - Service-Node (at least from Gateway/Proxy)
 - ActivityId + CorrelatedActivityId
-- The service has started to use OTel based tracing and Otel correlation vector - this could become a pretty pwoerful tool when wired up with OTEL telemetry emitted from applications - we should sync-up with owners of this in the service to udnerstand how sampling works today and what we would need to ensure to allow correlation between client-side Otel traces and service
-- UserAgent (suffix) needs to still be reflected in service telemetry since that is the only available option today for adding end-to-end correlation between application and service entrypoint - there are open issues in the service because we loose this correlation when Compute/Proxy call Backend - but hopefully that correlation link can be maintained in the future (basically original UserAgent fwded to Backend somehow)
+- The service has started to use OTel based tracing and OTel correlation vector - this could become a pretty powerful tool when wired up with OTEL telemetry emitted from applications - we should sync-up with owners of this in the service to understand how sampling works today and what we would need to ensure to allow correlation between client-side OTel traces and service
+- UserAgent (suffix) needs to still be reflected in service telemetry since that is the only available option today for adding end-to-end correlation between application and service entrypoint - there are open issues in the service because we loose this correlation when Compute/Proxy call Backend - but hopefully that correlation link can be maintained in the future (basically original UserAgent forwarded to Backend somehow)
 
 
 
 ### Lazy serialization
 
-In .Net and Java in direct mode it is absolutely critical today that we only serialize the diagnostics context into Json when requested (lazily) - serializing hediagnostic context into json would otherwise have a too high burden on CPU usage. On the other hand we also use the diagnostics context for example in Java to generate OTel traces and metrics - which means we pretty much always collect the diagnostics - and only make the json serialization conditional. 
+In .Net and Java in direct mode it is absolutely critical today that we only serialize the diagnostics context into Json when requested (lazily) - serializing the diagnostic context into json would otherwise have a too high burden on CPU usage. On the other hand we also use the diagnostics context for example in Java to generate OTel traces and metrics - which means we pretty much always collect the diagnostics - and only make the json serialization conditional. 
 
 In the Rust driver we need to design the native API in a way that allows a similar model. We have to expose expose enough info in a typed contract to allow making the decision whether to serialize the full diagnostics or not (usually this would happen on error, when latency or RU-usage exceeds certain thresholds and/or based on sampling) - but in general we would probably want to keep the actual diagnostics content as an opaque string.
 
