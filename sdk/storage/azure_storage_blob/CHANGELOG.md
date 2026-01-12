@@ -10,6 +10,7 @@
 - Added support for `set_immutability_policy` to `BlobClient`.
 - Added support for `delete_immutability_policy` to `BlobClient`.
 - Added support for `undelete` to `BlobClient`.
+- Added snapshot and versioning support for blobs with convenience methods `with_snapshot` and `with_version` to `BlobClient`.
 
 ### Breaking Changes
 
