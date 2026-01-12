@@ -166,8 +166,8 @@ impl CertificateClient {
         let parameters: Body = parameters.into();
 
         Ok(Poller::new(
-            move |next_link: PollerState<Url>, poller_options| {
-                let (mut request, next_link) = match next_link {
+            move |poller_state: PollerState<Url>, poller_options| {
+                let (mut request, next_link) = match poller_state {
                     PollerState::More(next_link) => {
                         // Make sure the `api-version` is set appropriately.
                         let qp = next_link
