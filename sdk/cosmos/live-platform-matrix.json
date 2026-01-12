@@ -15,13 +15,19 @@
         "Pool": "env:MACPOOL"
       }
     },
-    "RustToolchainName": ["stable", "msrv", "nightly"],
-    "Consistency": {
+    "RustToolchainName": ["stable"],
+    "Account Settings": {
+      "Eventual": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual' }"
+      },
       "Session": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session' }"
       },
-      "Invalid": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Invalid' }"
+      "Strong": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong' }"
+      },
+      "Session-MultiWrite": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = 'true' }"
       }
     }
   },
