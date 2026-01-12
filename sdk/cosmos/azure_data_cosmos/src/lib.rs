@@ -25,7 +25,7 @@ pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
 
-pub use feed::{FeedPage, FeedPager};
+pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
 mod cosmos_request;
 mod handler;
 mod operation_context;

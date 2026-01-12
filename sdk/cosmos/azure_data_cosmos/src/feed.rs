@@ -1,12 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use async_trait::async_trait;
-use azure_core::http::{
-    headers::Headers,
-    pager::{Page, PagerResult},
-    ItemIterator, RawResponse,
-};
+use std::{pin::Pin, task};
+
+use azure_core::http::{headers::Headers, pager::PagerResult, RawResponse};
+use futures::{stream::BoxStream, Stream};
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::constants;
@@ -107,17 +105,165 @@ impl<T: DeserializeOwned> FeedPage<T> {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl<T: DeserializeOwned + Send> Page for FeedPage<T> {
-    type Item = T;
-    type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
-    async fn into_items(self) -> azure_core::Result<Self::IntoIter> {
-        Ok(self.items.into_iter())
-    }
-}
-
 /// Represents a stream of pages from a Cosmos DB feed.
 ///
 /// See [`FeedPage`] for more details on Cosmos DB feeds.
-pub type FeedPager<T> = ItemIterator<FeedPage<T>, String>;
+#[pin_project::pin_project]
+pub struct FeedItemIterator<T> {
+    #[pin]
+    pages: BoxStream<'static, azure_core::Result<FeedPage<T>>>,
+    current: Option<std::vec::IntoIter<T>>,
+}
+
+impl<T> FeedItemIterator<T> {
+    /// Creates a new `FeedItemIterator` from a stream of pages.
+    pub(crate) fn new(
+        stream: impl Stream<Item = azure_core::Result<FeedPage<T>>> + Send + 'static,
+    ) -> Self {
+        Self {
+            pages: Box::pin(stream),
+            current: None,
+        }
+    }
+
+    pub fn into_pages(self) -> FeedPageIterator<T> {
+        FeedPageIterator(self.pages)
+    }
+}
+
+impl<T> Stream for FeedItemIterator<T> {
+    type Item = azure_core::Result<T>;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        cx: &mut task::Context<'_>,
+    ) -> task::Poll<Option<Self::Item>> {
+        let mut this = self.project();
+        loop {
+            if let Some(current) = this.current.as_mut() {
+                if let Some(item) = current.next() {
+                    return task::Poll::Ready(Some(Ok(item)));
+                }
+
+                // Reset the iterator and poll for the next page.
+                *this.current = None;
+            }
+
+            match this.pages.as_mut().poll_next(cx) {
+                task::Poll::Ready(page) => match page {
+                    Some(Ok(page)) => {
+                        *this.current = Some(page.items.into_iter());
+                        continue;
+                    }
+                    Some(Err(err)) => return task::Poll::Ready(Some(Err(err))),
+                    None => return task::Poll::Ready(None),
+                },
+                task::Poll::Pending => return task::Poll::Pending,
+            }
+        }
+    }
+}
+
+pub struct FeedPageIterator<T>(BoxStream<'static, azure_core::Result<FeedPage<T>>>);
+
+impl<T> Stream for FeedPageIterator<T> {
+    type Item = azure_core::Result<FeedPage<T>>;
+
+    fn poll_next(
+        mut self: Pin<&mut Self>,
+        cx: &mut task::Context<'_>,
+    ) -> task::Poll<Option<Self::Item>> {
+        self.0.as_mut().poll_next(cx)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::StreamExt;
+
+    fn create_test_page<T>(items: Vec<T>, continuation: Option<String>) -> FeedPage<T> {
+        FeedPage::new(items, continuation, Headers::new())
+    }
+
+    #[tokio::test]
+    async fn item_iterator_yields_all_items_from_multiple_pages() {
+        let pages = vec![
+            Ok(create_test_page(vec![1, 2, 3], Some("token1".to_string()))),
+            Ok(create_test_page(vec![4, 5], Some("token2".to_string()))),
+            Ok(create_test_page(vec![6], None)),
+        ];
+
+        let stream = futures::stream::iter(pages);
+        let item_iter = FeedItemIterator::new(stream);
+
+        let items: Vec<_> = item_iter
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .map(|r| r.unwrap())
+            .collect();
+        assert_eq!(items, vec![1, 2, 3, 4, 5, 6]);
+    }
+
+    #[tokio::test]
+    async fn page_iterator_yields_all_pages() {
+        let pages = vec![
+            Ok(create_test_page(vec![1, 2], Some("token1".to_string()))),
+            Ok(create_test_page(vec![3], None)),
+        ];
+
+        let stream = futures::stream::iter(pages);
+        let page_iter = FeedItemIterator::new(stream).into_pages();
+
+        let page_items: Vec<_> = page_iter
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .map(|r| r.unwrap().into_items())
+            .collect();
+        assert_eq!(page_items, vec![vec![1, 2], vec![3]]);
+    }
+
+    #[tokio::test]
+    async fn item_iterator_propagates_errors() {
+        let pages = vec![
+            Ok(create_test_page(vec![1, 2], Some("token".to_string()))),
+            Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                "test error",
+            )),
+        ];
+
+        let stream = futures::stream::iter(pages);
+        let mut item_iter = FeedItemIterator::new(stream);
+
+        // First two items should succeed
+        assert_eq!(item_iter.next().await.unwrap().unwrap(), 1);
+        assert_eq!(item_iter.next().await.unwrap().unwrap(), 2);
+
+        // Third item should be an error
+        assert!(item_iter.next().await.unwrap().is_err());
+    }
+
+    #[tokio::test]
+    async fn item_iterator_handles_empty_pages() {
+        let pages = vec![
+            Ok(create_test_page(vec![1], Some("token1".to_string()))),
+            Ok(create_test_page(vec![], Some("token2".to_string()))),
+            Ok(create_test_page(vec![2], None)),
+        ];
+
+        let stream = futures::stream::iter(pages);
+        let item_iter = FeedItemIterator::new(stream);
+
+        let items: Vec<_> = item_iter
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .map(|r| r.unwrap())
+            .collect();
+
+        assert_eq!(items, vec![1, 2]);
+    }
+}

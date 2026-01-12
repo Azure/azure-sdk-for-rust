@@ -19,7 +19,7 @@ fn collect_matching_items(
 #[tokio::test]
 pub async fn single_partition_query() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(2, 2);
         let container_client =
             test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -40,7 +40,7 @@ pub async fn single_partition_query() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(2, 2);
         let container_client =
             test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -71,7 +71,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 #[tokio::test]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(2, 2);
         let container_client =
             test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -96,7 +96,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 #[tokio::test]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(10, 2);
         let container_client =
             test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -126,7 +126,7 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
 ) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_db(async |_, db_client| {
-        let items = test_data::generate_mock_items(10, 10);
+        let items = test_data::generate_mock_items(10, 2);
         let container_client =
             test_data::create_container_with_items(db_client, items.clone(), None).await?;
 

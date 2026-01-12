@@ -8,7 +8,6 @@ use serde::Serialize;
 #[cfg(feature = "preview_query_engine")]
 mod engine;
 
-#[cfg(feature = "preview_query_engine")]
 pub(crate) mod executor;
 
 #[cfg(feature = "preview_query_engine")]

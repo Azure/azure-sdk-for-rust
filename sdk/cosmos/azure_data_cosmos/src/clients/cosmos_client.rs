@@ -5,8 +5,10 @@ use crate::{
     clients::DatabaseClient,
     models::DatabaseProperties,
     pipeline::{AuthorizationPolicy, GatewayPipeline},
+    pipeline::{AuthorizationPolicy, CosmosPipeline},
+    query::executor::QueryExecutor,
     resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
+    CosmosClientOptions, CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -231,17 +233,21 @@ impl CosmosClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions<'_>>,
-    ) -> azure_core::Result<FeedPager<DatabaseProperties>> {
+    ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.databases_link);
 
-        self.pipeline.send_query_request(
-            options.method_options.context,
-            query.into(),
-            url,
+        QueryExecutor::gateway(
+            self.pipeline.clone(),
             self.databases_link.clone(),
+            query.into(),
+            crate::QueryOptions {
+                method_options: options.method_options,
+                #[cfg(feature = "preview_query_engine")]
+                query_engine: None,
+            },
             |_| Ok(()),
-        )
+        )?
+        .into_stream()
     }
 
     /// Creates a new database.

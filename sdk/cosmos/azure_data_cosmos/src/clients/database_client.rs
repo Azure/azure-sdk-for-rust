@@ -2,12 +2,14 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::ContainerClient,
+    clients::{ContainerClient, OffersClient},
     models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::GatewayPipeline,
+    pipeline::CosmosPipeline,
+    query::executor::QueryExecutor,
     resource_context::{ResourceLink, ResourceType},
-    CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
 use std::sync::Arc;
@@ -123,17 +125,21 @@ impl DatabaseClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions<'_>>,
-    ) -> azure_core::Result<FeedPager<ContainerProperties>> {
+    ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.containers_link);
 
-        self.pipeline.send_query_request(
-            options.method_options.context,
-            query.into(),
-            url,
+        QueryExecutor::gateway(
+            self.pipeline.clone(),
             self.containers_link.clone(),
+            query.into(),
+            crate::QueryOptions {
+                method_options: options.method_options,
+                #[cfg(feature = "preview_query_engine")]
+                query_engine: None,
+            },
             |_| Ok(()),
-        )
+        )?
+        .into_stream()
     }
 
     /// Creates a new container.
@@ -200,9 +206,8 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        self.pipeline
-            .read_throughput_offer(options.method_options.context, &resource_id)
-            .await
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client.read(options.method_options.context).await
     }
 
     /// Replaces the database throughput properties.
@@ -225,8 +230,9 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        self.pipeline
-            .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client
+            .replace(options.method_options.context, throughput)
             .await
     }
 }

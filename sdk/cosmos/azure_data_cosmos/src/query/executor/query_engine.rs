@@ -1,21 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![allow(dead_code)]
-
 use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
 use crate::{
     constants,
+    pipeline::CosmosPipeline,
     pipeline::{self, GatewayPipeline},
     query::{OwnedQueryPipeline, QueryEngineRef, QueryResult},
     resource_context::{ResourceLink, ResourceType},
-    FeedPage, FeedPager, Query, QueryOptions,
+    FeedPage, Query,
 };
 
-pub struct QueryExecutor<T: DeserializeOwned> {
+/// A query executor that uses an external query engine to support cross-partition queries.
+pub struct QueryEngineExecutor<T: DeserializeOwned> {
     http_pipeline: Arc<GatewayPipeline>,
     container_link: ResourceLink,
     items_link: ResourceLink,
@@ -24,25 +24,18 @@ pub struct QueryExecutor<T: DeserializeOwned> {
     base_request: Option<Request>,
     query: Query,
     pipeline: Option<OwnedQueryPipeline>,
-
-    // Why is our phantom type a function? Because that represents how we _use_ the type T.
-    // Normally, PhantomData<T> is only Send/Sync if T is, because PhantomData is indicating that while we don't _name_ T in a field, we should act as though we have a field of type T.
-    // However, we don't store any T values in this, we only RETURN them.
-    // That means we use a function pointer to indicate that we don't actually operate on T directly, we just return it.
-    // Because of this, PhantomData<fn() -> T> is Send/Sync even if T isn't (see https://doc.rust-lang.org/stable/nomicon/phantom-data.html#table-of-phantomdata-patterns)
     phantom: std::marker::PhantomData<fn() -> T>,
 }
 
-impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
+impl<T: DeserializeOwned + Send + 'static> QueryEngineExecutor<T> {
     pub fn new(
         http_pipeline: Arc<GatewayPipeline>,
         container_link: ResourceLink,
+        context: Context<'static>,
         query: Query,
-        options: QueryOptions<'_>,
         query_engine: QueryEngineRef,
     ) -> azure_core::Result<Self> {
         let items_link = container_link.feed(ResourceType::Documents);
-        let context = options.method_options.context.into_owned();
         Ok(Self {
             http_pipeline,
             container_link,
@@ -56,24 +49,11 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         })
     }
 
-    pub fn into_stream(self) -> azure_core::Result<FeedPager<T>> {
-        // Ok(FeedPager::from_stream(futures::stream::try_unfold(
-        //     self,
-        //     |mut state| async move {
-        //         let val = state.step().await?;
-        //         Ok(val.map(|item| (item, state)))
-        //     },
-        // )))
-        unimplemented!("See https://github.com/Azure/azure-sdk-for-rust/issues/3413")
-    }
-
-    /// Executes a single step of the query execution.
+    /// Fetches the next page of query results.
     ///
-    /// # Returns
-    ///
-    /// An item to yield, or None if execution is complete.
+    /// Returns `None` if there are no more pages to fetch.
     #[tracing::instrument(skip_all)]
-    async fn step(&mut self) -> azure_core::Result<Option<FeedPage<T>>> {
+    pub async fn next_page(&mut self) -> azure_core::Result<Option<FeedPage<T>>> {
         let pipeline = match self.pipeline.as_mut() {
             Some(pipeline) => pipeline,
             None => {
@@ -100,7 +80,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                         .create_pipeline(&self.query.text, &query_plan, &pkranges)?;
                 if let Some(query) = pipeline.query() {
                     let query = Query::from(query).with_parameters_from(&self.query);
-                    self.base_request = Some(crate::pipeline::create_base_query_request(
+                    self.base_request = Some(create_base_query_request(
                         self.http_pipeline.url(&self.items_link),
                         &query,
                     )?);
@@ -137,10 +117,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                     if request.include_parameters {
                         query = query.with_parameters_from(&self.query)
                     }
-                    crate::pipeline::create_base_query_request(
-                        self.http_pipeline.url(&self.items_link),
-                        &query,
-                    )?
+                    create_base_query_request(self.http_pipeline.url(&self.items_link), &query)?
                 } else if let Some(base_request) = &self.base_request {
                     base_request.clone()
                 } else {
@@ -206,7 +183,14 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     }
 }
 
-// This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
+fn create_base_query_request(url: url::Url, query: &Query) -> azure_core::Result<Request> {
+    let mut request = Request::new(url, Method::Post);
+    request.insert_header(constants::QUERY, "True");
+    request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
+    request.set_json(query)?;
+    Ok(request)
+}
+
 #[tracing::instrument(skip_all)]
 async fn get_query_plan(
     http_pipeline: &GatewayPipeline,
@@ -216,7 +200,7 @@ async fn get_query_plan(
     supported_features: &str,
 ) -> azure_core::Result<RawResponse> {
     let url = http_pipeline.url(items_link);
-    let mut request = pipeline::create_base_query_request(url, query)?;
+    let mut request = create_base_query_request(url, query)?;
     request.insert_header(constants::QUERY_ENABLE_CROSS_PARTITION, "True");
     request.insert_header(constants::IS_QUERY_PLAN_REQUEST, "True");
     request.insert_header(
@@ -229,7 +213,6 @@ async fn get_query_plan(
         .await
 }
 
-// This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
 #[tracing::instrument(skip_all)]
 async fn get_pkranges(
     http_pipeline: &GatewayPipeline,

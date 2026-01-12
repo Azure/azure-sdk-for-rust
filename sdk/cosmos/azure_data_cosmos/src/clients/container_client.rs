@@ -2,12 +2,15 @@
 // Licensed under the MIT License.
 
 use crate::{
+    clients::OffersClient,
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
+    pipeline::CosmosPipeline,
+    query::executor::QueryExecutor,
     resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
-    ThroughputOptions,
+    DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
+    ReplaceContainerOptions, ThroughputOptions,
 };
 use std::sync::Arc;
 
@@ -164,9 +167,8 @@ impl ContainerClient {
             .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        self.pipeline
-            .read_throughput_offer(options.method_options.context, &resource_id)
-            .await
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client.read(options.method_options.context).await
     }
 
     /// Replaces the container throughput properties.
@@ -189,8 +191,9 @@ impl ContainerClient {
             .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        self.pipeline
-            .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client
+            .replace(options.method_options.context, throughput)
             .await
     }
 
@@ -703,7 +706,7 @@ impl ContainerClient {
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions<'_>>,
-    ) -> azure_core::Result<FeedPager<T>> {
+    ) -> azure_core::Result<FeedItemIterator<T>> {
         #[cfg_attr(not(feature = "preview_query_engine"), allow(unused_mut))]
         let mut options = options.unwrap_or_default();
         let partition_key = partition_key.into();
@@ -713,7 +716,7 @@ impl ContainerClient {
         #[cfg(feature = "preview_query_engine")]
         if partition_key.is_empty() {
             if let Some(query_engine) = options.query_engine.take() {
-                return crate::query::executor::QueryExecutor::new(
+                return crate::query::executor::QueryExecutor::query_engine(
                     self.pipeline.clone(),
                     self.link.clone(),
                     query,
@@ -724,12 +727,13 @@ impl ContainerClient {
             }
         }
 
-        let url = self.pipeline.url(&self.items_link);
-        self.pipeline
-            .send_query_request(ctx, query, url, self.items_link.clone(), |r| {
-                r.insert_headers(&options)?;
-                r.insert_headers(&partition_key)?;
-                Ok(())
-            })
+        QueryExecutor::gateway(
+            self.pipeline.clone(),
+            self.items_link.clone(),
+            query,
+            options,
+            |r: &mut azure_core::http::Request| r.insert_headers(&partition_key),
+        )?
+        .into_stream()
     }
 }

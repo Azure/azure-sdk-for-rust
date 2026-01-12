@@ -5,7 +5,12 @@ mod authorization_policy;
 mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
+pub use authorization_policy::AuthorizationPolicy;
+use azure_core::http::{request::Request, response::Response, Context, RawResponse};
+use url::Url;
+
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
     constants,
@@ -13,6 +18,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, FeedPage, FeedPager, Query,
 };
+use crate::{cosmos_request::CosmosRequest, CosmosClientOptions};
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{
@@ -103,129 +109,4 @@ impl GatewayPipeline {
         // Convert RawResponse into typed Response<T>
         res.map(Into::into)
     }
-
-    pub fn send_query_request<T: DeserializeOwned + Send>(
-        &self,
-        ctx: Context<'_>,
-        query: Query,
-        url: Url,
-        resource_link: ResourceLink,
-        apply_request_headers: impl Fn(&mut Request) -> azure_core::Result<()>,
-    ) -> azure_core::Result<FeedPager<T>> {
-        let mut base_request = create_base_query_request(url, &query)?;
-        apply_request_headers(&mut base_request)?;
-
-        // Only apply client-level headers if they aren't already present on the request.
-        // Caller-provided request headers must take precedence.
-        for (name, value) in self
-            .options
-            .as_headers()
-            .expect("CosmosClientOptions is infallible")
-        {
-            let header_val = base_request.headers().get_optional_str(&name);
-            if header_val.is_none() {
-                base_request.insert_header(name, value);
-            }
-        }
-
-        // We have to double-clone here.
-        // First we clone the pipeline to pass it in to the closure
-        let pipeline = self.pipeline.clone();
-        let options = PagerOptions {
-            context: ctx.with_value(resource_link).into_owned(),
-            ..Default::default()
-        };
-        Ok(FeedPager::new(
-            move |continuation, pager_options| {
-                // Then we have to clone it again to pass it in to the async block.
-                // This is because Pageable can't borrow any data, it has to own it all.
-                // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
-                let pipeline = pipeline.clone();
-                let mut req = base_request.clone();
-                Box::pin(async move {
-                    if let PagerState::More(continuation) = continuation {
-                        req.insert_header(constants::CONTINUATION, continuation);
-                    }
-
-                    let resp = pipeline
-                        .send(&pager_options.context, &mut req, None)
-                        .await?;
-                    let page = FeedPage::<T>::from_response(resp).await?;
-
-                    Ok(page.into())
-                })
-            },
-            Some(options),
-        ))
-    }
-
-    /// Helper function to read a throughput offer given a resource ID.
-    ///
-    /// ## Arguments
-    /// * `context` - The context for the request.
-    /// * `resource_id` - The resource ID to read the throughput offer for.
-    pub async fn read_throughput_offer(
-        &self,
-        context: Context<'_>,
-        resource_id: &str,
-    ) -> azure_core::Result<Option<ThroughputProperties>> {
-        // We only have to into_owned here in order to call send_query_request below,
-        // since it returns `Pager` which must own it's data.
-        // See https://github.com/Azure/azure-sdk-for-rust/issues/1911 for further discussion
-        let context = context.into_owned();
-
-        // Now, query for the offer for this resource.
-        let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
-            .with_parameter("@rid", resource_id)?;
-        let offers_link = ResourceLink::root(ResourceType::Offers);
-        let mut results = self.send_query_request::<ThroughputProperties>(
-            context.clone(),
-            query,
-            self.url(&offers_link),
-            offers_link.clone(),
-            |_| Ok(()),
-        )?;
-
-        // There should only be one offer for a given resource ID.
-        let offer = results.try_next().await?;
-        Ok(offer)
-    }
-
-    /// Helper function to update a throughput offer given a resource ID.
-    ///
-    /// ## Arguments
-    /// * `context` - The context for the request.
-    /// * `resource_id` - The resource ID to update the throughput offer for.
-    /// * `throughput` - The new throughput to set.
-    pub async fn replace_throughput_offer(
-        &self,
-        context: Context<'_>,
-        resource_id: &str,
-        throughput: ThroughputProperties,
-    ) -> azure_core::Result<Response<ThroughputProperties>> {
-        let response = self
-            .read_throughput_offer(context.clone(), resource_id)
-            .await?;
-        let mut current_throughput = response.unwrap_or_default();
-        current_throughput.offer = throughput.offer;
-
-        // NOTE: Offers API doesn't allow Enable Content Response On Write to be false, so once we support that option, we'll need to ignore it here.
-        let offer_link =
-            ResourceLink::root(ResourceType::Offers).item_by_rid(&current_throughput.offer_id);
-        let mut req = Request::new(self.url(&offer_link), Method::Put);
-        req.insert_headers(&ContentType::APPLICATION_JSON)?;
-        req.set_json(&current_throughput)?;
-
-        self.send_raw(context, &mut req, offer_link)
-            .await
-            .map(Into::into)
-    }
-}
-
-pub(crate) fn create_base_query_request(url: Url, query: &Query) -> azure_core::Result<Request> {
-    let mut request = Request::new(url, Method::Post);
-    request.insert_header(constants::QUERY, "True");
-    request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
-    request.set_json(query)?;
-    Ok(request)
 }
