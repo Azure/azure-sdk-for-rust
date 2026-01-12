@@ -13,7 +13,7 @@ The primary design goals of the Cosmos DB Native Driver are:
 1. **Consistency**: Provide consistent behavior across different language SDKs by centralizing the core client logic. This includes consistent retry policies, failover handling, connection management, diagnostics collection, etc.
 2. **Performance**: Provide a high-performance implementation that minimizes overhead and maximizes throughput for Cosmos DB operations.
 3. **Memory Safety**: Leverage Rust's memory safety guarantees to minimize the risk of memory-related bugs and vulnerabilities in the native driver.
-4. **Diagnosability**: Provide detailed diagnostics to allow both application developers and Cosmos DB service engineers to troubleshoot issues effectively.
+4. **Improved Troubleshooting**: Provide detailed diagnostics to allow both application developers and Cosmos DB service engineers to troubleshoot issues effectively.
 
 ## Risks
 
