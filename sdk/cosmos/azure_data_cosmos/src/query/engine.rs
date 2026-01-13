@@ -1,3 +1,5 @@
+use crate::conditional_send::ConditionalSend;
+
 /// Represents a request from the query pipeline for data from a specific partition key range.
 pub struct QueryRequest {
     /// The ID of the partition key range to query.
@@ -57,7 +59,7 @@ pub struct PipelineResult {
 }
 
 /// Provides an interface to a query pipeline, which aggregates data from multiple single partition queries into a single cross-partition result set.
-pub trait QueryPipeline: Send {
+pub trait QueryPipeline: ConditionalSend {
     /// The query to be executed, which may have been modified by the gateway when generating a query plan.
     ///
     /// This may be `None`, which indicates that every [`QueryRequest`] will have the [`QueryRequest::query`] field set to indicate a specific query to use.
@@ -88,7 +90,7 @@ pub trait QueryPipeline: Send {
 ///
 /// A [`QueryEngine`] must be [`Send`] and [`Sync`], as it may be shared across multiple threads.
 /// However, the individual [`QueryPipeline`] created by the engine do not need to be thread-safe.
-pub trait QueryEngine {
+pub trait QueryEngine: ConditionalSend + Sync {
     /// Creates a new query pipeline for the given query, plan, and partition key ranges.
     ///
     /// ## Arguments
@@ -113,14 +115,5 @@ pub trait QueryEngine {
     fn supported_features(&self) -> azure_core::Result<&str>;
 }
 
-#[cfg(target_arch = "wasm32")]
 pub(crate) type OwnedQueryPipeline = Box<dyn QueryPipeline>;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) type OwnedQueryPipeline = Box<dyn QueryPipeline + Send>;
-
-#[cfg(target_arch = "wasm32")]
 pub(crate) type QueryEngineRef = std::sync::Arc<dyn QueryEngine>;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) type QueryEngineRef = std::sync::Arc<dyn QueryEngine + Send + Sync>;

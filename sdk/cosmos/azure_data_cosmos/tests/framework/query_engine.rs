@@ -105,7 +105,7 @@ impl QueryEngine for MockQueryEngine {
         query: &str,
         _plan: &[u8],
         pkranges: &[u8],
-    ) -> azure_core::Result<Box<dyn QueryPipeline + Send>> {
+    ) -> azure_core::Result<Box<dyn QueryPipeline>> {
         {
             if let Some(err) = self.create_error.lock().unwrap().take() {
                 return Err(err);

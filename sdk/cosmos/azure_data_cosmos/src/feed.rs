@@ -4,10 +4,12 @@
 use std::{pin::Pin, task};
 
 use azure_core::http::{headers::Headers, pager::PagerResult, RawResponse};
-use futures::{stream::BoxStream, Stream};
+#[cfg(not(target_arch = "wasm32"))]
+use futures::stream::BoxStream;
+use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
-use crate::constants;
+use crate::{conditional_send::ConditionalSend, constants};
 
 /// Represents a single page of results from a Cosmos DB feed.
 ///
@@ -109,16 +111,20 @@ impl<T: DeserializeOwned> FeedPage<T> {
 ///
 /// See [`FeedPage`] for more details on Cosmos DB feeds.
 #[pin_project::pin_project]
-pub struct FeedItemIterator<T> {
+pub struct FeedItemIterator<T: ConditionalSend> {
     #[pin]
+    #[cfg(not(target_arch = "wasm32"))]
     pages: BoxStream<'static, azure_core::Result<FeedPage<T>>>,
+    #[pin]
+    #[cfg(target_arch = "wasm32")]
+    pages: Pin<Box<dyn Stream<Item = azure_core::Result<FeedPage<T>>> + 'static>>,
     current: Option<std::vec::IntoIter<T>>,
 }
 
-impl<T> FeedItemIterator<T> {
+impl<T: ConditionalSend> FeedItemIterator<T> {
     /// Creates a new `FeedItemIterator` from a stream of pages.
     pub(crate) fn new(
-        stream: impl Stream<Item = azure_core::Result<FeedPage<T>>> + Send + 'static,
+        stream: impl Stream<Item = azure_core::Result<FeedPage<T>>> + ConditionalSend + 'static,
     ) -> Self {
         Self {
             pages: Box::pin(stream),
@@ -131,7 +137,7 @@ impl<T> FeedItemIterator<T> {
     }
 }
 
-impl<T> Stream for FeedItemIterator<T> {
+impl<T: ConditionalSend> Stream for FeedItemIterator<T> {
     type Item = azure_core::Result<T>;
 
     fn poll_next(
@@ -164,9 +170,13 @@ impl<T> Stream for FeedItemIterator<T> {
     }
 }
 
-pub struct FeedPageIterator<T>(BoxStream<'static, azure_core::Result<FeedPage<T>>>);
+pub struct FeedPageIterator<T: ConditionalSend>(
+    #[cfg(not(target_arch = "wasm32"))] BoxStream<'static, azure_core::Result<FeedPage<T>>>,
+    #[cfg(target_arch = "wasm32")]
+    Pin<Box<dyn Stream<Item = azure_core::Result<FeedPage<T>>> + 'static>>,
+);
 
-impl<T> Stream for FeedPageIterator<T> {
+impl<T: ConditionalSend> Stream for FeedPageIterator<T> {
     type Item = azure_core::Result<FeedPage<T>>;
 
     fn poll_next(

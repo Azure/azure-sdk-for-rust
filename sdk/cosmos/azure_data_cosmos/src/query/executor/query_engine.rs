@@ -6,6 +6,7 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
 use crate::{
+    conditional_send::ConditionalSend,
     constants,
     pipeline::CosmosPipeline,
     pipeline::{self, GatewayPipeline},
@@ -15,7 +16,8 @@ use crate::{
 };
 
 /// A query executor that uses an external query engine to support cross-partition queries.
-pub struct QueryEngineExecutor<T: DeserializeOwned> {
+pub struct QueryEngineExecutor<T: DeserializeOwned + ConditionalSend> {
+    http_pipeline: Arc<CosmosPipeline>,
     http_pipeline: Arc<GatewayPipeline>,
     container_link: ResourceLink,
     items_link: ResourceLink,
@@ -27,7 +29,7 @@ pub struct QueryEngineExecutor<T: DeserializeOwned> {
     phantom: std::marker::PhantomData<fn() -> T>,
 }
 
-impl<T: DeserializeOwned + Send + 'static> QueryEngineExecutor<T> {
+impl<T: DeserializeOwned + ConditionalSend + 'static> QueryEngineExecutor<T> {
     pub fn new(
         http_pipeline: Arc<GatewayPipeline>,
         container_link: ResourceLink,

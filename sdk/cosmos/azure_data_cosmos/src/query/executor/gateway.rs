@@ -5,12 +5,15 @@ use azure_core::http::{Context, Method, Request};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
-use crate::{constants, pipeline::CosmosPipeline, resource_context::ResourceLink, FeedPage, Query};
+use crate::{
+    conditional_send::ConditionalSend, constants, pipeline::CosmosPipeline,
+    resource_context::ResourceLink, FeedPage, Query,
+};
 
 /// A query executor that sends queries directly to the gateway endpoint.
 ///
 /// This executor does not support cross-partition queries and requires a partition key to be specified.
-pub struct GatewayExecutor<T: DeserializeOwned> {
+pub struct GatewayExecutor<T: DeserializeOwned + ConditionalSend> {
     http_pipeline: Arc<CosmosPipeline>,
     items_link: ResourceLink,
     context: Context<'static>,
@@ -20,7 +23,7 @@ pub struct GatewayExecutor<T: DeserializeOwned> {
     phantom: std::marker::PhantomData<fn() -> T>,
 }
 
-impl<T: DeserializeOwned + Send + 'static> GatewayExecutor<T> {
+impl<T: DeserializeOwned + ConditionalSend + 'static> GatewayExecutor<T> {
     pub fn new(
         http_pipeline: Arc<CosmosPipeline>,
         items_link: ResourceLink,
