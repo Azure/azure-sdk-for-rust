@@ -14,6 +14,7 @@ members = [
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
   "sdk/cosmos/azure_data_cosmos_native",
+  "sdk/cosmos/azure_data_cosmos_tests",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
