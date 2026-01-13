@@ -17,8 +17,8 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
 use crate::{
-    pipeline::CosmosPipeline, resource_context::ResourceLink, FeedItemIterator, FeedPage, Query,
-    QueryOptions,
+    conditional_send::ConditionalSend, pipeline::CosmosPipeline, resource_context::ResourceLink,
+    FeedItemIterator, FeedPage, Query, QueryOptions,
 };
 
 #[cfg(feature = "preview_query_engine")]
@@ -29,7 +29,7 @@ use crate::query::QueryEngineRef;
 /// This enum provides two execution strategies:
 /// - [`Gateway`](QueryExecutor::Gateway): Direct gateway execution for single-partition queries
 /// - [`QueryEngine`](QueryExecutor::QueryEngine): Cross-partition query support via external query engine
-pub enum QueryExecutor<T: DeserializeOwned> {
+pub enum QueryExecutor<T: DeserializeOwned + ConditionalSend> {
     /// Executes queries directly against the gateway endpoint.
     Gateway(GatewayExecutor<T>),
 
@@ -38,7 +38,7 @@ pub enum QueryExecutor<T: DeserializeOwned> {
     QueryEngine(QueryEngineExecutor<T>),
 }
 
-impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
+impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
     /// Creates a new query executor using the query engine for cross-partition support.
     ///
     /// This method is only available when the `preview_query_engine` feature is enabled.
