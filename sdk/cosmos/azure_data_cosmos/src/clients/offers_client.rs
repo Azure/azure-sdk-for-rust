@@ -60,6 +60,8 @@ impl OffersClient {
             query,
             crate::QueryOptions {
                 method_options: ClientMethodOptions { context },
+                
+                #[allow(clippy::needless_update, reason = "this is here for future options")]
                 ..Default::default()
             },
             |_| Ok(()),
