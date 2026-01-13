@@ -3,7 +3,10 @@
 
 use std::borrow::Cow;
 
-use azure_core::{fmt::SafeDebug, http::headers::{AsHeaders, HeaderName, HeaderValue}};
+use azure_core::{
+    fmt::SafeDebug,
+    http::headers::{AsHeaders, HeaderName, HeaderValue},
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{constants, models::SystemProperties};
