@@ -44,15 +44,12 @@ A credential is a struct that can acquire access tokens for Azure resources. The
 
 This example demonstrates authenticating the `SecretClient` from the [azure_security_keyvault_secrets] crate using `DeveloperToolsCredential`.
 
-```rust
+```rust ignore dev
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let client = SecretClient::new("https://TODO.vault.azure.net/", credential.clone(), None)?;
-    Ok(())
-}
+let credential = DeveloperToolsCredential::new(None)?;
+let client = SecretClient::new("https://TODO.vault.azure.net/", credential.clone(), None)?;
 ```
 
 ### Authenticating with a Federated Identity Credential (FIC)
