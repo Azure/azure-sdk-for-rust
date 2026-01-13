@@ -49,6 +49,7 @@ fe2o3_amqp = [
   "fe2o3-amqp-cbs",
   "serde_amqp",
   "serde_bytes",
+  "azure_core/tokio",
 ]
 
 [lints]
