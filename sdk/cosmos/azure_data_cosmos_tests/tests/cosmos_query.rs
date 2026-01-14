@@ -1,4 +1,4 @@
-#![cfg(feature = "key_auth")]
+#![cfg(all(feature = "key_auth", feature = "fast"))]
 
 use std::error::Error;
 
