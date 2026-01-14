@@ -51,6 +51,10 @@ fe2o3_amqp = [
   "serde_bytes",
 ]
 
+# Note that this is strictly excessive - the tokio runtime dependency is only required when the `fe2o3_amqp` feature is enabled - for other AMQP stacks, different dependencies can be chosen.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+azure_core = { workspace = true, features = ["tokio"] }
+
 [lints]
 workspace = true
 
