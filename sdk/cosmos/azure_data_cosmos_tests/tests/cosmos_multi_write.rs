@@ -12,7 +12,7 @@ use azure_data_cosmos::{
     CosmosClientOptions, CreateContainerOptions,
 };
 
-use framework::{HUB_REGION, SATELLITE_REGION, TestClient};
+use framework::{TestClient, HUB_REGION, SATELLITE_REGION};
 
 // Helper to avoid duplicating the same preferred-locations setup.
 fn options_with_preferred_locations(locations: Vec<Cow<'static, str>>) -> CosmosClientOptions {
@@ -47,7 +47,11 @@ async fn create_container_and_write_item(
 
     let container_client = db_client.container_client(&created_properties.id);
     let _create_result = container_client
-        .create_item("item1", &serde_json::json!({"id": "item1", "value": "test"}), None)
+        .create_item(
+            "item1",
+            &serde_json::json!({"id": "item1", "value": "test"}),
+            None,
+        )
         .await?;
 
     Ok(())
@@ -60,19 +64,21 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
 
     // write to hub region
     TestClient::run_with_db(
-        async |_, db_client| {
-            create_container_and_write_item(db_client, CONTAINER_ID).await
-        },
-        Some(options_with_preferred_locations(vec![HUB_REGION.into(), SATELLITE_REGION.into()])),
+        async |_, db_client| create_container_and_write_item(db_client, CONTAINER_ID).await,
+        Some(options_with_preferred_locations(vec![
+            HUB_REGION.into(),
+            SATELLITE_REGION.into(),
+        ])),
     )
     .await?;
 
     // write to satellite region
     TestClient::run_with_db(
-        async |_, db_client| {
-            create_container_and_write_item(db_client, CONTAINER_ID).await
-        },
-        Some(options_with_preferred_locations(vec![SATELLITE_REGION.into(), HUB_REGION.into()])),
+        async |_, db_client| create_container_and_write_item(db_client, CONTAINER_ID).await,
+        Some(options_with_preferred_locations(vec![
+            SATELLITE_REGION.into(),
+            HUB_REGION.into(),
+        ])),
     )
     .await?;
 

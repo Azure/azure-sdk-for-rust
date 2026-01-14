@@ -5,17 +5,17 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::{
-    str::FromStr,
-    sync::{Arc, OnceLock},
-};
-use std::borrow::Cow;
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, Query,
 };
 use futures::TryStreamExt;
 use reqwest::ClientBuilder;
+use std::borrow::Cow;
+use std::{
+    str::FromStr,
+    sync::{Arc, OnceLock},
+};
 use tracing_subscriber::EnvFilter;
 
 /// Represents a Cosmos DB client connected to a test account.
@@ -128,7 +128,10 @@ impl TestClient {
     }
 
     /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
-    pub async fn run<F>(test: F, options: Option<CosmosClientOptions>) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run<F>(
+        test: F,
+        options: Option<CosmosClientOptions>,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
@@ -174,14 +177,20 @@ impl TestClient {
         }
     }
 
-    pub async fn run_with_db<F>(test: F, options: Option<CosmosClientOptions>) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run_with_db<F>(
+        test: F,
+        options: Option<CosmosClientOptions>,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
-        Self::run(async |run_context| {
-            let db_client = run_context.create_db().await?;
-            test(run_context, &db_client).await
-        }, options)
+        Self::run(
+            async |run_context| {
+                let db_client = run_context.create_db().await?;
+                test(run_context, &db_client).await
+            },
+            options,
+        )
         .await
     }
 }
