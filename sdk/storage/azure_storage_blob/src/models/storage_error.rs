@@ -11,15 +11,13 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct StorageError {
     /// The HTTP status code.
-    pub status_code: azure_core::http::StatusCode,
+    status_code: azure_core::http::StatusCode,
     /// The Storage error code, if available.
-    pub error_code: Option<StorageErrorCode>,
+    error_code: Option<StorageErrorCode>,
     /// The error message, if available.
-    pub message: Option<String>,
+    message: Option<String>,
     /// The request ID from the x-ms-request-id header, if available.
-    pub request_id: Option<String>,
-    /// The raw HTTP response.
-    pub raw_response: RawResponse,
+    request_id: Option<String>,
     /// Additional fields from the error response that weren't explicitly mapped.
     pub additional_error_info: HashMap<String, String>,
 }
@@ -39,10 +37,6 @@ impl StorageError {
 
     pub fn request_id(&self) -> Option<&str> {
         self.request_id.as_deref()
-    }
-
-    pub fn raw_response(&self) -> &RawResponse {
-        &self.raw_response
     }
 
     pub fn additional_error_info(&self) -> &HashMap<String, String> {
@@ -120,12 +114,17 @@ impl StorageError {
 
         let xml_fields = xml::from_xml::<_, StorageErrorXml>(raw_response.body())?;
 
-        // Parse error code from XML body
-        let error_code = xml_fields.code.and_then(|code| {
-            code.parse()
-                .ok()
-                .or(Some(StorageErrorCode::UnknownValue(code)))
-        });
+        // Parse error code from headers, parse from XML and discard so it doesn't end up in additional error info
+        let error_code = raw_response
+            .headers()
+            .get_optional_string(&azure_core::http::headers::HeaderName::from_static(
+                "x-ms-error-code",
+            ))
+            .and_then(|code| {
+                code.parse()
+                    .ok()
+                    .or(Some(StorageErrorCode::UnknownValue(code)))
+            });
 
         let request_id = raw_response.headers().get_optional_string(
             &azure_core::http::headers::HeaderName::from_static("x-ms-request-id"),
@@ -143,7 +142,6 @@ impl StorageError {
             error_code,
             message: xml_fields.message,
             request_id,
-            raw_response,
             additional_error_info,
         })
     }
@@ -168,17 +166,17 @@ impl TryFrom<azure_core::Error> for StorageError {
 
                 let body = raw_response.body();
 
+                let error_code = error_code.as_ref().and_then(|code| {
+                    code.parse()
+                        .ok()
+                        .or(Some(StorageErrorCode::UnknownValue(code.clone())))
+                });
+
+                let request_id = raw_response.as_ref().clone().headers().get_optional_string(
+                    &azure_core::http::headers::HeaderName::from_static("x-ms-request-id"),
+                );
+
                 if body.is_empty() {
-                    let error_code = error_code.as_ref().and_then(|code| {
-                        code.parse()
-                            .ok()
-                            .or(Some(StorageErrorCode::UnknownValue(code.clone())))
-                    });
-
-                    let request_id = raw_response.as_ref().clone().headers().get_optional_string(
-                        &azure_core::http::headers::HeaderName::from_static("x-ms-request-id"),
-                    );
-
                     // For bodiless responses, use the canonical reason phrase as a fallback message
                     // Underlying reqwest doesn't expose the custom reason phrase (that you can observe in Fiddler)
                     let message = Some(status.canonical_reason().to_string());
@@ -188,7 +186,6 @@ impl TryFrom<azure_core::Error> for StorageError {
                         error_code,
                         message,
                         request_id,
-                        raw_response: raw_response.as_ref().clone(),
                         additional_error_info: HashMap::new(),
                     });
                 }
@@ -228,21 +225,5 @@ impl std::fmt::Display for StorageError {
         }
 
         Ok(())
-    }
-}
-
-/// Extension trait to provide convenient conversion from `azure_core::Error` to `StorageError`.
-pub trait IntoStorageError {
-    /// Converts an `azure_core::Error` into a `StorageError`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the conversion fails (e.g., if the error kind is not an HTTP response).
-    fn into_storage_error(self) -> Result<StorageError, azure_core::Error>;
-}
-
-impl IntoStorageError for azure_core::Error {
-    fn into_storage_error(self) -> Result<StorageError, azure_core::Error> {
-        self.try_into()
     }
 }

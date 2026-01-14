@@ -83,4 +83,4 @@ pub use crate::generated::models::{
     StorageServiceStats, StorageServiceStatsHeaders, UserDelegationKey, UserDelegationKeyHeaders,
 };
 
-pub use storage_error::{IntoStorageError, StorageError};
+pub use storage_error::StorageError;

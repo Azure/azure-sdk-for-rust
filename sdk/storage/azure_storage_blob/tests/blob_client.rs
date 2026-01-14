@@ -16,7 +16,7 @@ use azure_storage_blob::{
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-        ImmutabilityPolicyMode, IntoStorageError, LeaseState, StorageError,
+        ImmutabilityPolicyMode, LeaseState, StorageError,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
@@ -815,7 +815,7 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
     let error_kind = error_response.kind();
     assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
 
-    let storage_error: StorageError = error_response.into_storage_error()?;
+    let storage_error: StorageError = error_response.try_into()?;
     println!("Download Error Response:");
     println!("{}", storage_error);
 
