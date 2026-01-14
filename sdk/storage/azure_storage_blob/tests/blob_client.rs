@@ -14,8 +14,8 @@ use azure_storage_blob::{
         BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-        ImmutabilityPolicyMode, LeaseState,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
+        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
@@ -493,7 +493,12 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         ("hello".to_string(), "world".to_string()),
         ("ferris".to_string(), "crab".to_string()),
     ]);
-    blob_client.set_tags(blob_tags.clone(), None).await?;
+    blob_client
+        .set_tags(
+            RequestContent::try_from(BlobTags::from(blob_tags.clone()))?,
+            None,
+        )
+        .await?;
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_model()?;
@@ -501,7 +506,12 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(blob_tags, map);
 
     // Set Tags with No Tags (Clear Tags)
-    blob_client.set_tags(HashMap::new(), None).await?;
+    blob_client
+        .set_tags(
+            RequestContent::try_from(BlobTags::from(HashMap::new()))?,
+            None,
+        )
+        .await?;
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_model()?;
