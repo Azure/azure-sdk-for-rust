@@ -17,11 +17,8 @@
 - Changed conversion implementation from `BlobTags` to `HashMap<String, String>` from `TryFrom` to `From`.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
 - Renamed `content_length` to `size` for `PageBlobClient`'s `create()` method.
-- Changed `BlobClient`'s `set_tags` parameter `tags` type from `HashMap<String, String>` to `BlobTags`.
-
-### Breaking Changes
-
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
+- Changed `BlobClient`'s `set_tags` parameter `tags` type from `HashMap<String, String>` to `BlobTags`.
 
 ### Bugs Fixed
 
