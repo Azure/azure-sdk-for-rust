@@ -20,7 +20,7 @@ pub mod test_data;
 #[cfg(feature = "preview_query_engine")]
 pub mod query_engine;
 
-pub use test_client::{TestClient, TestRunContext};
+pub use test_client::{TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION};
 
 use serde::{Deserialize, Serialize};
 

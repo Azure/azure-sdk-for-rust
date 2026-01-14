@@ -9,7 +9,7 @@ use std::{
     str::FromStr,
     sync::{Arc, OnceLock},
 };
-
+use std::borrow::Cow;
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, Query,
@@ -32,6 +32,8 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
+pub const HUB_REGION: &str = "West US 3";
+pub const SATELLITE_REGION: &str = "West Central US";
 
 static IS_AZURE_PIPELINES: OnceLock<bool> = OnceLock::new();
 
@@ -126,7 +128,7 @@ impl TestClient {
     }
 
     /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
-    pub async fn run<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run<F>(test: F, options: Option<CosmosClientOptions>) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
@@ -155,7 +157,7 @@ impl TestClient {
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        let test_client = Self::from_env(None)?;
+        let test_client = Self::from_env(options)?;
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(account) = test_client.cosmos_client.clone() {
@@ -172,14 +174,14 @@ impl TestClient {
         }
     }
 
-    pub async fn run_with_db<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run_with_db<F>(test: F, options: Option<CosmosClientOptions>) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
         Self::run(async |run_context| {
             let db_client = run_context.create_db().await?;
             test(run_context, &db_client).await
-        })
+        }, options)
         .await
     }
 }

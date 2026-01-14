@@ -53,7 +53,7 @@ pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
         assert!(new_throughput.autoscale_maximum().is_none());
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -98,7 +98,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
         assert_eq!(Some(500), throughput_response.throughput());
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -137,6 +137,6 @@ pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>>
         assert_eq!(Some(42), current_throughput.autoscale_increment());
 
         Ok(())
-    })
+    }, None)
     .await
 }

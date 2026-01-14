@@ -122,7 +122,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
         }
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -160,7 +160,7 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -189,7 +189,7 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
         assert_eq!(item, read_item);
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -229,7 +229,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
         assert_eq!(item, updated_item);
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -282,7 +282,7 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
         assert!(!response_item.bool_value);
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -350,7 +350,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
         }
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -421,7 +421,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -490,7 +490,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -558,7 +558,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -639,6 +639,6 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }

@@ -51,7 +51,7 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
         assert!(ids.is_empty());
 
         Ok(())
-    })
+    }, None)
     .await
 }
 #[tokio::test]
@@ -99,6 +99,6 @@ pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
         assert!(new_throughput.autoscale_maximum().is_none());
 
         Ok(())
-    })
+    }, None)
     .await
 }

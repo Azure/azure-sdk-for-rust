@@ -136,7 +136,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
         assert!(ids.is_empty());
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -177,6 +177,6 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }

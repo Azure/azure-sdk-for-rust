@@ -354,6 +354,8 @@ dependencies = [
 name = "azure_data_cosmos_tests"
 version = "0.0.0"
 dependencies = [
+ "azure_core",
+ "azure_core_test",
  "azure_data_cosmos",
  "futures",
  "reqwest",

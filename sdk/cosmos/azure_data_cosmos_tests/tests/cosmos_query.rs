@@ -33,7 +33,7 @@ pub async fn single_partition_query() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -64,7 +64,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -89,7 +89,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -118,7 +118,7 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -154,6 +154,6 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
         assert_eq!(Some("1004"), sub_status);
 
         Ok(())
-    })
+    }, None)
     .await
 }
