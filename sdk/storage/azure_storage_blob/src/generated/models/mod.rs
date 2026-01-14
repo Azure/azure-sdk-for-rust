@@ -16,3 +16,4 @@ pub use enums::*;
 pub use header_traits::*;
 pub use method_options::*;
 pub use pub_models::*;
+pub(crate) mod crate_models;
