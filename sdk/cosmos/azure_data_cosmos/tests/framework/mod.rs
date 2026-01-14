@@ -16,6 +16,7 @@
 
 mod test_client;
 pub mod test_data;
+pub mod fault_injection;
 
 #[cfg(feature = "preview_query_engine")]
 pub mod query_engine;
