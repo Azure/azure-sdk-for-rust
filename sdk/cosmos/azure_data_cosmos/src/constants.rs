@@ -48,6 +48,197 @@ pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
+// Unauthorized headers that should never be included are `authorization`, `proxy-authorization`
+// The comments indicate headers that are already included in the default allow list by azure-core
+pub const COSMOS_ALLOWED_HEADERS: &[&str] = &[
+    // Standard HTTP Headers
+    // "etag", // Already in default list
+    "x-http-method",
+    "slug",
+    // "content-type", // Already in default list
+    // "last-modified", // Already in default list
+    "content-encoding",
+    "characterset",
+    // "user-agent", // Already in default list
+    // "if-modified-since", // Already in default list
+    // "if-match", // Already in default list
+    // "if-none-match", // Already in default list
+    // "content-length", // Already in default list
+    "accept-encoding",
+    "keep-alive",
+    // "cache-control", // Already in default list
+    // "transfer-encoding", // Already in default list
+    "content-language",
+    "content-location",
+    "content-md5",
+    "content-range",
+    // "accept", // Already in default list
+    "accept-charset",
+    "accept-language",
+    "if-range",
+    // "if-unmodified-since", // Already in default list
+    "max-forwards",
+    "accept-ranges",
+    "proxy-authenticate",
+    // "retry-after", // Already in default list
+    "set-cookie",
+    // "www-authenticate", // Already in default list
+    "origin",
+    "host",
+    "access-control-allow-origin",
+    "access-control-allow-headers",
+    // "date", // Already in default list
+    "prefer",
+    "location",
+    "referer",
+    // "pragma", // Already in default list
+    // "server", // Already in default list
+    "strict-transport-security",
+    // Bulk/Batch
+    "x-ms-cosmos-is-batch-request",
+    "x-ms-cosmos-batch-atomic",
+    "x-ms-cosmos-batch-continue-on-error",
+    // Query
+    "x-ms-documentdb-query",
+    "x-ms-documentdb-isquery",
+    "x-ms-cosmos-is-query-plan-request",
+    "x-ms-cosmos-supported-query-features",
+    "x-ms-cosmos-query-version",
+    "x-ms-documentdb-query-metrics",
+    "x-ms-cosmos-query-execution-info",
+    "x-ms-cosmos-index-utilization",
+    // DocDB headers
+    "x-ms-continuation",
+    "x-ms-max-item-count",
+    "x-ms-documentdb-responsecontinuationtokenlimitinkb",
+    "x-ms-cosmos-priority-level",
+    "x-ms-activity-id",
+    "x-ms-cosmos-correlated-activityid",
+    "x-ms-documentdb-pre-trigger-include",
+    "x-ms-documentdb-pre-trigger-exclude",
+    "x-ms-documentdb-post-trigger-include",
+    "x-ms-documentdb-post-trigger-exclude",
+    "x-ms-indexing-directive",
+    "x-ms-session-token",
+    "x-ms-consistency-level",
+    "x-ms-date",
+    "x-ms-collection-partition-info",
+    "x-ms-collection-service-info",
+    "x-ms-retry-after-ms",
+    "x-ms-is-feed-unfiltered",
+    "x-ms-documentdb-expiry-seconds",
+    "x-ms-documentdb-query-enable-scan",
+    "x-ms-documentdb-query-emit-traces",
+    "x-ms-substatus",
+    "x-ms-alt-content-path",
+    "x-ms-content-path",
+    "x-ms-documentdb-query-iscontinuationexpected",
+    "x-ms-documentdb-populatequerymetrics",
+    "x-ms-cosmos-populateindexmetrics",
+    "x-ms-resource-quota",
+    "x-ms-resource-usage",
+    "x-ms-cosmos-intended-collection-rid",
+    // Quota Info
+    "x-ms-root-entity-max-count",
+    "x-ms-root-entity-current-count",
+    "x-ms-collection-quota-mb",
+    "x-ms-collection-usage-mb",
+    "x-ms-cosmos-max-content-length",
+    "x-ms-max-media-storage-usage-mb",
+    "x-ms-databaseaccount-consumed-mb",
+    "x-ms-databaseaccount-provisioned-mb",
+    // Collection quota
+    "x-ms-documentdb-populatequotainfo",
+    "x-ms-documentdb-populatepartitionstatistics",
+    "collection-partition-index",
+    "collection-service-index",
+    // Usage Info
+    "x-ms-media-storage-usage-mb",
+    "x-ms-request-charge",
+    // Address related headers
+    "x-ms-force-refresh",
+    "x-ms-item-count",
+    "x-ms-new-resource-id",
+    "x-ms-use-master-collection-resolver",
+    // Admin Headers
+    "x-ms-force-full-upgrade",
+    "x-ms-only-upgrade-system-applications",
+    "x-ms-only-upgrade-non-system-applications",
+    "x-ms-upgrade-fabric-code-config",
+    "x-ms-ignore-inprogress-upgrade",
+    "x-ms-upgrade-verification-kind",
+    "x-ms-iscanary",
+    // Version
+    "x-ms-version",
+    // RDFE
+    "ocp-resourceprovider-registered-uri",
+    // Request management
+    // "x-ms-request-id", // Already in default list
+    // State change
+    "x-ms-last-state-change-utc",
+    // Offer
+    "x-ms-offer-type",
+    "x-ms-offer-throughput",
+    "x-ms-cosmos-offer-autopilot-settings",
+    // RU/minute
+    "x-ms-documentdb-disable-ru-per-minute-usage",
+    "x-ms-documentdb-is-ru-per-minute-used",
+    "x-ms-offer-is-ru-per-minute-throughput-enabled",
+    "x-ms-cosmos-throughput-bucket",
+    // Partitioned collections
+    "x-ms-documentdb-partitionkey",
+    "x-ms-documentdb-query-enablecrosspartition",
+    "x-ms-documentdb-partitionkeyrangeid",
+    "x-ms-cosmos-physical-partition-id",
+    "x-ms-cosmos-is-partition-key-delete-pending",
+    "x-ms-start-epk",
+    "x-ms-end-epk",
+    "x-ms-read-key-type",
+    "x-ms-cosmos-sdk-supportedcapabilities",
+    // Upsert
+    "x-ms-documentdb-is-upsert",
+    // Index progress
+    "x-ms-documentdb-collection-index-transformation-progress",
+    "x-ms-documentdb-collection-lazy-indexing-progress",
+    // Client retry
+    "x-ms-throttle-retry-count",
+    "x-ms-throttle-retry-wait-time-ms",
+    // StoredProcedure
+    "x-ms-documentdb-script-enable-logging",
+    "x-ms-documentdb-script-log-results",
+    // Change feed
+    "a-im",
+    "x-ms-cosmos-changefeed-wire-format-version",
+    // Multiple Write Locations
+    "x-ms-cosmos-allow-tentative-writes",
+    // Dedicated Gateway
+    "x-ms-dedicatedgateway-max-age",
+    "x-ms-cosmos-cachehit",
+    // Backend
+    "lsn",
+    "x-ms-schemaversion",
+    "x-ms-gatewayversion",
+    "x-ms-serviceversion",
+    "x-ms-quorum-acked-lsn",
+    "x-ms-current-write-quorum",
+    "x-ms-current-replica-set-size",
+    "x-ms-xp-role",
+    "x-ms-global-committed-lsn",
+    "x-ms-number-of-read-regions",
+    "x-ms-transport-request-id",
+    "x-ms-item-lsn",
+    "x-ms-cosmos-item-llsn",
+    "x-ms-cosmos-llsn",
+    "x-ms-cosmos-quorum-acked-llsn",
+    "x-ms-request-duration-ms",
+    "x-ms-internal-partition-id",
+    // Thin Client
+    "x-ms-thinclient-proxy-operation-type",
+    "x-ms-thinclient-proxy-resource-type",
+    // Client ID
+    "x-ms-client-id",
+];
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[non_exhaustive]
 pub enum SubStatusCode {

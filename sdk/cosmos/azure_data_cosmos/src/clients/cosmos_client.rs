@@ -13,14 +13,16 @@ use azure_core::{
     http::{response::Response, Url},
 };
 use serde::Serialize;
+use std::borrow::Cow;
 use std::sync::Arc;
 
+use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
-use azure_core::http::RetryOptions;
+use azure_core::http::{LoggingOptions, RetryOptions};
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -56,7 +58,13 @@ impl CosmosClient {
         let endpoint: Url = endpoint.parse()?;
         let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
-
+        client_options.logging = LoggingOptions {
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
+                .iter()
+                .map(|&s| Cow::Borrowed(s))
+                .collect(),
+            additional_allowed_query_params: vec![],
+        };
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -112,6 +120,13 @@ impl CosmosClient {
 
         let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
+        client_options.logging = LoggingOptions {
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
+                .iter()
+                .map(|&s| Cow::Borrowed(s))
+                .collect(),
+            additional_allowed_query_params: vec![],
+        };
 
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
