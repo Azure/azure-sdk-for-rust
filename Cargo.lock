@@ -351,22 +351,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "azure_data_cosmos_tests"
-version = "0.0.0"
-dependencies = [
- "azure_core",
- "azure_core_test",
- "azure_data_cosmos",
- "futures",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
 name = "azure_identity"
 version = "0.31.0"
 dependencies = [

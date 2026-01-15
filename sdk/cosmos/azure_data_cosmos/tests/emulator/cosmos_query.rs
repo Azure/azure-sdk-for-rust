@@ -1,13 +1,14 @@
 #![cfg(all(feature = "key_auth"))]
 
+// Use the shared test framework declared in `tests/emulator/mod.rs`.
+use super::framework;
+
 use std::error::Error;
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{constants, Query};
 use framework::{test_data, MockItem, TestClient};
 use futures::TryStreamExt;
-
-mod framework;
 
 fn collect_matching_items(
     items: &[MockItem],
