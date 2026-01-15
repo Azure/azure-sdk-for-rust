@@ -13,7 +13,6 @@ use azure_core::{
     http::{response::Response, Url},
 };
 use serde::Serialize;
-use std::borrow::Cow;
 use std::sync::Arc;
 
 use crate::constants::COSMOS_ALLOWED_HEADERS;
@@ -59,10 +58,7 @@ impl CosmosClient {
         let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
         client_options.logging = LoggingOptions {
-            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
-                .iter()
-                .map(|&s| Cow::Borrowed(s))
-                .collect(),
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS.clone(),
             additional_allowed_query_params: vec![],
         };
         let pipeline_core = azure_core::http::Pipeline::new(
@@ -121,10 +117,7 @@ impl CosmosClient {
         let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
         client_options.logging = LoggingOptions {
-            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
-                .iter()
-                .map(|&s| Cow::Borrowed(s))
-                .collect(),
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS.clone(),
             additional_allowed_query_params: vec![],
         };
 

@@ -16,6 +16,7 @@
 ### Bugs Fixed
 
 ### Other Changes
+- Added `ALLOWED_COSMOS_HEADERS` for use in default logging policy. ([#3554](https://github.com/Azure/azure-sdk-for-rust/pull/3554))
 
 ## 0.29.0 (2025-11-10)
 
