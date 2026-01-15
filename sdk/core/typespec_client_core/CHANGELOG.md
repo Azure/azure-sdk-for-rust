@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `Body::take()`.
 - Added `Request::body_mut()`.
 - Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
 - Sort query parameters lexicographically in `QueryBuilder`.

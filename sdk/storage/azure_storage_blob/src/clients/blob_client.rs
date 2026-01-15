@@ -8,18 +8,20 @@ use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
+        BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
+        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+        BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientDeleteImmutabilityPolicyOptions,
-        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
-        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
-        BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobClientUndeleteOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
+        BlobClientChangeLeaseOptions, BlobClientCreateSnapshotOptions,
+        BlobClientDeleteImmutabilityPolicyOptions, BlobClientDeleteOptions,
+        BlobClientDownloadOptions, BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions,
+        BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+        BlobClientSetTierOptions, BlobClientUndeleteOptions, BlobTags,
+        BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -29,7 +31,8 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
+        AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
+        XmlFormat,
     },
     time::OffsetDateTime,
     tracing, Bytes, Result,
@@ -185,6 +188,52 @@ impl BlobClient {
     /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.client.endpoint
+    }
+
+    /// Creates a new BlobClient targeting a specific blob version.
+    ///
+    /// # Arguments
+    ///
+    /// * `version_id` - The version ID of the blob to target.
+    pub fn with_version(&self, version_id: &str) -> Result<Self> {
+        let mut versioned_endpoint = self.client.endpoint.clone();
+        {
+            let mut query_builder = versioned_endpoint.query_builder();
+            query_builder.set_pair("versionid", version_id);
+            query_builder.build();
+        }
+
+        Ok(Self {
+            client: GeneratedBlobClient {
+                endpoint: versioned_endpoint,
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+        })
+    }
+
+    /// Creates a new BlobClient targeting a specific blob snapshot.
+    ///
+    /// # Arguments
+    ///
+    /// * `snapshot` - The snapshot ID of the blob to target.
+    pub fn with_snapshot(&self, snapshot: &str) -> Result<Self> {
+        let mut snapshot_endpoint = self.client.endpoint.clone();
+        {
+            let mut query_builder = snapshot_endpoint.query_builder();
+            query_builder.set_pair("snapshot", snapshot);
+            query_builder.build();
+        }
+
+        Ok(Self {
+            client: GeneratedBlobClient {
+                endpoint: snapshot_endpoint,
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+        })
     }
 
     /// Returns all user-defined metadata, standard HTTP properties, and system properties for the blob.
@@ -376,21 +425,34 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
-    /// * `tags` - Name-value pairs associated with the blob as tag. Tags are case-sensitive.
-    ///   The tag set may contain at most 10 tags.  Tag keys must be between 1 and 128 characters,
+    /// * `tags` - Name-value pairs associated with the blob as tag. You can create this from a
+    ///   [`HashMap<String, String>`] by converting it to [`BlobTags`] and wrapping it into a RequestContent.
+    ///   Tags are case-sensitive. The tag set may contain at most 10 tags.  Tag keys must be between 1 and 128 characters,
     ///   and tag values must be between 0 and 256 characters.
     ///   Valid tag key and value characters include: lowercase and uppercase letters, digits (0-9),
     ///   space (' '), plus (+), minus (-), period (.), solidus (/), colon (:), equals (=), underscore (_)
     /// * `options` - Optional configuration for the request.
+    ///
+    /// # Example
+    ///
+    /// ```rust, ignore
+    /// use azure_core::http::RequestContent;
+    /// use azure_storage_blob::models::BlobTags;
+    /// use std::collections::HashMap;
+    ///
+    /// let mut tags = HashMap::new();
+    /// tags.insert("key".to_string(), "value".to_string());
+    ///
+    /// let blob_tags: BlobTags = tags.into();
+    /// let request_content = RequestContent::try_from(blob_tags)?;
+    /// blob_client.set_tags(request_content, None).await?;
+    /// ```
     pub async fn set_tags(
         &self,
-        tags: HashMap<String, String>,
+        tags: RequestContent<BlobTags, XmlFormat>,
         options: Option<BlobClientSetTagsOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        let blob_tags: BlobTags = tags.into();
-        self.client
-            .set_tags(RequestContent::try_from(blob_tags)?, options)
-            .await
+        self.client.set_tags(tags, options).await
     }
 
     /// Gets the tags on a blob.
@@ -490,5 +552,17 @@ impl BlobClient {
         options: Option<BlobClientUndeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.undelete(options).await
+    }
+
+    /// Creates a read-only snapshot of a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn create_snapshot(
+        &self,
+        options: Option<BlobClientCreateSnapshotOptions<'_>>,
+    ) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>> {
+        self.client.create_snapshot(options).await
     }
 }

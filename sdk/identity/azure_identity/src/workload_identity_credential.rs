@@ -25,10 +25,7 @@ const AZURE_CLIENT_ID: &str = "AZURE_CLIENT_ID";
 const AZURE_FEDERATED_TOKEN_FILE: &str = "AZURE_FEDERATED_TOKEN_FILE";
 const AZURE_TENANT_ID: &str = "AZURE_TENANT_ID";
 
-/// `WorkloadIdentityCredential` supports Azure workload identity on Kubernetes.
-///
-/// See [Azure Kubernetes Service documentation](https://learn.microsoft.com/azure/aks/workload-identity-overview)
-/// for more information.
+/// Authenticates an [Entra Workload Identity on Kubernetes](https://learn.microsoft.com/azure/aks/workload-identity-overview).
 #[derive(Debug)]
 pub struct WorkloadIdentityCredential(ClientAssertionCredential<Token>);
 
@@ -254,7 +251,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Env::from(
                 &[
@@ -297,7 +293,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Env::from(
                 &[
@@ -426,7 +421,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Env::from(
                 &[

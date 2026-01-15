@@ -23,7 +23,7 @@ const TFS_FEDAUTHREDIRECT_HEADER: HeaderName = HeaderName::from_static("x-tfs-fe
 
 const ALLOWED_HEADERS: &[&str] = &["x-msedge-ref", "x-vss-e2eid"];
 
-/// Enables authentication to Entra ID from Azure Pipelines.
+/// Authenticates an [Azure Pipelines service connection](https://learn.microsoft.com/azure/devops/pipelines/library/service-endpoints).
 #[derive(Debug)]
 pub struct AzurePipelinesCredential(ClientAssertionCredential<Client>);
 
@@ -38,7 +38,17 @@ pub struct AzurePipelinesCredentialOptions {
 }
 
 impl AzurePipelinesCredential {
-    /// Creates a new [`AzurePipelinesCredential`] for connecting to resources from Azure Pipelines.
+    /// Creates a new `AzurePipelinesCredential`.
+    ///
+    /// # Arguments
+    /// - `tenant_id`: The tenant (directory) ID of the service principal federated with the service connection.
+    /// - `client_id`: The client (application) ID of that service principal.
+    /// - `service_connection_id`: ID of the service connection to authenticate.
+    /// - `system_access_token`: Security token for the running build. See
+    ///   [Azure Pipelines documentation](https://learn.microsoft.com/azure/devops/pipelines/build/variables?view=azure-devops#systemaccesstoken)
+    ///   for an example showing how to get this value.
+    /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
+    ///
     pub fn new<T>(
         tenant_id: String,
         client_id: String,
@@ -280,7 +290,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Some(Env::from(
                 &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],
@@ -363,7 +372,6 @@ To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#apc"#,
                     transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
-                ..Default::default()
             },
             env: Some(Env::from(
                 &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],

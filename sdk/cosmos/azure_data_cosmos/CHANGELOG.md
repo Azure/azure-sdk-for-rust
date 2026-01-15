@@ -6,6 +6,8 @@
 
 - Added GlobalEndpointManager, LocationCache to support Cross Regional Retry.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+- Added `throughput_bucket`, `priority`, and `custom_headers` to different request options. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482))
+- Added several new options to `QueryOptions`. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482))
 
 ### Breaking Changes
 

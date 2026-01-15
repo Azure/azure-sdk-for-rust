@@ -244,21 +244,20 @@ impl PageBlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientCopyIncrementalResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
     ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
+    ///     if let Some(copy_id) = response.copy_id()? {
+    ///         println!("x-ms-copy-id: {:?}", copy_id);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::last_modified) - last-modified
     /// * [`copy_id`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::copy_id) - x-ms-copy-id
@@ -492,21 +491,20 @@ impl PageBlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageList, XmlFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
     ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
+    ///     if let Some(blob_content_length) = response.blob_content_length()? {
+    ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::PageListHeaders::date) - date
     /// * [`etag`()](crate::generated::models::PageListHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageListHeaders::last_modified) - last-modified
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
@@ -593,21 +591,20 @@ impl PageBlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageList, XmlFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
     ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
+    ///     if let Some(blob_content_length) = response.blob_content_length()? {
+    ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::PageListHeaders::date) - date
     /// * [`etag`()](crate::generated::models::PageListHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageListHeaders::last_modified) - last-modified
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length

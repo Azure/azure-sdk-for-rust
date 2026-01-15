@@ -15,7 +15,14 @@ use url::form_urlencoded;
 
 const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 
-/// Enables authentication of a Microsoft Entra service principal using a signed client assertion.
+/// Authenticates an application with client assertions.
+///
+/// This credential is for advanced scenarios. `ClientCertificateCredential` has a more convenient API for
+/// the most common assertion scenario, authenticating a service principal with a certificate.
+///
+/// See
+/// [Entra ID documentation](https://learn.microsoft.com/entra/identity-platform/certificate-credentials#assertion-format)
+/// for details of the assertion format.
 #[derive(Debug)]
 pub struct ClientAssertionCredential<C> {
     name: &'static str,
@@ -29,18 +36,6 @@ pub struct ClientAssertionCredential<C> {
 /// Options for constructing a new [`ClientAssertionCredential`].
 #[derive(Debug, Default)]
 pub struct ClientAssertionCredentialOptions {
-    /// Additional tenants for which the credential may acquire tokens.
-    ///
-    /// Add the wildcard value "*" to allow the credential to acquire tokens for any tenant in which the application is registered.
-    pub additionally_allowed_tenants: Vec<String>,
-
-    /// Should be set true only by applications authenticating in disconnected clouds, or private clouds such as Azure Stack.
-    ///
-    /// It determines whether the credential requests Microsoft Entra instance metadata
-    /// from <https://login.microsoft.com> before authenticating. Setting this to true will skip this request, making
-    /// the application responsible for ensuring the configured authority is valid and trustworthy.
-    pub disable_instance_discovery: bool,
-
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 }
@@ -55,6 +50,13 @@ pub trait ClientAssertion: Send + Sync + Debug {
 
 impl<C: ClientAssertion> ClientAssertionCredential<C> {
     /// Create a new `ClientAssertionCredential`.
+    ///
+    /// # Arguments
+    /// - `tenant_id`: The tenant (directory) ID of the service principal.
+    /// - `client_id`: The client (application) ID of the service principal.
+    /// - `assertion`: an implementation of [`ClientAssertion`] that provides assertions to the credential.
+    /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
+    ///
     pub fn new(
         tenant_id: String,
         client_id: String,
@@ -266,7 +268,6 @@ pub(crate) mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             }),
         )
         .expect("valid credential");
@@ -316,7 +317,6 @@ pub(crate) mod tests {
                     transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
-                ..Default::default()
             }),
         )
         .expect("valid credential");
@@ -358,7 +358,6 @@ pub(crate) mod tests {
                         cloud: Some(Arc::new(cloud)),
                         ..Default::default()
                     },
-                    ..Default::default()
                 }),
             )
             .expect("valid credential");

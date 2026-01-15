@@ -330,14 +330,24 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
+ "uuid",
 ]
 
 [[package]]
 name = "azure_data_cosmos_native"
 version = "0.27.0"
 dependencies = [
+ "azure_core",
  "azure_data_cosmos",
  "cbindgen",
+ "futures",
+ "getrandom 0.3.3",
+ "reqwest",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
@@ -351,6 +361,7 @@ dependencies = [
  "azure_security_keyvault_secrets",
  "clap",
  "futures",
+ "include-file",
  "openssl",
  "pin-project",
  "reqwest",
@@ -442,6 +453,7 @@ dependencies = [
 name = "azure_security_keyvault_certificates"
 version = "0.9.0"
 dependencies = [
+ "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",
@@ -463,6 +475,7 @@ dependencies = [
 name = "azure_security_keyvault_keys"
 version = "0.10.0"
 dependencies = [
+ "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",
@@ -486,6 +499,7 @@ dependencies = [
 name = "azure_security_keyvault_secrets"
 version = "0.10.0"
 dependencies = [
+ "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",
@@ -2426,9 +2440,9 @@ dependencies = [
 
 [[package]]
 name = "rkyv"
-version = "0.7.45"
+version = "0.7.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9008cd6385b9e161d8229e1f6549dd23c3d022f132a2ea37ac3a10ac4935779b"
+checksum = "2297bf9c81a3f0dc96bc9521370b88f054168c29826a75e89c55ff196e7ed6a1"
 dependencies = [
  "bitvec",
  "bytecheck",
@@ -2444,9 +2458,9 @@ dependencies = [
 
 [[package]]
 name = "rkyv_derive"
-version = "0.7.45"
+version = "0.7.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "503d1d27590a2b0a3a4ca4c94755aa2875657196ecbf401a42eff41d7de532c0"
+checksum = "84d7b42d4b8d06048d3ac8db0eb31bcb942cbeb709f0b5f2b2ebde398d3038f5"
 dependencies = [
  "proc-macro2",
  "quote",

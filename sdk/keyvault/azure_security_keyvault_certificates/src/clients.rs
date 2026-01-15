@@ -2,22 +2,94 @@
 // Licensed under the MIT License.
 
 pub use crate::generated::clients::*;
-use crate::models::{
-    CertificateClientCreateCertificateOptions, CertificateOperation, CreateCertificateParameters,
+use crate::{
+    authorizer::KeyVaultAuthorizer,
+    models::{
+        CertificateClientCreateCertificateOptions, CertificateOperation,
+        CreateCertificateParameters,
+    },
 };
 use azure_core::{
+    credentials::TokenCredential,
     error::ErrorKind,
+    fmt::SafeDebug,
     http::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         poller::{
             get_retry_after, Poller, PollerResult, PollerState, PollerStatus, StatusMonitor as _,
         },
-        Body, Method, RawResponse, Request, RequestContent, Url,
+        Body, ClientOptions, Method, Pipeline, RawResponse, Request, RequestContent, Url,
     },
     json, tracing, Result,
 };
+use std::sync::Arc;
+
+/// Options used when creating a [`CertificateClient`]
+#[derive(Clone, SafeDebug)]
+pub struct CertificateClientOptions {
+    /// The API version to use for this operation.
+    pub api_version: String,
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Controls whether the client requires the resource specified in authentication
+    /// challenges to match the Key Vault or Managed HSM domain. True by default.
+    pub verify_challenge_resource: Option<bool>,
+}
+
+impl Default for CertificateClientOptions {
+    fn default() -> Self {
+        Self {
+            api_version: String::from("2025-07-01"),
+            client_options: ClientOptions::default(),
+            verify_challenge_resource: Some(true),
+        }
+    }
+}
 
 impl CertificateClient {
+    /// Creates a new CertificateClient, using Entra ID authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - Service host
+    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
+    ///   Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("KeyVault")]
+    pub fn new(
+        endpoint: &str,
+        credential: Arc<dyn TokenCredential>,
+        options: Option<CertificateClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+        let endpoint = Url::parse(endpoint)?;
+        if !endpoint.scheme().starts_with("http") {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{endpoint} must use http(s)"),
+            ));
+        }
+        let authorizer = KeyVaultAuthorizer::new(options.verify_challenge_resource.unwrap_or(true));
+        let auth_policy: Arc<dyn Policy> = Arc::new(
+            BearerTokenAuthorizationPolicy::new(credential, Vec::<String>::new())
+                .with_on_request(authorizer.clone())
+                .with_on_challenge(authorizer),
+        );
+        Ok(Self {
+            endpoint,
+            api_version: options.api_version,
+            pipeline: Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options,
+                Vec::new(),
+                vec![auth_policy],
+                None,
+            ),
+        })
+    }
+
     /// Creates a new certificate and returns a [`Poller<CertificateOperation>`] to monitor the status.
     ///
     /// If this is the first version, the certificate resource is created. This operation requires the certificates/create permission.
@@ -93,9 +165,9 @@ impl CertificateClient {
 
         let parameters: Body = parameters.into();
 
-        Ok(Poller::from_callback(
-            move |next_link: PollerState<Url>, poller_options| {
-                let (mut request, next_link) = match next_link {
+        Ok(Poller::new(
+            move |poller_state: PollerState<Url>, poller_options| {
+                let (mut request, next_link) = match poller_state {
                     PollerState::More(next_link) => {
                         // Make sure the `api-version` is set appropriately.
                         let qp = next_link
@@ -131,7 +203,7 @@ impl CertificateClient {
                 let pipeline = pipeline.clone();
                 let api_version = api_version.clone();
                 let ctx = poller_options.context.clone();
-                async move {
+                Box::pin(async move {
                     let rsp = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
@@ -146,7 +218,7 @@ impl CertificateClient {
                         PollerStatus::InProgress => PollerResult::InProgress {
                             response: rsp,
                             retry_after,
-                            next: next_link,
+                            continuation_token: next_link,
                         },
                         PollerStatus::Succeeded => {
                             PollerResult::Succeeded {
@@ -187,7 +259,7 @@ impl CertificateClient {
                         }
                         _ => PollerResult::Done { response: rsp },
                     })
-                }
+                })
             },
             Some(options.method_options),
         ))
