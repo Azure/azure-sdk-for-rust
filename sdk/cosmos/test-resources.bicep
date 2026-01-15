@@ -108,5 +108,5 @@ resource accountName_roleAssignmentId 'Microsoft.DocumentDB/databaseAccounts/sql
 }
 
 output AZURE_COSMOS_ENABLE_CIRCUIT_BREAKER string = string(circuitBreakerEnabled)
-output RUSTFLAGS string = '--cfg ${testCategory}'
+output RUSTFLAGS string = '--cfg=test_category="${testCategory}"'
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
