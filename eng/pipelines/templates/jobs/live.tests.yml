@@ -145,6 +145,23 @@ jobs:
         arguments: >
           -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
 
+  - task: Powershell@2
+    displayName: Convert Test Results to JUnit XML
+    condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Convert-TestResultsToJUnit.ps1
+
+  - task: PublishTestResults@2
+    displayName: Publish Test Results
+    condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: '**/test-results/junit/*.xml'
+      testRunTitle: Rust Tests - $(Agent.JobName)
+      mergeTestResults: true
+      failTaskOnFailedTests: false
+
   - ${{ parameters.PostSteps }}
 
   - template: /eng/common/TestResources/remove-test-resources.yml
