@@ -62,87 +62,123 @@ pub const PROXY_AUTHENTICATE: HeaderName = HeaderName::from_static("proxy-authen
 pub const SET_COOKIE: HeaderName = HeaderName::from_static("set-cookie");
 pub const ORIGIN: HeaderName = HeaderName::from_static("origin");
 pub const HOST: HeaderName = HeaderName::from_static("host");
-pub const ACCESS_CONTROL_ALLOW_ORIGIN: HeaderName = HeaderName::from_static("access-control-allow-origin");
-pub const ACCESS_CONTROL_ALLOW_HEADERS: HeaderName = HeaderName::from_static("access-control-allow-headers");
+pub const ACCESS_CONTROL_ALLOW_ORIGIN: HeaderName =
+    HeaderName::from_static("access-control-allow-origin");
+pub const ACCESS_CONTROL_ALLOW_HEADERS: HeaderName =
+    HeaderName::from_static("access-control-allow-headers");
 pub const PREFER: HeaderName = HeaderName::from_static("prefer");
 pub const LOCATION: HeaderName = HeaderName::from_static("location");
 pub const REFERER: HeaderName = HeaderName::from_static("referer");
-pub const STRICT_TRANSPORT_SECURITY: HeaderName = HeaderName::from_static("strict-transport-security");
+pub const STRICT_TRANSPORT_SECURITY: HeaderName =
+    HeaderName::from_static("strict-transport-security");
 
 // Bulk/Batch
-pub const COSMOS_IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-batch-request");
+pub const COSMOS_IS_BATCH_REQUEST: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-is-batch-request");
 pub const COSMOS_BATCH_ATOMIC: HeaderName = HeaderName::from_static("x-ms-cosmos-batch-atomic");
-pub const COSMOS_BATCH_CONTINUE_ON_ERROR: HeaderName = HeaderName::from_static("x-ms-cosmos-batch-continue-on-error");
+pub const COSMOS_BATCH_CONTINUE_ON_ERROR: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-batch-continue-on-error");
 
 // Query
 pub const DOCUMENTDB_ISQUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-isquery");
 pub const COSMOS_QUERY_VERSION: HeaderName = HeaderName::from_static("x-ms-cosmos-query-version");
-pub const COSMOS_QUERY_EXECUTION_INFO: HeaderName = HeaderName::from_static("x-ms-cosmos-query-execution-info");
+pub const COSMOS_QUERY_EXECUTION_INFO: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-query-execution-info");
 
 // DocDB headers
 pub const MAX_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
-pub const DOCUMENTDB_RESPONSECONTINUATIONTOKENLIMITINKB: HeaderName = HeaderName::from_static("x-ms-documentdb-responsecontinuationtokenlimitinkb");
+pub const DOCUMENTDB_RESPONSECONTINUATIONTOKENLIMITINKB: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-responsecontinuationtokenlimitinkb");
 pub const ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-pub const COSMOS_CORRELATED_ACTIVITYID: HeaderName = HeaderName::from_static("x-ms-cosmos-correlated-activityid");
-pub const DOCUMENTDB_PRE_TRIGGER_EXCLUDE: HeaderName = HeaderName::from_static("x-ms-documentdb-pre-trigger-exclude");
-pub const DOCUMENTDB_POST_TRIGGER_EXCLUDE: HeaderName = HeaderName::from_static("x-ms-documentdb-post-trigger-exclude");
+pub const COSMOS_CORRELATED_ACTIVITYID: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-correlated-activityid");
+pub const DOCUMENTDB_PRE_TRIGGER_EXCLUDE: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-pre-trigger-exclude");
+pub const DOCUMENTDB_POST_TRIGGER_EXCLUDE: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-post-trigger-exclude");
 pub const DATE: HeaderName = HeaderName::from_static("x-ms-date");
-pub const COLLECTION_PARTITION_INFO: HeaderName = HeaderName::from_static("x-ms-collection-partition-info");
-pub const COLLECTION_SERVICE_INFO: HeaderName = HeaderName::from_static("x-ms-collection-service-info");
+pub const COLLECTION_PARTITION_INFO: HeaderName =
+    HeaderName::from_static("x-ms-collection-partition-info");
+pub const COLLECTION_SERVICE_INFO: HeaderName =
+    HeaderName::from_static("x-ms-collection-service-info");
 pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
 pub const IS_FEED_UNFILTERED: HeaderName = HeaderName::from_static("x-ms-is-feed-unfiltered");
-pub const DOCUMENTDB_EXPIRY_SECONDS: HeaderName = HeaderName::from_static("x-ms-documentdb-expiry-seconds");
-pub const DOCUMENTDB_QUERY_ENABLE_SCAN: HeaderName = HeaderName::from_static("x-ms-documentdb-query-enable-scan");
-pub const DOCUMENTDB_QUERY_EMIT_TRACES: HeaderName = HeaderName::from_static("x-ms-documentdb-query-emit-traces");
+pub const DOCUMENTDB_EXPIRY_SECONDS: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-expiry-seconds");
+pub const DOCUMENTDB_QUERY_ENABLE_SCAN: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-query-enable-scan");
+pub const DOCUMENTDB_QUERY_EMIT_TRACES: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-query-emit-traces");
 pub const ALT_CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
 pub const CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-content-path");
-pub const DOCUMENTDB_QUERY_ISCONTINUATIONEXPECTED: HeaderName = HeaderName::from_static("x-ms-documentdb-query-iscontinuationexpected");
-pub const DOCUMENTDB_POPULATEQUERYMETRICS: HeaderName = HeaderName::from_static("x-ms-documentdb-populatequerymetrics");
-pub const COSMOS_POPULATEINDEXMETRICS: HeaderName = HeaderName::from_static("x-ms-cosmos-populateindexmetrics");
+pub const DOCUMENTDB_QUERY_ISCONTINUATIONEXPECTED: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-query-iscontinuationexpected");
+pub const DOCUMENTDB_POPULATEQUERYMETRICS: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-populatequerymetrics");
+pub const COSMOS_POPULATEINDEXMETRICS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-populateindexmetrics");
 pub const RESOURCE_QUOTA: HeaderName = HeaderName::from_static("x-ms-resource-quota");
 pub const RESOURCE_USAGE: HeaderName = HeaderName::from_static("x-ms-resource-usage");
-pub const COSMOS_INTENDED_COLLECTION_RID: HeaderName = HeaderName::from_static("x-ms-cosmos-intended-collection-rid");
+pub const COSMOS_INTENDED_COLLECTION_RID: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-intended-collection-rid");
 
 // Quota Info
 pub const ROOT_ENTITY_MAX_COUNT: HeaderName = HeaderName::from_static("x-ms-root-entity-max-count");
-pub const ROOT_ENTITY_CURRENT_COUNT: HeaderName = HeaderName::from_static("x-ms-root-entity-current-count");
+pub const ROOT_ENTITY_CURRENT_COUNT: HeaderName =
+    HeaderName::from_static("x-ms-root-entity-current-count");
 pub const COLLECTION_QUOTA_MB: HeaderName = HeaderName::from_static("x-ms-collection-quota-mb");
 pub const COLLECTION_USAGE_MB: HeaderName = HeaderName::from_static("x-ms-collection-usage-mb");
-pub const COSMOS_MAX_CONTENT_LENGTH: HeaderName = HeaderName::from_static("x-ms-cosmos-max-content-length");
-pub const MAX_MEDIA_STORAGE_USAGE_MB: HeaderName = HeaderName::from_static("x-ms-max-media-storage-usage-mb");
-pub const DATABASEACCOUNT_CONSUMED_MB: HeaderName = HeaderName::from_static("x-ms-databaseaccount-consumed-mb");
-pub const DATABASEACCOUNT_PROVISIONED_MB: HeaderName = HeaderName::from_static("x-ms-databaseaccount-provisioned-mb");
+pub const COSMOS_MAX_CONTENT_LENGTH: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-max-content-length");
+pub const MAX_MEDIA_STORAGE_USAGE_MB: HeaderName =
+    HeaderName::from_static("x-ms-max-media-storage-usage-mb");
+pub const DATABASEACCOUNT_CONSUMED_MB: HeaderName =
+    HeaderName::from_static("x-ms-databaseaccount-consumed-mb");
+pub const DATABASEACCOUNT_PROVISIONED_MB: HeaderName =
+    HeaderName::from_static("x-ms-databaseaccount-provisioned-mb");
 
 // Collection quota
-pub const DOCUMENTDB_POPULATEQUOTAINFO: HeaderName = HeaderName::from_static("x-ms-documentdb-populatequotainfo");
-pub const DOCUMENTDB_POPULATEPARTITIONSTATISTICS: HeaderName = HeaderName::from_static("x-ms-documentdb-populatepartitionstatistics");
-pub const COLLECTION_PARTITION_INDEX: HeaderName = HeaderName::from_static("collection-partition-index");
-pub const COLLECTION_SERVICE_INDEX: HeaderName = HeaderName::from_static("collection-service-index");
+pub const DOCUMENTDB_POPULATEQUOTAINFO: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-populatequotainfo");
+pub const DOCUMENTDB_POPULATEPARTITIONSTATISTICS: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-populatepartitionstatistics");
+pub const COLLECTION_PARTITION_INDEX: HeaderName =
+    HeaderName::from_static("collection-partition-index");
+pub const COLLECTION_SERVICE_INDEX: HeaderName =
+    HeaderName::from_static("collection-service-index");
 
 // Usage Info
-pub const MEDIA_STORAGE_USAGE_MB: HeaderName = HeaderName::from_static("x-ms-media-storage-usage-mb");
+pub const MEDIA_STORAGE_USAGE_MB: HeaderName =
+    HeaderName::from_static("x-ms-media-storage-usage-mb");
 pub const REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
 
 // Address related headers
 pub const FORCE_REFRESH: HeaderName = HeaderName::from_static("x-ms-force-refresh");
 pub const ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
 pub const NEW_RESOURCE_ID: HeaderName = HeaderName::from_static("x-ms-new-resource-id");
-pub const USE_MASTER_COLLECTION_RESOLVER: HeaderName = HeaderName::from_static("x-ms-use-master-collection-resolver");
+pub const USE_MASTER_COLLECTION_RESOLVER: HeaderName =
+    HeaderName::from_static("x-ms-use-master-collection-resolver");
 
 // Admin Headers
 pub const FORCE_FULL_UPGRADE: HeaderName = HeaderName::from_static("x-ms-force-full-upgrade");
-pub const ONLY_UPGRADE_SYSTEM_APPLICATIONS: HeaderName = HeaderName::from_static("x-ms-only-upgrade-system-applications");
-pub const ONLY_UPGRADE_NON_SYSTEM_APPLICATIONS: HeaderName = HeaderName::from_static("x-ms-only-upgrade-non-system-applications");
-pub const UPGRADE_FABRIC_CODE_CONFIG: HeaderName = HeaderName::from_static("x-ms-upgrade-fabric-code-config");
-pub const IGNORE_INPROGRESS_UPGRADE: HeaderName = HeaderName::from_static("x-ms-ignore-inprogress-upgrade");
-pub const UPGRADE_VERIFICATION_KIND: HeaderName = HeaderName::from_static("x-ms-upgrade-verification-kind");
+pub const ONLY_UPGRADE_SYSTEM_APPLICATIONS: HeaderName =
+    HeaderName::from_static("x-ms-only-upgrade-system-applications");
+pub const ONLY_UPGRADE_NON_SYSTEM_APPLICATIONS: HeaderName =
+    HeaderName::from_static("x-ms-only-upgrade-non-system-applications");
+pub const UPGRADE_FABRIC_CODE_CONFIG: HeaderName =
+    HeaderName::from_static("x-ms-upgrade-fabric-code-config");
+pub const IGNORE_INPROGRESS_UPGRADE: HeaderName =
+    HeaderName::from_static("x-ms-ignore-inprogress-upgrade");
+pub const UPGRADE_VERIFICATION_KIND: HeaderName =
+    HeaderName::from_static("x-ms-upgrade-verification-kind");
 pub const ISCANARY: HeaderName = HeaderName::from_static("x-ms-iscanary");
 
 // Version
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 
 // RDFE
-pub const OCP_RESOURCEPROVIDER_REGISTERED_URI: HeaderName = HeaderName::from_static("ocp-resourceprovider-registered-uri");
+pub const OCP_RESOURCEPROVIDER_REGISTERED_URI: HeaderName =
+    HeaderName::from_static("ocp-resourceprovider-registered-uri");
 
 // State change
 pub const LAST_STATE_CHANGE_UTC: HeaderName = HeaderName::from_static("x-ms-last-state-change-utc");
@@ -151,36 +187,49 @@ pub const LAST_STATE_CHANGE_UTC: HeaderName = HeaderName::from_static("x-ms-last
 pub const OFFER_TYPE: HeaderName = HeaderName::from_static("x-ms-offer-type");
 
 // RU/minute
-pub const DOCUMENTDB_DISABLE_RU_PER_MINUTE_USAGE: HeaderName = HeaderName::from_static("x-ms-documentdb-disable-ru-per-minute-usage");
-pub const DOCUMENTDB_IS_RU_PER_MINUTE_USED: HeaderName = HeaderName::from_static("x-ms-documentdb-is-ru-per-minute-used");
-pub const OFFER_IS_RU_PER_MINUTE_THROUGHPUT_ENABLED: HeaderName = HeaderName::from_static("x-ms-offer-is-ru-per-minute-throughput-enabled");
+pub const DOCUMENTDB_DISABLE_RU_PER_MINUTE_USAGE: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-disable-ru-per-minute-usage");
+pub const DOCUMENTDB_IS_RU_PER_MINUTE_USED: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-is-ru-per-minute-used");
+pub const OFFER_IS_RU_PER_MINUTE_THROUGHPUT_ENABLED: HeaderName =
+    HeaderName::from_static("x-ms-offer-is-ru-per-minute-throughput-enabled");
 
 // Partitioned collections
-pub const COSMOS_PHYSICAL_PARTITION_ID: HeaderName = HeaderName::from_static("x-ms-cosmos-physical-partition-id");
-pub const COSMOS_IS_PARTITION_KEY_DELETE_PENDING: HeaderName = HeaderName::from_static("x-ms-cosmos-is-partition-key-delete-pending");
+pub const COSMOS_PHYSICAL_PARTITION_ID: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-physical-partition-id");
+pub const COSMOS_IS_PARTITION_KEY_DELETE_PENDING: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-is-partition-key-delete-pending");
 pub const START_EPK: HeaderName = HeaderName::from_static("x-ms-start-epk");
 pub const END_EPK: HeaderName = HeaderName::from_static("x-ms-end-epk");
 pub const READ_KEY_TYPE: HeaderName = HeaderName::from_static("x-ms-read-key-type");
-pub const COSMOS_SDK_SUPPORTEDCAPABILITIES: HeaderName = HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");
+pub const COSMOS_SDK_SUPPORTEDCAPABILITIES: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");
 
 // Index progress
-pub const DOCUMENTDB_COLLECTION_INDEX_TRANSFORMATION_PROGRESS: HeaderName = HeaderName::from_static("x-ms-documentdb-collection-index-transformation-progress");
-pub const DOCUMENTDB_COLLECTION_LAZY_INDEXING_PROGRESS: HeaderName = HeaderName::from_static("x-ms-documentdb-collection-lazy-indexing-progress");
+pub const DOCUMENTDB_COLLECTION_INDEX_TRANSFORMATION_PROGRESS: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-collection-index-transformation-progress");
+pub const DOCUMENTDB_COLLECTION_LAZY_INDEXING_PROGRESS: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-collection-lazy-indexing-progress");
 
 // Client retry
 pub const THROTTLE_RETRY_COUNT: HeaderName = HeaderName::from_static("x-ms-throttle-retry-count");
-pub const THROTTLE_RETRY_WAIT_TIME_MS: HeaderName = HeaderName::from_static("x-ms-throttle-retry-wait-time-ms");
+pub const THROTTLE_RETRY_WAIT_TIME_MS: HeaderName =
+    HeaderName::from_static("x-ms-throttle-retry-wait-time-ms");
 
 // StoredProcedure
-pub const DOCUMENTDB_SCRIPT_ENABLE_LOGGING: HeaderName = HeaderName::from_static("x-ms-documentdb-script-enable-logging");
-pub const DOCUMENTDB_SCRIPT_LOG_RESULTS: HeaderName = HeaderName::from_static("x-ms-documentdb-script-log-results");
+pub const DOCUMENTDB_SCRIPT_ENABLE_LOGGING: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-script-enable-logging");
+pub const DOCUMENTDB_SCRIPT_LOG_RESULTS: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-script-log-results");
 
 // Change feed
 pub const A_IM: HeaderName = HeaderName::from_static("a-im");
-pub const COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION: HeaderName = HeaderName::from_static("x-ms-cosmos-changefeed-wire-format-version");
+pub const COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-changefeed-wire-format-version");
 
 // Dedicated Gateway
-pub const DEDICATEDGATEWAY_MAX_AGE: HeaderName = HeaderName::from_static("x-ms-dedicatedgateway-max-age");
+pub const DEDICATEDGATEWAY_MAX_AGE: HeaderName =
+    HeaderName::from_static("x-ms-dedicatedgateway-max-age");
 pub const COSMOS_CACHEHIT: HeaderName = HeaderName::from_static("x-ms-cosmos-cachehit");
 
 // Backend
@@ -190,21 +239,27 @@ pub const GATEWAYVERSION: HeaderName = HeaderName::from_static("x-ms-gatewayvers
 pub const SERVICEVERSION: HeaderName = HeaderName::from_static("x-ms-serviceversion");
 pub const QUORUM_ACKED_LSN: HeaderName = HeaderName::from_static("x-ms-quorum-acked-lsn");
 pub const CURRENT_WRITE_QUORUM: HeaderName = HeaderName::from_static("x-ms-current-write-quorum");
-pub const CURRENT_REPLICA_SET_SIZE: HeaderName = HeaderName::from_static("x-ms-current-replica-set-size");
+pub const CURRENT_REPLICA_SET_SIZE: HeaderName =
+    HeaderName::from_static("x-ms-current-replica-set-size");
 pub const XP_ROLE: HeaderName = HeaderName::from_static("x-ms-xp-role");
 pub const GLOBAL_COMMITTED_LSN: HeaderName = HeaderName::from_static("x-ms-global-committed-lsn");
-pub const NUMBER_OF_READ_REGIONS: HeaderName = HeaderName::from_static("x-ms-number-of-read-regions");
+pub const NUMBER_OF_READ_REGIONS: HeaderName =
+    HeaderName::from_static("x-ms-number-of-read-regions");
 pub const TRANSPORT_REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-transport-request-id");
 pub const ITEM_LSN: HeaderName = HeaderName::from_static("x-ms-item-lsn");
 pub const COSMOS_ITEM_LLSN: HeaderName = HeaderName::from_static("x-ms-cosmos-item-llsn");
 pub const COSMOS_LLSN: HeaderName = HeaderName::from_static("x-ms-cosmos-llsn");
-pub const COSMOS_QUORUM_ACKED_LLSN: HeaderName = HeaderName::from_static("x-ms-cosmos-quorum-acked-llsn");
+pub const COSMOS_QUORUM_ACKED_LLSN: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-quorum-acked-llsn");
 pub const REQUEST_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
-pub const COSMOS_INTERNAL_PARTITION_ID: HeaderName = HeaderName::from_static("x-ms-cosmos-internal-partition-id");
+pub const COSMOS_INTERNAL_PARTITION_ID: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-internal-partition-id");
 
 // Thin Client
-pub const THINCLIENT_PROXY_OPERATION_TYPE: HeaderName = HeaderName::from_static("x-ms-thinclient-proxy-operation-type");
-pub const THINCLIENT_PROXY_RESOURCE_TYPE: HeaderName = HeaderName::from_static("x-ms-thinclient-proxy-resource-type");
+pub const THINCLIENT_PROXY_OPERATION_TYPE: HeaderName =
+    HeaderName::from_static("x-ms-thinclient-proxy-operation-type");
+pub const THINCLIENT_PROXY_RESOURCE_TYPE: HeaderName =
+    HeaderName::from_static("x-ms-thinclient-proxy-resource-type");
 
 // Client ID
 pub const CLIENT_ID: HeaderName = HeaderName::from_static("x-ms-client-id");
@@ -224,193 +279,196 @@ use std::sync::LazyLock;
 /// This is constructed from the header constants defined above.
 pub static COSMOS_ALLOWED_HEADERS: LazyLock<Vec<Cow<'static, str>>> = LazyLock::new(|| {
     [
-    // Standard HTTP Headers
-    // "etag", // Already in default list
-    &X_HTTP_METHOD,
-    &SLUG,
-    // "content-type", // Already in default list
-    // "last-modified", // Already in default list
-    &CONTENT_ENCODING,
-    &CHARACTERSET,
-    // "user-agent", // Already in default list
-    // "if-modified-since", // Already in default list
-    // "if-match", // Already in default list
-    // "if-none-match", // Already in default list
-    // "content-length", // Already in default list
-    &ACCEPT_ENCODING,
-    &KEEP_ALIVE,
-    // "cache-control", // Already in default list
-    // "transfer-encoding", // Already in default list
-    &CONTENT_LANGUAGE,
-    &CONTENT_LOCATION,
-    &CONTENT_MD5,
-    &CONTENT_RANGE,
-    // "accept", // Already in default list
-    &ACCEPT_CHARSET,
-    &ACCEPT_LANGUAGE,
-    &IF_RANGE,
-    // "if-unmodified-since", // Already in default list
-    &MAX_FORWARDS,
-    &ACCEPT_RANGES,
-    &PROXY_AUTHENTICATE,
-    // "retry-after", // Already in default list
-    &SET_COOKIE,
-    // "www-authenticate", // Already in default list
-    &ORIGIN,
-    &HOST,
-    &ACCESS_CONTROL_ALLOW_ORIGIN,
-    &ACCESS_CONTROL_ALLOW_HEADERS,
-    // "date", // Already in default list
-    &PREFER,
-    &LOCATION,
-    &REFERER,
-    // "pragma", // Already in default list
-    // "server", // Already in default list
-    &STRICT_TRANSPORT_SECURITY,
-    // Bulk/Batch
-    &COSMOS_IS_BATCH_REQUEST,
-    &COSMOS_BATCH_ATOMIC,
-    &COSMOS_BATCH_CONTINUE_ON_ERROR,
-    // Query
-    &QUERY,
-    &DOCUMENTDB_ISQUERY,
-    &IS_QUERY_PLAN_REQUEST,
-    &SUPPORTED_QUERY_FEATURES,
-    &COSMOS_QUERY_VERSION,
-    &QUERY_METRICS,
-    &COSMOS_QUERY_EXECUTION_INFO,
-    &INDEX_METRICS,
-    // DocDB headers
-    &CONTINUATION,
-    &MAX_ITEM_COUNT,
-    &DOCUMENTDB_RESPONSECONTINUATIONTOKENLIMITINKB,
-    &PRIORITY_LEVEL,
-    &ACTIVITY_ID,
-    &COSMOS_CORRELATED_ACTIVITYID,
-    &PRE_TRIGGER_INCLUDE,
-    &DOCUMENTDB_PRE_TRIGGER_EXCLUDE,
-    &POST_TRIGGER_INCLUDE,
-    &DOCUMENTDB_POST_TRIGGER_EXCLUDE,
-    &INDEXING_DIRECTIVE,
-    &SESSION_TOKEN,
-    &CONSISTENCY_LEVEL,
-    &DATE,
-    &COLLECTION_PARTITION_INFO,
-    &COLLECTION_SERVICE_INFO,
-    &RETRY_AFTER_MS,
-    &IS_FEED_UNFILTERED,
-    &DOCUMENTDB_EXPIRY_SECONDS,
-    &DOCUMENTDB_QUERY_ENABLE_SCAN,
-    &DOCUMENTDB_QUERY_EMIT_TRACES,
-    &SUB_STATUS,
-    &ALT_CONTENT_PATH,
-    &CONTENT_PATH,
-    &DOCUMENTDB_QUERY_ISCONTINUATIONEXPECTED,
-    &DOCUMENTDB_POPULATEQUERYMETRICS,
-    &COSMOS_POPULATEINDEXMETRICS,
-    &RESOURCE_QUOTA,
-    &RESOURCE_USAGE,
-    &COSMOS_INTENDED_COLLECTION_RID,
-    // Quota Info
-    &ROOT_ENTITY_MAX_COUNT,
-    &ROOT_ENTITY_CURRENT_COUNT,
-    &COLLECTION_QUOTA_MB,
-    &COLLECTION_USAGE_MB,
-    &COSMOS_MAX_CONTENT_LENGTH,
-    &MAX_MEDIA_STORAGE_USAGE_MB,
-    &DATABASEACCOUNT_CONSUMED_MB,
-    &DATABASEACCOUNT_PROVISIONED_MB,
-    // Collection quota
-    &DOCUMENTDB_POPULATEQUOTAINFO,
-    &DOCUMENTDB_POPULATEPARTITIONSTATISTICS,
-    &COLLECTION_PARTITION_INDEX,
-    &COLLECTION_SERVICE_INDEX,
-    // Usage Info
-    &MEDIA_STORAGE_USAGE_MB,
-    &REQUEST_CHARGE,
-    // Address related headers
-    &FORCE_REFRESH,
-    &ITEM_COUNT,
-    &NEW_RESOURCE_ID,
-    &USE_MASTER_COLLECTION_RESOLVER,
-    // Admin Headers
-    &FORCE_FULL_UPGRADE,
-    &ONLY_UPGRADE_SYSTEM_APPLICATIONS,
-    &ONLY_UPGRADE_NON_SYSTEM_APPLICATIONS,
-    &UPGRADE_FABRIC_CODE_CONFIG,
-    &IGNORE_INPROGRESS_UPGRADE,
-    &UPGRADE_VERIFICATION_KIND,
-    &ISCANARY,
-    // Version
-    &VERSION,
-    // RDFE
-    &OCP_RESOURCEPROVIDER_REGISTERED_URI,
-    // Request management
-    // "x-ms-request-id", // Already in default list
-    // State change
-    &LAST_STATE_CHANGE_UTC,
-    // Offer
-    &OFFER_TYPE,
-    &OFFER_THROUGHPUT,
-    &OFFER_AUTOPILOT_SETTINGS,
-    // RU/minute
-    &DOCUMENTDB_DISABLE_RU_PER_MINUTE_USAGE,
-    &DOCUMENTDB_IS_RU_PER_MINUTE_USED,
-    &OFFER_IS_RU_PER_MINUTE_THROUGHPUT_ENABLED,
-    &THROUGHPUT_BUCKET,
-    // Partitioned collections
-    &PARTITION_KEY,
-    &QUERY_ENABLE_CROSS_PARTITION,
-    &PARTITION_KEY_RANGE_ID,
-    &COSMOS_PHYSICAL_PARTITION_ID,
-    &COSMOS_IS_PARTITION_KEY_DELETE_PENDING,
-    &START_EPK,
-    &END_EPK,
-    &READ_KEY_TYPE,
-    &COSMOS_SDK_SUPPORTEDCAPABILITIES,
-    // Upsert
-    &IS_UPSERT,
-    // Index progress
-    &DOCUMENTDB_COLLECTION_INDEX_TRANSFORMATION_PROGRESS,
-    &DOCUMENTDB_COLLECTION_LAZY_INDEXING_PROGRESS,
-    // Client retry
-    &THROTTLE_RETRY_COUNT,
-    &THROTTLE_RETRY_WAIT_TIME_MS,
-    // StoredProcedure
-    &DOCUMENTDB_SCRIPT_ENABLE_LOGGING,
-    &DOCUMENTDB_SCRIPT_LOG_RESULTS,
-    // Change feed
-    &A_IM,
-    &COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION,
-    // Multiple Write Locations
-    &ALLOW_TENTATIVE_WRITES,
-    // Dedicated Gateway
-    &DEDICATEDGATEWAY_MAX_AGE,
-    &COSMOS_CACHEHIT,
-    // Backend
-    &LSN,
-    &SCHEMAVERSION,
-    &GATEWAYVERSION,
-    &SERVICEVERSION,
-    &QUORUM_ACKED_LSN,
-    &CURRENT_WRITE_QUORUM,
-    &CURRENT_REPLICA_SET_SIZE,
-    &XP_ROLE,
-    &GLOBAL_COMMITTED_LSN,
-    &NUMBER_OF_READ_REGIONS,
-    &TRANSPORT_REQUEST_ID,
-    &ITEM_LSN,
-    &COSMOS_ITEM_LLSN,
-    &COSMOS_LLSN,
-    &COSMOS_QUORUM_ACKED_LLSN,
-    &REQUEST_DURATION_MS,
-    &COSMOS_INTERNAL_PARTITION_ID,
-    // Thin Client
-    &THINCLIENT_PROXY_OPERATION_TYPE,
-    &THINCLIENT_PROXY_RESOURCE_TYPE,
-    // Client ID
-    &CLIENT_ID,
-    ].iter().map(|h| Cow::Owned(h.as_str().to_owned())).collect()
+        // Standard HTTP Headers
+        // "etag", // Already in default list
+        &X_HTTP_METHOD,
+        &SLUG,
+        // "content-type", // Already in default list
+        // "last-modified", // Already in default list
+        &CONTENT_ENCODING,
+        &CHARACTERSET,
+        // "user-agent", // Already in default list
+        // "if-modified-since", // Already in default list
+        // "if-match", // Already in default list
+        // "if-none-match", // Already in default list
+        // "content-length", // Already in default list
+        &ACCEPT_ENCODING,
+        &KEEP_ALIVE,
+        // "cache-control", // Already in default list
+        // "transfer-encoding", // Already in default list
+        &CONTENT_LANGUAGE,
+        &CONTENT_LOCATION,
+        &CONTENT_MD5,
+        &CONTENT_RANGE,
+        // "accept", // Already in default list
+        &ACCEPT_CHARSET,
+        &ACCEPT_LANGUAGE,
+        &IF_RANGE,
+        // "if-unmodified-since", // Already in default list
+        &MAX_FORWARDS,
+        &ACCEPT_RANGES,
+        &PROXY_AUTHENTICATE,
+        // "retry-after", // Already in default list
+        &SET_COOKIE,
+        // "www-authenticate", // Already in default list
+        &ORIGIN,
+        &HOST,
+        &ACCESS_CONTROL_ALLOW_ORIGIN,
+        &ACCESS_CONTROL_ALLOW_HEADERS,
+        // "date", // Already in default list
+        &PREFER,
+        &LOCATION,
+        &REFERER,
+        // "pragma", // Already in default list
+        // "server", // Already in default list
+        &STRICT_TRANSPORT_SECURITY,
+        // Bulk/Batch
+        &COSMOS_IS_BATCH_REQUEST,
+        &COSMOS_BATCH_ATOMIC,
+        &COSMOS_BATCH_CONTINUE_ON_ERROR,
+        // Query
+        &QUERY,
+        &DOCUMENTDB_ISQUERY,
+        &IS_QUERY_PLAN_REQUEST,
+        &SUPPORTED_QUERY_FEATURES,
+        &COSMOS_QUERY_VERSION,
+        &QUERY_METRICS,
+        &COSMOS_QUERY_EXECUTION_INFO,
+        &INDEX_METRICS,
+        // DocDB headers
+        &CONTINUATION,
+        &MAX_ITEM_COUNT,
+        &DOCUMENTDB_RESPONSECONTINUATIONTOKENLIMITINKB,
+        &PRIORITY_LEVEL,
+        &ACTIVITY_ID,
+        &COSMOS_CORRELATED_ACTIVITYID,
+        &PRE_TRIGGER_INCLUDE,
+        &DOCUMENTDB_PRE_TRIGGER_EXCLUDE,
+        &POST_TRIGGER_INCLUDE,
+        &DOCUMENTDB_POST_TRIGGER_EXCLUDE,
+        &INDEXING_DIRECTIVE,
+        &SESSION_TOKEN,
+        &CONSISTENCY_LEVEL,
+        &DATE,
+        &COLLECTION_PARTITION_INFO,
+        &COLLECTION_SERVICE_INFO,
+        &RETRY_AFTER_MS,
+        &IS_FEED_UNFILTERED,
+        &DOCUMENTDB_EXPIRY_SECONDS,
+        &DOCUMENTDB_QUERY_ENABLE_SCAN,
+        &DOCUMENTDB_QUERY_EMIT_TRACES,
+        &SUB_STATUS,
+        &ALT_CONTENT_PATH,
+        &CONTENT_PATH,
+        &DOCUMENTDB_QUERY_ISCONTINUATIONEXPECTED,
+        &DOCUMENTDB_POPULATEQUERYMETRICS,
+        &COSMOS_POPULATEINDEXMETRICS,
+        &RESOURCE_QUOTA,
+        &RESOURCE_USAGE,
+        &COSMOS_INTENDED_COLLECTION_RID,
+        // Quota Info
+        &ROOT_ENTITY_MAX_COUNT,
+        &ROOT_ENTITY_CURRENT_COUNT,
+        &COLLECTION_QUOTA_MB,
+        &COLLECTION_USAGE_MB,
+        &COSMOS_MAX_CONTENT_LENGTH,
+        &MAX_MEDIA_STORAGE_USAGE_MB,
+        &DATABASEACCOUNT_CONSUMED_MB,
+        &DATABASEACCOUNT_PROVISIONED_MB,
+        // Collection quota
+        &DOCUMENTDB_POPULATEQUOTAINFO,
+        &DOCUMENTDB_POPULATEPARTITIONSTATISTICS,
+        &COLLECTION_PARTITION_INDEX,
+        &COLLECTION_SERVICE_INDEX,
+        // Usage Info
+        &MEDIA_STORAGE_USAGE_MB,
+        &REQUEST_CHARGE,
+        // Address related headers
+        &FORCE_REFRESH,
+        &ITEM_COUNT,
+        &NEW_RESOURCE_ID,
+        &USE_MASTER_COLLECTION_RESOLVER,
+        // Admin Headers
+        &FORCE_FULL_UPGRADE,
+        &ONLY_UPGRADE_SYSTEM_APPLICATIONS,
+        &ONLY_UPGRADE_NON_SYSTEM_APPLICATIONS,
+        &UPGRADE_FABRIC_CODE_CONFIG,
+        &IGNORE_INPROGRESS_UPGRADE,
+        &UPGRADE_VERIFICATION_KIND,
+        &ISCANARY,
+        // Version
+        &VERSION,
+        // RDFE
+        &OCP_RESOURCEPROVIDER_REGISTERED_URI,
+        // Request management
+        // "x-ms-request-id", // Already in default list
+        // State change
+        &LAST_STATE_CHANGE_UTC,
+        // Offer
+        &OFFER_TYPE,
+        &OFFER_THROUGHPUT,
+        &OFFER_AUTOPILOT_SETTINGS,
+        // RU/minute
+        &DOCUMENTDB_DISABLE_RU_PER_MINUTE_USAGE,
+        &DOCUMENTDB_IS_RU_PER_MINUTE_USED,
+        &OFFER_IS_RU_PER_MINUTE_THROUGHPUT_ENABLED,
+        &THROUGHPUT_BUCKET,
+        // Partitioned collections
+        &PARTITION_KEY,
+        &QUERY_ENABLE_CROSS_PARTITION,
+        &PARTITION_KEY_RANGE_ID,
+        &COSMOS_PHYSICAL_PARTITION_ID,
+        &COSMOS_IS_PARTITION_KEY_DELETE_PENDING,
+        &START_EPK,
+        &END_EPK,
+        &READ_KEY_TYPE,
+        &COSMOS_SDK_SUPPORTEDCAPABILITIES,
+        // Upsert
+        &IS_UPSERT,
+        // Index progress
+        &DOCUMENTDB_COLLECTION_INDEX_TRANSFORMATION_PROGRESS,
+        &DOCUMENTDB_COLLECTION_LAZY_INDEXING_PROGRESS,
+        // Client retry
+        &THROTTLE_RETRY_COUNT,
+        &THROTTLE_RETRY_WAIT_TIME_MS,
+        // StoredProcedure
+        &DOCUMENTDB_SCRIPT_ENABLE_LOGGING,
+        &DOCUMENTDB_SCRIPT_LOG_RESULTS,
+        // Change feed
+        &A_IM,
+        &COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION,
+        // Multiple Write Locations
+        &ALLOW_TENTATIVE_WRITES,
+        // Dedicated Gateway
+        &DEDICATEDGATEWAY_MAX_AGE,
+        &COSMOS_CACHEHIT,
+        // Backend
+        &LSN,
+        &SCHEMAVERSION,
+        &GATEWAYVERSION,
+        &SERVICEVERSION,
+        &QUORUM_ACKED_LSN,
+        &CURRENT_WRITE_QUORUM,
+        &CURRENT_REPLICA_SET_SIZE,
+        &XP_ROLE,
+        &GLOBAL_COMMITTED_LSN,
+        &NUMBER_OF_READ_REGIONS,
+        &TRANSPORT_REQUEST_ID,
+        &ITEM_LSN,
+        &COSMOS_ITEM_LLSN,
+        &COSMOS_LLSN,
+        &COSMOS_QUORUM_ACKED_LLSN,
+        &REQUEST_DURATION_MS,
+        &COSMOS_INTERNAL_PARTITION_ID,
+        // Thin Client
+        &THINCLIENT_PROXY_OPERATION_TYPE,
+        &THINCLIENT_PROXY_RESOURCE_TYPE,
+        // Client ID
+        &CLIENT_ID,
+    ]
+    .iter()
+    .map(|h| Cow::Owned(h.as_str().to_owned()))
+    .collect()
 });
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
