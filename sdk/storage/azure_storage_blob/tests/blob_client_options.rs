@@ -267,7 +267,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     let mut current_versions = 0;
 
     for blob_item in &blob_items {
-        let name = blob_item.name.as_ref().unwrap().content.as_ref().unwrap();
+        let name = blob_item.name.as_ref().unwrap();
         let version_id = blob_item.version_id.as_ref();
         let is_current = blob_item.is_current_version.unwrap_or(false);
         assert!(version_id.is_some(),);
@@ -666,7 +666,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     let mut base_blob_count = 0;
 
     for blob_item in &blob_items {
-        let name = blob_item.name.as_ref().unwrap().content.as_ref().unwrap();
+        let name = blob_item.name.as_ref().unwrap();
         if blob_item.snapshot.is_some() {
             *snapshot_counts.entry(name.as_str()).or_insert(0) += 1;
         } else {

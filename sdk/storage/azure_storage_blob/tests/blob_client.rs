@@ -668,7 +668,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Extract all blob names from list_blobs() response
     let listed_blob_names: Vec<String> = blob_items
         .iter()
-        .map(|blob| blob.name.clone().unwrap().content.unwrap())
+        .map(|blob| blob.name.clone().unwrap())
         .collect();
     // Verify each test case blob name appears in the list (with normalization)
     for blob_name in test_cases {

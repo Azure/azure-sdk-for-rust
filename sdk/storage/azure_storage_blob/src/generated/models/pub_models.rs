@@ -223,8 +223,13 @@ pub struct BlobItemInternal {
     pub metadata: Option<BlobMetadata>,
 
     /// The name of the blob.
-    #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
-    pub name: Option<BlobName>,
+    #[serde(
+        rename = "Name",
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::models::deserialize_blob_name",
+        default
+    )]
+    pub name: Option<String>,
 
     /// The object replication metadata of the blob.
     #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]
