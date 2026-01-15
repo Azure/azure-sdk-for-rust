@@ -76,7 +76,7 @@ impl CosmosClient {
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint,
             pipeline_core,
-            global_endpoint_manager,
+            global_endpoint_manager.clone(),
             options,
         ));
 
@@ -131,7 +131,7 @@ impl CosmosClient {
         let pipeline = Arc::new(CosmosPipeline::new(
             endpoint,
             pipeline_core,
-            global_endpoint_manager,
+            global_endpoint_manager.clone(),
             options,
         ));
 
