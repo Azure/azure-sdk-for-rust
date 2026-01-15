@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 // Don't spell-check header names (which should start with 'x-').
-// cSpell:ignoreRegExp /x-[^\s]+/
+// cSpell:disable
 
 //! Constants defining HTTP headers and other values relevant to Azure Cosmos DB APIs.
 
