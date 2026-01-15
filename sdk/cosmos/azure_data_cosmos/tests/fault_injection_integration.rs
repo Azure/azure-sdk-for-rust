@@ -1,253 +1,123 @@
 #![cfg(feature = "key_auth")]
 
-//! Advanced integration example showing how to use fault injection with a Cosmos client.
+//! End-to-end integration tests for fault injection.
 //!
-//! This example demonstrates how to create a Cosmos client with fault injection
-//! integrated into the transport layer.
+//! These tests construct a real `CosmosClient` (via the integration test framework) but override
+//! the HTTP transport with a `FaultInjectionPolicy` placed at the end of the pipeline.
+//!
+//! The goal is to validate that injected faults interrupt real SDK operations as expected.
 
 mod framework;
 
-use azure_core::http::policies::Policy;
-use framework::fault_injection::*;
 use std::sync::Arc;
 
-/// Helper function to create a Transport with fault injection.
-///
-/// This wraps the default HTTP client transport with a fault injection policy.
-///
-/// Note: This is a simplified example. In production, you would need to properly
-/// integrate this with the transport pipeline including the TransportPolicy.
-pub fn create_fault_injection_policy() -> Arc<FaultInjectionPolicy> {
-    // Create a mock inner policy for demonstration
-    // In real usage, this would be your actual transport policy
-    #[derive(Debug)]
-    struct MockInnerPolicy;
+use azure_core::http::{policies::{Policy, TransportPolicy}, Transport};
+use azure_data_cosmos::{models::ContainerProperties, CosmosClientOptions, CreateContainerOptions};
 
-    #[async_trait::async_trait]
-    impl Policy for MockInnerPolicy {
-        async fn send(
-            &self,
-            _ctx: &azure_core::http::Context,
-            _request: &mut azure_core::http::Request,
-            _next: &[Arc<dyn Policy>],
-        ) -> azure_core::http::policies::PolicyResult {
-            // This is just for demonstration
-            Ok(azure_core::http::AsyncRawResponse::from_bytes(
-                azure_core::http::StatusCode::Ok,
-                azure_core::http::headers::Headers::new(),
-                Vec::new(),
-            ))
-        }
-    }
+use framework::{fault_injection::*, TestClient};
 
-    let inner_policy = Arc::new(MockInnerPolicy);
-    Arc::new(FaultInjectionPolicy::new(inner_policy))
+fn cosmos_options_with_fault_injection(
+    fault_policy: Arc<FaultInjectionPolicy>,
+) -> CosmosClientOptions {
+    let mut options = CosmosClientOptions::default();
+
+    // Put the fault injection policy at the end of the pipeline (transport position).
+    options.client_options.transport = Some(Transport::new_custom_policy(
+        fault_policy as Arc<dyn Policy>,
+    ));
+
+    options
 }
 
-#[test]
-fn test_create_fault_injection_policy() {
-    let fault_policy = create_fault_injection_policy();
-
-    // Add some faults for testing
-    fault_policy.add_fault(
-        predicate_url_contains_id("test-123".to_string()),
-        error_request_timeout(),
-        None,
-        None,
-    );
-
-    // Verify the fault was added
-    // (In a real test, you would use this transport with a Cosmos client)
-    println!("Created transport with fault injection");
-}
-
-/// Example: Creating a Cosmos client with fault injection
-///
-/// Note: This is a conceptual example. In actual usage, you would integrate this
-/// with TestClient or directly with CosmosClient.
 #[tokio::test]
-async fn example_cosmos_client_with_fault_injection() {
-    // Step 1: Create fault injection policy
-    let fault_policy = create_fault_injection_policy();
+pub async fn fault_injection_injects_timeout_on_create_container() -> Result<(), Box<dyn std::error::Error>> {
+    let container_id = "FaultInjectionTimeout";
 
-    // Step 2: Configure faults
-    // Example: Inject timeout error for documents with specific ID
+    // Inject a timeout for requests that contain our container id.
+    let inner_transport = Arc::new(TransportPolicy::default());
+    let fault_policy = Arc::new(FaultInjectionPolicy::new(inner_transport));
+
     fault_policy.add_fault(
-        predicate_url_contains_id("failing-doc-id".to_string()),
+        predicate_url_contains_id(container_id.to_string()),
         error_request_timeout(),
-        Some(2), // Fail the first 2 attempts
+        None,
         None,
     );
 
-    // Example: Inject forbidden error for write operations
-    fault_policy.add_fault(
-        predicate_is_write_operation("dbs/testdb".to_string()),
-        error_write_forbidden(),
-        None, // Always fail
-        None,
-    );
+    let options = cosmos_options_with_fault_injection(fault_policy.clone());
 
-    // Step 3: Create Cosmos client with the custom transport
-    // In real usage with a Cosmos client:
-    // let custom_transport = Transport::with_policy(fault_policy.clone());
-    // let mut options = CosmosClientOptions::default();
-    // options.client_options.transport = Some(custom_transport);
-    // let client = CosmosClient::with_key(endpoint, key, Some(options))?;
-    //
-    // For this example, we just demonstrate the setup
-    println!("Cosmos client options configured with fault injection");
+    TestClient::run_with_db_client_options(options, async move |_, db_client| {
+        let properties = ContainerProperties {
+            id: container_id.into(),
+            partition_key: "/id".into(),
+            ..Default::default()
+        };
 
-    // Step 4: Use the client - faults will be injected automatically
-    // For example:
-    // let db_client = client.database_client("testdb");
-    // let result = db_client.create_container(...).await;
-    // The result would be an error due to the injected fault
+        let err = db_client
+            .create_container(properties, Some(CreateContainerOptions::default()))
+            .await
+            .expect_err("expected injected timeout error");
 
-    // Step 5: Clear faults when done or reset for next test
+        assert_eq!(err.http_status(), Some(azure_core::http::StatusCode::RequestTimeout));
+
+        Ok(())
+    })
+    .await?;
+
+    // Counter reset / cleanup isn't required for correctness here, but keeping it tidy helps
+    // when reusing a policy in more complex tests.
     fault_policy.clear_faults();
     fault_policy.reset_counters();
+
+    Ok(())
 }
 
-/// Example: Testing retry behavior with max count
 #[tokio::test]
-async fn example_test_retry_with_max_count() {
-    let fault_policy = create_fault_injection_policy();
+pub async fn fault_injection_max_count_allows_success_after_failures() -> Result<(), Box<dyn std::error::Error>> {
+    let container_id = "FaultInjectionRetry";
 
-    // Configure a fault that triggers 3 times then succeeds
+    // Inject a timeout twice, then let the request through.
+    let inner_transport = Arc::new(TransportPolicy::default());
+    let fault_policy = Arc::new(FaultInjectionPolicy::new(inner_transport));
+
     fault_policy.add_fault(
-        predicate_is_document_operation(),
-        error_request_timeout(),
-        Some(3), // Fail 3 times
-        None,    // Then succeed
-    );
-
-    // In your test, make 4 requests:
-    // - First 3 should fail with timeout
-    // - 4th should succeed
-    // This is useful for testing retry logic
-
-    println!("Configured fault injection for retry testing");
-}
-
-/// Example: Testing region failover
-#[tokio::test]
-async fn example_test_region_failover() {
-    let fault_policy = create_fault_injection_policy();
-
-    // Simulate region failure
-    fault_policy.add_fault(
-        predicate_targets_region("https://eastus.documents.azure.com".to_string()),
-        error_region_down(),
-        None, // Always fail
-        None,
-    );
-
-    // Your test would verify that:
-    // 1. Requests to East US region fail
-    // 2. Client automatically fails over to another region
-    // 3. Subsequent requests succeed
-
-    println!("Configured fault injection for region failover testing");
-}
-
-/// Example: Testing with response transformation
-#[tokio::test]
-async fn example_test_response_transformation() {
-    let fault_policy = create_fault_injection_policy();
-
-    // Transform database account responses to simulate different topologies
-    fault_policy.add_response_transformation(
-        predicate_is_database_account_call(),
-        Arc::new(|_request, response| {
-            // In real usage, you would parse and modify the response body
-            // to simulate different account configurations, regions, etc.
-            
-            // For example, you could:
-            // 1. Parse the JSON response body
-            // 2. Modify the readableLocations or writableLocations
-            // 3. Return the modified response
-            
-            response
-        }),
-    );
-
-    println!("Configured response transformation for topology testing");
-}
-
-/// Example: Using counters to verify fault injection
-#[test]
-fn example_using_counters() {
-    let fault_policy = create_fault_injection_policy();
-
-    // Initial counter value should be 0
-    assert_eq!(fault_policy.get_counter("error_with_counter"), Some(0));
-
-    // You can use error_with_counter to track specific errors
-    let error = azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        "Test error",
-    );
-    let _tracked_error = fault_policy.error_with_counter(error);
-
-    // Counter should now be 1
-    assert_eq!(fault_policy.get_counter("error_with_counter"), Some(1));
-
-    // Reset counters
-    fault_policy.reset_counters();
-    assert_eq!(fault_policy.get_counter("error_with_counter"), Some(0));
-
-    println!("Counter tracking works correctly");
-}
-
-/// Example: Complex scenario with multiple fault rules
-#[tokio::test]
-async fn example_complex_fault_injection_scenario() {
-    let fault_policy = create_fault_injection_policy();
-
-    // Scenario: Test application behavior under multiple failure conditions
-
-    // 1. Specific document always fails
-    fault_policy.add_fault(
-        predicate_url_contains_id("corrupted-doc".to_string()),
-        error_internal_server_error(),
-        None,
-        None,
-    );
-
-    // 2. Write operations fail first 2 times
-    fault_policy.add_fault(
-        predicate_is_write_operation("dbs/prod".to_string()),
+        predicate_url_contains_id(container_id.to_string()),
         error_request_timeout(),
         Some(2),
         None,
     );
 
-    // 3. Region is down
-    fault_policy.add_fault(
-        predicate_targets_region("https://westus.documents.azure.com".to_string()),
-        error_region_down(),
-        None,
-        None,
-    );
+    let options = cosmos_options_with_fault_injection(fault_policy.clone());
 
-    // 4. Transform account topology
-    fault_policy.add_response_transformation(
-        predicate_is_database_account_call(),
-        Arc::new(|_request, response| {
-            // Modify account topology to simulate multi-region setup
-            response
-        }),
-    );
+    TestClient::run_with_db_client_options(options, async move |_, db_client| {
+        let properties = ContainerProperties {
+            id: container_id.into(),
+            partition_key: "/id".into(),
+            ..Default::default()
+        };
 
-    // Your test would verify:
-    // - Application handles corrupted documents gracefully
-    // - Retry logic works for write operations
-    // - Region failover works correctly
-    // - Multi-region scenarios are handled properly
+        // 1st attempt fails
+        let err = db_client
+            .create_container(properties.clone(), Some(CreateContainerOptions::default()))
+            .await
+            .expect_err("expected injected timeout on attempt 1");
+        assert_eq!(err.http_status(), Some(azure_core::http::StatusCode::RequestTimeout));
 
-    println!("Complex fault injection scenario configured");
-    
-    // Cleanup
-    fault_policy.clear_faults();
-    fault_policy.clear_transforms();
+        // 2nd attempt fails
+        let err = db_client
+            .create_container(properties.clone(), Some(CreateContainerOptions::default()))
+            .await
+            .expect_err("expected injected timeout on attempt 2");
+        assert_eq!(err.http_status(), Some(azure_core::http::StatusCode::RequestTimeout));
+
+        // 3rd attempt succeeds (fault has max_count=2 and then doesn't fire)
+        let _created = db_client
+            .create_container(properties, Some(CreateContainerOptions::default()))
+            .await?;
+
+        Ok(())
+    })
+    .await?;
+
+    Ok(())
 }

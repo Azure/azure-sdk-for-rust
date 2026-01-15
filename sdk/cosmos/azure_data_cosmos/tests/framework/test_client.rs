@@ -172,11 +172,73 @@ impl TestClient {
         }
     }
 
+    /// Like [`TestClient::run`], but allows passing Cosmos client options (e.g., custom transport).
+    pub async fn run_with_client_options<F>(
+        options: CosmosClientOptions,
+        test: F,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
+    {
+        let test_mode = if let Ok(s) = std::env::var(TEST_MODE_ENV_VAR) {
+            CosmosTestMode::from_str(&s).map_err(|_| {
+                format!(
+                    "Invalid value for {}: {}. Expected 'required', 'skipped', or 'allowed'.",
+                    TEST_MODE_ENV_VAR, s
+                )
+            })?
+        } else {
+            CosmosTestMode::Allowed
+        };
+
+        if test_mode == CosmosTestMode::Skipped {
+            println!(
+                "Skipping Cosmos DB tests because {} is set to 'skipped'.",
+                TEST_MODE_ENV_VAR
+            );
+            return Ok(());
+        }
+
+        _ = tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env())
+            .try_init();
+
+        let test_client = Self::from_env(Some(options))?;
+
+        if let Some(account) = test_client.cosmos_client.clone() {
+            let run = TestRunContext::new(account);
+            let result = test(&run).await;
+            run.cleanup().await?;
+            result
+        } else if test_mode == CosmosTestMode::Required {
+            panic!("Cosmos Test Mode is 'required' but no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
+        } else {
+            eprintln!("Skipping emulator/live tests because no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
+            Ok(())
+        }
+    }
+
+    /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
     pub async fn run_with_db<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
         Self::run(async |run_context| {
+            let db_client = run_context.create_db().await?;
+            test(run_context, &db_client).await
+        })
+        .await
+    }
+
+    /// Like [`TestClient::run_with_db`], but allows passing Cosmos client options.
+    pub async fn run_with_db_client_options<F>(
+        options: CosmosClientOptions,
+        test: F,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
+    {
+        Self::run_with_client_options(options, async |run_context| {
             let db_client = run_context.create_db().await?;
             test(run_context, &db_client).await
         })
