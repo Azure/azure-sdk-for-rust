@@ -84,7 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(client_options),
     )?;
 
-    // Create BlobClint
+    // Create BlobClient
     let blob_client = container_client.blob_client(blob_name);
 
     // Create container if does not exist
