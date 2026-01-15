@@ -2,11 +2,9 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
+use crate::constants::{A_IM, IF_NONE_MATCH, MAX_ITEM_COUNT};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use std::{
-    collections::HashMap,
-};
 use tracing::info;
 use std::sync::Arc;
 use std::time::Duration;
@@ -15,7 +13,7 @@ use azure_core::Error;
 use azure_core::http::{Response, StatusCode};
 use azure_core::http::headers::HeaderName;
 use serde::Deserialize;
-use crate::{ReadContainerOptions, ReadDatabaseOptions};
+use crate::ReadDatabaseOptions;
 use crate::pipeline::CosmosPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
@@ -55,6 +53,12 @@ pub struct PartitionKeyRangeCache {
     container_cache: Arc<ContainerCache>,
     endpoint_manager: Arc<GlobalEndpointManager>,
     database_link: ResourceLink,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct PkRangesResponse {
+    #[serde(rename = "PartitionKeyRanges")]
+    partition_key_ranges: Vec<PartitionKeyRange>,
 }
 
 impl PartitionKeyRangeCache {
@@ -193,45 +197,31 @@ impl PartitionKeyRangeCache {
             .as_ref()
             .and_then(|m| m.change_feed_next_if_none_match.clone());
 
-        let mut _last_status_code: StatusCode;
+        let mut last_status_code: StatusCode;
 
         loop {
-            let mut if_none_match = false;
-            if let Some(ref etag) = change_feed_next_if_none_match {
-                if_none_match = true;
-                // headers.insert("if-none-match".to_string(), etag.clone());
-            }
-
             let pk_range_link = self.database_link.feed(ResourceType::Containers).item(collection_rid).feed(ResourceType::PartitionKeyRanges);
             let response = self.execute_partition_key_range_read_change_feed(
                 collection_rid,
                 pk_range_link,
+                change_feed_next_if_none_match,
             ).await?;
 
-            _last_status_code = response.status();
+            last_status_code = response.status();
             change_feed_next_if_none_match = response.headers().get_optional_string(&HeaderName::from_static("etag"));
 
-            // Deserialize the response body to extract Vec<PartitionKeyRange>
-            if _last_status_code == StatusCode::Ok {
-                let body_string = response.into_body().into_string()?;
-                
-                // Cosmos DB wraps partition key ranges in a "PartitionKeyRanges" field
-                #[derive(Deserialize)]
-                struct PkRangesResponse {
-                    #[serde(rename = "PartitionKeyRanges")]
-                    partition_key_ranges: Vec<PartitionKeyRange>,
-                }
-                
-                let pk_ranges_response: PkRangesResponse = serde_json::from_str(&body_string)
-                    .map_err(|e| Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
-                
-                ranges.extend(pk_ranges_response.partition_key_ranges);
+            // If status is 304 (NotModified), the body is empty, so skip parsing
+            if last_status_code == StatusCode::NotModified {
                 break;
             }
 
-            // if last_status_code != StatusCode::Ok { // HttpStatusCode::NotModified
-            //     break;
-            // }
+            let body_string = response.into_body().into_string()?;
+
+            // Deserialize the response body to extract Vec<PartitionKeyRange>
+            let pk_ranges_response: PkRangesResponse = serde_json::from_str(&body_string)
+                .map_err(|e| Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+
+            ranges.extend(pk_ranges_response.partition_key_ranges);
         }
 
         let tuples: Vec<(PartitionKeyRange, Option<ServiceIdentity>)> = ranges
@@ -240,10 +230,10 @@ impl PartitionKeyRangeCache {
             .collect();
 
         let routing_map = if let Some(prev_map) = previous_routing_map {
-            // Combine with previous routing map
+            // Combine with a previous routing map
             prev_map.try_combine(tuples, change_feed_next_if_none_match)?
         } else {
-            // Create new complete routing map, filtering out gone ranges
+            // Create a new complete routing map, filtering out gone ranges
             let gone_ranges: std::collections::HashSet<String> = tuples
                 .iter()
                 .filter_map(|(range, _)| range.parents.clone())
@@ -269,6 +259,7 @@ impl PartitionKeyRangeCache {
         &self,
         collection_rid: &str,
         resource_link: ResourceLink,
+        if_none_match: Option<String>,
     ) -> azure_core::Result<Response<()>> {
 
         let options = ReadDatabaseOptions {
@@ -277,9 +268,13 @@ impl PartitionKeyRangeCache {
         let builder = CosmosRequest::builder(OperationType::ReadFeed, resource_link.clone());
         let mut cosmos_request = builder
             .resource_id(collection_rid.to_string())
-            .header("x-ms-max-item-count".to_string(), PAGE_SIZE_STRING.to_string())
-            .header("A-IM".to_string(), "Incremental Feed".to_string())
+            .header(MAX_ITEM_COUNT.as_str().to_string(), PAGE_SIZE_STRING.to_string())
+            .header(A_IM.as_str().to_string(), "Incremental Feed".to_string())
             .build()?;
+
+        if (if_none_match).is_some() {
+            cosmos_request.headers.insert(IF_NONE_MATCH.as_str().to_string(), if_none_match.unwrap())
+        }
 
         let endpoint = self
             .endpoint_manager

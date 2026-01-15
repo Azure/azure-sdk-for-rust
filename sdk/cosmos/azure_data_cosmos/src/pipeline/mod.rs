@@ -9,12 +9,12 @@ use azure_core::http::{
     pager::{PagerOptions, PagerState},
     request::{options::ContentType, Request},
     response::Response,
-    Context, Method, RawResponse,
+    Context, Method, RawResponse, PipelineSendOptions
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use url::Url;
-
+use azure_core::error::CheckSuccessOptions;
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -62,10 +62,14 @@ impl CosmosPipeline {
         request: &mut Request,
         resource_link: ResourceLink,
     ) -> azure_core::Result<RawResponse> {
-        // Clone pipeline and convert context to owned so the closure can be Fn
+        // Clone the pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
-        pipeline.send(&ctx_owned, request, None).await
+
+        let success_options = CheckSuccessOptions { success_codes: &[200, 201, 202, 204, 304], };
+        let pipeline_send_options = PipelineSendOptions { skip_checks: false, check_success: success_options};
+
+        pipeline.send(&ctx_owned, request, Some(pipeline_send_options)).await
     }
 
     pub async fn send<T>(

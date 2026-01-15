@@ -177,7 +177,7 @@ impl AsHeaders for ItemOptions<'_> {
         }
 
         if let Some(session_token) = &self.session_token {
-            headers.push((constants::SESSION_TOKEN, session_token.into()));
+            headers.push((constants::MAX_ITEM_COUNT, session_token.into()));
         }
 
         if let Some(consistency_level) = &self.consistency_level {
@@ -290,7 +290,7 @@ mod tests {
                 constants::POST_TRIGGER_INCLUDE,
                 "PostTrigger1,PostTrigger2".into(),
             ),
-            (constants::SESSION_TOKEN, "SessionToken".into()),
+            (constants::MAX_ITEM_COUNT, "SessionToken".into()),
             (constants::CONSISTENCY_LEVEL, "Session".into()),
             (constants::INDEXING_DIRECTIVE, "Include".into()),
             (headers::IF_MATCH, "etag_value".into()),
