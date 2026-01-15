@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
-// range.rs
+#![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -104,7 +103,7 @@ where
         if cmp1 <= Ordering::Equal && cmp2 <= Ordering::Equal {
             if (cmp1 == Ordering::Equal && !(range1.is_min_inclusive && range2.is_max_inclusive))
                 || (cmp2 == Ordering::Equal
-                && !(range2.is_min_inclusive && range1.is_max_inclusive))
+                    && !(range2.is_min_inclusive && range1.is_max_inclusive))
             {
                 return false;
             }
@@ -149,10 +148,9 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}{}{}{}{}",
+            "{}{},{}{}",
             if self.is_min_inclusive { "[" } else { "(" },
             self.min,
-            ",",
             self.max,
             if self.is_max_inclusive { "]" } else { ")" }
         )

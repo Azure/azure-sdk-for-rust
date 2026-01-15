@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-// partition_key_range.rs
+#![allow(dead_code)]
 
+use crate::routing::range::Range;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
-use crate::routing::range::Range;
-// use crate::routing::range::Range;
-
 /// Represents a partition key range in the Azure Cosmos DB service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartitionKeyRange {
@@ -133,57 +131,6 @@ impl PartitionKeyRange {
             .unwrap_or_default()
     }
 }
-//
-// /// Represents a range with min and max bounds
-// #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-// pub struct Range {
-//     #[serde(rename = "min")]
-//     pub min: String,
-//     #[serde(rename = "max")]
-//     pub max: String,
-//     #[serde(rename = "isMinInclusive")]
-//     pub is_min_inclusive: bool,
-//     #[serde(rename = "isMaxInclusive")]
-//     pub is_max_inclusive: bool,
-// }
-//
-// impl Range {
-//     /// Creates a new Range
-//     pub fn new(
-//         min: String,
-//         max: String,
-//         is_min_inclusive: bool,
-//         is_max_inclusive: bool,
-//     ) -> Self {
-//         Self {
-//             min,
-//             max,
-//             is_min_inclusive,
-//             is_max_inclusive,
-//         }
-//     }
-//
-//     /// Creates a point range (single value)
-//     pub fn get_point_range(value: String) -> Self {
-//         Self {
-//             min: value.clone(),
-//             max: value,
-//             is_min_inclusive: true,
-//             is_max_inclusive: true,
-//         }
-//     }
-//
-//     /// Checks if this is a single value range
-//     pub fn is_single_value(&self) -> bool {
-//         self.is_min_inclusive && self.is_max_inclusive && self.min == self.max
-//     }
-//
-//     /// Checks if this range overlaps with another
-//     pub fn overlaps(&self, other: &Range) -> bool {
-//         // Check if ranges don't overlap, then negate
-//         !(self.max <= other.min || other.max <= self.min)
-//     }
-// }
 
 // Implement PartialEq for PartitionKeyRange
 impl PartialEq for PartitionKeyRange {
@@ -211,16 +158,11 @@ impl Hash for PartitionKeyRange {
 
 #[cfg(test)]
 mod tests {
-    use tracing::Instrument;
     use super::*;
 
     #[test]
     fn test_partition_key_range_creation() {
-        let pkr = PartitionKeyRange::new(
-            "1".to_string(),
-            "".to_string(),
-            "FF".to_string(),
-        );
+        let pkr = PartitionKeyRange::new("1".to_string(), "".to_string(), "FF".to_string());
 
         assert_eq!(pkr.id, "1");
         assert_eq!(pkr.min_inclusive, "");
@@ -229,11 +171,7 @@ mod tests {
 
     #[test]
     fn test_to_range() {
-        let pkr = PartitionKeyRange::new(
-            "1".to_string(),
-            "00".to_string(),
-            "FF".to_string(),
-        );
+        let pkr = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
 
         let range = pkr.to_range();
         assert_eq!(range.min, "00");
@@ -244,17 +182,9 @@ mod tests {
 
     #[test]
     fn test_equality() {
-        let pkr1 = PartitionKeyRange::new(
-            "1".to_string(),
-            "00".to_string(),
-            "FF".to_string(),
-        );
+        let pkr1 = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
 
-        let mut pkr2 = PartitionKeyRange::new(
-            "1".to_string(),
-            "00".to_string(),
-            "FF".to_string(),
-        );
+        let mut pkr2 = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
 
         assert_eq!(pkr1, pkr2);
 
@@ -289,24 +219,9 @@ mod tests {
 
     #[test]
     fn test_range_overlap() {
-        let range1: Range<String> = Range::new(
-            "00".to_string(),
-            "50".to_string(),
-            true,
-            false,
-        );
-        let range2 = Range::new(
-            "40".to_string(),
-            "80".to_string(),
-            true,
-            false,
-        );
-        let range3 = Range::new(
-            "60".to_string(),
-            "90".to_string(),
-            true,
-            false,
-        );
+        let range1: Range<String> = Range::new("00".to_string(), "50".to_string(), true, false);
+        let range2 = Range::new("40".to_string(), "80".to_string(), true, false);
+        let range3 = Range::new("60".to_string(), "90".to_string(), true, false);
         assert!(Range::check_overlapping(&range1, &range2));
         assert!(!Range::check_overlapping(&range1, &range3));
     }

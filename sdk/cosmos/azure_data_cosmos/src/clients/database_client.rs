@@ -14,8 +14,8 @@ use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use azure_core::http::response::Response;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use azure_core::http::response::Response;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -25,11 +25,15 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     pipeline: Arc<CosmosPipeline>,
-    global_endpoint_manager: GlobalEndpointManager
+    global_endpoint_manager: GlobalEndpointManager,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str, global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub(crate) fn new(
+        pipeline: Arc<CosmosPipeline>,
+        database_id: &str,
+        global_endpoint_manager: GlobalEndpointManager,
+    ) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
@@ -48,7 +52,12 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: &str) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name, self.global_endpoint_manager.clone())
+        ContainerClient::new(
+            self.pipeline.clone(),
+            &self.link,
+            name,
+            self.global_endpoint_manager.clone(),
+        )
     }
 
     /// Returns the identifier of the Cosmos database.

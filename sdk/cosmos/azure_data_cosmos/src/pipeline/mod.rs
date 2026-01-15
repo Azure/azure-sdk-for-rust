@@ -4,18 +4,6 @@
 mod authorization_policy;
 mod signature_target;
 
-pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{
-    headers::AsHeaders,
-    pager::{PagerOptions, PagerState},
-    request::{options::ContentType, Request},
-    response::Response,
-    Context, Method, RawResponse, PipelineSendOptions
-};
-use futures::TryStreamExt;
-use serde::de::DeserializeOwned;
-use url::Url;
-use azure_core::error::CheckSuccessOptions;
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -25,6 +13,18 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, FeedPage, FeedPager, Query,
 };
+pub use authorization_policy::AuthorizationPolicy;
+use azure_core::error::CheckSuccessOptions;
+use azure_core::http::{
+    headers::AsHeaders,
+    pager::{PagerOptions, PagerState},
+    request::{options::ContentType, Request},
+    response::Response,
+    Context, Method, PipelineSendOptions, RawResponse,
+};
+use futures::TryStreamExt;
+use serde::de::DeserializeOwned;
+use url::Url;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -70,10 +70,17 @@ impl CosmosPipeline {
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
 
-        let success_options = CheckSuccessOptions { success_codes: &[200, 201, 202, 204, 304], };
-        let pipeline_send_options = PipelineSendOptions { skip_checks: false, check_success: success_options};
+        let success_options = CheckSuccessOptions {
+            success_codes: &[200, 201, 202, 204, 304],
+        };
+        let pipeline_send_options = PipelineSendOptions {
+            skip_checks: false,
+            check_success: success_options,
+        };
 
-        pipeline.send(&ctx_owned, request, Some(pipeline_send_options)).await
+        pipeline
+            .send(&ctx_owned, request, Some(pipeline_send_options))
+            .await
     }
 
     pub async fn send<T>(

@@ -1,16 +1,16 @@
 // cSpell:ignore smol
 #![allow(dead_code)]
 
-use std::sync::Arc;
 use super::async_cache::AsyncCache;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
+use crate::pipeline::CosmosPipeline;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadContainerOptions};
-use azure_core::http::{Response};
+use azure_core::http::Response;
 use azure_core::Error;
+use std::sync::Arc;
 use std::time::Duration;
-use crate::pipeline::CosmosPipeline;
 
 /// Cache for Cosmos DB container metadata and properties.
 ///
@@ -41,7 +41,11 @@ impl ContainerCache {
     ///
     /// # Returns
     /// A new `ContainerCache` instance ready for caching container metadata
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, container_link: ResourceLink, global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub(crate) fn new(
+        pipeline: Arc<CosmosPipeline>,
+        container_link: ResourceLink,
+        global_endpoint_manager: GlobalEndpointManager,
+    ) -> Self {
         let container_properties_cache = AsyncCache::new(
             Duration::from_secs(300), // Default 5 minutes TTL
         );
@@ -137,29 +141,23 @@ impl ContainerCache {
             .with_value(container_link)
             .into_owned();
 
-        // Prepare a callback delegate to invoke the http request.
-        // let sender = move |req: &mut CosmosRequest| {
-        //     let mut raw_req = req.clone().into_raw_request();
-        //     let ctx = ctx_owned.clone();
-        //     async move { self.pipeline.send(&ctx, &mut raw_req, None).await }
-        // };
-
-        // Delegate to the retry handler, providing the sender callback
         self.pipeline.send(cosmos_request, ctx_owned).await
-        // res.map(Into::into)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::resource_context::ResourceType;
+    use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
     use std::borrow::Cow;
     use url::Url;
-    use crate::resource_context::ResourceType;
 
     // Helper function to create a test CosmosPipeline
-    fn create_test_cosmos_pipeline(endpoint_manager: &GlobalEndpointManager) -> Arc<CosmosPipeline> {
+    fn create_test_cosmos_pipeline(
+        endpoint_manager: &GlobalEndpointManager,
+    ) -> Arc<CosmosPipeline> {
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -173,6 +171,7 @@ mod tests {
             endpoint,
             pipeline_core,
             endpoint_manager.clone(),
+            CosmosClientOptions::default(),
         ))
     }
 
@@ -245,7 +244,8 @@ mod tests {
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("testdb")
             .feed(ResourceType::Containers)
-            .item("testcontainer");        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
+            .item("testcontainer");
+        let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager.clone());
 
         // Verify the cache can be cloned (Debug trait is implemented)
         let cloned_cache = cache.clone();

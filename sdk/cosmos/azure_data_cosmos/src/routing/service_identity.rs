@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+#![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -52,15 +53,11 @@ impl ServiceIdentity {
         }
     }
 
-    fn get_federation_id(&self) -> &str {
-        &self.federation_id
-    }
-
-    fn get_service_uri(&self) -> &String {
+    fn service_uri(&self) -> &String {
         &self.service_name
     }
 
-    fn get_partition_key(&self) -> i64 {
+    fn partition_key(&self) -> i64 {
         0
     }
 }

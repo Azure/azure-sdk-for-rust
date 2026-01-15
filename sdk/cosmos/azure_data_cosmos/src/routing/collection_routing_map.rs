@@ -1,19 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-// partition_key_range.rs
-// collection_routing_map.rs
-//
-use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
-use azure_core::Error;
-use crate::PartitionKey;
+#![allow(dead_code)]
 use crate::routing::partition_key_range::{PartitionKeyRange, PartitionKeyRangeStatus};
 use crate::routing::range::Range;
 use crate::routing::service_identity::ServiceIdentity;
+use azure_core::Error;
+use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
 
-/// Stores partition key ranges in an efficient way with some additional information and provides
-/// convenience methods for working with set of ranges.
+/// Stores partition key ranges efficiently with some additional information and provides
+/// convenience methods for working with a set of ranges.
 #[derive(Debug, Clone)]
 pub struct CollectionRoutingMap {
     /// Partition key range id to partition address and range.
@@ -39,26 +35,10 @@ pub struct CollectionRoutingMap {
 }
 
 const INVALID_PK_RANGE_ID: i32 = -1;
-pub const MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &'static str = "";
-pub const MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &'static str = "FF";
+pub const MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
+pub const MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
 
 impl CollectionRoutingMap {
-    /// Creates a new CollectionRoutingMap from an existing one with updated change feed token
-    pub fn new_with_change_feed(
-        existing: &CollectionRoutingMap,
-        change_feed_next_if_none_match: Option<String>,
-    ) -> Self {
-        Self {
-            range_by_id: existing.range_by_id.clone(),
-            ordered_partition_key_ranges: existing.ordered_partition_key_ranges.clone(),
-            ordered_ranges: existing.ordered_ranges.clone(),
-            gone_ranges: existing.gone_ranges.clone(),
-            highest_non_offline_pk_range_id: existing.highest_non_offline_pk_range_id,
-            collection_unique_id: existing.collection_unique_id.clone(),
-            change_feed_next_if_none_match,
-        }
-    }
-
     /// Creates a new CollectionRoutingMap from raw components
     fn new(
         range_by_id: HashMap<String, (PartitionKeyRange, Option<ServiceIdentity>)>,
@@ -82,23 +62,21 @@ impl CollectionRoutingMap {
         // Calculate highest non-offline partition key range ID
         let highest_non_offline_pk_range_id = ordered_partition_key_ranges
             .iter()
-            .filter_map(|range| {
-                match range.id.parse::<i32>() {
-                    Ok(pk_id) => {
-                        if range.status != PartitionKeyRangeStatus::Offline {
-                            Some(pk_id)
-                        } else {
-                            Some(INVALID_PK_RANGE_ID)
-                        }
+            .filter_map(|range| match range.id.parse::<i32>() {
+                Ok(pk_id) => {
+                    if range.status != PartitionKeyRangeStatus::Offline {
+                        Some(pk_id)
+                    } else {
+                        Some(INVALID_PK_RANGE_ID)
                     }
-                    Err(_) => {
-                        tracing::error!(
-                            "Could not parse partition key range Id as int {} for collectionRid {}",
-                            range.id,
-                            collection_unique_id
-                        );
-                        None
-                    }
+                }
+                Err(_) => {
+                    tracing::error!(
+                        "Could not parse partition key range Id as int {} for collectionRid {}",
+                        range.id,
+                        collection_unique_id
+                    );
+                    None
                 }
             })
             .max()
@@ -133,8 +111,10 @@ impl CollectionRoutingMap {
             range_by_id.values().cloned().collect();
         sorted_ranges.sort_by(|a, b| a.0.min_inclusive.cmp(&b.0.min_inclusive));
 
-        let ordered_ranges: Vec<PartitionKeyRange> =
-            sorted_ranges.iter().map(|(range, _)| range.clone()).collect();
+        let ordered_ranges: Vec<PartitionKeyRange> = sorted_ranges
+            .iter()
+            .map(|(range, _)| range.clone())
+            .collect();
 
         if !Self::is_complete_set_of_ranges(&ordered_ranges)? {
             return Ok(None);
@@ -170,7 +150,7 @@ impl CollectionRoutingMap {
 
     /// Gets overlapping ranges for a single range
     pub fn get_overlapping_ranges(&self, range: &Range<String>) -> Vec<PartitionKeyRange> {
-        self.get_overlapping_ranges_multi(&[range.clone()])
+        self.get_overlapping_ranges_multi(std::slice::from_ref(range))
     }
 
     /// Gets overlapping ranges for multiple provided ranges
@@ -184,19 +164,15 @@ impl CollectionRoutingMap {
         // Algorithm: Use binary search to find the positions of the min key and max key in the routing map
         // Then within those two positions, check for overlapping partition key ranges
         for provided_range in provided_partition_key_ranges {
-            let min_index = self.ordered_ranges.binary_search_by(|probe| {
-                Self::compare_range_min(probe, provided_range)
-            }).unwrap_or_else(|idx| {
-                if idx > 0 {
-                    idx - 1
-                } else {
-                    0
-                }
-            });
+            let min_index = self
+                .ordered_ranges
+                .binary_search_by(|probe| Self::compare_range_min(probe, provided_range))
+                .unwrap_or_else(|idx| if idx > 0 { idx - 1 } else { 0 });
 
-            let max_index = match self.ordered_ranges.binary_search_by(|probe| {
-                Self::compare_range_max(probe, provided_range)
-            }) {
+            let max_index = match self
+                .ordered_ranges
+                .binary_search_by(|probe| Self::compare_range_max(probe, provided_range))
+            {
                 Ok(idx) => idx,
                 Err(idx) => std::cmp::min(self.ordered_partition_key_ranges.len() - 1, idx),
             };
@@ -219,18 +195,14 @@ impl CollectionRoutingMap {
         &self,
         effective_partition_key_value: &str,
     ) -> Result<&PartitionKeyRange, Error> {
-        if effective_partition_key_value
-            >= MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY
-        {
+        if effective_partition_key_value >= MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY {
             return Err(Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "effectivePartitionKeyValue out of range",
             ));
         }
 
-        if effective_partition_key_value
-            == MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY
-        {
+        if effective_partition_key_value == MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY {
             return Ok(&self.ordered_partition_key_ranges[0]);
         }
 
@@ -249,7 +221,8 @@ impl CollectionRoutingMap {
             Err(idx) => {
                 debug_assert!(idx > 0);
                 let adjusted_idx = idx - 1;
-                debug_assert!(self.ordered_ranges[adjusted_idx].contains(&effective_partition_key_value.to_string()));
+                debug_assert!(self.ordered_ranges[adjusted_idx]
+                    .contains(&effective_partition_key_value.to_string()));
                 adjusted_idx
             }
         };
@@ -316,8 +289,10 @@ impl CollectionRoutingMap {
             new_range_by_id.values().cloned().collect();
         sorted_ranges.sort_by(|a, b| a.0.min_inclusive.cmp(&b.0.min_inclusive));
 
-        let new_ordered_ranges: Vec<PartitionKeyRange> =
-            sorted_ranges.iter().map(|(range, _)| range.clone()).collect();
+        let new_ordered_ranges: Vec<PartitionKeyRange> = sorted_ranges
+            .iter()
+            .map(|(range, _)| range.clone())
+            .collect();
 
         if !Self::is_complete_set_of_ranges(&new_ordered_ranges)? {
             return Ok(None);
@@ -345,10 +320,9 @@ impl CollectionRoutingMap {
         let first_range = &ordered_ranges[0];
         let last_range = &ordered_ranges[ordered_ranges.len() - 1];
 
-        let mut is_complete = first_range.min_inclusive
-            == MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY;
-        is_complete &= last_range.max_exclusive
-            == MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY;
+        let mut is_complete =
+            first_range.min_inclusive == MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY;
+        is_complete &= last_range.max_exclusive == MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY;
 
         for i in 1..ordered_ranges.len() {
             let previous_range = &ordered_ranges[i - 1];
@@ -434,7 +408,7 @@ mod tests {
             "collection1".to_string(),
             Some("etag1".to_string()),
         )
-            .unwrap();
+        .unwrap();
 
         assert!(routing_map.is_some());
         let map = routing_map.unwrap();
@@ -455,8 +429,8 @@ mod tests {
             "collection1".to_string(),
             None,
         )
-            .unwrap()
-            .unwrap();
+        .unwrap()
+        .unwrap();
 
         let search_range = Range::new("30".to_string(), "70".to_string(), true, false);
         let overlapping = routing_map.get_overlapping_ranges(&search_range);
@@ -476,8 +450,8 @@ mod tests {
             "collection1".to_string(),
             None,
         )
-            .unwrap()
-            .unwrap();
+        .unwrap()
+        .unwrap();
 
         let range = routing_map.try_get_range_by_partition_key_range_id("1");
         assert!(range.is_some());
@@ -489,7 +463,6 @@ mod tests {
 
     #[test]
     fn test_is_gone() {
-        let mut parent_range = create_test_range("0", "", "FF");
         let mut child1 = create_test_range("1", "", "80");
         let mut child2 = create_test_range("2", "80", "FF");
 
@@ -504,8 +477,8 @@ mod tests {
             "collection1".to_string(),
             None,
         )
-            .unwrap()
-            .unwrap();
+        .unwrap()
+        .unwrap();
 
         assert!(routing_map.is_gone("0"));
         assert!(!routing_map.is_gone("1"));

@@ -12,13 +12,13 @@ use crate::{
 use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
-use crate::operation_context::OperationType;
-use azure_core::http::response::Response;
-use serde::{de::DeserializeOwned, Serialize};
 use crate::handler::transport_handler::TransportHandler;
+use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
+use azure_core::http::response::Response;
+use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
@@ -44,9 +44,22 @@ impl ContainerClient {
             .item(container_id);
         let items_link = link.feed(ResourceType::Documents);
 
-        let collection_cache = ContainerCache::new(pipeline.clone(), link.clone(), global_endpoint_manager.clone());
-        let partition_key_range_cache = PartitionKeyRangeCache::new(pipeline.clone(), database_link.clone(), Arc::from(collection_cache.clone()), Arc::from(global_endpoint_manager.clone()));
-        let transport_handler = Arc::from(TransportHandler::new(pipeline.clone(), Arc::from(collection_cache), Arc::from(partition_key_range_cache)));
+        let collection_cache = ContainerCache::new(
+            pipeline.clone(),
+            link.clone(),
+            global_endpoint_manager.clone(),
+        );
+        let partition_key_range_cache = PartitionKeyRangeCache::new(
+            pipeline.clone(),
+            database_link.clone(),
+            Arc::from(collection_cache.clone()),
+            Arc::from(global_endpoint_manager.clone()),
+        );
+        let transport_handler = Arc::from(TransportHandler::new(
+            pipeline.clone(),
+            Arc::from(collection_cache),
+            Arc::from(partition_key_range_cache),
+        ));
 
         Self {
             link,

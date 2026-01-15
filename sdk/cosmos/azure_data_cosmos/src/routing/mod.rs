@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 pub(crate) mod async_cache;
+pub(crate) mod collection_routing_map;
 pub(crate) mod container_cache;
 pub(crate) mod global_endpoint_manager;
 pub(crate) mod location_cache;
-pub(crate) mod collection_routing_map;
 pub(crate) mod partition_key_range;
 pub(crate) mod partition_key_range_cache;
 pub(crate) mod range;
