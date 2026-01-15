@@ -53,12 +53,6 @@ impl GeneratedPageBlobClient {
             .push(storage_headers_policy);
 
         let per_retry_policies = if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("https") {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use https"),
-                ));
-            }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
