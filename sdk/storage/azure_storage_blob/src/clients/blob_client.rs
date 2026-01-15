@@ -425,21 +425,34 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
-    /// * `tags` - Name-value pairs associated with the blob as tag. Tags are case-sensitive.
-    ///   The tag set may contain at most 10 tags.  Tag keys must be between 1 and 128 characters,
+    /// * `tags` - Name-value pairs associated with the blob as tag. You can create this from a
+    ///   [`HashMap<String, String>`] by converting it to [`BlobTags`] and wrapping it into a RequestContent.
+    ///   Tags are case-sensitive. The tag set may contain at most 10 tags.  Tag keys must be between 1 and 128 characters,
     ///   and tag values must be between 0 and 256 characters.
     ///   Valid tag key and value characters include: lowercase and uppercase letters, digits (0-9),
     ///   space (' '), plus (+), minus (-), period (.), solidus (/), colon (:), equals (=), underscore (_)
     /// * `options` - Optional configuration for the request.
+    ///
+    /// # Example
+    ///
+    /// ```rust, ignore
+    /// use azure_core::http::RequestContent;
+    /// use azure_storage_blob::models::BlobTags;
+    /// use std::collections::HashMap;
+    ///
+    /// let mut tags = HashMap::new();
+    /// tags.insert("key".to_string(), "value".to_string());
+    ///
+    /// let blob_tags: BlobTags = tags.into();
+    /// let request_content = RequestContent::try_from(blob_tags)?;
+    /// blob_client.set_tags(request_content, None).await?;
+    /// ```
     pub async fn set_tags(
         &self,
-        tags: HashMap<String, String>,
+        tags: RequestContent<BlobTags, XmlFormat>,
         options: Option<BlobClientSetTagsOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        let blob_tags: BlobTags = tags.into();
-        self.client
-            .set_tags(RequestContent::try_from(blob_tags)?, options)
-            .await
+        self.client.set_tags(tags, options).await
     }
 
     /// Gets the tags on a blob.
