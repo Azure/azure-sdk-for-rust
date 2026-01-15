@@ -1,4 +1,4 @@
-#![cfg(all(feature = "key_auth", feature = "fast"))]
+#![cfg(all(feature = "key_auth"))]
 
 mod framework;
 
