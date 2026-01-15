@@ -24,10 +24,10 @@
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session' }"
       },
       "Strong": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong' }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; }"
       },
       "Session-MultiWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = 'true' }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = 'true'; testCategory = 'multi_write' }"
       }
     }
   },
