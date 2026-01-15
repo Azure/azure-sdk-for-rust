@@ -114,6 +114,7 @@ openssl = { version = "0.10.72" }
 opentelemetry = { version = "0.30", features = ["trace"] }
 opentelemetry_sdk = "0.30"
 opentelemetry-http = "0.30"
+percent-encoding = "2.3.1"
 pin-project = "1.0"
 proc-macro2 = "1.0.97"
 quick-xml = { version = "0.38.3", features = ["serialize", "serde-types"] }

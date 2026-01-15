@@ -224,7 +224,7 @@ pub struct BlobItemInternal {
 
     /// The name of the blob.
     #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
-    pub name: Option<BlobName>,
+    pub name: Option<crate::models::BlobName>,
 
     /// The object replication metadata of the blob.
     #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]
@@ -254,26 +254,13 @@ pub struct BlobMetadata {
     pub encrypted: Option<String>,
 }
 
-/// Represents a blob name.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct BlobName {
-    /// The blob name.
-    #[serde(rename = "$text", skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
-
-    /// Whether the blob name is encoded.
-    #[serde(rename = "@Encoded", skip_serializing_if = "Option::is_none")]
-    pub encoded: Option<bool>,
-}
-
 /// Represents a blob prefix.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct BlobPrefix {
     /// The blob name.
     #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
-    pub name: Option<BlobName>,
+    pub name: Option<crate::models::BlobName>,
 }
 
 /// The properties of a blob.

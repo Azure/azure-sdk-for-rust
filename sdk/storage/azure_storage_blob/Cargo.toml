@@ -21,6 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 bytes.workspace = true
 futures.workspace = true
+percent-encoding = { workspace = true, features = ["alloc"] }
 pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
