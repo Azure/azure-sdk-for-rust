@@ -90,7 +90,7 @@ mod tests {
 
         assert_eq!(identity.federation_id(), "fed123");
         assert_eq!(identity.service_name(), &url);
-        assert_eq!(identity.is_master_service(), true);
+        assert!(identity.is_master_service());
     }
 
     #[test]
