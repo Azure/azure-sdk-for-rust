@@ -231,7 +231,7 @@ pub const COSMOS_ALLOWED_HEADERS: &[&str] = &[
     "x-ms-cosmos-llsn",
     "x-ms-cosmos-quorum-acked-llsn",
     "x-ms-request-duration-ms",
-    "x-ms-internal-partition-id",
+    "x-ms-cosmos-internal-partition-id",
     // Thin Client
     "x-ms-thinclient-proxy-operation-type",
     "x-ms-thinclient-proxy-resource-type",
