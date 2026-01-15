@@ -361,6 +361,7 @@ dependencies = [
  "azure_security_keyvault_secrets",
  "clap",
  "futures",
+ "include-file",
  "openssl",
  "pin-project",
  "reqwest",
@@ -540,6 +541,7 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
+ "tracing-subscriber",
  "url",
  "uuid",
 ]
