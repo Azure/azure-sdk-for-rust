@@ -1,6 +1,6 @@
 # Release History
 
-## 0.31.0 (Unreleased)
+## 0.31.0 (2026-01-16)
 
 ### Features Added
 
@@ -27,10 +27,6 @@
 - Removed `Pager::from_stream`.
 - Removed `Poller::from_stream`.
 - Renamed `BoxedFuture` to `PagerResultFuture` in `pager` module.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.30.1 (2025-11-09)
 
