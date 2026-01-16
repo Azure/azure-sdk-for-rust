@@ -687,7 +687,7 @@ impl QueueClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
-        if let Some(queue_message) = options.queue_message {
+        if let Some(queue_message) = options.queue_message.clone() {
             request.set_body(queue_message);
         }
         let rsp = self
