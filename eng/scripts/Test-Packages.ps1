@@ -91,6 +91,10 @@ foreach ($package in $packagesToTest) {
       $featuresArg = "--features " + ($features -join ",")
     }
   }
+  else {
+    # Allow existence of empty test-features.txt to denote only default features.
+    $featuresArg = "--all-features"
+  }
 
   Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
