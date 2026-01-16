@@ -147,8 +147,8 @@ impl CosmosRequest {
             req.insert_headers(pk).unwrap();
         }
 
-        if !OperationType::is_read_only(&self.operation_type) {
-            req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
+        if let Some(ct) = self.operation_type.body_content_type() {
+            req.insert_headers(&ct).unwrap();
             if self.operation_type == OperationType::Upsert {
                 req.insert_header(constants::IS_UPSERT, "true");
             }

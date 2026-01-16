@@ -34,7 +34,7 @@ pub struct FeedPage<T> {
 
 impl<T> FeedPage<T> {
     /// Creates a new `FeedPage` instance.
-    #[cfg_attr(not(feature = "preview_query_engine"), allow(dead_code))]
+    #[allow(dead_code)]
     pub(crate) fn new(items: Vec<T>, continuation: Option<String>, headers: Headers) -> Self {
         Self {
             items,

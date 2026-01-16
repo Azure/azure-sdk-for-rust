@@ -7,7 +7,6 @@ use crate::{
     options::ReadDatabaseOptions,
     pipeline::GatewayPipeline,
     pipeline::CosmosPipeline,
-    query::executor::QueryExecutor,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
@@ -128,15 +127,11 @@ impl DatabaseClient {
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
         let options = options.unwrap_or_default();
 
-        QueryExecutor::gateway(
+        crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),
             self.containers_link.clone(),
+            options.method_options.context.into_owned(),
             query.into(),
-            crate::QueryOptions {
-                method_options: options.method_options,
-                #[cfg(feature = "preview_query_engine")]
-                query_engine: None,
-            },
             |_| Ok(()),
         )?
         .into_stream()

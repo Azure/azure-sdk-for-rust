@@ -5,9 +5,8 @@ use crate::{
     clients::OffersClient,
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
-    pipeline::GatewayPipeline,
     pipeline::CosmosPipeline,
-    query::executor::QueryExecutor,
+    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
     ReplaceContainerOptions, ThroughputOptions,
@@ -20,6 +19,7 @@ use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
+use azure_core::http::headers::AsHeaders;
 use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -707,32 +707,22 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions<'_>>,
     ) -> azure_core::Result<FeedItemIterator<T>> {
-        #[cfg_attr(not(feature = "preview_query_engine"), allow(unused_mut))]
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
         let partition_key = partition_key.into();
         let query = query.into();
-        let ctx = options.method_options.context.clone();
 
-        #[cfg(feature = "preview_query_engine")]
-        if partition_key.is_empty() {
-            if let Some(query_engine) = options.query_engine.take() {
-                return crate::query::executor::QueryExecutor::query_engine(
-                    self.pipeline.clone(),
-                    self.link.clone(),
-                    query,
-                    options,
-                    query_engine,
-                )?
-                .into_stream();
-            }
-        }
-
-        QueryExecutor::gateway(
+        crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),
             self.items_link.clone(),
+            options.method_options.context.into_owned(),
             query,
-            options,
-            |r: &mut azure_core::http::Request| r.insert_headers(&partition_key),
+            |headers| {
+                // Use AsHeaders trait to convert PartitionKey into headers
+                for (name, value) in partition_key.as_headers()? {
+                    headers.insert(name, value);
+                }
+                Ok(())
+            },
         )?
         .into_stream()
     }

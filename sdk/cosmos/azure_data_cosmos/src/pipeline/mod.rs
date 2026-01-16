@@ -6,7 +6,7 @@ mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{request::Request, response::Response, Context, RawResponse};
+use azure_core::http::{response::Response, Body, Context, RawResponse};
 use url::Url;
 
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
@@ -68,45 +68,53 @@ impl GatewayPipeline {
 
     pub async fn send_raw(
         &self,
-        ctx: Context<'_>,
-        request: &mut Request,
-        resource_link: ResourceLink,
+        mut cosmos_request: CosmosRequest,
+        context: Context<'_>,
     ) -> azure_core::Result<RawResponse> {
-        // Clone the pipeline and convert context to owned so the closure can be Fn
-        let pipeline = self.pipeline.clone();
-        let ctx_owned = ctx.with_value(resource_link).into_owned();
-
-        let success_options = CheckSuccessOptions {
-            success_codes: &[200, 201, 202, 204, 304],
+        cosmos_request.client_headers(&self.options);
+        // Prepare a callback delegate to invoke the http request.
+        let sender = |req: &mut CosmosRequest| {
+            let pipeline = self.pipeline.clone();
+            let ctx = context.clone();
+            let success_options = CheckSuccessOptions {
+                success_codes: &[200, 201, 202, 204, 304],
+            };
+            let pipeline_send_options = PipelineSendOptions {
+                skip_checks: false,
+                check_success: success_options,
+            };
+            let resource_link = req.resource_link.clone();
+            let mut raw_req = req.clone().into_raw_request();
+            if tracing::enabled!(tracing::Level::TRACE) {
+                let body = match &raw_req.body() {
+                    Body::Bytes(b) => std::str::from_utf8(b.as_ref()).unwrap_or("<invalid utf-8>"),
+                    Body::SeekableStream(_) => "<seekable stream>",
+                };
+                tracing::trace!(
+                    %body,
+                    method = ?raw_req.method(),
+                    url = ?raw_req.url(),
+                    "sending HTTP request",
+                );
+            }
+            async move {
+                let ctx_owned = ctx.with_value(resource_link).into_owned();
+                pipeline
+                    .send(&ctx_owned, &mut raw_req, Some(pipeline_send_options))
+                    .await
+            }
         };
-        let pipeline_send_options = PipelineSendOptions {
-            skip_checks: false,
-            check_success: success_options,
-        };
 
-        pipeline
-            .send(&ctx_owned, request, Some(pipeline_send_options))
-            .await
+        // Delegate to the retry handler, providing the sender callback
+        self.retry_handler.send(&mut cosmos_request, sender).await
     }
 
     pub async fn send<T>(
         &self,
-        mut cosmos_request: CosmosRequest,
+        cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        cosmos_request.client_headers(&self.options);
-        // Prepare a callback delegate to invoke the http request.
-        let sender = move |req: &mut CosmosRequest| {
-            let ctx = context.clone();
-            let url = req.resource_link.clone();
-            let mut raw_req = req.clone().into_raw_request();
-            async move { self.send_raw(ctx, &mut raw_req, url).await }
-        };
-
-        // Delegate to the retry handler, providing the sender callback
-        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
-
-        // Convert RawResponse into typed Response<T>
-        res.map(Into::into)
+        let raw_response = self.send_raw(cosmos_request, context).await?;
+        Ok(raw_response.into())
     }
 }
