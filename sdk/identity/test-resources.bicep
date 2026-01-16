@@ -65,7 +65,7 @@ resource storageRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-0
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = if (deployResources) {
   name: 'asp-${baseName}'
   location: location
-  kind: 'linux'
+  kind: 'app'
   properties: {}
   sku: {
     capacity: 1
@@ -79,7 +79,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = if (deployResou
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = if (deployResources) {
   name: 'func-${baseName}'
   location: location
-  kind: 'functionapp,linux'
+  kind: 'functionapp'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
