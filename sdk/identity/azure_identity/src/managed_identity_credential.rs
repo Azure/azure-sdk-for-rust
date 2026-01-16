@@ -191,17 +191,17 @@ mod tests {
             UserAssignedId::ObjectId(id) => format!("object-id={id}&"),
             UserAssignedId::ResourceId(id) => format!("resource-id={id}&"),
         });
-        let url = if authority.starts_with("http://") || authority.starts_with("https://") {
-            format!(
-                "{authority}/api/probe?test=managed-identity&{id_param}storage-name={storage_name}"
-            )
+        let scheme = if authority.starts_with("http") {
+            ""
         } else {
-            format!(
-                "http://{authority}/api?test=managed-identity&{id_param}storage-name={storage_name}"
-            )
+            "http://"
         };
+        let url = format!(
+            "{scheme}{authority}/api?test=managed-identity&{id_param}storage-name={storage_name}"
+        );
         let u = Url::parse(&url).expect("invalid URL");
         let client = azure_core::http::new_http_client(None);
+        eprintln!("Test app URL: {url}");
         let req = Request::new(u, Method::Get);
 
         let res = client.execute_request(&req).await.expect("request failed");
@@ -373,8 +373,33 @@ mod tests {
 
     #[recorded::test(live)]
     async fn function_app_user_assigned_live() -> azure_core::Result<()> {
-        eprintln!("Skipped: Function App live tests require deployed resources");
-        Ok(())
+        let function_name = std::env::var("IDENTITY_FUNCTIONAPP_NAME");
+        if function_name.is_err() {
+            eprintln!("Skipped: IDENTITY_FUNCTIONAPP_NAME not set");
+            return Ok(());
+        }
+        let storage_name = std::env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
+        if storage_name.is_err() {
+            eprintln!("Skipped: IDENTITY_STORAGE_NAME_USER_ASSIGNED not set");
+            return Ok(());
+        }
+        let client_id = std::env::var("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID");
+        if client_id.is_err() {
+            eprintln!("Skipped: IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID not set");
+            return Ok(());
+        }
+        if let Ok(hostname) = std::env::var("IDENTITY_FUNCTIONAPP_DEFAULT_HOSTNAME") {
+            eprintln!("Using custom Function App host name: {hostname}");
+        } else {
+            eprintln!("Using default Function App host name");
+        }
+        let url = format!("https://{}.azurewebsites.net", function_name.unwrap());
+        run_deployed_test(
+            &url,
+            &storage_name.unwrap(),
+            Some(UserAssignedId::ClientId(client_id.unwrap())),
+        )
+        .await
     }
 
     async fn run_app_service_test(options: Option<ManagedIdentityCredentialOptions>) {
