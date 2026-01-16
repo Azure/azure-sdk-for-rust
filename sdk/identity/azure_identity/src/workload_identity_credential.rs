@@ -187,8 +187,7 @@ mod tests {
     };
     use azure_core::{
         http::{
-            headers::Headers, AsyncRawResponse, ClientOptions, Method, RawResponse, Request,
-            StatusCode, Transport, Url,
+            headers::Headers, AsyncRawResponse, ClientOptions, RawResponse, StatusCode, Transport,
         },
         Bytes,
     };
@@ -369,6 +368,7 @@ mod tests {
 
         assert_eq!(StatusCode::Ok, status, "Test app responded with '{body}'");
 
+        // TODO: revert
         Ok(())
     }
 
