@@ -21,19 +21,6 @@ var blobDataOwnerRoleId = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
 var queueDataContributorRoleId = '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
 var tableDataContributorRoleId = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
 
-resource saSystemAssigned 'Microsoft.Storage/storageAccounts@2021-08-01' = if (deployResources) {
-  kind: 'StorageV2'
-  location: location
-  name: 'sa${uniqueString(baseName)}'
-  properties: {
-    accessTier: 'Hot'
-    allowSharedKeyAccess: false
-  }
-  sku: {
-    name: 'Standard_LRS'
-  }
-}
-
 resource saUserAssigned 'Microsoft.Storage/storageAccounts@2021-08-01' = if (deployResources) {
   kind: 'StorageV2'
   location: location
@@ -158,8 +145,6 @@ resource tableRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01
   }
 }
 
-output IDENTITY_STORAGE_ID string = deployResources ? saSystemAssigned.id : ''
-output IDENTITY_STORAGE_NAME_SYSTEM_ASSIGNED string = deployResources ? saSystemAssigned.name : ''
 output IDENTITY_STORAGE_NAME_USER_ASSIGNED string = deployResources ? saUserAssigned.name : ''
 output IDENTITY_USER_ASSIGNED_IDENTITY string = deployResources ? usermgdid.id : ''
 output IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID string = deployResources ? usermgdid.properties.clientId : ''
