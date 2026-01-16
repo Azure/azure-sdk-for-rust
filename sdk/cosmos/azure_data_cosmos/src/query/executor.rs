@@ -84,13 +84,6 @@ impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
         }
 
         let cosmos_request = builder.build()?;
-        if tracing::enabled!(tracing::Level::TRACE) {
-            if let Some(body) = &cosmos_request.body {
-                if let Ok(body) = std::str::from_utf8(body.as_slice()) {
-                    tracing::trace!(body = %body, "sending query request");
-                }
-            }
-        }
 
         // Send through the pipeline
         let resp = self

@@ -85,18 +85,6 @@ impl GatewayPipeline {
             };
             let resource_link = req.resource_link.clone();
             let mut raw_req = req.clone().into_raw_request();
-            if tracing::enabled!(tracing::Level::TRACE) {
-                let body = match &raw_req.body() {
-                    Body::Bytes(b) => std::str::from_utf8(b.as_ref()).unwrap_or("<invalid utf-8>"),
-                    Body::SeekableStream(_) => "<seekable stream>",
-                };
-                tracing::trace!(
-                    %body,
-                    method = ?raw_req.method(),
-                    url = ?raw_req.url(),
-                    "sending HTTP request",
-                );
-            }
             async move {
                 let ctx_owned = ctx.with_value(resource_link).into_owned();
                 pipeline
