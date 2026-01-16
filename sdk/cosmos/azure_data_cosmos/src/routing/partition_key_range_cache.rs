@@ -598,7 +598,6 @@ mod tests {
     fn partition_key_range_edge_case_empty_min() {
         let range = create_mock_partition_key_range("0", "", "FF");
         assert_eq!(range.min_inclusive, "");
-        assert!(!range.min_inclusive.is_empty() || range.min_inclusive == "");
     }
 
     #[test]
@@ -652,7 +651,7 @@ mod tests {
         let overlapping = routing_map.get_overlapping_ranges(&point_range);
 
         assert!(
-            overlapping.len() > 0,
+            !overlapping.is_empty(),
             "Should find at least one range for point lookup"
         );
     }
@@ -669,7 +668,7 @@ mod tests {
 
         // Boundary should be handled correctly
         assert!(
-            overlapping.len() > 0,
+            !overlapping.is_empty(),
             "Should find range for boundary value"
         );
     }
