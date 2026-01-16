@@ -397,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_complete_routing_map() {
+    fn create_complete_routing_map() {
         let ranges = vec![
             (create_test_range("0", "", "AA"), None),
             (create_test_range("1", "AA", "FF"), None),
@@ -417,7 +417,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_overlapping_ranges() {
+    fn get_overlapping_ranges() {
         let ranges = vec![
             (create_test_range("0", "", "33"), None),
             (create_test_range("1", "33", "66"), None),
@@ -439,7 +439,7 @@ mod tests {
     }
 
     #[test]
-    fn test_try_get_range_by_id() {
+    fn try_get_range_by_id() {
         let ranges = vec![
             (create_test_range("0", "", "50"), None),
             (create_test_range("1", "50", "FF"), None),
@@ -462,7 +462,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_gone() {
+    fn is_gone() {
         let mut child1 = create_test_range("1", "", "80");
         let mut child2 = create_test_range("2", "80", "FF");
 

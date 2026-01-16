@@ -4,7 +4,7 @@
 use crate::{
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
-    pipeline::CosmosPipeline,
+    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
     ThroughputOptions,
@@ -12,7 +12,7 @@ use crate::{
 use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::transport_handler::TransportHandler;
+use crate::handler::cosmos_connection::TransportHandler;
 use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -27,14 +27,14 @@ use serde::{de::DeserializeOwned, Serialize};
 pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
-    pipeline: Arc<CosmosPipeline>,
+    pipeline: Arc<GatewayPipeline>,
     transport_handler: Arc<TransportHandler>,
     container_id: String,
 }
 
 impl ContainerClient {
     pub(crate) fn new(
-        pipeline: Arc<CosmosPipeline>,
+        pipeline: Arc<GatewayPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
         global_endpoint_manager: GlobalEndpointManager,

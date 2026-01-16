@@ -5,7 +5,7 @@ use crate::{
     clients::ContainerClient,
     models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
-    pipeline::CosmosPipeline,
+    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
     ThroughputOptions,
@@ -24,13 +24,13 @@ pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
     database_id: String,
-    pipeline: Arc<CosmosPipeline>,
+    pipeline: Arc<GatewayPipeline>,
     global_endpoint_manager: GlobalEndpointManager,
 }
 
 impl DatabaseClient {
     pub(crate) fn new(
-        pipeline: Arc<CosmosPipeline>,
+        pipeline: Arc<GatewayPipeline>,
         database_id: &str,
         global_endpoint_manager: GlobalEndpointManager,
     ) -> Self {

@@ -5,7 +5,7 @@
 use crate::constants::{A_IM, IF_NONE_MATCH, MAX_ITEM_COUNT};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use crate::pipeline::CosmosPipeline;
+use crate::pipeline::GatewayPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::collection_routing_map::CollectionRoutingMap;
@@ -49,7 +49,7 @@ pub trait CollectionRoutingMapCache: Send + Sync {
 #[derive(Clone, Debug)]
 pub struct PartitionKeyRangeCache {
     routing_map_cache: AsyncCache<String, CollectionRoutingMap>,
-    pipeline: Arc<CosmosPipeline>,
+    pipeline: Arc<GatewayPipeline>,
     container_cache: Arc<ContainerCache>,
     endpoint_manager: Arc<GlobalEndpointManager>,
     database_link: ResourceLink,
@@ -63,7 +63,7 @@ struct PkRangesResponse {
 
 impl PartitionKeyRangeCache {
     pub fn new(
-        pipeline: Arc<CosmosPipeline>,
+        pipeline: Arc<GatewayPipeline>,
         database_link: ResourceLink,
         container_cache: Arc<ContainerCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,

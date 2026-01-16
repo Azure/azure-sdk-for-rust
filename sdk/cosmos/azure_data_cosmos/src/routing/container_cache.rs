@@ -4,7 +4,7 @@
 use super::async_cache::AsyncCache;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use crate::pipeline::CosmosPipeline;
+use crate::pipeline::GatewayPipeline;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadContainerOptions};
 use azure_core::http::Response;
@@ -21,7 +21,7 @@ use std::time::Duration;
 /// across regional endpoints.
 #[derive(Clone, Debug)]
 pub struct ContainerCache {
-    pipeline: Arc<CosmosPipeline>,
+    pipeline: Arc<GatewayPipeline>,
     container_link: ResourceLink,
     global_endpoint_manager: GlobalEndpointManager,
     container_properties_cache: AsyncCache<String, ContainerProperties>,
@@ -42,7 +42,7 @@ impl ContainerCache {
     /// # Returns
     /// A new `ContainerCache` instance ready for caching container metadata
     pub(crate) fn new(
-        pipeline: Arc<CosmosPipeline>,
+        pipeline: Arc<GatewayPipeline>,
         container_link: ResourceLink,
         global_endpoint_manager: GlobalEndpointManager,
     ) -> Self {
@@ -157,7 +157,7 @@ mod tests {
     // Helper function to create a test CosmosPipeline
     fn create_test_cosmos_pipeline(
         endpoint_manager: &GlobalEndpointManager,
-    ) -> Arc<CosmosPipeline> {
+    ) -> Arc<GatewayPipeline> {
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -167,7 +167,7 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        Arc::new(CosmosPipeline::new(
+        Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             endpoint_manager.clone(),

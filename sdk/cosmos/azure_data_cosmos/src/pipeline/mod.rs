@@ -28,14 +28,14 @@ use url::Url;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
-pub struct CosmosPipeline {
+pub struct GatewayPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,
     options: CosmosClientOptions,
 }
 
-impl CosmosPipeline {
+impl GatewayPipeline {
     pub fn new(
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
@@ -43,7 +43,7 @@ impl CosmosPipeline {
         options: CosmosClientOptions,
     ) -> Self {
         let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
-        CosmosPipeline {
+        GatewayPipeline {
             endpoint,
             pipeline,
             retry_handler,
@@ -53,7 +53,7 @@ impl CosmosPipeline {
 
     /// Creates a [`Url`] out of the provided [`ResourceLink`]
     ///
-    /// This is a little backwards, ideally we'd accept [`ResourceLink`] in the [`CosmosPipeline::send`] method,
+    /// This is a little backwards, ideally we'd accept [`ResourceLink`] in the [`GatewayPipeline::send`] method,
     /// but we need callers to be able to build an [`azure_core::Request`] so they need to be able to get the full URL.
     /// This allows the clients to hold a single thing representing the "connection" to a Cosmos DB account though.
     pub fn url(&self, link: &ResourceLink) -> Url {

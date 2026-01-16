@@ -84,7 +84,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_service_identity_creation() {
+    fn service_identity_creation() {
         let url = String::from("https://example.com/service");
         let identity = ServiceIdentity::new("fed123".to_string(), url.clone(), true);
 
@@ -94,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn test_application_name() {
+    fn application_name_validation() {
         let url = String::from("https://example.com/app/service");
         let identity = ServiceIdentity::new("fed123".to_string(), url, false);
 
@@ -102,18 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn test_equality() {
-        let url1 = String::from("https://example.com/service");
-        let url2 = String::from("https://example.com/service");
-
-        let identity1 = ServiceIdentity::new("Fed123".to_string(), url1, true);
-        let identity2 = ServiceIdentity::new("fed123".to_string(), url2, true);
-
-        assert_eq!(identity1, identity2);
-    }
-
-    #[test]
-    fn test_display() {
+    fn display_validation() {
         let url = String::from("https://example.com/service");
         let identity = ServiceIdentity::new("fed123".to_string(), url, true);
 

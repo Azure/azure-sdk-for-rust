@@ -209,7 +209,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_range_creation() {
+    fn range_creation() {
         let range = Range::new(10, 20, true, false);
         assert_eq!(range.min, 10);
         assert_eq!(range.max, 20);
@@ -218,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn test_point_range() {
+    fn point_range() {
         let range = Range::get_point_range(5);
         assert_eq!(range.min, 5);
         assert_eq!(range.max, 5);
@@ -226,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_range() {
+    fn empty_range() {
         let range = Range::get_empty_range(10);
         assert!(range.is_empty());
         assert_eq!(range.min, 10);
@@ -234,7 +234,7 @@ mod tests {
     }
 
     #[test]
-    fn test_contains() {
+    fn contains() {
         let range = Range::new(10, 20, true, false);
         assert!(range.contains(&10)); // min inclusive
         assert!(range.contains(&15)); // middle
@@ -244,14 +244,14 @@ mod tests {
     }
 
     #[test]
-    fn test_contains_inclusive() {
+    fn contains_inclusive() {
         let range = Range::new(10, 20, true, true);
         assert!(range.contains(&10));
         assert!(range.contains(&20)); // max inclusive
     }
 
     #[test]
-    fn test_check_overlapping() {
+    fn check_overlapping() {
         let range1 = Range::new(10, 20, true, false);
         let range2 = Range::new(15, 25, true, false);
         assert!(Range::check_overlapping(&range1, &range2));
@@ -261,7 +261,7 @@ mod tests {
     }
 
     #[test]
-    fn test_check_overlapping_edge_cases() {
+    fn check_overlapping_edge_cases() {
         // Touching at boundary, one inclusive one exclusive
         let range1 = Range::new(10, 20, true, false);
         let range2 = Range::new(20, 30, true, false);
@@ -274,14 +274,14 @@ mod tests {
     }
 
     #[test]
-    fn test_check_overlapping_with_empty() {
+    fn check_overlapping_with_empty() {
         let range1 = Range::new(10, 20, true, false);
         let empty = Range::get_empty_range(15);
         assert!(!Range::check_overlapping(&range1, &empty));
     }
 
     #[test]
-    fn test_equality() {
+    fn equality() {
         let range1 = Range::new(10, 20, true, false);
         let range2 = Range::new(10, 20, true, false);
         let range3 = Range::new(10, 20, true, true);
@@ -291,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display() {
+    fn display() {
         let range1 = Range::new(10, 20, true, false);
         assert_eq!(format!("{}", range1), "[10,20)");
 
@@ -300,7 +300,7 @@ mod tests {
     }
 
     #[test]
-    fn test_min_comparer() {
+    fn min_comparer() {
         let range1 = Range::new(10, 20, true, false);
         let range2 = Range::new(15, 25, true, false);
         let range3 = Range::new(10, 30, false, false);
@@ -313,7 +313,7 @@ mod tests {
     }
 
     #[test]
-    fn test_max_comparer() {
+    fn max_comparer() {
         let range1 = Range::new(10, 20, true, false);
         let range2 = Range::new(15, 25, true, false);
         let range3 = Range::new(5, 20, true, true);
@@ -327,7 +327,7 @@ mod tests {
     }
 
     #[test]
-    fn test_string_ranges() {
+    fn string_ranges() {
         let range = Range::new("AA".to_string(), "FF".to_string(), true, false);
         assert!(range.contains(&"BB".to_string()));
         assert!(range.contains(&"AA".to_string()));
@@ -336,7 +336,7 @@ mod tests {
     }
 
     #[test]
-    fn test_serialization() {
+    fn serialization() {
         let range = Range::new("00".to_string(), "FF".to_string(), true, false);
         let json = serde_json::to_string(&range).unwrap();
         let deserialized: Range<String> = serde_json::from_str(&json).unwrap();

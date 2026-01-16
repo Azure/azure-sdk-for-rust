@@ -158,7 +158,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_partition_key_range_creation() {
+    fn partition_key_range_creation() {
         let pkr = PartitionKeyRange::new("1".to_string(), "".to_string(), "FF".to_string());
 
         assert_eq!(pkr.id, "1");
@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_range() {
+    fn to_range() {
         let pkr = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
 
         let range = pkr.to_range();
@@ -178,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    fn test_equality() {
+    fn equality_check() {
         let pkr1 = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
 
         let mut pkr2 = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
@@ -190,7 +190,7 @@ mod tests {
     }
 
     #[test]
-    fn test_serialization() {
+    fn serialization() {
         let pkr = PartitionKeyRange {
             id: "1".to_string(),
             resource_id: Some("rid123".to_string()),
@@ -215,7 +215,7 @@ mod tests {
     }
 
     #[test]
-    fn test_range_overlap() {
+    fn range_overlap() {
         let range1: Range<String> = Range::new("00".to_string(), "50".to_string(), true, false);
         let range2 = Range::new("40".to_string(), "80".to_string(), true, false);
         let range3 = Range::new("60".to_string(), "90".to_string(), true, false);

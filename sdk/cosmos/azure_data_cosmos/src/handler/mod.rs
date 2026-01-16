@@ -2,5 +2,5 @@
 // Licensed under the MIT License.
 
 //! Handler types for request processing and retry logic.
+pub(crate) mod cosmos_connection;
 pub(crate) mod retry_handler;
-pub(crate) mod transport_handler;
