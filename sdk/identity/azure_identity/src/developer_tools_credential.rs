@@ -21,6 +21,9 @@ use std::{
 #[derive(Clone, Debug, Default)]
 pub struct DeveloperToolsCredentialOptions {
     /// An implementation of [`Executor`] to run commands asynchronously.
+    ///
+    /// If `None`, one is created using [`crate::process::new_executor`]; alternatively,
+    /// you can supply your own implementation using a different asynchronous runtime.
     pub executor: Option<Arc<dyn Executor>>,
 }
 
@@ -42,7 +45,7 @@ impl DeveloperToolsCredential {
     /// Creates a new instance of `DeveloperToolsCredential`.
     ///
     /// # Arguments
-    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    /// * `options`: Options for configuring the credential. If `None`, the credential uses its default options.
     pub fn new(
         options: Option<DeveloperToolsCredentialOptions>,
     ) -> azure_core::Result<Arc<DeveloperToolsCredential>> {

@@ -30,13 +30,11 @@ use openssl::{
 use std::sync::Arc;
 use url::form_urlencoded;
 
-/// Refresh time to use in seconds.
-const DEFAULT_REFRESH_TIME: i64 = 300;
+const DEFAULT_ASSERTION_LIFETIME: i64 = 300;
 
 const AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY: &str = "AZURE_CLIENT_SEND_CERTIFICATE_CHAIN";
 
-/// Provides options to configure how the Identity library makes authentication
-/// requests to Azure Active Directory.
+/// Options for constructing a new [`ClientCertificateCredential`].
 #[derive(Clone, Debug, Default)]
 pub struct ClientCertificateCredentialOptions {
     /// Options for the credential's HTTP pipeline.
@@ -49,11 +47,7 @@ pub struct ClientCertificateCredentialOptions {
     pub(crate) env: Option<Env>,
 }
 
-/// Enables authentication to Azure Active Directory using a client certificate that
-/// was generated for an App Registration.
-///
-/// In order to use subject name validation `send_cert_chain` option must be set to true
-/// The certificate is expected to be in base64 encoded PKCS12 format.
+/// Authenticates an application with a certificate.
 #[derive(Debug)]
 pub struct ClientCertificateCredential {
     client_id: String,
@@ -66,6 +60,13 @@ pub struct ClientCertificateCredential {
 
 impl ClientCertificateCredential {
     /// Create a new `ClientCertificateCredential`.
+    ///
+    /// # Arguments
+    /// - `tenant_id`: The tenant (directory) ID of the service principal.
+    /// - `client_id`: The client (application) ID of the service principal.
+    /// - `certificate`: A base64-encoded PKCS12 certificate with its RSA private key.
+    /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
+    ///
     pub fn new(
         tenant_id: String,
         client_id: String,
@@ -159,7 +160,7 @@ impl ClientCertificateCredential {
     ) -> azure_core::Result<AccessToken> {
         let uuid = Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
-        let expiry_time = current_time + DEFAULT_REFRESH_TIME;
+        let expiry_time = current_time + DEFAULT_ASSERTION_LIFETIME;
         let payload = format!(
             r#"{{"aud":"{}","exp":{},"iss": "{}", "jti": "{}", "nbf": {}, "sub": "{}"}}"#,
             self.endpoint, expiry_time, self.client_id, uuid, current_time, self.client_id

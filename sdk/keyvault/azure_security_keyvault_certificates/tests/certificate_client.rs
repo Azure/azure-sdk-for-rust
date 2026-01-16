@@ -118,6 +118,11 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
                 api_children: vec![
                     ExpectedRestApiSpan {
                         api_verb: Method::Post,
+                        expected_status_code: StatusCode::Unauthorized,
+                        ..Default::default()
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: Method::Post,
                         expected_status_code: StatusCode::Accepted,
                         is_wildcard: false,
                     },

@@ -373,7 +373,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `container_acl` - The access control list for the container. You can create this from a
-    ///   [`HashMap<String, AccessPolicy>`] using [`SignedIdentifiers::from()`] and then wrapping it into a RequestContent.
+    ///   [`HashMap<String, AccessPolicy>`] by converting it to [`SignedIdentifiers`] and wrapping it into a RequestContent.
     /// * `options` - Optional configuration for the request.
     ///
     /// # Example
@@ -381,6 +381,7 @@ impl BlobContainerClient {
     /// ```rust, ignore
     /// use azure_core::http::RequestContent;
     /// use azure_storage_blob::models::{AccessPolicy, SignedIdentifiers};
+    /// use std::collections::HashMap;
     /// use typespec_client_core::time::OffsetDateTime;
     ///
     /// let mut policies = HashMap::new();
@@ -390,7 +391,8 @@ impl BlobContainerClient {
     ///     permission: Some("rwd".to_string()),
     /// });
     ///
-    /// let request_content = RequestContent::try_from(SignedIdentifiers::from(policies))?;
+    /// let signed_identifiers: SignedIdentifiers = policies.into();
+    /// let request_content = RequestContent::try_from(signed_identifiers)?;
     /// container_client.set_access_policy(request_content, None).await?;
     /// ```
     pub async fn set_access_policy(
