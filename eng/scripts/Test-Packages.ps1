@@ -20,7 +20,7 @@ function Invoke-CargoTestWithJsonOutput (
   # and uploaded to DevOps for display in the Tests tab
   # (requires -Z unstable-options)
   $result = Invoke-LoggedCommand `
-    "cargo +nightly test $TestParams --package $PackageName --no-fail-fast -- --format json -Z unstable-options" `
+    "cargo +nightly test $TestParams --package $PackageName --all-features --no-fail-fast -- --format json -Z unstable-options" `
     -GroupOutput `
     -DoNotExitOnFailedExitCode
 
@@ -83,36 +83,27 @@ foreach ($package in $packagesToTest) {
     }
   }
 
-  $featuresList = ([System.IO.Path]::Combine($packageDirectory, "test-features.txt"))
-  $featuresArg = ""
-  if (Test-Path $featuresList) {
-    $features = Get-Content $featuresList | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object { $_.Trim() }
-    if ($features.Count -gt 0) {
-      $featuresArg = "--features " + ($features -join ",")
-    }
-  }
-
   Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-  Invoke-LoggedCommand "cargo build --keep-going $featuresArg" -GroupOutput
+  Invoke-LoggedCommand "cargo build --all-features --keep-going" -GroupOutput
   Write-Host "`n`n"
 
   $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 
   $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
   Invoke-CargoTestWithJsonOutput `
-    -TestParams "--doc $featuresArg" `
+    -TestParams "--doc" `
     -PackageName $package.Name `
     -OutputFile $docTestOutput
 
   $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
   Invoke-CargoTestWithJsonOutput `
-    -TestParams "--lib --bins --tests --examples $featuresArg" `
+    -TestParams "--lib --bins --tests --examples" `
     -PackageName $package.Name `
     -OutputFile $allTargetsOutput
 
   Invoke-LoggedCommand `
-    "cargo test --benches --package $($package.Name) --no-fail-fast $featuresArg" `
+    "cargo test --benches --package $($package.Name) --all-features --no-fail-fast" `
     -GroupOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
