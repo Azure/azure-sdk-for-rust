@@ -21,7 +21,6 @@ use std::{
     convert::Infallible,
     fmt,
     future::{Future, IntoFuture},
-    marker::PhantomData,
     pin::Pin,
     str::FromStr,
     sync::Arc,
@@ -183,7 +182,7 @@ impl<'a> PollerOptions<'a> {
 }
 
 /// The result of fetching the status monitor from a [`Poller`], whether the long-running operation (LRO) is in progress or done.
-pub enum PollerResult<M, F = JsonFormat, C = Url>
+pub enum PollerResult<M, C, F = JsonFormat>
 where
     M: StatusMonitor,
     F: Format,
@@ -228,11 +227,11 @@ where
     },
 }
 
-impl<M, F, C> fmt::Debug for PollerResult<M, F, C>
+impl<M, C, F> fmt::Debug for PollerResult<M, C, F>
 where
     M: StatusMonitor,
-    F: Format,
     C: fmt::Debug,
+    F: Format,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -283,8 +282,8 @@ mod types {
     pub type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>> + Send>;
 
     /// A pinned boxed [`Future`] that can be stored and called dynamically.
-    pub type PollerResultFuture<M, F, C> =
-        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F, C>>> + Send + 'static>>;
+    pub type PollerResultFuture<M, C, F> =
+        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, C, F>>> + Send + 'static>>;
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -303,8 +302,8 @@ mod types {
     pub type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 
     /// A pinned boxed [`Future`] that can be stored and called dynamically.
-    pub type PollerResultFuture<M, F, C> =
-        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F, C>>> + 'static>>;
+    pub type PollerResultFuture<M, C, F> =
+        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, C, F>>> + 'static>>;
 }
 
 pub use types::PollerResultFuture;
@@ -371,7 +370,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 /// # Ok(()) }
 /// ```
 #[pin_project::pin_project]
-pub struct Poller<M, F = JsonFormat, C = Url>
+pub struct Poller<M, F = JsonFormat>
 where
     M: StatusMonitor,
     F: Format,
@@ -379,10 +378,9 @@ where
     #[pin]
     stream: Pin<BoxedStream<M, F>>,
     target: Option<BoxedFuture<M>>,
-    phantom: PhantomData<C>,
 }
 
-impl<M, F, C> Poller<M, F, C>
+impl<M, F> Poller<M, F>
 where
     M: StatusMonitor,
     F: Format + Send,
@@ -483,31 +481,26 @@ where
     ///     })
     /// }, None);
     /// ```
-    pub fn new<
-        Fun: Fn(PollerState<C>, PollerOptions<'static>) -> PollerResultFuture<M, F, C>
-            + ConditionalSend
-            + 'static,
-    >(
-        make_request: Fun,
-        options: Option<PollerOptions<'static>>,
-    ) -> Self
+    pub fn new<C, Fun>(make_request: Fun, options: Option<PollerOptions<'static>>) -> Self
     where
         M: Send + 'static,
         M::Output: Send + 'static,
         M::Format: Send + 'static,
         C: AsRef<str> + ConditionalSend + 'static,
+        Fun: Fn(PollerState<C>, PollerOptions<'static>) -> PollerResultFuture<M, C, F>
+            + ConditionalSend
+            + 'static,
     {
         let options = options.unwrap_or_default();
         let (stream, target) = create_poller_stream(make_request, options);
         Self {
             stream: Box::pin(stream),
             target: Some(target),
-            phantom: PhantomData,
         }
     }
 }
 
-impl<M, F, C> Stream for Poller<M, F, C>
+impl<M, F> Stream for Poller<M, F>
 where
     M: StatusMonitor,
     F: Format,
@@ -524,13 +517,12 @@ where
     }
 }
 
-impl<M, F, C> IntoFuture for Poller<M, F, C>
+impl<M, F> IntoFuture for Poller<M, F>
 where
     M: StatusMonitor + 'static,
     M::Output: ConditionalSend + 'static,
     M::Format: ConditionalSend + 'static,
     F: Format + 'static,
-    C: 'static,
 {
     type Output = crate::Result<Response<M::Output, M::Format>>;
 
@@ -562,7 +554,7 @@ where
     }
 }
 
-impl<M, F, C> fmt::Debug for Poller<M, F, C>
+impl<M, F> fmt::Debug for Poller<M, F>
 where
     M: StatusMonitor,
     F: Format,
@@ -602,7 +594,7 @@ fn create_poller_stream<
     M,
     F: Format,
     C: AsRef<str> + ConditionalSend + 'static,
-    Fun: Fn(PollerState<C>, PollerOptions<'static>) -> PollerResultFuture<M, F, C>
+    Fun: Fn(PollerState<C>, PollerOptions<'static>) -> PollerResultFuture<M, C, F>
         + ConditionalSend
         + 'static,
 >(
