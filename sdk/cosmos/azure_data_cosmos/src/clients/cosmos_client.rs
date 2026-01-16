@@ -58,7 +58,10 @@ impl CosmosClient {
         let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
         client_options.logging = LoggingOptions {
-            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS.clone(),
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
+                .iter()
+                .map(|h| std::borrow::Cow::Borrowed(h.as_str()))
+                .collect(),
             additional_allowed_query_params: vec![],
         };
         let pipeline_core = azure_core::http::Pipeline::new(
@@ -117,7 +120,10 @@ impl CosmosClient {
         let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
         client_options.logging = LoggingOptions {
-            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS.clone(),
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
+                .iter()
+                .map(|h| std::borrow::Cow::Borrowed(h.as_str()))
+                .collect(),
             additional_allowed_query_params: vec![],
         };
 
