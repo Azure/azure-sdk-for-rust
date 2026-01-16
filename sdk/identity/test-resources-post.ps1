@@ -4,24 +4,24 @@
 # IMPORTANT: Do not invoke this file directly. Please instead run eng/common/TestResources/New-TestResources.ps1 from the repository root.
 
 param (
-  # [hashtable] $AdditionalParameters = @{},
+  [hashtable] $AdditionalParameters = @{},
   [hashtable] $DeploymentOutputs,
 
-  # [Parameter(Mandatory = $true)]
-  # [ValidateNotNullOrEmpty()]
-  # [string] $SubscriptionId,
+  [Parameter(Mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
+  [string] $SubscriptionId,
 
-  # [Parameter(ParameterSetName = 'Provisioner', Mandatory = $true)]
-  # [ValidateNotNullOrEmpty()]
-  # [string] $TenantId,
+  [Parameter(ParameterSetName = 'Provisioner', Mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
+  [string] $TenantId,
 
   [Parameter()]
   [ValidatePattern('^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')]
   [string] $TestApplicationId,
 
-  # [Parameter(Mandatory = $true)]
-  # [ValidateNotNullOrEmpty()]
-  # [string] $Environment,
+  [Parameter(Mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
+  [string] $Environment,
 
   # Captures any arguments from eng/New-TestResources.ps1 not declared here (no parameter errors).
   [Parameter(ValueFromRemainingArguments = $true)]
@@ -31,19 +31,14 @@ param (
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
-# if ($CI) {
-#   if (!$AdditionalParameters['deployResources']) {
-#     Write-Host "Skipping post-provisioning script because resources weren't deployed"
-#     return
-#   }
-  # az cloud set -n $Environment
-  # az login --federated-token $env:ARM_OIDC_TOKEN --service-principal -t $TenantId -u $TestApplicationId
-  # az account set --subscription $SubscriptionId
-# }
-
-$DeploymentOutputs = @{
-  IDENTITY_FUNCTIONAPP_NAME = 'chlowe'
-  IDENTITY_RESOURCE_GROUP = 'chlowe'
+if ($CI) {
+  if (!$AdditionalParameters['deployResources']) {
+    Write-Host "Skipping post-provisioning script because resources weren't deployed"
+    return
+  }
+  az cloud set -n $Environment
+  az login --federated-token $env:ARM_OIDC_TOKEN --service-principal -t $TenantId -u $TestApplicationId
+  az account set --subscription $SubscriptionId
 }
 
 $rg = $DeploymentOutputs['IDENTITY_RESOURCE_GROUP']
