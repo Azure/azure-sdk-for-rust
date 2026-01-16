@@ -50,7 +50,7 @@ impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
         })
     }
 
-    /// Converts the executor into a stream of pages.
+    /// Consumes the executor and converts it into a stream of pages.
     pub fn into_stream(self) -> azure_core::Result<crate::FeedItemIterator<T>> {
         Ok(crate::FeedItemIterator::new(futures::stream::try_unfold(
             self,
