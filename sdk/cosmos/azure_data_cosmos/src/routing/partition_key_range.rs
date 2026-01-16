@@ -90,7 +90,6 @@ pub enum PartitionKeyRangeStatus {
 }
 
 impl PartitionKeyRange {
-
     /// Creates a new PartitionKeyRange with required fields
     pub fn new(id: String, min_inclusive: String, max_exclusive: String) -> Self {
         Self {

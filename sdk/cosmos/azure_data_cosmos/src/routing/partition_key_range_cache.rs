@@ -156,7 +156,10 @@ impl PartitionKeyRangeCache {
                     Some(map) => Ok(map),
                     None => Err(Error::new(
                         azure_core::error::ErrorKind::Other,
-                        format!("Failed to get routing map for collection: {}", collection_rid),
+                        format!(
+                            "Failed to get routing map for collection: {}",
+                            collection_rid
+                        ),
                     )),
                 }
             })
@@ -343,7 +346,10 @@ mod tests {
     #[test]
     fn should_force_refresh_both_none() {
         let result = PartitionKeyRangeCache::should_force_refresh(None, None);
-        assert!(!result, "Should not force refresh when both values are None");
+        assert!(
+            !result,
+            "Should not force refresh when both values are None"
+        );
     }
 
     #[test]
@@ -469,8 +475,7 @@ mod tests {
     fn routing_map_creation_multiple_ranges() {
         let range1 = create_mock_partition_key_range("0", "", "7F");
         let range2 = create_mock_partition_key_range("1", "7F", "FF");
-        let routing_map =
-            create_routing_map(vec![range1, range2], Some("etag2".to_string()));
+        let routing_map = create_routing_map(vec![range1, range2], Some("etag2".to_string()));
 
         let found_range1 = routing_map.try_get_range_by_partition_key_range_id("0");
         let found_range2 = routing_map.try_get_range_by_partition_key_range_id("1");
@@ -510,14 +515,18 @@ mod tests {
         let range1 = create_mock_partition_key_range("0", "", "50");
         let range2 = create_mock_partition_key_range("1", "50", "A0");
         let range3 = create_mock_partition_key_range("2", "A0", "FF");
-        let routing_map = create_routing_map(vec![range1, range2, range3], Some("etag1".to_string()));
+        let routing_map =
+            create_routing_map(vec![range1, range2, range3], Some("etag1".to_string()));
 
         // Range that spans across multiple partition ranges
         let test_range = Range::new("30".to_string(), "B0".to_string(), true, false);
         let overlapping = routing_map.get_overlapping_ranges(&test_range);
 
         // Should overlap with all three ranges
-        assert!(overlapping.len() >= 2, "Should find at least 2 overlapping ranges");
+        assert!(
+            overlapping.len() >= 2,
+            "Should find at least 2 overlapping ranges"
+        );
     }
 
     #[test]
@@ -605,7 +614,9 @@ mod tests {
         // The collection_unique_id is set internally in create_routing_map
         let routing_map = create_routing_map(vec![range], Some("etag1".to_string()));
         // Just verify it doesn't panic
-        assert!(routing_map.try_get_range_by_partition_key_range_id("0").is_some());
+        assert!(routing_map
+            .try_get_range_by_partition_key_range_id("0")
+            .is_some());
     }
 
     #[test]
@@ -621,7 +632,9 @@ mod tests {
         for i in 0..4 {
             let id = i.to_string();
             assert!(
-                routing_map.try_get_range_by_partition_key_range_id(&id).is_some(),
+                routing_map
+                    .try_get_range_by_partition_key_range_id(&id)
+                    .is_some(),
                 "Range {} should exist",
                 id
             );
@@ -638,7 +651,10 @@ mod tests {
         let point_range = Range::get_point_range("25".to_string());
         let overlapping = routing_map.get_overlapping_ranges(&point_range);
 
-        assert!(overlapping.len() > 0, "Should find at least one range for point lookup");
+        assert!(
+            overlapping.len() > 0,
+            "Should find at least one range for point lookup"
+        );
     }
 
     #[test]
@@ -652,7 +668,10 @@ mod tests {
         let overlapping = routing_map.get_overlapping_ranges(&boundary_range);
 
         // Boundary should be handled correctly
-        assert!(overlapping.len() > 0, "Should find range for boundary value");
+        assert!(
+            overlapping.len() > 0,
+            "Should find range for boundary value"
+        );
     }
 
     #[test]
