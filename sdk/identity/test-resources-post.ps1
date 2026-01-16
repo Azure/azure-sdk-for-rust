@@ -55,7 +55,7 @@ cargo install --path . --root target
 Write-Host "##[endgroup]"
 
 Write-Host "##[group]Deploy Azure Function App"
-Compress-Archive -Path "target/bin/deployed_live_test", "host.json" -DestinationPath func.zip -Force
+Compress-Archive -Path "target/bin/deployed_live_test.exe", "host.json" -DestinationPath func.zip -Force
 az functionapp deploy -g $rg -n $DeploymentOutputs['IDENTITY_FUNCTIONAPP_NAME'] --src-path func.zip --type zip
 Write-Host "##vso[task.setvariable variable=IDENTITY_FUNCTIONAPP_URL;]$functionAppUrl"
 Write-Host "##[endgroup]"

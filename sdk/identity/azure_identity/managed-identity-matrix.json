@@ -4,8 +4,8 @@
             "Agent": {
                 "msi_image": {
                     "ArmTemplateParameters": "@{deployResources = $true}",
-                    "OSVmImage": "env:LINUXVMIMAGE",
-                    "Pool": "env:LINUXPOOL"
+                    "OSVmImage": "env:WINDOWSVMIMAGE",
+                    "Pool": "env:WINDOWSPOOL"
                 }
             },
             "IDENTITY_IMDS_AVAILABLE": "1",
