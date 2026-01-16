@@ -11,13 +11,13 @@ use std::sync::Arc;
 
 /// Handler for managing transport-level operations with Cosmos DB.
 #[derive(Debug, Clone)]
-pub struct TransportHandler {
+pub struct CosmosConnection {
     pipeline: Arc<GatewayPipeline>,
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
 }
 
-impl TransportHandler {
+impl CosmosConnection {
     /// Creates a new `TransportHandler` with the specified pipeline.
     ///
     /// # Arguments

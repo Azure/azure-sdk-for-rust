@@ -12,7 +12,7 @@ use crate::{
 use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::cosmos_connection::TransportHandler;
+use crate::handler::cosmos_connection::CosmosConnection;
 use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -28,7 +28,7 @@ pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
-    transport_handler: Arc<TransportHandler>,
+    cosmos_connection: Arc<CosmosConnection>,
     container_id: String,
 }
 
@@ -55,7 +55,7 @@ impl ContainerClient {
             Arc::from(collection_cache.clone()),
             Arc::from(global_endpoint_manager.clone()),
         );
-        let transport_handler = Arc::from(TransportHandler::new(
+        let cosmos_connection = Arc::from(CosmosConnection::new(
             pipeline.clone(),
             Arc::from(collection_cache),
             Arc::from(partition_key_range_cache),
@@ -65,7 +65,7 @@ impl ContainerClient {
             link,
             items_link,
             pipeline,
-            transport_handler,
+            cosmos_connection,
             container_id: container_id.to_string(),
         }
     }
@@ -94,7 +94,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -139,7 +139,7 @@ impl ContainerClient {
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
             .json(&properties)
             .build()?;
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -208,7 +208,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -292,7 +292,7 @@ impl ContainerClient {
             .partition_key(partition_key.into())
             .build()?;
 
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -378,7 +378,7 @@ impl ContainerClient {
             .partition_key(partition_key.into())
             .build()?;
 
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -465,7 +465,7 @@ impl ContainerClient {
             .partition_key(partition_key.into())
             .build()?;
 
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -518,7 +518,7 @@ impl ContainerClient {
             .request_headers(&options)
             .build()?;
 
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -557,7 +557,7 @@ impl ContainerClient {
             .request_headers(&options)
             .build()?;
 
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
@@ -633,7 +633,7 @@ impl ContainerClient {
             .json(&patch)
             .build()?;
 
-        self.transport_handler
+        self.cosmos_connection
             .send(cosmos_request, options.method_options.context)
             .await
     }
