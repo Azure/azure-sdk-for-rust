@@ -1,15 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![allow(dead_code, unused_imports)]
+
 use axum::{
-    extract::{Query},
+    extract::{Path, Query},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get,
     Router,
 };
 use azure_core::credentials::TokenCredential;
-use azure_identity::{ManagedIdentityCredential, ManagedIdentityCredentialOptions, UserAssignedId, WorkloadIdentityCredential};
+use azure_identity::{
+    ManagedIdentityCredential, ManagedIdentityCredentialOptions, UserAssignedId,
+    WorkloadIdentityCredential,
+};
 use azure_storage_blob::BlobServiceClient;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -32,9 +37,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Listening on http://{}", listener.local_addr()?);
 
     let router = Router::new()
-        .route("/api", get(handle_request));
-        // .route("/{*path}", get(handle_request));
-        // .route("/{*wildcard}", get(handle_any_path));
+        .route("/{*wildcard}", get(handle_any_path))
+        .route("/", get(handle_any_path));
+    // .route("/api", get(handle_request));
+    // .route("/{*path}", get(handle_request));
     axum::serve(listener, router)
         .with_graceful_shutdown(async {
             tokio::signal::ctrl_c()
@@ -44,6 +50,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     Ok(())
+}
+
+async fn handle_any_path(Path(path): Path<String>) -> impl IntoResponse {
+    if path.is_empty() {
+        "/".to_string()
+    } else {
+        format!("/{path}")
+    }
 }
 
 async fn handle_request(Query(params): Query<Params>) -> Response {
@@ -81,19 +95,23 @@ async fn handle_request(Query(params): Query<Params>) -> Response {
                 }
             }
         }
-        "workload-identity" => {
-            match WorkloadIdentityCredential::new(None) {
-                Ok(cred) => cred,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("WorkloadIdentityCredential::new returned '{e}'"),
-                    )
-                        .into_response()
-                }
+        "workload-identity" => match WorkloadIdentityCredential::new(None) {
+            Ok(cred) => cred,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("WorkloadIdentityCredential::new returned '{e}'"),
+                )
+                    .into_response()
             }
+        },
+        test => {
+            return (
+                StatusCode::BAD_REQUEST,
+                format!("Unknown test '{test}' path ''"),
+            )
+                .into_response()
         }
-        test => return (StatusCode::BAD_REQUEST, format!("Unknown test '{test}' path ''")).into_response(),
     };
 
     match try_storage(credential, &params.storage_name).await {
