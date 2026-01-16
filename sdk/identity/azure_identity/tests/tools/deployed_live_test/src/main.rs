@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use axum::{
-    extract::{Path, Query},
+    extract::{Query},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get,
@@ -99,14 +99,6 @@ async fn handle_request(Query(params): Query<Params>) -> Response {
     match try_storage(credential, &params.storage_name).await {
         Ok(_) => StatusCode::OK.into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
-    }
-}
-
-async fn handle_any_path(Path(path): Path<String>) -> impl IntoResponse {
-    if path.is_empty() {
-        "/".to_string()
-    } else {
-        format!("/{path}")
     }
 }
 
