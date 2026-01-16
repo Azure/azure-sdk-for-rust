@@ -6,7 +6,7 @@
   "devDependencies": {
     "@azure-tools/typespec-azure-core": "~0.64.0",
     "@azure-tools/typespec-azure-rulesets": "~0.64.0",
-    "@azure-tools/typespec-client-generator-core": "~0.64.0",
+    "@azure-tools/typespec-client-generator-core": "~0.64.1",
     "@typespec/compiler": "^1.8.0",
     "@typespec/http": "^1.8.0",
     "@typespec/openapi": "^1.8.0",
