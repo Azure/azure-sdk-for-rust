@@ -212,9 +212,9 @@ mod tests {
         let global_endpoint_manager = create_test_endpoint_manager();
         let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
         let container_link = ResourceLink::root(ResourceType::Databases)
-            .item("testdb")
+            .item("test_db")
             .feed(ResourceType::Containers)
-            .item("testcontainer");
+            .item("test_container");
         let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
 
         // Test that remove_by_id doesn't panic when removing non-existent items
@@ -228,9 +228,9 @@ mod tests {
         let global_endpoint_manager = create_test_endpoint_manager();
         let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
         let container_link = ResourceLink::root(ResourceType::Databases)
-            .item("testdb")
+            .item("test_db")
             .feed(ResourceType::Containers)
-            .item("testcontainer");
+            .item("test_container");
         let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
 
         // Verify the cache was created successfully
@@ -242,9 +242,9 @@ mod tests {
         let global_endpoint_manager = create_test_endpoint_manager();
         let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
         let container_link = ResourceLink::root(ResourceType::Databases)
-            .item("testdb")
+            .item("test_db")
             .feed(ResourceType::Containers)
-            .item("testcontainer");
+            .item("test_container");
         let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager.clone());
 
         // Verify the cache can be cloned (Debug trait is implemented)
@@ -258,9 +258,9 @@ mod tests {
         let global_endpoint_manager = create_test_endpoint_manager();
         let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
         let container_link = ResourceLink::root(ResourceType::Databases)
-            .item("testdb")
+            .item("test_db")
             .feed(ResourceType::Containers)
-            .item("testcontainer");
+            .item("test_container");
         let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
         let container_id = "test-container";
 
@@ -278,9 +278,9 @@ mod tests {
         let global_endpoint_manager = create_test_endpoint_manager();
         let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
         let container_link = ResourceLink::root(ResourceType::Databases)
-            .item("testdb")
+            .item("test_db")
             .feed(ResourceType::Containers)
-            .item("testcontainer");
+            .item("test_container");
         let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
 
         let cloned_cache = cache.clone();
@@ -296,9 +296,9 @@ mod tests {
         let global_endpoint_manager = create_test_endpoint_manager();
         let pipeline = create_test_cosmos_pipeline(&global_endpoint_manager);
         let container_link = ResourceLink::root(ResourceType::Databases)
-            .item("testdb")
+            .item("test_db")
             .feed(ResourceType::Containers)
-            .item("testcontainer");
+            .item("test_container");
         let cache = ContainerCache::new(pipeline, container_link, global_endpoint_manager);
 
         cache.remove_by_id("container1").await;

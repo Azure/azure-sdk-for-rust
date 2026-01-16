@@ -90,8 +90,6 @@ pub enum PartitionKeyRangeStatus {
 }
 
 impl PartitionKeyRange {
-    /// The master partition key range ID (used only in Gateway)
-    pub const MASTER_PARTITION_KEY_RANGE_ID: &'static str = "M";
 
     /// Creates a new PartitionKeyRange with required fields
     pub fn new(id: String, min_inclusive: String, max_exclusive: String) -> Self {

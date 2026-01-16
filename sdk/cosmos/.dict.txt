@@ -30,3 +30,6 @@ winget
 makefiles
 ctest
 cmake
+
+# Common rust syntaxes
+rfind

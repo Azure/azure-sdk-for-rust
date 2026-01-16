@@ -365,7 +365,7 @@ impl CollectionRoutingMap {
             return max_cmp;
         }
 
-        // If maxs are equal, compare inclusiveness
+        // If max is equal, compare inclusiveness
         match (probe.is_max_inclusive, target.is_max_inclusive) {
             (true, false) => Ordering::Greater,
             (false, true) => Ordering::Less,
