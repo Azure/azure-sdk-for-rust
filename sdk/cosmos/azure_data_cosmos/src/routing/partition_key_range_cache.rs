@@ -263,7 +263,10 @@ impl PartitionKeyRangeCache {
                 MAXIMUM_ITEM_COUNT.as_str().to_string(),
                 PAGE_SIZE_STRING.to_string(),
             )
-            .header(A_IM_TYPE.as_str().to_string(), "Incremental Feed".to_string())
+            .header(
+                A_IM_TYPE.as_str().to_string(),
+                "Incremental Feed".to_string(),
+            )
             .build()?;
 
         if let Some(value) = if_none_match {
