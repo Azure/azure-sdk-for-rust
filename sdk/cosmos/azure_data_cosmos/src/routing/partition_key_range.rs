@@ -82,7 +82,6 @@ pub struct PartitionKeyRange {
 #[serde(rename_all = "lowercase")]
 pub enum PartitionKeyRangeStatus {
     #[default]
-    Invalid,
     Online,
     Splitting,
     Offline,

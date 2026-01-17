@@ -15,7 +15,6 @@ use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 use crate::routing::service_identity::ServiceIdentity;
 use crate::ReadDatabaseOptions;
-use async_trait::async_trait;
 use azure_core::http::headers::HeaderName;
 use azure_core::http::{Response, StatusCode};
 use azure_core::Error;
@@ -25,26 +24,6 @@ use std::time::Duration;
 use tracing::info;
 
 const PAGE_SIZE_STRING: &str = "-1";
-
-#[async_trait]
-pub trait RoutingMapProvider: Send + Sync {
-    async fn try_get_partition_key_range_by_id(
-        &self,
-        collection_resource_id: &str,
-        partition_key_range_id: &str,
-        force_refresh: bool,
-    ) -> Response<Option<PartitionKeyRange>>;
-}
-
-#[async_trait]
-pub trait CollectionRoutingMapCache: Send + Sync {
-    async fn try_lookup(
-        &self,
-        collection_rid: &str,
-        previous_value: Option<Arc<CollectionRoutingMap>>,
-        request: Option<Arc<CosmosRequest>>,
-    ) -> Response<Option<Arc<CollectionRoutingMap>>>;
-}
 
 #[derive(Clone, Debug)]
 pub struct PartitionKeyRangeCache {
@@ -185,14 +164,28 @@ impl PartitionKeyRangeCache {
         collection_rid: &str,
         previous_routing_map: Option<CollectionRoutingMap>,
     ) -> Result<Option<CollectionRoutingMap>, Error> {
+        // Maximum number of iterations to prevent infinite loops in case of unexpected server behavior
+        const MAX_ITERATIONS: usize = 1000;
+
+        let mut iteration_count = 0;
         let mut ranges = Vec::new();
         let mut change_feed_next_if_none_match = previous_routing_map
             .as_ref()
             .and_then(|m| m.change_feed_next_if_none_match.clone());
 
-        let mut last_status_code: StatusCode;
-
         loop {
+            iteration_count += 1;
+            if iteration_count > MAX_ITERATIONS {
+                return Err(Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    format!(
+                        "Maximum iteration count ({}) exceeded while fetching partition key ranges for collection: {}",
+                        MAX_ITERATIONS,
+                        collection_rid
+                    ),
+                ));
+            }
+
             let pk_range_link = self
                 .database_link
                 .feed(ResourceType::Containers)
@@ -206,7 +199,7 @@ impl PartitionKeyRangeCache {
                 )
                 .await?;
 
-            last_status_code = response.status();
+            let last_status_code = response.status();
             change_feed_next_if_none_match = response
                 .headers()
                 .get_optional_string(&HeaderName::from_static("etag"));
@@ -246,7 +239,7 @@ impl PartitionKeyRangeCache {
 
             CollectionRoutingMap::try_create_complete_routing_map(
                 filtered_tuples,
-                String::new(),
+                collection_rid.to_string(),
                 change_feed_next_if_none_match,
             )?
         };

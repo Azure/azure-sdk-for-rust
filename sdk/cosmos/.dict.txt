@@ -31,5 +31,5 @@ makefiles
 ctest
 cmake
 
-# Common rust syntaxes
+# Common Rust syntax
 rfind

@@ -34,7 +34,7 @@ impl ServiceIdentity {
     }
 
     /// Gets the service name (URI)
-    pub fn service_name(&self) -> &String {
+    pub fn service_name(&self) -> &str {
         &self.service_name
     }
 

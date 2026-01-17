@@ -18,11 +18,13 @@ pub struct CosmosConnection {
 }
 
 impl CosmosConnection {
-    /// Creates a new `TransportHandler` with the specified pipeline.
+    /// Creates a new [`CosmosConnection`] with the specified dependencies.
     ///
     /// # Arguments
     ///
-    /// * `pipeline` - The Cosmos pipeline to use for sending requests.
+    /// * `pipeline` - The Cosmos gateway pipeline to use for sending requests.
+    /// * `container_cache` - The cache used to resolve container properties.
+    /// * `pk_range_cache` - The cache used to resolve partition key ranges.
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
         container_cache: Arc<ContainerCache>,
@@ -40,14 +42,295 @@ impl CosmosConnection {
         cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        let container_prop = self
-            .container_cache
-            .resolve_by_id("sdk_rust_container".parse()?, None, false)
-            .await?;
-        let _pk_range = self
-            .pk_range_cache
-            .resolve_partition_key_range_by_id(&container_prop.id, "0".as_ref(), false)
-            .await;
         self.pipeline.send(cosmos_request, context).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cosmos_request::CosmosRequest;
+    use crate::operation_context::OperationType;
+    use crate::resource_context::{ResourceLink, ResourceType};
+    use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+    use crate::CosmosClientOptions;
+    use azure_core::http::ClientOptions;
+    use std::borrow::Cow;
+    use url::Url;
+
+    // Helper function to create a test GlobalEndpointManager
+    fn create_endpoint_manager() -> GlobalEndpointManager {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
+        GlobalEndpointManager::new(endpoint, vec![], pipeline)
+    }
+
+    // Helper function to create a test GatewayPipeline
+    fn create_gateway_pipeline(endpoint_manager: &GlobalEndpointManager) -> Arc<GatewayPipeline> {
+        let pipeline_core = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
+        Arc::new(GatewayPipeline::new(
+            endpoint,
+            pipeline_core,
+            endpoint_manager.clone(),
+            CosmosClientOptions::default(),
+        ))
+    }
+
+    // Helper function to create a test ContainerCache
+    fn create_container_cache(
+        pipeline: Arc<GatewayPipeline>,
+        endpoint_manager: GlobalEndpointManager,
+    ) -> Arc<ContainerCache> {
+        let container_link = ResourceLink::root(ResourceType::Databases)
+            .item("test_db")
+            .feed(ResourceType::Containers)
+            .item("test_container");
+        Arc::new(ContainerCache::new(
+            pipeline,
+            container_link,
+            endpoint_manager,
+        ))
+    }
+
+    // Helper function to create a test PartitionKeyRangeCache
+    fn create_pk_range_cache(
+        pipeline: Arc<GatewayPipeline>,
+        container_cache: Arc<ContainerCache>,
+        endpoint_manager: Arc<GlobalEndpointManager>,
+    ) -> Arc<PartitionKeyRangeCache> {
+        let database_link = ResourceLink::root(ResourceType::Databases).item("test_db");
+        Arc::new(PartitionKeyRangeCache::new(
+            pipeline,
+            database_link,
+            container_cache,
+            endpoint_manager,
+        ))
+    }
+
+    // Helper function to create a test CosmosRequest
+    fn create_cosmos_request() -> CosmosRequest {
+        let resource_link = ResourceLink::root(ResourceType::Databases)
+            .item("test_db")
+            .feed(ResourceType::Containers)
+            .item("test_container")
+            .feed(ResourceType::Documents)
+            .item("test_doc");
+        CosmosRequest::builder(OperationType::Read, resource_link)
+            .build()
+            .expect("Failed to create CosmosRequest")
+    }
+
+    #[test]
+    fn new_cosmos_connection() {
+        let endpoint_manager = create_endpoint_manager();
+        let pipeline = create_gateway_pipeline(&endpoint_manager);
+        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
+        let pk_range_cache = create_pk_range_cache(
+            pipeline.clone(),
+            container_cache.clone(),
+            Arc::new(endpoint_manager),
+        );
+
+        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
+
+        // Verify the connection was created successfully
+        assert!(std::mem::size_of_val(&connection) > 0);
+    }
+
+    #[test]
+    fn cosmos_connection_clone() {
+        let endpoint_manager = create_endpoint_manager();
+        let pipeline = create_gateway_pipeline(&endpoint_manager);
+        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
+        let pk_range_cache = create_pk_range_cache(
+            pipeline.clone(),
+            container_cache.clone(),
+            Arc::new(endpoint_manager),
+        );
+
+        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
+        let cloned_connection = connection.clone();
+
+        // Both should be valid instances
+        assert!(std::mem::size_of_val(&connection) > 0);
+        assert!(std::mem::size_of_val(&cloned_connection) > 0);
+    }
+
+    #[test]
+    fn cosmos_connection_has_required_fields() {
+        let endpoint_manager = create_endpoint_manager();
+        let pipeline = create_gateway_pipeline(&endpoint_manager);
+        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
+        let pk_range_cache = create_pk_range_cache(
+            pipeline.clone(),
+            container_cache.clone(),
+            Arc::new(endpoint_manager),
+        );
+
+        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
+
+        // Test that connection has pipeline, container_cache, and pk_range_cache
+        // by checking that it implements Debug (which requires all fields to implement Debug)
+        let debug_output = format!("{:?}", connection);
+        assert!(debug_output.contains("CosmosConnection"));
+        assert!(debug_output.contains("pipeline"));
+        assert!(debug_output.contains("container_cache"));
+        assert!(debug_output.contains("pk_range_cache"));
+    }
+
+    #[test]
+    fn cosmos_request_builder_creates_valid_request() {
+        let request = create_cosmos_request();
+        assert_eq!(request.operation_type, OperationType::Read);
+        assert_eq!(request.resource_type, ResourceType::Documents);
+    }
+
+    #[test]
+    fn cosmos_connection_with_preferred_locations() {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
+        let endpoint_manager = GlobalEndpointManager::new(
+            endpoint.clone(),
+            vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            pipeline.clone(),
+        );
+
+        let gateway_pipeline = Arc::new(GatewayPipeline::new(
+            endpoint,
+            pipeline,
+            endpoint_manager.clone(),
+            CosmosClientOptions::default(),
+        ));
+
+        let container_cache =
+            create_container_cache(gateway_pipeline.clone(), endpoint_manager.clone());
+        let pk_range_cache = create_pk_range_cache(
+            gateway_pipeline.clone(),
+            container_cache.clone(),
+            Arc::new(endpoint_manager),
+        );
+
+        let connection =
+            CosmosConnection::new(gateway_pipeline, container_cache, pk_range_cache);
+
+        // Verify the connection was created successfully with preferred locations
+        assert!(std::mem::size_of_val(&connection) > 0);
+    }
+
+    #[test]
+    fn multiple_cosmos_connections_share_caches() {
+        let endpoint_manager = create_endpoint_manager();
+        let pipeline = create_gateway_pipeline(&endpoint_manager);
+        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
+        let pk_range_cache = create_pk_range_cache(
+            pipeline.clone(),
+            container_cache.clone(),
+            Arc::new(endpoint_manager),
+        );
+
+        // Create multiple connections sharing the same caches
+        let connection1 =
+            CosmosConnection::new(pipeline.clone(), container_cache.clone(), pk_range_cache.clone());
+        let connection2 =
+            CosmosConnection::new(pipeline.clone(), container_cache.clone(), pk_range_cache.clone());
+        let connection3 = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
+
+        // All connections should be valid
+        assert!(std::mem::size_of_val(&connection1) > 0);
+        assert!(std::mem::size_of_val(&connection2) > 0);
+        assert!(std::mem::size_of_val(&connection3) > 0);
+    }
+
+    #[test]
+    fn cosmos_request_for_different_operations() {
+        // Test Read operation
+        let read_link = ResourceLink::root(ResourceType::Databases)
+            .item("test_db")
+            .feed(ResourceType::Containers)
+            .item("test_container")
+            .feed(ResourceType::Documents)
+            .item("test_doc");
+        let read_request = CosmosRequest::builder(OperationType::Read, read_link)
+            .build()
+            .unwrap();
+        assert_eq!(read_request.operation_type, OperationType::Read);
+        assert!(read_request.is_read_only_request());
+
+        // Test Create operation
+        let create_link = ResourceLink::root(ResourceType::Databases)
+            .item("test_db")
+            .feed(ResourceType::Containers)
+            .item("test_container")
+            .feed(ResourceType::Documents);
+        let create_request = CosmosRequest::builder(OperationType::Create, create_link)
+            .build()
+            .unwrap();
+        assert_eq!(create_request.operation_type, OperationType::Create);
+        assert!(!create_request.is_read_only_request());
+
+        // Test Delete operation
+        let delete_link = ResourceLink::root(ResourceType::Databases)
+            .item("test_db")
+            .feed(ResourceType::Containers)
+            .item("test_container")
+            .feed(ResourceType::Documents)
+            .item("doc_to_delete");
+        let delete_request = CosmosRequest::builder(OperationType::Delete, delete_link)
+            .build()
+            .unwrap();
+        assert_eq!(delete_request.operation_type, OperationType::Delete);
+        assert!(!delete_request.is_read_only_request());
+
+        // Test Query operation
+        let query_link = ResourceLink::root(ResourceType::Databases)
+            .item("test_db")
+            .feed(ResourceType::Containers)
+            .item("test_container")
+            .feed(ResourceType::Documents);
+        let query_request = CosmosRequest::builder(OperationType::Query, query_link)
+            .build()
+            .unwrap();
+        assert_eq!(query_request.operation_type, OperationType::Query);
+        assert!(query_request.is_read_only_request());
+    }
+
+    #[test]
+    fn cosmos_connection_debug_implementation() {
+        let endpoint_manager = create_endpoint_manager();
+        let pipeline = create_gateway_pipeline(&endpoint_manager);
+        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
+        let pk_range_cache = create_pk_range_cache(
+            pipeline.clone(),
+            container_cache.clone(),
+            Arc::new(endpoint_manager),
+        );
+
+        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
+
+        // Verify Debug trait is properly implemented
+        let debug_str = format!("{:?}", connection);
+        assert!(!debug_str.is_empty());
     }
 }

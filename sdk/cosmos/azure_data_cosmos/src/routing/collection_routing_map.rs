@@ -76,7 +76,7 @@ impl CollectionRoutingMap {
                         range.id,
                         collection_unique_id
                     );
-                    None
+                    Some(INVALID_PK_RANGE_ID)
                 }
             })
             .max()
@@ -164,6 +164,11 @@ impl CollectionRoutingMap {
         // Algorithm: Use binary search to find the positions of the min key and max key in the routing map
         // Then within those two positions, check for overlapping partition key ranges
         for provided_range in provided_partition_key_ranges {
+            // If there are no ranges, skip processing
+            if self.ordered_partition_key_ranges.is_empty() {
+                continue;
+            }
+
             let min_index = self
                 .ordered_ranges
                 .binary_search_by(|probe| Self::compare_range_min(probe, provided_range))
@@ -174,7 +179,7 @@ impl CollectionRoutingMap {
                 .binary_search_by(|probe| Self::compare_range_max(probe, provided_range))
             {
                 Ok(idx) => idx,
-                Err(idx) => std::cmp::min(self.ordered_partition_key_ranges.len() - 1, idx),
+                Err(idx) => std::cmp::min(self.ordered_partition_key_ranges.len().saturating_sub(1), idx),
             };
 
             for i in min_index..=max_index {
@@ -199,6 +204,13 @@ impl CollectionRoutingMap {
             return Err(Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "effectivePartitionKeyValue out of range",
+            ));
+        }
+
+        if self.ordered_partition_key_ranges.is_empty() {
+            return Err(Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "no partition key ranges available",
             ));
         }
 
