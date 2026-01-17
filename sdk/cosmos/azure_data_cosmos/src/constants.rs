@@ -48,9 +48,9 @@ pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
-pub(crate) const MAX_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
-pub(crate) const A_IM: HeaderName = HeaderName::from_static("a-im");
-pub(crate) const IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
+pub const MAXIMUM_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
+pub const A_IM: HeaderName = HeaderName::from_static("a-im");
+pub const IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[non_exhaustive]
