@@ -259,17 +259,12 @@ impl PartitionKeyRangeCache {
         let builder = CosmosRequest::builder(OperationType::ReadFeed, resource_link.clone());
         let mut cosmos_request = builder
             .resource_id(collection_rid.to_string())
-            .header(
-                MAX_ITEM_COUNT.as_str().to_string(),
-                PAGE_SIZE_STRING.to_string(),
-            )
-            .header(A_IM.as_str().to_string(), "Incremental Feed".to_string())
+            .header(MAX_ITEM_COUNT, PAGE_SIZE_STRING.to_string())
+            .header(A_IM, "Incremental Feed".to_string())
             .build()?;
 
         if let Some(value) = if_none_match {
-            cosmos_request
-                .headers
-                .insert(IF_NONE_MATCH.as_str().to_string(), value)
+            cosmos_request.headers.insert(IF_NONE_MATCH, value)
         }
 
         let endpoint = self
