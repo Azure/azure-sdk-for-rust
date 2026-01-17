@@ -232,8 +232,7 @@ mod tests {
             Arc::new(endpoint_manager),
         );
 
-        let connection =
-            CosmosConnection::new(gateway_pipeline, container_cache, pk_range_cache);
+        let connection = CosmosConnection::new(gateway_pipeline, container_cache, pk_range_cache);
 
         // Verify the connection was created successfully with preferred locations
         assert!(std::mem::size_of_val(&connection) > 0);
@@ -251,10 +250,16 @@ mod tests {
         );
 
         // Create multiple connections sharing the same caches
-        let connection1 =
-            CosmosConnection::new(pipeline.clone(), container_cache.clone(), pk_range_cache.clone());
-        let connection2 =
-            CosmosConnection::new(pipeline.clone(), container_cache.clone(), pk_range_cache.clone());
+        let connection1 = CosmosConnection::new(
+            pipeline.clone(),
+            container_cache.clone(),
+            pk_range_cache.clone(),
+        );
+        let connection2 = CosmosConnection::new(
+            pipeline.clone(),
+            container_cache.clone(),
+            pk_range_cache.clone(),
+        );
         let connection3 = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
 
         // All connections should be valid

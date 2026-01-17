@@ -62,12 +62,12 @@ impl CollectionRoutingMap {
         // Calculate highest non-offline partition key range ID
         let highest_non_offline_pk_range_id = ordered_partition_key_ranges
             .iter()
-            .filter_map(|range| match range.id.parse::<i32>() {
+            .map(|range| match range.id.parse::<i32>() {
                 Ok(pk_id) => {
                     if range.status != PartitionKeyRangeStatus::Offline {
-                        Some(pk_id)
+                        pk_id
                     } else {
-                        Some(INVALID_PK_RANGE_ID)
+                        INVALID_PK_RANGE_ID
                     }
                 }
                 Err(_) => {
@@ -76,7 +76,7 @@ impl CollectionRoutingMap {
                         range.id,
                         collection_unique_id
                     );
-                    Some(INVALID_PK_RANGE_ID)
+                    INVALID_PK_RANGE_ID
                 }
             })
             .max()
@@ -179,7 +179,10 @@ impl CollectionRoutingMap {
                 .binary_search_by(|probe| Self::compare_range_max(probe, provided_range))
             {
                 Ok(idx) => idx,
-                Err(idx) => std::cmp::min(self.ordered_partition_key_ranges.len().saturating_sub(1), idx),
+                Err(idx) => std::cmp::min(
+                    self.ordered_partition_key_ranges.len().saturating_sub(1),
+                    idx,
+                ),
             };
 
             for i in min_index..=max_index {
