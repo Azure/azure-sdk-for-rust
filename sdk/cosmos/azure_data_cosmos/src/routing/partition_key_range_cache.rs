@@ -123,25 +123,31 @@ impl PartitionKeyRangeCache {
         collection_rid: &str,
         previous_value: Option<CollectionRoutingMap>,
     ) -> Result<Option<CollectionRoutingMap>, Error> {
+        // Clone previous_value for use in should_force_refresh closure
         // Determine if we need to force refresh based on whether we have a previous value
-        let should_refresh = previous_value.is_some();
         let routing_map = self
             .routing_map_cache
-            .get(collection_rid.to_string(), should_refresh, || async {
-                let routing_map = self
-                    .get_routing_map_for_collection(collection_rid, previous_value.clone())
-                    .await?;
-                match routing_map {
-                    Some(map) => Ok(map),
-                    None => Err(Error::new(
-                        azure_core::error::ErrorKind::Other,
-                        format!(
-                            "Failed to get routing map for collection: {}",
-                            collection_rid
-                        ),
-                    )),
-                }
-            })
+            .get(
+                collection_rid.to_string(),
+                |cached| {
+                    PartitionKeyRangeCache::should_force_refresh(previous_value.clone(), cached)
+                },
+                || async {
+                    let routing_map = self
+                        .get_routing_map_for_collection(collection_rid, previous_value.clone())
+                        .await?;
+                    match routing_map {
+                        Some(map) => Ok(map),
+                        None => Err(Error::new(
+                            azure_core::error::ErrorKind::Other,
+                            format!(
+                                "Failed to get routing map for collection: {}",
+                                collection_rid
+                            ),
+                        )),
+                    }
+                },
+            )
             .await;
 
         Ok(routing_map.ok())
@@ -149,7 +155,7 @@ impl PartitionKeyRangeCache {
 
     fn should_force_refresh(
         previous_value: Option<CollectionRoutingMap>,
-        current_value: Option<CollectionRoutingMap>,
+        current_value: Option<&CollectionRoutingMap>,
     ) -> bool {
         match (previous_value, current_value) {
             (Some(prev), Some(curr)) => {
@@ -352,7 +358,7 @@ mod tests {
     fn should_force_refresh_previous_none() {
         let range = create_mock_partition_key_range("0", "", "FF");
         let current = create_routing_map(vec![range], Some("etag1".to_string()));
-        let result = PartitionKeyRangeCache::should_force_refresh(None, Some(current));
+        let result = PartitionKeyRangeCache::should_force_refresh(None, Some(&current));
         assert!(
             !result,
             "Should not force refresh when previous value is None"
@@ -377,7 +383,7 @@ mod tests {
         let previous = create_routing_map(vec![range1], Some("etag1".to_string()));
         let current = create_routing_map(vec![range2], Some("etag1".to_string()));
 
-        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(current));
+        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(&current));
         assert!(
             result,
             "Should force refresh when etags are the same (no changes)"
@@ -391,7 +397,7 @@ mod tests {
         let previous = create_routing_map(vec![range1], Some("etag1".to_string()));
         let current = create_routing_map(vec![range2], Some("etag2".to_string()));
 
-        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(current));
+        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(&current));
         assert!(
             !result,
             "Should not force refresh when etags are different (changes detected)"
@@ -405,7 +411,7 @@ mod tests {
         let previous = create_routing_map(vec![range1], None);
         let current = create_routing_map(vec![range2], None);
 
-        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(current));
+        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(&current));
         assert!(
             result,
             "Should force refresh when both etags are None (equal)"
@@ -419,7 +425,7 @@ mod tests {
         let previous = create_routing_map(vec![range1], Some("etag1".to_string()));
         let current = create_routing_map(vec![range2], None);
 
-        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(current));
+        let result = PartitionKeyRangeCache::should_force_refresh(Some(previous), Some(&current));
         assert!(
             !result,
             "Should not force refresh when etags differ (one is None)"

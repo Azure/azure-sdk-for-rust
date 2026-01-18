@@ -129,14 +129,16 @@ impl PartitionKeyRange {
 }
 
 // Implement PartialEq for PartitionKeyRange
+// Note: Only identity fields are compared to maintain consistency with Hash.
+// Floating-point fields (throughput_fraction, target_throughput) are excluded
+// because f64 does not implement Hash, and Rust requires that if a == b,
+// then hash(a) == hash(b).
 impl PartialEq for PartitionKeyRange {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
             && self.resource_id == other.resource_id
             && self.min_inclusive == other.min_inclusive
             && self.max_exclusive == other.max_exclusive
-            && self.target_throughput == other.target_throughput
-            && self.throughput_fraction == other.throughput_fraction
     }
 }
 

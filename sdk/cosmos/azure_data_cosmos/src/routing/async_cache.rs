@@ -55,21 +55,35 @@ where
     ///
     /// # Arguments
     /// * `key` - The cache key to look up
-    /// * `force_refresh` - If true, bypass cache and compute fresh value even if cached value is valid
-    /// * `compute` - Async function to compute the value if not cached or force refresh is requested
-    pub async fn get<F, Fut, E>(&self, key: K, force_refresh: bool, compute: F) -> Result<V, E>
+    /// * `should_refresh` - Callback function that receives the cached value (if any) and returns true
+    ///   if the cache should be refreshed. Receives `Some(&V)` if there's a cached value, or `None` if not.
+    /// * `compute` - Async function to compute the value if not cached or refresh is requested
+    pub async fn get<F, Fut, E, R>(&self, key: K, should_refresh: R, compute: F) -> Result<V, E>
     where
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<V, E>>,
+        R: FnOnce(Option<&V>) -> bool,
     {
-        // Fast path: check if value exists and is not expired (read lock)
-        // Skip this if force_refresh is true
-        if !force_refresh {
+        // First, check what's in the cache and determine if we need to refresh
+        let (cached_value, force_refresh) = {
             let store = self.store.read().await;
-            if let Some(entry) = store.get(&key) {
-                if !entry.is_expired() {
-                    return Ok(entry.value.clone());
+            match store.get(&key) {
+                Some(entry) if !entry.is_expired() => (
+                    Some(entry.value.clone()),
+                    should_refresh(Some(&entry.value)),
+                ),
+                Some(entry) => {
+                    // Entry exists but is expired - still pass it to should_refresh for inspection
+                    (None, should_refresh(Some(&entry.value)))
                 }
+                None => (None, should_refresh(None)),
+            }
+        };
+
+        // Fast path: return cached value if it exists and no refresh is needed
+        if !force_refresh {
+            if let Some(value) = cached_value {
+                return Ok(value);
             }
         }
 
@@ -89,7 +103,7 @@ where
                 }
             }
         } else {
-            // force_refresh is true, remove existing entry to ensure fresh computation
+            // force_refresh is true, remove the existing entry to ensure fresh computation
             store.remove(&key);
         }
 
@@ -144,10 +158,14 @@ mod tests {
 
         // First get - should compute
         let value = cache
-            .get("key1".to_string(), false, || async {
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                Ok::<String, &str>("value1".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async {
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok::<String, &str>("value1".to_string())
+                },
+            )
             .await
             .unwrap();
 
@@ -156,10 +174,14 @@ mod tests {
 
         // Second get - should return cached value
         let value = cache
-            .get("key1".to_string(), false, || async {
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                Ok::<String, &str>("value2".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async {
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok::<String, &str>("value2".to_string())
+                },
+            )
             .await
             .unwrap();
 
@@ -173,9 +195,11 @@ mod tests {
 
         // Add entry
         cache
-            .get("key1".to_string(), false, || async {
-                Ok::<String, &str>("value1".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async { Ok::<String, &str>("value1".to_string()) },
+            )
             .await
             .unwrap();
 
@@ -189,9 +213,11 @@ mod tests {
 
         // Get again - should recompute after expiration
         let value = cache
-            .get("key1".to_string(), false, || async {
-                Ok::<String, &str>("value2".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async { Ok::<String, &str>("value2".to_string()) },
+            )
             .await
             .unwrap();
 
@@ -204,9 +230,11 @@ mod tests {
 
         // Add entry
         cache
-            .get("key1".to_string(), false, || async {
-                Ok::<String, &str>("value1".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async { Ok::<String, &str>("value1".to_string()) },
+            )
             .await
             .unwrap();
 
@@ -219,10 +247,14 @@ mod tests {
         let count_clone = compute_count.clone();
 
         cache
-            .get("key1".to_string(), false, || async {
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                Ok::<String, &str>("value2".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async {
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok::<String, &str>("value2".to_string())
+                },
+            )
             .await
             .unwrap();
 
@@ -238,10 +270,14 @@ mod tests {
 
         // First get - should compute
         let value = cache
-            .get("key1".to_string(), false, || async {
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                Ok::<String, &str>("value1".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async {
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok::<String, &str>("value1".to_string())
+                },
+            )
             .await
             .unwrap();
 
@@ -250,22 +286,30 @@ mod tests {
 
         // Second get without force_refresh - should return cached value
         let value = cache
-            .get("key1".to_string(), false, || async {
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                Ok::<String, &str>("value2".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async {
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok::<String, &str>("value2".to_string())
+                },
+            )
             .await
             .unwrap();
 
         assert_eq!(value, "value1");
         assert_eq!(compute_count.load(Ordering::SeqCst), 1); // Not incremented
 
-        // Third get WITH force_refresh - should recompute even though cached value is valid
+        // Third get WITH force_refresh (callback returns true) - should recompute
         let value = cache
-            .get("key1".to_string(), true, || async {
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                Ok::<String, &str>("value3".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| true,
+                || async {
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok::<String, &str>("value3".to_string())
+                },
+            )
             .await
             .unwrap();
 
@@ -274,14 +318,68 @@ mod tests {
 
         // Fourth get without force_refresh - should return newly cached value
         let value = cache
-            .get("key1".to_string(), false, || async {
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                Ok::<String, &str>("value4".to_string())
-            })
+            .get(
+                "key1".to_string(),
+                |_| false,
+                || async {
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok::<String, &str>("value4".to_string())
+                },
+            )
             .await
             .unwrap();
 
         assert_eq!(value, "value3");
         assert_eq!(compute_count.load(Ordering::SeqCst), 2); // Not incremented
+    }
+
+    #[tokio::test]
+    async fn conditional_refresh_based_on_cached_value() {
+        let cache = AsyncCache::new(Duration::from_secs(60));
+
+        // First get - cache is empty, should_refresh receives None
+        let value = cache
+            .get(
+                "key1".to_string(),
+                |cached| {
+                    assert!(cached.is_none()); // No cached value yet
+                    false
+                },
+                || async { Ok::<String, &str>("value1".to_string()) },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(value, "value1");
+
+        // Second get - cache has value, should_refresh receives Some
+        let value = cache
+            .get(
+                "key1".to_string(),
+                |cached| {
+                    assert_eq!(cached, Some(&"value1".to_string()));
+                    false // Don't refresh
+                },
+                || async { Ok::<String, &str>("value2".to_string()) },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(value, "value1"); // Still the original value
+
+        // Third get - conditionally refresh based on cached value content
+        let value = cache
+            .get(
+                "key1".to_string(),
+                |cached| {
+                    // Refresh only if cached value is "value1"
+                    cached.map_or(false, |v| v == "value1")
+                },
+                || async { Ok::<String, &str>("value3".to_string()) },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(value, "value3"); // Refreshed because condition was met
     }
 }

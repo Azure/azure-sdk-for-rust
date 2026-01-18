@@ -80,12 +80,16 @@ impl ContainerCache {
         force_refresh: bool,
     ) -> Result<ContainerProperties, Error> {
         self.container_properties_cache
-            .get(container_id, force_refresh, || async {
-                let response = self
-                    .read_container_properties_by_id(self.container_link.clone(), options)
-                    .await?;
-                response.into_model()
-            })
+            .get(
+                container_id,
+                |_| force_refresh,
+                || async {
+                    let response = self
+                        .read_container_properties_by_id(self.container_link.clone(), options)
+                        .await?;
+                    response.into_model()
+                },
+            )
             .await
     }
 
