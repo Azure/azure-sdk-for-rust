@@ -367,13 +367,13 @@ mod tests {
 
         assert_eq!(value, "value1"); // Still the original value
 
-        // Third get - conditionally refresh based on cached value content
+        // Third, get - conditionally refresh based on cached value content
         let value = cache
             .get(
                 "key1".to_string(),
                 |cached| {
                     // Refresh only if cached value is "value1"
-                    cached.map_or(false, |v| v == "value1")
+                    cached.is_some_and(|v| v == "value1")
                 },
                 || async { Ok::<String, &str>("value3".to_string()) },
             )
