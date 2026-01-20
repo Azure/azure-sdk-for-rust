@@ -31,6 +31,7 @@ pub struct CosmosPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,
+    pub fault_injection_enabled: bool,
 }
 
 impl CosmosPipeline {
@@ -38,12 +39,14 @@ impl CosmosPipeline {
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
         global_endpoint_manager: GlobalEndpointManager,
+        fault_injection_enabled: bool,
     ) -> Self {
         let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
         CosmosPipeline {
             endpoint,
             pipeline,
             retry_handler,
+            fault_injection_enabled,
         }
     }
 
@@ -81,6 +84,11 @@ impl CosmosPipeline {
             async move { self.send_raw(ctx, &mut raw_req, url).await }
         };
 
+        #[cfg(feature = "fault_injection")]
+        if self.fault_injection_enabled {
+            cosmos_request
+                .add_fault_injection_headers();
+        }
         // Delegate to the retry handler, providing the sender callback
         let res = self.retry_handler.send(&mut cosmos_request, sender).await;
 

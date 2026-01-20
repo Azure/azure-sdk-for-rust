@@ -18,6 +18,7 @@ pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
     pub application_name: Option<String>,
     pub application_region: Option<String>,
+    pub fault_injection_enabled: bool,
     pub application_preferred_regions: Vec<Cow<'static, str>>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     pub consistency_level: Option<ConsistencyLevel>,

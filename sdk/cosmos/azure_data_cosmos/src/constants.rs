@@ -36,6 +36,11 @@ pub const POST_TRIGGER_INCLUDE: HeaderName =
 pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 pub const INDEXING_DIRECTIVE: HeaderName = HeaderName::from_static("x-ms-indexing-directive");
 pub const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+// these are not actually sent but are used internally for fault injection
+pub const FAULT_INJECTION_OPERATION: HeaderName =
+    HeaderName::from_static("x-ms-fault-injection-operation");
+pub const FAULT_INJECTION_CONTAINER_ID: HeaderName =
+    HeaderName::from_static("x-ms-fault-injection-container-id");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 

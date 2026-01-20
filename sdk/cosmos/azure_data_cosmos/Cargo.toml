@@ -40,6 +40,7 @@ workspace = true
 default = ["hmac_rust"]
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 preview_query_engine = ["serde_json/raw_value"] # Enables support for the PREVIEW external query engine
+fault_injection = [] # Enables support for fault injection testing
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 

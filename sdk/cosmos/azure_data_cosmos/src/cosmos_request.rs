@@ -11,6 +11,8 @@ use azure_core::http::{
     Method,
 };
 use serde::Serialize;
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::FaultOperationType;
 
 /// Specifies which form of authorization token should be used when signing
 /// the request. The SDK generally uses the primary key, but some operations
@@ -146,6 +148,17 @@ impl CosmosRequest {
         }
 
         req
+    }
+
+    #[cfg(feature = "fault_injection")]
+    pub fn add_fault_injection_headers(&mut self) {
+        if self.operation_type == Upsert && self.resource_type == ResourceType::Documents {
+            self.headers.insert(
+                constants::FAULT_INJECTION_OPERATION,
+                HeaderValue::from_static(FaultOperationType::Upsert.into()),
+            );
+            return;
+        }
     }
 }
 

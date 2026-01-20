@@ -77,6 +77,7 @@ impl CosmosClient {
             endpoint.parse()?,
             pipeline_core,
             global_endpoint_manager,
+            options.fault_injection_enabled
         ));
 
         Ok(Self {
