@@ -360,10 +360,7 @@ impl GlobalEndpointManager {
         operation_type: OperationType,
     ) -> bool {
         let cache = self.location_cache.lock().unwrap();
-        cache.can_use_multiple_write_locations()
-            && (resource_type == ResourceType::Documents
-                || (resource_type == ResourceType::StoredProcedures
-                    && operation_type == OperationType::Execute))
+        cache.can_support_multiple_write_locations(resource_type, operation_type)
     }
 
     /// Retrieves the Cosmos DB account ("database account") properties from the service.

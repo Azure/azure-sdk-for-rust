@@ -46,10 +46,24 @@ async fn create_container_and_write_item(
         )
         .await?
         .into_model()?;
+    // keep reading container until it is fully created
+    loop {
+        match db_client
+            .container_client(&created_properties.id)
+            .read(None)
+            .await
+        {
+            Ok(_) => break,
+            Err(e) => {
+                println!("waiting for container to be created: {}", e);
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
+        }
+    }
 
     let container_client = db_client.container_client(&created_properties.id);
     let _create_result = container_client
-        .create_item(
+        .upsert_item(
             "item1",
             &serde_json::json!({"id": "item1", "value": "test"}),
             None,
