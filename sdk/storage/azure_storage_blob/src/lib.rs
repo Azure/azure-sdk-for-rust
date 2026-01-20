@@ -10,6 +10,7 @@
 pub mod clients;
 #[allow(unused_imports)]
 mod generated;
+mod logging;
 mod parsers;
 mod partitioned_transfer;
 mod pipeline;

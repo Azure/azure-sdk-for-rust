@@ -7,6 +7,7 @@ use crate::{
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadBlobFromUrlResult,
     },
+    logging::StorageLoggingExt,
     models::{
         BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions, BlockList,
@@ -45,6 +46,7 @@ impl GeneratedBlockBlobClient {
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        options.client_options.apply_storage_logging_defaults();
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options

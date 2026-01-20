@@ -5,6 +5,7 @@ use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     generated::models::BlobServiceClientGetAccountInfoResult,
+    logging::StorageLoggingExt,
     models::{
         BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
         BlobServiceClientGetPropertiesOptions, BlobServiceClientGetStatisticsOptions,
@@ -45,6 +46,7 @@ impl GeneratedBlobServiceClient {
         options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        options.client_options.apply_storage_logging_defaults();
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options

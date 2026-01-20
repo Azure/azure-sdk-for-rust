@@ -24,10 +24,10 @@
 //! az login
 //! $env:AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
 //! $env:RUST_LOG="<log-level>"
-//! cargo run --package azure_storage_blob --example logging_and_headers
+//! cargo run --package azure_storage_blob --example storage_logging
 //! ```
 
-use azure_core::http::{LoggingOptions, RequestContent};
+use azure_core::http::RequestContent;
 use azure_identity::AzureCliCredential;
 use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
 use std::env;
@@ -62,20 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Configure logging to show additional Azure Storage headers
     // By default, most headers are sanitized to avoid logging sensitive data.
     // Here we can explicitly allow certain Azure Storage headers to be logged.
-    let mut client_options = BlobContainerClientOptions::default();
-    client_options.client_options.logging = LoggingOptions {
-        additional_allowed_header_names: vec![
-            "x-ms-version".into(),
-            "x-ms-blob-type".into(),
-            "content-md5".into(),
-            "x-ms-server-encrypted".into(),
-            "x-ms-lease-state".into(),
-            "accept-ranges".into(),
-            "x-ms-lease-status".into(),
-            "x-ms-creation-time".into(),
-        ],
-        additional_allowed_query_params: vec![],
-    };
+    let client_options = BlobContainerClientOptions::default();
 
     let container_client = BlobContainerClient::new(
         &endpoint,
