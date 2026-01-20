@@ -31,10 +31,6 @@ struct TestItem {
 
 async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
-    let options = Some(CreateContainerOptions {
-        throughput: Some(ThroughputProperties::manual(600)),
-        ..Default::default()
-    });
     db_client
         .create_container(
             ContainerProperties {
@@ -42,7 +38,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
                 partition_key: "/partition_key".into(),
                 ..Default::default()
             },
-            options,
+            None,
         )
         .await?;
     let container_client = db_client.container_client("Container");

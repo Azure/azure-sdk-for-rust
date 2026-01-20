@@ -25,7 +25,7 @@ var accountName = toLower(baseName)
 var resourceId = cosmosAccount.id
 var singleRegionConfiguration = [
   {
-    locationName: 'West US 3'
+    locationName: 'East US 2'
     provisioningState: 'Succeeded'
     failoverPriority: 0
     isZoneRedundant: false
@@ -33,7 +33,7 @@ var singleRegionConfiguration = [
 ]
 var multiRegionConfiguration = [
   {
-    locationName: 'West US 3'
+    locationName: 'East US 2'
     provisioningState: 'Succeeded'
     failoverPriority: 0
     isZoneRedundant: false
