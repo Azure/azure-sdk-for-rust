@@ -5,6 +5,13 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
+# Skip setup if AZURE_COSMOS_CONNECTION_STRING is already set
+if ($env:AZURE_COSMOS_CONNECTION_STRING) {
+    Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
+    $global:LASTEXITCODE = 0
+    return
+}
+
 $IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
 if($IsAzDo) {
     $AzDoEmulatorPath = Join-Path $env:AGENT_HOMEDIRECTORY "..\..\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
