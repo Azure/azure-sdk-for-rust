@@ -107,4 +107,4 @@ resource versionedBlobServices 'Microsoft.Storage/storageAccounts/blobServices@2
 }
 
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.name
-output AZURE_STORAGE_VERSIONED_ACCOUNT_NAME string = versionedStorage.name
+output VERSIONED_AZURE_STORAGE_ACCOUNT_NAME string = versionedStorage.name
