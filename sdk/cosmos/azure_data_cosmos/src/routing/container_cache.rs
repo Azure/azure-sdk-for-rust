@@ -10,7 +10,6 @@ use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadCon
 use azure_core::http::Response;
 use azure_core::Error;
 use std::sync::Arc;
-use std::time::Duration;
 
 /// Cache for Cosmos DB container metadata and properties.
 ///
@@ -28,7 +27,7 @@ pub struct ContainerCache {
 }
 
 impl ContainerCache {
-    /// Creates a new `ContainerCache` with default configuration.
+    /// Creates a new `ContainerCache` with the default configuration.
     ///
     /// # Summary
     /// Initializes a container cache with a 5-minute TTL for container properties.
@@ -46,9 +45,8 @@ impl ContainerCache {
         container_link: ResourceLink,
         global_endpoint_manager: GlobalEndpointManager,
     ) -> Self {
-        let container_properties_cache = AsyncCache::new(
-            Duration::from_secs(300), // Default 5 minutes TTL
-        );
+        // No TTL-based expiry is needed.
+        let container_properties_cache = AsyncCache::new(None);
 
         Self {
             pipeline,

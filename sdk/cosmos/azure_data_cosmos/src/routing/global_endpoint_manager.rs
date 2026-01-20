@@ -66,7 +66,7 @@ impl GlobalEndpointManager {
         )));
 
         let account_properties_cache = AsyncCache::new(
-            Duration::from_secs(600), // Default 10 minutes TTL
+            Some(Duration::from_secs(600)), // Default 10 minutes TTL
         );
 
         Self {

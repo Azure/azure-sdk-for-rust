@@ -20,7 +20,6 @@ use azure_core::http::{Response, StatusCode};
 use azure_core::Error;
 use serde::Deserialize;
 use std::sync::Arc;
-use std::time::Duration;
 use tracing::info;
 
 const PAGE_SIZE_STRING: &str = "-1";
@@ -47,9 +46,8 @@ impl PartitionKeyRangeCache {
         container_cache: Arc<ContainerCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
-        let routing_map_cache = AsyncCache::new(
-            Duration::from_secs(300), // Default 5 minutes TTL
-        );
+        // No TTL-based expiry is needed.
+        let routing_map_cache = AsyncCache::new(None);
         Self {
             routing_map_cache,
             pipeline,
