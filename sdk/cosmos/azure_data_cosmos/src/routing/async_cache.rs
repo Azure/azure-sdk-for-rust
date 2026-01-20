@@ -29,7 +29,6 @@ impl<V> CacheEntry<V> {
 /// A generic async cache with optional TTL support.
 ///
 /// When created with `new()`, entries expire after the specified TTL.
-/// When created with `new_without_expiration()`, entries never expire.
 #[derive(Clone)]
 pub struct AsyncCache<K, V>
 where
