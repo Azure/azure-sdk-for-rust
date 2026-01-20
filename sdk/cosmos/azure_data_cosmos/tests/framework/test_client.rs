@@ -6,6 +6,7 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
 use azure_core::http::{StatusCode, Transport};
+use azure_data_cosmos::regions::{WEST_CENTRAL_US, WEST_US_3};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, Query,
 };
@@ -17,7 +18,6 @@ use std::{
     sync::{Arc, OnceLock},
 };
 use tracing_subscriber::EnvFilter;
-use azure_data_cosmos::regions::{WEST_CENTRAL_US, WEST_US_3};
 
 /// Represents a Cosmos DB client connected to a test account.
 pub struct TestClient {
