@@ -73,4 +73,38 @@ resource blobServices 'Microsoft.Storage/storageAccounts/blobServices@2024-01-01
   }
 }
 
+resource versionedStorage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
+  name: '${baseName}ver'
+  location: location
+  kind: 'StorageV2'
+  sku: {
+    name: 'Standard_RAGRS'
+  }
+  properties: {
+    accessTier: 'Hot'
+    allowSharedKeyAccess: false
+    encryption: encryption
+    networkAcls: networkAcls
+    supportsHttpsTrafficOnly: true
+  }
+}
+
+resource versionedBlobServices 'Microsoft.Storage/storageAccounts/blobServices@2024-01-01' = {
+  parent: versionedStorage
+  name: 'default'
+  properties: {
+    isVersioningEnabled: true
+    deleteRetentionPolicy: {
+      enabled: true
+      days: 1
+      allowPermanentDelete: false
+    }
+    containerDeleteRetentionPolicy: {
+      enabled: true
+      days: 1
+    }
+  }
+}
+
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.name
+output AZURE_STORAGE_VERSIONED_ACCOUNT_NAME string = versionedStorage.name
