@@ -6,10 +6,7 @@ use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{constants, PartitionKey};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue, Headers};
-use azure_core::http::{
-    request::{options::ContentType, Request},
-    Method,
-};
+use azure_core::http::{request::Request, Method};
 use serde::Serialize;
 
 /// Specifies which form of authorization token should be used when signing

@@ -6,7 +6,7 @@ mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{response::Response, Body, Context, RawResponse};
+use azure_core::http::{response::Response, Context, RawResponse};
 use url::Url;
 
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
