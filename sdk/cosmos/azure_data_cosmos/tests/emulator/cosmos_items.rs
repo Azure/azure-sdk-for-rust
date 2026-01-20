@@ -8,8 +8,8 @@ use super::framework;
 use azure_core::http::Etag;
 use azure_data_cosmos::{
     clients::ContainerClient,
-    models::{ContainerProperties, PatchDocument},
-    ItemOptions, PartitionKey,
+    models::{ContainerProperties, PatchDocument, ThroughputProperties},
+    CreateContainerOptions, ItemOptions, PartitionKey,
 };
 use framework::{TestClient, TestRunContext};
 use serde::{Deserialize, Serialize};
@@ -31,6 +31,10 @@ struct TestItem {
 
 async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
+    let options = Some(CreateContainerOptions {
+        throughput: Some(ThroughputProperties::manual(600)),
+        ..Default::default()
+    });
     db_client
         .create_container(
             ContainerProperties {
@@ -38,7 +42,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
                 partition_key: "/partition_key".into(),
                 ..Default::default()
             },
-            None,
+            options,
         )
         .await?;
     let container_client = db_client.container_client("Container");

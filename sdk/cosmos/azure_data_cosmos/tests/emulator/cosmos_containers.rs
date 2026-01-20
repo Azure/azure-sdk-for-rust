@@ -36,7 +36,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 ..Default::default()
             };
 
-            let throughput = ThroughputProperties::manual(400);
+            let throughput = ThroughputProperties::manual(800);
 
             let created_properties = db_client
                 .create_container(
@@ -117,14 +117,14 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 .await?
                 .expect("throughput should be present");
 
-            assert_eq!(Some(400), current_throughput.throughput());
+            assert_eq!(Some(800), current_throughput.throughput());
 
-            let new_throughput = ThroughputProperties::manual(500);
+            let new_throughput = ThroughputProperties::manual(900);
             let throughput_response = container_client
                 .replace_throughput(new_throughput, None)
                 .await?
                 .into_model()?;
-            assert_eq!(Some(500), throughput_response.throughput());
+            assert_eq!(Some(900), throughput_response.throughput());
 
             container_client.delete(None).await?;
 
