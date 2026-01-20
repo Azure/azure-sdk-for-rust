@@ -15,12 +15,13 @@ use azure_core::{
 use serde::Serialize;
 use std::sync::Arc;
 
+use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
-use azure_core::http::RetryOptions;
+use azure_core::http::{LoggingOptions, RetryOptions};
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -53,9 +54,16 @@ impl CosmosClient {
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
-        let mut client_options = options.client_options;
+        let endpoint: Url = endpoint.parse()?;
+        let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
-
+        client_options.logging = LoggingOptions {
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
+                .iter()
+                .map(|h| std::borrow::Cow::Borrowed(h.as_str()))
+                .collect(),
+            additional_allowed_query_params: vec![],
+        };
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -67,16 +75,15 @@ impl CosmosClient {
             None,
         );
 
-        let global_endpoint_manager = GlobalEndpointManager::new(
-            endpoint.parse()?,
-            options.application_preferred_regions,
-            pipeline_core.clone(),
-        );
+        let preferred_regions = options.application_preferred_regions.clone();
+        let global_endpoint_manager =
+            GlobalEndpointManager::new(endpoint.clone(), preferred_regions, pipeline_core.clone());
 
         let pipeline = Arc::new(CosmosPipeline::new(
-            endpoint.parse()?,
+            endpoint,
             pipeline_core,
             global_endpoint_manager,
+            options,
         ));
 
         Ok(Self {
@@ -108,8 +115,17 @@ impl CosmosClient {
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
-        let mut client_options = options.client_options;
+        let endpoint: Url = endpoint.parse()?;
+
+        let mut client_options = options.client_options.clone();
         client_options.retry = RetryOptions::none();
+        client_options.logging = LoggingOptions {
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
+                .iter()
+                .map(|h| std::borrow::Cow::Borrowed(h.as_str()))
+                .collect(),
+            additional_allowed_query_params: vec![],
+        };
 
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
@@ -120,16 +136,15 @@ impl CosmosClient {
             None,
         );
 
-        let global_endpoint_manager = GlobalEndpointManager::new(
-            endpoint.parse()?,
-            options.application_preferred_regions,
-            pipeline_core.clone(),
-        );
+        let preferred_regions = options.application_preferred_regions.clone();
+        let global_endpoint_manager =
+            GlobalEndpointManager::new(endpoint.clone(), preferred_regions, pipeline_core.clone());
 
         let pipeline = Arc::new(CosmosPipeline::new(
-            endpoint.parse()?,
+            endpoint,
             pipeline_core,
-            global_endpoint_manager.clone(),
+            global_endpoint_manager,
+            options,
         ));
 
         Ok(Self {
@@ -244,7 +259,7 @@ impl CosmosClient {
 
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.databases_link.clone())
-                .headers(&options.throughput)
+                .request_headers(&options.throughput)
                 .json(&RequestBody { id })
                 .build()?;
 

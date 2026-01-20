@@ -11,7 +11,7 @@ use azure_storage_blob::models::{
     BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
     BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobClientSetTierOptions, BlobContainerClientListBlobFlatSegmentOptions, BlobTags,
     BlockBlobClientUploadOptions, DeleteSnapshotsOptionType, ListBlobsIncludeItem,
 };
 use azure_storage_blob_test::{
@@ -137,7 +137,12 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
 
     // Set Tags on Current Version (Does NOT Create New Version)
     let tags = HashMap::from([("env".to_string(), "test".to_string())]);
-    blob_client.set_tags(tags.clone(), None).await?;
+    blob_client
+        .set_tags(
+            RequestContent::try_from(BlobTags::from(tags.clone()))?,
+            None,
+        )
+        .await?;
 
     // Verify version_id hasn't changed after setting tags
     let response = blob_client.get_properties(None).await?;
@@ -788,7 +793,12 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
 
     // Test Blob Tags Behavior with Snapshots
     let tags = HashMap::from([("test_key".to_string(), "test_value".to_string())]);
-    blob_client.set_tags(tags.clone(), None).await?;
+    blob_client
+        .set_tags(
+            RequestContent::try_from(BlobTags::from(tags.clone()))?,
+            None,
+        )
+        .await?;
 
     // Verify Tags on Base Blob
     let response_tags = blob_client.get_tags(None).await?.into_model()?;

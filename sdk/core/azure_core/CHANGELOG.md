@@ -1,6 +1,6 @@
 # Release History
 
-## 0.31.0 (Unreleased)
+## 0.31.0 (2026-01-16)
 
 ### Features Added
 
@@ -16,7 +16,6 @@
 ### Breaking Changes
 
 - Added type parameter `C` to `Pager` declaration, defaulting to `Url` so it can be elided in most existing declarations.
-- Added type parameter `C` to `Poller` declaration, defaulting to `Url` so it can be elided in most existing declarations.
 - Changed `Pager::from_callback` to take a `PagerOptions` as the second parameter rather than a `Context` parameter.
 - Changed `Pager::from_callback` to `Pager::new` which now requires the caller to return a `Pin<Box<dyn Future>>`.
 - Changed `Poller::from_callback` to `Poller::new` which now requires the caller to return a `Pin<Box<dyn Future>>`.
@@ -28,10 +27,6 @@
 - Removed `Pager::from_stream`.
 - Removed `Poller::from_stream`.
 - Renamed `BoxedFuture` to `PagerResultFuture` in `pager` module.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.30.1 (2025-11-09)
 
