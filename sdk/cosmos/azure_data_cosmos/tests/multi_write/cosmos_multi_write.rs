@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 #![cfg(all(feature = "key_auth"))]
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/multi_write/mod.rs`.
 use super::framework;
 
 use std::borrow::Cow;
@@ -59,7 +59,6 @@ async fn create_container_and_write_item(
     Ok(())
 }
 
-// just a place holder does not really test anything
 #[tokio::test]
 pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     const CONTAINER_ID: &str = "MultiWritePreferredLocations";

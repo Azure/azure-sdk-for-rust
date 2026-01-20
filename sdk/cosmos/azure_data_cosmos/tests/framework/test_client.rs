@@ -17,6 +17,7 @@ use std::{
     sync::{Arc, OnceLock},
 };
 use tracing_subscriber::EnvFilter;
+use azure_data_cosmos::regions::{WEST_CENTRAL_US, WEST_US_3};
 
 /// Represents a Cosmos DB client connected to a test account.
 pub struct TestClient {
@@ -32,8 +33,8 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-pub const HUB_REGION: &str = "West US 3";
-pub const SATELLITE_REGION: &str = "West Central US";
+pub const HUB_REGION: &str = WEST_US_3;
+pub const SATELLITE_REGION: &str = WEST_CENTRAL_US;
 
 static IS_AZURE_PIPELINES: OnceLock<bool> = OnceLock::new();
 

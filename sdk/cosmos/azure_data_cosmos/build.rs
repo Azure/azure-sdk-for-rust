@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 // Registers custom cfgs used by this crate's integration tests.
 //
 // Some CI/build setups enable `-W unexpected-cfgs`, and in newer Rust toolchains

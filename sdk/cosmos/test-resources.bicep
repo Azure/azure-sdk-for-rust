@@ -3,7 +3,7 @@ param baseName string
 @description('Flag to enable or disable multiple write locations on CosmosDB Account')
 param enableMultipleWriteLocations bool = false
 
-@description('dictates which tests run for this resource')
+@description('Dictates which tests run for this resource')
 param testCategory string = 'emulator'
 
 @description('Default Cosmosdb Account level consistency')
@@ -14,9 +14,6 @@ param enableMultipleRegions bool = false
 
 @description('Location for the Cosmos DB account.')
 param location string = resourceGroup().location
-
-@description('Whether Per Partition Circuit Breaker should be enabled.')
-param circuitBreakerEnabled bool = false
 
 @description('The api version to be used by Bicep to create resources')
 param apiVersion string = '2023-04-15'
@@ -107,6 +104,5 @@ resource accountName_roleAssignmentId 'Microsoft.DocumentDB/databaseAccounts/sql
   }
 }
 
-output AZURE_COSMOS_ENABLE_CIRCUIT_BREAKER string = string(circuitBreakerEnabled)
 output RUSTFLAGS string = '--cfg=test_category="${testCategory}"'
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
