@@ -1,6 +1,6 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.9.0 (2026-01-20)
 
 ### Features Added
 
@@ -10,10 +10,6 @@
 ### Breaking Changes
 
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.8.0 (2025-11-10)
 
