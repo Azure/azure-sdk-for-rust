@@ -294,9 +294,8 @@ impl TestRunContext {
 
     /// Get shared database client for this test run
     pub fn get_shared_container(&self) -> ContainerClient {
-        let db_client = self.client().database_client(&SHARED_DATABASE_ID);
-        let container_client = db_client.container_client(&SHARED_CONTAINER_ID);
-        container_client
+        let db_client = self.client().database_client(SHARED_DATABASE_ID);
+        db_client.container_client(SHARED_CONTAINER_ID)
     }
 
     /// Cleans up test resources.
