@@ -199,110 +199,23 @@ pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
+/// A newtype wrapper for Cosmos DB sub-status codes.
+///
+/// Sub-status codes provide additional context for HTTP error responses from Cosmos DB.
+/// This type wraps a `usize` value representing the numeric code.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-#[non_exhaustive]
-pub enum SubStatusCode {
-    TooManyRequests = 429,
-
-    // 400: Bad Request sub-status
-    PartitionKeyMismatch = 1001,
-    CrossPartitionQueryNotServable = 1004,
-    ScriptCompileError = 0xFFFF, // From ExecuteStoredProcedure.
-    AnotherOfferReplaceOperationIsInProgress = 3205,
-    HttpListenerException = 1101,
-
-    // 410: StatusCodeType_Gone: sub-status
-    NameCacheIsStale = 1000,
-    PartitionKeyRangeGone = 1002,
-    CompletingSplit = 1007,
-    CompletingPartitionMigration = 1008,
-    LeaseNotFound = 1022,
-    ArchivalPartitionNotPresent = 1024,
-
-    // 404: LSN in session token is higher
-    OwnerResourceNotFound = 1003,
-    ConfigurationPropertyNotFound = 1005,
-    CollectionCreateInProgress = 1013,
-    StoreNotReady = 1023,
-    AuthTokenNotFoundInCache = 1030,
-
-    // 404: StatusCodeType_NotFound: sub-status
-    PartitionMigratingCollectionDeleted = 1031,
-    PartitionMigrationSourcePartitionDeletedInMaster = 1034,
-    PartitionMigrationSharedThroughputDatabasePartitionResourceNotFoundInMaster = 1035,
-    PartitionMigrationPartitionResourceNotFoundInMaster = 1036,
-    PartitionMigrationFailedToUpdateDNS = 1037,
-
-    // 403: Forbidden sub-status.
-    WriteForbidden = 3,
-    RedundantCollectionPut = 1009,
-    SharedThroughputDatabaseQuotaExceeded = 1010,
-    SharedThroughputOfferGrowNotNeeded = 1011,
-    PartitionKeyQuotaOverLimit = 1014,
-    SharedThroughputDatabaseCollectionCountExceeded = 1019,
-    SharedThroughputDatabaseCountExceeded = 1020,
-    ComputeInternalError = 1021,
-    ThroughputCapQuotaExceeded = 1028,
-    InvalidThroughputCapValue = 1029,
-
-    // 409: Conflict exception
-    ConflictWithControlPlane = 1006,
-    DatabaseNameAlreadyExists = 3206,
-    PartitionKeyHashCollisionForId = 3302,
-
-    // 409: Partition migration Count mismatch conflict sub status codes
-    PartitionMigrationDocumentCountMismatchBetweenSourceAndTargetPartition = 3050,
-    PartitionMigrationDocumentCountMismatchBetweenTargetPartitionReplicas = 3051,
-
-    // 503: Service Unavailable due to region being out of capacity for bindable partitions
-    ComputeFederationNotFound = 1012,
-    OperationPaused = 9001,
-    ServiceIsOffline = 9002,
-    InsufficientCapacity = 9003,
-
-    //412: PreCondition Failed
-    SplitIsDisabled = 2001,
-    CollectionsInPartitionGotUpdated = 2002,
-    CanNotAcquirePKRangesLock = 2003,
-    ResourceNotFound = 2004,
-    CanNotAcquireOfferOwnerLock = 2005,
-    CanNotAcquirePKRangeLock = 2007,
-    CanNotAcquirePartitionLock = 2008,
-    StorageSplitConflictingWithNWayThroughputSplit = 2011,
-    MergeIsDisabled = 2012,
-    TombstoneRecordsNotFound = 2015, // Tombstone records were not found because they were purged.
-    InvalidAccountStatus = 2016,
-    OfferValidationFailed = 2017,
-    CanNotAcquireMasterPartitionAccessLock = 2018,
-    CanNotAcquireInAccountRestoreInProgressLock = 2019,
-    CollectionStateChanged = 2020,
-    OfferScaledUpByUser = 2021,
-    CanNotAcquireLogStoreStorageAccountLoadBalanceLock = 2101,
-
-    // 500: InternalServerError
-    ConfigurationNameNotEmpty = 3001,
-    ConfigurationOperationCancelled = 3002,
-    InvalidAccountConfiguration = 3003,
-    FederationDoesNotExistOrIsLocked = 3004,
-    PartitionFailoverErrorCode = 3010,
-
-    // 429: Request Rate Too Large
-    PrepareTimeLimitExceeded = 3207,
-    ClientTcpChannelFull = 3208,
-    BWTermCountLimitExceeded = 3209,
-    RUBudgetExceeded = 3200,
-    GatewayThrottled = 3201,
-    StoredProcedureConcurrency = 3084,
-}
+pub struct SubStatusCode(usize);
 
 impl SubStatusCode {
-    pub const CONFIGURATION_NAME_NOT_FOUND: SubStatusCode =
-        SubStatusCode::CrossPartitionQueryNotServable;
-    pub const READ_SESSION_NOT_AVAILABLE: SubStatusCode = SubStatusCode::PartitionKeyRangeGone;
-    pub const PROVISION_LIMIT_REACHED: SubStatusCode = SubStatusCode::ConfigurationPropertyNotFound;
-    pub const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = SubStatusCode::CompletingSplit;
-    pub const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode =
-        SubStatusCode::CompletingPartitionMigration;
+    /// Creates a new `SubStatusCode` from a numeric value.
+    pub const fn new(code: usize) -> Self {
+        Self(code)
+    }
+
+    /// Returns the numeric value of the sub-status code.
+    pub const fn value(&self) -> usize {
+        self.0
+    }
 
     /// Attempts to create a `SubStatusCode` from a header string.
     /// Returns `None` if parsing fails or code is unknown.
@@ -316,83 +229,199 @@ impl SubStatusCode {
     }
 }
 
+impl From<SubStatusCode> for usize {
+    fn from(code: SubStatusCode) -> Self {
+        code.0
+    }
+}
+
 impl TryFrom<u32> for SubStatusCode {
     type Error = (); // Unknown code
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        use SubStatusCode::*;
         let code = match value {
-            3 => WriteForbidden,
-            429 => TooManyRequests,
-            1000 => NameCacheIsStale,
-            1001 => PartitionKeyMismatch,
-            1002 => PartitionKeyRangeGone,
-            1003 => OwnerResourceNotFound,
-            1004 => CrossPartitionQueryNotServable,
-            1005 => ConfigurationPropertyNotFound,
-            1006 => ConflictWithControlPlane,
-            1007 => CompletingSplit,
-            1008 => CompletingPartitionMigration,
-            1009 => RedundantCollectionPut,
-            1010 => SharedThroughputDatabaseQuotaExceeded,
-            1011 => SharedThroughputOfferGrowNotNeeded,
-            1012 => ComputeFederationNotFound,
-            1013 => CollectionCreateInProgress,
-            1014 => PartitionKeyQuotaOverLimit,
-            1019 => SharedThroughputDatabaseCollectionCountExceeded,
-            1020 => SharedThroughputDatabaseCountExceeded,
-            1021 => ComputeInternalError,
-            1022 => LeaseNotFound,
-            1023 => StoreNotReady,
-            1024 => ArchivalPartitionNotPresent,
-            1028 => ThroughputCapQuotaExceeded,
-            1029 => InvalidThroughputCapValue,
-            1030 => AuthTokenNotFoundInCache,
-            1031 => PartitionMigratingCollectionDeleted,
-            1034 => PartitionMigrationSourcePartitionDeletedInMaster,
-            1035 => PartitionMigrationSharedThroughputDatabasePartitionResourceNotFoundInMaster,
-            1036 => PartitionMigrationPartitionResourceNotFoundInMaster,
-            1037 => PartitionMigrationFailedToUpdateDNS,
-            1101 => HttpListenerException,
-            2001 => SplitIsDisabled,
-            2002 => CollectionsInPartitionGotUpdated,
-            2003 => CanNotAcquirePKRangesLock,
-            2004 => ResourceNotFound,
-            2005 => CanNotAcquireOfferOwnerLock,
-            2007 => CanNotAcquirePKRangeLock,
-            2008 => CanNotAcquirePartitionLock,
-            2011 => StorageSplitConflictingWithNWayThroughputSplit,
-            2012 => MergeIsDisabled,
-            2015 => TombstoneRecordsNotFound,
-            2016 => InvalidAccountStatus,
-            2017 => OfferValidationFailed,
-            2018 => CanNotAcquireMasterPartitionAccessLock,
-            2019 => CanNotAcquireInAccountRestoreInProgressLock,
-            2020 => CollectionStateChanged,
-            2021 => OfferScaledUpByUser,
-            2101 => CanNotAcquireLogStoreStorageAccountLoadBalanceLock,
-            3001 => ConfigurationNameNotEmpty,
-            3002 => ConfigurationOperationCancelled,
-            3003 => InvalidAccountConfiguration,
-            3004 => FederationDoesNotExistOrIsLocked,
-            3010 => PartitionFailoverErrorCode,
-            3050 => PartitionMigrationDocumentCountMismatchBetweenSourceAndTargetPartition,
-            3051 => PartitionMigrationDocumentCountMismatchBetweenTargetPartitionReplicas,
-            3084 => StoredProcedureConcurrency,
-            3200 => RUBudgetExceeded,
-            3201 => GatewayThrottled,
-            3205 => AnotherOfferReplaceOperationIsInProgress,
-            3206 => DatabaseNameAlreadyExists,
-            3207 => PrepareTimeLimitExceeded,
-            3208 => ClientTcpChannelFull,
-            3209 => BWTermCountLimitExceeded,
-            3302 => PartitionKeyHashCollisionForId,
-            9001 => OperationPaused,
-            9002 => ServiceIsOffline,
-            9003 => InsufficientCapacity,
-            0xFFFF => ScriptCompileError,
+            3 => WRITE_FORBIDDEN,
+            429 => TOO_MANY_REQUESTS,
+            1000 => NAME_CACHE_IS_STALE,
+            1001 => PARTITION_KEY_MISMATCH,
+            1002 => PARTITION_KEY_RANGE_GONE,
+            1003 => OWNER_RESOURCE_NOT_FOUND,
+            1004 => CROSS_PARTITION_QUERY_NOT_SERVABLE,
+            1005 => CONFIGURATION_PROPERTY_NOT_FOUND,
+            1006 => CONFLICT_WITH_CONTROL_PLANE,
+            1007 => COMPLETING_SPLIT,
+            1008 => COMPLETING_PARTITION_MIGRATION,
+            1009 => REDUNDANT_COLLECTION_PUT,
+            1010 => SHARED_THROUGHPUT_DATABASE_QUOTA_EXCEEDED,
+            1011 => SHARED_THROUGHPUT_OFFER_GROW_NOT_NEEDED,
+            1012 => COMPUTE_FEDERATION_NOT_FOUND,
+            1013 => COLLECTION_CREATE_IN_PROGRESS,
+            1014 => PARTITION_KEY_QUOTA_OVER_LIMIT,
+            1019 => SHARED_THROUGHPUT_DATABASE_COLLECTION_COUNT_EXCEEDED,
+            1020 => SHARED_THROUGHPUT_DATABASE_COUNT_EXCEEDED,
+            1021 => COMPUTE_INTERNAL_ERROR,
+            1022 => LEASE_NOT_FOUND,
+            1023 => STORE_NOT_READY,
+            1024 => ARCHIVAL_PARTITION_NOT_PRESENT,
+            1028 => THROUGHPUT_CAP_QUOTA_EXCEEDED,
+            1029 => INVALID_THROUGHPUT_CAP_VALUE,
+            1030 => AUTH_TOKEN_NOT_FOUND_IN_CACHE,
+            1031 => PARTITION_MIGRATING_COLLECTION_DELETED,
+            1034 => PARTITION_MIGRATION_SOURCE_PARTITION_DELETED_IN_MASTER,
+            1035 => PARTITION_MIGRATION_SHARED_THROUGHPUT_DATABASE_PARTITION_RESOURCE_NOT_FOUND_IN_MASTER,
+            1036 => PARTITION_MIGRATION_PARTITION_RESOURCE_NOT_FOUND_IN_MASTER,
+            1037 => PARTITION_MIGRATION_FAILED_TO_UPDATE_DNS,
+            1101 => HTTP_LISTENER_EXCEPTION,
+            2001 => SPLIT_IS_DISABLED,
+            2002 => COLLECTIONS_IN_PARTITION_GOT_UPDATED,
+            2003 => CAN_NOT_ACQUIRE_PKRANGES_LOCK,
+            2004 => RESOURCE_NOT_FOUND,
+            2005 => CAN_NOT_ACQUIRE_OFFER_OWNER_LOCK,
+            2007 => CAN_NOT_ACQUIRE_PKRANGE_LOCK,
+            2008 => CAN_NOT_ACQUIRE_PARTITION_LOCK,
+            2011 => STORAGE_SPLIT_CONFLICTING_WITH_NWAY_THROUGHPUT_SPLIT,
+            2012 => MERGE_IS_DISABLED,
+            2015 => TOMBSTONE_RECORDS_NOT_FOUND,
+            2016 => INVALID_ACCOUNT_STATUS,
+            2017 => OFFER_VALIDATION_FAILED,
+            2018 => CAN_NOT_ACQUIRE_MASTER_PARTITION_ACCESS_LOCK,
+            2019 => CAN_NOT_ACQUIRE_IN_ACCOUNT_RESTORE_IN_PROGRESS_LOCK,
+            2020 => COLLECTION_STATE_CHANGED,
+            2021 => OFFER_SCALED_UP_BY_USER,
+            2101 => CAN_NOT_ACQUIRE_LOG_STORE_STORAGE_ACCOUNT_LOAD_BALANCE_LOCK,
+            3001 => CONFIGURATION_NAME_NOT_EMPTY,
+            3002 => CONFIGURATION_OPERATION_CANCELLED,
+            3003 => INVALID_ACCOUNT_CONFIGURATION,
+            3004 => FEDERATION_DOES_NOT_EXIST_OR_IS_LOCKED,
+            3010 => PARTITION_FAILOVER_ERROR_CODE,
+            3050 => PARTITION_MIGRATION_DOCUMENT_COUNT_MISMATCH_BETWEEN_SOURCE_AND_TARGET_PARTITION,
+            3051 => PARTITION_MIGRATION_DOCUMENT_COUNT_MISMATCH_BETWEEN_TARGET_PARTITION_REPLICAS,
+            3084 => STORED_PROCEDURE_CONCURRENCY,
+            3200 => RU_BUDGET_EXCEEDED,
+            3201 => GATEWAY_THROTTLED,
+            3205 => ANOTHER_OFFER_REPLACE_OPERATION_IS_IN_PROGRESS,
+            3206 => DATABASE_NAME_ALREADY_EXISTS,
+            3207 => PREPARE_TIME_LIMIT_EXCEEDED,
+            3208 => CLIENT_TCP_CHANNEL_FULL,
+            3209 => BW_TERM_COUNT_LIMIT_EXCEEDED,
+            3302 => PARTITION_KEY_HASH_COLLISION_FOR_ID,
+            9001 => OPERATION_PAUSED,
+            9002 => SERVICE_IS_OFFLINE,
+            9003 => INSUFFICIENT_CAPACITY,
+            0xFFFF => SCRIPT_COMPILE_ERROR,
             _ => return Err(()),
         };
         Ok(code)
     }
 }
+
+// Internal constants for sub-status codes
+// 400: Bad Request sub-status
+pub(crate) const PARTITION_KEY_MISMATCH: SubStatusCode = SubStatusCode(1001);
+pub(crate) const CROSS_PARTITION_QUERY_NOT_SERVABLE: SubStatusCode = SubStatusCode(1004);
+pub(crate) const SCRIPT_COMPILE_ERROR: SubStatusCode = SubStatusCode(0xFFFF);
+pub(crate) const ANOTHER_OFFER_REPLACE_OPERATION_IS_IN_PROGRESS: SubStatusCode =
+    SubStatusCode(3205);
+pub(crate) const HTTP_LISTENER_EXCEPTION: SubStatusCode = SubStatusCode(1101);
+
+// 410: StatusCodeType_Gone: sub-status
+pub(crate) const NAME_CACHE_IS_STALE: SubStatusCode = SubStatusCode(1000);
+pub(crate) const PARTITION_KEY_RANGE_GONE: SubStatusCode = SubStatusCode(1002);
+pub(crate) const COMPLETING_SPLIT: SubStatusCode = SubStatusCode(1007);
+pub(crate) const COMPLETING_PARTITION_MIGRATION: SubStatusCode = SubStatusCode(1008);
+pub(crate) const LEASE_NOT_FOUND: SubStatusCode = SubStatusCode(1022);
+pub(crate) const ARCHIVAL_PARTITION_NOT_PRESENT: SubStatusCode = SubStatusCode(1024);
+
+// 404: LSN in session token is higher
+pub(crate) const OWNER_RESOURCE_NOT_FOUND: SubStatusCode = SubStatusCode(1003);
+pub(crate) const CONFIGURATION_PROPERTY_NOT_FOUND: SubStatusCode = SubStatusCode(1005);
+pub(crate) const COLLECTION_CREATE_IN_PROGRESS: SubStatusCode = SubStatusCode(1013);
+pub(crate) const STORE_NOT_READY: SubStatusCode = SubStatusCode(1023);
+pub(crate) const AUTH_TOKEN_NOT_FOUND_IN_CACHE: SubStatusCode = SubStatusCode(1030);
+
+// 404: StatusCodeType_NotFound: sub-status
+pub(crate) const PARTITION_MIGRATING_COLLECTION_DELETED: SubStatusCode = SubStatusCode(1031);
+pub(crate) const PARTITION_MIGRATION_SOURCE_PARTITION_DELETED_IN_MASTER: SubStatusCode =
+    SubStatusCode(1034);
+pub(crate) const PARTITION_MIGRATION_SHARED_THROUGHPUT_DATABASE_PARTITION_RESOURCE_NOT_FOUND_IN_MASTER: SubStatusCode = SubStatusCode(1035);
+pub(crate) const PARTITION_MIGRATION_PARTITION_RESOURCE_NOT_FOUND_IN_MASTER: SubStatusCode =
+    SubStatusCode(1036);
+pub(crate) const PARTITION_MIGRATION_FAILED_TO_UPDATE_DNS: SubStatusCode = SubStatusCode(1037);
+
+// 403: Forbidden sub-status
+pub(crate) const WRITE_FORBIDDEN: SubStatusCode = SubStatusCode(3);
+pub(crate) const REDUNDANT_COLLECTION_PUT: SubStatusCode = SubStatusCode(1009);
+pub(crate) const SHARED_THROUGHPUT_DATABASE_QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(1010);
+pub(crate) const SHARED_THROUGHPUT_OFFER_GROW_NOT_NEEDED: SubStatusCode = SubStatusCode(1011);
+pub(crate) const PARTITION_KEY_QUOTA_OVER_LIMIT: SubStatusCode = SubStatusCode(1014);
+pub(crate) const SHARED_THROUGHPUT_DATABASE_COLLECTION_COUNT_EXCEEDED: SubStatusCode =
+    SubStatusCode(1019);
+pub(crate) const SHARED_THROUGHPUT_DATABASE_COUNT_EXCEEDED: SubStatusCode = SubStatusCode(1020);
+pub(crate) const COMPUTE_INTERNAL_ERROR: SubStatusCode = SubStatusCode(1021);
+pub(crate) const THROUGHPUT_CAP_QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(1028);
+pub(crate) const INVALID_THROUGHPUT_CAP_VALUE: SubStatusCode = SubStatusCode(1029);
+
+// 409: Conflict exception
+pub(crate) const CONFLICT_WITH_CONTROL_PLANE: SubStatusCode = SubStatusCode(1006);
+pub(crate) const DATABASE_NAME_ALREADY_EXISTS: SubStatusCode = SubStatusCode(3206);
+pub(crate) const PARTITION_KEY_HASH_COLLISION_FOR_ID: SubStatusCode = SubStatusCode(3302);
+
+// 409: Partition migration Count mismatch conflict sub status codes
+pub(crate) const PARTITION_MIGRATION_DOCUMENT_COUNT_MISMATCH_BETWEEN_SOURCE_AND_TARGET_PARTITION:
+    SubStatusCode = SubStatusCode(3050);
+pub(crate) const PARTITION_MIGRATION_DOCUMENT_COUNT_MISMATCH_BETWEEN_TARGET_PARTITION_REPLICAS:
+    SubStatusCode = SubStatusCode(3051);
+
+// 503: Service Unavailable due to region being out of capacity for bindable partitions
+pub(crate) const COMPUTE_FEDERATION_NOT_FOUND: SubStatusCode = SubStatusCode(1012);
+pub(crate) const OPERATION_PAUSED: SubStatusCode = SubStatusCode(9001);
+pub(crate) const SERVICE_IS_OFFLINE: SubStatusCode = SubStatusCode(9002);
+pub(crate) const INSUFFICIENT_CAPACITY: SubStatusCode = SubStatusCode(9003);
+
+// 412: PreCondition Failed
+pub(crate) const SPLIT_IS_DISABLED: SubStatusCode = SubStatusCode(2001);
+pub(crate) const COLLECTIONS_IN_PARTITION_GOT_UPDATED: SubStatusCode = SubStatusCode(2002);
+pub(crate) const CAN_NOT_ACQUIRE_PKRANGES_LOCK: SubStatusCode = SubStatusCode(2003);
+pub(crate) const RESOURCE_NOT_FOUND: SubStatusCode = SubStatusCode(2004);
+pub(crate) const CAN_NOT_ACQUIRE_OFFER_OWNER_LOCK: SubStatusCode = SubStatusCode(2005);
+pub(crate) const CAN_NOT_ACQUIRE_PKRANGE_LOCK: SubStatusCode = SubStatusCode(2007);
+pub(crate) const CAN_NOT_ACQUIRE_PARTITION_LOCK: SubStatusCode = SubStatusCode(2008);
+pub(crate) const STORAGE_SPLIT_CONFLICTING_WITH_NWAY_THROUGHPUT_SPLIT: SubStatusCode =
+    SubStatusCode(2011);
+pub(crate) const MERGE_IS_DISABLED: SubStatusCode = SubStatusCode(2012);
+pub(crate) const TOMBSTONE_RECORDS_NOT_FOUND: SubStatusCode = SubStatusCode(2015);
+pub(crate) const INVALID_ACCOUNT_STATUS: SubStatusCode = SubStatusCode(2016);
+pub(crate) const OFFER_VALIDATION_FAILED: SubStatusCode = SubStatusCode(2017);
+pub(crate) const CAN_NOT_ACQUIRE_MASTER_PARTITION_ACCESS_LOCK: SubStatusCode = SubStatusCode(2018);
+pub(crate) const CAN_NOT_ACQUIRE_IN_ACCOUNT_RESTORE_IN_PROGRESS_LOCK: SubStatusCode =
+    SubStatusCode(2019);
+pub(crate) const COLLECTION_STATE_CHANGED: SubStatusCode = SubStatusCode(2020);
+pub(crate) const OFFER_SCALED_UP_BY_USER: SubStatusCode = SubStatusCode(2021);
+pub(crate) const CAN_NOT_ACQUIRE_LOG_STORE_STORAGE_ACCOUNT_LOAD_BALANCE_LOCK: SubStatusCode =
+    SubStatusCode(2101);
+
+// 500: InternalServerError
+pub(crate) const CONFIGURATION_NAME_NOT_EMPTY: SubStatusCode = SubStatusCode(3001);
+pub(crate) const CONFIGURATION_OPERATION_CANCELLED: SubStatusCode = SubStatusCode(3002);
+pub(crate) const INVALID_ACCOUNT_CONFIGURATION: SubStatusCode = SubStatusCode(3003);
+pub(crate) const FEDERATION_DOES_NOT_EXIST_OR_IS_LOCKED: SubStatusCode = SubStatusCode(3004);
+pub(crate) const PARTITION_FAILOVER_ERROR_CODE: SubStatusCode = SubStatusCode(3010);
+
+// 429: Request Rate Too Large
+pub(crate) const TOO_MANY_REQUESTS: SubStatusCode = SubStatusCode(429);
+pub(crate) const PREPARE_TIME_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3207);
+pub(crate) const CLIENT_TCP_CHANNEL_FULL: SubStatusCode = SubStatusCode(3208);
+pub(crate) const BW_TERM_COUNT_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3209);
+pub(crate) const RU_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3200);
+pub(crate) const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);
+pub(crate) const STORED_PROCEDURE_CONCURRENCY: SubStatusCode = SubStatusCode(3084);
+
+// Additional aliases for backwards compatibility (internal use only)
+#[allow(dead_code)]
+pub(crate) const CONFIGURATION_NAME_NOT_FOUND: SubStatusCode = CROSS_PARTITION_QUERY_NOT_SERVABLE;
+pub(crate) const READ_SESSION_NOT_AVAILABLE: SubStatusCode = PARTITION_KEY_RANGE_GONE;
+#[allow(dead_code)]
+pub(crate) const PROVISION_LIMIT_REACHED: SubStatusCode = CONFIGURATION_PROPERTY_NOT_FOUND;
+#[allow(dead_code)]
+pub(crate) const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = COMPLETING_SPLIT;
+pub(crate) const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode = COMPLETING_PARTITION_MIGRATION;

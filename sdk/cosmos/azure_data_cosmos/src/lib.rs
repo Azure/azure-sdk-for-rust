@@ -30,6 +30,7 @@ mod cosmos_request;
 mod handler;
 mod operation_context;
 pub mod regions;
+pub use regions::RegionName;
 mod request_context;
 mod retry_policies;
 pub mod routing;

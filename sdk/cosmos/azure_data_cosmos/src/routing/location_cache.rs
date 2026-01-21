@@ -5,8 +5,8 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::{AccountProperties, AccountRegion};
 use crate::operation_context::OperationType;
+use crate::RegionName;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::{
     collections::HashMap,
     sync::RwLock,
@@ -57,7 +57,7 @@ impl RequestOperation {
 #[derive(Clone, Default, Debug)]
 pub struct DatabaseAccountLocationsInfo {
     /// User-specified preferred Azure regions for request routing
-    pub preferred_locations: Vec<Cow<'static, str>>,
+    pub preferred_locations: Vec<RegionName>,
     /// List of regions where write operations are supported
     pub account_write_locations: Vec<AccountRegion>,
     /// List of regions where read operations are supported
@@ -110,7 +110,7 @@ impl LocationCache {
     ///
     /// # Returns
     /// A new `LocationCache` instance ready for endpoint management
-    pub fn new(default_endpoint: Url, preferred_locations: Vec<Cow<'static, str>>) -> Self {
+    pub fn new(default_endpoint: Url, preferred_locations: Vec<RegionName>) -> Self {
         Self {
             default_endpoint,
             locations_info: DatabaseAccountLocationsInfo {
@@ -512,12 +512,7 @@ mod tests {
     use crate::resource_context::{ResourceLink, ResourceType};
     use std::{collections::HashSet, vec};
 
-    fn create_test_data() -> (
-        Url,
-        Vec<AccountRegion>,
-        Vec<AccountRegion>,
-        Vec<Cow<'static, str>>,
-    ) {
+    fn create_test_data() -> (Url, Vec<AccountRegion>, Vec<AccountRegion>, Vec<RegionName>) {
         // Setting up test database account data
         let default_endpoint = "https://default.documents.example.com".parse().unwrap();
 
@@ -541,8 +536,10 @@ mod tests {
 
         let read_locations = Vec::from([location_1, location_2, location_3, location_4]);
 
-        let preferred_locations: Vec<Cow<'static, str>> =
-            vec![Cow::Borrowed("Location 1"), Cow::Borrowed("Location 2")];
+        let preferred_locations: Vec<RegionName> = vec![
+            RegionName::from("Location 1"),
+            RegionName::from("Location 2"),
+        ];
 
         (
             default_endpoint,
@@ -574,7 +571,10 @@ mod tests {
 
         assert_eq!(
             cache.locations_info.preferred_locations,
-            vec!["Location 1".to_string(), "Location 2".to_string()]
+            vec![
+                RegionName::from("Location 1"),
+                RegionName::from("Location 2")
+            ]
         );
 
         // check available write locations

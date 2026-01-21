@@ -8,10 +8,9 @@ use crate::operation_context::OperationType;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::location_cache::{LocationCache, RequestOperation};
-use crate::ReadDatabaseOptions;
+use crate::{ReadDatabaseOptions, RegionName};
 use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -57,7 +56,7 @@ impl GlobalEndpointManager {
     /// A new `GlobalEndpointManager` instance ready for request routing
     pub fn new(
         default_endpoint: Url,
-        preferred_locations: Vec<Cow<'static, str>>,
+        preferred_locations: Vec<RegionName>,
         pipeline: Pipeline,
     ) -> Self {
         let location_cache = Arc::new(Mutex::new(LocationCache::new(
@@ -420,7 +419,7 @@ mod tests {
     fn create_test_manager() -> GlobalEndpointManager {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            vec![RegionName::from("West US"), RegionName::from("East US")],
             create_test_pipeline(),
         )
     }
@@ -462,9 +461,9 @@ mod tests {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com/".parse().unwrap(),
             vec![
-                Cow::Borrowed("West US"),
-                Cow::Borrowed("East US"),
-                Cow::Borrowed("North Europe"),
+                RegionName::from("West US"),
+                RegionName::from("East US"),
+                RegionName::from("North Europe"),
             ],
             create_test_pipeline(),
         );

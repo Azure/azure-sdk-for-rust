@@ -154,8 +154,8 @@ impl ContainerCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::RegionName;
     use azure_core::http::ClientOptions;
-    use std::borrow::Cow;
     use url::Url;
 
     // Helper function to create a test pipeline
@@ -183,7 +183,7 @@ mod tests {
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
         GlobalEndpointManager::new(
             endpoint,
-            vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            vec![RegionName::from("East US"), RegionName::from("West US")],
             pipeline,
         )
     }

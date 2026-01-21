@@ -5,8 +5,9 @@ use super::{
     get_substatus_code_from_error, get_substatus_code_from_response,
     resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
 };
-use crate::constants;
-use crate::constants::SubStatusCode;
+use crate::constants::{
+    self, SubStatusCode, LEASE_NOT_FOUND, READ_SESSION_NOT_AVAILABLE, WRITE_FORBIDDEN,
+};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -423,9 +424,7 @@ impl ClientRetryPolicy {
         sub_status_code: Option<SubStatusCode>,
     ) -> Option<RetryResult> {
         // Forbidden - Write forbidden (403.3)
-        if status_code == StatusCode::Forbidden
-            && sub_status_code == Some(SubStatusCode::WriteForbidden)
-        {
+        if status_code == StatusCode::Forbidden && sub_status_code == Some(WRITE_FORBIDDEN) {
             // automatic failover support needed to be plugged in here.
             return Some(
                 self.should_retry_on_endpoint_failure(false, false, true, false, false)
@@ -435,7 +434,7 @@ impl ClientRetryPolicy {
 
         // Read Session Not Available (404.1022)
         if status_code == StatusCode::NotFound
-            && sub_status_code == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+            && sub_status_code == Some(READ_SESSION_NOT_AVAILABLE)
         {
             return Some(self.should_retry_on_session_not_available());
         }
@@ -448,8 +447,7 @@ impl ClientRetryPolicy {
         // Internal server error (500) or Gone - Lease not found (410)
         if (status_code == StatusCode::InternalServerError
             && self.operation_type.unwrap().is_read_only())
-            || (status_code == StatusCode::Gone
-                && sub_status_code == Some(SubStatusCode::LeaseNotFound))
+            || (status_code == StatusCode::Gone && sub_status_code == Some(LEASE_NOT_FOUND))
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
@@ -522,10 +520,10 @@ mod tests {
     use crate::regions;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+    use crate::RegionName;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
-    use std::borrow::Cow;
 
     fn create_test_endpoint_manager() -> GlobalEndpointManager {
         let pipeline = azure_core::http::Pipeline::new(
@@ -539,7 +537,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            vec![RegionName::from("West US"), RegionName::from("East US")],
             pipeline,
         )
     }
@@ -735,8 +733,7 @@ mod tests {
     async fn test_should_retry_gone_with_lease_not_found() {
         let mut policy = create_test_policy_with_preferred_locations();
         policy.operation_type = Some(OperationType::Read);
-        let error =
-            create_error_with_substatus(StatusCode::Gone, SubStatusCode::LeaseNotFound as u32);
+        let error = create_error_with_substatus(StatusCode::Gone, LEASE_NOT_FOUND.value() as u32);
 
         let result = policy.should_retry_error(&error).await;
 
@@ -754,10 +751,8 @@ mod tests {
         let mut policy = create_test_policy();
         policy.operation_type = Some(OperationType::Create);
         policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
-        let error = create_error_with_substatus(
-            StatusCode::Forbidden,
-            SubStatusCode::WriteForbidden as u32,
-        );
+        let error =
+            create_error_with_substatus(StatusCode::Forbidden, WRITE_FORBIDDEN.value() as u32);
 
         let result = policy.should_retry_error(&error).await;
 
@@ -777,7 +772,7 @@ mod tests {
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE as u32,
+            READ_SESSION_NOT_AVAILABLE.value() as u32,
         );
 
         let result = policy.should_retry_error(&error).await;
@@ -799,7 +794,7 @@ mod tests {
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE as u32,
+            READ_SESSION_NOT_AVAILABLE.value() as u32,
         );
 
         let result = policy.should_retry_error(&error).await;
@@ -821,7 +816,7 @@ mod tests {
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE as u32,
+            READ_SESSION_NOT_AVAILABLE.value() as u32,
         );
 
         let result = policy.should_retry_error(&error).await;

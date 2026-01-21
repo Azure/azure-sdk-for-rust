@@ -3,6 +3,82 @@
 
 //! Region Names relevant to Azure Cosmos DB APIs.
 
+use std::borrow::Cow;
+use std::fmt;
+use std::hash::{Hash, Hasher};
+
+/// A newtype wrapper for Azure region names that provides canonical comparison.
+///
+/// Region names are compared case-insensitively and ignoring whitespace characters.
+/// This ensures that "West US", "westus", and "WEST US" are all considered equal.
+#[derive(Clone, Debug)]
+pub struct RegionName(Cow<'static, str>);
+
+impl RegionName {
+    /// Creates a new `RegionName` from a static string.
+    pub const fn from_static(s: &'static str) -> Self {
+        Self(Cow::Borrowed(s))
+    }
+
+    /// Returns the canonical form of the region name (lowercase, no whitespace).
+    fn canonical(&self) -> String {
+        self.0
+            .chars()
+            .filter(|c| !c.is_whitespace())
+            .flat_map(|c| c.to_lowercase())
+            .collect()
+    }
+
+    /// Returns the original region name as a string slice.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl From<String> for RegionName {
+    fn from(s: String) -> Self {
+        Self(Cow::Owned(s))
+    }
+}
+
+impl From<&'static str> for RegionName {
+    fn from(s: &'static str) -> Self {
+        Self(Cow::Borrowed(s))
+    }
+}
+
+impl From<Cow<'static, str>> for RegionName {
+    fn from(s: Cow<'static, str>) -> Self {
+        Self(s)
+    }
+}
+
+impl AsRef<str> for RegionName {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for RegionName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl PartialEq for RegionName {
+    fn eq(&self, other: &Self) -> bool {
+        self.canonical() == other.canonical()
+    }
+}
+
+impl Eq for RegionName {}
+
+impl Hash for RegionName {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.canonical().hash(state);
+    }
+}
+
 // cSpell:disable
 pub const WEST_US: &str = "West US";
 pub const WEST_US_2: &str = "West US 2";
@@ -100,3 +176,58 @@ pub const NORTHEAST_US_5: &str = "Northeast US 5";
 pub const INDIA_SOUTH_CENTRAL: &str = "India South Central";
 pub const SINGAPORE_CENTRAL: &str = "Singapore Central";
 pub const SINGAPORE_NORTH: &str = "Singapore North";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn canonical_comparison() {
+        let r1 = RegionName::from("West US");
+        let r2 = RegionName::from("westus");
+        let r3 = RegionName::from("WEST US");
+        let r4 = RegionName::from("West  US");
+        let r5 = RegionName::from("EastUS");
+
+        assert_eq!(r1, r2);
+        assert_eq!(r1, r3);
+        assert_eq!(r1, r4);
+        assert_ne!(r1, r5);
+    }
+
+    #[test]
+    fn hash_consistency() {
+        let mut set = HashSet::new();
+        set.insert(RegionName::from("West US"));
+
+        assert!(set.contains(&RegionName::from("westus")));
+        assert!(set.contains(&RegionName::from("WEST US")));
+        assert!(set.contains(&RegionName::from("West  US")));
+        assert!(!set.contains(&RegionName::from("East US")));
+    }
+
+    #[test]
+    fn display_preserves_original() {
+        let r1 = RegionName::from("West US");
+        assert_eq!(r1.to_string(), "West US");
+
+        let r2 = RegionName::from("westus");
+        assert_eq!(r2.to_string(), "westus");
+    }
+
+    #[test]
+    fn as_str_returns_original() {
+        let r = RegionName::from("West US");
+        assert_eq!(r.as_str(), "West US");
+    }
+
+    #[test]
+    fn from_cow() {
+        let borrowed = RegionName::from(Cow::Borrowed("West US"));
+        assert_eq!(borrowed.as_str(), "West US");
+
+        let owned = RegionName::from(Cow::Owned("West US".to_string()));
+        assert_eq!(owned.as_str(), "West US");
+    }
+}
