@@ -20,8 +20,16 @@ policyid
 prevsnapshot
 RAGRS
 restype
+rscc
+rscd
+rsce
+rscl
+rsct
+rscd
 ruleid
 secondtag
+skoid
+sktid
 subsecond
 testblob1
 testblob2

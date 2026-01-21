@@ -12,6 +12,7 @@ use crate::{
         BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
         BlockBlobClientUploadResult,
     },
+    logging::StorageLoggingExt,
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
         BlobClientChangeLeaseOptions, BlobClientCreateSnapshotOptions,
@@ -60,6 +61,7 @@ impl GeneratedBlobClient {
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        options.client_options.apply_storage_logging_defaults();
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options

@@ -17,6 +17,7 @@ use crate::{
         BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetMetadataOptions, SignedIdentifiers,
     },
+    logging::StorageLoggingExt,
     models::{FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode},
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -52,6 +53,7 @@ impl GeneratedBlobContainerClient {
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        options.client_options.apply_storage_logging_defaults();
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options

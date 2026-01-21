@@ -3,6 +3,7 @@
 
 use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
+    logging::StorageLoggingExt,
     models::{
         PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
         PageBlobClientCreateOptions, PageBlobClientCreateResult,
@@ -45,6 +46,7 @@ impl GeneratedPageBlobClient {
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        options.client_options.apply_storage_logging_defaults();
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options
