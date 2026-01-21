@@ -11,6 +11,8 @@ cloneable
 moka
 substatus
 retryable
+nocapture
+LASTEXITCODE
 upsert
 upserts
 upserted
