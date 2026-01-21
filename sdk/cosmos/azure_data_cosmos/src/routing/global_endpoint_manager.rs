@@ -66,7 +66,7 @@ impl GlobalEndpointManager {
         )));
 
         let account_properties_cache = AsyncCache::new(
-            Duration::from_secs(600), // Default 10 minutes TTL
+            Some(Duration::from_secs(600)), // Default 10 minutes TTL
         );
 
         Self {
@@ -282,19 +282,23 @@ impl GlobalEndpointManager {
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
         _ = self
             .account_properties_cache
-            .get(ACCOUNT_PROPERTIES_KEY, force_refresh, || async {
-                // Fetch latest account properties from service
-                let account_properties: AccountProperties =
-                    self.get_database_account().await?.into_body().json()?;
+            .get(
+                ACCOUNT_PROPERTIES_KEY,
+                |_| force_refresh,
+                || async {
+                    // Fetch latest account properties from service
+                    let account_properties: AccountProperties =
+                        self.get_database_account().await?.into_body().json()?;
 
-                // Update location cache with the fetched account properties (only on fresh fetch)
-                {
-                    let mut cache = self.location_cache.lock().unwrap();
-                    cache.on_database_account_read(account_properties.clone());
-                }
+                    // Update location cache with the fetched account properties (only on fresh fetch)
+                    {
+                        let mut cache = self.location_cache.lock().unwrap();
+                        cache.on_database_account_read(account_properties.clone());
+                    }
 
-                Ok::<AccountProperties, Error>(account_properties)
-            })
+                    Ok::<AccountProperties, Error>(account_properties)
+                },
+            )
             .await;
 
         Ok(())
