@@ -6,14 +6,11 @@
 use super::framework;
 
 use azure_core::http::Etag;
-use azure_data_cosmos::{
-    clients::ContainerClient,
-    models::{ContainerProperties, PatchDocument, ThroughputProperties},
-    CreateContainerOptions, ItemOptions, PartitionKey,
-};
-use framework::{TestClient, TestRunContext};
+use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
+use framework::TestClient;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {
@@ -29,33 +26,17 @@ struct TestItem {
     bool_value: bool,
 }
 
-async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
-    let db_client = run_context.create_db().await?;
-    db_client
-        .create_container(
-            ContainerProperties {
-                id: "Container".into(),
-                partition_key: "/partition_key".into(),
-                ..Default::default()
-            },
-            None,
-        )
-        .await?;
-    let container_client = db_client.container_client("Container");
-
-    Ok(container_client)
-}
-
 #[tokio::test]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             // Create an item with @ in both ID and partition key
             let mut item = TestItem {
-                id: "Item@1".into(),
-                partition_key: Some("Partition@1".into()),
+                id: format!("Item@1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition@1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
@@ -63,15 +44,16 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 bool_value: true,
             };
 
-            let response = container_client
-                .create_item("Partition@1", &item, None)
-                .await?;
+            let pk = format!("Partition@1-{}", unique_id);
+            let item_id = format!("Item@1-{}", unique_id);
+
+            let response = container_client.create_item(&pk, &item, None).await?;
             let body = response.into_body().into_string()?;
             assert_eq!("", body);
 
             // Try to read the item
             let read_item: TestItem = container_client
-                .read_item("Partition@1", "Item@1", None)
+                .read_item(&pk, &item_id, None)
                 .await?
                 .into_model()?;
             assert_eq!(item, read_item);
@@ -81,7 +63,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             item.nested.nested_value = "Updated".into();
 
             let response = container_client
-                .replace_item("Partition@1", "Item@1", &item, None)
+                .replace_item(&pk, &item_id, &item, None)
                 .await?;
             let body = response.into_body().into_string()?;
             assert_eq!("", body);
@@ -91,8 +73,8 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             item.nested.nested_value = "UpdatedAgain".into();
             let updated_item: TestItem = container_client
                 .replace_item(
-                    "Partition@1",
-                    "Item@1",
+                    &pk,
+                    &item_id,
                     &item,
                     Some(ItemOptions {
                         enable_content_response_on_write: true,
@@ -105,15 +87,13 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             assert_eq!(item, updated_item);
 
             // Delete the item
-            let response = container_client
-                .delete_item("Partition@1", "Item@1", None)
-                .await?;
+            let response = container_client.delete_item(&pk, &item_id, None).await?;
             let body = response.into_body().into_string()?;
             assert_eq!("", body);
 
             // Try to read the item again, expecting a 404
             let result = container_client
-                .read_item::<TestItem>("Partition@1", "Item@1", None)
+                .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
             match result {
                 Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
@@ -136,24 +116,27 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             // Create an item
             let item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
                 },
                 bool_value: true,
             };
-            container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
 
             let read_item: serde_json::Value = container_client
-                .read_item("Partition1", "Item1", None)
+                .read_item(&pk, &item_id, None)
                 .await?
                 .into_model()?;
             assert!(
@@ -177,23 +160,26 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             let item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
                 },
                 bool_value: true,
             };
-            container_client
-                .upsert_item("Partition1", &item, None)
-                .await?;
+
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            container_client.upsert_item(&pk, &item, None).await?;
 
             let read_item: TestItem = container_client
-                .read_item("Partition1", "Item1", None)
+                .read_item(&pk, &item_id, None)
                 .await?
                 .into_model()?;
             assert_eq!(item, read_item);
@@ -209,27 +195,29 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             let mut item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
                 },
                 bool_value: true,
             };
-            container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+
+            let pk = format!("Partition1-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
 
             item.value = 24;
             item.nested.nested_value = "Updated".into();
 
             let updated_item: TestItem = container_client
                 .upsert_item(
-                    "Partition1",
+                    &pk,
                     &item,
                     Some(ItemOptions {
                         enable_content_response_on_write: true,
@@ -252,30 +240,33 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 pub async fn item_patch() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             let item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item3-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
                 },
                 bool_value: true,
             };
-            container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item3-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
 
             let patch = PatchDocument::default()
                 .with_replace("/nested/nested_value", "Patched")?
                 .with_increment("/value", 10)?;
             container_client
-                .patch_item("Partition1", "Item1", patch, None)
+                .patch_item(&pk, &item_id, patch, None)
                 .await?;
 
             let patched_item: TestItem = container_client
-                .read_item("Partition1", "Item1", None)
+                .read_item(&pk, &item_id, None)
                 .await?
                 .into_model()?;
             assert_eq!("Patched", patched_item.nested.nested_value);
@@ -284,8 +275,8 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
             let patch = PatchDocument::default().with_replace("/bool_value", false)?;
             let response_item: TestItem = container_client
                 .patch_item(
-                    "Partition1",
-                    "Item1",
+                    &pk,
+                    &item_id,
                     patch,
                     Some(ItemOptions {
                         enable_content_response_on_write: true,
@@ -308,10 +299,11 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             let mut item = TestItem {
-                id: "Item1".into(),
+                id: format!("Item1-{}", unique_id).into(),
                 partition_key: None,
                 value: 42,
                 nested: NestedItem {
@@ -319,6 +311,9 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                 },
                 bool_value: true,
             };
+
+            let item_id = format!("Item1-{}", unique_id);
+
             container_client
                 .create_item(PartitionKey::NULL, &item, None)
                 .await?;
@@ -331,7 +326,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             let read_item: TestItem = container_client
-                .read_item(PartitionKey::NULL, "Item1", None)
+                .read_item(PartitionKey::NULL, &item_id, None)
                 .await?
                 .into_model()?;
             assert_eq!(item, read_item);
@@ -339,24 +334,24 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             container_client
                 .patch_item(
                     PartitionKey::NULL,
-                    "Item1",
+                    &item_id,
                     PatchDocument::default().with_set("/value", 10)?,
                     None,
                 )
                 .await?;
 
             let read_item: TestItem = container_client
-                .read_item(PartitionKey::NULL, "Item1", None)
+                .read_item(PartitionKey::NULL, &item_id, None)
                 .await?
                 .into_model()?;
             assert_eq!(10, read_item.value);
 
             container_client
-                .delete_item(PartitionKey::NULL, "Item1", None)
+                .delete_item(PartitionKey::NULL, &item_id, None)
                 .await?;
 
             let result = container_client
-                .read_item::<()>(PartitionKey::NULL, "Item1", None)
+                .read_item::<()>(PartitionKey::NULL, &item_id, None)
                 .await;
             match result {
                 Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
@@ -379,12 +374,13 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             //Create an item
             let mut item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
@@ -392,9 +388,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                 bool_value: true,
             };
 
-            let response = container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            let response = container_client.create_item(&pk, &item, None).await?;
 
             //Store Etag from response
             let etag: Etag = response
@@ -409,8 +406,8 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             container_client
                 .replace_item(
-                    "Partition1",
-                    "Item1",
+                    &pk,
+                    &item_id,
                     &item,
                     Some(ItemOptions {
                         if_match_etag: Some(etag),
@@ -425,8 +422,8 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             let response = container_client
                 .replace_item(
-                    "Partition1",
-                    "Item1",
+                    &pk,
+                    &item_id,
                     &item,
                     Some(ItemOptions {
                         if_match_etag: Some("incorrectEtag".into()),
@@ -453,12 +450,13 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             //Create an item
             let mut item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
@@ -466,9 +464,9 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 bool_value: true,
             };
 
-            let response = container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+            let pk = format!("Partition1-{}", unique_id);
+
+            let response = container_client.create_item(&pk, &item, None).await?;
 
             //Store Etag from response
             let etag: Etag = response
@@ -483,7 +481,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             container_client
                 .upsert_item(
-                    "Partition1",
+                    &pk,
                     &item,
                     Some(ItemOptions {
                         if_match_etag: Some(etag),
@@ -498,7 +496,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             let response = container_client
                 .upsert_item(
-                    "Partition1",
+                    &pk,
                     &item,
                     Some(ItemOptions {
                         if_match_etag: Some("incorrectEtag".into()),
@@ -525,12 +523,13 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             //Create an item
             let item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
@@ -538,9 +537,10 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 bool_value: true,
             };
 
-            let response = container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            let response = container_client.create_item(&pk, &item, None).await?;
 
             //Store Etag from response
             let etag: Etag = response
@@ -552,8 +552,8 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Delete item with correct Etag
             container_client
                 .delete_item(
-                    "Partition1",
-                    "Item1",
+                    &pk,
+                    &item_id,
                     Some(ItemOptions {
                         if_match_etag: Some(etag),
                         ..Default::default()
@@ -562,15 +562,13 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             //Add item again for second delete test
-            container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+            container_client.create_item(&pk, &item, None).await?;
 
             //Delete item with incorrect Etag
             let response = container_client
                 .delete_item(
-                    "Partition1",
-                    "Item1",
+                    &pk,
+                    &item_id,
                     Some(ItemOptions {
                         if_match_etag: Some("incorrectEtag".into()),
                         ..Default::default()
@@ -596,12 +594,13 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
 pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run(
         async |run_context| {
-            let container_client = create_container(run_context).await?;
+            let container_client = run_context.get_shared_container();
+            let unique_id = Uuid::new_v4().to_string();
 
             //Create an item
             let item = TestItem {
-                id: "Item1".into(),
-                partition_key: Some("Partition1".into()),
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
                 value: 42,
                 nested: NestedItem {
                     nested_value: "Nested".into(),
@@ -609,9 +608,10 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
                 bool_value: true,
             };
 
-            let response = container_client
-                .create_item("Partition1", &item, None)
-                .await?;
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            let response = container_client.create_item(&pk, &item, None).await?;
 
             //Store Etag from response
             let etag: Etag = response
@@ -627,8 +627,8 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             container_client
                 .patch_item(
-                    "Partition1",
-                    "Item1",
+                    &pk,
+                    &item_id,
                     patch,
                     Some(ItemOptions {
                         if_match_etag: Some(etag),
@@ -638,7 +638,7 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             let patched_item: TestItem = container_client
-                .read_item("Partition1", "Item1", None)
+                .read_item(&pk, &item_id, None)
                 .await?
                 .into_model()?;
 
@@ -652,8 +652,8 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             let response = container_client
                 .patch_item(
-                    "Partition1",
-                    "Item1",
+                    &pk,
+                    &item_id,
                     patch,
                     Some(ItemOptions {
                         if_match_etag: Some("incorrectEtag".into()),

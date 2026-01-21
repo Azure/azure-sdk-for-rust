@@ -14,13 +14,16 @@
 //!
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
-mod test_client;
+pub mod test_client;
 pub mod test_data;
 
 #[cfg(feature = "preview_query_engine")]
 pub mod query_engine;
 
-pub use test_client::{TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION};
+pub use test_client::{
+    TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION, SHARED_CONTAINER_ID,
+    SHARED_DATABASE_ID, SHARED_PARTITION_KEY,
+};
 
 use serde::{Deserialize, Serialize};
 

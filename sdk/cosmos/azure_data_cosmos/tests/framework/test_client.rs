@@ -6,6 +6,7 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
 use azure_core::http::{StatusCode, Transport};
+use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::regions::{EAST_US_2, WEST_CENTRAL_US};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, Query,
@@ -29,14 +30,58 @@ pub struct TestClientOptions {
     pub allow_invalid_certificates: bool,
 }
 
-const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
-const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
-const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
-const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
+pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
+pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
+pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 pub const HUB_REGION: &str = EAST_US_2;
 pub const SATELLITE_REGION: &str = WEST_CENTRAL_US;
+pub const SHARED_CONTAINER_ID: &str = "shared-container";
+pub const SHARED_DATABASE_ID: &str = "shared-database";
+pub const SHARED_PARTITION_KEY: &str = "partition_key";
 
 static IS_AZURE_PIPELINES: OnceLock<bool> = OnceLock::new();
+
+/// Creates a CosmosClient from environment variables.
+/// Returns None if no connection string is provided.
+/// Used for test setup and cleanup.
+pub fn create_client() -> Result<Option<CosmosClient>, Box<dyn std::error::Error>> {
+    let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
+        return Ok(None);
+    };
+
+    let (connection_string, mut allow_invalid_certificates) = match env_var.as_ref() {
+        "emulator" => (EMULATOR_CONNECTION_STRING, true),
+        _ => (env_var.as_str(), false),
+    };
+
+    let connection_string: ConnectionString = connection_string.parse()?;
+
+    if let Ok(val) = std::env::var(ALLOW_INVALID_CERTS_ENV_VAR) {
+        if let Ok(parsed) = val.parse::<bool>() {
+            if parsed {
+                allow_invalid_certificates = true;
+            }
+        }
+    }
+
+    let mut options = CosmosClientOptions::default();
+    if allow_invalid_certificates {
+        let client = ClientBuilder::new()
+            .danger_accept_invalid_certs(true)
+            .pool_max_idle_per_host(0)
+            .build()?;
+        options.client_options.transport = Some(Transport::new(Arc::new(client)));
+    }
+
+    let cosmos_client = CosmosClient::with_key(
+        &connection_string.account_endpoint,
+        connection_string.account_key.clone(),
+        Some(options),
+    )?;
+
+    Ok(Some(cosmos_client))
+}
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 enum CosmosTestMode {
@@ -245,6 +290,13 @@ impl TestRunContext {
 
         let db_client = self.client().database_client(&props.id);
         Ok(db_client)
+    }
+
+    /// Get shared database client for this test run
+    pub fn get_shared_container(&self) -> ContainerClient {
+        let db_client = self.client().database_client(&SHARED_DATABASE_ID);
+        let container_client = db_client.container_client(&SHARED_CONTAINER_ID);
+        container_client
     }
 
     /// Cleans up test resources.

@@ -99,5 +99,20 @@ if ($IsWindows) {
     Write-Host "Cosmos DB Emulator is not available on this platform. Skipping test setup."
 }
 
+# Create shared test resources if connection string is set
+if ($env:AZURE_COSMOS_CONNECTION_STRING) {
+    LogGroupStart "Creating shared test resources"
+    Push-Location $PSScriptRoot
+    try {
+        Invoke-LoggedCommand "cargo test --test test_setup --features key_auth -- --ignored --nocapture"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to create shared test resources."
+        }
+    } finally {
+        Pop-Location
+    }
+    LogGroupEnd
+}
+
 # Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
 $global:LASTEXITCODE = 0
