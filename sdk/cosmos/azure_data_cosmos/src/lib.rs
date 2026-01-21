@@ -34,3 +34,6 @@ mod request_context;
 mod retry_policies;
 pub mod routing;
 mod serde;
+mod error;
+mod hash;
+mod murmur_hash;
