@@ -45,7 +45,7 @@ impl ManagedIdentityCredential {
     /// Creates a new instance of `ManagedIdentityCredential`.
     ///
     /// # Arguments
-    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    /// * `options`: Options for configuring the credential. If `None`, the credential uses its default options.
     ///
     pub fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();

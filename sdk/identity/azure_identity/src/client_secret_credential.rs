@@ -20,7 +20,7 @@ use url::form_urlencoded;
 /// Options for constructing a new [`ClientSecretCredential`].
 #[derive(Debug, Default)]
 pub struct ClientSecretCredentialOptions {
-    /// Options for constructing credentials.
+    /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 }
 
@@ -35,13 +35,13 @@ pub struct ClientSecretCredential {
 }
 
 impl ClientSecretCredential {
-    /// Create a new instance of a Client Secret Credential.
+    /// Create a new `ClientSecretCredential`.
     ///
     /// # Arguments
-    /// - `tenant_id`: The Azure Active Directory tenant (directory) ID of the service principal.
+    /// - `tenant_id`: The tenant (directory) ID of the service principal.
     /// - `client_id`: The client (application) ID of the service principal.
     /// - `secret`: The client secret that was generated for the service principal.
-    /// - `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
     ///
     pub fn new(
         tenant_id: &str,

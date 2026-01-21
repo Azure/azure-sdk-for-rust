@@ -269,6 +269,42 @@ impl From<()> for PartitionKey {
     }
 }
 
+impl From<Vec<PartitionKeyValue>> for PartitionKey {
+    /// Creates a [`PartitionKey`] from a vector of [`PartitionKeyValue`]s.
+    ///
+    /// This is useful when the partition key structure is determined at runtime,
+    /// such as when working with multiple containers with different schemas or
+    /// building partition keys from configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the vector contains more than 3 elements, as Cosmos DB supports
+    /// a maximum of 3 hierarchical partition key levels.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use azure_data_cosmos::{PartitionKey, PartitionKeyValue};
+    ///
+    /// // Single-level partition key
+    /// let keys = vec![PartitionKeyValue::from("tenant1")];
+    /// let partition_key = PartitionKey::from(keys);
+    ///
+    /// // Multi-level partition key built at runtime
+    /// let mut keys = vec![PartitionKeyValue::from("tenant1")];
+    /// keys.push(PartitionKeyValue::from("region1"));
+    /// let partition_key = PartitionKey::from(keys);
+    /// ```
+    fn from(values: Vec<PartitionKeyValue>) -> Self {
+        assert!(
+            values.len() <= 3,
+            "Partition keys can have at most 3 levels, got {}",
+            values.len()
+        );
+        PartitionKey(values)
+    }
+}
+
 impl<T: Into<PartitionKeyValue>> From<T> for PartitionKey {
     fn from(value: T) -> Self {
         PartitionKey(vec![value.into()])
@@ -350,7 +386,73 @@ mod tests {
     }
 
     #[test]
-    pub fn null_value() {
+    fn from_vec_empty() {
+        let keys: Vec<PartitionKeyValue> = vec![];
+        let partition_key = PartitionKey::from(keys);
+        assert_eq!(Vec::<PartitionKeyValue>::new(), partition_key.0);
+
+        let mut headers_iter = partition_key.as_headers().unwrap();
+        let (name, value) = headers_iter.next().unwrap();
+        assert_eq!(constants::QUERY_ENABLE_CROSS_PARTITION, name);
+        assert_eq!("True", value.as_str());
+    }
+
+    #[test]
+    fn from_vec_single() {
+        let keys = vec![PartitionKeyValue::from("tenant1")];
+        let partition_key = PartitionKey::from(keys);
+        assert_eq!(key_to_string(partition_key), r#"["tenant1"]"#);
+    }
+
+    #[test]
+    fn from_vec_double() {
+        let keys = vec![
+            PartitionKeyValue::from("tenant1"),
+            PartitionKeyValue::from("region1"),
+        ];
+        let partition_key = PartitionKey::from(keys);
+        assert_eq!(key_to_string(partition_key), r#"["tenant1","region1"]"#);
+    }
+
+    #[test]
+    fn from_vec_triple() {
+        let keys = vec![
+            PartitionKeyValue::from("tenant1"),
+            PartitionKeyValue::from("region1"),
+            PartitionKeyValue::from("user1"),
+        ];
+        let partition_key = PartitionKey::from(keys);
+        assert_eq!(
+            key_to_string(partition_key),
+            r#"["tenant1","region1","user1"]"#
+        );
+    }
+
+    #[test]
+    fn from_vec_mixed_types() {
+        let keys = vec![
+            PartitionKeyValue::from("tenant1"),
+            PartitionKeyValue::from(42i64),
+            PartitionKeyValue::from(123.45f64),
+        ];
+        let partition_key = PartitionKey::from(keys);
+        assert_eq!(key_to_string(partition_key), r#"["tenant1",42,123.45]"#);
+    }
+
+    #[test]
+    #[should_panic(expected = "Partition keys can have at most 3 levels, got 4")]
+    fn from_vec_too_many() {
+        let keys = vec![
+            PartitionKeyValue::from("a"),
+            PartitionKeyValue::from("b"),
+            PartitionKeyValue::from("c"),
+            PartitionKeyValue::from("d"),
+        ];
+        let _partition_key = PartitionKey::from(keys);
+    }
+
+    #[test]
+    fn null_value() {
         assert_eq!(key_to_string(PartitionKey::NULL), r#"[null]"#);
         assert_eq!(
             key_to_string((PartitionKey::NULL, PartitionKey::NULL, PartitionKey::NULL)),
