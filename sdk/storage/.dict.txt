@@ -25,7 +25,6 @@ rscd
 rsce
 rscl
 rsct
-rscd
 ruleid
 secondtag
 skoid

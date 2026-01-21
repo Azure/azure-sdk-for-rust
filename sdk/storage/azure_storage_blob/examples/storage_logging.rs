@@ -38,11 +38,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing subscriber to see HTTP requests and responses.
     // Uses RUST_LOG environment variable if set, otherwise defaults to "trace" level
     // to ensure detailed HTTP request/response logs are visible when running this example.
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("trace")),
-        )
-        .init();
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("trace"));
+    println!("RUST_LOG filter: {}", env_filter);
+    tracing_subscriber::fmt().with_env_filter(env_filter).init();
 
     // Get Azure Storage Account name from environment variable
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
@@ -59,9 +57,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create BlobContainerClient
     let endpoint = format!("https://{}.blob.core.windows.net", account);
 
-    // Configure logging to show additional Azure Storage headers
-    // By default, most headers are sanitized to avoid logging sensitive data.
-    // Here we can explicitly allow certain Azure Storage headers to be logged.
+    // Azure Storage headers (x-ms-version, x-ms-request-id, etc.) are logged by default.
+    // No additional logging configuration is required for standard tracing output.
     let client_options = BlobContainerClientOptions::default();
 
     let container_client = BlobContainerClient::new(
@@ -114,7 +111,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "\nNote: With RUST_LOG=trace, you should see detailed HTTP request/response logs above."
     );
     println!(
-        "The configured headers (x-ms-version, x-ms-blob-type, etc.) are now visible in the logs."
+        "Azure Storage headers (such as x-ms-version and x-ms-blob-type) are logged by default and should be visible in the trace-level logs above; no additional logging configuration is required in this example."
     );
 
     Ok(())
