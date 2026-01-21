@@ -19,7 +19,7 @@ pub struct StorageError {
     /// The request ID from the x-ms-request-id header, if available.
     request_id: Option<String>,
     /// Additional fields from the error response that weren't explicitly mapped.
-    pub additional_error_info: HashMap<String, String>,
+    additional_error_info: HashMap<String, String>,
 }
 
 impl StorageError {
@@ -46,59 +46,29 @@ impl StorageError {
     /// Converts a `serde_json::Value` to a String representation, handling nested XML structures.
     fn value_to_string(value: &Value) -> String {
         match value {
-            // Handle null values
+            // Primitive types: extract directly
             Value::Null => "null".to_string(),
-
-            // Handle boolean values
             Value::Bool(b) => b.to_string(),
-
-            // Handle numeric values
             Value::Number(n) => n.to_string(),
-
-            // Handle string values
             Value::String(s) => s.clone(),
 
-            // Handle arrays
-            Value::Array(arr) => {
-                let elements: Vec<String> = arr.iter().map(Self::value_to_string).collect();
-                format!("[{}]", elements.join(", "))
-            }
+            // Special case: XML elements with $text field - extract the text content
+            Value::Object(obj) if obj.len() == 1 && obj.contains_key("$text") => obj
+                .get("$text")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+                .unwrap_or_default(),
 
-            // Handle objects (including XML elements with $text)
-            Value::Object(obj) => {
-                // Special case: if the object only has a "$text" field, extract it
-                if obj.len() == 1 && obj.contains_key("$text") {
-                    if let Some(Value::String(text)) = obj.get("$text") {
-                        return text.clone();
-                    }
-                }
-
-                // For other objects, format as key-value pairs
-                let pairs: Vec<String> = obj
-                    .iter()
-                    .map(|(k, v)| {
-                        // Skip $text key in compound objects to avoid duplication
-                        if k == "$text" {
-                            Self::value_to_string(v)
-                        } else {
-                            format!("{}: {}", k, Self::value_to_string(v))
-                        }
-                    })
-                    .collect();
-
-                // If it's a single element (after filtering), return it directly
-                if pairs.len() == 1 {
-                    pairs[0].clone()
-                } else {
-                    format!("{{{}}}", pairs.join(", "))
-                }
-            }
+            // Arrays and complex objects: use serde_json's compact representation
+            _ => serde_json::to_string(value).unwrap_or_default(),
         }
     }
 
     /// Deserializes a `StorageError` from XML body with HTTP response metadata.
     fn from_xml(
         status_code: azure_core::http::StatusCode,
+        error_code: Option<StorageErrorCode>,
+        request_id: Option<String>,
         raw_response: RawResponse,
     ) -> Result<Self, azure_core::Error> {
         #[derive(Deserialize)]
@@ -114,22 +84,6 @@ impl StorageError {
 
         let xml_fields = xml::from_xml::<_, StorageErrorXml>(raw_response.body())?;
 
-        // Parse error code from headers, parse from XML and discard so it doesn't end up in additional error info
-        let error_code = raw_response
-            .headers()
-            .get_optional_string(&azure_core::http::headers::HeaderName::from_static(
-                "x-ms-error-code",
-            ))
-            .and_then(|code| {
-                code.parse()
-                    .ok()
-                    .or(Some(StorageErrorCode::UnknownValue(code)))
-            });
-
-        let request_id = raw_response.headers().get_optional_string(
-            &azure_core::http::headers::HeaderName::from_static("x-ms-request-id"),
-        );
-
         // Convert additional fields from HashMap<String, Value> to HashMap<String, String>
         let additional_error_info = xml_fields
             .additional_fields
@@ -144,60 +98,6 @@ impl StorageError {
             request_id,
             additional_error_info,
         })
-    }
-}
-
-impl TryFrom<azure_core::Error> for StorageError {
-    type Error = azure_core::Error;
-
-    fn try_from(error: azure_core::Error) -> Result<Self, Self::Error> {
-        match error.kind() {
-            ErrorKind::HttpResponse {
-                status,
-                error_code,
-                raw_response,
-            } => {
-                let raw_response = raw_response.as_ref().ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        "Cannot convert to StorageError: raw_response is missing.",
-                    )
-                })?;
-
-                let body = raw_response.body();
-
-                let error_code = error_code.as_ref().and_then(|code| {
-                    code.parse()
-                        .ok()
-                        .or(Some(StorageErrorCode::UnknownValue(code.clone())))
-                });
-
-                let request_id = raw_response.as_ref().clone().headers().get_optional_string(
-                    &azure_core::http::headers::HeaderName::from_static("x-ms-request-id"),
-                );
-
-                if body.is_empty() {
-                    // For bodiless responses, use the canonical reason phrase as a fallback message
-                    // Underlying reqwest doesn't expose the custom reason phrase (that you can observe in Fiddler)
-                    let message = Some(status.canonical_reason().to_string());
-
-                    return Ok(StorageError {
-                        status_code: *status,
-                        error_code,
-                        message,
-                        request_id,
-                        additional_error_info: HashMap::new(),
-                    });
-                }
-
-                StorageError::from_xml(*status, raw_response.as_ref().clone())
-            }
-            // TODO: We may have to handle other ErrorKind variants, but catch-all for now.
-            _ => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "ErrorKind was not HttpResponse and could not be parsed.",
-            )),
-        }
     }
 }
 
@@ -225,5 +125,69 @@ impl std::fmt::Display for StorageError {
         }
 
         Ok(())
+    }
+}
+
+impl std::error::Error for StorageError {}
+
+impl TryFrom<azure_core::Error> for StorageError {
+    type Error = azure_core::Error;
+
+    fn try_from(error: azure_core::Error) -> Result<Self, Self::Error> {
+        match error.kind() {
+            ErrorKind::HttpResponse {
+                status,
+                error_code: _,
+                raw_response,
+            } => {
+                let raw_response = raw_response.as_ref().ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        "Cannot convert to StorageError: raw_response is missing.",
+                    )
+                })?;
+
+                let headers = raw_response.headers();
+                let body = raw_response.body();
+
+                let error_code = headers
+                    .get_optional_string(&azure_core::http::headers::HeaderName::from_static(
+                        "x-ms-error-code",
+                    ))
+                    .and_then(|code| {
+                        code.parse()
+                            .ok()
+                            .or(Some(StorageErrorCode::UnknownValue(code)))
+                    });
+
+                let request_id = headers.get_optional_string(
+                    &azure_core::http::headers::HeaderName::from_static("x-ms-request-id"),
+                );
+
+                if body.is_empty() {
+                    // For bodiless responses, use the canonical reason phrase as a fallback message
+                    let message = Some(status.canonical_reason().to_string());
+
+                    return Ok(StorageError {
+                        status_code: *status,
+                        error_code,
+                        message,
+                        request_id,
+                        additional_error_info: HashMap::new(),
+                    });
+                }
+
+                StorageError::from_xml(
+                    *status,
+                    error_code,
+                    request_id,
+                    raw_response.as_ref().clone(),
+                )
+            }
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "ErrorKind was not HttpResponse and could not be parsed.",
+            )),
+        }
     }
 }
