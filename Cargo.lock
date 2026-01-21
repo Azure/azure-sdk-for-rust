@@ -188,7 +188,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "0.31.0"
+version = "0.32.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -222,7 +222,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -244,7 +244,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_macros"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -256,7 +256,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -3264,7 +3264,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "typespec"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "base64",
  "bytes",
@@ -3278,7 +3278,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -3306,7 +3306,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",
