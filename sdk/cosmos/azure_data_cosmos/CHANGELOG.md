@@ -1,6 +1,6 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.30.0 (2026-02-10)
 
 ### Features Added
 
@@ -12,8 +12,6 @@
 ### Breaking Changes
 
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
-
-### Bugs Fixed
 
 ### Other Changes
 - Added `ALLOWED_COSMOS_HEADERS` for use in default logging policy. ([#3554](https://github.com/Azure/azure-sdk-for-rust/pull/3554))
