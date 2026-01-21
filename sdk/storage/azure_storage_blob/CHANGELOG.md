@@ -1,6 +1,6 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 0.8.0 (2026-01-21)
 
 ### Features Added
 
@@ -19,10 +19,6 @@
 - Renamed `content_length` to `size` for `PageBlobClient`'s `create()` method.
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 - Changed `BlobClient`'s `set_tags` parameter `tags` type from `HashMap<String, String>` to `RequestContent<BlobTags, XmlFormat>`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.7.0 (2025-11-11)
 
