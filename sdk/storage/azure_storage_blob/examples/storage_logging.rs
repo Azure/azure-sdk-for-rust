@@ -71,17 +71,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create BlobClient
     let blob_client = container_client.blob_client(blob_name);
 
-    // Create container if does not exist
+    // Create container if it does not exist
     println!("Creating container '{}'...", container_name);
-    match container_client.create_container(None).await {
-        Ok(_) => println!("Container created successfully"),
-        Err(e) => {
-            if e.to_string().contains("ContainerAlreadyExists") || e.to_string().contains("409") {
-                println!("Container already exists, continuing...");
-            } else {
-                return Err(e.into());
-            }
-        }
+    if container_client.exists().await? {
+        println!("Container already exists, continuing...");
+    } else {
+        container_client.create_container(None).await?;
+        println!("Container created successfully");
     }
 
     // Upload the file

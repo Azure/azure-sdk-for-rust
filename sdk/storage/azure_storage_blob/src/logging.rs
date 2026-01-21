@@ -3,21 +3,12 @@
 
 //! Logging configuration for Azure Storage Blob clients.
 //!
-//! This module defines the default allowed headers and query parameters
-//! that are safe to log for Azure Storage Blob operations. These defaults
-//! are automatically applied to all Storage Blob clients and are additive
-//! with any user-specified logging options.
+//! These defaults are automatically applied to all Storage Blob clients and are additive with any user-specified logging options.
 
 use azure_core::http::ClientOptions;
 use std::borrow::Cow;
 
 /// Default allowed header names for Azure Storage Blob logging.
-///
-/// These headers are considered safe to log and will not be redacted.
-///
-/// Headers already in the core SDK's default allow list (such as `content-type`,
-/// `content-length`, `etag`, `last-modified`, `x-ms-request-id`, `x-ms-client-request-id`)
-/// are not duplicated here.
 pub static STORAGE_ALLOWED_HEADERS: &[&str] = &[
     // CORS
     "access-control-allow-origin",
@@ -113,11 +104,6 @@ pub static STORAGE_ALLOWED_HEADERS: &[&str] = &[
 ];
 
 /// Default allowed query parameters for Azure Storage Blob logging.
-///
-/// These query parameters are considered safe to log and will not be redacted.
-///
-/// Query parameters already in the core SDK's default allow list (such as `api-version`)
-/// are not duplicated here.
 pub static STORAGE_ALLOWED_QUERY_PARAMETERS: &[&str] = &[
     // SAS token parameters (values are time-limited or non-sensitive identifiers)
     "se",
@@ -160,32 +146,25 @@ pub static STORAGE_ALLOWED_QUERY_PARAMETERS: &[&str] = &[
     "prevsnapshot",
 ];
 
-/// Extension trait for applying Azure Storage Blob logging defaults to client options.
-pub(crate) trait StorageLoggingExt {
-    /// Applies the default Azure Storage Blob logging configuration.
-    ///
-    /// This method prepends the storage-specific allowed headers and query parameters
-    /// to the user's existing logging options. User-specified options are preserved and
-    /// take effect in addition to the storage defaults.
-    fn apply_storage_logging_defaults(&mut self);
-}
+/// Applies the default Azure Storage Blob logging configuration to client options.
+///
+/// This function prepends the storage-specific allowed headers and query parameters
+/// to the user's existing logging options. User-specified options are preserved and
+/// take effect in addition to the storage defaults.
+pub(crate) fn apply_storage_logging_defaults(options: &mut ClientOptions) {
+    // Prepend storage-specific headers to any user-specified headers
+    let user_headers = std::mem::take(&mut options.logging.additional_allowed_header_names);
+    options.logging.additional_allowed_header_names = STORAGE_ALLOWED_HEADERS
+        .iter()
+        .map(|s| Cow::Borrowed(*s))
+        .chain(user_headers)
+        .collect();
 
-impl StorageLoggingExt for ClientOptions {
-    fn apply_storage_logging_defaults(&mut self) {
-        // Prepend storage-specific headers to any user-specified headers
-        let user_headers = std::mem::take(&mut self.logging.additional_allowed_header_names);
-        self.logging.additional_allowed_header_names = STORAGE_ALLOWED_HEADERS
-            .iter()
-            .map(|s| Cow::Borrowed(*s))
-            .chain(user_headers)
-            .collect();
-
-        // Prepend storage-specific query params to any user-specified query params
-        let user_query_params = std::mem::take(&mut self.logging.additional_allowed_query_params);
-        self.logging.additional_allowed_query_params = STORAGE_ALLOWED_QUERY_PARAMETERS
-            .iter()
-            .map(|s| Cow::Borrowed(*s))
-            .chain(user_query_params)
-            .collect();
-    }
+    // Prepend storage-specific query params to any user-specified query params
+    let user_query_params = std::mem::take(&mut options.logging.additional_allowed_query_params);
+    options.logging.additional_allowed_query_params = STORAGE_ALLOWED_QUERY_PARAMETERS
+        .iter()
+        .map(|s| Cow::Borrowed(*s))
+        .chain(user_query_params)
+        .collect();
 }
