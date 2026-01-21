@@ -97,7 +97,7 @@ resource versionedBlobServices 'Microsoft.Storage/storageAccounts/blobServices@2
     deleteRetentionPolicy: {
       enabled: true
       days: 1
-      allowPermanentDelete: false
+      allowPermanentDelete: true
     }
     containerDeleteRetentionPolicy: {
       enabled: true
