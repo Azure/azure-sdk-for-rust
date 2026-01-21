@@ -33,6 +33,9 @@ Optional: If this switch is passed then the script will only update the release 
 .PARAMETER GroupId
 Optional: The group ID for the package. For Java packages, if not provided, the script will prompt for input with 'com.azure' as the default.
 
+.PARAMETER ReleaseVersion
+Optional: The version to release. If provided, the script will not prompt for the version interactively.
+
 .EXAMPLE
 PS> ./eng/common/scripts/Prepare-Release.ps1 <PackageName>
 
@@ -53,7 +56,8 @@ param(
   [string]$ServiceDirectory,
   [string]$ReleaseDate, # Pass Date in the form MM/dd/yyyy"
   [switch]$ReleaseTrackingOnly = $false,
-  [string]$GroupId
+  [string]$GroupId,
+  [string]$ReleaseVersion
 )
 Set-StrictMode -Version 3
 
@@ -144,11 +148,17 @@ if (Test-Path "Function:GetExistingPackageVersions")
 }
 
 $currentProjectVersion = $packageProperties.Version
-$newVersion = Read-Host -Prompt "Input the new version, or press Enter to use current project version '$currentProjectVersion'"
-
-if (!$newVersion)
+if ($ReleaseVersion)
 {
-  $newVersion = $currentProjectVersion;
+  $newVersion = $ReleaseVersion
+}
+else
+{
+  $newVersion = Read-Host -Prompt "Input the new version, or press Enter to use current project version '$currentProjectVersion'"
+  if (!$newVersion)
+  {
+    $newVersion = $currentProjectVersion;
+  }
 }
 
 $newVersionParsed = [AzureEngSemanticVersion]::ParseVersionString($newVersion)
