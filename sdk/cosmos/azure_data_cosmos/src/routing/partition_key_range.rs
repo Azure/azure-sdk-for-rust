@@ -144,7 +144,8 @@ impl PartialEq for PartitionKeyRange {
 
 impl Eq for PartitionKeyRange {}
 
-// Implement Hash for PartitionKeyRange
+// Implement a Manual Hash for PartitionKeyRange, because only the ID, RID,
+// and min/max should be considered for equality/hashing.
 impl Hash for PartitionKeyRange {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);

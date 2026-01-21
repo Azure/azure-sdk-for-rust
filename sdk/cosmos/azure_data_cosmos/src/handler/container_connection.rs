@@ -11,14 +11,14 @@ use std::sync::Arc;
 
 /// Handler for managing transport-level operations with Cosmos DB.
 #[derive(Debug, Clone)]
-pub struct CosmosConnection {
+pub struct ContainerConnection {
     pipeline: Arc<GatewayPipeline>,
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
 }
 
-impl CosmosConnection {
-    /// Creates a new [`CosmosConnection`] with the specified dependencies.
+impl ContainerConnection {
+    /// Creates a new [`ContainerConnection`] with the specified dependencies.
     ///
     /// # Arguments
     ///
@@ -136,64 +136,6 @@ mod tests {
     }
 
     #[test]
-    fn new_cosmos_connection() {
-        let endpoint_manager = create_endpoint_manager();
-        let pipeline = create_gateway_pipeline(&endpoint_manager);
-        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            pipeline.clone(),
-            container_cache.clone(),
-            Arc::new(endpoint_manager),
-        );
-
-        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
-
-        // Verify the connection was created successfully
-        assert!(std::mem::size_of_val(&connection) > 0);
-    }
-
-    #[test]
-    fn cosmos_connection_clone() {
-        let endpoint_manager = create_endpoint_manager();
-        let pipeline = create_gateway_pipeline(&endpoint_manager);
-        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            pipeline.clone(),
-            container_cache.clone(),
-            Arc::new(endpoint_manager),
-        );
-
-        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
-        let cloned_connection = connection.clone();
-
-        // Both should be valid instances
-        assert!(std::mem::size_of_val(&connection) > 0);
-        assert!(std::mem::size_of_val(&cloned_connection) > 0);
-    }
-
-    #[test]
-    fn cosmos_connection_has_required_fields() {
-        let endpoint_manager = create_endpoint_manager();
-        let pipeline = create_gateway_pipeline(&endpoint_manager);
-        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            pipeline.clone(),
-            container_cache.clone(),
-            Arc::new(endpoint_manager),
-        );
-
-        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
-
-        // Test that connection has pipeline, container_cache, and pk_range_cache
-        // by checking that it implements Debug (which requires all fields to implement Debug)
-        let debug_output = format!("{:?}", connection);
-        assert!(debug_output.contains("CosmosConnection"));
-        assert!(debug_output.contains("pipeline"));
-        assert!(debug_output.contains("container_cache"));
-        assert!(debug_output.contains("pk_range_cache"));
-    }
-
-    #[test]
     fn cosmos_request_builder_creates_valid_request() {
         let request = create_cosmos_request();
         assert_eq!(request.operation_type, OperationType::Read);
@@ -201,7 +143,7 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_connection_with_preferred_locations() {
+    fn container_connection_with_preferred_locations() {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -232,14 +174,15 @@ mod tests {
             Arc::new(endpoint_manager),
         );
 
-        let connection = CosmosConnection::new(gateway_pipeline, container_cache, pk_range_cache);
+        let connection =
+            ContainerConnection::new(gateway_pipeline, container_cache, pk_range_cache);
 
         // Verify the connection was created successfully with preferred locations
         assert!(std::mem::size_of_val(&connection) > 0);
     }
 
     #[test]
-    fn multiple_cosmos_connections_share_caches() {
+    fn multiple_container_connections_share_caches() {
         let endpoint_manager = create_endpoint_manager();
         let pipeline = create_gateway_pipeline(&endpoint_manager);
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
@@ -250,17 +193,17 @@ mod tests {
         );
 
         // Create multiple connections sharing the same caches
-        let connection1 = CosmosConnection::new(
+        let connection1 = ContainerConnection::new(
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
         );
-        let connection2 = CosmosConnection::new(
+        let connection2 = ContainerConnection::new(
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
         );
-        let connection3 = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
+        let connection3 = ContainerConnection::new(pipeline, container_cache, pk_range_cache);
 
         // All connections should be valid
         assert!(std::mem::size_of_val(&connection1) > 0);
@@ -322,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_connection_debug_implementation() {
+    fn container_connection_debug_implementation() {
         let endpoint_manager = create_endpoint_manager();
         let pipeline = create_gateway_pipeline(&endpoint_manager);
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
@@ -332,7 +275,7 @@ mod tests {
             Arc::new(endpoint_manager),
         );
 
-        let connection = CosmosConnection::new(pipeline, container_cache, pk_range_cache);
+        let connection = ContainerConnection::new(pipeline, container_cache, pk_range_cache);
 
         // Verify Debug trait is properly implemented
         let debug_str = format!("{:?}", connection);
