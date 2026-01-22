@@ -818,17 +818,29 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    // Act
+    // Act - Download a blob that doesn't exist (container exists but blob doesn't)
     let response = blob_client.download(None).await;
     let error_response = response.unwrap_err();
-
     let error_kind = error_response.kind();
     assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
-
     let storage_error: StorageError = error_response.try_into()?;
-    println!("Download Error Response:");
-    println!("{}", storage_error);
 
+    // Assert
+    assert_eq!(storage_error.status_code(), StatusCode::NotFound);
+    assert!(
+        storage_error.error_code().is_some(),
+        "Expected code to be populated."
+    );
+    assert!(
+        storage_error.message().is_some(),
+        "Expected message to be populated."
+    );
+    assert!(
+        storage_error.request_id().is_some(),
+        "Expected request_id to be populated."
+    );
+
+    container_client.delete_container(None).await?;
     Ok(())
 }
 
@@ -840,17 +852,28 @@ async fn test_storage_error_model_bodiless(ctx: TestContext) -> Result<(), Box<d
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    // Act
+    // Act - get_properties returns a bodiless 404 response
     let response = blob_client.get_properties(None).await;
     let error_response = response.unwrap_err();
-
     let error_kind = error_response.kind();
     assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
-
     let storage_error: StorageError = error_response.try_into()?;
 
-    println!("Get Properties Error Response:");
-    println!("{}", storage_error);
+    // Assert
+    assert_eq!(storage_error.status_code(), StatusCode::NotFound);
+    assert_eq!(
+        storage_error.message(),
+        Some("Not Found"),
+        "Expected canonical reason phrase for bodiless response."
+    );
+    assert!(
+        storage_error.request_id().is_some(),
+        "Expected request_id to be populated from headers."
+    );
+    assert!(
+        storage_error.additional_error_info().is_empty(),
+        "Expected no additional_error_info for bodiless response."
+    );
 
     Ok(())
 }
@@ -863,10 +886,10 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let source_blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&source_blob_client, None, None).await?;
-
     let blob_client = container_client.blob_client(&get_blob_name(recording));
-
     let blob_name = get_blob_name(recording);
+
+    // Act
     let overwrite_blob_client = container_client.blob_client(&blob_name);
     create_test_blob(
         &overwrite_blob_client,
@@ -893,14 +916,80 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
         .block_blob_client()
         .upload_blob_from_url(overwrite_url.clone(), None)
         .await;
-    // Assert
+
     let error = response.unwrap_err();
     assert_eq!(StatusCode::NotFound, error.http_status().unwrap());
-
     let storage_error: StorageError = error.try_into()?;
 
-    println!("Upload Blob From URL w/ Contrived Failure Response:");
-    println!("{}", storage_error);
+    // Assert
+    assert_eq!(storage_error.status_code(), StatusCode::NotFound);
+    assert!(
+        storage_error.copy_source_status_code().is_some(),
+        "Expected copy_source_status_code to be populated."
+    );
+    assert!(
+        storage_error.copy_source_error_code().is_some(),
+        "Expected copy_source_error_code to be populated."
+    );
+    assert!(
+        storage_error.copy_source_error_message().is_some(),
+        "Expected copy_source_error_message to be populated."
+    );
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model_query_parameter_fields(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    // Create a container client with an invalid maxresults=0 query parameter
+    let mut url_with_bad_param = container_client.url().clone();
+    url_with_bad_param.set_query(Some("restype=container&comp=list&maxresults=0"));
+
+    let mut client_options = ClientOptions::default();
+    recording.instrument(&mut client_options);
+
+    let container_client_options = BlobContainerClientOptions {
+        client_options,
+        ..Default::default()
+    };
+
+    let bad_container_client = BlobContainerClient::from_url(
+        url_with_bad_param,
+        Some(recording.credential()),
+        Some(container_client_options),
+    )?;
+
+    // list_blobs with maxresults=0 should fail with OutOfRangeQueryParameterValue
+    let response = bad_container_client.list_blobs(None);
+    let mut pages = response?.into_pages();
+    let page_result = pages.try_next().await;
+    let error = page_result.unwrap_err();
+    let storage_error: StorageError = error.try_into()?;
+
+    // Assert
+    assert_eq!(storage_error.status_code(), StatusCode::BadRequest);
+    assert!(
+        storage_error.message().is_some(),
+        "Expected message to be populated."
+    );
+    assert!(
+        storage_error.query_parameter_name().is_some(),
+        "Expected query_parameter_name to be populated, got None. Full error: {}.",
+        storage_error
+    );
+    assert!(
+        storage_error.query_parameter_value().is_some(),
+        "Expected query_parameter_value to be populated, got None. Full error: {}.",
+        storage_error
+    );
 
     container_client.delete_container(None).await?;
     Ok(())

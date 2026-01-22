@@ -18,6 +18,22 @@ pub struct StorageError {
     message: Option<String>,
     /// The request ID from the x-ms-request-id header, if available.
     request_id: Option<String>,
+    /// A general reason for the error, if available.
+    reason: Option<String>,
+    /// Additional authentication error details, if available.
+    authentication_error_detail: Option<String>,
+    /// Details about signature mismatch errors, if available.
+    signature_mismatch_error_detail: Option<String>,
+    /// The name of the query parameter that caused the error, if available.
+    query_parameter_name: Option<String>,
+    /// The value of the query parameter that caused the error, if available.
+    query_parameter_value: Option<String>,
+    /// The HTTP status code from the copy source, if available.
+    copy_source_status_code: Option<String>,
+    /// The error code from the copy source, if available.
+    copy_source_error_code: Option<String>,
+    /// The error message from the copy source, if available.
+    copy_source_error_message: Option<String>,
     /// Additional fields from the error response that weren't explicitly mapped.
     additional_error_info: HashMap<String, String>,
 }
@@ -37,6 +53,38 @@ impl StorageError {
 
     pub fn request_id(&self) -> Option<&str> {
         self.request_id.as_deref()
+    }
+
+    pub fn reason(&self) -> Option<&str> {
+        self.reason.as_deref()
+    }
+
+    pub fn authentication_error_detail(&self) -> Option<&str> {
+        self.authentication_error_detail.as_deref()
+    }
+
+    pub fn signature_mismatch_error_detail(&self) -> Option<&str> {
+        self.signature_mismatch_error_detail.as_deref()
+    }
+
+    pub fn query_parameter_name(&self) -> Option<&str> {
+        self.query_parameter_name.as_deref()
+    }
+
+    pub fn query_parameter_value(&self) -> Option<&str> {
+        self.query_parameter_value.as_deref()
+    }
+
+    pub fn copy_source_status_code(&self) -> Option<&str> {
+        self.copy_source_status_code.as_deref()
+    }
+
+    pub fn copy_source_error_code(&self) -> Option<&str> {
+        self.copy_source_error_code.as_deref()
+    }
+
+    pub fn copy_source_error_message(&self) -> Option<&str> {
+        self.copy_source_error_message.as_deref()
     }
 
     pub fn additional_error_info(&self) -> &HashMap<String, String> {
@@ -78,6 +126,22 @@ impl StorageError {
             code: Option<String>,
             #[serde(rename = "Message")]
             message: Option<String>,
+            #[serde(rename = "Reason")]
+            reason: Option<String>,
+            #[serde(rename = "AuthenticationErrorDetail")]
+            authentication_error_detail: Option<String>,
+            #[serde(rename = "SignatureMismatchErrorDetail")]
+            signature_mismatch_error_detail: Option<String>,
+            #[serde(rename = "QueryParameterName")]
+            query_parameter_name: Option<String>,
+            #[serde(rename = "QueryParameterValue")]
+            query_parameter_value: Option<String>,
+            #[serde(rename = "CopySourceStatusCode")]
+            copy_source_status_code: Option<String>,
+            #[serde(rename = "CopySourceErrorCode")]
+            copy_source_error_code: Option<String>,
+            #[serde(rename = "CopySourceErrorMessage")]
+            copy_source_error_message: Option<String>,
             #[serde(flatten)]
             additional_fields: HashMap<String, Value>,
         }
@@ -96,6 +160,14 @@ impl StorageError {
             error_code,
             message: xml_fields.message,
             request_id,
+            reason: xml_fields.reason,
+            authentication_error_detail: xml_fields.authentication_error_detail,
+            signature_mismatch_error_detail: xml_fields.signature_mismatch_error_detail,
+            query_parameter_name: xml_fields.query_parameter_name,
+            query_parameter_value: xml_fields.query_parameter_value,
+            copy_source_status_code: xml_fields.copy_source_status_code,
+            copy_source_error_code: xml_fields.copy_source_error_code,
+            copy_source_error_message: xml_fields.copy_source_error_message,
             additional_error_info,
         })
     }
@@ -115,6 +187,38 @@ impl std::fmt::Display for StorageError {
 
         if let Some(message) = &self.message {
             writeln!(f, "Error Message: {}", message)?;
+        }
+
+        if let Some(reason) = &self.reason {
+            writeln!(f, "Reason: {}", reason)?;
+        }
+
+        if let Some(detail) = &self.authentication_error_detail {
+            writeln!(f, "Authentication Error Detail: {}", detail)?;
+        }
+
+        if let Some(detail) = &self.signature_mismatch_error_detail {
+            writeln!(f, "Signature Mismatch Error Detail: {}", detail)?;
+        }
+
+        if let Some(name) = &self.query_parameter_name {
+            writeln!(f, "Query Parameter Name: {}", name)?;
+        }
+
+        if let Some(value) = &self.query_parameter_value {
+            writeln!(f, "Query Parameter Value: {}", value)?;
+        }
+
+        if let Some(status) = &self.copy_source_status_code {
+            writeln!(f, "Copy Source Status Code: {}", status)?;
+        }
+
+        if let Some(code) = &self.copy_source_error_code {
+            writeln!(f, "Copy Source Error Code: {}", code)?;
+        }
+
+        if let Some(message) = &self.copy_source_error_message {
+            writeln!(f, "Copy Source Error Message: {}", message)?;
         }
 
         if !self.additional_error_info.is_empty() {
@@ -173,6 +277,14 @@ impl TryFrom<azure_core::Error> for StorageError {
                         error_code,
                         message,
                         request_id,
+                        reason: None,
+                        authentication_error_detail: None,
+                        signature_mismatch_error_detail: None,
+                        query_parameter_name: None,
+                        query_parameter_value: None,
+                        copy_source_status_code: None,
+                        copy_source_error_code: None,
+                        copy_source_error_message: None,
                         additional_error_info: HashMap::new(),
                     });
                 }
