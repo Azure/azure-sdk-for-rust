@@ -5,7 +5,7 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::{AccountProperties, AccountRegion};
 use crate::operation_context::OperationType;
-use crate::RegionName;
+use crate::regions::RegionName;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,

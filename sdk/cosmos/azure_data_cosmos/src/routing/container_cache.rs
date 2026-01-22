@@ -154,7 +154,7 @@ impl ContainerCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::RegionName;
+    use crate::regions::RegionName;
     use azure_core::http::ClientOptions;
     use url::Url;
 

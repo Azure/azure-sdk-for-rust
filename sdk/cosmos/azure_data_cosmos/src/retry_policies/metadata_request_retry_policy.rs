@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{get_substatus_code_from_error, get_substatus_code_from_response, RetryResult};
-use crate::constants::{SubStatusCode, DATABASE_ACCOUNT_NOT_FOUND, LEASE_NOT_FOUND};
+use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -212,9 +212,10 @@ impl MetadataRequestRetryPolicy {
         // Check for retryable status codes
         if (status_code == StatusCode::ServiceUnavailable
             || status_code == StatusCode::InternalServerError
-            || (status_code == StatusCode::Gone && sub_status_code == Some(LEASE_NOT_FOUND))
+            || (status_code == StatusCode::Gone
+                && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND))
             || (status_code == StatusCode::Forbidden
-                && sub_status_code == Some(DATABASE_ACCOUNT_NOT_FOUND)))
+                && sub_status_code == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)))
             && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
         {
             return RetryResult::Retry {
@@ -262,9 +263,9 @@ mod tests {
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
     use crate::regions;
+    use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-    use crate::RegionName;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;

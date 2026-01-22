@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{PartitionKey, RegionName};
+use crate::regions::RegionName;
+use crate::PartitionKey;
 use azure_core::http::RawResponse;
 use std::collections::HashMap;
 use url::Url;

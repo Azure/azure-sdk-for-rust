@@ -3,7 +3,7 @@
 
 use crate::constants;
 use crate::models::ThroughputProperties;
-use crate::RegionName;
+use crate::regions::RegionName;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use azure_core::time::Duration;
