@@ -16,7 +16,7 @@ applyTo: "sdk/cosmos/**/CHANGELOG.md"
 	- Prefer the existing style used in the file.
 	- When the file uses PR-linked bullets, use the same pattern:
 		- Prefer placing the PR link at the end, matching existing Cosmos changelog entries:
-			- `- <one-line summary of the change>. - [PR #12345](https://github.com/Azure/azure-sdk-for-rust/pull/12345)`
+			- `- <one-line summary of the change>. ([#12345](https://github.com/Azure/azure-sdk-for-rust/pull/12345))`
 	- If you are working on a local branch and there is no PR yet, you may add the one-line summary without the link.
 		- Once a PR exists (even before merge), update the entry to include the PR link.
 
