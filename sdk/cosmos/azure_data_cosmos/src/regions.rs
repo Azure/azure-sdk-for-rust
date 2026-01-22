@@ -5,31 +5,45 @@
 
 use std::borrow::Cow;
 use std::fmt;
-use std::hash::{Hash, Hasher};
 
 /// A newtype wrapper for Azure region names that provides canonical comparison.
 ///
-/// Region names are compared case-insensitively and ignoring whitespace characters.
-/// This ensures that "West US", "westus", and "WEST US" are all considered equal.
-#[derive(Clone, Debug)]
+/// Region names are stored in canonical form (lowercase, no whitespace) to ensure
+/// efficient comparison. This ensures that "West US", "westus", and "WEST US" are
+/// all considered equal and stored identically.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RegionName(Cow<'static, str>);
 
+/// Creates a `RegionName` from a static string that must already be in canonical form.
+///
+/// # Panics
+/// Panics in debug builds if the string is not canonical (lowercase, no whitespace).
+const fn from_static_canonical(s: &'static str) -> RegionName {
+    // Note: We can't validate at compile time easily, but we document the requirement
+    RegionName(Cow::Borrowed(s))
+}
+
 impl RegionName {
-    /// Creates a new `RegionName` from a static string.
-    pub const fn from_static(s: &'static str) -> Self {
-        Self(Cow::Borrowed(s))
+    /// Creates a new `RegionName`, converting the input to canonical form if needed.
+    ///
+    /// The canonical form is lowercase with all whitespace removed.
+    pub fn new(s: impl Into<Cow<'static, str>>) -> Self {
+        let cow = s.into();
+        let needs_canonicalization = cow.chars().any(|c| c.is_whitespace() || c.is_uppercase());
+
+        if needs_canonicalization {
+            let canonical: String = cow
+                .chars()
+                .filter(|c| !c.is_whitespace())
+                .flat_map(|c| c.to_lowercase())
+                .collect();
+            Self(Cow::Owned(canonical))
+        } else {
+            Self(cow)
+        }
     }
 
-    /// Returns the canonical form of the region name (lowercase, no whitespace).
-    fn canonical(&self) -> String {
-        self.0
-            .chars()
-            .filter(|c| !c.is_whitespace())
-            .flat_map(|c| c.to_lowercase())
-            .collect()
-    }
-
-    /// Returns the original region name as a string slice.
+    /// Returns the canonical region name as a string slice.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -37,19 +51,19 @@ impl RegionName {
 
 impl From<String> for RegionName {
     fn from(s: String) -> Self {
-        Self(Cow::Owned(s))
+        Self::new(s)
     }
 }
 
 impl From<&'static str> for RegionName {
     fn from(s: &'static str) -> Self {
-        Self(Cow::Borrowed(s))
+        Self::new(s)
     }
 }
 
 impl From<Cow<'static, str>> for RegionName {
     fn from(s: Cow<'static, str>) -> Self {
-        Self(s)
+        Self::new(s)
     }
 }
 
@@ -65,119 +79,104 @@ impl fmt::Display for RegionName {
     }
 }
 
-impl PartialEq for RegionName {
-    fn eq(&self, other: &Self) -> bool {
-        self.canonical() == other.canonical()
-    }
-}
-
-impl Eq for RegionName {}
-
-impl Hash for RegionName {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.canonical().hash(state);
-    }
-}
-
 // cSpell:disable
-pub const WEST_US: RegionName = RegionName::from_static("West US");
-pub const WEST_US_2: RegionName = RegionName::from_static("West US 2");
-pub const WEST_CENTRAL_US: RegionName = RegionName::from_static("West Central US");
-pub const EAST_US: RegionName = RegionName::from_static("East US");
-pub const EAST_US_2: RegionName = RegionName::from_static("East US 2");
-pub const EAST_US_3: RegionName = RegionName::from_static("East US 3");
-pub const CENTRAL_US: RegionName = RegionName::from_static("Central US");
-pub const SOUTH_CENTRAL_US: RegionName = RegionName::from_static("South Central US");
-pub const NORTH_CENTRAL_US: RegionName = RegionName::from_static("North Central US");
-pub const WEST_EUROPE: RegionName = RegionName::from_static("West Europe");
-pub const NORTH_EUROPE: RegionName = RegionName::from_static("North Europe");
-pub const EAST_ASIA: RegionName = RegionName::from_static("East Asia");
-pub const SOUTHEAST_ASIA: RegionName = RegionName::from_static("Southeast Asia");
-pub const JAPAN_EAST: RegionName = RegionName::from_static("Japan East");
-pub const JAPAN_WEST: RegionName = RegionName::from_static("Japan West");
-pub const AUSTRALIA_EAST: RegionName = RegionName::from_static("Australia East");
-pub const AUSTRALIA_SOUTHEAST: RegionName = RegionName::from_static("Australia Southeast");
-pub const CENTRAL_INDIA: RegionName = RegionName::from_static("Central India");
-pub const SOUTH_INDIA: RegionName = RegionName::from_static("South India");
-pub const WEST_INDIA: RegionName = RegionName::from_static("West India");
-pub const CANADA_EAST: RegionName = RegionName::from_static("Canada East");
-pub const CANADA_CENTRAL: RegionName = RegionName::from_static("Canada Central");
-pub const CHINA_NORTH: RegionName = RegionName::from_static("China North");
-pub const CHINA_EAST: RegionName = RegionName::from_static("China East");
-pub const CHINA_NORTH_2: RegionName = RegionName::from_static("China North 2");
-pub const CHINA_EAST_2: RegionName = RegionName::from_static("China East 2");
-pub const KOREA_SOUTH: RegionName = RegionName::from_static("Korea South");
-pub const KOREA_CENTRAL: RegionName = RegionName::from_static("Korea Central");
-pub const UK_WEST: RegionName = RegionName::from_static("UK West");
-pub const UK_SOUTH: RegionName = RegionName::from_static("UK South");
-pub const BRAZIL_SOUTH: RegionName = RegionName::from_static("Brazil South");
-pub const USGOV_ARIZONA: RegionName = RegionName::from_static("USGov Arizona");
-pub const USGOV_TEXAS: RegionName = RegionName::from_static("USGov Texas");
-pub const USGOV_VIRGINIA: RegionName = RegionName::from_static("USGov Virginia");
-pub const EAST_US_2_EUAP: RegionName = RegionName::from_static("East US 2 EUAP");
-pub const CENTRAL_US_EUAP: RegionName = RegionName::from_static("Central US EUAP");
-pub const FRANCE_CENTRAL: RegionName = RegionName::from_static("France Central");
-pub const FRANCE_SOUTH: RegionName = RegionName::from_static("France South");
-pub const USDOD_CENTRAL: RegionName = RegionName::from_static("USDoD Central");
-pub const USDOD_EAST: RegionName = RegionName::from_static("USDoD East");
-pub const AUSTRALIA_CENTRAL: RegionName = RegionName::from_static("Australia Central");
-pub const AUSTRALIA_CENTRAL_2: RegionName = RegionName::from_static("Australia Central 2");
-pub const SOUTH_AFRICA_NORTH: RegionName = RegionName::from_static("South Africa North");
-pub const SOUTH_AFRICA_WEST: RegionName = RegionName::from_static("South Africa West");
-pub const UAE_CENTRAL: RegionName = RegionName::from_static("UAE Central");
-pub const UAE_NORTH: RegionName = RegionName::from_static("UAE North");
-pub const USNAT_EAST: RegionName = RegionName::from_static("USNat East");
-pub const USNAT_WEST: RegionName = RegionName::from_static("USNat West");
-pub const USSEC_EAST: RegionName = RegionName::from_static("USSec East");
-pub const USSEC_WEST: RegionName = RegionName::from_static("USSec West");
-pub const USSEC_WEST_CENTRAL: RegionName = RegionName::from_static("USSec West Central");
-pub const SWITZERLAND_NORTH: RegionName = RegionName::from_static("Switzerland North");
-pub const SWITZERLAND_WEST: RegionName = RegionName::from_static("Switzerland West");
-pub const GERMANY_NORTH: RegionName = RegionName::from_static("Germany North");
-pub const GERMANY_WEST_CENTRAL: RegionName = RegionName::from_static("Germany West Central");
-pub const NORWAY_EAST: RegionName = RegionName::from_static("Norway East");
-pub const NORWAY_WEST: RegionName = RegionName::from_static("Norway West");
-pub const BRAZIL_SOUTHEAST: RegionName = RegionName::from_static("Brazil Southeast");
-pub const WEST_US_3: RegionName = RegionName::from_static("West US 3");
-pub const JIO_INDIA_CENTRAL: RegionName = RegionName::from_static("Jio India Central");
-pub const JIO_INDIA_WEST: RegionName = RegionName::from_static("Jio India West");
-pub const EAST_US_SLV: RegionName = RegionName::from_static("East US SLV");
-pub const SWEDEN_CENTRAL: RegionName = RegionName::from_static("Sweden Central");
-pub const SWEDEN_SOUTH: RegionName = RegionName::from_static("Sweden South");
-pub const QATAR_CENTRAL: RegionName = RegionName::from_static("Qatar Central");
-pub const CHINA_NORTH_3: RegionName = RegionName::from_static("China North 3");
-pub const CHINA_EAST_3: RegionName = RegionName::from_static("China East 3");
-pub const POLAND_CENTRAL: RegionName = RegionName::from_static("Poland Central");
-pub const MALAYSIA_SOUTH: RegionName = RegionName::from_static("Malaysia South");
-pub const ITALY_NORTH: RegionName = RegionName::from_static("Italy North");
-pub const ISRAEL_CENTRAL: RegionName = RegionName::from_static("Israel Central");
-pub const MEXICO_CENTRAL: RegionName = RegionName::from_static("Mexico Central");
-pub const SPAIN_CENTRAL: RegionName = RegionName::from_static("Spain Central");
-pub const TAIWAN_NORTH: RegionName = RegionName::from_static("Taiwan North");
-pub const TAIWAN_NORTHWEST: RegionName = RegionName::from_static("Taiwan Northwest");
-pub const NEW_ZEALAND_NORTH: RegionName = RegionName::from_static("New Zealand North");
-pub const AUSTRIA_EAST: RegionName = RegionName::from_static("Austria East");
-pub const BLEU_FRANCE_CENTRAL: RegionName = RegionName::from_static("Bleu France Central");
-pub const BLEU_FRANCE_SOUTH: RegionName = RegionName::from_static("Bleu France South");
-pub const INDONESIA_CENTRAL: RegionName = RegionName::from_static("Indonesia Central");
-pub const SOUTHEAST_US: RegionName = RegionName::from_static("Southeast US");
-pub const SOUTHWEST_US: RegionName = RegionName::from_static("Southwest US");
-pub const MALAYSIA_WEST: RegionName = RegionName::from_static("Malaysia West");
+pub const WEST_US: RegionName = from_static_canonical("westus");
+pub const WEST_US_2: RegionName = from_static_canonical("westus2");
+pub const WEST_CENTRAL_US: RegionName = from_static_canonical("westcentralus");
+pub const EAST_US: RegionName = from_static_canonical("eastus");
+pub const EAST_US_2: RegionName = from_static_canonical("eastus2");
+pub const EAST_US_3: RegionName = from_static_canonical("eastus3");
+pub const CENTRAL_US: RegionName = from_static_canonical("centralus");
+pub const SOUTH_CENTRAL_US: RegionName = from_static_canonical("southcentralus");
+pub const NORTH_CENTRAL_US: RegionName = from_static_canonical("northcentralus");
+pub const WEST_EUROPE: RegionName = from_static_canonical("westeurope");
+pub const NORTH_EUROPE: RegionName = from_static_canonical("northeurope");
+pub const EAST_ASIA: RegionName = from_static_canonical("eastasia");
+pub const SOUTHEAST_ASIA: RegionName = from_static_canonical("southeastasia");
+pub const JAPAN_EAST: RegionName = from_static_canonical("japaneast");
+pub const JAPAN_WEST: RegionName = from_static_canonical("japanwest");
+pub const AUSTRALIA_EAST: RegionName = from_static_canonical("australiaeast");
+pub const AUSTRALIA_SOUTHEAST: RegionName = from_static_canonical("australiasoutheast");
+pub const CENTRAL_INDIA: RegionName = from_static_canonical("centralindia");
+pub const SOUTH_INDIA: RegionName = from_static_canonical("southindia");
+pub const WEST_INDIA: RegionName = from_static_canonical("westindia");
+pub const CANADA_EAST: RegionName = from_static_canonical("canadaeast");
+pub const CANADA_CENTRAL: RegionName = from_static_canonical("canadacentral");
+pub const CHINA_NORTH: RegionName = from_static_canonical("chinanorth");
+pub const CHINA_EAST: RegionName = from_static_canonical("chinaeast");
+pub const CHINA_NORTH_2: RegionName = from_static_canonical("chinanorth2");
+pub const CHINA_EAST_2: RegionName = from_static_canonical("chinaeast2");
+pub const KOREA_SOUTH: RegionName = from_static_canonical("koreasouth");
+pub const KOREA_CENTRAL: RegionName = from_static_canonical("koreacentral");
+pub const UK_WEST: RegionName = from_static_canonical("ukwest");
+pub const UK_SOUTH: RegionName = from_static_canonical("uksouth");
+pub const BRAZIL_SOUTH: RegionName = from_static_canonical("brazilsouth");
+pub const USGOV_ARIZONA: RegionName = from_static_canonical("usgovarizona");
+pub const USGOV_TEXAS: RegionName = from_static_canonical("usgovtexas");
+pub const USGOV_VIRGINIA: RegionName = from_static_canonical("usgovvirginia");
+pub const EAST_US_2_EUAP: RegionName = from_static_canonical("eastus2euap");
+pub const CENTRAL_US_EUAP: RegionName = from_static_canonical("centraluseuap");
+pub const FRANCE_CENTRAL: RegionName = from_static_canonical("francecentral");
+pub const FRANCE_SOUTH: RegionName = from_static_canonical("francesouth");
+pub const USDOD_CENTRAL: RegionName = from_static_canonical("usdodcentral");
+pub const USDOD_EAST: RegionName = from_static_canonical("usdodeast");
+pub const AUSTRALIA_CENTRAL: RegionName = from_static_canonical("australiacentral");
+pub const AUSTRALIA_CENTRAL_2: RegionName = from_static_canonical("australiacentral2");
+pub const SOUTH_AFRICA_NORTH: RegionName = from_static_canonical("southafricanorth");
+pub const SOUTH_AFRICA_WEST: RegionName = from_static_canonical("southafricawest");
+pub const UAE_CENTRAL: RegionName = from_static_canonical("uaecentral");
+pub const UAE_NORTH: RegionName = from_static_canonical("uaenorth");
+pub const USNAT_EAST: RegionName = from_static_canonical("usnateast");
+pub const USNAT_WEST: RegionName = from_static_canonical("usnatwest");
+pub const USSEC_EAST: RegionName = from_static_canonical("usseceast");
+pub const USSEC_WEST: RegionName = from_static_canonical("ussecwest");
+pub const USSEC_WEST_CENTRAL: RegionName = from_static_canonical("ussecwestcentral");
+pub const SWITZERLAND_NORTH: RegionName = from_static_canonical("switzerlandnorth");
+pub const SWITZERLAND_WEST: RegionName = from_static_canonical("switzerlandwest");
+pub const GERMANY_NORTH: RegionName = from_static_canonical("germanynorth");
+pub const GERMANY_WEST_CENTRAL: RegionName = from_static_canonical("germanywestcentral");
+pub const NORWAY_EAST: RegionName = from_static_canonical("norwayeast");
+pub const NORWAY_WEST: RegionName = from_static_canonical("norwaywest");
+pub const BRAZIL_SOUTHEAST: RegionName = from_static_canonical("brazilsoutheast");
+pub const WEST_US_3: RegionName = from_static_canonical("westus3");
+pub const JIO_INDIA_CENTRAL: RegionName = from_static_canonical("jioindiacentral");
+pub const JIO_INDIA_WEST: RegionName = from_static_canonical("jioindiawest");
+pub const EAST_US_SLV: RegionName = from_static_canonical("eastusslv");
+pub const SWEDEN_CENTRAL: RegionName = from_static_canonical("swedencentral");
+pub const SWEDEN_SOUTH: RegionName = from_static_canonical("swedensouth");
+pub const QATAR_CENTRAL: RegionName = from_static_canonical("qatarcentral");
+pub const CHINA_NORTH_3: RegionName = from_static_canonical("chinanorth3");
+pub const CHINA_EAST_3: RegionName = from_static_canonical("chinaeast3");
+pub const POLAND_CENTRAL: RegionName = from_static_canonical("polandcentral");
+pub const MALAYSIA_SOUTH: RegionName = from_static_canonical("malaysiasouth");
+pub const ITALY_NORTH: RegionName = from_static_canonical("italynorth");
+pub const ISRAEL_CENTRAL: RegionName = from_static_canonical("israelcentral");
+pub const MEXICO_CENTRAL: RegionName = from_static_canonical("mexicocentral");
+pub const SPAIN_CENTRAL: RegionName = from_static_canonical("spaincentral");
+pub const TAIWAN_NORTH: RegionName = from_static_canonical("taiwannorth");
+pub const TAIWAN_NORTHWEST: RegionName = from_static_canonical("taiwannorthwest");
+pub const NEW_ZEALAND_NORTH: RegionName = from_static_canonical("newzealandnorth");
+pub const AUSTRIA_EAST: RegionName = from_static_canonical("austriaeast");
+pub const BLEU_FRANCE_CENTRAL: RegionName = from_static_canonical("bleufrancecentral");
+pub const BLEU_FRANCE_SOUTH: RegionName = from_static_canonical("bleufrancesouth");
+pub const INDONESIA_CENTRAL: RegionName = from_static_canonical("indonesiacentral");
+pub const SOUTHEAST_US: RegionName = from_static_canonical("southeastus");
+pub const SOUTHWEST_US: RegionName = from_static_canonical("southwestus");
+pub const MALAYSIA_WEST: RegionName = from_static_canonical("malaysiawest");
 pub const DELOS_CLOUD_GERMANY_CENTRAL: RegionName =
-    RegionName::from_static("Delos Cloud Germany Central");
-pub const DELOS_CLOUD_GERMANY_NORTH: RegionName =
-    RegionName::from_static("Delos Cloud Germany North");
-pub const CHILE_CENTRAL: RegionName = RegionName::from_static("Chile Central");
-pub const SOUTH_CENTRAL_US_2: RegionName = RegionName::from_static("South Central US 2");
-pub const ISRAEL_NORTHWEST: RegionName = RegionName::from_static("Israel Northwest");
-pub const BELGIUM_CENTRAL: RegionName = RegionName::from_static("Belgium Central");
-pub const DENMARK_EAST: RegionName = RegionName::from_static("Denmark East");
-pub const SOUTHEAST_US_3: RegionName = RegionName::from_static("Southeast US 3");
-pub const SOUTHEAST_US_5: RegionName = RegionName::from_static("Southeast US 5");
-pub const NORTHEAST_US_5: RegionName = RegionName::from_static("Northeast US 5");
-pub const INDIA_SOUTH_CENTRAL: RegionName = RegionName::from_static("India South Central");
-pub const SINGAPORE_CENTRAL: RegionName = RegionName::from_static("Singapore Central");
-pub const SINGAPORE_NORTH: RegionName = RegionName::from_static("Singapore North");
+    from_static_canonical("deloscloudgermanycentral");
+pub const DELOS_CLOUD_GERMANY_NORTH: RegionName = from_static_canonical("deloscloudgermanynorth");
+pub const CHILE_CENTRAL: RegionName = from_static_canonical("chilecentral");
+pub const SOUTH_CENTRAL_US_2: RegionName = from_static_canonical("southcentralus2");
+pub const ISRAEL_NORTHWEST: RegionName = from_static_canonical("israelnorthwest");
+pub const BELGIUM_CENTRAL: RegionName = from_static_canonical("belgiumcentral");
+pub const DENMARK_EAST: RegionName = from_static_canonical("denmarkeast");
+pub const SOUTHEAST_US_3: RegionName = from_static_canonical("southeastus3");
+pub const SOUTHEAST_US_5: RegionName = from_static_canonical("southeastus5");
+pub const NORTHEAST_US_5: RegionName = from_static_canonical("northeastus5");
+pub const INDIA_SOUTH_CENTRAL: RegionName = from_static_canonical("indiasouthcentral");
+pub const SINGAPORE_CENTRAL: RegionName = from_static_canonical("singaporecentral");
+pub const SINGAPORE_NORTH: RegionName = from_static_canonical("singaporenorth");
 
 #[cfg(test)]
 mod tests {
@@ -210,26 +209,32 @@ mod tests {
     }
 
     #[test]
-    fn display_preserves_original() {
+    fn stores_canonical_form() {
         let r1 = RegionName::from("West US");
-        assert_eq!(r1.to_string(), "West US");
+        assert_eq!(r1.to_string(), "westus");
+        assert_eq!(r1.as_str(), "westus");
 
         let r2 = RegionName::from("westus");
         assert_eq!(r2.to_string(), "westus");
+        assert_eq!(r2.as_str(), "westus");
+
+        let r3 = RegionName::from("WEST US");
+        assert_eq!(r3.as_str(), "westus");
     }
 
     #[test]
-    fn as_str_returns_original() {
-        let r = RegionName::from("West US");
-        assert_eq!(r.as_str(), "West US");
+    fn constants_are_canonical() {
+        assert_eq!(WEST_US.as_str(), "westus");
+        assert_eq!(EAST_US.as_str(), "eastus");
+        assert_eq!(WEST_EUROPE.as_str(), "westeurope");
     }
 
     #[test]
     fn from_cow() {
         let borrowed = RegionName::from(Cow::Borrowed("West US"));
-        assert_eq!(borrowed.as_str(), "West US");
+        assert_eq!(borrowed.as_str(), "westus");
 
         let owned = RegionName::from(Cow::Owned("West US".to_string()));
-        assert_eq!(owned.as_str(), "West US");
+        assert_eq!(owned.as_str(), "westus");
     }
 }

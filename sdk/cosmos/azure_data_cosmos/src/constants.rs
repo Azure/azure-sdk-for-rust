@@ -217,15 +217,11 @@ impl SubStatusCode {
         self.0
     }
 
-    /// Attempts to create a `SubStatusCode` from a header string.
-    /// Returns `None` if parsing fails or code is unknown.
+    /// Creates a `SubStatusCode` from a header string.
+    /// Returns `None` if parsing fails.
     pub fn from_header_value(s: &str) -> Option<Self> {
         let raw = s.trim();
-        if let Ok(v) = raw.parse::<u32>() {
-            SubStatusCode::try_from(v).ok()
-        } else {
-            None
-        }
+        raw.parse::<u32>().ok().map(|v| SubStatusCode(v as usize))
     }
 
     // Internal constants for sub-status codes
@@ -417,25 +413,8 @@ impl From<SubStatusCode> for usize {
     }
 }
 
-impl TryFrom<u32> for SubStatusCode {
-    type Error = (); // Unknown code
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match value {
-            3
-            | 429
-            | 1000..=1037
-            | 1101
-            | 2001..=2021
-            | 2101
-            | 3001..=3010
-            | 3050..=3051
-            | 3084
-            | 3200..=3209
-            | 3302
-            | 9001..=9003
-            | 0xFFFF => Ok(SubStatusCode(value as usize)),
-            _ => Err(()),
-        }
+impl From<u32> for SubStatusCode {
+    fn from(value: u32) -> Self {
+        SubStatusCode(value as usize)
     }
 }
