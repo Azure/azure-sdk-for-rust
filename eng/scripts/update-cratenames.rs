@@ -77,7 +77,10 @@ fn main() {
             return Ok(());
         };
         if let Some(dev_dependencies) = manifest.dev_dependencies {
-            dependencies.extend(dev_dependencies)
+            dependencies.extend(dev_dependencies);
+        }
+        if let Some(build_dependencies) = manifest.build_dependencies {
+            dependencies.extend(build_dependencies);
         }
 
         let dependencies: Vec<String> = dependencies
@@ -146,10 +149,10 @@ where
             let entry = entry?;
             let path = entry.path();
             if path.is_dir() {
-                if matches!(path.file_name(), Some(name) if name == "target")
-                    || path.starts_with(".")
-                {
-                    continue;
+                if let Some(name) = path.file_name() {
+                    if name == "target" || name.as_encoded_bytes().starts_with(&[b'.']) {
+                        continue;
+                    }
                 }
                 find(&path, f)?;
             } else {
