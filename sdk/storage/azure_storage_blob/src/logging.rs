@@ -53,7 +53,6 @@ pub static STORAGE_ALLOWED_HEADERS: &[&str] = &[
     "x-ms-request-server-encrypted",
     "x-ms-server-encrypted",
     "x-ms-encryption-algorithm",
-    "x-ms-encryption-key-sha256",
     "x-ms-default-encryption-scope",
     "x-ms-deny-encryption-scope-override",
     // Access tier
