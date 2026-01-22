@@ -17,10 +17,25 @@ pub struct RegionName(Cow<'static, str>);
 /// Creates a `RegionName` from a static string that must already be in canonical form.
 ///
 /// # Panics
-/// Panics in debug builds if the string is not canonical (lowercase, no whitespace).
+/// Panics at compile-time if the string is not canonical (lowercase ASCII letters and digits only).
 const fn from_static_canonical(s: &'static str) -> RegionName {
-    // Note: We can't validate at compile time easily, but we document the requirement
+    ensure_canonical_ascii(s);
     RegionName(Cow::Borrowed(s))
+}
+
+/// Validates that a string contains only lowercase ASCII letters and digits.
+///
+/// # Panics
+/// Panics at compile-time if the string contains any character that is not a lowercase ASCII letter or digit.
+const fn ensure_canonical_ascii(s: &str) {
+    let mut i = 0;
+    let bytes = s.as_bytes();
+    while i < bytes.len() {
+        if !bytes[i].is_ascii_lowercase() && !bytes[i].is_ascii_digit() {
+            panic!("string contains non-lowercase or non-ASCII character");
+        }
+        i += 1;
+    }
 }
 
 impl RegionName {
@@ -227,6 +242,24 @@ mod tests {
         assert_eq!(WEST_US.as_str(), "westus");
         assert_eq!(EAST_US.as_str(), "eastus");
         assert_eq!(WEST_EUROPE.as_str(), "westeurope");
+    }
+
+    #[test]
+    #[should_panic(expected = "string contains non-lowercase or non-ASCII character")]
+    fn from_static_canonical_panics_on_uppercase() {
+        let _invalid = from_static_canonical("WestUS");
+    }
+
+    #[test]
+    #[should_panic(expected = "string contains non-lowercase or non-ASCII character")]
+    fn from_static_canonical_panics_on_spaces() {
+        let _invalid = from_static_canonical("west us");
+    }
+
+    #[test]
+    #[should_panic(expected = "string contains non-lowercase or non-ASCII character")]
+    fn from_static_canonical_panics_on_special_chars() {
+        let _invalid = from_static_canonical("west-us");
     }
 
     #[test]
