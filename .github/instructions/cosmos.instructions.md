@@ -1,3 +1,7 @@
+---
+applyTo: "sdk/cosmos/**/*.*"
+---
+
 # Cosmos SDK Instructions
 
 This file contains coding guidelines and architectural patterns specific to the Azure Cosmos DB SDK for Rust (`sdk/cosmos`).
@@ -33,8 +37,12 @@ Follow the **Data-Oriented Programming in Rust** principles from [https://analog
 #### Async/Await
 
 - All I/O operations must be async
-- Use `tokio` as the async runtime (inherited from workspace)
-- Prefer streaming responses for large result sets (use `futures::Stream`)
+- Async runtime
+  - For `sdk/cosmos/azure_data_cosmos` and `sdk/cosmos/azure_data_cosmos_driver` keep using the same async runtime abstractions as `azure_core` does.
+  - Use `tokio` as the async runtime for `sdk/cosmos/azure_data_cosmos_native`
+- Streaming  (use of `futures::Stream`)
+  - There is no need to consider streaming for payloads of individual requests/responses because the Cosmos DB service enforces rather strict limits on request and response payload size (max. 4 MB - only via config overrides extendable to 16 MB per response payload)
+  - There is a need for pagination for example for query or change feed results (could retrun multiple pages - each page created by one or multipel responses) - so `futures::Stream` might be used there to achieve pagination - but for transport, assuming buffered transport is sufficient.
 
 #### Resource Management
 
