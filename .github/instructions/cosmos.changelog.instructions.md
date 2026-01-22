@@ -15,9 +15,19 @@ applyTo: "sdk/cosmos/**/CHANGELOG.md"
 - Entry format:
 	- Prefer the existing style used in the file.
 	- When the file uses PR-linked bullets, use the same pattern:
-		- `- [#12345](https://github.com/Azure/azure-sdk-for-rust/pull/12345) <one-line summary of the change>`
+		- Prefer placing the PR link at the end, matching existing Cosmos changelog entries:
+			- `- <one-line summary of the change>. - [PR #12345](https://github.com/Azure/azure-sdk-for-rust/pull/12345)`
 	- If you are working on a local branch and there is no PR yet, you may add the one-line summary without the link.
 		- Once a PR exists (even before merge), update the entry to include the PR link.
+
+- PR number/link discovery (do this automatically when a PR exists):
+	- Determine the current branch name: `git rev-parse --abbrev-ref HEAD`.
+	- Prefer using GitHub CLI if available/authenticated:
+		- `gh pr view --repo Azure/azure-sdk-for-rust --json number,url`
+		- or `gh pr list --repo Azure/azure-sdk-for-rust --head <forkOwner>:<branch> --json number,url --limit 1`
+	- If `gh` is unavailable, search GitHub PRs by head branch (works in a browser):
+		- Query: `is:pr head:<forkOwner>:<branch>`
+		- URL: `https://github.com/Azure/azure-sdk-for-rust/pulls?q=is%3Apr+head%3A<forkOwner>%3A<branch>`
 
 - For the first unreleased version section, keep all standard category headers present even if some are empty.
 

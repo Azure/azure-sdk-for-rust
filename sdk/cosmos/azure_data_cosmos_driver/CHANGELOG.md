@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Initial release of `azure_data_cosmos_driver` crate providing core Cosmos DB protocol implementation with schema-agnostic data plane for cross-language SDK reuse.
+- Initial release of `azure_data_cosmos_driver` (core Cosmos DB protocol implementation with schema-agnostic data plane for cross-language SDK reuse). - [PR #3592](https://github.com/Azure/azure-sdk-for-rust/pull/3592)
 
 ### Breaking Changes
 
