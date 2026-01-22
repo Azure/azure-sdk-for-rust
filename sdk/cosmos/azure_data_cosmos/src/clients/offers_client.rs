@@ -56,8 +56,8 @@ impl OffersClient {
             offers_link.clone(),
             context.into_owned(),
             query,
-            |_| Ok(()),
-        )?;
+            azure_core::http::headers::Headers::new(),
+        );
 
         // There should only be one offer for a given resource ID.
         let mut page_iter = executor.into_stream()?.into_pages();

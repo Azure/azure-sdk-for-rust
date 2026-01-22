@@ -33,12 +33,9 @@ impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
         items_link: ResourceLink,
         context: Context<'static>,
         query: Query,
-        apply_headers: impl FnOnce(&mut Headers) -> azure_core::Result<()>,
-    ) -> azure_core::Result<Self> {
-        let mut base_headers = Headers::new();
-        apply_headers(&mut base_headers)?;
-
-        Ok(Self {
+        base_headers: Headers,
+    ) -> Self {
+        Self {
             http_pipeline,
             items_link,
             context,
@@ -47,7 +44,7 @@ impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
             continuation: None,
             complete: false,
             phantom: std::marker::PhantomData,
-        })
+        }
     }
 
     /// Consumes the executor and converts it into a stream of pages.

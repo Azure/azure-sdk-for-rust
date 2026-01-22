@@ -711,19 +711,23 @@ impl ContainerClient {
         let partition_key = partition_key.into();
         let query = query.into();
 
+        let mut headers = azure_core::http::headers::Headers::new();
+
+        // Use AsHeaders trait to convert PartitionKey and options into headers
+        for (name, value) in partition_key.as_headers()? {
+            headers.insert(name, value);
+        }
+        for (name, value) in options.as_headers()? {
+            headers.insert(name, value);
+        }
+
         crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),
             self.items_link.clone(),
             options.method_options.context.into_owned(),
             query,
-            |headers| {
-                // Use AsHeaders trait to convert PartitionKey into headers
-                for (name, value) in partition_key.as_headers()? {
-                    headers.insert(name, value);
-                }
-                Ok(())
-            },
-        )?
+            headers,
+        )
         .into_stream()
     }
 }

@@ -132,8 +132,8 @@ impl DatabaseClient {
             self.containers_link.clone(),
             options.method_options.context.into_owned(),
             query.into(),
-            |_| Ok(()),
-        )?
+            azure_core::http::headers::Headers::new(),
+        )
         .into_stream()
     }
 
