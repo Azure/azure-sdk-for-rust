@@ -313,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.30.0"
+version = "0.31.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -331,20 +331,6 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
-]
-
-[[package]]
-name = "azure_data_cosmos_driver"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "azure_core",
- "futures",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "url",
 ]
 
 [[package]]
