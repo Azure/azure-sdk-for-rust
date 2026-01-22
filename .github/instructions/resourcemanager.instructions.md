@@ -4,13 +4,13 @@ applyTo: "sdk/*/azure_resourcemanager_*/"
 
 # Azure Resource Manager Instructions
 
-- Initial new Azure Resource Manager (ARM) projects using instructions in `doc/dev/resourcemanager-generation.md`.
+- Initialize new Azure Resource Manager (ARM) projects using instructions in `doc/dev/resourcemanager-generation.md`.
 - Integration tests under `tests/` in the crate root directory should be generated for client type exported from the crate root e.g., `azure_resourcemanager_keyvault::KeyVaultClient` that show:
     - Creating a new resource.
     - Listing existing resources available in the current subscription.
     - Updating the properties of an existing resource.
-    - Delete a resource.
-- A `README.md` file in the crate root directory should follow the same structure as `sdk/keyvault/azure_security_keyvault_secrets/README.md` that include:
+    - Deleting a resource.
+- A `README.md` file in the crate root directory should follow the same structure as `sdk/keyvault/azure_security_keyvault_secrets/README.md` that includes:
     - A brief overview of which Azure Resource Provider (RP) it controls.
     - How to install the crate.
     - How to authenticate the client library using a `DeveloperToolsCredential`.
