@@ -334,6 +334,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_data_cosmos_driver"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core",
+ "futures",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
 name = "azure_data_cosmos_native"
 version = "0.27.0"
 dependencies = [

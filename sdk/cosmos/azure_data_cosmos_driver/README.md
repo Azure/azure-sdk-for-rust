@@ -1,0 +1,97 @@
+# Azure Cosmos DB Driver
+
+Core implementation layer for Azure Cosmos DB, providing transport, routing, and protocol handling.
+
+## Purpose
+
+`azure_data_cosmos_driver` is designed for:
+
+- **Cross-language SDK reuse**: Provides a common implementation that can be used by Rust, Java, .NET, and Python SDKs via the C API wrapper (`azure_data_cosmos_native`)
+- **Advanced scenarios**: Direct use by developers who need fine-grained control over Cosmos DB operations
+- **Internal implementation**: Used internally by `azure_data_cosmos` (the primary Rust SDK)
+
+## Support Model
+
+**Community/GitHub Support Only** - This crate has a public API and accepts contributions, but does **not** receive 24x7 Microsoft Support.
+
+For production Rust applications requiring full Microsoft support, use [`azure_data_cosmos`](https://docs.rs/azure_data_cosmos) instead.
+
+## Key Features
+
+### Schema-Agnostic Data Plane
+
+The driver is intentionally ignorant of document/item schemas. Data plane operations:
+
+- Accept raw bytes (`&[u8]`) for request bodies
+- Return buffered responses (`Vec<u8>`) for items (≤16MB payload limit)
+- Support both UTF-8 JSON and Cosmos DB binary encoding (detected automatically)
+
+**Serialization is handled by the consuming SDK** using native language APIs.
+
+### Independent Versioning
+
+This crate follows **strict semantic versioning** but can move to new major versions more frequently than `azure_data_cosmos`. Breaking changes in the driver do not force SDK version bumps because the SDK uses adapter patterns to maintain backward compatibility.
+
+## Architecture
+
+```text
+┌─────────────────────────────────────┐
+│  Language-Specific SDKs             │
+│  (azure_data_cosmos, Java, .NET)    │
+│  - Type-safe APIs                   │
+│  - Native serialization             │
+└───────────────┬─────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────┐
+│  azure_data_cosmos_driver           │
+│  - Transport & routing              │
+│  - Protocol handling                │
+│  - Retry logic                      │
+│  - Schema-agnostic (raw bytes)      │
+└───────────────┬─────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────┐
+│  Azure Cosmos DB Service            │
+└─────────────────────────────────────┘
+```
+
+## Usage
+
+```rust,no_run
+use azure_data_cosmos_driver::{DriverBuilder, options::DriverOptions};
+
+#[tokio::main]
+async fn main() -> azure_core::Result<()> {
+    let driver = DriverBuilder::new()
+        .build(
+            "https://myaccount.documents.azure.com",
+            credential,
+            DriverOptions::default(),
+        )
+        .await?;
+
+    // Driver operations work with raw bytes
+    // let response = driver.create_item(partition_key, &json_bytes, &options).await?;
+
+    Ok(())
+}
+```
+
+## Module Organization
+
+- **`options`**: Configuration types (driver options, connection pool settings)
+- **`models`**: Management/metadata resource types (container properties, partition key definitions)
+- **`diagnostics`**: Operational telemetry (RU consumption, retry counts, timing information)
+- **`builders`**: Fluent builders for constructing driver instances
+
+Internal modules (pipeline, routing, handlers) have `pub(crate)` visibility.
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE.txt](../../LICENSE.txt) for details.
