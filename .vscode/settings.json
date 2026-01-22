@@ -12,13 +12,6 @@
       "file": ".github/instructions/github-pullrequest.instructions.md"
     }
   ],
-  "markdownlint.config": {
-    "MD024": false,
-    "MD034": false,
-    "MD046": {
-      "style": "consistent"
-    }
-  },
   "rust-analyzer.cargo.features": "all",
   "rust-analyzer.check.command": "clippy",
   "yaml.format.printWidth": 240,
