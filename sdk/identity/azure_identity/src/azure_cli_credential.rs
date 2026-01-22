@@ -79,7 +79,7 @@ pub struct AzureCliCredential {
 /// Options for constructing an [`AzureCliCredential`].
 #[derive(Clone, Debug, Default)]
 pub struct AzureCliCredentialOptions {
-    /// The name or ID of a subscription
+    /// The name or ID of a subscription.
     ///
     /// Set this to acquire tokens for an account other than the Azure CLI's current account.
     pub subscription: Option<String>,

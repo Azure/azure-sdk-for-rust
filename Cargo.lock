@@ -330,6 +330,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -351,7 +352,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.31.0"
+version = "0.32.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -360,6 +361,7 @@ dependencies = [
  "azure_security_keyvault_secrets",
  "clap",
  "futures",
+ "include-file",
  "openssl",
  "pin-project",
  "reqwest",
@@ -449,8 +451,9 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
+ "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",
@@ -470,8 +473,9 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
+ "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",
@@ -493,8 +497,9 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
+ "async-lock",
  "async-trait",
  "azure_core",
  "azure_core_test",

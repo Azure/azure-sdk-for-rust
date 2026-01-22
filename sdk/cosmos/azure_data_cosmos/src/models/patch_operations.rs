@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use azure_core::{error::ErrorKind, Error};
+use azure_core::{error::ErrorKind, fmt::SafeDebug, Error};
 use serde::{Deserialize, Serialize};
 
 // Cosmos' patch operations are _similar_ to JSON Patch (RFC 6902) in structure, but have different operations.
@@ -38,7 +38,8 @@ use serde::{Deserialize, Serialize};
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default, SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
+#[safe(true)]
 pub struct PatchDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub condition: Option<Cow<'static, str>>,
@@ -159,7 +160,8 @@ impl PatchDocument {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(tag = "op")]
 #[serde(rename_all = "camelCase")]
 pub enum PatchOperation {

@@ -5,6 +5,7 @@ use super::{
     get_substatus_code_from_error, get_substatus_code_from_response,
     resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
 };
+use crate::constants;
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
@@ -137,6 +138,14 @@ impl ClientRetryPolicy {
                     request.resource_type,
                     request.operation_type,
                 );
+
+        if self.is_multi_master_write_request {
+            request
+                .headers
+                .insert(constants::ALLOW_TENTATIVE_WRITES, "true");
+        } else {
+            request.headers.remove(constants::ALLOW_TENTATIVE_WRITES);
+        }
 
         // Clear previous location-based routing directive
         request.request_context.clear_route_to_location();

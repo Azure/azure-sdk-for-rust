@@ -1,17 +1,21 @@
 # Release History
 
-## 0.31.0 (Unreleased)
+## 0.32.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
-- Removed unused `additionally_allowed_tenants` and `disable_instance_discovery` options for `AzureCliCredential` and `ClientAssertionCredential`.
-- Changed the type of the `certificate` parameter of `ClientCertificateCredential::new()` from `impl Into<Secret>` to `Secret`.
-
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.31.0 (2026-01-21)
+
+### Breaking Changes
+
+- Removed unused `additionally_allowed_tenants` and `disable_instance_discovery` options for `AzureCliCredential` and `ClientAssertionCredential`.
+- Changed the type of the `certificate` parameter of `ClientCertificateCredential::new()` from `impl Into<Secret>` to `Secret`.
 
 ## 0.30.0 (2025-11-11)
 

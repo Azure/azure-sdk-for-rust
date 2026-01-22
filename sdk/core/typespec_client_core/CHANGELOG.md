@@ -1,18 +1,13 @@
 # Release History
 
-## 0.10.0 (Unreleased)
+## 0.10.0 (2026-01-16)
 
 ### Features Added
 
+- Added `Body::take()`.
 - Added `Request::body_mut()`.
 - Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
 - Sort query parameters lexicographically in `QueryBuilder`.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.9.1 (2025-11-09)
 

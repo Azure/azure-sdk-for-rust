@@ -1,10 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
 /// Represents the partition key definition for a container.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
     /// The list of partition keys paths.
@@ -65,7 +67,8 @@ impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
 }
 
 /// Represents the kind of a partition key.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "PascalCase")]
 pub enum PartitionKeyKind {
     /// The container is partitioned by hashing the value of a single partition key.
