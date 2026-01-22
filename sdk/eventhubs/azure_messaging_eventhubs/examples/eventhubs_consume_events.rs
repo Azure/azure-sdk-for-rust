@@ -60,6 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("Partition ID: {:?}", event.partition_key());
         println!("Event offset: {:?}", event.offset());
+        println!("Raw AMQP message: {:?}", event.raw_amqp_message());
     }
 
     consumer.close().await?;
