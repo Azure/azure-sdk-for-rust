@@ -176,7 +176,6 @@ mod tests {
     use azure_core::{error::ErrorKind, http::headers::Headers};
     use azure_core_test::{http::MockHttpClient, recorded};
     use futures::FutureExt;
-    use core::panic;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -374,29 +373,67 @@ mod tests {
     }
 
     #[recorded::test(live)]
-    async fn function_app_user_assigned_live() -> azure_core::Result<()> {
+    async fn function_app_system_assigned_live() -> azure_core::Result<()> {
         let function_name = std::env::var("IDENTITY_FUNCTIONAPP_NAME");
         if function_name.is_err() {
-            panic!("IDENTITY_FUNCTIONAPP_NAME not set");
+            eprintln!("IDENTITY_FUNCTIONAPP_NAME not set");
         }
         let storage_name = std::env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
         if storage_name.is_err() {
-            panic!("IDENTITY_STORAGE_NAME_USER_ASSIGNED not set");
+            eprintln!("IDENTITY_STORAGE_NAME_USER_ASSIGNED not set");
+        }
+        let url = format!("https://{}.azurewebsites.net", function_name.unwrap());
+        run_deployed_test(&url, &storage_name.unwrap(), None).await
+    }
+
+    #[recorded::test(live)]
+    async fn function_app_user_assigned_client_id_live() -> azure_core::Result<()> {
+        let function_name = std::env::var("IDENTITY_FUNCTIONAPP_NAME");
+        if function_name.is_err() {
+            eprintln!("Skipped: IDENTITY_FUNCTIONAPP_NAME not set");
+            return Ok(());
+        }
+        let storage_name = std::env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
+        if storage_name.is_err() {
+            eprintln!("Skipped: IDENTITY_STORAGE_NAME_USER_ASSIGNED not set");
+            return Ok(());
         }
         let client_id = std::env::var("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID");
         if client_id.is_err() {
-            panic!("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID not set");
-        }
-        if let Ok(hostname) = std::env::var("IDENTITY_FUNCTIONAPP_DEFAULT_HOSTNAME") {
-            eprintln!("Using custom Function App host name: {hostname}");
-        } else {
-            eprintln!("Using default Function App host name");
+            eprintln!("Skipped: IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID not set");
+            return Ok(());
         }
         let url = format!("https://{}.azurewebsites.net", function_name.unwrap());
         run_deployed_test(
             &url,
             &storage_name.unwrap(),
             Some(UserAssignedId::ClientId(client_id.unwrap())),
+        )
+        .await
+    }
+
+    #[recorded::test(live)]
+    async fn function_app_user_assigned_object_id_live() -> azure_core::Result<()> {
+        let function_name = std::env::var("IDENTITY_FUNCTIONAPP_NAME");
+        if function_name.is_err() {
+            eprintln!("Skipped: IDENTITY_FUNCTIONAPP_NAME not set");
+            return Ok(());
+        }
+        let storage_name = std::env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
+        if storage_name.is_err() {
+            eprintln!("Skipped: IDENTITY_STORAGE_NAME_USER_ASSIGNED not set");
+            return Ok(());
+        }
+        let object_id = std::env::var("IDENTITY_USER_ASSIGNED_IDENTITY_OBJECT_ID");
+        if object_id.is_err() {
+            eprintln!("Skipped: IDENTITY_USER_ASSIGNED_IDENTITY_OBJECT_ID not set");
+            return Ok(());
+        }
+        let url = format!("https://{}.azurewebsites.net", function_name.unwrap());
+        run_deployed_test(
+            &url,
+            &storage_name.unwrap(),
+            Some(UserAssignedId::ObjectId(object_id.unwrap())),
         )
         .await
     }

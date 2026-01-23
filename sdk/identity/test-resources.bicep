@@ -68,7 +68,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = if (deployResources) {
   location: location
   kind: 'functionapp'
   identity: {
-    type: 'UserAssigned'
+    type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: {
       '${usermgdid.id}': {}
     }
@@ -151,4 +151,3 @@ output IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID string = deployResources ? user
 output IDENTITY_USER_ASSIGNED_IDENTITY_NAME string = deployResources ? usermgdid.name : ''
 output IDENTITY_USER_ASSIGNED_IDENTITY_OBJECT_ID string = deployResources ? usermgdid.properties.principalId : ''
 output IDENTITY_FUNCTIONAPP_NAME string = deployResources ? functionApp.name : ''
-output IDENTITY_FUNCTIONAPP_DEFAULT_HOSTNAME string = deployResources ? functionApp.properties.defaultHostName : ''
