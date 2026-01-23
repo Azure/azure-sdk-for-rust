@@ -1,6 +1,6 @@
 # Release History
 
-## 0.10.0 (Unreleased)
+## 0.11.0 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,12 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.10.0 (2026-01-16)
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.9.1 (2025-11-09)
 

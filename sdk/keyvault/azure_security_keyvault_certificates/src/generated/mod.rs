@@ -7,4 +7,4 @@
 pub mod clients;
 /// Contains all the data structures and types used by the client library.
 pub mod models;
-pub use clients::{CertificateClient, CertificateClientOptions};
+pub use clients::CertificateClient;

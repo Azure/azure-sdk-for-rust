@@ -1,18 +1,25 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
 
 ### Features Added
 
-- Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
-
 ### Breaking Changes
-
-- Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.9.0 (2026-01-20)
+
+### Features Added
+
+- Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+- Added support for sovereign and private clouds. Clients now discover authentication parameters at runtime by eliciting a challenge from Key Vault by sending their first request without an access token. You may see this request and Key Vault's 401 response in logs, followed by a successful retry.
+
+### Breaking Changes
+
+- Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ## 0.8.0 (2025-11-10)
 

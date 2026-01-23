@@ -2,11 +2,11 @@
 
 - Git commits should follow the standard form:
 
-  ```markdown
-  title of no more than 50 characters
+    ```markdown
+    title of no more than 50 characters
 
-  multi-line descriptions
-  ```
+    multi-line descriptions
+    ```
 
 - Summarize changes for a title of no more than 50 characters ideally, with a hard stop at 80 characters.
 - Descriptions can be multiple lines or even paragraphs.
