@@ -414,6 +414,7 @@ impl GlobalEndpointManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::AccountRegion;
     use crate::partition_key::PartitionKey;
 
     fn create_test_pipeline() -> Pipeline {
@@ -528,6 +529,16 @@ mod tests {
     fn test_mark_endpoint_unavailable_for_read() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
+        let account_region = AccountRegion {
+            name: "West US".to_string(),
+            database_account_endpoint: "https://test.documents.azure.com".parse().unwrap(),
+        };
+        // Populate the location cache's regions
+        let _ = manager
+            .location_cache
+            .lock()
+            .unwrap()
+            .update(vec![account_region.clone()], vec![account_region]);
 
         // This should not panic
         manager.mark_endpoint_unavailable_for_read(&endpoint);
@@ -541,6 +552,16 @@ mod tests {
     fn test_mark_endpoint_unavailable_for_write() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
+        let account_region = AccountRegion {
+            name: "West US".to_string(),
+            database_account_endpoint: "https://test.documents.azure.com".parse().unwrap(),
+        };
+        // Populate the location cache's regions
+        let _ = manager
+            .location_cache
+            .lock()
+            .unwrap()
+            .update(vec![account_region.clone()], vec![account_region]);
 
         // This should not panic
         manager.mark_endpoint_unavailable_for_write(&endpoint);

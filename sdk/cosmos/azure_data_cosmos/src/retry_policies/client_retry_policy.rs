@@ -107,7 +107,7 @@ impl ClientRetryPolicy {
             is_multi_master_write_request: false,
             location_endpoint: None,
             retry_context: None,
-            excluded_regions: excluded_regions,
+            excluded_regions,
             throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10),
         }
     }
