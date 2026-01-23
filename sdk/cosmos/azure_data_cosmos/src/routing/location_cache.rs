@@ -189,17 +189,18 @@ impl LocationCache {
         write_locations: Vec<AccountRegion>,
         read_locations: Vec<AccountRegion>,
     ) -> Result<(), &'static str> {
-        // Populate effective preferred locations if none are set
-        if self.locations_info.preferred_locations.is_empty() {
-            let mut effective_preferred_locations = Vec::new();
-            for location in &read_locations {
-                let loc_cow = Cow::Owned(location.name.clone());
-                if !effective_preferred_locations.contains(&loc_cow) {
-                    effective_preferred_locations.push(loc_cow);
-                }
+        // Build effective preferred locations: preferred regions first, then remaining account regions
+        let mut effective_preferred_locations = self.locations_info.preferred_locations.clone();
+        for location in &read_locations {
+            let loc_cow = Cow::Owned(location.name.clone());
+            if !effective_preferred_locations
+                .iter()
+                .any(|p| p.eq_ignore_ascii_case(&location.name))
+            {
+                effective_preferred_locations.push(loc_cow);
             }
-            self.locations_info.preferred_locations = effective_preferred_locations;
         }
+        self.locations_info.preferred_locations = effective_preferred_locations;
         // Separate write locations into appropriate hashmap and list
         if !write_locations.is_empty() {
             let (account_write_endpoints_by_location, account_write_locations) =
@@ -1095,7 +1096,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_service_endpoint_effective_preferred_regions() {
+    fn resolve_service_endpoint_no_preferred_regions() {
         // set no preferred regions in cache, so all regions from account are used
         let pref_regions: Vec<String> = vec![];
         // create test cache
@@ -1126,6 +1127,45 @@ mod tests {
         assert_eq!(
             endpoint,
             Url::parse("https://location2.documents.example.com").unwrap()
+        );
+    }
+
+    #[test]
+    fn resolve_service_endpoint_effective_preferred_regions() {
+        // effective preferred regions should be ordered as preferred regions + remaining regions from account - excluded regions
+        // normal region order is Location 1, Location 2, Location 3, Location 4
+        let pref_regions: Vec<String> = vec![
+            "Location 4".to_string(),
+            "Location 3".to_string(),
+        ];
+        // create test cache
+        let cache = create_custom_test_location_cache(Some(pref_regions), vec![]);
+
+        let builder = CosmosRequest::builder(
+            OperationType::Read,
+            ResourceLink::root(ResourceType::Documents),
+        );
+
+        let cosmos_request = builder.clone().build().ok().unwrap();
+
+        // resolve service endpoint - should go to first region on preferred list, which is Location 4
+        let endpoint = cache.resolve_service_endpoint(&cosmos_request);
+        assert_eq!(
+            endpoint,
+            Url::parse("https://location4.documents.example.com").unwrap()
+        );
+
+        let cosmos_request = builder
+            .set_excluded_regions(Some(vec!["Location 4".to_string(), "Location 3".to_string()]))
+            .build()
+            .ok()
+            .unwrap();
+
+        // resolve service endpoint - should skip Location 4 and Location 3 and go to Location 1
+        let endpoint = cache.resolve_service_endpoint(&cosmos_request);
+        assert_eq!(
+            endpoint,
+            Url::parse("https://location1.documents.example.com").unwrap()
         );
     }
 }
