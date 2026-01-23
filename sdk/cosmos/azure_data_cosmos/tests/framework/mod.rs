@@ -21,8 +21,7 @@ pub mod test_data;
 pub mod query_engine;
 
 pub use test_client::{
-    TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION, SHARED_CONTAINER_ID,
-    SHARED_DATABASE_ID, SHARED_PARTITION_KEY,
+    TestClient, TestOptions, TestRunContext, DEFAULT_TEST_TIMEOUT, HUB_REGION, SATELLITE_REGION,
 };
 
 use serde::{Deserialize, Serialize};

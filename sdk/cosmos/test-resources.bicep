@@ -21,6 +21,7 @@ param apiVersion string = '2023-04-15'
 @description('The principal to assign the role to. This is application object id.')
 param testApplicationOid string
 
+var databaseName = 'shared-test-db${uniqueString(resourceGroup().id)}'
 var accountName = toLower(baseName)
 var resourceId = cosmosAccount.id
 var singleRegionConfiguration = [
@@ -73,6 +74,16 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
   }
 }
 
+resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-02-15-preview' = {
+  parent: cosmosAccount
+  name: databaseName
+  properties: {
+    resource: {
+      id: databaseName
+    }
+  }
+}
+
 resource accountName_roleDefinitionId 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions@2023-04-15' = {
   parent: cosmosAccount
   name: roleDefinitionId
@@ -105,4 +116,5 @@ resource accountName_roleAssignmentId 'Microsoft.DocumentDB/databaseAccounts/sql
 }
 
 output RUSTFLAGS string = '--cfg=test_category="${testCategory}"'
+output DATABASE_NAME string = databaseName
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'

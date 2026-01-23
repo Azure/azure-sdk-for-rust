@@ -20,8 +20,8 @@ use framework::TestClient;
 
 #[tokio::test]
 pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_db(
-        async |_, db_client| {
+    TestClient::run_with_shared_db(
+        async |run_context, db_client| {
             // Create the container
             let properties = ContainerProperties {
                 id: "TheContainer".into(),
@@ -38,16 +38,17 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             let throughput = ThroughputProperties::manual(400);
 
-            let created_properties = db_client
-                .create_container(
-                    properties.clone(),
-                    Some(CreateContainerOptions {
-                        throughput: Some(throughput),
-                        ..Default::default()
-                    }),
-                )
-                .await?
-                .into_model()?;
+            let container_client = run_context.create_container(
+                db_client,
+                properties.clone(),
+                Some(CreateContainerOptions {
+                    throughput: Some(throughput),
+                    ..Default::default()
+                }),
+            ).await?;
+
+            // Read the container to get its properties
+            let created_properties = container_client.read(None).await?.into_model()?;
 
             assert_eq!(&properties.id, &created_properties.id);
             assert_eq!(
@@ -148,8 +149,8 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_db(
-        async |_, db_client| {
+    TestClient::run_with_shared_db(
+        async |run_context, db_client| {
             // Create the container
             let properties = ContainerProperties {
                 id: "TheContainer".into(),
@@ -164,10 +165,14 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
                 ..Default::default()
             };
 
-            let created_properties = db_client
-                .create_container(properties.clone(), None)
-                .await?
-                .into_model()?;
+            let container_client = run_context.create_container(
+                db_client,
+                properties.clone(),
+                None,
+            ).await?;
+
+            // Read the container to get its properties
+            let created_properties = container_client.read(None).await?.into_model()?;
 
             assert_eq!(&properties.id, &created_properties.id);
             assert_eq!(

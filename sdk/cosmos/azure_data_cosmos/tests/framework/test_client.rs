@@ -9,11 +9,14 @@ use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::regions::{EAST_US_2, WEST_CENTRAL_US};
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, Query,
+    clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, PartitionKey,
+    Query,
 };
 use futures::TryStreamExt;
 use reqwest::ClientBuilder;
 use std::borrow::Cow;
+use std::convert::Into;
+use std::time::Duration;
 use std::{
     str::FromStr,
     sync::{Arc, OnceLock},
@@ -36,52 +39,40 @@ pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 pub const HUB_REGION: &str = EAST_US_2;
 pub const SATELLITE_REGION: &str = WEST_CENTRAL_US;
-pub const SHARED_CONTAINER_ID: &str = "shared-container";
-pub const SHARED_DATABASE_ID: &str = "shared-database";
-pub const SHARED_PARTITION_KEY: &str = "partition_key";
+pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
+
+/// Default timeout for tests (60 seconds).
+pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Options for configuring test execution.
+#[derive(Default, Clone)]
+pub struct TestOptions {
+    /// CosmosClient options to use for the test.
+    pub client_options: Option<CosmosClientOptions>,
+    /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
+    pub timeout: Option<Duration>,
+}
+
+impl TestOptions {
+    /// Creates a new TestOptions with default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the client options.
+    pub fn with_client_options(mut self, options: CosmosClientOptions) -> Self {
+        self.client_options = Some(options);
+        self
+    }
+
+    /// Sets the timeout for the test.
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = Some(timeout);
+        self
+    }
+}
 
 static IS_AZURE_PIPELINES: OnceLock<bool> = OnceLock::new();
-
-/// Creates a CosmosClient from environment variables.
-/// Returns None if no connection string is provided.
-/// Used for test setup and cleanup.
-pub fn create_client() -> Result<Option<CosmosClient>, Box<dyn std::error::Error>> {
-    let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
-        return Ok(None);
-    };
-
-    let (connection_string, mut allow_invalid_certificates) = match env_var.as_ref() {
-        "emulator" => (EMULATOR_CONNECTION_STRING, true),
-        _ => (env_var.as_str(), false),
-    };
-
-    let connection_string: ConnectionString = connection_string.parse()?;
-
-    if let Ok(val) = std::env::var(ALLOW_INVALID_CERTS_ENV_VAR) {
-        if let Ok(parsed) = val.parse::<bool>() {
-            if parsed {
-                allow_invalid_certificates = true;
-            }
-        }
-    }
-
-    let mut options = CosmosClientOptions::default();
-    if allow_invalid_certificates {
-        let client = ClientBuilder::new()
-            .danger_accept_invalid_certs(true)
-            .pool_max_idle_per_host(0)
-            .build()?;
-        options.client_options.transport = Some(Transport::new(Arc::new(client)));
-    }
-
-    let cosmos_client = CosmosClient::with_key(
-        &connection_string.account_endpoint,
-        connection_string.account_key.clone(),
-        Some(options),
-    )?;
-
-    Ok(Some(cosmos_client))
-}
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 enum CosmosTestMode {
@@ -93,6 +84,23 @@ enum CosmosTestMode {
 
     /// Tests can run if the env vars are set, but will not fail if they are not.
     Allowed,
+}
+
+fn get_shared_database_id() -> &'static str {
+    static SHARED_DATABASE_ID: OnceLock<String> = OnceLock::new();
+
+    let id = SHARED_DATABASE_ID.get_or_init(|| {
+        std::env::var(DATABASE_NAME_ENV_VAR).unwrap_or_else(|_| {
+            panic!(
+                "{} is not set. Create a Cosmos DB database for tests, then set {} to its name (e.g. export {}=my-test-db).",
+                DATABASE_NAME_ENV_VAR,
+                DATABASE_NAME_ENV_VAR,
+                DATABASE_NAME_ENV_VAR
+            )
+        })
+    });
+
+    id.as_str()
 }
 
 impl FromStr for CosmosTestMode {
@@ -174,9 +182,22 @@ impl TestClient {
     }
 
     /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
-    pub async fn run<F>(
+    pub async fn run<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
+    where
+        F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
+    {
+        Self::run_with_options(test, TestOptions::new()).await
+    }
+
+    /// Runs a test function with a new [`TestClient`] and custom test options.
+    ///
+    /// This method supports:
+    /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
+    /// - Consistency level checking (skips test if current consistency level is unsupported)
+    /// - Custom CosmosClient options
+    pub async fn run_with_options<F>(
         test: F,
-        options: Option<CosmosClientOptions>,
+        options: TestOptions,
     ) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
@@ -206,14 +227,23 @@ impl TestClient {
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        let test_client = Self::from_env(options)?;
+        let test_client = Self::from_env(options.client_options)?;
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(account) = test_client.cosmos_client.clone() {
             let run = TestRunContext::new(account);
-            let result = test(&run).await;
+
+            // Apply timeout
+            let timeout = options.timeout.unwrap_or(DEFAULT_TEST_TIMEOUT);
+            let result = tokio::time::timeout(timeout, test(&run)).await;
+
+            // Always cleanup, even if test timed out
             run.cleanup().await?;
-            result
+
+            match result {
+                Ok(test_result) => test_result,
+                Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
+            }
         } else if test_mode == CosmosTestMode::Required {
             panic!("Cosmos Test Mode is 'required' but no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
         } else {
@@ -223,19 +253,33 @@ impl TestClient {
         }
     }
 
-    pub async fn run_with_db<F>(
+    pub async fn run_with_unique_db<F>(
         test: F,
-        options: Option<CosmosClientOptions>,
+        options: Option<TestOptions>,
     ) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
-        Self::run(
+        Self::run_with_options(
             async |run_context| {
                 let db_client = run_context.create_db().await?;
                 test(run_context, &db_client).await
             },
-            options,
+            options.unwrap_or_default(),
+        )
+        .await
+    }
+
+    pub async fn run_with_shared_db<F>(
+        test: F,
+        options: Option<TestOptions>,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
+    {
+        Self::run_with_options(
+            async |run_context| test(run_context, &run_context.shared_db_client()).await,
+            options.unwrap_or_default(),
         )
         .await
     }
@@ -262,6 +306,11 @@ impl TestRunContext {
     /// Gets the underlying [`CosmosClient`].
     pub fn client(&self) -> &CosmosClient {
         &self.client
+    }
+
+    /// Gets the shared database client.
+    pub fn shared_db_client(&self) -> DatabaseClient {
+        self.client().database_client(get_shared_database_id())
     }
 
     /// Creates a new, empty, database for this test run with default throughput options.
@@ -292,11 +341,103 @@ impl TestRunContext {
         Ok(db_client)
     }
 
-    /// Get shared database client for this test run
-    pub fn get_shared_container(&self) -> ContainerClient {
-        let db_client = self.client().database_client(SHARED_DATABASE_ID);
-        db_client.container_client(SHARED_CONTAINER_ID)
+    /// Reads an item from the specified container with infinite retries on failure.
+    /// This is useful for tests where eventual consistency may cause transient read failures.
+    pub async fn read_item_infinite_retries<T>(
+        &self,
+        container: &ContainerClient,
+        partition_key: impl Into<PartitionKey>,
+        item_id: &str,
+    ) -> azure_core::Result<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        // Own the inputs so no borrowed data must live across `.await`.
+        let partition_key = partition_key.into().to_owned();
+        let item_id = item_id.to_owned();
+
+        loop {
+            match container
+                .read_item(partition_key.clone(), item_id.clone().as_str(), None)
+                .await
+            {
+                Ok(response) => return response.into_model(),
+                Err(e) => {
+                    println!("Read item failed: {}. Retrying...", e);
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
     }
+
+    /// Queries items from the specified container with infinite retries on failure.
+    /// This is useful for tests where eventual consistency may cause transient query failures.
+    pub async fn query_items_infinite_retries<T>(
+        &self,
+        container: &ContainerClient,
+        query: impl Into<Query>,
+        partition_key: impl Into<PartitionKey>,
+    ) -> azure_core::Result<Vec<T>>
+    where
+        T: serde::de::DeserializeOwned + std::marker::Send + 'static,
+    {
+        let query = query.into();
+        let partition_key = partition_key.into().to_owned();
+
+        loop {
+            match container
+                .query_items::<T>(query.clone(), partition_key.clone(), None)
+
+            {
+                Ok(pager) => {
+                    match pager.try_collect::<Vec<T>>().await {
+                        Ok(items) => return Ok(items),
+                        Err(e) => {
+                            println!("Query items failed: {}. Retrying...", e);
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("Query items failed: {}. Retrying...", e);
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+    }
+
+    /// Creates a container with infinite retries on 429 (Too Many Requests) errors.
+    /// This is useful for tests where rate limiting may cause transient failures.
+    pub async fn create_container(
+        &self,
+        db_client: &DatabaseClient,
+        properties: azure_data_cosmos::models::ContainerProperties,
+        options: Option<azure_data_cosmos::CreateContainerOptions<'_>>,
+    ) -> azure_core::Result<ContainerClient> {
+        loop {
+            match db_client.create_container(properties.clone(), options.clone()).await {
+                Ok(response) => {
+                    let created = response.into_model()?;
+                    return Ok(db_client.container_client(&created.id));
+                }
+                Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
+                    println!("Create container got 429 (Too Many Requests). Retrying...");
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    panic!("{}", 429)
+                }
+                Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+                    // Container already exists, just return a client for it
+                    return Ok(db_client.container_client(&properties.id));
+                }
+                Err(e) => {
+                    panic!("Create container failed: {}. Not Retrying...", e);
+                    // return Err(e)
+                },
+            }
+        }
+    }
+
+
 
     /// Cleans up test resources.
     ///
@@ -311,6 +452,30 @@ impl TestRunContext {
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);
+        }
+
+        // delete all the containers from shared database
+        // read all containers
+        let shared_db_client = self.shared_db_client();
+        let mut container_pager = shared_db_client.query_containers(
+            Query::from(
+                "SELECT *
+    FROM c",
+            ),
+            None,
+        )?;
+        let mut container_ids = Vec::new();
+        while let Some(container) = container_pager.try_next().await? {
+            container_ids.push(container.id);
+        }
+
+        // delete each container
+        for container_id in container_ids {
+            println!("Deleting left-over container: {}", &container_id);
+            shared_db_client
+                .container_client(&container_id)
+                .delete(None)
+                .await?;
         }
 
         // Now that we have a list of databases created by this test, we delete them.

@@ -17,16 +17,16 @@
     },
     "RustToolchainName": ["stable"],
     "Account Settings": {
-      "Eventual": {
+      "Eventual SingleWrite": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual' }"
       },
-      "Session": {
+      "Session SingleWrite": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session' }"
       },
-      "Strong": {
+      "Strong SingleWrite": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; }"
       },
-      "Session-MultiWrite": {
+      "Session MultiWrite": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; testCategory = 'multi_write' }"
       }
     }

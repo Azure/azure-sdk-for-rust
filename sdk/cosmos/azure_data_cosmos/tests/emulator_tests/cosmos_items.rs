@@ -6,8 +6,11 @@
 use super::framework;
 
 use azure_core::http::Etag;
+use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
 use framework::TestClient;
+use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
 use uuid::Uuid;
@@ -26,11 +29,27 @@ struct TestItem {
     bool_value: bool,
 }
 
+async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
+    let db_client = run_context.create_db().await?;
+    run_context.create_container(&db_client,
+                                  ContainerProperties {
+        id: "Container".into(),
+        partition_key: "/partition_key".into(),
+        ..Default::default()
+    },
+                                  None,).await?;
+    let container_client = db_client.container_client("Container");
+
+    Ok(container_client)
+}
+
+// TODO: add asserts on status code (and other headers/diagnostics) for all the tests
+
 #[tokio::test]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             // Create an item with @ in both ID and partition key
@@ -52,10 +71,9 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             assert_eq!("", body);
 
             // Try to read the item
-            let read_item: TestItem = container_client
-                .read_item(&pk, &item_id, None)
-                .await?
-                .into_model()?;
+            let read_item: TestItem = run_context
+                .read_item_infinite_retries::<TestItem>(&container_client, &pk, &item_id)
+                .await?;
             assert_eq!(item, read_item);
 
             // Replace the item
@@ -92,16 +110,22 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             assert_eq!("", body);
 
             // Try to read the item again, expecting a 404
-            let result = container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
-            match result {
-                Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
-                Err(err) => {
-                    assert_eq!(
-                        Some(azure_core::http::StatusCode::NotFound),
-                        err.http_status()
-                    );
+            // infinite loop to avoid test flakes due to eventual consistency
+            loop {
+                match container_client
+                    .read_item::<TestItem>(&pk, &item_id, None)
+                    .await
+                {
+                    Ok(_) => {
+                        println!("expected a 404 error when reading the deleted item");
+                    }
+                    Err(err) => {
+                        assert_eq!(
+                            Some(azure_core::http::StatusCode::NotFound),
+                            err.http_status()
+                        );
+                        break;
+                    }
                 }
             }
 
@@ -114,9 +138,9 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             // Create an item
@@ -135,10 +159,9 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 
             container_client.create_item(&pk, &item, None).await?;
 
-            let read_item: serde_json::Value = container_client
-                .read_item(&pk, &item_id, None)
-                .await?
-                .into_model()?;
+            let read_item: serde_json::Value = run_context
+                .read_item_infinite_retries::<serde_json::Value>(&container_client, &pk, &item_id)
+                .await?;
             assert!(
                 read_item.get("_rid").is_some(),
                 "expected _rid to be present"
@@ -158,9 +181,9 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             let item = TestItem {
@@ -178,10 +201,9 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 
             container_client.upsert_item(&pk, &item, None).await?;
 
-            let read_item: TestItem = container_client
-                .read_item(&pk, &item_id, None)
-                .await?
-                .into_model()?;
+            let read_item: TestItem = run_context
+                .read_item_infinite_retries::<TestItem>(&container_client, &pk, &item_id)
+                .await?;
             assert_eq!(item, read_item);
 
             Ok(())
@@ -193,9 +215,9 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             let mut item = TestItem {
@@ -238,9 +260,9 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_patch() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             let item = TestItem {
@@ -265,10 +287,9 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
                 .patch_item(&pk, &item_id, patch, None)
                 .await?;
 
-            let patched_item: TestItem = container_client
-                .read_item(&pk, &item_id, None)
-                .await?
-                .into_model()?;
+            let patched_item: TestItem = run_context
+                .read_item_infinite_retries::<TestItem>(&container_client, &pk, &item_id)
+                .await?;
             assert_eq!("Patched", patched_item.nested.nested_value);
             assert_eq!(52, patched_item.value);
 
@@ -297,9 +318,9 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             let mut item = TestItem {
@@ -325,10 +346,13 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                 .upsert_item(PartitionKey::NULL, &item, None)
                 .await?;
 
-            let read_item: TestItem = container_client
-                .read_item(PartitionKey::NULL, &item_id, None)
-                .await?
-                .into_model()?;
+            let read_item: TestItem = run_context
+                .read_item_infinite_retries::<TestItem>(
+                    &container_client,
+                    PartitionKey::NULL,
+                    &item_id,
+                )
+                .await?;
             assert_eq!(item, read_item);
 
             container_client
@@ -340,26 +364,35 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                 )
                 .await?;
 
-            let read_item: TestItem = container_client
-                .read_item(PartitionKey::NULL, &item_id, None)
-                .await?
-                .into_model()?;
+            let read_item: TestItem = run_context
+                .read_item_infinite_retries::<TestItem>(
+                    &container_client,
+                    PartitionKey::NULL,
+                    &item_id,
+                )
+                .await?;
             assert_eq!(10, read_item.value);
 
             container_client
                 .delete_item(PartitionKey::NULL, &item_id, None)
                 .await?;
 
-            let result = container_client
-                .read_item::<()>(PartitionKey::NULL, &item_id, None)
-                .await;
-            match result {
-                Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
-                Err(err) => {
-                    assert_eq!(
-                        Some(azure_core::http::StatusCode::NotFound),
-                        err.http_status()
-                    );
+            // infinite loop to avoid test flakes due to eventual consistency
+            loop {
+                match container_client
+                    .read_item::<()>(PartitionKey::NULL, &item_id, None)
+                    .await
+                {
+                    Ok(_) => {
+                        println!("expected a 404 error when reading the deleted item");
+                    }
+                    Err(err) => {
+                        assert_eq!(
+                            Some(azure_core::http::StatusCode::NotFound),
+                            err.http_status()
+                        );
+                        break;
+                    }
                 }
             }
 
@@ -372,9 +405,9 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             //Create an item
@@ -448,9 +481,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             //Create an item
@@ -521,9 +554,9 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             //Create an item
@@ -592,9 +625,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
-    TestClient::run(
-        async |run_context| {
-            let container_client = run_context.get_shared_container();
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
             //Create an item

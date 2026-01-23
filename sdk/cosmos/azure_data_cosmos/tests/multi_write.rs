@@ -2,5 +2,4 @@
 // Licensed under the MIT License.
 #![cfg(test_category = "multi_write")]
 
-#[path = "multi_write/mod.rs"]
-mod multi_write;
+mod multi_write_tests;

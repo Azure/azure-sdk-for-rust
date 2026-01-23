@@ -11,8 +11,6 @@ rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos"
 
-# Registers custom cfgs like `test_category` for integration test gating.
-build = "build.rs"
 
 keywords = ["sdk", "azure", "rest", "cloud", "cosmos"]
 categories = ["api-bindings"]

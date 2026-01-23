@@ -5,21 +5,6 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
-# Delete shared test resources if connection string is set
-if ($env:AZURE_COSMOS_CONNECTION_STRING) {
-    LogGroupStart "Deleting shared test resources"
-    Push-Location $PSScriptRoot
-    try {
-        Invoke-LoggedCommand "cargo test --test test_cleanup --features key_auth -- --ignored --nocapture"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warning "Failed to delete shared test resources. Continuing with emulator cleanup."
-        }
-    } finally {
-        Pop-Location
-    }
-    LogGroupEnd
-}
-
 $IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
 if($IsAzDo) {
     $AzDoEmulatorPath = Join-Path $env:AGENT_HOMEDIRECTORY "..\..\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
