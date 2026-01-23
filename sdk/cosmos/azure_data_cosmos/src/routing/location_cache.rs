@@ -586,7 +586,7 @@ mod tests {
         if pref_regions.is_some() {
             preferred_locations = pref_regions.unwrap().into_iter().map(|s| Cow::Owned(s)).collect();
         }
-        if excl_regions.is_empty() == false {
+        if !excl_regions.is_empty() {
             excluded_regions = excl_regions;
         }
 
