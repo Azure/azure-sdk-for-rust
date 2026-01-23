@@ -17,6 +17,7 @@ use azure_storage_blob::{
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
         BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, StorageError,
+        StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
@@ -827,13 +828,15 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     // Assert
     assert_eq!(storage_error.status_code(), StatusCode::NotFound);
-    assert!(
-        storage_error.error_code().is_some(),
-        "Expected code to be populated."
+    assert_eq!(
+        storage_error.error_code(),
+        Some(&StorageErrorCode::BlobNotFound)
     );
     assert!(
-        storage_error.message().is_some(),
-        "Expected message to be populated."
+        storage_error
+            .message()
+            .is_some_and(|m| m.starts_with("The specified blob does not exist.")),
+        "Expected message to start with 'The specified blob does not exist.'"
     );
     assert!(
         storage_error.request_id().is_some(),
@@ -923,72 +926,14 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
 
     // Assert
     assert_eq!(storage_error.status_code(), StatusCode::NotFound);
-    assert!(
-        storage_error.copy_source_status_code().is_some(),
-        "Expected copy_source_status_code to be populated."
+    assert_eq!(
+        storage_error.copy_source_status_code(),
+        Some(StatusCode::NotFound)
     );
-    assert!(
-        storage_error.copy_source_error_code().is_some(),
-        "Expected copy_source_error_code to be populated."
-    );
-    assert!(
-        storage_error.copy_source_error_message().is_some(),
-        "Expected copy_source_error_message to be populated."
-    );
-
-    container_client.delete_container(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_storage_error_model_query_parameter_fields(
-    ctx: TestContext,
-) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-
-    // Create a container client with an invalid maxresults=0 query parameter
-    let mut url_with_bad_param = container_client.url().clone();
-    url_with_bad_param.set_query(Some("restype=container&comp=list&maxresults=0"));
-
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
-
-    let container_client_options = BlobContainerClientOptions {
-        client_options,
-        ..Default::default()
-    };
-
-    let bad_container_client = BlobContainerClient::from_url(
-        url_with_bad_param,
-        Some(recording.credential()),
-        Some(container_client_options),
-    )?;
-
-    // list_blobs with maxresults=0 should fail with OutOfRangeQueryParameterValue
-    let response = bad_container_client.list_blobs(None);
-    let mut pages = response?.into_pages();
-    let page_result = pages.try_next().await;
-    let error = page_result.unwrap_err();
-    let storage_error: StorageError = error.try_into()?;
-
-    // Assert
-    assert_eq!(storage_error.status_code(), StatusCode::BadRequest);
-    assert!(
-        storage_error.message().is_some(),
-        "Expected message to be populated."
-    );
-    assert!(
-        storage_error.query_parameter_name().is_some(),
-        "Expected query_parameter_name to be populated, got None. Full error: {}.",
-        storage_error
-    );
-    assert!(
-        storage_error.query_parameter_value().is_some(),
-        "Expected query_parameter_value to be populated, got None. Full error: {}.",
-        storage_error
+    assert_eq!(storage_error.copy_source_error_code(), Some("BlobNotFound"));
+    assert_eq!(
+        storage_error.copy_source_error_message(),
+        Some("The specified blob does not exist.")
     );
 
     container_client.delete_container(None).await?;

@@ -22,14 +22,8 @@ pub struct StorageError {
     reason: Option<String>,
     /// Additional authentication error details, if available.
     authentication_error_detail: Option<String>,
-    /// Details about signature mismatch errors, if available.
-    signature_mismatch_error_detail: Option<String>,
-    /// The name of the query parameter that caused the error, if available.
-    query_parameter_name: Option<String>,
-    /// The value of the query parameter that caused the error, if available.
-    query_parameter_value: Option<String>,
     /// The HTTP status code from the copy source, if available.
-    copy_source_status_code: Option<String>,
+    copy_source_status_code: Option<azure_core::http::StatusCode>,
     /// The error code from the copy source, if available.
     copy_source_error_code: Option<String>,
     /// The error message from the copy source, if available.
@@ -63,20 +57,8 @@ impl StorageError {
         self.authentication_error_detail.as_deref()
     }
 
-    pub fn signature_mismatch_error_detail(&self) -> Option<&str> {
-        self.signature_mismatch_error_detail.as_deref()
-    }
-
-    pub fn query_parameter_name(&self) -> Option<&str> {
-        self.query_parameter_name.as_deref()
-    }
-
-    pub fn query_parameter_value(&self) -> Option<&str> {
-        self.query_parameter_value.as_deref()
-    }
-
-    pub fn copy_source_status_code(&self) -> Option<&str> {
-        self.copy_source_status_code.as_deref()
+    pub fn copy_source_status_code(&self) -> Option<azure_core::http::StatusCode> {
+        self.copy_source_status_code
     }
 
     pub fn copy_source_error_code(&self) -> Option<&str> {
@@ -130,12 +112,6 @@ impl StorageError {
             reason: Option<String>,
             #[serde(rename = "AuthenticationErrorDetail")]
             authentication_error_detail: Option<String>,
-            #[serde(rename = "SignatureMismatchErrorDetail")]
-            signature_mismatch_error_detail: Option<String>,
-            #[serde(rename = "QueryParameterName")]
-            query_parameter_name: Option<String>,
-            #[serde(rename = "QueryParameterValue")]
-            query_parameter_value: Option<String>,
             #[serde(rename = "CopySourceStatusCode")]
             copy_source_status_code: Option<String>,
             #[serde(rename = "CopySourceErrorCode")]
@@ -162,10 +138,10 @@ impl StorageError {
             request_id,
             reason: xml_fields.reason,
             authentication_error_detail: xml_fields.authentication_error_detail,
-            signature_mismatch_error_detail: xml_fields.signature_mismatch_error_detail,
-            query_parameter_name: xml_fields.query_parameter_name,
-            query_parameter_value: xml_fields.query_parameter_value,
-            copy_source_status_code: xml_fields.copy_source_status_code,
+            copy_source_status_code: xml_fields
+                .copy_source_status_code
+                .and_then(|s| s.parse::<u16>().ok())
+                .map(azure_core::http::StatusCode::from),
             copy_source_error_code: xml_fields.copy_source_error_code,
             copy_source_error_message: xml_fields.copy_source_error_message,
             additional_error_info,
@@ -195,18 +171,6 @@ impl std::fmt::Display for StorageError {
 
         if let Some(detail) = &self.authentication_error_detail {
             writeln!(f, "Authentication Error Detail: {}", detail)?;
-        }
-
-        if let Some(detail) = &self.signature_mismatch_error_detail {
-            writeln!(f, "Signature Mismatch Error Detail: {}", detail)?;
-        }
-
-        if let Some(name) = &self.query_parameter_name {
-            writeln!(f, "Query Parameter Name: {}", name)?;
-        }
-
-        if let Some(value) = &self.query_parameter_value {
-            writeln!(f, "Query Parameter Value: {}", value)?;
         }
 
         if let Some(status) = &self.copy_source_status_code {
@@ -279,9 +243,6 @@ impl TryFrom<azure_core::Error> for StorageError {
                         request_id,
                         reason: None,
                         authentication_error_detail: None,
-                        signature_mismatch_error_detail: None,
-                        query_parameter_name: None,
-                        query_parameter_value: None,
                         copy_source_status_code: None,
                         copy_source_error_code: None,
                         copy_source_error_message: None,
