@@ -341,9 +341,9 @@ impl TestRunContext {
         Ok(db_client)
     }
 
-    /// Reads an item from the specified container with infinite retries on failure.
+    /// Reads an item from the specified container with exponential backoff retries on 404 errors.
     /// This is useful for tests where eventual consistency may cause transient read failures.
-    pub async fn read_item_infinite_retries<T>(
+    pub async fn read_item<T>(
         &self,
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
@@ -355,6 +355,8 @@ impl TestRunContext {
         // Own the inputs so no borrowed data must live across `.await`.
         let partition_key = partition_key.into().to_owned();
         let item_id = item_id.to_owned();
+        let mut backoff = Duration::from_millis(100);
+        const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
             match container
@@ -362,17 +364,24 @@ impl TestRunContext {
                 .await
             {
                 Ok(response) => return response.into_model(),
-                Err(e) => {
-                    println!("Read item failed: {}. Retrying...", e);
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    println!(
+                        "Read item failed with {:?}: {}. Retrying after {:?}...",
+                        e.http_status(),
+                        e,
+                        backoff
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
+                Err(e) => return Err(e),
             }
         }
     }
 
-    /// Queries items from the specified container with infinite retries on failure.
+    /// Queries items from the specified container with exponential backoff retries on 404 errors.
     /// This is useful for tests where eventual consistency may cause transient query failures.
-    pub async fn query_items_infinite_retries<T>(
+    pub async fn query_items<T>(
         &self,
         container: &ContainerClient,
         query: impl Into<Query>,
@@ -383,25 +392,36 @@ impl TestRunContext {
     {
         let query = query.into();
         let partition_key = partition_key.into().to_owned();
+        let mut backoff = Duration::from_millis(100);
+        const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
-            match container
-                .query_items::<T>(query.clone(), partition_key.clone(), None)
-
-            {
-                Ok(pager) => {
-                    match pager.try_collect::<Vec<T>>().await {
-                        Ok(items) => return Ok(items),
-                        Err(e) => {
-                            println!("Query items failed: {}. Retrying...", e);
-                            tokio::time::sleep(Duration::from_secs(1)).await;
-                        }
+            match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
+                Ok(pager) => match pager.try_collect::<Vec<T>>().await {
+                    Ok(items) => return Ok(items),
+                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                        println!(
+                            "Query items failed with {:?}: {}. Retrying after {:?}...",
+                            e.http_status(),
+                            e,
+                            backoff
+                        );
+                        tokio::time::sleep(backoff).await;
+                        backoff = (backoff * 2).min(MAX_BACKOFF);
                     }
+                    Err(e) => return Err(e),
+                },
+                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    println!(
+                        "Query items failed with {:?}: {}. Retrying after {:?}...",
+                        e.http_status(),
+                        e,
+                        backoff
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
-                Err(e) => {
-                    println!("Query items failed: {}. Retrying...", e);
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                }
+                Err(e) => return Err(e),
             }
         }
     }
@@ -418,13 +438,19 @@ impl TestRunContext {
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
-            match db_client.create_container(properties.clone(), options.clone()).await {
+            match db_client
+                .create_container(properties.clone(), options.clone())
+                .await
+            {
                 Ok(response) => {
                     let created = response.into_model()?;
                     return Ok(db_client.container_client(&created.id));
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
-                    println!("Create container got 429 (Too Many Requests). Retrying after {:?}...", backoff);
+                    println!(
+                        "Create container got 429 (Too Many Requests). Retrying after {:?}...",
+                        backoff
+                    );
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
@@ -435,16 +461,14 @@ impl TestRunContext {
                     container_client.delete(None).await?;
 
                     // recreate
-                    db_client.create_container(properties.clone(), options.clone()).await?;
+                    db_client
+                        .create_container(properties.clone(), options.clone())
+                        .await?;
                 }
-                Err(e) => {
-                    return Err(e)
-                },
+                Err(e) => return Err(e),
             }
         }
     }
-
-
 
     /// Cleans up test resources.
     ///

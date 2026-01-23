@@ -27,11 +27,9 @@ pub async fn single_partition_query() -> Result<(), Box<dyn Error>> {
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-            let result_items: Vec<MockItem> = run_context.query_items_infinite_retries(
-                &container_client,
-                "select * from docs c",
-                "partition0",
-            ).await?;
+            let result_items: Vec<MockItem> = run_context
+                .query_items(&container_client, "select * from docs c", "partition0")
+                .await?;
             assert_eq!(
                 collect_matching_items(&items, |p| p.partition_key == "partition0"),
                 result_items
@@ -62,11 +60,9 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
             // Query for items with that merge order
             let query = Query::from("select * from c where c.mergeOrder = @some_value")
                 .with_parameter("@some_value", merge_order)?;
-            let result_items: Vec<MockItem> = run_context.query_items_infinite_retries(
-                &container_client,
-                query,
-                "partition1",
-            ).await?;
+            let result_items: Vec<MockItem> = run_context
+                .query_items(&container_client, query, "partition1")
+                .await?;
             assert_eq!(
                 collect_matching_items(&items, |p| p.merge_order == merge_order),
                 result_items
@@ -87,10 +83,9 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-            let result_items: Vec<String> = run_context.query_items_infinite_retries(
-                &container_client,
-                "select value c.id from c",
-                "partition1").await?;
+            let result_items: Vec<String> = run_context
+                .query_items(&container_client, "select value c.id from c", "partition1")
+                .await?;
             assert_eq!(
                 items
                     .iter()
@@ -115,12 +110,13 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-
-            let result_items: Vec<String> = run_context.query_items_infinite_retries(
-                &container_client,
-                "select value c.id from c where c.mergeOrder between 40 and 60",
-                (),
-            ).await?;
+            let result_items: Vec<String> = run_context
+                .query_items(
+                    &container_client,
+                    "select value c.id from c where c.mergeOrder between 40 and 60",
+                    (),
+                )
+                .await?;
 
             assert_eq!(
                 items

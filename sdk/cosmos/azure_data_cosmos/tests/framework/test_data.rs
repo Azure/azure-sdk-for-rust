@@ -44,13 +44,16 @@ pub async fn create_container_with_items(
 
     // Retry on 429 errors
     loop {
-        match db.create_container(
-            properties.clone(),
-            Some(CreateContainerOptions {
-                throughput: throughput.clone(),
-                ..Default::default()
-            }),
-        ).await {
+        match db
+            .create_container(
+                properties.clone(),
+                Some(CreateContainerOptions {
+                    throughput: throughput.clone(),
+                    ..Default::default()
+                }),
+            )
+            .await
+        {
             Ok(_) => break,
             Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                 println!("Create container got 429 (Too Many Requests). Retrying...");

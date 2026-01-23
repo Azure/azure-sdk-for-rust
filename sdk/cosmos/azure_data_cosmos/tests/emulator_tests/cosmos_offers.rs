@@ -72,14 +72,16 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 
             let throughput = ThroughputProperties::manual(400);
 
-            let container_client = run_context.create_container(
-                db_client,
-                properties.clone(),
-                Some(CreateContainerOptions {
-                    throughput: Some(throughput),
-                    ..Default::default()
-                }),
-            ).await?;
+            let container_client = run_context
+                .create_container(
+                    db_client,
+                    properties.clone(),
+                    Some(CreateContainerOptions {
+                        throughput: Some(throughput),
+                        ..Default::default()
+                    }),
+                )
+                .await?;
 
             // Read throughput
             let current_throughput = container_client
@@ -116,14 +118,16 @@ pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>>
 
             let throughput = ThroughputProperties::autoscale(5000, Some(42));
 
-            let container_client = run_context.create_container(
-                db_client,
-                properties.clone(),
-                Some(CreateContainerOptions {
-                    throughput: Some(throughput),
-                    ..Default::default()
-                }),
-            ).await?;
+            let container_client = run_context
+                .create_container(
+                    db_client,
+                    properties.clone(),
+                    Some(CreateContainerOptions {
+                        throughput: Some(throughput),
+                        ..Default::default()
+                    }),
+                )
+                .await?;
 
             // Read throughput
             let current_throughput = container_client

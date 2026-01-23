@@ -38,14 +38,16 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             let throughput = ThroughputProperties::manual(400);
 
-            let container_client = run_context.create_container(
-                db_client,
-                properties.clone(),
-                Some(CreateContainerOptions {
-                    throughput: Some(throughput),
-                    ..Default::default()
-                }),
-            ).await?;
+            let container_client = run_context
+                .create_container(
+                    db_client,
+                    properties.clone(),
+                    Some(CreateContainerOptions {
+                        throughput: Some(throughput),
+                        ..Default::default()
+                    }),
+                )
+                .await?;
 
             // Read the container to get its properties
             let created_properties = container_client.read(None).await?.into_model()?;
@@ -165,11 +167,9 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
                 ..Default::default()
             };
 
-            let container_client = run_context.create_container(
-                db_client,
-                properties.clone(),
-                None,
-            ).await?;
+            let container_client = run_context
+                .create_container(db_client, properties.clone(), None)
+                .await?;
 
             // Read the container to get its properties
             let created_properties = container_client.read(None).await?.into_model()?;
