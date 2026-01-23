@@ -542,13 +542,15 @@ mod tests {
     use crate::resource_context::{ResourceLink, ResourceType};
     use std::{collections::HashSet, vec};
 
-    fn create_test_data() -> (
+    type TestData = (
         Url,
         Vec<AccountRegion>,
         Vec<AccountRegion>,
         Vec<Cow<'static, str>>,
         Vec<String>,
-    ) {
+    );
+
+    fn create_test_data() -> TestData {
         // Setting up test database account data
         let default_endpoint = "https://default.documents.example.com".parse().unwrap();
 
@@ -610,12 +612,8 @@ mod tests {
             mut preferred_locations,
             mut excluded_regions,
         ) = create_test_data();
-        if pref_regions.is_some() {
-            preferred_locations = pref_regions
-                .unwrap()
-                .into_iter()
-                .map(|s| Cow::Owned(s))
-                .collect();
+        if let Some(regions) = pref_regions {
+            preferred_locations = regions.into_iter().map(Cow::Owned).collect();
         }
         if !excl_regions.is_empty() {
             excluded_regions = excl_regions;
