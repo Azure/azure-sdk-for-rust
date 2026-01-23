@@ -36,3 +36,4 @@ applyTo: "sdk/cosmos/**/CHANGELOG.md"
 - Reference example (style only):
 	- https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/CHANGELOG.md
 
+- Also keep general changelog instructions in https://github.com/Azure/azure-sdk-for-java/blob/main/.github/changelog.instructions.md under consideration unless they conflict with any guidance in this document.
