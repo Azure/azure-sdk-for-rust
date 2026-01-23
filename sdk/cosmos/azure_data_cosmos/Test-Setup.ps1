@@ -5,6 +5,9 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
+# Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
+$global:LASTEXITCODE = 0
+
 # Skip emulator setup if AZURE_COSMOS_CONNECTION_STRING is already set
 if ($env:AZURE_COSMOS_CONNECTION_STRING) {
     Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
