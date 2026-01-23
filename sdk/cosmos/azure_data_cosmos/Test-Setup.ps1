@@ -98,6 +98,3 @@ if ($IsWindows) {
     # We can't run the emulator on the macOS agent, and we don't want to fail local builds because the emulator isn't installed.
     Write-Host "Cosmos DB Emulator is not available on this platform. Skipping test setup."
 }
-
-# Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
-$global:LASTEXITCODE = 0
