@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use crate::options::CosmosClientOptions;
 use std::time::Duration;
 
@@ -25,7 +24,6 @@ pub struct FaultInjectionRule {
 
 use std::sync::Arc;
 use azure_core::http::Transport;
-use crate::operation_context::OperationType;
 use super::fault_http_client::FaultClient;
 
 /// Builder for creating a fault injection client.
@@ -48,12 +46,8 @@ impl FaultInjectionClientBuilder {
     ///
     /// This wraps the existing transport (or creates a default one) with the fault injection client.
     pub fn inject(&self, mut options: CosmosClientOptions) -> CosmosClientOptions {
-        // Get the inner transport from options or create a default one
-        let inner_transport = options.client_options.transport.take();
-        let inner_client: Arc<dyn azure_core::http::HttpClient> = match inner_transport {
-            Some(transport) => transport.into_inner_http_client(),
-            None => azure_core::http::new_http_client(),
-        };
+        // Create a default http client
+        let inner_client: Arc<dyn azure_core::http::HttpClient> = azure_core::http::new_http_client();
 
         let fault_client = FaultClient::new(inner_client, self.rules.clone());
         options.client_options.transport = Some(Transport::new(Arc::new(fault_client)));
@@ -64,7 +58,7 @@ impl FaultInjectionClientBuilder {
 
     /// Adds a fault injection rule to the builder.
     pub fn with_rule(&mut self, rule: FaultInjectionRule) -> &mut Self {
-        self.rules.append(rule);
+        self.rules.push(rule);
         self
     }
 }
@@ -97,10 +91,10 @@ pub struct FaultInjectionRuleBuilder {
 
 impl FaultInjectionRuleBuilder {
     /// Creates a new FaultInjectionRuleBuilder with default values.
-    pub fn new(id: impl Into<String>, result: FaultInjectionResult) -> Self {
+    pub fn new(id: impl Into<String>, result: impl FaultInjectionResult + 'static) -> Self {
         Self {
             condition: FaultInjectionCondition::default(),
-            result: result.into(),
+            result: Box::new(result),
             duration: Duration::MAX, // Infinite duration by default
             start_delay: Duration::ZERO,
             hit_limit: None,
@@ -116,7 +110,7 @@ impl FaultInjectionRuleBuilder {
 
     /// Sets the result to inject when the condition is met.
     pub fn with_result(mut self, result: impl FaultInjectionResult + 'static) -> Self {
-        self.result = Some(Box::new(result));
+        self.result = Box::new(result);
         self
     }
 
@@ -161,20 +155,21 @@ pub struct FaultInjectionCondition {
     /// Either the region or the endpoints must be specified.
     pub endpoints: Option<Vec<String>>,
     /// The type of operation to which the fault injection applies.
-    pub operation_type: FaultOperationType,
+    pub operation_type: Option<FaultOperationType>,
     /// The region to which the fault injection applies.
     /// Either the endpoints or the region must be specified.
     pub region: Option<String>,
     /// The partition key range ID to which the fault injection applies.
     pub partition_key_range_id: Option<String>,
     /// The container ID to which the fault injection applies.
-    pub container_id: String,
+    pub container_id: Option<String>,
 }
 
 /// The type of operation to which the fault injection applies.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum FaultOperationType {
     /// Read items.
+    #[default]
     ReadItem,
     /// Query items.
     QueryItem,
@@ -200,6 +195,26 @@ pub enum FaultOperationType {
     MetadataQueryPlan,
     /// Partition key ranges request.
     MetadataPartitionKeyRanges,
+}
+
+impl From<FaultOperationType> for &'static str {
+    fn from(op: FaultOperationType) -> Self {
+        match op {
+            FaultOperationType::ReadItem => "ReadItem",
+            FaultOperationType::QueryItem => "QueryItem",
+            FaultOperationType::CreateItem => "CreateItem",
+            FaultOperationType::UpsertItem => "UpsertItem",
+            FaultOperationType::ReplaceItem => "ReplaceItem",
+            FaultOperationType::DeleteItem => "DeleteItem",
+            FaultOperationType::PatchItem => "PatchItem",
+            FaultOperationType::BatchItem => "BatchItem",
+            FaultOperationType::ChangeFeedItem => "ChangeFeedItem",
+            FaultOperationType::MetadataReadContainer => "MetadataReadContainer",
+            FaultOperationType::MetadataReadDatabaseAccount => "MetadataReadDatabaseAccount",
+            FaultOperationType::MetadataQueryPlan => "MetadataQueryPlan",
+            FaultOperationType::MetadataPartitionKeyRanges => "MetadataPartitionKeyRanges",
+        }
+    }
 }
 
 /// Represents different server error types that can be injected for fault testing.
@@ -244,9 +259,6 @@ pub trait FaultInjectionResult: Send + Sync {
 
     /// Returns this result as a server error if it is one.
     fn as_server_error(&self) -> Option<&FaultInjectionServerError>;
-
-    /// Another type for connection errors
-    /// Another type for modified responses
 }
 
 impl Clone for Box<dyn FaultInjectionResult> {
@@ -340,13 +352,13 @@ pub struct FaultInjectionConditionBuilder {
 
 impl FaultInjectionConditionBuilder {
     /// Creates a new FaultInjectionConditionBuilder with default values.
-    pub fn new(operation_type: OperationType, container_id: str) -> Self {
+    pub fn new() -> Self {
         Self {
             endpoints: None,
-            operation_type: operation_type.into(),
+            operation_type: None,
             region: None,
             partition_key_range_id: None,
-            container_id: container_id.into(),
+            container_id: None,
         }
     }
 
@@ -390,10 +402,6 @@ impl FaultInjectionConditionBuilder {
 
     /// Builds the FaultInjectionCondition.
     pub fn build(self) -> FaultInjectionCondition {
-        // either endpoints or region must be specified
-        if self.endpoints.is_none() && self.region.is_none() {
-            panic!("Either endpoints or region must be specified for FaultInjectionCondition");
-        }
         FaultInjectionCondition {
             endpoints: self.endpoints,
             operation_type: self.operation_type,

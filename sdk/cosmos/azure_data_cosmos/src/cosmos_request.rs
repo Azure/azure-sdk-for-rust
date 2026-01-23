@@ -164,10 +164,10 @@ impl CosmosRequest {
 
     #[cfg(feature = "fault_injection")]
     pub fn add_fault_injection_headers(&mut self) {
-        if self.operation_type == Upsert && self.resource_type == ResourceType::Documents {
+        if self.operation_type == OperationType::Upsert && self.resource_type == ResourceType::Documents {
             self.headers.insert(
                 constants::FAULT_INJECTION_OPERATION,
-                HeaderValue::from_static(FaultOperationType::Upsert.into()),
+                HeaderValue::from_static(FaultOperationType::UpsertItem.into()),
             );
             return;
         }
