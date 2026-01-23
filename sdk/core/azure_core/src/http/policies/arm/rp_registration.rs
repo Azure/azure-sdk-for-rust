@@ -8,10 +8,11 @@
 
 use crate::{
     credentials::TokenCredential,
+    error::{ErrorKind, ResultExt},
     http::{
         headers::{HeaderName, Headers},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy, PolicyResult},
-        Context, Method, Request, StatusCode,
+        AsyncRawResponse, Context, Method, Request, StatusCode, Url,
     },
     sleep::sleep,
     time::Duration,
@@ -21,7 +22,6 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{debug, trace};
-use typespec::error::{ErrorKind, ResultExt};
 
 /// Error codes that indicate an unregistered resource provider.
 const UNREGISTERED_RP_CODES: &[&str] = &[
@@ -193,7 +193,7 @@ impl RPRegistrationPolicy {
             self.options.endpoint, subscription_id, provider_namespace, PROVIDER_API_VERSION
         );
 
-        let url = typespec_client_core::http::Url::parse(&url)
+        let url = Url::parse(&url)
             .with_context(ErrorKind::Other, "failed to parse registration URL")?;
 
         let mut request = Request::new(url, Method::Post);
@@ -236,7 +236,7 @@ impl RPRegistrationPolicy {
             self.options.endpoint, subscription_id, provider_namespace, PROVIDER_API_VERSION
         );
 
-        let url = typespec_client_core::http::Url::parse(&url)
+        let url = Url::parse(&url)
             .with_context(ErrorKind::Other, "failed to parse provider state URL")?;
 
         let mut request = Request::new(url, Method::Get);
@@ -347,7 +347,7 @@ impl Policy for RPRegistrationPolicy {
                 Ok(err) => err,
                 Err(_) => {
                     // Not a parseable ARM error, return the original response
-                    return Ok(typespec_client_core::http::AsyncRawResponse::from_bytes(
+                    return Ok(AsyncRawResponse::from_bytes(
                         StatusCode::Conflict,
                         Headers::new(),
                         body,
@@ -364,7 +364,7 @@ impl Policy for RPRegistrationPolicy {
 
             if !is_unregistered {
                 // Not an unregistered RP error, return the response
-                return Ok(typespec_client_core::http::AsyncRawResponse::from_bytes(
+                return Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Conflict,
                     Headers::new(),
                     body,
