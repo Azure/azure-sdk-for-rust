@@ -4,18 +4,6 @@
 mod authorization_policy;
 mod signature_target;
 
-pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{
-    headers::AsHeaders,
-    pager::{PagerOptions, PagerState},
-    request::{options::ContentType, Request},
-    response::Response,
-    Context, Method, RawResponse,
-};
-use futures::TryStreamExt;
-use serde::de::DeserializeOwned;
-use url::Url;
-
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -25,17 +13,29 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, FeedPage, FeedPager, Query,
 };
+pub use authorization_policy::AuthorizationPolicy;
+use azure_core::error::CheckSuccessOptions;
+use azure_core::http::{
+    headers::AsHeaders,
+    pager::{PagerOptions, PagerState},
+    request::{options::ContentType, Request},
+    response::Response,
+    Context, Method, PipelineSendOptions, RawResponse,
+};
+use futures::TryStreamExt;
+use serde::de::DeserializeOwned;
+use url::Url;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
-pub struct CosmosPipeline {
+pub struct GatewayPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,
     options: CosmosClientOptions,
 }
 
-impl CosmosPipeline {
+impl GatewayPipeline {
     pub fn new(
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
@@ -43,7 +43,7 @@ impl CosmosPipeline {
         options: CosmosClientOptions,
     ) -> Self {
         let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
-        CosmosPipeline {
+        GatewayPipeline {
             endpoint,
             pipeline,
             retry_handler,
@@ -53,7 +53,7 @@ impl CosmosPipeline {
 
     /// Creates a [`Url`] out of the provided [`ResourceLink`]
     ///
-    /// This is a little backwards, ideally we'd accept [`ResourceLink`] in the [`CosmosPipeline::send`] method,
+    /// This is a little backwards, ideally we'd accept [`ResourceLink`] in the [`GatewayPipeline::send`] method,
     /// but we need callers to be able to build an [`azure_core::Request`] so they need to be able to get the full URL.
     /// This allows the clients to hold a single thing representing the "connection" to a Cosmos DB account though.
     pub fn url(&self, link: &ResourceLink) -> Url {
@@ -66,10 +66,21 @@ impl CosmosPipeline {
         request: &mut Request,
         resource_link: ResourceLink,
     ) -> azure_core::Result<RawResponse> {
-        // Clone pipeline and convert context to owned so the closure can be Fn
+        // Clone the pipeline and convert context to owned so the closure can be Fn
         let pipeline = self.pipeline.clone();
         let ctx_owned = ctx.with_value(resource_link).into_owned();
-        pipeline.send(&ctx_owned, request, None).await
+
+        let success_options = CheckSuccessOptions {
+            success_codes: &[200, 201, 202, 204, 304],
+        };
+        let pipeline_send_options = PipelineSendOptions {
+            skip_checks: false,
+            check_success: success_options,
+        };
+
+        pipeline
+            .send(&ctx_owned, request, Some(pipeline_send_options))
+            .await
     }
 
     pub async fn send<T>(

@@ -9,14 +9,14 @@ use std::sync::Arc;
 
 use crate::{
     constants,
-    pipeline::{self, CosmosPipeline},
+    pipeline::{self, GatewayPipeline},
     query::{OwnedQueryPipeline, QueryEngineRef, QueryResult},
     resource_context::{ResourceLink, ResourceType},
     FeedPage, FeedPager, Query, QueryOptions,
 };
 
 pub struct QueryExecutor<T: DeserializeOwned> {
-    http_pipeline: Arc<CosmosPipeline>,
+    http_pipeline: Arc<GatewayPipeline>,
     container_link: ResourceLink,
     items_link: ResourceLink,
     context: Context<'static>,
@@ -35,7 +35,7 @@ pub struct QueryExecutor<T: DeserializeOwned> {
 
 impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub fn new(
-        http_pipeline: Arc<CosmosPipeline>,
+        http_pipeline: Arc<GatewayPipeline>,
         container_link: ResourceLink,
         query: Query,
         options: QueryOptions<'_>,
@@ -209,7 +209,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
 // This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
 #[tracing::instrument(skip_all)]
 async fn get_query_plan(
-    http_pipeline: &CosmosPipeline,
+    http_pipeline: &GatewayPipeline,
     items_link: &ResourceLink,
     context: Context<'_>,
     query: &Query,
@@ -232,7 +232,7 @@ async fn get_query_plan(
 // This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
 #[tracing::instrument(skip_all)]
 async fn get_pkranges(
-    http_pipeline: &CosmosPipeline,
+    http_pipeline: &GatewayPipeline,
     container_link: &ResourceLink,
     context: Context<'_>,
 ) -> azure_core::Result<RawResponse> {

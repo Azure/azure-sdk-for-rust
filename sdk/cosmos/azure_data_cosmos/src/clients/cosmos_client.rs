@@ -4,7 +4,7 @@
 use crate::{
     clients::DatabaseClient,
     models::DatabaseProperties,
-    pipeline::{AuthorizationPolicy, CosmosPipeline},
+    pipeline::{AuthorizationPolicy, GatewayPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
 };
@@ -27,7 +27,8 @@ use azure_core::http::{LoggingOptions, RetryOptions};
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     databases_link: ResourceLink,
-    pipeline: Arc<CosmosPipeline>,
+    pipeline: Arc<GatewayPipeline>,
+    global_endpoint_manager: GlobalEndpointManager,
 }
 
 impl CosmosClient {
@@ -79,16 +80,17 @@ impl CosmosClient {
         let global_endpoint_manager =
             GlobalEndpointManager::new(endpoint.clone(), preferred_regions, pipeline_core.clone());
 
-        let pipeline = Arc::new(CosmosPipeline::new(
+        let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
-            global_endpoint_manager,
+            global_endpoint_manager.clone(),
             options,
         ));
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            global_endpoint_manager,
         })
     }
 
@@ -140,16 +142,17 @@ impl CosmosClient {
         let global_endpoint_manager =
             GlobalEndpointManager::new(endpoint.clone(), preferred_regions, pipeline_core.clone());
 
-        let pipeline = Arc::new(CosmosPipeline::new(
+        let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
-            global_endpoint_manager,
+            global_endpoint_manager.clone(),
             options,
         ));
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            global_endpoint_manager,
         })
     }
 
@@ -188,7 +191,11 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id)
+        DatabaseClient::new(
+            self.pipeline.clone(),
+            id,
+            self.global_endpoint_manager.clone(),
+        )
     }
 
     /// Gets the endpoint of the database account this client is connected to.
