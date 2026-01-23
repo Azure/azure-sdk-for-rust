@@ -10,14 +10,14 @@ use std::sync::Arc;
 use crate::{
     conditional_send::ConditionalSend, constants, cosmos_request::CosmosRequest,
     cosmos_request::CosmosRequestBuilder, operation_context::OperationType,
-    pipeline::CosmosPipeline, resource_context::ResourceLink, FeedPage, Query,
+    pipeline::GatewayPipeline, resource_context::ResourceLink, FeedPage, Query,
 };
 
 /// A query executor that sends queries directly to the gateway endpoint.
 ///
 /// This executor does not support cross-partition queries and requires a partition key to be specified.
 pub struct QueryExecutor<T: DeserializeOwned + ConditionalSend> {
-    http_pipeline: Arc<CosmosPipeline>,
+    http_pipeline: Arc<GatewayPipeline>,
     items_link: ResourceLink,
     context: Context<'static>,
     query: Query,
@@ -29,7 +29,7 @@ pub struct QueryExecutor<T: DeserializeOwned + ConditionalSend> {
 
 impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
     pub fn new(
-        http_pipeline: Arc<CosmosPipeline>,
+        http_pipeline: Arc<GatewayPipeline>,
         items_link: ResourceLink,
         context: Context<'static>,
         query: Query,

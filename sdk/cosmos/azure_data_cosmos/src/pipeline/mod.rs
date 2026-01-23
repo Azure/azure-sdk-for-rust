@@ -6,31 +6,16 @@ mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{response::Response, Context, RawResponse};
+use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
 use url::Url;
 
-use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
-use crate::resource_context::ResourceLink;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
-    constants,
-    models::ThroughputProperties,
-    resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, FeedPage, FeedPager, Query,
+    handler::retry_handler::{BackOffRetryHandler, RetryHandler},
+    resource_context::ResourceLink,
+    routing::global_endpoint_manager::GlobalEndpointManager,
+    CosmosClientOptions,
 };
-use crate::{cosmos_request::CosmosRequest, CosmosClientOptions};
-pub use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
-use azure_core::http::{
-    headers::AsHeaders,
-    pager::{PagerOptions, PagerState},
-    request::{options::ContentType, Request},
-    response::Response,
-    Context, Method, PipelineSendOptions, RawResponse,
-};
-use futures::TryStreamExt;
-use serde::de::DeserializeOwned;
-use url::Url;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]

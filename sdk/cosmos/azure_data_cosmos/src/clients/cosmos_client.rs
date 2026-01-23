@@ -5,7 +5,6 @@ use crate::{
     clients::DatabaseClient,
     models::DatabaseProperties,
     pipeline::{AuthorizationPolicy, GatewayPipeline},
-    pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };

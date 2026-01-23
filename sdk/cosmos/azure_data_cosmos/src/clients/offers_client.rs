@@ -10,7 +10,7 @@ use crate::{
     cosmos_request::CosmosRequest,
     models::ThroughputProperties,
     operation_context::OperationType,
-    pipeline::CosmosPipeline,
+    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     FeedPage, Query,
 };
@@ -21,7 +21,7 @@ use std::sync::Arc;
 /// Internal client for managing throughput offers.
 #[derive(Clone)]
 pub(crate) struct OffersClient {
-    pipeline: Arc<CosmosPipeline>,
+    pipeline: Arc<GatewayPipeline>,
     resource_id: String,
 }
 
@@ -31,7 +31,7 @@ impl OffersClient {
     /// # Arguments
     /// * `pipeline` - The Cosmos pipeline.
     /// * `resource_id` - The resource ID (RID) of the database or container.
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, resource_id: String) -> Self {
+    pub(crate) fn new(pipeline: Arc<GatewayPipeline>, resource_id: String) -> Self {
         Self {
             pipeline,
             resource_id,

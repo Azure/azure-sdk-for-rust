@@ -5,7 +5,6 @@ use crate::{
     clients::OffersClient,
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
-    pipeline::CosmosPipeline,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
