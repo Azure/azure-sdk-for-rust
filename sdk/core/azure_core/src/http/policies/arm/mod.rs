@@ -1,0 +1,10 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! ARM-specific HTTP pipeline policies.
+//!
+//! This module provides policies specific to Azure Resource Manager (ARM) operations.
+
+mod rp_registration;
+
+pub use rp_registration::*;
