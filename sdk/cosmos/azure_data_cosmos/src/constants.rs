@@ -422,85 +422,13 @@ impl From<u32> for SubStatusCode {
 
 impl std::fmt::Debug for SubStatusCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.0 {
-            3 => write!(f, "3 (WRITE_FORBIDDEN)"),
-            429 => write!(f, "429 (TOO_MANY_REQUESTS)"),
-            1000 => write!(f, "1000 (NAME_CACHE_IS_STALE)"),
-            1001 => write!(f, "1001 (PARTITION_KEY_MISMATCH)"),
-            1002 => write!(f, "1002 (PARTITION_KEY_RANGE_GONE)"),
-            1003 => write!(f, "1003 (OWNER_RESOURCE_NOT_FOUND)"),
-            1004 => write!(f, "1004 (CROSS_PARTITION_QUERY_NOT_SERVABLE)"),
-            1005 => write!(f, "1005 (CONFIGURATION_PROPERTY_NOT_FOUND)"),
-            1006 => write!(f, "1006 (CONFLICT_WITH_CONTROL_PLANE)"),
-            1007 => write!(f, "1007 (COMPLETING_SPLIT)"),
-            1008 => write!(f, "1008 (COMPLETING_PARTITION_MIGRATION)"),
-            1009 => write!(f, "1009 (REDUNDANT_COLLECTION_PUT)"),
-            1010 => write!(f, "1010 (SHARED_THROUGHPUT_DATABASE_QUOTA_EXCEEDED)"),
-            1011 => write!(f, "1011 (SHARED_THROUGHPUT_OFFER_GROW_NOT_NEEDED)"),
-            1012 => write!(f, "1012 (COMPUTE_FEDERATION_NOT_FOUND)"),
-            1013 => write!(f, "1013 (COLLECTION_CREATE_IN_PROGRESS)"),
-            1014 => write!(f, "1014 (PARTITION_KEY_QUOTA_OVER_LIMIT)"),
-            1019 => write!(f, "1019 (SHARED_THROUGHPUT_DATABASE_COLLECTION_COUNT_EXCEEDED)"),
-            1020 => write!(f, "1020 (SHARED_THROUGHPUT_DATABASE_COUNT_EXCEEDED)"),
-            1021 => write!(f, "1021 (COMPUTE_INTERNAL_ERROR)"),
-            1022 => write!(f, "1022 (LEASE_NOT_FOUND)"),
-            1023 => write!(f, "1023 (STORE_NOT_READY)"),
-            1024 => write!(f, "1024 (ARCHIVAL_PARTITION_NOT_PRESENT)"),
-            1028 => write!(f, "1028 (THROUGHPUT_CAP_QUOTA_EXCEEDED)"),
-            1029 => write!(f, "1029 (INVALID_THROUGHPUT_CAP_VALUE)"),
-            1030 => write!(f, "1030 (AUTH_TOKEN_NOT_FOUND_IN_CACHE)"),
-            1031 => write!(f, "1031 (PARTITION_MIGRATING_COLLECTION_DELETED)"),
-            1034 => write!(f, "1034 (PARTITION_MIGRATION_SOURCE_PARTITION_DELETED_IN_MASTER)"),
-            1035 => write!(f, "1035 (PARTITION_MIGRATION_SHARED_THROUGHPUT_DATABASE_PARTITION_RESOURCE_NOT_FOUND_IN_MASTER)"),
-            1036 => write!(f, "1036 (PARTITION_MIGRATION_PARTITION_RESOURCE_NOT_FOUND_IN_MASTER)"),
-            1037 => write!(f, "1037 (PARTITION_MIGRATION_FAILED_TO_UPDATE_DNS)"),
-            1101 => write!(f, "1101 (HTTP_LISTENER_EXCEPTION)"),
-            2001 => write!(f, "2001 (SPLIT_IS_DISABLED)"),
-            2002 => write!(f, "2002 (COLLECTIONS_IN_PARTITION_GOT_UPDATED)"),
-            2003 => write!(f, "2003 (CAN_NOT_ACQUIRE_PKRANGES_LOCK)"),
-            2004 => write!(f, "2004 (RESOURCE_NOT_FOUND)"),
-            2005 => write!(f, "2005 (CAN_NOT_ACQUIRE_OFFER_OWNER_LOCK)"),
-            2007 => write!(f, "2007 (CAN_NOT_ACQUIRE_PKRANGE_LOCK)"),
-            2008 => write!(f, "2008 (CAN_NOT_ACQUIRE_PARTITION_LOCK)"),
-            2011 => write!(f, "2011 (STORAGE_SPLIT_CONFLICTING_WITH_NWAY_THROUGHPUT_SPLIT)"),
-            2012 => write!(f, "2012 (MERGE_IS_DISABLED)"),
-            2015 => write!(f, "2015 (TOMBSTONE_RECORDS_NOT_FOUND)"),
-            2016 => write!(f, "2016 (INVALID_ACCOUNT_STATUS)"),
-            2017 => write!(f, "2017 (OFFER_VALIDATION_FAILED)"),
-            2018 => write!(f, "2018 (CAN_NOT_ACQUIRE_MASTER_PARTITION_ACCESS_LOCK)"),
-            2019 => write!(f, "2019 (CAN_NOT_ACQUIRE_IN_ACCOUNT_RESTORE_IN_PROGRESS_LOCK)"),
-            2020 => write!(f, "2020 (COLLECTION_STATE_CHANGED)"),
-            2021 => write!(f, "2021 (OFFER_SCALED_UP_BY_USER)"),
-            2101 => write!(f, "2101 (CAN_NOT_ACQUIRE_LOG_STORE_STORAGE_ACCOUNT_LOAD_BALANCE_LOCK)"),
-            3001 => write!(f, "3001 (CONFIGURATION_NAME_NOT_EMPTY)"),
-            3002 => write!(f, "3002 (CONFIGURATION_OPERATION_CANCELLED)"),
-            3003 => write!(f, "3003 (INVALID_ACCOUNT_CONFIGURATION)"),
-            3004 => write!(f, "3004 (FEDERATION_DOES_NOT_EXIST_OR_IS_LOCKED)"),
-            3010 => write!(f, "3010 (PARTITION_FAILOVER_ERROR_CODE)"),
-            3050 => write!(f, "3050 (PARTITION_MIGRATION_DOCUMENT_COUNT_MISMATCH_BETWEEN_SOURCE_AND_TARGET_PARTITION)"),
-            3051 => write!(f, "3051 (PARTITION_MIGRATION_DOCUMENT_COUNT_MISMATCH_BETWEEN_TARGET_PARTITION_REPLICAS)"),
-            3084 => write!(f, "3084 (STORED_PROCEDURE_CONCURRENCY)"),
-            3200 => write!(f, "3200 (RU_BUDGET_EXCEEDED)"),
-            3201 => write!(f, "3201 (GATEWAY_THROTTLED)"),
-            3205 => write!(f, "3205 (ANOTHER_OFFER_REPLACE_OPERATION_IS_IN_PROGRESS)"),
-            3206 => write!(f, "3206 (DATABASE_NAME_ALREADY_EXISTS)"),
-            3207 => write!(f, "3207 (PREPARE_TIME_LIMIT_EXCEEDED)"),
-            3208 => write!(f, "3208 (CLIENT_TCP_CHANNEL_FULL)"),
-            3209 => write!(f, "3209 (BW_TERM_COUNT_LIMIT_EXCEEDED)"),
-            3302 => write!(f, "3302 (PARTITION_KEY_HASH_COLLISION_FOR_ID)"),
-            9001 => write!(f, "9001 (OPERATION_PAUSED)"),
-            9002 => write!(f, "9002 (SERVICE_IS_OFFLINE)"),
-            9003 => write!(f, "9003 (INSUFFICIENT_CAPACITY)"),
-            0xFFFF => write!(f, "65535 (SCRIPT_COMPILE_ERROR)"),
-            _ => write!(f, "{}", self.0),
-        }
+        write!(f, "{}", self.0)
     }
 }
 
 impl std::fmt::Display for SubStatusCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Display uses the same format as Debug
-        std::fmt::Debug::fmt(self, f)
+        write!(f, "{}", self.0)
     }
 }
 
@@ -509,18 +437,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn substatus_code_debug_known_value() {
+    fn substatus_code_debug_value() {
         let code = SubStatusCode::new(1029);
-        assert_eq!(format!("{:?}", code), "1029 (INVALID_THROUGHPUT_CAP_VALUE)");
+        assert_eq!(format!("{:?}", code), "1029");
     }
 
     #[test]
-    fn substatus_code_debug_another_known_value() {
+    fn substatus_code_debug_another_value() {
         let code = SubStatusCode::new(1004);
-        assert_eq!(
-            format!("{:?}", code),
-            "1004 (CROSS_PARTITION_QUERY_NOT_SERVABLE)"
-        );
+        assert_eq!(format!("{:?}", code), "1004");
     }
 
     #[test]
@@ -530,9 +455,9 @@ mod tests {
     }
 
     #[test]
-    fn substatus_code_display_known_value() {
+    fn substatus_code_display_value() {
         let code = SubStatusCode::new(1029);
-        assert_eq!(format!("{}", code), "1029 (INVALID_THROUGHPUT_CAP_VALUE)");
+        assert_eq!(format!("{}", code), "1029");
     }
 
     #[test]
@@ -545,17 +470,14 @@ mod tests {
     fn substatus_code_from_u32() {
         let code = SubStatusCode::from(429u32);
         assert_eq!(code.value(), 429);
-        assert_eq!(format!("{}", code), "429 (TOO_MANY_REQUESTS)");
+        assert_eq!(format!("{}", code), "429");
     }
 
     #[test]
     fn substatus_code_from_header_value_valid() {
         let code = SubStatusCode::from_header_value("1002");
         assert!(code.is_some());
-        assert_eq!(
-            format!("{:?}", code.unwrap()),
-            "1002 (PARTITION_KEY_RANGE_GONE)"
-        );
+        assert_eq!(format!("{:?}", code.unwrap()), "1002");
     }
 
     #[test]
