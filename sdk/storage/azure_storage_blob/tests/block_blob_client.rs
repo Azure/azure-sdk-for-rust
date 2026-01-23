@@ -14,7 +14,8 @@ use azure_storage_blob::{
     BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, StorageAccount, TestPolicy,
+    create_test_blob, get_blob_name, get_container_client, predicates, ClientOptionsExt,
+    StorageAccount, TestPolicy,
 };
 use std::{
     error::Error,
@@ -214,32 +215,18 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
 #[recorded::test]
 async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let stage_count = Arc::new(AtomicUsize::new(0));
-    // Pipeline policy to count stage block requests going through the pipeline through stage_count
-    let policy_count_ref = stage_count.clone();
-    let count_policy = Arc::new(TestPolicy::new(
-        Some(Arc::new(move |request| {
-            if let Some(url_query) = request.url().query() {
-                if url_query.contains("comp=block") && !url_query.contains("blocklist") {
-                    policy_count_ref.fetch_add(1, Ordering::Relaxed);
-                }
-            }
-            Ok(())
-        })),
-        None,
+    let stage_block_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(
+        stage_block_count.clone(),
+        Some(Arc::new(predicates::is_stage_block_request)),
     ));
-    let mut client_options = BlobContainerClientOptions::default();
-    client_options
-        .client_options
-        .per_call_policies
-        .push(count_policy.clone());
 
     let recording = ctx.recording();
     let container_client = get_container_client(
         recording,
         true,
         StorageAccount::Standard,
-        Some(client_options),
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
     )
     .await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
@@ -254,7 +241,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         (1, 256, 4),
         (8, 31, 34),
     ] {
-        stage_count.store(0, Ordering::Relaxed);
+        stage_block_count.store(0, Ordering::Relaxed);
         let options = BlockBlobClientManagedUploadOptions {
             parallel: Some(NonZero::new(parallel).unwrap()),
             partition_size: Some(NonZero::new(partition_size).unwrap()),
@@ -279,13 +266,55 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             partition_size
         );
         assert_eq!(
-            stage_count.load(Ordering::Relaxed),
+            stage_block_count.load(Ordering::Relaxed),
             expected_stage_block_calls,
             "Failed parallel={},partition_size={}",
             parallel,
             partition_size
         );
     }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let data = [];
+
+    request_count.store(0, Ordering::Relaxed);
+    let options = BlockBlobClientManagedUploadOptions {
+        ..Default::default()
+    };
+    {
+        let _scope = count_policy.check_request_scope();
+        block_blob_client
+            .managed_upload(data.to_vec().into(), Some(options))
+            .await?;
+    }
+    assert_eq!(
+        blob_client
+            .download(None)
+            .await?
+            .into_body()
+            .collect()
+            .await?[..],
+        data
+    );
+    assert_eq!(request_count.load(Ordering::Relaxed), 1);
 
     Ok(())
 }

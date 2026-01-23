@@ -21,8 +21,8 @@ use azure_core::{
 use azure_core_test::Recording;
 use azure_storage_blob::{
     models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult},
-    BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
-    BlobServiceClientOptions,
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
+    BlobServiceClient, BlobServiceClientOptions,
 };
 use bytes::BytesMut;
 use futures::{AsyncRead, AsyncReadExt};
@@ -169,6 +169,44 @@ pub async fn create_test_blob(
     }
 }
 
+pub trait ClientOptionsExt {
+    fn with_per_call_policy(self, policy: Arc<dyn Policy + 'static>) -> Self;
+    fn with_per_try_policy(self, policy: Arc<dyn Policy + 'static>) -> Self;
+}
+impl ClientOptionsExt for BlobServiceClientOptions {
+    fn with_per_call_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_call_policies.push(policy);
+        self
+    }
+
+    fn with_per_try_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_try_policies.push(policy);
+        self
+    }
+}
+impl ClientOptionsExt for BlobContainerClientOptions {
+    fn with_per_call_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_call_policies.push(policy);
+        self
+    }
+
+    fn with_per_try_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_try_policies.push(policy);
+        self
+    }
+}
+impl ClientOptionsExt for BlobClientOptions {
+    fn with_per_call_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_call_policies.push(policy);
+        self
+    }
+
+    fn with_per_try_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_try_policies.push(policy);
+        self
+    }
+}
+
 #[async_trait::async_trait]
 pub trait AsyncReadTestExt {
     async fn read_into_spare_capacity(
@@ -235,6 +273,20 @@ impl Drop for AssertionScope {
 }
 
 type Check<T> = Arc<dyn Fn(&T) -> Result<()> + Send + Sync>;
+type Predicate<T> = Arc<dyn Fn(&T) -> bool + Send + Sync>;
+
+pub mod predicates {
+    use azure_core::http::Request;
+
+    pub fn is_stage_block_request(request: &Request) -> bool {
+        if let Some(url_query) = request.url().query() {
+            url_query.contains("comp=block") && !url_query.contains("blocklist")
+        } else {
+            false
+        }
+    }
+}
+
 pub struct TestPolicy {
     request_scope_counter: Arc<AtomicUsize>,
     response_scope_counter: Arc<AtomicUsize>,
@@ -253,6 +305,24 @@ impl TestPolicy {
             on_request: on_request.unwrap_or(Arc::new(|_| Ok(()))),
             on_response: on_response.unwrap_or(Arc::new(|_| Ok(()))),
         }
+    }
+
+    pub fn count_requests(count: Arc<AtomicUsize>, predicate: Option<Predicate<Request>>) -> Self {
+        Self::new(
+            match predicate {
+                Some(pred) => Some(Arc::new(move |request| {
+                    if pred(request) {
+                        count.fetch_add(1, Ordering::Relaxed);
+                    }
+                    Ok(())
+                })),
+                None => Some(Arc::new(move |_| {
+                    count.fetch_add(1, Ordering::Relaxed);
+                    Ok(())
+                })),
+            },
+            None,
+        )
     }
 
     /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
