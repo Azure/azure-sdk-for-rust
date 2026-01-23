@@ -95,7 +95,7 @@ pub struct LocationCache {
     /// Thread-safe map tracking unavailable endpoints and when they were last checked
     pub location_unavailability_info_map: RwLock<HashMap<Url, LocationUnavailabilityInfo>>,
     /// Client level excluded regions. Empty if no regions are excluded.
-    pub client_excluded_regions: Vec<String>
+    pub client_excluded_regions: Vec<String>,
 }
 
 impl LocationCache {
@@ -112,7 +112,11 @@ impl LocationCache {
     ///
     /// # Returns
     /// A new `LocationCache` instance ready for endpoint management
-    pub fn new(default_endpoint: Url, preferred_locations: Vec<Cow<'static, str>>, excluded_regions: Vec<String>) -> Self {
+    pub fn new(
+        default_endpoint: Url,
+        preferred_locations: Vec<Cow<'static, str>>,
+        excluded_regions: Vec<String>,
+    ) -> Self {
         Self {
             default_endpoint,
             locations_info: DatabaseAccountLocationsInfo {
@@ -326,7 +330,10 @@ impl LocationCache {
                 );
             }
         } else {
-            let endpoints = self.get_applicable_endpoints(request.operation_type, request.excluded_regions.as_ref());
+            let endpoints = self.get_applicable_endpoints(
+                request.operation_type,
+                request.excluded_regions.as_ref(),
+            );
 
             if !endpoints.is_empty() {
                 location_endpoint_to_route =
@@ -373,7 +380,11 @@ impl LocationCache {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn get_applicable_endpoints(&self, operation_type: OperationType, excluded_regions: Option<&Vec<String>>) -> Vec<Url> {
+    pub fn get_applicable_endpoints(
+        &self,
+        operation_type: OperationType,
+        excluded_regions: Option<&Vec<String>>,
+    ) -> Vec<Url> {
         // Select endpoints based on operation type.
         if operation_type.is_read_only() {
             self.get_preferred_available_endpoints(
@@ -416,7 +427,7 @@ impl LocationCache {
     fn get_endpoints_by_location(
         &mut self,
         locations: Vec<AccountRegion>,
-        is_write: bool
+        is_write: bool,
     ) -> (HashMap<String, Url>, Vec<AccountRegion>) {
         // Separates locations into a hashmap and list
         let mut endpoints_by_location = HashMap::new();
@@ -428,9 +439,13 @@ impl LocationCache {
                 location.database_account_endpoint.clone(),
             );
             if is_write {
-                self.locations_info.write_endpoints.push(location.database_account_endpoint.clone());
+                self.locations_info
+                    .write_endpoints
+                    .push(location.database_account_endpoint.clone());
             } else {
-                self.locations_info.read_endpoints.push(location.database_account_endpoint.clone());
+                self.locations_info
+                    .read_endpoints
+                    .push(location.database_account_endpoint.clone());
             }
             parsed_locations.push(location);
         }
@@ -571,19 +586,36 @@ mod tests {
     }
 
     fn create_test_location_cache() -> LocationCache {
-        let (default_endpoint, write_locations, read_locations, preferred_locations, excluded_regions) =
-            create_test_data();
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
 
         let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
         cache.update(write_locations, read_locations).unwrap();
         cache
     }
 
-    fn create_custom_test_location_cache(pref_regions: Option<Vec<String>>, excl_regions: Vec<String>) -> LocationCache {
-        let (default_endpoint, write_locations, read_locations, mut preferred_locations, mut excluded_regions) =
-            create_test_data();
+    fn create_custom_test_location_cache(
+        pref_regions: Option<Vec<String>>,
+        excl_regions: Vec<String>,
+    ) -> LocationCache {
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            mut preferred_locations,
+            mut excluded_regions,
+        ) = create_test_data();
         if pref_regions.is_some() {
-            preferred_locations = pref_regions.unwrap().into_iter().map(|s| Cow::Owned(s)).collect();
+            preferred_locations = pref_regions
+                .unwrap()
+                .into_iter()
+                .map(|s| Cow::Owned(s))
+                .collect();
         }
         if !excl_regions.is_empty() {
             excluded_regions = excl_regions;
@@ -703,10 +735,19 @@ mod tests {
 
     #[test]
     fn location_cache_update_with_one_preferred_location() {
-        let (default_endpoint, write_locations, read_locations, preferred_locations, excluded_regions) =
-            create_test_data();
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
 
-        let mut cache = LocationCache::new(default_endpoint, vec![preferred_locations[0].clone()], excluded_regions);
+        let mut cache = LocationCache::new(
+            default_endpoint,
+            vec![preferred_locations[0].clone()],
+            excluded_regions,
+        );
 
         let _ = cache.update(write_locations, read_locations);
 
@@ -751,7 +792,9 @@ mod tests {
 
         // check that endpoint is last option in read endpoints, and it is in the location unavailability info map
         assert_eq!(
-            cache.get_applicable_endpoints(OperationType::Read, None).last(),
+            cache
+                .get_applicable_endpoints(OperationType::Read, None)
+                .last(),
             Some(&unavailable_endpoint)
         );
 
@@ -782,7 +825,9 @@ mod tests {
 
         // check that endpoint is last option in write endpoints, and it is in the location unavailability info map
         assert_eq!(
-            cache.get_applicable_endpoints(OperationType::Create, None).last(),
+            cache
+                .get_applicable_endpoints(OperationType::Create, None)
+                .last(),
             Some(&unavailable_endpoint)
         );
 
@@ -912,10 +957,14 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn resolve_service_endpoint_request_excluded_regions() {
-        let pref_regions: Vec<String> =
-            vec!["Location 4".to_string(), "Location 3".to_string(), "Location 2".to_string(), "Location 1".to_string()];
+        let pref_regions: Vec<String> = vec![
+            "Location 4".to_string(),
+            "Location 3".to_string(),
+            "Location 2".to_string(),
+            "Location 1".to_string(),
+        ];
         // create test cache
         let cache = create_custom_test_location_cache(Some(pref_regions), vec![]);
 
@@ -924,7 +973,12 @@ mod tests {
             ResourceLink::root(ResourceType::Documents),
         );
 
-        let cosmos_request = builder.clone().set_excluded_regions(Some(vec!["Location 4".to_string()])).build().ok().unwrap();
+        let cosmos_request = builder
+            .clone()
+            .set_excluded_regions(Some(vec!["Location 4".to_string()]))
+            .build()
+            .ok()
+            .unwrap();
 
         // resolve service endpoint - should skip Location 4 and go to Location 3
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -933,8 +987,16 @@ mod tests {
             Url::parse("https://location3.documents.example.com").unwrap()
         );
 
-        let cosmos_request = builder.set_excluded_regions(Some(vec!["Location 4".to_string(),
-         "Location 3".to_string(), "Location 2".to_string(), "Location 1".to_string()])).build().ok().unwrap();
+        let cosmos_request = builder
+            .set_excluded_regions(Some(vec![
+                "Location 4".to_string(),
+                "Location 3".to_string(),
+                "Location 2".to_string(),
+                "Location 1".to_string(),
+            ]))
+            .build()
+            .ok()
+            .unwrap();
 
         // resolve service endpoint - should skip all preferred locations and go to default endpoint
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -944,12 +1006,15 @@ mod tests {
         );
     }
 
-            #[test]
+    #[test]
     fn resolve_service_endpoint_client_excluded_regions() {
-        let pref_regions: Vec<String> =
-            vec!["Location 4".to_string(), "Location 3".to_string(), "Location 2".to_string(), "Location 1".to_string()];
-        let excl_regions: Vec<String> =
-            vec!["Location 4".to_string()];
+        let pref_regions: Vec<String> = vec![
+            "Location 4".to_string(),
+            "Location 3".to_string(),
+            "Location 2".to_string(),
+            "Location 1".to_string(),
+        ];
+        let excl_regions: Vec<String> = vec!["Location 4".to_string()];
         // create test cache
         let cache = create_custom_test_location_cache(Some(pref_regions), excl_regions);
 
@@ -971,10 +1036,13 @@ mod tests {
     #[test]
     fn resolve_service_endpoint_excluded_regions_precedence() {
         // verify that request excluded regions take precedence over client excluded regions
-        let pref_regions: Vec<String> =
-            vec!["Location 4".to_string(), "Location 3".to_string(), "Location 2".to_string(), "Location 1".to_string()];
-        let excl_regions: Vec<String> =
-            vec!["Location 4".to_string()];
+        let pref_regions: Vec<String> = vec![
+            "Location 4".to_string(),
+            "Location 3".to_string(),
+            "Location 2".to_string(),
+            "Location 1".to_string(),
+        ];
+        let excl_regions: Vec<String> = vec!["Location 4".to_string()];
         // create test cache
         let cache = create_custom_test_location_cache(Some(pref_regions), excl_regions);
 
@@ -983,7 +1051,12 @@ mod tests {
             ResourceLink::root(ResourceType::Documents),
         );
 
-        let cosmos_request = builder.clone().set_excluded_regions(Some(vec!["Location 3".to_string()])).build().ok().unwrap();
+        let cosmos_request = builder
+            .clone()
+            .set_excluded_regions(Some(vec!["Location 3".to_string()]))
+            .build()
+            .ok()
+            .unwrap();
 
         // resolve service endpoint - should use request excluded regions and only exclude Location 3
         // routing to Location 4 (most preferred region) even if excluded in client excluded regions
@@ -994,7 +1067,12 @@ mod tests {
         );
 
         // if setting None in request excluded regions, should use client excluded regions
-        let cosmos_request = builder.clone().set_excluded_regions(None).build().ok().unwrap();
+        let cosmos_request = builder
+            .clone()
+            .set_excluded_regions(None)
+            .build()
+            .ok()
+            .unwrap();
 
         // resolve service endpoint - should skip Location 4 and go to Location 3
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -1004,7 +1082,11 @@ mod tests {
         );
 
         // if setting an empty list in request excluded regions, no regions should be excluded
-        let cosmos_request = builder.set_excluded_regions(Some(vec![])).build().ok().unwrap();
+        let cosmos_request = builder
+            .set_excluded_regions(Some(vec![]))
+            .build()
+            .ok()
+            .unwrap();
 
         // resolve service endpoint - should not exclude any regions and go to Location 4
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -1014,7 +1096,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn resolve_service_endpoint_effective_preferred_regions() {
         // set no preferred regions in cache, so all regions from account are used
         let pref_regions: Vec<String> = vec![];
@@ -1035,7 +1117,11 @@ mod tests {
             Url::parse("https://location1.documents.example.com").unwrap()
         );
 
-        let cosmos_request = builder.set_excluded_regions(Some(vec!["Location 1".to_string()])).build().ok().unwrap();
+        let cosmos_request = builder
+            .set_excluded_regions(Some(vec!["Location 1".to_string()]))
+            .build()
+            .ok()
+            .unwrap();
 
         // resolve service endpoint - should skip Location 1 and go to Location 2
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -1044,6 +1130,4 @@ mod tests {
             Url::parse("https://location2.documents.example.com").unwrap()
         );
     }
-
-    
 }

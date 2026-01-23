@@ -92,7 +92,10 @@ impl ClientRetryPolicy {
     ///
     /// # Returns
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
-    pub fn new(global_endpoint_manager: GlobalEndpointManager, excluded_regions: Option<Vec<String>>) -> Self {
+    pub fn new(
+        global_endpoint_manager: GlobalEndpointManager,
+        excluded_regions: Option<Vec<String>>,
+    ) -> Self {
         Self {
             global_endpoint_manager: Arc::new(global_endpoint_manager),
             enable_endpoint_discovery: true,

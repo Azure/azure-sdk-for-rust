@@ -199,7 +199,11 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn applicable_endpoints(&self, operation_type: OperationType, excluded_regions: Option<&Vec<String>>) -> Vec<Url> {
+    pub fn applicable_endpoints(
+        &self,
+        operation_type: OperationType,
+        excluded_regions: Option<&Vec<String>>,
+    ) -> Vec<Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -612,7 +616,8 @@ mod tests {
         let excluded_regions = vec!["West US".to_string(), "East US".to_string()];
         let endpoints = manager.applicable_endpoints(OperationType::Read, Some(&excluded_regions));
         assert!(!endpoints.is_empty());
-        let endpoints = manager.applicable_endpoints(OperationType::Create, Some(&excluded_regions));
+        let endpoints =
+            manager.applicable_endpoints(OperationType::Create, Some(&excluded_regions));
         assert!(!endpoints.is_empty());
     }
 
