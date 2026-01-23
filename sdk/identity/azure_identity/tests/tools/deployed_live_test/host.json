@@ -19,7 +19,7 @@
   },
   "customHandler": {
     "description": {
-      "defaultExecutablePath": "deployed_live_test",
+      "defaultExecutablePath": "deployed_live_test.exe",
       "workingDirectory": "",
       "arguments": []
     },
