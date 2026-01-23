@@ -559,7 +559,6 @@ mod tests {
 
         let preferred_locations: Vec<Cow<'static, str>> =
             vec![Cow::Borrowed("Location 1"), Cow::Borrowed("Location 2")];
-        
         let excluded_regions: Vec<String> = vec![];
 
         (
