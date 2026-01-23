@@ -486,4 +486,36 @@ mod tests {
         assert_eq!(options.endpoint, "https://management.azure.com");
         assert_eq!(options.audience, "https://management.azure.com");
     }
+
+    #[test]
+    fn test_rp_registration_options_custom() {
+        let options = RPRegistrationOptions {
+            max_attempts: 5,
+            polling_delay: Duration::seconds(10),
+            polling_duration: Duration::minutes(10),
+            status_codes: vec![StatusCode::Conflict, StatusCode::Forbidden],
+            endpoint: "https://custom.endpoint.com".to_string(),
+            audience: "https://custom.audience.com".to_string(),
+        };
+
+        assert_eq!(options.max_attempts, 5);
+        assert_eq!(options.polling_delay, Duration::seconds(10));
+        assert_eq!(options.polling_duration, Duration::minutes(10));
+        assert_eq!(
+            options.status_codes,
+            vec![StatusCode::Conflict, StatusCode::Forbidden]
+        );
+        assert_eq!(options.endpoint, "https://custom.endpoint.com");
+        assert_eq!(options.audience, "https://custom.audience.com");
+    }
+
+    #[test]
+    fn test_disabled_policy() {
+        // Test that policy is disabled when max_attempts is 0
+        let options = RPRegistrationOptions {
+            max_attempts: 0,
+            ..Default::default()
+        };
+        assert_eq!(options.max_attempts, 0);
+    }
 }

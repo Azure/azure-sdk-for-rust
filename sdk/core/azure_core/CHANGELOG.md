@@ -7,6 +7,9 @@
 - Added ARM-specific pipeline policies in `azure_core::http::policies::arm` module.
   - `RPRegistrationPolicy`: Automatically registers unregistered Azure Resource Providers when encountering registration errors.
   - `RPRegistrationOptions`: Configuration for RP registration behavior (max attempts, polling intervals, etc.).
+  - `ArmExponentialRetryOptions` and `ArmFixedRetryOptions`: ARM-tuned retry configurations with appropriate defaults for management plane operations.
+  - Helper functions to configure retry behavior: `arm_exponential_retry_options()`, `arm_fixed_retry_options()`, and their `_with` variants.
+  - `ARM_RETRY_HEADERS`: Constant defining ARM-specific rate limit headers for retry logic.
 
 ### Breaking Changes
 

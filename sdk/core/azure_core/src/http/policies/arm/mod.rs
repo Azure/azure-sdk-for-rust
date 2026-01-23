@@ -5,6 +5,8 @@
 //!
 //! This module provides policies specific to Azure Resource Manager (ARM) operations.
 
+mod retry;
 mod rp_registration;
 
+pub use retry::*;
 pub use rp_registration::*;
