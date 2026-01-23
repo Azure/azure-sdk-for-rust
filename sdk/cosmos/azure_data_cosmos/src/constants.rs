@@ -199,6 +199,10 @@ pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
+pub const MAXIMUM_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
+pub const A_IM_TYPE: HeaderName = HeaderName::from_static("a-im");
+pub const IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
+
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
 /// Sub-status codes provide additional context for HTTP error responses from Cosmos DB.
