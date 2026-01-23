@@ -31,14 +31,15 @@ struct TestItem {
 
 async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
+    let container_id = format!("Container-{}", Uuid::new_v4());
     run_context.create_container(&db_client,
                                   ContainerProperties {
-        id: "Container".into(),
+        id: container_id.clone().into(),
         partition_key: "/partition_key".into(),
         ..Default::default()
     },
                                   None,).await?;
-    let container_client = db_client.container_client("Container");
+    let container_client = db_client.container_client(&container_id);
 
     Ok(container_client)
 }

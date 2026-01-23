@@ -20,7 +20,7 @@ use framework::TestClient;
 
 #[tokio::test]
 pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
+    TestClient::run_with_unique_db(
         async |run_context, db_client| {
             // Create the container
             let properties = ContainerProperties {
@@ -149,7 +149,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
+    TestClient::run_with_unique_db(
         async |run_context, db_client| {
             // Create the container
             let properties = ContainerProperties {

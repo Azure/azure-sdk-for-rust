@@ -152,7 +152,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     log_buffer.lock().unwrap().clear();
 
     // write to hub region
-    TestClient::run_with_shared_db(
+    TestClient::run_with_unique_db(
         async |_, db_client| {
             create_container_and_write_item(db_client, CONTAINER_ID, HUB_REGION).await
         },
@@ -191,7 +191,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     log_buffer.lock().unwrap().clear();
 
     // write to satellite region
-    TestClient::run_with_shared_db(
+    TestClient::run_with_unique_db(
         async |_, db_client| {
             create_container_and_write_item(db_client, CONTAINER_ID, SATELLITE_REGION).await
         },

@@ -406,7 +406,7 @@ impl TestRunContext {
         }
     }
 
-    /// Creates a container with infinite retries on 429 (Too Many Requests) errors.
+    /// Creates a container with exponential backoff retries on 429 (Too Many Requests) errors.
     /// This is useful for tests where rate limiting may cause transient failures.
     pub async fn create_container(
         &self,
@@ -414,6 +414,9 @@ impl TestRunContext {
         properties: azure_data_cosmos::models::ContainerProperties,
         options: Option<azure_data_cosmos::CreateContainerOptions<'_>>,
     ) -> azure_core::Result<ContainerClient> {
+        let mut backoff = Duration::from_millis(100);
+        const MAX_BACKOFF: Duration = Duration::from_secs(10);
+
         loop {
             match db_client.create_container(properties.clone(), options.clone()).await {
                 Ok(response) => {
@@ -421,17 +424,21 @@ impl TestRunContext {
                     return Ok(db_client.container_client(&created.id));
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
-                    println!("Create container got 429 (Too Many Requests). Retrying...");
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                    panic!("{}", 429)
+                    println!("Create container got 429 (Too Many Requests). Retrying after {:?}...", backoff);
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                     // Container already exists, just return a client for it
-                    return Ok(db_client.container_client(&properties.id));
+                    // delete and recreate it
+                    let container_client = db_client.container_client(&properties.id);
+                    container_client.delete(None).await?;
+
+                    // recreate
+                    db_client.create_container(properties.clone(), options.clone()).await?;
                 }
                 Err(e) => {
-                    panic!("Create container failed: {}. Not Retrying...", e);
-                    // return Err(e)
+                    return Err(e)
                 },
             }
         }
@@ -452,30 +459,6 @@ impl TestRunContext {
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);
-        }
-
-        // delete all the containers from shared database
-        // read all containers
-        let shared_db_client = self.shared_db_client();
-        let mut container_pager = shared_db_client.query_containers(
-            Query::from(
-                "SELECT *
-    FROM c",
-            ),
-            None,
-        )?;
-        let mut container_ids = Vec::new();
-        while let Some(container) = container_pager.try_next().await? {
-            container_ids.push(container.id);
-        }
-
-        // delete each container
-        for container_id in container_ids {
-            println!("Deleting left-over container: {}", &container_id);
-            shared_db_client
-                .container_client(&container_id)
-                .delete(None)
-                .await?;
         }
 
         // Now that we have a list of databases created by this test, we delete them.

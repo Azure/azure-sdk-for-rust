@@ -62,7 +62,7 @@ pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
+    TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let properties = ContainerProperties {
                 id: "TheContainer".into(),
@@ -106,7 +106,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
+    TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let properties = ContainerProperties {
                 id: "TheContainer".into(),
