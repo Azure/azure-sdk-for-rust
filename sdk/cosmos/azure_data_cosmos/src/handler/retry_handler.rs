@@ -88,7 +88,7 @@ impl BackOffRetryHandler {
                 self.global_endpoint_manager.clone(),
             ))
         } else {
-            RetryPolicy::Client(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
+            RetryPolicy::Client(ClientRetryPolicy::new(self.global_endpoint_manager.clone(), request.excluded_regions.clone()) )
         }
     }
 

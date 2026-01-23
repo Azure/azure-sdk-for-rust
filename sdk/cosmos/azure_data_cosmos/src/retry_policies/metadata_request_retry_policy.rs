@@ -283,6 +283,7 @@ mod tests {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            vec![],
             pipeline,
         )
     }
@@ -299,6 +300,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
+            vec![],
             vec![],
             pipeline,
         )
@@ -321,6 +323,7 @@ mod tests {
                 regions::WEST_US.into(),
                 regions::NORTH_CENTRAL_US.into(),
             ],
+            vec![],
             pipeline,
         )
     }

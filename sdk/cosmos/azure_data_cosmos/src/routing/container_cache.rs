@@ -188,7 +188,7 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        GlobalEndpointManager::new(endpoint, vec![], pipeline)
+        GlobalEndpointManager::new(endpoint, vec![], vec![], pipeline)
     }
 
     // Helper function to create a test GlobalEndpointManager with preferred locations
@@ -205,6 +205,7 @@ mod tests {
         GlobalEndpointManager::new(
             endpoint,
             vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            vec![],
             pipeline,
         )
     }

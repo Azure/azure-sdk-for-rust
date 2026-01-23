@@ -290,6 +290,7 @@ impl ContainerClient {
             .request_headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
+            .set_excluded_regions(options.excluded_regions)
             .build()?;
 
         self.container_connection
@@ -376,6 +377,7 @@ impl ContainerClient {
             .request_headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
+            .set_excluded_regions(options.excluded_regions)
             .build()?;
 
         self.container_connection
@@ -463,6 +465,7 @@ impl ContainerClient {
             .request_headers(&options)
             .json(&item)
             .partition_key(partition_key.into())
+            .set_excluded_regions(options.excluded_regions)
             .build()?;
 
         self.container_connection
@@ -516,6 +519,7 @@ impl ContainerClient {
         let cosmos_request = CosmosRequest::builder(OperationType::Read, link)
             .partition_key(partition_key.into())
             .request_headers(&options)
+            .set_excluded_regions(options.excluded_regions)
             .build()?;
 
         self.container_connection
@@ -555,6 +559,7 @@ impl ContainerClient {
         let cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
             .request_headers(&options)
+            .set_excluded_regions(options.excluded_regions)
             .build()?;
 
         self.container_connection
@@ -631,6 +636,7 @@ impl ContainerClient {
             .partition_key(partition_key.into())
             .request_headers(&options)
             .json(&patch)
+            .set_excluded_regions(options.excluded_regions)
             .build()?;
 
         self.container_connection

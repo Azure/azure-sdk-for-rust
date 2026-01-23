@@ -36,6 +36,7 @@ pub struct CosmosClientOptions {
     pub application_name: Option<String>,
     pub application_region: Option<String>,
     pub application_preferred_regions: Vec<Cow<'static, str>>,
+    pub excluded_regions: Vec<String>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     /// Used to specify the consistency level for the operation.
     ///
@@ -263,6 +264,11 @@ pub struct ItemOptions<'a> {
     ///
     /// Custom headers will not override headers that are already set by the SDK.
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    /// Regions to be skipped from regional routing preferences. The regions in this list are specified as the names of the Azure Cosmos locations like, 'West US', 'East US' and so on.
+    /// If all preferred regions were excluded, the primary/hub region will be used to route requests.
+    /// If None is provided, client-level excluded regions will be used.
+    /// If an empty vector is provided, no regions will be excluded for this request.
+    pub excluded_regions: Option<Vec<String>>,
 }
 
 impl AsHeaders for ItemOptions<'_> {

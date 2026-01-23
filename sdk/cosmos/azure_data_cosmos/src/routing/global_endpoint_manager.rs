@@ -58,11 +58,13 @@ impl GlobalEndpointManager {
     pub fn new(
         default_endpoint: Url,
         preferred_locations: Vec<Cow<'static, str>>,
+        excluded_regions: Vec<String>,
         pipeline: Pipeline,
     ) -> Self {
         let location_cache = Arc::new(Mutex::new(LocationCache::new(
             default_endpoint.clone(),
             preferred_locations.clone(),
+            excluded_regions.clone(),
         )));
 
         let account_properties_cache = AsyncCache::new(
@@ -197,11 +199,11 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
-    pub fn applicable_endpoints(&self, operation_type: OperationType) -> Vec<Url> {
+    pub fn applicable_endpoints(&self, operation_type: OperationType, excluded_regions: Option<&Vec<String>>) -> Vec<Url> {
         self.location_cache
             .lock()
             .unwrap()
-            .get_applicable_endpoints(operation_type)
+            .get_applicable_endpoints(operation_type, excluded_regions)
     }
 
     /// Marks an endpoint as unavailable for read operations.
@@ -425,6 +427,7 @@ mod tests {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            vec![],
             create_test_pipeline(),
         )
     }
@@ -470,6 +473,7 @@ mod tests {
                 Cow::Borrowed("East US"),
                 Cow::Borrowed("North Europe"),
             ],
+            vec![],
             create_test_pipeline(),
         );
         assert_eq!(manager.preferred_location_count(), 3);
@@ -479,6 +483,7 @@ mod tests {
     fn test_preferred_location_count_empty() {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
+            vec![],
             vec![],
             create_test_pipeline(),
         );
@@ -596,7 +601,18 @@ mod tests {
     #[test]
     fn test_applicable_endpoints() {
         let manager = create_test_manager();
-        let endpoints = manager.applicable_endpoints(OperationType::Read);
+        let endpoints = manager.applicable_endpoints(OperationType::Read, None);
+        assert!(!endpoints.is_empty());
+    }
+
+    #[test]
+    fn test_applicable_excluded_endpoints() {
+        let manager = create_test_manager();
+        // Exclude all regions to test behavior - should still return default endpoint
+        let excluded_regions = vec!["West US".to_string(), "East US".to_string()];
+        let endpoints = manager.applicable_endpoints(OperationType::Read, Some(&excluded_regions));
+        assert!(!endpoints.is_empty());
+        let endpoints = manager.applicable_endpoints(OperationType::Create, Some(&excluded_regions));
         assert!(!endpoints.is_empty());
     }
 

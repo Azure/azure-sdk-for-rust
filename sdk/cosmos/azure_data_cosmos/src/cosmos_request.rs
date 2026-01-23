@@ -61,6 +61,7 @@ pub struct CosmosRequest {
     pub query_string: Option<String>,
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
+    pub excluded_regions: Option<Vec<String>>,
 }
 
 impl CosmosRequest {
@@ -88,6 +89,7 @@ impl CosmosRequest {
             query_string: None,
             continuation: None,
             entity_id: None,
+            excluded_regions: None,
         }
     }
 
@@ -175,6 +177,7 @@ pub struct CosmosRequestBuilder {
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
+    excluded_regions: Option<Vec<String>>,
     // Flags
     is_feed: bool,
     use_gateway_mode: bool,
@@ -201,6 +204,7 @@ impl CosmosRequestBuilder {
             force_name_cache_refresh: false,
             force_partition_key_range_refresh: false,
             force_collection_routing_map_refresh: false,
+            excluded_regions: None,
         }
     }
 
@@ -218,6 +222,14 @@ impl CosmosRequestBuilder {
                 self.headers.insert(name, value);
             }
         }
+        self
+    }
+
+    pub fn set_excluded_regions(mut self, excluded_regions: Option<Vec<String>>) -> Self {
+        // Sets the excluded regions for the given request. If None is provided,
+        // client-level excluded regions will be used. If an empty vector is provided,
+        // no regions will be excluded for this request.
+        self.excluded_regions = excluded_regions;
         self
     }
 
@@ -265,6 +277,7 @@ impl CosmosRequestBuilder {
         req.force_collection_routing_map_refresh = self.force_collection_routing_map_refresh;
         req.continuation = self.continuation;
         req.entity_id = self.entity_id;
+        req.excluded_regions = self.excluded_regions;
 
         Ok(req)
     }

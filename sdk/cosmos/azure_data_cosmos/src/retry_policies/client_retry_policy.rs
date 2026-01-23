@@ -70,6 +70,9 @@ pub struct ClientRetryPolicy {
     /// Context information for routing the next retry attempt to a specific location
     retry_context: Option<RetryContext>,
 
+    /// Regions excluded from routing for the current request
+    excluded_regions: Option<Vec<String>>,
+
     /// Underlying policy for handling resource throttling (429) with exponential backoff
     throttling_retry: ResourceThrottleRetryPolicy,
 }
@@ -89,7 +92,7 @@ impl ClientRetryPolicy {
     ///
     /// # Returns
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
-    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub fn new(global_endpoint_manager: GlobalEndpointManager, excluded_regions: Option<Vec<String>>) -> Self {
         Self {
             global_endpoint_manager: Arc::new(global_endpoint_manager),
             enable_endpoint_discovery: true,
@@ -101,6 +104,7 @@ impl ClientRetryPolicy {
             is_multi_master_write_request: false,
             location_endpoint: None,
             retry_context: None,
+            excluded_regions: excluded_regions,
             throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10),
         }
     }
@@ -127,6 +131,7 @@ impl ClientRetryPolicy {
         // Hence, the outcome of the operation is ignored here.
         _ = self.global_endpoint_manager.refresh_location(false).await;
         self.operation_type = Some(request.operation_type);
+        self.excluded_regions = request.excluded_regions.clone();
         self.can_use_multiple_write_locations = self
             .global_endpoint_manager
             .can_use_multiple_write_locations(request);
@@ -241,7 +246,7 @@ impl ClientRetryPolicy {
         if self.can_use_multiple_write_locations {
             let endpoints = self
                 .global_endpoint_manager
-                .applicable_endpoints(self.operation_type.unwrap());
+                .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
             if self.session_token_retry_count > endpoints.len() as i32 {
                 // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
                 RetryResult::DoNotRetry
@@ -540,6 +545,7 @@ mod tests {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            vec![],
             pipeline,
         )
     }
@@ -556,6 +562,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
+            vec![],
             vec![],
             pipeline,
         )
@@ -578,23 +585,24 @@ mod tests {
                 regions::WEST_US.into(),
                 regions::NORTH_CENTRAL_US.into(),
             ],
+            vec![],
             pipeline,
         )
     }
 
     fn create_test_policy() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager();
-        ClientRetryPolicy::new(manager)
+        ClientRetryPolicy::new(manager, None)
     }
 
     fn create_test_policy_no_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_no_locations();
-        ClientRetryPolicy::new(manager)
+        ClientRetryPolicy::new(manager, None)
     }
 
     fn create_test_policy_with_preferred_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_with_preferred_locations();
-        ClientRetryPolicy::new(manager)
+        ClientRetryPolicy::new(manager, None)
     }
 
     fn create_test_request() -> CosmosRequest {

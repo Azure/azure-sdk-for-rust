@@ -69,7 +69,7 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        GlobalEndpointManager::new(endpoint, vec![], pipeline)
+        GlobalEndpointManager::new(endpoint, vec![], vec![], pipeline)
     }
 
     // Helper function to create a test GatewayPipeline
@@ -156,6 +156,7 @@ mod tests {
         let endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
             vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            vec![],
             pipeline.clone(),
         );
 
