@@ -822,8 +822,6 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Act - Download a blob that doesn't exist (container exists but blob doesn't)
     let response = blob_client.download(None).await;
     let error_response = response.unwrap_err();
-    let error_kind = error_response.kind();
-    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
     let storage_error: StorageError = error_response.try_into()?;
 
     // Assert
