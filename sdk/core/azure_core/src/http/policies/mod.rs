@@ -3,6 +3,7 @@
 
 //! HTTP pipeline policies.
 
+pub mod arm;
 pub mod auth;
 mod client_request_id;
 mod instrumentation;

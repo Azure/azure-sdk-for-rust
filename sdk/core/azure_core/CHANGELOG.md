@@ -4,6 +4,10 @@
 
 ### Features Added
 
+- Added ARM-specific pipeline policies in `azure_core::http::policies::arm` module.
+  - `RPRegistrationPolicy`: Automatically registers unregistered Azure Resource Providers when encountering registration errors.
+  - `RPRegistrationOptions`: Configuration for RP registration behavior (max attempts, polling intervals, etc.).
+
 ### Breaking Changes
 
 ### Bugs Fixed
