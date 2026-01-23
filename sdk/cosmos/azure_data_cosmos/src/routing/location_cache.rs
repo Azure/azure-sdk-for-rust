@@ -482,7 +482,7 @@ impl LocationCache {
         let excluded_regions = if request_excluded_regions.is_none() {
             self.client_excluded_regions.clone()
         } else {
-            request_excluded_regions.cloned().unwrap_or_default()
+            request_excluded_regions.cloned().unwrap()
         };
         effective_preferred_locations.retain(|location| {
             !excluded_regions
