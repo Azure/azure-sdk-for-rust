@@ -164,6 +164,7 @@ cosmos_headers! {
     DOCUMENTDB_SCRIPT_LOG_RESULTS => "x-ms-documentdb-script-log-results",
     // Change feed
     A_IM => "a-im",
+    IF_NONE_MATCH => "if-none-match",
     COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION => "x-ms-cosmos-changefeed-wire-format-version",
     // Dedicated Gateway
     DEDICATEDGATEWAY_MAX_AGE => "x-ms-dedicatedgateway-max-age",
@@ -198,10 +199,6 @@ pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("applicatio
 pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=minimal");
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
-
-pub const MAXIMUM_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
-pub const A_IM_TYPE: HeaderName = HeaderName::from_static("a-im");
-pub const IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
