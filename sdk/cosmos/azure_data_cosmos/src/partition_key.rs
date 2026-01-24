@@ -497,7 +497,7 @@ mod tests {
     pub fn string_ownership() {
         // Validates that owned Strings and Cow types are correctly converted.
         // Existing tests cover &str, but explicitly testing String allocation is required.
-        
+
         let owned = String::from("owned-id");
         assert_eq!(key_to_string(owned), r#"["owned-id"]"#);
 
@@ -506,5 +506,5 @@ mod tests {
 
         let cow_owned: Cow<'static, str> = Cow::Owned(String::from("cow-owned"));
         assert_eq!(key_to_string(cow_owned), r#"["cow-owned"]"#);
-    } 
+    }
 }
