@@ -1,24 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::{conditional_send::ConditionalSend, cosmos_request::CosmosRequest};
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
-
-// Helper trait to conditionally require Send on non-WASM targets
-#[cfg(not(target_arch = "wasm32"))]
-pub trait ConditionalSend: Send {}
-#[cfg(not(target_arch = "wasm32"))]
-impl<T: Send> ConditionalSend for T {}
-
-#[cfg(target_arch = "wasm32")]
-pub trait ConditionalSend {}
-#[cfg(target_arch = "wasm32")]
-impl<T> ConditionalSend for T {}
 
 /// Trait defining the interface for retry handlers in Cosmos DB operations
 ///
