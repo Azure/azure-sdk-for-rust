@@ -6,7 +6,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use super::{ArrowField, BlobTag, Block, ContainerItem, CorsRule, FilterBlobItem};
+use super::{crate_models::ArrowField, BlobTag, Block, ContainerItem, CorsRule, FilterBlobItem};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Deserialize, Serialize)]
@@ -146,18 +146,18 @@ impl CorsCorsRule {
 #[serde(rename = "Schema")]
 pub(crate) struct SchemaField {
     #[serde(default)]
-    Field: Option<Vec<ArrowField>>,
+    Field: Vec<ArrowField>,
 }
 
 impl SchemaField {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<ArrowField>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<ArrowField>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(SchemaField::deserialize(deserializer)?.Field)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<ArrowField>>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<ArrowField>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
