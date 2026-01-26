@@ -28,7 +28,7 @@ uuid.workspace = true
 azure_identity.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 clap.workspace = true
-reqwest.workspace = true
+reqwest = { workspace = true, features = ["http2"] }
 time.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
