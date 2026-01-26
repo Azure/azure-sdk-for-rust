@@ -8,6 +8,9 @@ This file contains coding guidelines and architectural patterns specific to the 
 
 ## Core Principles
 
+### Design guidelines
+- Follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html) as the primary reference for API design, error handling, async patterns, and module organization unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.inctsructions.md` files.
+
 ### Data-Oriented Programming (DOP)
 
 Follow the **Data-Oriented Programming in Rust** principles from [https://analogrelay.github.io/dop-in-rust](https://analogrelay.github.io/dop-in-rust):
