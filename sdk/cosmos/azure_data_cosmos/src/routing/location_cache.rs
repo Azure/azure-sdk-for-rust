@@ -638,7 +638,12 @@ mod tests {
 
         assert_eq!(
             cache.locations_info.preferred_locations,
-            vec!["Location 1".to_string(), "Location 2".to_string()]
+            vec![
+                "Location 1".to_string(),
+                "Location 2".to_string(),
+                "Location 3".to_string(),
+                "Location 4".to_string()
+            ]
         );
 
         // check available write locations
@@ -757,7 +762,12 @@ mod tests {
 
         assert_eq!(
             cache.locations_info.preferred_locations,
-            vec![preferred_locations[0].clone()]
+            vec![
+                preferred_locations[0].clone(),
+                Cow::from("Location 2".to_string()),
+                Cow::from("Location 3".to_string()),
+                Cow::from("Location 4".to_string())
+            ]
         );
 
         assert_eq!(
@@ -1134,10 +1144,7 @@ mod tests {
     fn resolve_service_endpoint_effective_preferred_regions() {
         // effective preferred regions should be ordered as preferred regions + remaining regions from account - excluded regions
         // normal region order is Location 1, Location 2, Location 3, Location 4
-        let pref_regions: Vec<String> = vec![
-            "Location 4".to_string(),
-            "Location 3".to_string(),
-        ];
+        let pref_regions: Vec<String> = vec!["Location 4".to_string(), "Location 3".to_string()];
         // create test cache
         let cache = create_custom_test_location_cache(Some(pref_regions), vec![]);
 
@@ -1156,7 +1163,10 @@ mod tests {
         );
 
         let cosmos_request = builder
-            .set_excluded_regions(Some(vec!["Location 4".to_string(), "Location 3".to_string()]))
+            .set_excluded_regions(Some(vec![
+                "Location 4".to_string(),
+                "Location 3".to_string(),
+            ]))
             .build()
             .ok()
             .unwrap();
