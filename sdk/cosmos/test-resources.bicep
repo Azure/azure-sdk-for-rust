@@ -40,7 +40,7 @@ var multiRegionConfiguration = [
     isZoneRedundant: false
   }
   {
-    locationName: 'West Central US'
+    locationName: 'Central US'
     provisioningState: 'Succeeded'
     failoverPriority: 1
     isZoneRedundant: false
