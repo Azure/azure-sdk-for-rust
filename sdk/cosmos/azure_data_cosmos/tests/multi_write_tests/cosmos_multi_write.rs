@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 #![cfg(feature = "key_auth")]
 
-// Use the shared test framework declared in `tests/multi_write/mod.rs`.
 use super::framework;
 
 use framework::TestOptions;

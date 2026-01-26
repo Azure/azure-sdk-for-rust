@@ -115,14 +115,15 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             assert_eq!("", body);
 
             // Try to read the item again, expecting a 404
-            // infinite loop to avoid test flakes due to eventual consistency
+            // loop with backoff to avoid test flakes due to eventual consistency
             loop {
                 match container_client
                     .read_item::<TestItem>(&pk, &item_id, None)
                     .await
                 {
                     Ok(_) => {
-                        println!("expected a 404 error when reading the deleted item");
+                        println!("expected a 404 error when reading the deleted item, retrying...");
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                     }
                     Err(err) => {
                         assert_eq!(
@@ -374,14 +375,15 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                 .delete_item(PartitionKey::NULL, &item_id, None)
                 .await?;
 
-            // infinite loop to avoid test flakes due to eventual consistency
+            // loop with backoff to avoid test flakes due to eventual consistency
             loop {
                 match container_client
                     .read_item::<()>(PartitionKey::NULL, &item_id, None)
                     .await
                 {
                     Ok(_) => {
-                        println!("expected a 404 error when reading the deleted item");
+                        println!("expected a 404 error when reading the deleted item, retrying...");
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                     }
                     Err(err) => {
                         assert_eq!(
