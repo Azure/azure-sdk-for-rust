@@ -181,9 +181,9 @@ impl TestClient {
     }
 
     /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
-    pub async fn run<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run<F>(mut test: F) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
+        F: AsyncFnMut(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
         Self::run_with_options(test, TestOptions::new()).await
     }
@@ -199,7 +199,7 @@ impl TestClient {
         options: TestOptions,
     ) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
+        F: AsyncFnMut(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
         let test_mode = if let Ok(s) = std::env::var(TEST_MODE_ENV_VAR) {
             CosmosTestMode::from_str(&s).map_err(|_| {
@@ -232,9 +232,40 @@ impl TestClient {
         if let Some(account) = test_client.cosmos_client.clone() {
             let run = TestRunContext::new(account);
 
-            // Apply timeout
+            // Apply timeout around entire test including retries on 429s
             let timeout = options.timeout.unwrap_or(DEFAULT_TEST_TIMEOUT);
-            let result = tokio::time::timeout(timeout, test(&run)).await;
+
+            let result = tokio::time::timeout(timeout, async {
+                let mut backoff = Duration::from_millis(500);
+                const MAX_BACKOFF: Duration = Duration::from_secs(30);
+
+                loop {
+                    let test_result = test(&run).await;
+
+                    match &test_result {
+                        Err(e) => {
+                            // Check if the error is a 429
+                            let is_429 = e.to_string().contains("429")
+                                || e.to_string().contains("TooManyRequests")
+                                || e.to_string().contains("Too Many Requests");
+
+                            if is_429 {
+                                println!(
+                                    "Test got 429 (Too Many Requests). Retrying after {:?}...",
+                                    backoff
+                                );
+                                tokio::time::sleep(backoff).await;
+                                backoff = (backoff * 2).min(MAX_BACKOFF);
+                                continue;
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    break test_result;
+                }
+            })
+            .await;
 
             // Always cleanup, even if test timed out
             run.cleanup().await?;
@@ -253,11 +284,11 @@ impl TestClient {
     }
 
     pub async fn run_with_unique_db<F>(
-        test: F,
+        mut test: F,
         options: Option<TestOptions>,
     ) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
+        F: AsyncFnMut(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
         Self::run_with_options(
             async |run_context| {
@@ -270,11 +301,11 @@ impl TestClient {
     }
 
     pub async fn run_with_shared_db<F>(
-        test: F,
+        mut test: F,
         options: Option<TestOptions>,
     ) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
+        F: AsyncFnMut(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
         Self::run_with_options(
             async |run_context| test(run_context, &run_context.shared_db_client()).await,

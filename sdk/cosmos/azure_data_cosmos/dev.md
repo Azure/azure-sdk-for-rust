@@ -5,9 +5,10 @@
    * [Azure ARM](https://learn.microsoft.com/azure/cosmos-db/quick-create-template).
 1. Set the `DATABASE_NAME` environment variable to the name of the database you created.
 1. Set the `RUSTFLAGS` environment variable to `"--cfg=test_category=\"emulator\" --cfg=test_category=\"multi_write\""`
-2. Set the `AZURE_COSMOS_CONNECTION_STRING` environment variable to your Cosmos DB connection string.
+1. Set the `RUST_TEST_THREADS` environment variable to `1` to ensure tests run serially.
+1. Set the `AZURE_COSMOS_CONNECTION_STRING` environment variable to your Cosmos DB connection string.
 1. Run the tests using the following command:
-`cargo +nightly test --lib --bins --tests --examples --package azure_data_cosmos --all-features --no-fail-fast -- --format json -Z unstable-options`
+`cargo +nightly test --lib --bins --tests --examples --package azure_data_cosmos --all-features --no-fail-fast -- --format json -Z unstable-options --nocapture`
 
 ### Useful commands to run before submitting a PR
 * `cargo fmt --all`: This will format the code according to Rust's standard formatting guidelines.
