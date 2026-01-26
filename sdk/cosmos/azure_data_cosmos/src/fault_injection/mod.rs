@@ -2,9 +2,6 @@
 // Licensed under the MIT License.
 
 #[cfg(feature = "fault_injection")]
-mod engine;
-
-#[cfg(feature = "fault_injection")]
 mod fault_injection_utils;
 
 #[cfg(feature = "fault_injection")]

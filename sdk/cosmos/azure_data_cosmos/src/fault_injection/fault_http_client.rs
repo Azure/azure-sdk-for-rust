@@ -139,9 +139,6 @@ impl FaultClient {
 
             // Generate the appropriate error based on error type
             let (status_code, _sub_status, message) = match server_error.error_type {
-                FaultInjectionServerErrorType::Gone => {
-                    (StatusCode::Gone, Some(0), "Gone - Injected fault")
-                }
                 FaultInjectionServerErrorType::RetryWith => {
                     (StatusCode::from(449), None, "Retry With - Injected fault")
                 }
@@ -157,12 +154,6 @@ impl FaultClient {
                 FaultInjectionServerErrorType::Timeout => {
                     (StatusCode::RequestTimeout, None, "Request Timeout - Injected fault")
                 }
-                FaultInjectionServerErrorType::PartitionIsMigrating => {
-                    (StatusCode::Gone, Some(1008), "Partition Is Migrating - Injected fault")
-                }
-                FaultInjectionServerErrorType::PartitionIsSplitting => {
-                    (StatusCode::Gone, Some(1007), "Partition Is Splitting - Injected fault")
-                }
                 FaultInjectionServerErrorType::ResponseDelay => {
                     // For response delay, we just add a delay but don't return an error
                     // The delay was already applied above
@@ -176,23 +167,15 @@ impl FaultClient {
                 FaultInjectionServerErrorType::ServiceUnavailable => {
                     (StatusCode::ServiceUnavailable, None, "Service Unavailable - Injected fault")
                 }
-                FaultInjectionServerErrorType::StaledAddressesServerGone => {
-                    (StatusCode::Gone, Some(0), "Staled Addresses Server Gone - Injected fault")
-                }
-                FaultInjectionServerErrorType::NameCacheIsStale => {
-                    (StatusCode::Gone, Some(1000), "Name Cache Is Stale - Injected fault")
-                }
                 FaultInjectionServerErrorType::PartitionIsGone => {
                     (StatusCode::Gone, Some(1002), "Partition Is Gone - Injected fault")
                 }
-                FaultInjectionServerErrorType::LeaseNotFound => {
-                    (StatusCode::Gone, Some(1022), "Lease Not Found - Injected fault")
-                }
             };
 
-            let error = azure_core::Error::message(ErrorKind::HttpResponse {
+            let error = azure_core::Error::with_message(ErrorKind::HttpResponse {
                 status: status_code,
-                error_code: None,
+                error_code: Some("Injected Fault".to_string()),
+                raw_response: None,
             }, message);
 
             return Some(Err(error));

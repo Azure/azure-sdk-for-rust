@@ -2,7 +2,7 @@ use crate::options::CosmosClientOptions;
 use std::time::Duration;
 
 /// A fault injection rule that defines when and how to inject faults.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FaultInjectionRule {
     /// The condition under which to inject the fault.
     pub condition: FaultInjectionCondition,
@@ -149,7 +149,7 @@ impl FaultInjectionRuleBuilder {
 }
 
 /// Defines the condition under which a fault injection rule should be applied.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct FaultInjectionCondition {
     /// The endpoints to which the fault injection applies.
     /// Either the region or the endpoints must be specified.
@@ -220,8 +220,6 @@ impl From<FaultOperationType> for &'static str {
 /// Represents different server error types that can be injected for fault testing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaultInjectionServerErrorType {
-    /// 410 from server. Only applicable for direct connection type.
-    Gone,
     /// 449 from server.
     RetryWith,
     /// 500 from server.
@@ -232,28 +230,18 @@ pub enum FaultInjectionServerErrorType {
     ReadSessionNotAvailable,
     /// 408 from server.
     Timeout,
-    /// 410-1008 from server.
-    PartitionIsMigrating,
-    /// 410-1007 from server.
-    PartitionIsSplitting,
     /// Response delay, when it is over request timeout, can simulate transit timeout.
     ResponseDelay,
     /// Simulate high channel acquisition, when it is over connection timeout, can simulate connectionTimeoutException.
     ConnectionDelay,
     /// Simulate service unavailable (503).
     ServiceUnavailable,
-    /// Simulate 410-0 due to staled addresses. The exception will only be cleared if a forceRefresh address refresh happened.
-    StaledAddressesServerGone,
-    /// Simulate 410/1000, container recreate scenario.
-    NameCacheIsStale,
     /// 410-1002 from server.
     PartitionIsGone,
-    /// 410-1022 from server.
-    LeaseNotFound,
 }
 
 /// Trait for fault injection results.
-pub trait FaultInjectionResult: Send + Sync {
+pub trait FaultInjectionResult: Send + Sync + std::fmt::Debug {
     /// Clones this result into a boxed trait object.
     fn clone_box(&self) -> Box<dyn FaultInjectionResult>;
 
@@ -268,7 +256,7 @@ impl Clone for Box<dyn FaultInjectionResult> {
 }
 
 /// Represents a server error to be injected.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FaultInjectionServerError {
     /// The type of server error to inject.
     pub error_type: FaultInjectionServerErrorType,
