@@ -6,10 +6,13 @@ description = "In all Cargo.toml files in the repo, for all dependencies that ha
 
 [dependencies]
 regex = "1.5"
+semver = "1.0"
 toml_edit = "0.22"
 ---
 
 use regex::Regex;
+use semver::Version;
+use std::collections::HashMap;
 use std::io::Write;
 use std::{env, error::Error, fs, path::PathBuf};
 use toml_edit::{value, DocumentMut, Item, Table};
@@ -96,17 +99,49 @@ fn find_cargo_toml_files(dir: &PathBuf, exclude_dirs: &Vec<PathBuf>, toml_paths:
 }
 
 fn get_package_versions(toml_files: &Vec<TomlInfo>) -> Vec<(String, String, bool)> {
-    let mut package_versions = Vec::new();
+    // Use a HashMap to deduplicate package versions.
+    // When there are multiple Cargo.toml files with the same package name but different versions
+    // (e.g., test fixtures, examples, or stale files), we need to pick the correct version.
+    let mut package_map: HashMap<String, (String, bool)> = HashMap::new();
 
     for toml_file in toml_files {
         if toml_file.package_name.is_none() || toml_file.package_version.is_none() {
             continue;
         }
 
-        package_versions.push((toml_file.package_name.clone().unwrap(), toml_file.package_version.clone().unwrap(), toml_file.is_publish_disabled));
+        let name = toml_file.package_name.clone().unwrap();
+        let version = toml_file.package_version.clone().unwrap();
+        let is_publish_disabled = toml_file.is_publish_disabled;
+
+        // Determine if we should use this version
+        let should_use = match package_map.get(&name) {
+            None => true, // First occurrence, always use it
+            Some((existing_version, existing_publish_disabled)) => {
+                // Prefer publishable packages over non-publishable ones
+                if *existing_publish_disabled && !is_publish_disabled {
+                    true
+                } else if !*existing_publish_disabled && is_publish_disabled {
+                    false
+                } else {
+                    // Both have the same publish status, prefer the higher version
+                    match (Version::parse(&version), Version::parse(existing_version)) {
+                        (Ok(new_ver), Ok(existing_ver)) => new_ver > existing_ver,
+                        _ => false, // If parsing fails, keep existing
+                    }
+                }
+            }
+        };
+
+        if should_use {
+            package_map.insert(name, (version, is_publish_disabled));
+        }
     }
 
-    package_versions
+    // Convert HashMap back to Vec for compatibility with existing code
+    package_map
+        .into_iter()
+        .map(|(name, (version, is_publish_disabled))| (name, version, is_publish_disabled))
+        .collect()
 }
 
 fn update_package_versions(toml: &mut Table, package_versions: &Vec<(String, String, bool)>, add: bool) {
