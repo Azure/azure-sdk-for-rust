@@ -812,10 +812,7 @@ mod tests {
         assert_eq!(options.is_http2_allowed, false);
         // gateway20 is set to true but HTTP/2 is false, so it should be false
         assert_eq!(options.is_gateway20_allowed, false);
-        assert_eq!(
-            options.emulator_server_cert_validation_disabled,
-            true
-        );
+        assert_eq!(options.emulator_server_cert_validation_disabled, true);
     }
 
     #[test]
