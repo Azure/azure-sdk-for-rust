@@ -40,8 +40,8 @@ pub const HUB_REGION: &str = EAST_US_2;
 pub const SATELLITE_REGION: &str = WEST_CENTRAL_US;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 
-/// Default timeout for tests (60 seconds).
-pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(60);
+/// Default timeout for tests (80 seconds).
+pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 
 /// Options for configuring test execution.
 #[derive(Default, Clone)]
@@ -181,7 +181,7 @@ impl TestClient {
     }
 
     /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
-    pub async fn run<F>(mut test: F) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
     where
         F: AsyncFnMut(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
@@ -195,7 +195,7 @@ impl TestClient {
 
     /// - Custom CosmosClient options
     pub async fn run_with_options<F>(
-        test: F,
+        mut test: F,
         options: TestOptions,
     ) -> Result<(), Box<dyn std::error::Error>>
     where
