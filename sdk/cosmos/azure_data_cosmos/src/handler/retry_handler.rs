@@ -86,7 +86,6 @@ impl BackOffRetryHandler {
         if request.resource_type.is_meta_data() {
             RetryPolicy::Metadata(MetadataRequestRetryPolicy::new(
                 self.global_endpoint_manager.clone(),
-                request.excluded_regions.clone(),
             ))
         } else {
             RetryPolicy::Client(ClientRetryPolicy::new(

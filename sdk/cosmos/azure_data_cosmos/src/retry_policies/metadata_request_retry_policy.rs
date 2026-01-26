@@ -30,8 +30,6 @@ pub struct MetadataRequestRetryPolicy {
 
     /// An integer capturing the current retry count on unavailable endpoint.
     unavailable_endpoint_retry_count: i32,
-    /// Regions to be skipped from regional routing preferences. The regions in this list are specified as the names of the Azure Cosmos locations like, 'West US', 'East US' and so on.
-    excluded_regions: Option<Vec<String>>,
 }
 
 /// A helper struct containing the required attributes for metadata retry context.
@@ -60,10 +58,7 @@ impl MetadataRequestRetryPolicy {
     /// - Maximum unavailable endpoint retries based on preferred location count
     /// - Underlying throttling retry policy for 429 responses
     /// - Initial retry count set to zero
-    pub fn new(
-        global_endpoint_manager: GlobalEndpointManager,
-        excluded_regions: Option<Vec<String>>,
-    ) -> Self {
+    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
         Self {
             global_endpoint_manager: Arc::from(global_endpoint_manager.clone()),
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
@@ -73,7 +68,6 @@ impl MetadataRequestRetryPolicy {
             ),
             retry_context: None,
             unavailable_endpoint_retry_count: 0,
-            excluded_regions,
         }
     }
 
@@ -336,17 +330,17 @@ mod tests {
 
     fn create_test_policy() -> MetadataRequestRetryPolicy {
         let manager = create_test_endpoint_manager();
-        MetadataRequestRetryPolicy::new(manager, None)
+        MetadataRequestRetryPolicy::new(manager)
     }
 
     fn create_test_policy_no_locations() -> MetadataRequestRetryPolicy {
         let manager = create_test_endpoint_manager_no_locations();
-        MetadataRequestRetryPolicy::new(manager, None)
+        MetadataRequestRetryPolicy::new(manager)
     }
 
     fn create_test_policy_with_preferred_locations() -> MetadataRequestRetryPolicy {
         let manager = create_test_endpoint_manager_with_preferred_locations();
-        MetadataRequestRetryPolicy::new(manager, None)
+        MetadataRequestRetryPolicy::new(manager)
     }
 
     fn create_test_request() -> CosmosRequest {
