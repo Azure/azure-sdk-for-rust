@@ -292,7 +292,7 @@ fn parse_optional_duration_millis_from_env(
     builder_value: Option<Duration>,
     env_var_name: &str,
     min_millis: u64,
-    max_millis: u64
+    max_millis: u64,
 ) -> azure_core::Result<Option<Duration>> {
     match builder_value {
         Some(timeout) => {
@@ -760,10 +760,7 @@ mod tests {
         );
         assert_eq!(options.is_http2_allowed, true);
         assert_eq!(options.is_gateway20_allowed, false);
-        assert_eq!(
-            options.emulator_server_cert_validation_disabled,
-            false
-        );
+        assert_eq!(options.emulator_server_cert_validation_disabled, false);
         assert_eq!(options.idle_connection_timeout, None);
         assert_eq!(options.local_address, None);
         // Default is 1_000 when HTTP/2 is allowed (which is true by default)
