@@ -39,7 +39,7 @@ azure_core_test = { workspace = true, features = [
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
 futures.workspace = true
-opentelemetry-stdout = { version = "0.30" }
+opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true
 rand.workspace = true
 tokio = { workspace = true, features = ["macros"] }
