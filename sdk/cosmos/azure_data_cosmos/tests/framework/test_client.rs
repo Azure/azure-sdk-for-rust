@@ -14,8 +14,8 @@ use azure_data_cosmos::{
 };
 use futures::TryStreamExt;
 use reqwest::ClientBuilder;
-use std::borrow::Cow;
-use std::convert::Into;
+
+
 use std::time::Duration;
 use std::{
     str::FromStr,
@@ -193,7 +193,7 @@ impl TestClient {
     ///
     /// This method supports:
     /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
-    /// - Consistency level checking (skips test if current consistency level is unsupported)
+
     /// - Custom CosmosClient options
     pub async fn run_with_options<F>(
         test: F,
@@ -455,15 +455,16 @@ impl TestRunContext {
                     backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
-                    // Container already exists, just return a client for it
-                    // delete and recreate it
+                    // Container already exists, delete and recreate it, then return a client
                     let container_client = db_client.container_client(&properties.id);
                     container_client.delete(None).await?;
 
                     // recreate
-                    db_client
+                    let response = db_client
                         .create_container(properties.clone(), options.clone())
                         .await?;
+                    let created = response.into_model()?;
+                    return Ok(db_client.container_client(&created.id));
                 }
                 Err(e) => return Err(e),
             }
