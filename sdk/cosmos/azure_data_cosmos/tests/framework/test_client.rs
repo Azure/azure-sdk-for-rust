@@ -15,7 +15,6 @@ use azure_data_cosmos::{
 use futures::TryStreamExt;
 use reqwest::ClientBuilder;
 
-
 use std::time::Duration;
 use std::{
     str::FromStr,
