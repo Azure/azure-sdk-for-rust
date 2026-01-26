@@ -27,7 +27,7 @@
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; }"
       },
       "Session MultiWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; testCategory = 'multi_write' }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; testCategory = 'multi_write'; enableMultipleRegions= $true }"
       }
     }
   },
