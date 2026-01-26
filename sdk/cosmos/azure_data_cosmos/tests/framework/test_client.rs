@@ -7,7 +7,7 @@
 
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::regions::{WEST_US_3, EAST_US_2};
+use azure_data_cosmos::regions::{EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, PartitionKey,
     Query,
