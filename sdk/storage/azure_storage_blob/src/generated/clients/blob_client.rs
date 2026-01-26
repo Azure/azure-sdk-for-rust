@@ -739,6 +739,18 @@ impl BlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
+        if let Some(access_tier_if_modified_since) = options.access_tier_if_modified_since {
+            request.insert_header(
+                "x-ms-access-tier-if-modified-since",
+                to_rfc7231(&access_tier_if_modified_since),
+            );
+        }
+        if let Some(access_tier_if_unmodified_since) = options.access_tier_if_unmodified_since {
+            request.insert_header(
+                "x-ms-access-tier-if-unmodified-since",
+                to_rfc7231(&access_tier_if_unmodified_since),
+            );
+        }
         if let Some(delete_snapshots) = options.delete_snapshots.as_ref() {
             request.insert_header("x-ms-delete-snapshots", delete_snapshots.to_string());
         }
@@ -1211,6 +1223,24 @@ impl BlobClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
+        if let Some(if_match) = options.if_match.as_ref() {
+            request.insert_header("x-ms-blob-if-match", if_match);
+        }
+        if let Some(if_modified_since) = options.if_modified_since {
+            request.insert_header(
+                "x-ms-blob-if-modified-since",
+                to_rfc7231(&if_modified_since),
+            );
+        }
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
+            request.insert_header("x-ms-blob-if-none-match", if_none_match);
+        }
+        if let Some(if_unmodified_since) = options.if_unmodified_since {
+            request.insert_header(
+                "x-ms-blob-if-unmodified-since",
+                to_rfc7231(&if_unmodified_since),
+            );
+        }
         if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -1768,6 +1798,24 @@ impl BlobClient {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/xml");
+        if let Some(if_match) = options.if_match.as_ref() {
+            request.insert_header("x-ms-blob-if-match", if_match);
+        }
+        if let Some(if_modified_since) = options.if_modified_since {
+            request.insert_header(
+                "x-ms-blob-if-modified-since",
+                to_rfc7231(&if_modified_since),
+            );
+        }
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
+            request.insert_header("x-ms-blob-if-none-match", if_none_match);
+        }
+        if let Some(if_unmodified_since) = options.if_unmodified_since {
+            request.insert_header(
+                "x-ms-blob-if-unmodified-since",
+                to_rfc7231(&if_unmodified_since),
+            );
+        }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
             request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
@@ -2043,7 +2091,7 @@ impl Default for BlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-11-05"),
+            version: String::from("2026-04-06"),
         }
     }
 }

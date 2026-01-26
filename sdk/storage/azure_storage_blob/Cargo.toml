@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_blob"
-version = "0.8.0"
+version = "0.9.0"
 description = "Microsoft Azure Blob Storage client library for Rust"
 readme = "README.md"
 authors.workspace = true

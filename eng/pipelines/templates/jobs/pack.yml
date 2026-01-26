@@ -49,7 +49,8 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: stable
+      # 1.93 just came out and bumped the doc version to v57, which cargo-semver-checks does not yet support.
+      Toolchain: '1.92'
 
   - ${{ if eq(parameters.TestPipeline, 'true') }}:
     - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml

@@ -460,14 +460,23 @@ pub enum SkuName {
     /// The premium LRS SKU.
     PremiumLrs,
 
+    /// The premium ZRS SKU.
+    PremiumZrs,
+
     /// The standard GRS SKU.
     StandardGrs,
+
+    /// The standard GZRS SKU.
+    StandardGzrs,
 
     /// The standard LRS SKU.
     StandardLrs,
 
     /// The standard RAGRS SKU.
     StandardRagrs,
+
+    /// The standard RAGZRS SKU.
+    StandardRagzrs,
 
     /// The standard ZRS SKU.
     StandardZrs,

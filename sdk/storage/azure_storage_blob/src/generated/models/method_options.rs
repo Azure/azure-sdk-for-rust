@@ -148,6 +148,16 @@ pub struct AppendBlobClientAppendBlockFromUrlOptions<'a> {
     /// Specify the md5 calculated for the range of bytes that must be read from the copy source.
     pub source_content_md5: Option<Vec<u8>>,
 
+    /// The algorithm used to produce the source encryption key hash. Currently, the only accepted value is "AES256". Must be
+    /// provided if the x-ms-source-encryption-key is provided.
+    pub source_encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Optional. Specifies the source encryption key to use to encrypt the source data provided in the request.
+    pub source_encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided source encryption key. Must be provided if the x-ms-source-encryption-key header is provided.
+    pub source_encryption_key_sha256: Option<String>,
+
     /// Specify an ETag value to operate only on blobs with a matching value.
     pub source_if_match: Option<String>,
 
@@ -507,6 +517,12 @@ pub struct BlobClientCreateSnapshotOptions<'a> {
 /// Options to be passed to `BlobClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientDeleteOptions<'a> {
+    /// Specify this header value to operate only on a blob if the access-tier has been modified since the specified date/time.
+    pub access_tier_if_modified_since: Option<OffsetDateTime>,
+
+    /// Specify this header value to operate only on a blob if the access-tier has not been modified since the specified date/time.
+    pub access_tier_if_unmodified_since: Option<OffsetDateTime>,
+
     /// Optional. Only possible value is 'permanent', which specifies to permanently delete a blob if blob soft delete is enabled.
     pub blob_delete_type: Option<BlobDeleteType>,
 
@@ -691,8 +707,20 @@ pub struct BlobClientGetPropertiesOptions<'a> {
 /// Options to be passed to `BlobClient::get_tags()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientGetTagsOptions<'a> {
+    /// Specify an ETag value to operate only on blobs with a matching value.
+    pub if_match: Option<String>,
+
+    /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// Specify an ETag value to operate only on blobs without a matching value.
+    pub if_none_match: Option<String>,
+
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
+
+    /// Specify this header value to operate only on a blob if it has not been modified since the specified date/time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
 
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
@@ -916,8 +944,20 @@ pub struct BlobClientSetPropertiesOptions<'a> {
 /// Options to be passed to `BlobClient::set_tags()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetTagsOptions<'a> {
+    /// Specify an ETag value to operate only on blobs with a matching value.
+    pub if_match: Option<String>,
+
+    /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// Specify an ETag value to operate only on blobs without a matching value.
+    pub if_none_match: Option<String>,
+
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
+
+    /// Specify this header value to operate only on a blob if it has not been modified since the specified date/time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
 
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
@@ -1228,6 +1268,10 @@ pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
 
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; For recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub start_from: Option<String>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
 }
@@ -1244,6 +1288,7 @@ impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            start_from: self.start_from,
             timeout: self.timeout,
         }
     }
@@ -1271,6 +1316,10 @@ pub struct BlobContainerClientListBlobHierarchySegmentOptions<'a> {
     /// Filters the results to return only containers whose name begins with the specified prefix.
     pub prefix: Option<String>,
 
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; For recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub start_from: Option<String>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
 }
@@ -1287,6 +1336,7 @@ impl BlobContainerClientListBlobHierarchySegmentOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            start_from: self.start_from,
             timeout: self.timeout,
         }
     }
@@ -1747,6 +1797,16 @@ pub struct BlockBlobClientStageBlockFromUrlOptions<'a> {
     /// Specify the md5 calculated for the range of bytes that must be read from the copy source.
     pub source_content_md5: Option<Vec<u8>>,
 
+    /// The algorithm used to produce the source encryption key hash. Currently, the only accepted value is "AES256". Must be
+    /// provided if the x-ms-source-encryption-key is provided.
+    pub source_encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Optional. Specifies the source encryption key to use to encrypt the source data provided in the request.
+    pub source_encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided source encryption key. Must be provided if the x-ms-source-encryption-key header is provided.
+    pub source_encryption_key_sha256: Option<String>,
+
     /// Specify an ETag value to operate only on blobs with a matching value.
     pub source_if_match: Option<String>,
 
@@ -1950,6 +2010,16 @@ pub struct BlockBlobClientUploadBlobFromUrlOptions<'a> {
 
     /// Specify the md5 calculated for the range of bytes that must be read from the copy source.
     pub source_content_md5: Option<Vec<u8>>,
+
+    /// The algorithm used to produce the source encryption key hash. Currently, the only accepted value is "AES256". Must be
+    /// provided if the x-ms-source-encryption-key is provided.
+    pub source_encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Optional. Specifies the source encryption key to use to encrypt the source data provided in the request.
+    pub source_encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided source encryption key. Must be provided if the x-ms-source-encryption-key header is provided.
+    pub source_encryption_key_sha256: Option<String>,
 
     /// Specify an ETag value to operate only on blobs with a matching value.
     pub source_if_match: Option<String>,
@@ -2452,6 +2522,16 @@ pub struct PageBlobClientUploadPagesFromUrlOptions<'a> {
 
     /// Specify the md5 calculated for the range of bytes that must be read from the copy source.
     pub source_content_md5: Option<Vec<u8>>,
+
+    /// The algorithm used to produce the source encryption key hash. Currently, the only accepted value is "AES256". Must be
+    /// provided if the x-ms-source-encryption-key is provided.
+    pub source_encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Optional. Specifies the source encryption key to use to encrypt the source data provided in the request.
+    pub source_encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided source encryption key. Must be provided if the x-ms-source-encryption-key header is provided.
+    pub source_encryption_key_sha256: Option<String>,
 
     /// Specify an ETag value to operate only on blobs with a matching value.
     pub source_if_match: Option<String>,
