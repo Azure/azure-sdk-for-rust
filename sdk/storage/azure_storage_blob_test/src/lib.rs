@@ -207,7 +207,7 @@ impl ClientOptionsExt for BlobClientOptions {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 pub trait AsyncReadTestExt {
     async fn read_into_spare_capacity(
         &mut self,
@@ -215,7 +215,7 @@ pub trait AsyncReadTestExt {
     ) -> futures::io::Result<usize>;
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl<Stream: AsyncRead + Unpin + Send> AsyncReadTestExt for Stream {
     async fn read_into_spare_capacity(
         &mut self,
@@ -240,12 +240,12 @@ impl<Stream: AsyncRead + Unpin + Send> AsyncReadTestExt for Stream {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 pub trait BodyTestExt {
     async fn collect_bytes(&mut self) -> azure_core::Result<Bytes>;
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl BodyTestExt for Body {
     async fn collect_bytes(&mut self) -> azure_core::Result<Bytes> {
         match self {
@@ -364,7 +364,7 @@ impl Policy for TestPolicy {
 
 impl std::fmt::Debug for TestPolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("AssertionPolicy")
+        f.debug_struct(std::any::type_name::<TestPolicy>())
             .field("check_request_counter", &self.request_scope_counter)
             .field("check_response_counter", &self.response_scope_counter)
             .finish()
