@@ -11,6 +11,10 @@ trigger:
     - sdk/cosmos/
 
 parameters:
+- name: RunLiveTests
+  displayName: Run live tests
+  type: boolean
+  default: false
 - name: release_azure_data_cosmos
   displayName: azure_data_cosmos
   type: boolean
@@ -20,6 +24,12 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: cosmos
+    RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
     Artifacts:
     - name: azure_data_cosmos
       releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
+    LiveTestMatrixConfigs:
+      - Name: Cosmos_live_test
+        Path: sdk/cosmos/live-platform-matrix.json
+        Selection: all
+        GenerateVMJobs: true

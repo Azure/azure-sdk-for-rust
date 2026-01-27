@@ -41,6 +41,14 @@ parameters:
     Selection: sparse
     NonSparseParameters: RustToolchainName
     GenerateVMJobs: true
+- name: LiveTestMatrixConfigs
+  type: object
+  default:
+  - Name: rust_ci_test_base
+    Path: eng/pipelines/templates/stages/platform-matrix.json
+    Selection: sparse
+    NonSparseParameters: RustToolchainName
+    GenerateVMJobs: true
 - name: AdditionalMatrixConfigs
   type: object
   default: []
@@ -121,7 +129,7 @@ extends:
                     PersistOidcToken: ${{ parameters.PersistOidcToken }}
                   MatrixConfigs:
                   # Enumerate platforms and additional platforms based on supported clouds (sparse platform<-->cloud matrix).
-                  - ${{ parameters.MatrixConfigs }}
+                  - ${{ parameters.LiveTestMatrixConfigs }}
                   - ${{ parameters.AdditionalMatrixConfigs }}
                   MatrixFilters:
                   - ${{ cloud.value.MatrixFilters }}
@@ -148,9 +156,9 @@ extends:
             parameters:
               DependsOn: "Build"
               ServiceDirectory: ${{ parameters.ServiceDirectory }}
-              Artifacts: 
-                - ${{ each artifact in parameters.Artifacts }}: 
-                  - ${{ if ne(artifact.releaseInBatch, 'false')}}: 
+              Artifacts:
+                - ${{ each artifact in parameters.Artifacts }}:
+                  - ${{ if ne(artifact.releaseInBatch, 'false')}}:
                     - ${{ artifact }}
               TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
               PipelineArtifactName: packages
