@@ -267,7 +267,6 @@ mod tests {
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
-    use std::borrow::Cow;
     use std::sync::Arc;
 
     fn create_test_endpoint_manager() -> Arc<GlobalEndpointManager> {
@@ -317,9 +316,9 @@ mod tests {
         Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
-                regions::EAST_ASIA.into(),
-                regions::WEST_US.into(),
-                regions::NORTH_CENTRAL_US.into(),
+                regions::EAST_ASIA,
+                regions::WEST_US,
+                regions::NORTH_CENTRAL_US,
             ],
             pipeline,
         ))
