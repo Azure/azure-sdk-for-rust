@@ -529,11 +529,14 @@ version = "0.9.0"
 dependencies = [
  "async-trait",
  "azure_core",
+ "azure_core_opentelemetry",
  "azure_core_test",
  "azure_identity",
  "azure_storage_blob_test",
  "bytes",
  "futures",
+ "opentelemetry-stdout",
+ "opentelemetry_sdk",
  "pin-project",
  "rand 0.9.2",
  "serde",
@@ -541,6 +544,7 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
+ "tracing-subscriber",
  "url",
  "uuid",
 ]

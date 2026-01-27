@@ -23,7 +23,7 @@ pub use response::{AsyncRawResponse, AsyncResponse, RawResponse, Response};
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{
     new_http_client, AppendToUrlQuery, Context, DeserializeWith, Format, HttpClient, JsonFormat,
-    Method, NoFormat, Sanitizer, StatusCode, Url, UrlExt,
+    LoggingOptions, Method, NoFormat, Sanitizer, StatusCode, Url, UrlExt,
 };
 
 pub use crate::error::check_success;
