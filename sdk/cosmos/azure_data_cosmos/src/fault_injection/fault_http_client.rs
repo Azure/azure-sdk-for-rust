@@ -134,7 +134,11 @@ impl FaultClient {
 
             // Apply delay before injecting the error
             if server_error.delay > Duration::ZERO {
-                azure_core::sleep(server_error.delay).await;
+                // Convert std::time::Duration to azure_core time::Duration for sleep
+                let delay_secs = server_error.delay.as_secs();
+                let delay_nanos = server_error.delay.subsec_nanos();
+                let delay = azure_core::time::Duration::new(delay_secs as i64, delay_nanos as i32);
+                azure_core::async_runtime::get_async_runtime().sleep(delay).await;
             }
 
             // Generate the appropriate error based on error type

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 #![cfg(feature = "key_auth")]
+#[cfg(feature = "fault_injection")]
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
@@ -9,6 +10,10 @@ use azure_core::http::Etag;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
+use azure_data_cosmos::fault_injection::{
+    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionRuleBuilder,
+    FaultInjectionServerError, FaultInjectionServerErrorType,
+};
 use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
@@ -707,3 +712,74 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
     )
     .await
 }
+
+/// Test that verifies fault injection with repeated 503 Service Unavailable errors.
+/// This test expects the operation to fail with a 503 error since no retries are configured
+/// for this error type.
+#[tokio::test]
+#[cfg(feature = "fault_injection")]
+pub async fn item_read_with_503_fault_injection() -> Result<(), Box<dyn Error>> {
+    use azure_data_cosmos::CosmosClientOptions;
+    use std::time::Duration;
+
+    // Create a fault injection rule that always returns 503 Service Unavailable
+    let server_error = FaultInjectionServerError::builder(FaultInjectionServerErrorType::ServiceUnavailable)
+        .probability(1.0) // Always inject the fault
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(azure_data_cosmos::fault_injection::FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("503-always", server_error)
+        .with_condition(condition)
+        .build();
+
+    let mut fault_builder = FaultInjectionClientBuilder::new();
+    fault_builder.with_rule(rule);
+
+    // Inject the fault into client options
+    let options = fault_builder.inject(CosmosClientOptions::default());
+
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            // Create an item (this should succeed since fault is only on reads)
+            let item = TestItem {
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            // Try to read the item - this should fail with 503 due to fault injection
+            let result = container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+
+            // Verify we got a 503 error
+            let err = result.expect_err("expected the read to fail with 503");
+            assert_eq!(
+                Some(azure_core::http::StatusCode::ServiceUnavailable),
+                err.http_status(),
+                "expected 503 Service Unavailable, got {:?}",
+                err.http_status()
+            );
+
+            Ok(())
+        },
+        Some(framework::TestOptions::new().with_client_options(options)),
+    )
+    .await
+}
+
