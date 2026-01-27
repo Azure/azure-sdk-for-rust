@@ -315,7 +315,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap containing the location names with their corresponding write endpoint URLs
     #[allow(dead_code)]
-    fn available_write_endpoints_by_location(&self) -> HashMap<String, Url> {
+    fn available_write_endpoints_by_location(&self) -> HashMap<RegionName, Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -335,7 +335,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap mapping location names to read endpoint URLs
     #[allow(dead_code)]
-    fn available_read_endpoints_by_location(&self) -> HashMap<String, Url> {
+    fn available_read_endpoints_by_location(&self) -> HashMap<RegionName, Url> {
         self.location_cache
             .lock()
             .unwrap()

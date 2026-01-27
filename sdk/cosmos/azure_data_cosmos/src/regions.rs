@@ -3,6 +3,7 @@
 
 //! Region Names relevant to Azure Cosmos DB APIs.
 
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
 use std::fmt;
 
@@ -13,6 +14,25 @@ use std::fmt;
 /// all considered equal and stored identically.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RegionName(Cow<'static, str>);
+
+impl Serialize for RegionName {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for RegionName {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(RegionName::new(s))
+    }
+}
 
 /// Creates a `RegionName` from a static string that must already be in canonical form.
 ///
