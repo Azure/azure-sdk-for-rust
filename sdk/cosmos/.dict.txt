@@ -25,6 +25,7 @@ CELA
 RNTBD
 dedicatedgateway
 enablepreview
+westus
 
 # Cosmos' docs all use "Autoscale" as a single word, rather than a compound "AutoScale" or "Auto Scale"
 autoscale

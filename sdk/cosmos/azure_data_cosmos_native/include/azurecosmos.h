@@ -78,8 +78,6 @@ typedef struct cosmos_database_client cosmos_database_client;
  */
 typedef struct cosmos_runtime_context cosmos_runtime_context;
 
-typedef struct cosmos_SubStatusCode cosmos_SubStatusCode;
-
 /**
  * External representation of an error across the FFI boundary.
  */
@@ -215,16 +213,6 @@ typedef struct cosmos_runtime_options {
    */
   uint8_t _unused;
 } cosmos_runtime_options;
-
-
-
-
-
-
-
-
-
-
 
 
 

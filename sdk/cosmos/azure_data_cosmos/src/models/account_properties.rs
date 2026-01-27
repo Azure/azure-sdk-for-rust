@@ -5,6 +5,7 @@
 //! This is a focused representation for the sample JSON provided; fields not
 //! present in the sample are intentionally omitted for now.
 
+use crate::regions::RegionName;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -15,7 +16,7 @@ use url::Url;
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountRegion {
-    pub name: String,
+    pub name: RegionName,
 
     #[serde(with = "crate::serde::url")]
     pub database_account_endpoint: Url,

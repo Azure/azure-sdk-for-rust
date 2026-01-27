@@ -211,7 +211,7 @@ impl MetadataRequestRetryPolicy {
         if (status_code == StatusCode::ServiceUnavailable
             || status_code == StatusCode::InternalServerError
             || (status_code == StatusCode::Gone
-                && sub_status_code == Some(SubStatusCode::LeaseNotFound))
+                && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND))
             || (status_code == StatusCode::Forbidden
                 && sub_status_code == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)))
             && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
@@ -261,12 +261,12 @@ mod tests {
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
     use crate::regions;
+    use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
-    use std::borrow::Cow;
     use std::sync::Arc;
 
     fn create_test_endpoint_manager() -> Arc<GlobalEndpointManager> {
@@ -281,7 +281,7 @@ mod tests {
 
         Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
+            vec![RegionName::from("West US"), RegionName::from("East US")],
             pipeline,
         ))
     }
@@ -316,9 +316,9 @@ mod tests {
         Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
-                regions::EAST_ASIA.into(),
-                regions::WEST_US.into(),
-                regions::NORTH_CENTRAL_US.into(),
+                regions::EAST_ASIA,
+                regions::WEST_US,
+                regions::NORTH_CENTRAL_US,
             ],
             pipeline,
         ))
