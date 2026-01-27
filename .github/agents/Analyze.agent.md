@@ -29,7 +29,7 @@ Spelling errors should be fixed in public APIs and documentation.
 - Run `npx cspell lint -c .vscode/cspell.json sdk/<service>/**` to check spelling.
 - Show a summary of unique, case-insensitive words.
 - Prompt the user which words should be changed and to what they should be changed.
-  Those changes should be made to all files under `sdk/<service>/` and in #changes.
+  Those changes should be made to all files under `sdk/<service>/` and in the #changes context.
 - Remaining words should be added to `sdk/<service>/.dict.txt` as a sorted list of lowercase unique words.
 - If `sdk/<service>/.dict.txt` does not exist, create it as a plain text file and add an entry to `.vscode/cspell.json` like for `sdk/keyvault` e.g.,
 
@@ -39,7 +39,7 @@ Spelling errors should be fixed in public APIs and documentation.
         "name": "keyvault",
         "path": "../sdk/keyvault/.dict.txt",
         "noSuggest": true
-      },
+      }
     ],
     "overrides": [
       {
