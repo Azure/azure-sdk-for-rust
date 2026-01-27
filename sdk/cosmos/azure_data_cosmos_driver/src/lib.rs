@@ -1,0 +1,30 @@
+#![doc = include_str!("../README.md")]
+#![allow(dead_code, unused_variables)]
+
+//! Azure Cosmos DB Driver - Core Implementation Layer
+//!
+//! This crate provides the core transport, routing, and protocol handling for Azure Cosmos DB.
+//! It is designed to be reused across multiple language SDKs (Rust, Java, .NET, Python) via
+//! the C API wrapper (`azure_data_cosmos_native`).
+//!
+//! # Support Model
+//!
+//! This crate has a **public API** but receives **community/GitHub support only** (no 24x7 Microsoft Support).
+//! For production Rust applications, use [`azure_data_cosmos`](https://docs.rs/azure_data_cosmos) instead,
+//! which provides full Microsoft support.
+//!
+//! # Schema-Agnostic Design
+//!
+//! The driver is intentionally ignorant of document/item schemas. Data plane operations accept
+//! raw bytes (`&[u8]`) and return buffered responses (`Vec<u8>`). Serialization is handled by
+//! the consuming SDK in its native language.
+
+pub mod builders;
+pub mod diagnostics;
+pub mod models;
+pub mod options;
+
+// Re-export key types at crate root
+pub use builders::DriverBuilder;
+pub use diagnostics::DiagnosticsContext;
+pub use options::DriverOptions;
