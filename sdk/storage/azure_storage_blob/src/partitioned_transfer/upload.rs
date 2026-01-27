@@ -4,6 +4,7 @@
 use azure_core::http::Body;
 use bytes::Bytes;
 
+use async_trait::async_trait;
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::stream::SeekableStream;
 #[cfg(not(target_arch = "wasm32"))]
@@ -14,7 +15,8 @@ use crate::streams::partitioned_stream::PartitionedStream;
 
 use super::*;
 
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 pub(crate) trait PartitionedUploadBehavior {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()>;
     async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()>;
@@ -135,7 +137,8 @@ mod tests {
         }
     }
 
-    #[async_trait::async_trait]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
     impl PartitionedUploadBehavior for MockPartitionedUploadBehavior {
         async fn transfer_oneshot(&self, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
