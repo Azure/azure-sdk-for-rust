@@ -10,6 +10,7 @@
 #[macro_use]
 mod macros;
 
+pub mod arm;
 pub mod cloud;
 pub mod credentials;
 pub mod error;
