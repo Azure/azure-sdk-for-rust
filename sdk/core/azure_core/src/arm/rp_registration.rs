@@ -116,8 +116,8 @@ struct ProviderResponse {
 ///
 /// ```rust,no_run
 /// use azure_core::{
+///     arm::{RPRegistrationOptions, RPRegistrationPolicy},
 ///     credentials::TokenCredential,
-///     http::policies::arm::{RPRegistrationOptions, RPRegistrationPolicy},
 /// };
 /// use std::sync::Arc;
 ///

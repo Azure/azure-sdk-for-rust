@@ -16,11 +16,9 @@
 //!
 //! ```no_run
 //! use azure_core::{
+//!     arm::{RPRegistrationOptions, RPRegistrationPolicy},
 //!     credentials::TokenCredential,
-//!     http::{
-//!         policies::arm::{RPRegistrationOptions, RPRegistrationPolicy},
-//!         ClientOptions, Pipeline,
-//!     },
+//!     http::{ClientOptions, Pipeline},
 //! };
 //! use std::sync::Arc;
 //!
@@ -56,11 +54,11 @@
 //! ## Example: Configuring ARM Retry Behavior
 //!
 //! ```rust
-//! use azure_core::http::{
-//!     policies::arm::{arm_exponential_retry_options, ArmExponentialRetryOptions},
-//!     ClientOptions,
+//! use azure_core::{
+//!     arm::{arm_exponential_retry_options, arm_exponential_retry_options_with, ArmExponentialRetryOptions},
+//!     http::ClientOptions,
+//!     time::Duration,
 //! };
-//! use azure_core::time::Duration;
 //!
 //! // Use default ARM retry configuration
 //! let mut client_options = ClientOptions::default();
@@ -74,7 +72,6 @@
 //!     max_total_elapsed: Duration::minutes(5),
 //!     max_delay: Duration::seconds(30),
 //! };
-//! use azure_core::http::policies::arm::arm_exponential_retry_options_with;
 //! arm_exponential_retry_options_with(&mut custom_options, custom_retry);
 //! ```
 //!
@@ -85,13 +82,9 @@
 //!
 //! ```no_run
 //! use azure_core::{
+//!     arm::{arm_exponential_retry_options, RPRegistrationOptions, RPRegistrationPolicy},
 //!     credentials::TokenCredential,
-//!     http::{
-//!         policies::arm::{
-//!             arm_exponential_retry_options, RPRegistrationOptions, RPRegistrationPolicy,
-//!         },
-//!         ClientOptions, Pipeline,
-//!     },
+//!     http::{ClientOptions, Pipeline},
 //! };
 //! use std::sync::Arc;
 //!
