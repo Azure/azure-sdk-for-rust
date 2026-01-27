@@ -61,9 +61,6 @@ pub struct ClientRetryPolicy {
     /// Whether the account supports writing to multiple locations simultaneously
     can_use_multiple_write_locations: bool,
 
-    /// Whether this is a write request in a multi-master configuration
-    is_multi_master_write_request: bool,
-
     /// The resolved endpoint URL for the current or next request attempt
     location_endpoint: Option<Url>,
 
@@ -98,7 +95,6 @@ impl ClientRetryPolicy {
             service_unavailable_retry_count: 0,
             operation_type: None,
             can_use_multiple_write_locations: false,
-            is_multi_master_write_request: false,
             location_endpoint: None,
             retry_context: None,
             throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10),
@@ -131,15 +127,7 @@ impl ClientRetryPolicy {
             .global_endpoint_manager
             .can_use_multiple_write_locations(request);
 
-        self.is_multi_master_write_request = !request.operation_type.is_read_only()
-            && self
-                .global_endpoint_manager
-                .can_support_multiple_write_locations(
-                    request.resource_type,
-                    request.operation_type,
-                );
-
-        if self.is_multi_master_write_request {
+        if self.can_use_multiple_write_locations {
             request
                 .headers
                 .insert(constants::ALLOW_TENTATIVE_WRITES, "true");
@@ -657,7 +645,6 @@ mod tests {
         assert_eq!(policy.session_token_retry_count, 0);
         assert_eq!(policy.service_unavailable_retry_count, 0);
         assert!(!policy.can_use_multiple_write_locations);
-        assert!(!policy.is_multi_master_write_request);
         assert!(policy.location_endpoint.is_none());
         assert!(policy.retry_context.is_none());
         assert!(policy.operation_type.is_none());
