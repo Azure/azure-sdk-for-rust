@@ -8,6 +8,7 @@ use crate::retry_policies::{RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
+use std::sync::Arc;
 use tracing::debug;
 
 // Helper trait to conditionally require Send on non-WASM targets
