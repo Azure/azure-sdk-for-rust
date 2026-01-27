@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Builder types for constructing driver instances.
 
 use crate::options::{ConnectionPoolOptions, DriverOptions};

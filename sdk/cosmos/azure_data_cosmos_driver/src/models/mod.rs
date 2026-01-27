@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Data models for Cosmos DB management and metadata operations.
 //!
 //! This module contains types representing Cosmos DB resources (accounts, databases, containers)

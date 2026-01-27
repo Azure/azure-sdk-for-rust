@@ -395,6 +395,30 @@ cargo clippy --workspace --all-features --all-targets --keep-going --no-deps
 
 Always add a comment explaining **why** the warning is allowed.
 
+### Copyright Header
+
+**All Rust source files** in the `sdk/cosmos` directory must begin with the following copyright header:
+
+```rust
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+```
+
+This header must be:
+- The first two lines of every `.rs` file
+- Followed by a blank line before any other content (imports, module docs, etc.)
+- Exactly as shown above (no variations in formatting or text)
+
+**Example**:
+```rust
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Module documentation starts here.
+
+use std::time::Duration;
+```
+
 ## Performance Considerations
 
 - Minimize allocations in hot paths

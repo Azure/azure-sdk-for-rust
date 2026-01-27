@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Diagnostic and telemetry types for Cosmos DB operations.
 //!
 //! This module provides rich diagnostic information about Cosmos DB operations,
