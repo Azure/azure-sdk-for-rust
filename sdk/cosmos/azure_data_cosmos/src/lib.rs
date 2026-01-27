@@ -32,5 +32,5 @@ mod operation_context;
 pub mod regions;
 mod request_context;
 mod retry_policies;
-pub mod routing;
+mod routing;
 mod serde;

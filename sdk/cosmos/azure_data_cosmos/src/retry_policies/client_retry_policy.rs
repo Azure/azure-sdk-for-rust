@@ -86,9 +86,9 @@ impl ClientRetryPolicy {
     ///
     /// # Returns
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
-    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>) -> Self {
         Self {
-            global_endpoint_manager: Arc::new(global_endpoint_manager),
+            global_endpoint_manager,
             enable_endpoint_discovery: true,
             failover_retry_count: 0,
             session_token_retry_count: 0,
@@ -514,8 +514,9 @@ mod tests {
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
     use std::borrow::Cow;
+    use std::sync::Arc;
 
-    fn create_test_endpoint_manager() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -525,14 +526,14 @@ mod tests {
             None,
         );
 
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
             pipeline,
-        )
+        ))
     }
 
-    fn create_test_endpoint_manager_no_locations() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager_no_locations() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -542,14 +543,14 @@ mod tests {
             None,
         );
 
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![],
             pipeline,
-        )
+        ))
     }
 
-    fn create_test_endpoint_manager_with_preferred_locations() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager_with_preferred_locations() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -559,7 +560,7 @@ mod tests {
             None,
         );
 
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
                 regions::EAST_ASIA.into(),
@@ -567,7 +568,7 @@ mod tests {
                 regions::NORTH_CENTRAL_US.into(),
             ],
             pipeline,
-        )
+        ))
     }
 
     fn create_test_policy() -> ClientRetryPolicy {
