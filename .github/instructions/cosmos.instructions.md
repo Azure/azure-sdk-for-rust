@@ -20,6 +20,38 @@ Follow the **Data-Oriented Programming in Rust** principles from [https://analog
 - **Treat data as immutable**: Use owned types and transformations rather than mutation where practical
 - **Validate at boundaries**: Parse/validate data when it enters the system, trust it internally
 
+### Prefer Standard Traits Over Custom Methods
+
+Always implement standard Rust traits instead of creating custom public methods when equivalent functionality exists:
+
+- **Parsing strings**: Implement `std::str::FromStr` instead of `pub fn from_str(s: &str)`
+- **Converting types**: Implement `From<T>`/`Into<T>` instead of `pub fn to_x()` or `pub fn from_x()`
+- **Default values**: Implement `Default` instead of `pub fn new_default()`
+- **Iteration**: Implement `Iterator`/`IntoIterator` instead of `pub fn get_items()`
+- **Display formatting**: Implement `Display`/`Debug` instead of `pub fn to_string()`
+- **Cloning**: Implement `Clone` instead of `pub fn copy()`
+- **Comparison**: Implement `PartialEq`/`Eq`/`PartialOrd`/`Ord` instead of custom comparison methods
+
+**Rationale**: Standard traits enable generic programming, work with Rust's type system, and follow Rust idioms.
+
+**Example**:
+```rust
+// ❌ BAD: Custom public method duplicates trait functionality
+impl MyType {
+    pub fn from_str(s: &str) -> Option<Self> { /* ... */ }
+}
+
+// ✅ GOOD: Implement the standard trait
+impl std::str::FromStr for MyType {
+    type Err = azure_core::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> { /* ... */ }
+}
+
+// Users can then use: "value".parse::<MyType>()
+```
+
+If you need a non-fallible parse internally, create a **private** helper method and have the trait implementation call it.
+
 ### Cosmos-Specific Patterns
 
 #### Request Building
@@ -331,6 +363,37 @@ let driver = Driver::builder()
   - Query scenarios
   - Partition key handling
   - Continuation token pagination
+- Tests should use standard trait implementations (e.g., `.parse::<T>()` instead of calling `T::from_str()` directly)
+- Use `assert!` and `assert!` for boolean assertions instead of `assert_eq!(value, true/false)`
+
+## Code Quality and Validation
+
+### Automatic Clippy Validation
+
+**ALWAYS run `cargo clippy` after making code changes** to catch common issues and ensure code quality:
+
+```bash
+# Run clippy for the modified crate
+cargo clippy -p <crate-name> --all-features --all-targets
+
+# Run clippy for the entire workspace (use sparingly)
+cargo clippy --workspace --all-features --all-targets --keep-going --no-deps
+```
+
+**Fix all clippy warnings before considering code complete**. Common patterns to watch for:
+
+- ✅ Implement standard traits instead of custom methods (`clippy::should_implement_trait`)
+- ✅ Use `assert!(value)` instead of `assert_eq!(value, true)`
+- ✅ Use `assert!(!value)` instead of `assert_eq!(value, false)`
+- ✅ Avoid unnecessary clones, allocations, or copies
+- ✅ Use idiomatic patterns (e.g., `if let`, pattern matching)
+
+**When to suppress warnings**: Only use `#[allow(clippy::...)]` when:
+- The warning is a false positive
+- Following the suggestion would make code less clear
+- The pattern is required for FFI or external constraints
+
+Always add a comment explaining **why** the warning is allowed.
 
 ## Performance Considerations
 

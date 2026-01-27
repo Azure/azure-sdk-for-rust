@@ -131,7 +131,7 @@ impl ReadConsistencyStrategy {
     /// Parsing is case-sensitive for exact matches, with case-insensitive fallback.
     ///
     /// Returns `None` if the string does not match any known strategy.
-    pub fn from_str(s: &str) -> Option<Self> {
+    fn parse(s: &str) -> Option<Self> {
         match s {
             "Default" => Some(Self::Default),
             "Eventual" => Some(Self::Eventual),
@@ -175,7 +175,7 @@ impl std::str::FromStr for ReadConsistencyStrategy {
     type Err = azure_core::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::from_str(s).ok_or_else(|| {
+        Self::parse(s).ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 format!("Unknown read consistency strategy: {}", s),
@@ -691,33 +691,33 @@ mod tests {
     #[test]
     fn parse_all_strategies() {
         assert_eq!(
-            ReadConsistencyStrategy::from_str("Default"),
+            "Default".parse::<ReadConsistencyStrategy>().ok(),
             Some(ReadConsistencyStrategy::Default)
         );
         assert_eq!(
-            ReadConsistencyStrategy::from_str("Eventual"),
+            "Eventual".parse::<ReadConsistencyStrategy>().ok(),
             Some(ReadConsistencyStrategy::Eventual)
         );
         assert_eq!(
-            ReadConsistencyStrategy::from_str("Session"),
+            "Session".parse::<ReadConsistencyStrategy>().ok(),
             Some(ReadConsistencyStrategy::Session)
         );
         assert_eq!(
-            ReadConsistencyStrategy::from_str("GlobalStrong"),
+            "GlobalStrong".parse::<ReadConsistencyStrategy>().ok(),
             Some(ReadConsistencyStrategy::GlobalStrong)
         );
     }
 
     #[test]
     fn parse_unknown_returns_none() {
-        assert_eq!(ReadConsistencyStrategy::from_str("Unknown"), None);
+        assert!("Unknown".parse::<ReadConsistencyStrategy>().is_err());
     }
 
     #[test]
     fn parse_case_insensitive_fallback() {
         // Case-insensitive fallback works
         assert_eq!(
-            ReadConsistencyStrategy::from_str("eventual"),
+            "eventual".parse::<ReadConsistencyStrategy>().ok(),
             Some(ReadConsistencyStrategy::Eventual)
         );
     }
@@ -731,7 +731,7 @@ mod tests {
             ReadConsistencyStrategy::GlobalStrong,
         ] {
             let s = strategy.to_string();
-            assert_eq!(ReadConsistencyStrategy::from_str(&s), Some(*strategy));
+            assert_eq!(s.parse::<ReadConsistencyStrategy>().ok(), Some(*strategy));
         }
     }
 
@@ -739,7 +739,7 @@ mod tests {
     fn connection_pool_options_builder_defaults() {
         let options = ConnectionPoolOptionsBuilder::new().build().unwrap();
 
-        assert_eq!(options.is_proxy_allowed, false);
+        assert!(!options.is_proxy_allowed);
         assert_eq!(options.min_connect_timeout, Duration::from_millis(100));
         assert_eq!(options.max_connect_timeout, Duration::from_millis(5_000));
         assert_eq!(
@@ -758,9 +758,9 @@ mod tests {
             options.max_metadata_request_timeout,
             Duration::from_millis(65_000)
         );
-        assert_eq!(options.is_http2_allowed, true);
-        assert_eq!(options.is_gateway20_allowed, false);
-        assert_eq!(options.emulator_server_cert_validation_disabled, false);
+        assert!(options.is_http2_allowed);
+        assert!(!options.is_gateway20_allowed);
+        assert!(!options.emulator_server_cert_validation_disabled);
         assert_eq!(options.idle_connection_timeout, None);
         assert_eq!(options.local_address, None);
         // Default is 1_000 when HTTP/2 is allowed (which is true by default)
@@ -785,7 +785,7 @@ mod tests {
             .build()
             .unwrap();
 
-        assert_eq!(options.is_proxy_allowed, true);
+        assert!(options.is_proxy_allowed);
         assert_eq!(options.min_connect_timeout, Duration::from_millis(200));
         assert_eq!(options.max_connect_timeout, Duration::from_millis(3_000));
         assert_eq!(
@@ -809,10 +809,10 @@ mod tests {
             options.idle_connection_timeout,
             Some(Duration::from_millis(600_000))
         );
-        assert_eq!(options.is_http2_allowed, false);
+        assert!(!options.is_http2_allowed);
         // gateway20 is set to true but HTTP/2 is false, so it should be false
-        assert_eq!(options.is_gateway20_allowed, false);
-        assert_eq!(options.emulator_server_cert_validation_disabled, true);
+        assert!(!options.is_gateway20_allowed);
+        assert!(options.emulator_server_cert_validation_disabled);
     }
 
     #[test]
@@ -1006,7 +1006,7 @@ mod tests {
             .unwrap();
 
         // Gateway 2.0 should be disabled if HTTP/2 is not allowed
-        assert_eq!(options.is_gateway20_allowed, false);
+        assert!(!options.is_gateway20_allowed);
     }
 
     #[test]
