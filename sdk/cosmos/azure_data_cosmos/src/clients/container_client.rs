@@ -37,28 +37,28 @@ impl ContainerClient {
         pipeline: Arc<GatewayPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
-        global_endpoint_manager: GlobalEndpointManager,
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Documents);
 
-        let container_cache = ContainerCache::new(
+        let container_cache = Arc::from(ContainerCache::new(
             pipeline.clone(),
             link.clone(),
             global_endpoint_manager.clone(),
-        );
-        let partition_key_range_cache = PartitionKeyRangeCache::new(
+        ));
+        let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
             pipeline.clone(),
             database_link.clone(),
-            Arc::from(container_cache.clone()),
-            Arc::from(global_endpoint_manager.clone()),
-        );
+            container_cache.clone(),
+            global_endpoint_manager.clone(),
+        ));
         let container_connection = Arc::from(ContainerConnection::new(
             pipeline.clone(),
-            Arc::from(container_cache),
-            Arc::from(partition_key_range_cache),
+            container_cache,
+            partition_key_range_cache,
         ));
 
         Self {
