@@ -9,6 +9,31 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . "$PSScriptRoot/../common/scripts/common.ps1"
 
+# Helper function to run cargo test with JSON output
+function Invoke-CargoTestWithJsonOutput (
+  [string]$TestParams,
+  [string]$PackageName,
+  [string]$OutputFile
+) {
+  Write-Host "Running tests for $PackageName"
+  # Use nightly toolchain to enable JSON output format which can be converted
+  # and uploaded to DevOps for display in the Tests tab
+  # (requires -Z unstable-options)
+  $result = Invoke-LoggedCommand `
+    "cargo +nightly test $TestParams --package $PackageName --all-features --no-fail-fast -- --format json -Z unstable-options" `
+    -GroupOutput `
+    -DoNotExitOnFailedExitCode
+
+  LogGroupStart 'Test result JSON'
+  $result | Tee-Object -FilePath $OutputFile
+  LogGroupEnd
+
+  if ($LASTEXITCODE) {
+    LogError "Tests failed for $PackageName. For more information see the pipeline Tests tab."
+    exit $LASTEXITCODE
+  }
+}
+
 Write-Host @"
 Testing packages with
     PackageInfoDirectory: '$PackageInfoDirectory'
@@ -20,9 +45,15 @@ Testing packages with
     ARM_OIDC_TOKEN: $($env:ARM_OIDC_TOKEN ? 'present' : 'not present')
 "@
 
+$testResultsDir = ([System.IO.Path]::Combine($RepoRoot, 'test-results'))
+if (!(Test-Path $testResultsDir)) {
+  New-Item -ItemType Directory -Path $testResultsDir | Out-Null
+}
+Write-Host "Test results will be saved to: $testResultsDir"
+
 if ($PackageInfoDirectory) {
   if (!(Test-Path $PackageInfoDirectory)) {
-    Write-Error "Package info path '$PackageInfoDirectory' does not exist."
+    LogError "Package info path '$PackageInfoDirectory' does not exist."
     exit 1
   }
 
@@ -40,48 +71,45 @@ foreach ($package in $packagesToTest) {
 }
 
 foreach ($package in $packagesToTest) {
-  Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
-  try {
-    $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
+  $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
 
-    $setupScript = Join-Path $packageDirectory "Test-Setup.ps1"
-    if (Test-Path $setupScript) {
-      Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $setupScript -GroupOutput
-      if (!$? -ne 0) {
-        Write-Error "Test setup script failed for package: '$($package.Name)'"
-        exit 1
-      }
-    }
-
-    $featuresList = Join-Path $packageDirectory "test-features.txt"
-    $featuresArg = ""
-    if (Test-Path $featuresList) {
-      $features = Get-Content $featuresList | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object { $_.Trim() }
-      if ($features.Count -gt 0) {
-        $featuresArg = "--features " + ($features -join ",")
-      }
-    }
-
-    Write-Host "`n`nTesting package: '$($package.Name)'`n"
-
-    Invoke-LoggedCommand "cargo build --keep-going $featuresArg" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --doc --no-fail-fast $featuresArg" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast $featuresArg" -GroupOutput
-    Write-Host "`n`n"
-
-    $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
-    if (Test-Path $cleanupScript) {
-      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand $cleanupScript -GroupOutput
-      # We ignore the exit code of the cleanup script.
+  $setupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Setup.ps1'))
+  if (Test-Path $setupScript) {
+    Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
+    Invoke-LoggedCommand $setupScript -GroupOutput
+    if (!$? -ne 0) {
+      LogError "Test setup script failed for package: '$($package.Name)'"
+      exit 1
     }
   }
-  finally {
-    Pop-Location
+
+  Write-Host "`n`nTesting package: '$($package.Name)'`n"
+
+  Invoke-LoggedCommand "cargo build --all-features --keep-going" -GroupOutput
+  Write-Host "`n`n"
+
+  $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+
+  $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
+  Invoke-CargoTestWithJsonOutput `
+    -TestParams "--doc" `
+    -PackageName $package.Name `
+    -OutputFile $docTestOutput
+
+  $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
+  Invoke-CargoTestWithJsonOutput `
+    -TestParams "--lib --bins --tests --examples" `
+    -PackageName $package.Name `
+    -OutputFile $allTargetsOutput
+
+  Invoke-LoggedCommand `
+    "cargo test --benches --package $($package.Name) --all-features --no-fail-fast" `
+    -GroupOutput
+
+  $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
+  if (Test-Path $cleanupScript) {
+    Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
+    Invoke-LoggedCommand $cleanupScript -GroupOutput -DoNotExitOnFailedExitCode
+    # We ignore the exit code of the cleanup script.
   }
 }

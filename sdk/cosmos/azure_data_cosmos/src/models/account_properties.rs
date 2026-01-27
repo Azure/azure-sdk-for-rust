@@ -5,12 +5,14 @@
 //! This is a focused representation for the sample JSON provided; fields not
 //! present in the sample are intentionally omitted for now.
 
+use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use url::Url;
 
 /// Represents a single regional endpoint for the Cosmos DB account (readable or writable).
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(SafeDebug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountRegion {
     pub name: String,
@@ -20,7 +22,8 @@ pub struct AccountRegion {
 }
 
 /// Describes replica set sizing characteristics for user/system replication policies.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, Serialize, Deserialize)]
+#[safe(true)]
 // cSpell:disable
 #[serde(rename_all = "camelCase")]
 pub struct ReplicationPolicy {
@@ -32,14 +35,16 @@ pub struct ReplicationPolicy {
 }
 
 /// User-configured default consistency level for the account.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, Serialize, Deserialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ConsistencyPolicy {
     pub default_consistency_level: String,
 }
 
 /// Read preference coefficients used by the service when selecting regions.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, Serialize, Deserialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadPolicy {
     pub primary_read_coefficient: i32,
@@ -52,7 +57,8 @@ pub struct ReadPolicy {
 /// This struct captures a subset of fields surfaced in the account read payload
 /// (not exhaustive). It includes region lists, consistency/replication policies
 /// and a raw `query_engine_configuration` JSON string for optional parsing.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, Serialize, Deserialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountProperties {
     #[serde(rename = "_self")]

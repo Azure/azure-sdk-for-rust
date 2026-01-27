@@ -244,21 +244,20 @@ impl PageBlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientCopyIncrementalResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
     ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
+    ///     if let Some(copy_id) = response.copy_id()? {
+    ///         println!("x-ms-copy-id: {:?}", copy_id);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::date) - date
     /// * [`etag`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::last_modified) - last-modified
     /// * [`copy_id`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::copy_id) - x-ms-copy-id
@@ -492,21 +491,20 @@ impl PageBlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageList, XmlFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
     ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
+    ///     if let Some(blob_content_length) = response.blob_content_length()? {
+    ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::PageListHeaders::date) - date
     /// * [`etag`()](crate::generated::models::PageListHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageListHeaders::last_modified) - last-modified
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
@@ -593,21 +591,20 @@ impl PageBlobClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageList, XmlFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
     ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
+    ///     if let Some(blob_content_length) = response.blob_content_length()? {
+    ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::PageListHeaders::date) - date
     /// * [`etag`()](crate::generated::models::PageListHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageListHeaders::last_modified) - last-modified
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
@@ -1188,6 +1185,21 @@ impl PageBlobClient {
         if let Some(source_content_md5) = options.source_content_md5 {
             request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
         }
+        if let Some(source_encryption_algorithm) = options.source_encryption_algorithm.as_ref() {
+            request.insert_header(
+                "x-ms-source-encryption-algorithm",
+                source_encryption_algorithm.to_string(),
+            );
+        }
+        if let Some(source_encryption_key) = options.source_encryption_key.as_ref() {
+            request.insert_header("x-ms-source-encryption-key", source_encryption_key);
+        }
+        if let Some(source_encryption_key_sha256) = options.source_encryption_key_sha256.as_ref() {
+            request.insert_header(
+                "x-ms-source-encryption-key-sha256",
+                source_encryption_key_sha256,
+            );
+        }
         if let Some(source_if_match) = options.source_if_match.as_ref() {
             request.insert_header("x-ms-source-if-match", source_if_match);
         }
@@ -1229,7 +1241,7 @@ impl Default for PageBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-11-05"),
+            version: String::from("2026-04-06"),
         }
     }
 }

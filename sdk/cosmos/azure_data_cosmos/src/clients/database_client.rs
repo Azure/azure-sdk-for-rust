@@ -5,7 +5,7 @@ use crate::{
     clients::ContainerClient,
     models::{ContainerProperties, CosmosResponse, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
-    pipeline::CosmosPipeline,
+    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
     ThroughputOptions,
@@ -15,6 +15,7 @@ use std::sync::Arc;
 use azure_core::http::response::Response;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -23,11 +24,16 @@ pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
     database_id: String,
-    pipeline: Arc<CosmosPipeline>,
+    pipeline: Arc<GatewayPipeline>,
+    global_endpoint_manager: Arc<GlobalEndpointManager>,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: Arc<CosmosPipeline>, database_id: &str) -> Self {
+    pub(crate) fn new(
+        pipeline: Arc<GatewayPipeline>,
+        database_id: &str,
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
+    ) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
@@ -37,6 +43,7 @@ impl DatabaseClient {
             containers_link,
             database_id,
             pipeline,
+            global_endpoint_manager,
         }
     }
 
@@ -45,7 +52,12 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: &str) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name)
+        ContainerClient::new(
+            self.pipeline.clone(),
+            &self.link,
+            name,
+            self.global_endpoint_manager.clone(),
+        )
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -141,7 +153,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
-                .headers(&options.throughput)
+                .request_headers(&options.throughput)
                 .json(&properties)
                 .build()?;
 

@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
 /// Represents the indexing policy for a container.
 ///
 /// For more information see <https://learn.microsoft.com/azure/cosmos-db/index-policy>
-#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {
     /// Indicates that the indexing policy is automatic.
@@ -45,7 +47,8 @@ pub struct IndexingPolicy {
 }
 
 /// Defines the indexing modes supported by Azure Cosmos DB.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum IndexingMode {
     Consistent,
@@ -53,7 +56,8 @@ pub enum IndexingMode {
 }
 
 /// Represents a JSON path.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct PropertyPath {
     // The path to the property referenced in this index.
@@ -67,7 +71,8 @@ impl<T: Into<String>> From<T> for PropertyPath {
 }
 
 /// Represents a spatial index
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct SpatialIndex {
     /// The path to the property referenced in this index.
@@ -78,7 +83,8 @@ pub struct SpatialIndex {
 }
 
 /// Defines the types of spatial data that can be indexed.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "PascalCase")]
 pub enum SpatialType {
     Point,
@@ -88,7 +94,8 @@ pub enum SpatialType {
 }
 
 /// Represents a composite index
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(transparent)]
 pub struct CompositeIndex {
     /// The properties in this composite index
@@ -96,7 +103,8 @@ pub struct CompositeIndex {
 }
 
 /// Describes a single property in a composite index.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct CompositeIndexProperty {
     /// The path to the property referenced in this index.
@@ -110,7 +118,8 @@ pub struct CompositeIndexProperty {
 }
 
 /// Ordering values available for composite indexes.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum CompositeIndexOrder {
     Ascending,
@@ -120,7 +129,8 @@ pub enum CompositeIndexOrder {
 /// Represents a vector index
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy#vector-indexes>
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorIndex {
     /// The path to the property referenced in this index.
@@ -132,7 +142,8 @@ pub struct VectorIndex {
 }
 
 /// Types of vector indexes supported by Cosmos DB
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorIndexType {
     /// Represents the `flat` vector index type.

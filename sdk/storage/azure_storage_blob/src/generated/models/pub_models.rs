@@ -99,10 +99,6 @@ pub struct ArrowField {
     pub type_prop: Option<String>,
 }
 
-/// Contains results for `BlobClient::abort_copy_from_url()`
-#[derive(SafeDebug)]
-pub struct BlobClientAbortCopyFromUrlResult;
-
 /// Contains results for `BlobClient::acquire_lease()`
 #[derive(SafeDebug)]
 pub struct BlobClientAcquireLeaseResult;
@@ -175,17 +171,9 @@ pub struct BlobContainerClientGetPropertiesResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientReleaseLeaseResult;
 
-/// Contains results for `BlobContainerClient::rename()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRenameResult;
-
 /// Contains results for `BlobContainerClient::renew_lease()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenewLeaseResult;
-
-/// Contains results for `BlobContainerClient::restore()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRestoreResult;
 
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -953,6 +941,10 @@ pub struct JsonTextConfiguration {
 /// Key information
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyInfo {
+    /// The delegated user tenant id in Azure AD.
+    #[serde(rename = "DelegatedUserTid", skip_serializing_if = "Option::is_none")]
+    pub delegated_user_tid: Option<String>,
+
     /// The date-time the key expires.
     #[serde(rename = "Expiry", skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
@@ -1329,6 +1321,13 @@ pub struct StorageServiceStats {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct UserDelegationKey {
+    /// The delegated user tenant id in Azure AD. Return if DelegatedUserTid is specified.
+    #[serde(
+        rename = "SignedDelegatedUserTid",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub signed_delegated_user_tid: Option<String>,
+
     /// The date-time the key expires.
     #[serde(rename = "SignedExpiry", skip_serializing_if = "Option::is_none")]
     pub signed_expiry: Option<String>,

@@ -14,9 +14,8 @@ use crate::generated::models::{
     BlobContainerClientListBlobFlatSegmentOptions,
     BlobContainerClientListBlobHierarchySegmentOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenameOptions,
-    BlobContainerClientRenameResult, BlobContainerClientRenewLeaseOptions,
-    BlobContainerClientRenewLeaseResult, BlobContainerClientRestoreOptions,
-    BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyOptions,
+    BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
+    BlobContainerClientRestoreOptions, BlobContainerClientSetAccessPolicyOptions,
     BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsFlatSegmentResponse,
     ListBlobsHierarchySegmentResponse, SignedIdentifiers,
 };
@@ -609,21 +608,20 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientGetAccountInfoResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(account_kind) = response.account_kind()? {
     ///         println!("x-ms-account-kind: {:?}", account_kind);
     ///     }
     ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
     ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
     ///     }
+    ///     if let Some(sku_name) = response.sku_name()? {
+    ///         println!("x-ms-sku-name: {:?}", sku_name);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::date) - date
     /// * [`account_kind`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::account_kind) - x-ms-account-kind
     /// * [`is_hierarchical_namespace_enabled`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::is_hierarchical_namespace_enabled) - x-ms-is-hns-enabled
     /// * [`sku_name`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
@@ -751,29 +749,6 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`ListBlobsFlatSegmentResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{ListBlobsFlatSegmentResponse, ListBlobsFlatSegmentResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<ListBlobsFlatSegmentResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListBlobsFlatSegmentResponseHeaders::date) - date
-    ///
-    /// [`ListBlobsFlatSegmentResponseHeaders`]: crate::generated::models::ListBlobsFlatSegmentResponseHeaders
     #[tracing::function("Storage.Blob.Container.listBlobFlatSegment")]
     pub fn list_blob_flat_segment(
         &self,
@@ -805,6 +780,9 @@ impl BlobContainerClient {
         }
         if let Some(prefix) = options.prefix.as_ref() {
             query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
         }
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -862,29 +840,6 @@ impl BlobContainerClient {
     ///   that acts as a placeholder for all blobs whose names begin with the same substring up to the appearance of the delimiter
     ///   character. The delimiter may be a single character or a string.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`ListBlobsHierarchySegmentResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{ListBlobsHierarchySegmentResponse, ListBlobsHierarchySegmentResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<ListBlobsHierarchySegmentResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListBlobsHierarchySegmentResponseHeaders::date) - date
-    ///
-    /// [`ListBlobsHierarchySegmentResponseHeaders`]: crate::generated::models::ListBlobsHierarchySegmentResponseHeaders
     #[tracing::function("Storage.Blob.Container.listBlobHierarchySegment")]
     pub fn list_blob_hierarchy_segment(
         &self,
@@ -918,6 +873,9 @@ impl BlobContainerClient {
         }
         if let Some(prefix) = options.prefix.as_ref() {
             query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
         }
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -1052,35 +1010,12 @@ impl BlobContainerClient {
     ///
     /// * `source_container_name` - Required. Specifies the name of the container to rename.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientRenameResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientRenameResult, BlobContainerClientRenameResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientRenameResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientRenameResultHeaders::date) - date
-    ///
-    /// [`BlobContainerClientRenameResultHeaders`]: crate::generated::models::BlobContainerClientRenameResultHeaders
     #[tracing::function("Storage.Blob.Container.rename")]
     pub async fn rename(
         &self,
         source_container_name: String,
         options: Option<BlobContainerClientRenameOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRenameResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -1203,34 +1138,11 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientRestoreResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientRestoreResult, BlobContainerClientRestoreResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientRestoreResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientRestoreResultHeaders::date) - date
-    ///
-    /// [`BlobContainerClientRestoreResultHeaders`]: crate::generated::models::BlobContainerClientRestoreResultHeaders
     #[tracing::function("Storage.Blob.Container.restore")]
     pub async fn restore(
         &self,
         options: Option<BlobContainerClientRestoreOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRestoreResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -1379,7 +1291,7 @@ impl Default for BlobContainerClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-11-05"),
+            version: String::from("2026-04-06"),
         }
     }
 }

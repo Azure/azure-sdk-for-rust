@@ -79,13 +79,7 @@ pub struct AzureCliCredential {
 /// Options for constructing an [`AzureCliCredential`].
 #[derive(Clone, Debug, Default)]
 pub struct AzureCliCredentialOptions {
-    /// Specifies tenants to which the credential may authenticate, in addition to [`Self::tenant_id`].
-    ///
-    /// When `tenant_id` is `None` this option has no effect and the credential will authenticate to any requested tenant.
-    /// Add the wildcard value "*" to allow the credential to authenticate to any tenant.
-    pub additionally_allowed_tenants: Vec<String>,
-
-    /// The name or ID of a subscription
+    /// The name or ID of a subscription.
     ///
     /// Set this to acquire tokens for an account other than the Azure CLI's current account.
     pub subscription: Option<String>,
@@ -224,7 +218,6 @@ mod tests {
                 )),
                 tenant_id,
                 subscription,
-                ..Default::default()
             };
         let cred = AzureCliCredential::new(Some(options))?;
         return cred.get_token(LIVE_TEST_SCOPES, None).await;

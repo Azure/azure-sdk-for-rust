@@ -176,7 +176,6 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-#[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/3440"]
 async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

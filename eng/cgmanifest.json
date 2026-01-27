@@ -5,6 +5,12 @@
     {
       "component": {
         "type": "cargo",
+        "cargo": { "name": "cargo2junit", "version": "0.1.15" }
+      }
+    },
+    {
+      "component": {
+        "type": "cargo",
         "cargo": { "name": "cargo-semver-checks", "version": "0.45.0" }
       },
       "developmentDependency": true

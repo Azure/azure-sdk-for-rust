@@ -13,7 +13,7 @@ use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 use url::Url;
 
@@ -23,13 +23,13 @@ use url::Url;
 /// refreshing account properties, and resolving service endpoints based on request characteristics
 /// and availability. It handles endpoint discovery, tracks unavailable endpoints, and supports
 /// multi-master write configurations.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct GlobalEndpointManager {
     /// The primary default endpoint URL for the Cosmos DB account
     default_endpoint: Url,
 
     /// Thread-safe cache of location information including read/write endpoints and availability status
-    location_cache: Arc<Mutex<LocationCache>>,
+    location_cache: Mutex<LocationCache>,
 
     /// HTTP pipeline for making requests to the Cosmos DB service
     pipeline: Pipeline,
@@ -60,13 +60,13 @@ impl GlobalEndpointManager {
         preferred_locations: Vec<Cow<'static, str>>,
         pipeline: Pipeline,
     ) -> Self {
-        let location_cache = Arc::new(Mutex::new(LocationCache::new(
+        let location_cache = Mutex::new(LocationCache::new(
             default_endpoint.clone(),
             preferred_locations.clone(),
-        )));
+        ));
 
         let account_properties_cache = AsyncCache::new(
-            Duration::from_secs(600), // Default 10 minutes TTL
+            Some(Duration::from_secs(600)), // Default 10 minutes TTL
         );
 
         Self {
@@ -282,19 +282,23 @@ impl GlobalEndpointManager {
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
         _ = self
             .account_properties_cache
-            .get(ACCOUNT_PROPERTIES_KEY, force_refresh, || async {
-                // Fetch latest account properties from service
-                let account_properties: AccountProperties =
-                    self.get_database_account().await?.into_body().json()?;
+            .get(
+                ACCOUNT_PROPERTIES_KEY,
+                |_| force_refresh,
+                || async {
+                    // Fetch latest account properties from service
+                    let account_properties: AccountProperties =
+                        self.get_database_account().await?.into_body().json()?;
 
-                // Update location cache with the fetched account properties (only on fresh fetch)
-                {
-                    let mut cache = self.location_cache.lock().unwrap();
-                    cache.on_database_account_read(account_properties.clone());
-                }
+                    // Update location cache with the fetched account properties (only on fresh fetch)
+                    {
+                        let mut cache = self.location_cache.lock().unwrap();
+                        cache.on_database_account_read(account_properties.clone());
+                    }
 
-                Ok::<AccountProperties, Error>(account_properties)
-            })
+                    Ok::<AccountProperties, Error>(account_properties)
+                },
+            )
             .await;
 
         Ok(())
@@ -360,10 +364,7 @@ impl GlobalEndpointManager {
         operation_type: OperationType,
     ) -> bool {
         let cache = self.location_cache.lock().unwrap();
-        cache.can_use_multiple_write_locations()
-            && (resource_type == ResourceType::Documents
-                || (resource_type == ResourceType::StoredProcedures
-                    && operation_type == OperationType::Execute))
+        cache.can_support_multiple_write_locations(resource_type, operation_type)
     }
 
     /// Retrieves the Cosmos DB account ("database account") properties from the service.

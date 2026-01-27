@@ -1,6 +1,16 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 0.9.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.8.0 (2026-01-21)
 
 ### Features Added
 
@@ -10,20 +20,15 @@
 - Added support for `set_immutability_policy` to `BlobClient`.
 - Added support for `delete_immutability_policy` to `BlobClient`.
 - Added support for `undelete` to `BlobClient`.
+- Added snapshot and versioning support for blobs with convenience methods `with_snapshot` and `with_version` to `BlobClient`.
 
 ### Breaking Changes
 
 - Changed conversion implementation from `BlobTags` to `HashMap<String, String>` from `TryFrom` to `From`.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
 - Renamed `content_length` to `size` for `PageBlobClient`'s `create()` method.
-
-### Breaking Changes
-
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
-
-### Bugs Fixed
-
-### Other Changes
+- Changed `BlobClient`'s `set_tags` parameter `tags` type from `HashMap<String, String>` to `RequestContent<BlobTags, XmlFormat>`.
 
 ## 0.7.0 (2025-11-11)
 
