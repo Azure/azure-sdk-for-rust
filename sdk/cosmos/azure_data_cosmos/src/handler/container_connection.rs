@@ -42,14 +42,6 @@ impl ContainerConnection {
         cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        let container_prop = self
-            .container_cache
-            .resolve_by_id("sdk_rust_container".parse()?, None, false)
-            .await?;
-        let _pk_range = self
-            .pk_range_cache
-            .resolve_partition_key_range_by_id(&container_prop.id, "0".as_ref(), false)
-            .await;
         self.pipeline.send(cosmos_request, context).await
     }
 }
