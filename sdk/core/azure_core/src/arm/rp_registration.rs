@@ -193,8 +193,8 @@ impl RPRegistrationPolicy {
             self.options.endpoint, subscription_id, provider_namespace, PROVIDER_API_VERSION
         );
 
-        let url = Url::parse(&url)
-            .with_context(ErrorKind::Other, "failed to parse registration URL")?;
+        let url =
+            Url::parse(&url).with_context(ErrorKind::Other, "failed to parse registration URL")?;
 
         let mut request = Request::new(url, Method::Post);
         request.insert_header(HeaderName::from_static("content-length"), "0");
@@ -285,7 +285,11 @@ impl RPRegistrationPolicy {
                 .await?;
 
             if state != last_state {
-                trace!("Provider {} registration state: {}", provider_namespace, state);
+                trace!(
+                    "Provider {} registration state: {}",
+                    provider_namespace,
+                    state
+                );
                 last_state = state.clone();
             }
 
@@ -373,13 +377,12 @@ impl Policy for RPRegistrationPolicy {
 
             // Extract the resource provider namespace from the request URL
             let (subscription_id, provider_namespace) =
-                Self::extract_rp_namespace(request.url().path())
-                    .ok_or_else(|| {
-                        Error::with_message(
-                            ErrorKind::Other,
-                            "failed to extract resource provider namespace from URL",
-                        )
-                    })?;
+                Self::extract_rp_namespace(request.url().path()).ok_or_else(|| {
+                    Error::with_message(
+                        ErrorKind::Other,
+                        "failed to extract resource provider namespace from URL",
+                    )
+                })?;
 
             debug!(
                 "Detected unregistered resource provider: {} (attempt {}/{})",
