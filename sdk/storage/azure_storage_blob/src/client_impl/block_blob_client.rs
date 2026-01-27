@@ -12,7 +12,7 @@ use crate::{
     generated::BlockBlobClient,
     models::{
         BlockBlobClientCommitBlockListOptions, BlockBlobClientManagedUploadOptions,
-        BlockBlobClientStageBlockOptions, BlockLookupList,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
 };
@@ -44,6 +44,36 @@ impl BlockBlobClient {
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
         // construct exhaustively to ensure we catch new options when added
+        let oneshot_options = BlockBlobClientUploadOptions {
+            blob_cache_control: options.blob_cache_control.clone(),
+            blob_content_disposition: options.blob_content_disposition.clone(),
+            blob_content_encoding: options.blob_content_encoding.clone(),
+            blob_content_language: options.blob_content_language.clone(),
+            blob_content_md5: options.blob_content_md5.clone(),
+            blob_content_type: options.blob_content_type.clone(),
+            blob_tags_string: options.blob_tags_string.clone(),
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key.clone(),
+            encryption_key_sha256: options.encryption_key_sha256.clone(),
+            encryption_scope: options.encryption_scope.clone(),
+            if_match: options.if_match.clone(),
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match.clone(),
+            if_tags: options.if_tags.clone(),
+            if_unmodified_since: options.if_unmodified_since,
+            immutability_policy_expiry: options.immutability_policy_expiry,
+            immutability_policy_mode: options.immutability_policy_mode,
+            lease_id: options.lease_id.clone(),
+            legal_hold: options.legal_hold,
+            metadata: options.metadata.clone(),
+            method_options: options.method_options.clone(),
+            structured_body_type: None,
+            structured_content_length: None,
+            tier: options.tier.clone(),
+            timeout: options.per_request_timeout,
+            transactional_content_crc64: None,
+            transactional_content_md5: None,
+        };
         let stage_block_options = BlockBlobClientStageBlockOptions {
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key.clone(),
@@ -91,6 +121,7 @@ impl BlockBlobClient {
             partition_size,
             &BlockBlobClientUploadBehavior::new(
                 self,
+                oneshot_options,
                 stage_block_options,
                 commit_block_list_options,
             ),
@@ -106,6 +137,7 @@ struct BlockInfo {
 
 struct BlockBlobClientUploadBehavior<'c, 'opt> {
     client: &'c BlockBlobClient,
+    oneshot_options: BlockBlobClientUploadOptions<'opt>,
     stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
     commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     blocks: Mutex<Vec<BlockInfo>>,
@@ -114,11 +146,13 @@ struct BlockBlobClientUploadBehavior<'c, 'opt> {
 impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
     fn new(
         client: &'c BlockBlobClient,
+        oneshot_options: BlockBlobClientUploadOptions<'opt>,
         stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
         commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     ) -> Self {
         Self {
             client,
+            oneshot_options,
             stage_block_options,
             commit_block_list_options,
             blocks: Mutex::new(vec![]),
@@ -132,7 +166,11 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()> {
         let content_len = content.len().try_into().unwrap();
         self.client
-            .upload(content.into(), content_len, None)
+            .upload(
+                content.into(),
+                content_len,
+                Some(self.oneshot_options.clone()),
+            )
             .await?;
         Ok(())
     }
