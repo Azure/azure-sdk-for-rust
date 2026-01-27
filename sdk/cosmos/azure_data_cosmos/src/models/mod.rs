@@ -8,6 +8,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 mod account_properties;
 mod container_properties;
+mod cosmos_response;
 mod indexing_policy;
 mod partition_key_definition;
 mod patch_operations;
@@ -15,6 +16,7 @@ mod throughput_properties;
 
 pub use account_properties::*;
 pub use container_properties::*;
+pub use cosmos_response::*;
 pub use indexing_policy::*;
 pub use partition_key_definition::*;
 pub use patch_operations::*;

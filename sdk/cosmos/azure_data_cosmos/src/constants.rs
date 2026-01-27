@@ -36,6 +36,8 @@ pub const POST_TRIGGER_INCLUDE: HeaderName =
 pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 pub const INDEXING_DIRECTIVE: HeaderName = HeaderName::from_static("x-ms-indexing-directive");
 pub const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+pub const REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
+pub const ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 

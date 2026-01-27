@@ -3,7 +3,7 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -12,9 +12,9 @@ use crate::{
 };
 use std::sync::Arc;
 
+use azure_core::http::response::Response;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use azure_core::http::response::Response;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -74,13 +74,14 @@ impl DatabaseClient {
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<DatabaseProperties>> {
+    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
         self.pipeline
             .send(cosmos_request?, options.method_options.context)
             .await
+            .map(|(response, request)| CosmosResponse::new(response, request))
     }
 
     /// Executes a query against containers in the database.
@@ -136,7 +137,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
@@ -147,6 +148,7 @@ impl DatabaseClient {
         self.pipeline
             .send(cosmos_request, options.method_options.context)
             .await
+            .map(|(response, request)| CosmosResponse::new(response, request))
     }
 
     /// Deletes this database.
@@ -159,13 +161,14 @@ impl DatabaseClient {
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
         self.pipeline
             .send(cosmos_request?, options.method_options.context)
             .await
+            .map(|(response, request)| CosmosResponse::new(response, request))
     }
 
     /// Reads database throughput properties, if any.

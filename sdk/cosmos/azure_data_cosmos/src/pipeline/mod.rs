@@ -72,7 +72,7 @@ impl CosmosPipeline {
         &self,
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
-    ) -> azure_core::Result<Response<T>> {
+    ) -> azure_core::Result<(Response<T>, CosmosRequest)> {
         // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
             let ctx = context.clone();
@@ -84,8 +84,8 @@ impl CosmosPipeline {
         // Delegate to the retry handler, providing the sender callback
         let res = self.retry_handler.send(&mut cosmos_request, sender).await;
 
-        // Convert RawResponse into typed Response<T>
-        res.map(Into::into)
+        // Convert RawResponse into typed Response<T> and return with the final request
+        res.map(|r| (r.into(), cosmos_request))
     }
 
     pub fn send_query_request<T: DeserializeOwned + Send>(

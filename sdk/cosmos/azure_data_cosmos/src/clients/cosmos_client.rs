@@ -3,14 +3,14 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::DatabaseProperties,
+    models::{CosmosResponse, DatabaseProperties},
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{response::Response, Url},
+    http::Url,
 };
 use serde::Serialize;
 use std::sync::Arc;
@@ -234,7 +234,7 @@ impl CosmosClient {
         &self,
         id: &str,
         options: Option<CreateDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<DatabaseProperties>> {
+    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
 
         #[derive(Serialize)]
@@ -251,5 +251,6 @@ impl CosmosClient {
         self.pipeline
             .send(cosmos_request, options.method_options.context)
             .await
+            .map(|(response, request)| CosmosResponse::new(response, request))
     }
 }

@@ -21,6 +21,7 @@ pub mod models;
 pub use clients::CosmosClient;
 
 pub use connection_string::*;
+pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
