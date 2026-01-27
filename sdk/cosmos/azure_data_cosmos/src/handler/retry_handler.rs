@@ -8,6 +8,7 @@ use crate::retry_policies::{RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
+use tracing::debug;
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -124,6 +125,17 @@ impl RetryHandler for BackOffRetryHandler {
 
         loop {
             retry_policy.before_send_request(request).await;
+
+            // Log the endpoint URL being used for this request
+            debug!(
+                target: "azure_data_cosmos::retry_handler",
+                "Sending request - endpoint: {:?}, region: {:?}, operation: {:?}, resource: {:?}",
+                request.request_context.location_endpoint_to_route,
+                request.request_context.region_name,
+                request.operation_type,
+                request.resource_type
+            );
+
             // Invoke the provided sender callback instead of calling inner_send_async directly
             let result = sender(request).await;
             let retry_result = retry_policy.should_retry(&result).await;

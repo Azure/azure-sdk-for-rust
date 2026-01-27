@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added basic multi-region writes support. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482) and [#3495](https://github.com/Azure/azure-sdk-for-rust/pull/3495))
+
 ### Breaking Changes
 
 ### Bugs Fixed
