@@ -76,3 +76,9 @@ jobs:
           echo "=== Workspace Structure ==="
           find . -name "Cargo.toml" | head -10
           echo "=== Environment Ready for Copilot Coding Agent ==="
+
+      - name: Install azsdk mcp server
+        shell: pwsh
+        run: |
+          ./eng/common/mcp/azure-sdk-mcp.ps1 -InstallDirectory $HOME/bin
+
