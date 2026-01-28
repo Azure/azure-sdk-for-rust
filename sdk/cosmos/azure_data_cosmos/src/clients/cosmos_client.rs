@@ -8,10 +8,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
 };
-use azure_core::{
-    credentials::TokenCredential,
-    http::Url,
-};
+use azure_core::{credentials::TokenCredential, http::Url};
 use serde::Serialize;
 use std::sync::Arc;
 

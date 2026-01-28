@@ -11,13 +11,13 @@ use crate::{
 };
 use std::sync::Arc;
 
-use azure_core::http::response::Response;
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
+use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.

@@ -3,14 +3,15 @@
 
 //! Provides the [`CosmosResponse`] type for wrapping responses from Cosmos DB operations.
 
+use crate::cosmos_request::CosmosRequest;
+use crate::SessionToken;
 use azure_core::http::{
     headers::{HeaderName, Headers},
     response::Response,
     StatusCode,
 };
 use serde::de::DeserializeOwned;
-
-use crate::cosmos_request::CosmosRequest;
+use url::Url;
 
 /// A response from a Cosmos DB operation.
 ///
@@ -56,14 +57,9 @@ impl<T> CosmosResponse<T> {
         self.response.headers().get_optional_str(name)
     }
 
-    /// Returns a reference to the original Cosmos request.
-    pub(crate) fn request(&self) -> &CosmosRequest {
-        &self.request
-    }
-
-    /// Consumes the response and returns the underlying typed response.
-    pub fn into_inner(self) -> Response<T> {
-        self.response
+    /// Returns the final endpoint used to fulfill the operation.
+    pub fn endpoint(&self) -> Url {
+        self.request.clone().into_raw_request().url().clone()
     }
 
     /// Consumes the response and returns the response body.
@@ -83,8 +79,9 @@ impl<T> CosmosResponse<T> {
     }
 
     /// Returns the session token from this response, if available.
-    pub fn session_token(&self) -> Option<&str> {
+    pub fn session_token(&self) -> Option<SessionToken> {
         self.get_optional_header_str(&crate::constants::SESSION_TOKEN)
+            .map(|s| SessionToken::from(s.to_string()))
     }
 
     /// Returns the ETag from this response, if available.
@@ -99,5 +96,3 @@ impl<T: DeserializeOwned> CosmosResponse<T> {
         self.response.into_body().json()
     }
 }
-
-

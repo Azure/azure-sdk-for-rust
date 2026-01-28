@@ -292,7 +292,8 @@ impl PartitionKeyRangeCache {
             .with_value(resource_link)
             .into_owned();
 
-        self.pipeline.send(cosmos_request, ctx_owned).await
+        let (response, _) = self.pipeline.send(cosmos_request, ctx_owned).await?;
+        Ok(response)
     }
 }
 
