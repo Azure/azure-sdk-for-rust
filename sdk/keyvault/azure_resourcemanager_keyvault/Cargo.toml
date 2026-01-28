@@ -1,0 +1,24 @@
+[package]
+name = "azure_resourcemanager_keyvault"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["azure_core/default"]
+
+[dependencies]
+async-trait = { workspace = true }
+azure_core = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+azure_core_test = { workspace = true }
+azure_core_test_macros = { workspace = true }
+azure_identity = { workspace = true }
+futures = { workspace = true }
+include-file = { workspace = true }
+tokio = { workspace = true }

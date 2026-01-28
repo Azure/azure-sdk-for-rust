@@ -17,6 +17,7 @@ members = [
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
+  "sdk/keyvault/azure_resourcemanager_keyvault",
   "sdk/keyvault/azure_security_keyvault_certificates",
   "sdk/keyvault/azure_security_keyvault_keys",
   "sdk/keyvault/azure_security_keyvault_secrets",
