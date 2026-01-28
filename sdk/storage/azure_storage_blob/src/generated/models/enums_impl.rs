@@ -1109,9 +1109,12 @@ impl FromStr for SkuName {
     fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
         Ok(match s {
             "Premium_LRS" => SkuName::PremiumLrs,
+            "Premium_ZRS" => SkuName::PremiumZrs,
             "Standard_GRS" => SkuName::StandardGrs,
+            "Standard_GZRS" => SkuName::StandardGzrs,
             "Standard_LRS" => SkuName::StandardLrs,
             "Standard_RAGRS" => SkuName::StandardRagrs,
+            "Standard_RAGZRS" => SkuName::StandardRagzrs,
             "Standard_ZRS" => SkuName::StandardZrs,
             _ => {
                 return Err(Error::with_message_fn(ErrorKind::DataConversion, || {
@@ -1126,9 +1129,12 @@ impl AsRef<str> for SkuName {
     fn as_ref(&self) -> &str {
         match self {
             SkuName::PremiumLrs => "Premium_LRS",
+            SkuName::PremiumZrs => "Premium_ZRS",
             SkuName::StandardGrs => "Standard_GRS",
+            SkuName::StandardGzrs => "Standard_GZRS",
             SkuName::StandardLrs => "Standard_LRS",
             SkuName::StandardRagrs => "Standard_RAGRS",
+            SkuName::StandardRagzrs => "Standard_RAGZRS",
             SkuName::StandardZrs => "Standard_ZRS",
         }
     }
@@ -1138,9 +1144,12 @@ impl Display for SkuName {
     fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
         match self {
             SkuName::PremiumLrs => Display::fmt("Premium_LRS", f),
+            SkuName::PremiumZrs => Display::fmt("Premium_ZRS", f),
             SkuName::StandardGrs => Display::fmt("Standard_GRS", f),
+            SkuName::StandardGzrs => Display::fmt("Standard_GZRS", f),
             SkuName::StandardLrs => Display::fmt("Standard_LRS", f),
             SkuName::StandardRagrs => Display::fmt("Standard_RAGRS", f),
+            SkuName::StandardRagzrs => Display::fmt("Standard_RAGZRS", f),
             SkuName::StandardZrs => Display::fmt("Standard_ZRS", f),
         }
     }

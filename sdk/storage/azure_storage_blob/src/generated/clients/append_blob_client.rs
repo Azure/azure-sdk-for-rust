@@ -342,6 +342,21 @@ impl AppendBlobClient {
         if let Some(source_content_md5) = options.source_content_md5 {
             request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
         }
+        if let Some(source_encryption_algorithm) = options.source_encryption_algorithm.as_ref() {
+            request.insert_header(
+                "x-ms-source-encryption-algorithm",
+                source_encryption_algorithm.to_string(),
+            );
+        }
+        if let Some(source_encryption_key) = options.source_encryption_key.as_ref() {
+            request.insert_header("x-ms-source-encryption-key", source_encryption_key);
+        }
+        if let Some(source_encryption_key_sha256) = options.source_encryption_key_sha256.as_ref() {
+            request.insert_header(
+                "x-ms-source-encryption-key-sha256",
+                source_encryption_key_sha256,
+            );
+        }
         if let Some(source_if_match) = options.source_if_match.as_ref() {
             request.insert_header("x-ms-source-if-match", source_if_match);
         }
@@ -620,7 +635,7 @@ impl Default for AppendBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-11-05"),
+            version: String::from("2026-04-06"),
         }
     }
 }

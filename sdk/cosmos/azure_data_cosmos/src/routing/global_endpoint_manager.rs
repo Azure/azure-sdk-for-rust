@@ -13,7 +13,7 @@ use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 use url::Url;
 
@@ -23,13 +23,13 @@ use url::Url;
 /// refreshing account properties, and resolving service endpoints based on request characteristics
 /// and availability. It handles endpoint discovery, tracks unavailable endpoints, and supports
 /// multi-master write configurations.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct GlobalEndpointManager {
     /// The primary default endpoint URL for the Cosmos DB account
     default_endpoint: Url,
 
     /// Thread-safe cache of location information including read/write endpoints and availability status
-    location_cache: Arc<Mutex<LocationCache>>,
+    location_cache: Mutex<LocationCache>,
 
     /// HTTP pipeline for making requests to the Cosmos DB service
     pipeline: Pipeline,
@@ -61,11 +61,11 @@ impl GlobalEndpointManager {
         excluded_regions: Vec<String>,
         pipeline: Pipeline,
     ) -> Self {
-        let location_cache = Arc::new(Mutex::new(LocationCache::new(
+        let location_cache = Mutex::new(LocationCache::new(
             default_endpoint.clone(),
             preferred_locations.clone(),
             excluded_regions.clone(),
-        )));
+        ));
 
         let account_properties_cache = AsyncCache::new(
             Some(Duration::from_secs(600)), // Default 10 minutes TTL
@@ -370,10 +370,7 @@ impl GlobalEndpointManager {
         operation_type: OperationType,
     ) -> bool {
         let cache = self.location_cache.lock().unwrap();
-        cache.can_use_multiple_write_locations()
-            && (resource_type == ResourceType::Documents
-                || (resource_type == ResourceType::StoredProcedures
-                    && operation_type == OperationType::Execute))
+        cache.can_support_multiple_write_locations(resource_type, operation_type)
     }
 
     /// Retrieves the Cosmos DB account ("database account") properties from the service.

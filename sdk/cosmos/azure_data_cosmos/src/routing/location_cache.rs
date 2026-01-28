@@ -5,6 +5,7 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::{AccountProperties, AccountRegion};
 use crate::operation_context::OperationType;
+use crate::resource_context::ResourceType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::{
@@ -319,7 +320,11 @@ impl LocationCache {
             .request_context
             .use_preferred_locations
             .unwrap_or(true)
-            || (!request.operation_type.is_read_only() && !self.can_use_multiple_write_locations())
+            || (!request.operation_type.is_read_only()
+                && !self.can_support_multiple_write_locations(
+                    request.resource_type,
+                    request.operation_type,
+                ))
         {
             let location_info = &self.locations_info;
             if !location_info.account_write_locations.is_empty() {
@@ -366,6 +371,31 @@ impl LocationCache {
     pub fn can_use_multiple_write_locations(&self) -> bool {
         let endpoints = self.write_endpoints();
         !endpoints.is_empty() && endpoints.len() > 1
+    }
+
+    /// Determines if the account supports multiple write locations for specific resource and operation types.
+    ///
+    /// # Summary
+    /// Evaluates whether multi-master writes are supported based on account configuration and
+    /// the specific resource/operation combination. Multi-master writes are supported for
+    /// Documents (all operations) and StoredProcedures (Execute operation only). Other resource
+    /// types like Databases, Containers, etc., do not support multi-write even in multi-master accounts.
+    ///
+    /// # Arguments
+    /// * `resource_type` - The type of resource being operated on
+    /// * `operation_type` - The type of operation being performed
+    ///
+    /// # Returns
+    /// `true` if multi-write is supported for the resource/operation, `false` otherwise
+    pub(crate) fn can_support_multiple_write_locations(
+        &self,
+        resource_type: ResourceType,
+        operation_type: OperationType,
+    ) -> bool {
+        self.can_use_multiple_write_locations()
+            && (resource_type == ResourceType::Documents
+                || (resource_type == ResourceType::StoredProcedures
+                    && operation_type == OperationType::Execute))
     }
 
     /// Returns all endpoints that could handle a specific request.
