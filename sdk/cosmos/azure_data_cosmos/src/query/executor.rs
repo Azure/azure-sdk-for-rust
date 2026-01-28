@@ -3,7 +3,10 @@
 
 //! Query execution implementation.
 
-use azure_core::http::{headers::Headers, Context};
+use azure_core::http::{
+    headers::{Header, Headers},
+    Context,
+};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 

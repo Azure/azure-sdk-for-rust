@@ -7,15 +7,7 @@ mod signature_target;
 use crate::cosmos_request::CosmosRequest;
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
-use azure_core::http::{
-    headers::AsHeaders,
-    pager::{PagerOptions, PagerState},
-    request::{options::ContentType, Request},
-    response::Response,
-    Context, Method, PipelineSendOptions, RawResponse,
-};
-use futures::TryStreamExt;
-use serde::de::DeserializeOwned;
+use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
 use std::sync::Arc;
 use url::Url;
 
@@ -25,7 +17,6 @@ use crate::{
     routing::global_endpoint_manager::GlobalEndpointManager,
     CosmosClientOptions,
 };
-use azure_core::error::CheckSuccessOptions;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
