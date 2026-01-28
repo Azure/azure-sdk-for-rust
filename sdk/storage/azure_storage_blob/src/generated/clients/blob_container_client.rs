@@ -20,19 +20,16 @@ use crate::generated::models::{
     ListBlobsHierarchySegmentResponse, SignedIdentifiers,
 };
 use azure_core::{
-    credentials::TokenCredential,
     error::CheckSuccessOptions,
-    fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
+        RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 #[tracing::client]
 pub struct BlobContainerClient {
@@ -41,56 +38,7 @@ pub struct BlobContainerClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a `BlobContainerClient`
-#[derive(Clone, SafeDebug)]
-pub struct BlobContainerClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
 impl BlobContainerClient {
-    /// Creates a new BlobContainerClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Container")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<BlobContainerClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -1284,14 +1232,5 @@ impl BlobContainerClient {
             )
             .await?;
         Ok(rsp.into())
-    }
-}
-
-impl Default for BlobContainerClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
     }
 }
