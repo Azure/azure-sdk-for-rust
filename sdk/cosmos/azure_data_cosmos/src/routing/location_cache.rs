@@ -9,7 +9,7 @@ use crate::resource_context::ResourceType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::RwLock,
     time::{Duration, SystemTime},
 };
@@ -193,15 +193,20 @@ impl LocationCache {
     ) -> Result<(), &'static str> {
         // Build effective preferred locations: preferred regions first, then remaining account regions
         let mut effective_preferred_locations = self.locations_info.preferred_locations.clone();
+
+        // Use HashSet for O(1) lookups instead of O(n) linear search
+        let existing: HashSet<String> = effective_preferred_locations
+            .iter()
+            .map(|s| s.to_ascii_lowercase())
+            .collect();
+
+        // Extend with read locations not already in preferred locations - O(n)
         for location in &read_locations {
-            let loc_cow = Cow::Owned(location.name.clone());
-            if !effective_preferred_locations
-                .iter()
-                .any(|p| p.eq_ignore_ascii_case(&location.name))
-            {
-                effective_preferred_locations.push(loc_cow);
+            if !existing.contains(&location.name.to_ascii_lowercase()) {
+                effective_preferred_locations.push(Cow::Owned(location.name.clone()));
             }
         }
+
         self.locations_info.preferred_locations = effective_preferred_locations;
         // Separate write locations into appropriate hashmap and list
         if !write_locations.is_empty() {
