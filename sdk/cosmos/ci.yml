@@ -24,10 +24,13 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: cosmos
-    RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
+    RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), contains(variables['Build.DefinitionName'], 'weekly')) }}
     Artifacts:
     - name: azure_data_cosmos
       releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
+    CloudConfig:
+      Public:
+        ServiceConnection: azure-sdk-tests-cosmos
     LiveTestMatrixConfigs:
       - Name: Cosmos_live_test
         Path: sdk/cosmos/live-platform-matrix.json
