@@ -11,7 +11,7 @@
 ### Bugs Fixed
 
 ### Other Changes
-- Use new `FeedItemIterator` for query operations. ([#3515])(https://github.com/Azure/azure-sdk-for-rust/pull/3515)
+- Use new `FeedItemIterator` for query operations. ([#3515](https://github.com/Azure/azure-sdk-for-rust/pull/3515))
 
 ## 0.30.0 (2026-01-21)
 
