@@ -74,19 +74,19 @@ will unify features e.g., you can add `reqwest`'s `system-proxy` feature without
 [dependencies]
 azure_identity = "1"
 azure_security_keyvault_secrets = "1"
-reqwest = { version = "0.12.23", features = ["system-proxy"] }
+reqwest = { version = "0.13.1", features = ["system-proxy"] }
 ```
 
-Similarly, you can choose to support `reqwest::Client` but use `rustls-tls` with a different TLS provider by disabling our default features
-and adding only what you need, such as our `reqwest` feature just to enable the `HttpClient` trait implementation on `reqwest::Client` and
-add a dependency on `reqwest` with the feature you want:
+Similarly, you can choose to support `reqwest::Client` but use a different TLS provider by disabling our default features and adding
+only what you need. For example, adding our `reqwest` feature to enable the `HttpClient` trait implementation on `reqwest::Client` and
+a dependency on `reqwest` with the feature you want:
 
 ```toml
 [dependencies]
 azure_core = { version = "1", default-features = false, features = ["reqwest"] }
 azure_identity = { version = "1", default-features = false }
 azure_security_keyvault_secrets = { version = "1", default-features = false }
-reqwest = { version = "0.12.23", features = ["rustls-tls-webpki-roots"] }
+reqwest = { version = "0.13.1", features = ["rustls"] }
 ```
 
 You could even completely replace `reqwest` and provide your own `HttpClient` implementation. See [an example](#other-http-client) below.
