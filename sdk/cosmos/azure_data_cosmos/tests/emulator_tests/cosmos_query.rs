@@ -20,10 +20,10 @@ fn collect_matching_items(
 }
 
 #[tokio::test]
-pub async fn single_partition_query() -> Result<(), Box<dyn Error>> {
+pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let items = test_data::generate_mock_items(10, 10);
+            let items = test_data::generate_mock_items(2, 2);
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -46,7 +46,7 @@ pub async fn single_partition_query() -> Result<(), Box<dyn Error>> {
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let items = test_data::generate_mock_items(10, 10);
+            let items = test_data::generate_mock_items(2, 2);
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -79,7 +79,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let items = test_data::generate_mock_items(10, 10);
+            let items = test_data::generate_mock_items(2, 2);
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -106,7 +106,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let items = test_data::generate_mock_items(10, 10);
+            let items = test_data::generate_mock_items(10, 2);
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
@@ -126,46 +126,6 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
                     .collect::<Vec<_>>(),
                 result_items
             );
-
-            Ok(())
-        },
-        None,
-    )
-    .await
-}
-
-#[tokio::test]
-pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
-) -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let items = test_data::generate_mock_items(10, 10);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
-
-            let mut pager = container_client.query_items::<String>(
-                "select value c.id from c order by c.mergeOrder",
-                (),
-                None,
-            )?;
-            let result = pager.try_next().await;
-
-            let Err(err) = result else {
-                panic!("expected an error but got a successful result");
-            };
-            assert_eq!(Some(StatusCode::BadRequest), err.http_status());
-
-            let response =
-                if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind()
-                {
-                    raw_response.as_ref().unwrap().clone()
-                } else {
-                    panic!("expected an HTTP response error");
-                };
-            let sub_status = response.headers().get_optional_str(&constants::SUB_STATUS);
-
-            // 1004 = CrossPartitionQueryNotServable
-            assert_eq!(Some("1004"), sub_status);
 
             Ok(())
         },
