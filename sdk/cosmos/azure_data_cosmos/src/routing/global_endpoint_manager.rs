@@ -51,6 +51,7 @@ impl GlobalEndpointManager {
     /// # Arguments
     /// * `default_endpoint` - The primary Cosmos DB account endpoint URL
     /// * `preferred_locations` - Ordered list of preferred Azure regions for request routing
+    /// * `excluded_regions` - List of regions to exclude from routing
     /// * `pipeline` - HTTP pipeline for making service requests
     ///
     /// # Returns
@@ -58,7 +59,7 @@ impl GlobalEndpointManager {
     pub fn new(
         default_endpoint: Url,
         preferred_locations: Vec<Cow<'static, str>>,
-        excluded_regions: Vec<String>,
+        excluded_regions: Vec<Cow<'static, str>>,
         pipeline: Pipeline,
     ) -> Self {
         let location_cache = Mutex::new(LocationCache::new(

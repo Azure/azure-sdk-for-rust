@@ -96,7 +96,7 @@ pub struct LocationCache {
     /// Thread-safe map tracking unavailable endpoints and when they were last checked
     pub location_unavailability_info_map: RwLock<HashMap<Url, LocationUnavailabilityInfo>>,
     /// Client level excluded regions. Empty if no regions are excluded.
-    pub client_excluded_regions: Vec<String>,
+    pub client_excluded_regions: Vec<Cow<'static, str>>,
 }
 
 impl LocationCache {
@@ -110,13 +110,14 @@ impl LocationCache {
     /// # Arguments
     /// * `default_endpoint` - The primary Cosmos DB account endpoint URL
     /// * `preferred_locations` - Ordered list of preferred Azure regions for routing
+    /// * `excluded_regions` - List of regions to exclude from routing
     ///
     /// # Returns
     /// A new `LocationCache` instance ready for endpoint management
     pub fn new(
         default_endpoint: Url,
         preferred_locations: Vec<Cow<'static, str>>,
-        excluded_regions: Vec<String>,
+        excluded_regions: Vec<Cow<'static, str>>,
     ) -> Self {
         Self {
             default_endpoint,
@@ -510,11 +511,10 @@ impl LocationCache {
         let mut unavailable_endpoints = Vec::new();
         let mut effective_preferred_locations = self.locations_info.preferred_locations.clone();
         // Remove excluded regions from effective preferred locations
-        let excluded_regions = if request_excluded_regions.is_none() {
-            self.client_excluded_regions.clone()
-        } else {
-            request_excluded_regions.cloned().unwrap()
-        };
+        let excluded_regions = request_excluded_regions
+            .cloned()
+            .map(|v| v.into_iter().map(Cow::Owned).collect())
+            .unwrap_or_else(|| self.client_excluded_regions.clone());
         effective_preferred_locations.retain(|location| {
             !excluded_regions
                 .iter()
@@ -578,7 +578,7 @@ mod tests {
         Vec<AccountRegion>,
         Vec<AccountRegion>,
         Vec<Cow<'static, str>>,
-        Vec<String>,
+        Vec<Cow<'static, str>>,
     );
 
     fn create_test_data() -> TestData {
@@ -607,7 +607,7 @@ mod tests {
 
         let preferred_locations: Vec<Cow<'static, str>> =
             vec![Cow::Borrowed("Location 1"), Cow::Borrowed("Location 2")];
-        let excluded_regions: Vec<String> = vec![];
+        let excluded_regions: Vec<Cow<'static, str>> = vec![];
 
         (
             default_endpoint,
@@ -634,7 +634,7 @@ mod tests {
 
     fn create_custom_test_location_cache(
         pref_regions: Option<Vec<String>>,
-        excl_regions: Vec<String>,
+        excl_regions: Option<Vec<String>>,
     ) -> LocationCache {
         let (
             default_endpoint,
@@ -646,8 +646,8 @@ mod tests {
         if let Some(regions) = pref_regions {
             preferred_locations = regions.into_iter().map(Cow::Owned).collect();
         }
-        if !excl_regions.is_empty() {
-            excluded_regions = excl_regions;
+        if let Some(regions) = excl_regions {
+            excluded_regions = regions.into_iter().map(Cow::Owned).collect();
         }
 
         let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
@@ -1005,7 +1005,7 @@ mod tests {
             "Location 1".to_string(),
         ];
         // create test cache
-        let cache = create_custom_test_location_cache(Some(pref_regions), vec![]);
+        let cache = create_custom_test_location_cache(Some(pref_regions), Some(vec![]));
 
         let builder = CosmosRequest::builder(
             OperationType::Read,
@@ -1014,7 +1014,7 @@ mod tests {
 
         let cosmos_request = builder
             .clone()
-            .set_excluded_regions(Some(vec!["Location 4".to_string()]))
+            .excluded_regions(Some(vec!["Location 4".into()]))
             .build()
             .ok()
             .unwrap();
@@ -1027,11 +1027,11 @@ mod tests {
         );
 
         let cosmos_request = builder
-            .set_excluded_regions(Some(vec![
-                "Location 4".to_string(),
-                "Location 3".to_string(),
-                "Location 2".to_string(),
-                "Location 1".to_string(),
+            .excluded_regions(Some(vec![
+                "Location 4".into(),
+                "Location 3".into(),
+                "Location 2".into(),
+                "Location 1".into(),
             ]))
             .build()
             .ok()
@@ -1055,7 +1055,7 @@ mod tests {
         ];
         let excl_regions: Vec<String> = vec!["Location 4".to_string()];
         // create test cache
-        let cache = create_custom_test_location_cache(Some(pref_regions), excl_regions);
+        let cache = create_custom_test_location_cache(Some(pref_regions), Some(excl_regions));
 
         let builder = CosmosRequest::builder(
             OperationType::Read,
@@ -1083,7 +1083,7 @@ mod tests {
         ];
         let excl_regions: Vec<String> = vec!["Location 4".to_string()];
         // create test cache
-        let cache = create_custom_test_location_cache(Some(pref_regions), excl_regions);
+        let cache = create_custom_test_location_cache(Some(pref_regions), Some(excl_regions));
 
         let builder = CosmosRequest::builder(
             OperationType::Read,
@@ -1092,7 +1092,7 @@ mod tests {
 
         let cosmos_request = builder
             .clone()
-            .set_excluded_regions(Some(vec!["Location 3".to_string()]))
+            .excluded_regions(Some(vec!["Location 3".into()]))
             .build()
             .ok()
             .unwrap();
@@ -1106,12 +1106,7 @@ mod tests {
         );
 
         // if setting None in request excluded regions, should use client excluded regions
-        let cosmos_request = builder
-            .clone()
-            .set_excluded_regions(None)
-            .build()
-            .ok()
-            .unwrap();
+        let cosmos_request = builder.clone().excluded_regions(None).build().ok().unwrap();
 
         // resolve service endpoint - should skip Location 4 and go to Location 3
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -1121,11 +1116,7 @@ mod tests {
         );
 
         // if setting an empty list in request excluded regions, no regions should be excluded
-        let cosmos_request = builder
-            .set_excluded_regions(Some(vec![]))
-            .build()
-            .ok()
-            .unwrap();
+        let cosmos_request = builder.excluded_regions(Some(vec![])).build().ok().unwrap();
 
         // resolve service endpoint - should not exclude any regions and go to Location 4
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -1139,8 +1130,9 @@ mod tests {
     fn resolve_service_endpoint_no_preferred_regions() {
         // set no preferred regions in cache, so all regions from account are used
         let pref_regions: Vec<String> = vec![];
+        let excl_regions: Vec<String> = vec![];
         // create test cache
-        let cache = create_custom_test_location_cache(Some(pref_regions), vec![]);
+        let cache = create_custom_test_location_cache(Some(pref_regions), Some(excl_regions));
 
         let builder = CosmosRequest::builder(
             OperationType::Read,
@@ -1157,7 +1149,7 @@ mod tests {
         );
 
         let cosmos_request = builder
-            .set_excluded_regions(Some(vec!["Location 1".to_string()]))
+            .excluded_regions(Some(vec!["Location 1".into()]))
             .build()
             .ok()
             .unwrap();
@@ -1175,8 +1167,9 @@ mod tests {
         // effective preferred regions should be ordered as preferred regions + remaining regions from account - excluded regions
         // normal region order is Location 1, Location 2, Location 3, Location 4
         let pref_regions: Vec<String> = vec!["Location 4".to_string(), "Location 3".to_string()];
+        let excl_regions: Vec<String> = vec![];
         // create test cache
-        let cache = create_custom_test_location_cache(Some(pref_regions), vec![]);
+        let cache = create_custom_test_location_cache(Some(pref_regions), Some(excl_regions));
 
         let builder = CosmosRequest::builder(
             OperationType::Read,
@@ -1193,10 +1186,7 @@ mod tests {
         );
 
         let cosmos_request = builder
-            .set_excluded_regions(Some(vec![
-                "Location 4".to_string(),
-                "Location 3".to_string(),
-            ]))
+            .excluded_regions(Some(vec!["Location 4".into(), "Location 3".into()]))
             .build()
             .ok()
             .unwrap();

@@ -36,7 +36,7 @@ pub struct CosmosClientOptions {
     pub application_name: Option<String>,
     pub application_region: Option<String>,
     pub application_preferred_regions: Vec<Cow<'static, str>>,
-    pub excluded_regions: Vec<String>,
+    pub excluded_regions: Vec<Cow<'static, str>>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     /// Used to specify the consistency level for the operation.
     ///

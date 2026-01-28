@@ -225,7 +225,7 @@ impl CosmosRequestBuilder {
         self
     }
 
-    pub fn set_excluded_regions(mut self, excluded_regions: Option<Vec<String>>) -> Self {
+    pub fn excluded_regions(mut self, excluded_regions: Option<Vec<String>>) -> Self {
         // Sets the excluded regions for the given request. If None is provided,
         // client-level excluded regions will be used. If an empty vector is provided,
         // no regions will be excluded for this request.
