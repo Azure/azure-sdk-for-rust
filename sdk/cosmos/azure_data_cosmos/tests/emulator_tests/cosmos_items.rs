@@ -140,7 +140,12 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             let response = container_client
                 .replace_item(&pk, &item_id, &item, None)
                 .await?;
-            assert_response(&response, StatusCode::Ok, &get_effective_hub_endpoint(), false);
+            assert_response(
+                &response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                false,
+            );
             let body = response.into_body().into_string()?;
             assert_eq!("", body);
 
@@ -158,7 +163,12 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                     }),
                 )
                 .await?;
-            assert_response(&response, StatusCode::Ok, &get_effective_hub_endpoint(), false);
+            assert_response(
+                &response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                false,
+            );
             let updated_item: TestItem = response.into_body().json()?;
             assert_eq!(item, updated_item);
 
