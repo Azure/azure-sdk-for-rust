@@ -7,6 +7,8 @@
 
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::CosmosResponse;
+use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, PartitionKey,
@@ -111,7 +113,7 @@ pub fn get_effective_hub_endpoint() -> String {
     }
 
     // Insert the hub region after the account name, before .documents.azure.com
-    // e.g., "accountname.documents.azure.com" -> "accountname-eastus2.documents.azure.com"
+    // e.g., "account_name.documents.azure.com" -> "account_name-eastus2.documents.azure.com"
     let region_suffix = HUB_REGION.to_lowercase().replace(' ', "");
     if let Some(pos) = host.find(".documents.azure.com") {
         let account_name = &host[..pos];
@@ -425,7 +427,8 @@ impl TestRunContext {
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-    ) -> azure_core::Result<T>
+        options: Option<ItemOptions<'_>>,
+    ) -> azure_core::Result<CosmosResponse<T>>
     where
         T: serde::de::DeserializeOwned,
     {
@@ -437,10 +440,14 @@ impl TestRunContext {
 
         loop {
             match container
-                .read_item(partition_key.clone(), item_id.clone().as_str(), None)
+                .read_item(
+                    partition_key.clone(),
+                    item_id.clone().as_str(),
+                    options.clone(),
+                )
                 .await
             {
-                Ok(response) => return response.into_model(),
+                Ok(response) => return Ok(response),
                 Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
                     println!(
                         "Read item failed with {:?}: {}. Retrying after {:?}...",

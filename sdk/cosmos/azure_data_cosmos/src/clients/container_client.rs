@@ -97,7 +97,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Updates the indexing policy of the container.
@@ -143,7 +143,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Reads container throughput properties, if any.
@@ -213,7 +213,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Creates a new item in the container.
@@ -298,7 +298,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Replaces an existing item in the container.
@@ -385,7 +385,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Creates or replaces an item in the container.
@@ -473,7 +473,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Reads a specific item from the container.
@@ -527,7 +527,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Deletes an item from the container.
@@ -567,7 +567,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Patches an item in the container.
@@ -644,7 +644,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Executes a single-partition query against items in the container.

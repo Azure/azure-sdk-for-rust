@@ -126,8 +126,8 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             assert_eq!("", body);
 
             // Try to read the item
-            let read_response = container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
+            let read_response = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
             let read_item: TestItem = read_response.into_model()?;
@@ -240,8 +240,8 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            let read_response = container_client
-                .read_item::<serde_json::Value>(&pk, &item_id, None)
+            let read_response = run_context
+                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
             let read_item: serde_json::Value = read_response.into_model()?;
@@ -290,8 +290,8 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            let read_response = container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
+            let read_response = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
             let read_item: TestItem = read_response.into_model()?;
@@ -401,8 +401,8 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            let read_response = container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
+            let read_response = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
             let patched_item: TestItem = read_response.into_model()?;
@@ -479,8 +479,8 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            let read_response = container_client
-                .read_item::<TestItem>(PartitionKey::NULL, &item_id, None)
+            let read_response = run_context
+                .read_item::<TestItem>(&container_client, PartitionKey::NULL, &item_id, None)
                 .await?;
             assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
             let read_item: TestItem = read_response.into_model()?;
@@ -501,8 +501,8 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            let read_response = container_client
-                .read_item::<TestItem>(PartitionKey::NULL, &item_id, None)
+            let read_response = run_context
+                .read_item::<TestItem>(&container_client, PartitionKey::NULL, &item_id, None)
                 .await?;
             assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
             let read_item: TestItem = read_response.into_model()?;
@@ -866,8 +866,8 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            let read_response = container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
+            let read_response = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
             let patched_item: TestItem = read_response.into_model()?;

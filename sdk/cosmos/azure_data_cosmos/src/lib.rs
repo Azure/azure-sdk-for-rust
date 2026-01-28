@@ -8,7 +8,7 @@ pub mod clients;
 mod connection_string;
 pub mod constants;
 mod feed;
-mod options;
+pub mod options;
 mod partition_key;
 pub(crate) mod pipeline;
 pub mod query;

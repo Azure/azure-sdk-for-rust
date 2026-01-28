@@ -21,14 +21,15 @@ use url::Url;
 pub struct CosmosResponse<T> {
     /// The underlying typed HTTP response.
     response: Response<T>,
-    /// The final Cosmos request that produced this response.
-    request: CosmosRequest,
+    /// The final endpoint used to fulfill the operation.
+    endpoint: Url,
 }
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
     pub fn new(response: Response<T>, request: CosmosRequest) -> Self {
-        Self { response, request }
+        let endpoint = request.clone().into_raw_request().url().clone();
+        Self { response, endpoint }
     }
 
     /// Returns the HTTP status code of the response.
@@ -59,7 +60,7 @@ impl<T> CosmosResponse<T> {
 
     /// Returns the final endpoint used to fulfill the operation.
     pub fn endpoint(&self) -> Url {
-        self.request.clone().into_raw_request().url().clone()
+        self.endpoint.clone()
     }
 
     /// Consumes the response and returns the response body.
