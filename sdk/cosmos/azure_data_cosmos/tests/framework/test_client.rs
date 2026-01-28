@@ -39,6 +39,7 @@ pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:
 pub const HUB_REGION: &str = EAST_US_2;
 pub const SATELLITE_REGION: &str = WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
+pub const EMULATOR_HOST: &str = "localhost";
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
@@ -105,6 +106,10 @@ fn get_shared_database_id() -> &'static str {
 pub fn get_effective_hub_endpoint() -> String {
     let host = get_global_endpoint();
 
+    if host == EMULATOR_HOST.to_string() {
+        return host;
+    }
+
     // Insert the hub region after the account name, before .documents.azure.com
     // e.g., "accountname.documents.azure.com" -> "accountname-eastus2.documents.azure.com"
     let region_suffix = HUB_REGION.to_lowercase().replace(' ', "");
@@ -123,7 +128,7 @@ pub fn get_global_endpoint() -> String {
 
     // If using emulator, just return the emulator endpoint
     if connection_string_env == "emulator" || connection_string_env == EMULATOR_CONNECTION_STRING {
-        return "https://localhost:8081".to_string();
+        return EMULATOR_HOST.to_string();
     }
 
     // Parse the connection string to get the account endpoint
