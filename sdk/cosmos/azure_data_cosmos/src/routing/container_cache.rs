@@ -22,7 +22,7 @@ use std::sync::Arc;
 pub struct ContainerCache {
     pipeline: Arc<GatewayPipeline>,
     container_link: ResourceLink,
-    global_endpoint_manager: GlobalEndpointManager,
+    global_endpoint_manager: Arc<GlobalEndpointManager>,
     container_properties_cache: AsyncCache<String, ContainerProperties>,
 }
 
@@ -43,7 +43,7 @@ impl ContainerCache {
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
         container_link: ResourceLink,
-        global_endpoint_manager: GlobalEndpointManager,
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
         // No TTL-based expiry is needed.
         let container_properties_cache = AsyncCache::new(None);
@@ -158,7 +158,7 @@ mod tests {
 
     // Helper function to create a test CosmosPipeline
     fn create_test_gateway_pipeline(
-        endpoint_manager: &GlobalEndpointManager,
+        endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Arc<GatewayPipeline> {
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
@@ -172,14 +172,14 @@ mod tests {
         Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
-            endpoint_manager.clone(),
+            endpoint_manager,
             CosmosClientOptions::default(),
             false,
         ))
     }
 
     // Helper function to create a test GlobalEndpointManager
-    fn create_test_endpoint_manager() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -189,11 +189,11 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        GlobalEndpointManager::new(endpoint, vec![], pipeline)
+        Arc::new(GlobalEndpointManager::new(endpoint, vec![], pipeline))
     }
 
     // Helper function to create a test GlobalEndpointManager with preferred locations
-    fn create_test_endpoint_manager_with_locations() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager_with_locations() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -203,17 +203,17 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
             endpoint,
             vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
             pipeline,
-        )
+        ))
     }
 
     #[tokio::test]
     async fn remove_by_id() {
         let global_endpoint_manager = create_test_endpoint_manager();
-        let pipeline = create_test_gateway_pipeline(&global_endpoint_manager);
+        let pipeline = create_test_gateway_pipeline(global_endpoint_manager.clone());
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("test_db")
             .feed(ResourceType::Containers)
@@ -229,7 +229,7 @@ mod tests {
     #[tokio::test]
     async fn new_container_cache() {
         let global_endpoint_manager = create_test_endpoint_manager();
-        let pipeline = create_test_gateway_pipeline(&global_endpoint_manager);
+        let pipeline = create_test_gateway_pipeline(global_endpoint_manager.clone());
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("test_db")
             .feed(ResourceType::Containers)
@@ -243,7 +243,7 @@ mod tests {
     #[tokio::test]
     async fn new_container_cache_with_preferred_locations() {
         let global_endpoint_manager = create_test_endpoint_manager();
-        let pipeline = create_test_gateway_pipeline(&global_endpoint_manager);
+        let pipeline = create_test_gateway_pipeline(global_endpoint_manager.clone());
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("test_db")
             .feed(ResourceType::Containers)
@@ -259,7 +259,7 @@ mod tests {
     async fn remove_by_id_idempotency() {
         // Test that removing the same item multiple times is safe
         let global_endpoint_manager = create_test_endpoint_manager();
-        let pipeline = create_test_gateway_pipeline(&global_endpoint_manager);
+        let pipeline = create_test_gateway_pipeline(global_endpoint_manager.clone());
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("test_db")
             .feed(ResourceType::Containers)
@@ -279,7 +279,7 @@ mod tests {
     async fn container_cache_clone() {
         // Test that ContainerCache can be cloned properly
         let global_endpoint_manager = create_test_endpoint_manager();
-        let pipeline = create_test_gateway_pipeline(&global_endpoint_manager);
+        let pipeline = create_test_gateway_pipeline(global_endpoint_manager.clone());
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("test_db")
             .feed(ResourceType::Containers)
@@ -297,7 +297,7 @@ mod tests {
     async fn remove_by_id_with_different_ids() {
         // Test removing different container IDs
         let global_endpoint_manager = create_test_endpoint_manager();
-        let pipeline = create_test_gateway_pipeline(&global_endpoint_manager);
+        let pipeline = create_test_gateway_pipeline(global_endpoint_manager.clone());
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("test_db")
             .feed(ResourceType::Containers)

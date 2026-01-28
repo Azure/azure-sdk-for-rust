@@ -24,6 +24,7 @@ use azure_core::http::{
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
+use std::sync::Arc;
 use url::Url;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
@@ -40,7 +41,7 @@ impl GatewayPipeline {
     pub fn new(
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
-        global_endpoint_manager: GlobalEndpointManager,
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
         options: CosmosClientOptions,
         fault_injection_enabled: bool,
     ) -> Self {

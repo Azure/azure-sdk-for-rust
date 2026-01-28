@@ -25,14 +25,14 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     pipeline: Arc<GatewayPipeline>,
-    global_endpoint_manager: GlobalEndpointManager,
+    global_endpoint_manager: Arc<GlobalEndpointManager>,
 }
 
 impl DatabaseClient {
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
         database_id: &str,
-        global_endpoint_manager: GlobalEndpointManager,
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);

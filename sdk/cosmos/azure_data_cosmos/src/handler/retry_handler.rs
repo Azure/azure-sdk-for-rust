@@ -8,6 +8,7 @@ use crate::retry_policies::{RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
+use std::sync::Arc;
 use tracing::debug;
 
 // Helper trait to conditionally require Send on non-WASM targets
@@ -67,7 +68,7 @@ pub trait RetryHandler: Send + Sync {
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
 pub struct BackOffRetryHandler {
-    global_endpoint_manager: GlobalEndpointManager,
+    global_endpoint_manager: Arc<GlobalEndpointManager>,
 }
 
 impl BackOffRetryHandler {
@@ -93,7 +94,7 @@ impl BackOffRetryHandler {
         }
     }
 
-    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>) -> Self {
         Self {
             global_endpoint_manager,
         }

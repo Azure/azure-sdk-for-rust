@@ -781,6 +781,9 @@ impl BlobContainerClient {
         if let Some(prefix) = options.prefix.as_ref() {
             query_builder.set_pair("prefix", prefix);
         }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -870,6 +873,9 @@ impl BlobContainerClient {
         }
         if let Some(prefix) = options.prefix.as_ref() {
             query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
         }
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -1285,7 +1291,7 @@ impl Default for BlobContainerClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-11-05"),
+            version: String::from("2026-04-06"),
         }
     }
 }
