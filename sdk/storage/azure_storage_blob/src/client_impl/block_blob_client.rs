@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::{
     generated::BlockBlobClient,
     models::{
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientManagedUploadOptions,
+        method_options::BlockBlobClientManagedUploadOptions, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
@@ -25,6 +25,15 @@ const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unw
 
 // implement this on handwritten client for now
 impl crate::BlockBlobClient {
+    /// The managed upload operation updates the content of an existing block blob. Updating an existing block blob overwrites
+    /// any existing metadata on the blob. Partial updates are not supported; the content of the existing blob is
+    /// overwritten with the content of the new blob. To perform a partial update of the content of a block blob, use the Put
+    /// Block List operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `body` - The body of the request.
+    /// * `options` - Optional parameters for the request.
     pub async fn managed_upload(
         &self,
         body: Body,
@@ -164,7 +173,7 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()> {
-        let content_len = content.len().try_into().unwrap();
+        let content_len = content.len() as u64;
         self.client
             .upload(
                 content.into(),
