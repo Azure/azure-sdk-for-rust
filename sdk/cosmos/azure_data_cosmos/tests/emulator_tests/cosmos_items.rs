@@ -717,7 +717,6 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
 /// This test expects the operation to fail with a 503 error since no retries are configured
 /// for this error type.
 #[tokio::test]
-#[cfg(feature = "fault_injection")]
 pub async fn item_read_with_503_fault_injection() -> Result<(), Box<dyn Error>> {
     use azure_data_cosmos::CosmosClientOptions;
     use std::time::Duration;

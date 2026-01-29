@@ -34,4 +34,5 @@ mod request_context;
 mod retry_policies;
 mod routing;
 mod serde;
-mod fault_injection;
+#[cfg(feature = "fault_injection")]
+pub mod fault_injection;

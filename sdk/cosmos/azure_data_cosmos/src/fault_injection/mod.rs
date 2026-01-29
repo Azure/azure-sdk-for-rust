@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 #[cfg(feature = "fault_injection")]
-mod fault_injection_utils;
+pub mod fault_injection_utils;
 
 #[cfg(feature = "fault_injection")]
 mod fault_http_client;
