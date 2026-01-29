@@ -623,6 +623,159 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+pub async fn transactional_batch_basic() -> Result<(), Box<dyn Error>> {
+    use azure_data_cosmos::models::TransactionalBatch;
+
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let pk = format!("Partition1-{}", unique_id);
+
+            // Create test items
+            let item1 = TestItem {
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(pk.clone().into()),
+                value: 10,
+                nested: NestedItem {
+                    nested_value: "First".into(),
+                },
+                bool_value: true,
+            };
+
+            let item2 = TestItem {
+                id: format!("Item2-{}", unique_id).into(),
+                partition_key: Some(pk.clone().into()),
+                value: 20,
+                nested: NestedItem {
+                    nested_value: "Second".into(),
+                },
+                bool_value: false,
+            };
+
+            let item3 = TestItem {
+                id: format!("Item3-{}", unique_id).into(),
+                partition_key: Some(pk.clone().into()),
+                value: 30,
+                nested: NestedItem {
+                    nested_value: "Third".into(),
+                },
+                bool_value: true,
+            };
+
+            // Build and execute a batch with multiple operations
+            let batch = TransactionalBatch::new(PartitionKey::from(&pk))
+                .create_item(&item1)?
+                .create_item(&item2)?
+                .create_item(&item3)?;
+
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await?;
+
+            // Verify the batch was successful
+            assert_eq!(
+                azure_core::http::StatusCode::Ok,
+                response.status(),
+                "Expected batch execution to succeed"
+            );
+
+            // Verify the items were actually created by reading them back
+            let read_item1: TestItem = run_context
+                .read_item::<TestItem>(
+                    &container_client,
+                    &pk,
+                    &format!("Item1-{}", unique_id),
+                )
+                .await?;
+            assert_eq!(item1, read_item1);
+
+            let read_item2: TestItem = run_context
+                .read_item::<TestItem>(
+                    &container_client,
+                    &pk,
+                    &format!("Item2-{}", unique_id),
+                )
+                .await?;
+            assert_eq!(item2, read_item2);
+
+            let read_item3: TestItem = run_context
+                .read_item::<TestItem>(
+                    &container_client,
+                    &pk,
+                    &format!("Item3-{}", unique_id),
+                )
+                .await?;
+            assert_eq!(item3, read_item3);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn transactional_batch_with_patch() -> Result<(), Box<dyn Error>> {
+    use azure_data_cosmos::models::TransactionalBatch;
+
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            // First create an item
+            let item = TestItem {
+                id: item_id.clone().into(),
+                partition_key: Some(pk.clone().into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Original".into(),
+                },
+                bool_value: true,
+            };
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            // Create a patch to update the item
+            let patch = PatchDocument::default()
+                .with_set("/value", 100)?
+                .with_set("/nested/nested_value", "Patched")?;
+
+            // Execute a batch with a patch operation
+            let batch =
+                TransactionalBatch::new(PartitionKey::from(&pk)).patch_item(item_id.clone(), patch)?;
+
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await?;
+
+            assert_eq!(
+                azure_core::http::StatusCode::Ok,
+                response.status(),
+                "Expected batch execution to succeed"
+            );
+
+            // Read back the item and verify the patch was applied
+            let updated_item: TestItem = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id)
+                .await?;
+
+            assert_eq!(100, updated_item.value);
+            assert_eq!("Patched", updated_item.nested.nested_value);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
 pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
