@@ -115,26 +115,6 @@ pub enum BlobDeleteType {
     Permanent,
 }
 
-/// The blob expiration options.
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum BlobExpiryOptions {
-    /// Absolute time.
-    Absolute,
-
-    /// Never expire.
-    NeverExpire,
-
-    /// Relative to creation time.
-    RelativeToCreation,
-
-    /// Relative to now.
-    RelativeToNow,
-
-    /// Any other value not defined in `BlobExpiryOptions`.
-    UnknownValue(String),
-}
-
 /// The blob type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
@@ -397,31 +377,6 @@ pub enum PublicAccessType {
 
     /// Any other value not defined in `PublicAccessType`.
     UnknownValue(String),
-}
-
-/// The query request, note only SQL supported
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum QueryRequestType {
-    /// The SQL request query type.
-    Sql,
-}
-
-/// The query format type.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum QueryType {
-    /// The query format type is Apache Arrow.
-    Arrow,
-
-    /// The query format type is delimited.
-    Delimited,
-
-    /// The query format type is JSON.
-    Json,
-
-    /// The query format type is Parquet.
-    Parquet,
 }
 
 /// If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High

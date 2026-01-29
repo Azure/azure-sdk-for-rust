@@ -2,13 +2,10 @@
 
 ## 0.9.0 (Unreleased)
 
-### Features Added
-
 ### Breaking Changes
 
-### Bugs Fixed
-
-### Other Changes
+- Renamed `BlobItemInternal` to `BlobItem`.
+- Renamed `BlobPropertiesInternal` to `BlobProperties`.
 
 ## 0.8.0 (2026-01-21)
 

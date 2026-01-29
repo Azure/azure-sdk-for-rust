@@ -13,17 +13,35 @@ use crate::{
         PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
     },
     pipeline::StorageHeadersPolicy,
-    PageBlobClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Bytes, Result,
 };
 use std::sync::Arc;
+
+/// Options used when creating a [`PageBlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct PageBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for PageBlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with a specific Azure storage Page blob, although that blob may not yet exist.
 pub struct PageBlobClient {

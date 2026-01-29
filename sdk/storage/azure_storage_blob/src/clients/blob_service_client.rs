@@ -13,17 +13,36 @@ use crate::{
         StorageServiceStats,
     },
     pipeline::StorageHeadersPolicy,
-    BlobContainerClient, BlobServiceClientOptions,
+    BlobContainerClient,
 };
 use azure_core::{
     credentials::TokenCredential,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pager, Pipeline, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, NoFormat, Pager, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Result,
 };
 use std::sync::Arc;
+
+/// Options used when creating a [`BlobServiceClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobServiceClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for BlobServiceClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
