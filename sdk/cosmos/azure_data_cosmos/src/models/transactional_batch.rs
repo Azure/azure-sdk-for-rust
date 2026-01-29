@@ -82,7 +82,7 @@ impl TransactionalBatch {
     /// * `item` - The item to create. Must implement [`Serialize`].
     pub fn create_item<T: Serialize>(
         mut self,
-        item: T,
+        item: &T,
     ) -> Result<Self, serde_json::Error> {
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Create {
@@ -101,7 +101,7 @@ impl TransactionalBatch {
     /// * `if_none_match` - Optional ETag for conditional create (If-None-Match header).
     pub fn create_item_with_options<T: Serialize>(
         mut self,
-        item: T,
+        item: &T,
         if_match: Option<Etag>,
         if_none_match: Option<Etag>,
     ) -> Result<Self, serde_json::Error> {
@@ -155,7 +155,7 @@ impl TransactionalBatch {
     pub fn replace_item<T: Serialize>(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
-        item: T,
+        item: &T,
     ) -> Result<Self, serde_json::Error> {
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Replace {
@@ -177,7 +177,7 @@ impl TransactionalBatch {
     pub fn replace_item_with_options<T: Serialize>(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
-        item: T,
+        item: &T,
         if_match: Option<Etag>,
         if_none_match: Option<Etag>,
     ) -> Result<Self, serde_json::Error> {
@@ -197,7 +197,7 @@ impl TransactionalBatch {
     /// * `item` - The item to upsert. Must implement [`Serialize`].
     pub fn upsert_item<T: Serialize>(
         mut self,
-        item: T,
+        item: &T,
     ) -> Result<Self, serde_json::Error> {
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Upsert {
@@ -216,7 +216,7 @@ impl TransactionalBatch {
     /// * `if_none_match` - Optional ETag for conditional upsert (If-None-Match header).
     pub fn upsert_item_with_options<T: Serialize>(
         mut self,
-        item: T,
+        item: &T,
         if_match: Option<Etag>,
         if_none_match: Option<Etag>,
     ) -> Result<Self, serde_json::Error> {
@@ -380,7 +380,7 @@ mod tests {
             id: "item1".to_string(),
             name: "Test Item".to_string(),
         };
-        let batch = TransactionalBatch::new("partition1").create_item(item)?;
+        let batch = TransactionalBatch::new("partition1").create_item(&item)?;
         assert_eq!(batch.operations().len(), 1);
         Ok(())
     }
@@ -397,9 +397,9 @@ mod tests {
         };
 
         let batch = TransactionalBatch::new("partition1")
-            .create_item(item1)?
+            .create_item(&item1)?
             .read_item("item3")
-            .replace_item("item4", item2)?
+            .replace_item("item4", &item2)?
             .delete_item("item5", None);
 
         assert_eq!(batch.operations().len(), 4);
@@ -412,7 +412,7 @@ mod tests {
             id: "item1".to_string(),
             name: "Test".to_string(),
         };
-        let batch = TransactionalBatch::new("partition1").create_item(item)?;
+        let batch = TransactionalBatch::new("partition1").create_item(&item)?;
         let operations = batch.operations();
         let serialized = serde_json::to_string(&operations)?;
 

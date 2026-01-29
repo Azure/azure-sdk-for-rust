@@ -69,7 +69,7 @@ impl TransactionalBatchCommand {
         println!("Creating a transactional batch with multiple operations...");
 
         // Create a batch that:
-        // 1. Creates two new products
+        // 1. Creates three new products
         // 2. Reads one of them back
         // 3. Updates another with a patch operation
         let patch = PatchDocument::default()
