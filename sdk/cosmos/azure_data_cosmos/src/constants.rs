@@ -191,6 +191,9 @@ cosmos_headers! {
     THINCLIENT_PROXY_RESOURCE_TYPE => "x-ms-thinclient-proxy-resource-type",
     // Client ID
     CLIENT_ID => "x-ms-client-id",
+    // these are not actually sent but are used internally for fault injection
+    FAULT_INJECTION_OPERATION => "x-ms-fault-injection-operation",
+    FAULT_INJECTION_CONTAINER_ID => "x-ms-fault-injection-container-id",
 }
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");

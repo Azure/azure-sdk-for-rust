@@ -174,6 +174,7 @@ mod tests {
             pipeline_core,
             endpoint_manager,
             CosmosClientOptions::default(),
+            false,
         ))
     }
 

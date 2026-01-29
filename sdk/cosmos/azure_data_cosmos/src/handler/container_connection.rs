@@ -90,6 +90,7 @@ mod tests {
             pipeline_core,
             endpoint_manager,
             CosmosClientOptions::default(),
+            false,
         ))
     }
 
@@ -166,6 +167,7 @@ mod tests {
             pipeline,
             endpoint_manager.clone(),
             CosmosClientOptions::default(),
+            false,
         ));
 
         let container_cache =
