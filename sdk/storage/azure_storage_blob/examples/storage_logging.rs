@@ -35,8 +35,8 @@
 //!
 //! ```bash
 //! az login
-//! $env:AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
-//! $env:RUST_LOG="<log-level>"
+//! export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
+//! export RUST_LOG="<log-level>"
 //! cargo run --package azure_storage_blob --example storage_logging
 //! ```
 //!
