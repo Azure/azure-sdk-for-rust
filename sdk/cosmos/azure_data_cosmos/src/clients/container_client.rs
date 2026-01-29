@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{
-    models::{ContainerProperties, PatchDocument, ThroughputProperties},
+    models::{ContainerProperties, PatchDocument, ThroughputProperties, TransactionalBatch},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
-    ThroughputOptions,
+    ThroughputOptions, TransactionalBatchOptions,
 };
 use std::sync::Arc;
 
@@ -731,5 +731,68 @@ impl ContainerClient {
                 r.insert_headers(&partition_key)?;
                 Ok(())
             })
+    }
+
+    /// Executes a transactional batch of operations against the container.
+    ///
+    /// All operations in the batch must target items with the same partition key.
+    /// The batch can contain up to 100 operations and the total request payload must not exceed 2 MB.
+    /// If any operation fails, the entire batch is rolled back atomically.
+    ///
+    /// # Arguments
+    /// * `batch` - The transactional batch to execute.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::models::TransactionalBatch;
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")]
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let p1 = Product {
+    ///     product_id: "product1".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #1".to_string(),
+    /// };
+    /// let p2 = Product {
+    ///     product_id: "product2".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #2".to_string(),
+    /// };
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let batch = TransactionalBatch::new("category1")
+    ///     .create_item(p1)?
+    ///     .create_item(p2)?;
+    /// container_client
+    ///     .execute_transactional_batch(batch, None)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    pub async fn execute_transactional_batch(
+        &self,
+        batch: TransactionalBatch,
+        options: Option<TransactionalBatchOptions<'_>>,
+    ) -> azure_core::Result<Response<()>> {
+        let options = options.unwrap_or_default();
+        let cosmos_request = CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
+            .request_headers(&options)
+            .partition_key(batch.partition_key().clone())
+            .json(batch.operations())
+            .header(crate::constants::COSMOS_IS_BATCH_REQUEST, "True")
+            .header(crate::constants::COSMOS_BATCH_ATOMIC, "True")
+            .build()?;
+
+        self.container_connection
+            .send(cosmos_request, options.method_options.context)
+            .await
     }
 }

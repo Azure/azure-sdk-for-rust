@@ -459,6 +459,83 @@ pub struct ThroughputOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`ContainerClient::execute_transactional_batch()`](crate::clients::ContainerClient::execute_transactional_batch()).
+#[derive(Clone, Default)]
+pub struct TransactionalBatchOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+    /// When this value is true, write operations will respond with the new value of the resource being written.
+    ///
+    /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
+    /// Note that read operations in the batch will always return content, regardless of this setting.
+    pub enable_content_response_on_write: bool,
+    /// Applies when working with Session consistency.
+    /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
+    /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
+    ///
+    /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
+    pub session_token: Option<SessionToken>,
+    /// Used to specify the consistency level for the operation.
+    ///
+    /// The default value is the consistency level set on the Cosmos DB account.
+    /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
+    pub consistency_level: Option<ConsistencyLevel>,
+    /// The desired throughput bucket for this request
+    ///
+    /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
+    pub throughput_bucket: Option<usize>,
+    /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
+    /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
+    ///
+    /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
+    pub priority: Option<PriorityLevel>,
+    /// Additional headers to be included in the batch request. This allows for custom headers beyond those natively supported.
+    ///
+    /// Custom headers will not override headers that are already set by the SDK.
+    pub custom_headers: HashMap<HeaderName, HeaderValue>,
+}
+
+impl AsHeaders for TransactionalBatchOptions<'_> {
+    type Error = Infallible;
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
+        let mut headers = Vec::new();
+
+        // custom headers should be added first so that they don't override SDK-set headers
+        for (header_name, header_value) in &self.custom_headers {
+            headers.push((header_name.clone(), header_value.clone()));
+        }
+
+        if let Some(session_token) = &self.session_token {
+            headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
+        }
+
+        if let Some(consistency_level) = &self.consistency_level {
+            headers.push((
+                constants::CONSISTENCY_LEVEL,
+                consistency_level.to_string().into(),
+            ));
+        }
+
+        if let Some(priority) = &self.priority {
+            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
+        }
+
+        if let Some(throughput_bucket) = &self.throughput_bucket {
+            headers.push((
+                constants::THROUGHPUT_BUCKET,
+                throughput_bucket.to_string().into(),
+            ));
+        }
+
+        if !self.enable_content_response_on_write {
+            headers.push((headers::PREFER, constants::PREFER_MINIMAL));
+        }
+
+        Ok(headers.into_iter())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

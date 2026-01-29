@@ -12,6 +12,7 @@ mod indexing_policy;
 mod partition_key_definition;
 mod patch_operations;
 mod throughput_properties;
+mod transactional_batch;
 
 pub use account_properties::*;
 pub use container_properties::*;
@@ -19,6 +20,7 @@ pub use indexing_policy::*;
 pub use partition_key_definition::*;
 pub use patch_operations::*;
 pub use throughput_properties::*;
+pub use transactional_batch::*;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
