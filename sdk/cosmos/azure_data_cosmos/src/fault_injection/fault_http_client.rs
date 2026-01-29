@@ -4,9 +4,11 @@ use std::time::{Duration, Instant};
 use async_trait::async_trait;
 use azure_core::http::{AsyncRawResponse, HttpClient, Request, StatusCode};
 use azure_core::error::ErrorKind;
-use crate::fault_injection::fault_injection_utils::{
-    FaultInjectionRule, FaultInjectionServerErrorType, FaultInjectionResult,
+use crate::constants::SubStatusCode::PartitionKeyRangeGone;
+use super::fault_injection_result::{
+    FaultInjectionResult, FaultInjectionServerErrorType,
 };
+use super::fault_injection_rule::FaultInjectionRule;
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
@@ -134,18 +136,14 @@ impl FaultClient {
 
             // Apply delay before injecting the error
             if server_error.delay > Duration::ZERO {
-                // Convert std::time::Duration to azure_core time::Duration for sleep
-                let delay_secs = server_error.delay.as_secs();
-                let delay_nanos = server_error.delay.subsec_nanos();
-                let delay = azure_core::time::Duration::new(delay_secs as i64, delay_nanos as i32);
+                // Convert std::time::Duration to azure_core::time::Duration for sleep
+                let delay = azure_core::time::Duration::try_from(server_error.delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO);
                 azure_core::async_runtime::get_async_runtime().sleep(delay).await;
             }
 
             // Generate the appropriate error based on error type
             let (status_code, _sub_status, message) = match server_error.error_type {
-                FaultInjectionServerErrorType::RetryWith => {
-                    (StatusCode::from(449), None, "Retry With - Injected fault")
-                }
                 FaultInjectionServerErrorType::InternalServerError => {
                     (StatusCode::InternalServerError, None, "Internal Server Error - Injected fault")
                 }
@@ -153,7 +151,7 @@ impl FaultClient {
                     (StatusCode::TooManyRequests, None, "Too Many Requests - Injected fault")
                 }
                 FaultInjectionServerErrorType::ReadSessionNotAvailable => {
-                    (StatusCode::NotFound, Some(1002), "Read Session Not Available - Injected fault")
+                    (StatusCode::NotFound, Some(PartitionKeyRangeGone), "Read Session Not Available - Injected fault")
                 }
                 FaultInjectionServerErrorType::Timeout => {
                     (StatusCode::RequestTimeout, None, "Request Timeout - Injected fault")
@@ -172,7 +170,7 @@ impl FaultClient {
                     (StatusCode::ServiceUnavailable, None, "Service Unavailable - Injected fault")
                 }
                 FaultInjectionServerErrorType::PartitionIsGone => {
-                    (StatusCode::Gone, Some(1002), "Partition Is Gone - Injected fault")
+                    (StatusCode::Gone, Some(PartitionKeyRangeGone), "Partition Is Gone - Injected fault")
                 }
             };
 

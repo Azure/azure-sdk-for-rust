@@ -10,10 +10,7 @@ use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
-use azure_data_cosmos::fault_injection::{
-    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionRuleBuilder,
-    FaultInjectionServerError, FaultInjectionServerErrorType,
-};
+use azure_data_cosmos::fault_injection::{FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionRuleBuilder, FaultInjectionServerError, FaultInjectionServerErrorBuilder, FaultInjectionServerErrorType};
 use framework::TestClient;
 use framework::TestRunContext;
 use framework::{get_effective_hub_endpoint, get_global_endpoint};
@@ -911,72 +908,103 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-/// Test that verifies fault injection with repeated 503 Service Unavailable errors.
-/// This test expects the operation to fail with a 503 error since no retries are configured
-/// for this error type.
+/// Test that verifies fault injection with various server error types.
+/// Each test case creates a fault injection rule that returns the specified error
+/// and verifies that the read operation fails with the expected HTTP status code.
 #[tokio::test]
-pub async fn item_read_with_503_fault_injection() -> Result<(), Box<dyn Error>> {
+pub async fn item_read_with_fault_injection() -> Result<(), Box<dyn Error>> {
     use azure_data_cosmos::CosmosClientOptions;
-    use std::time::Duration;
 
-    // Create a fault injection rule that always returns 503 Service Unavailable
-    let server_error = FaultInjectionServerError::builder(FaultInjectionServerErrorType::ServiceUnavailable)
-        .probability(1.0) // Always inject the fault
-        .build();
+    let test_cases = vec![
+        (
+            "503 Service Unavailable",
+            FaultInjectionServerErrorType::ServiceUnavailable,
+            StatusCode::ServiceUnavailable,
+        ),
+        (
+            "500 Internal Server Error",
+            FaultInjectionServerErrorType::InternalServerError,
+            StatusCode::InternalServerError,
+        ),
+        (
+            "429 Too Many Requests",
+            FaultInjectionServerErrorType::TooManyRequests,
+            StatusCode::TooManyRequests,
+        ),
+        (
+            "408 Request Timeout",
+            FaultInjectionServerErrorType::Timeout,
+            StatusCode::RequestTimeout,
+        ),
+    ];
 
-    let condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(azure_data_cosmos::fault_injection::FaultOperationType::ReadItem)
-        .build();
+    for (name, error_type, expected_status) in test_cases {
+        println!("Testing fault injection: {}", name);
 
-    let rule = FaultInjectionRuleBuilder::new("503-always", server_error)
-        .with_condition(condition)
-        .build();
+        // Create a fault injection rule that always returns the specified error
+        let server_error = FaultInjectionServerErrorBuilder::new(error_type).build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(azure_data_cosmos::fault_injection::FaultOperationType::ReadItem)
+            .build();
 
-    // Inject the fault into client options
-    let options = fault_builder.inject(CosmosClientOptions::default());
+        let rule = FaultInjectionRuleBuilder::new(&format!("{:?}-always", name), server_error)
+            .with_condition(condition)
+            .build();
 
-    TestClient::run_with_shared_db(
-        async |run_context, _db_client| {
-            let container_client = create_container(run_context).await?;
-            let unique_id = Uuid::new_v4().to_string();
+        let mut fault_builder = FaultInjectionClientBuilder::new();
+        fault_builder.with_rule(rule);
 
-            // Create an item (this should succeed since fault is only on reads)
-            let item = TestItem {
-                id: format!("Item1-{}", unique_id).into(),
-                partition_key: Some(format!("Partition1-{}", unique_id).into()),
-                value: 42,
-                nested: NestedItem {
-                    nested_value: "Nested".into(),
-                },
-                bool_value: true,
-            };
+        // Inject the fault into client options
+        let options = fault_builder.inject(CosmosClientOptions::default());
 
-            let pk = format!("Partition1-{}", unique_id);
-            let item_id = format!("Item1-{}", unique_id);
+        TestClient::run_with_shared_db(
+            async |run_context, _db_client| {
+                let container_client = create_container(run_context).await?;
+                let unique_id = Uuid::new_v4().to_string();
 
-            container_client.create_item(&pk, &item, None).await?;
+                // Create an item (this should succeed since fault is only on reads)
+                let item = TestItem {
+                    id: format!("Item1-{}", unique_id).into(),
+                    partition_key: Some(format!("Partition1-{}", unique_id).into()),
+                    value: 42,
+                    nested: NestedItem {
+                        nested_value: "Nested".into(),
+                    },
+                    bool_value: true,
+                };
 
-            // Try to read the item - this should fail with 503 due to fault injection
-            let result = container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+                let pk = format!("Partition1-{}", unique_id);
+                let item_id = format!("Item1-{}", unique_id);
 
-            // Verify we got a 503 error
-            let err = result.expect_err("expected the read to fail with 503");
-            assert_eq!(
-                Some(azure_core::http::StatusCode::ServiceUnavailable),
-                err.http_status(),
-                "expected 503 Service Unavailable, got {:?}",
-                err.http_status()
-            );
+                container_client.create_item(&pk, &item, None).await?;
 
-            Ok(())
-        },
-        Some(framework::TestOptions::new().with_client_options(options)),
-    )
-    .await
+                // Try to read the item - this should fail with the injected error
+                let result = container_client
+                    .read_item::<TestItem>(&pk, &item_id, None)
+                    .await;
+
+                // Verify we got the expected error
+                let err = result.expect_err(&format!(
+                    "expected the read to fail with {:?}",
+                    expected_status
+                ));
+                assert_eq!(
+                    Some(expected_status),
+                    err.http_status(),
+                    "Test case '{}': expected {:?}, got {:?}",
+                    name,
+                    expected_status,
+                    err.http_status()
+                );
+
+                Ok(())
+            },
+            Some(framework::TestOptions::new().with_client_options(options)),
+        )
+        .await?;
+    }
+
+    Ok(())
 }
 

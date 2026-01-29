@@ -326,6 +326,7 @@ impl TestClient {
         } else if test_mode == CosmosTestMode::Required {
             panic!("Cosmos Test Mode is 'required' but no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
         } else {
+            // Test mode is 'allowed' but no connection string was provided, so we skip the test.
             eprintln!("Skipping emulator/live tests because no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
             Ok(())
         }
