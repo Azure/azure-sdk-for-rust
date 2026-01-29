@@ -41,7 +41,7 @@ impl ContainerConnection {
         &self,
         cosmos_request: CosmosRequest,
         context: Context<'_>,
-    ) -> azure_core::Result<Response<T>> {
+    ) -> azure_core::Result<(Response<T>, CosmosRequest)> {
         self.pipeline.send(cosmos_request, context).await
     }
 }

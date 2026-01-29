@@ -3,7 +3,7 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -86,13 +86,14 @@ impl DatabaseClient {
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<DatabaseProperties>> {
+    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
         self.pipeline
             .send(cosmos_request?, options.method_options.context)
             .await
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Executes a query against containers in the database.
@@ -148,7 +149,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
@@ -159,6 +160,7 @@ impl DatabaseClient {
         self.pipeline
             .send(cosmos_request, options.method_options.context)
             .await
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Deletes this database.
@@ -171,13 +173,14 @@ impl DatabaseClient {
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
         self.pipeline
             .send(cosmos_request?, options.method_options.context)
             .await
+            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Reads database throughput properties, if any.

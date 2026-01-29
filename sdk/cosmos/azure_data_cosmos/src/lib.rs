@@ -8,7 +8,7 @@ pub mod clients;
 mod connection_string;
 pub mod constants;
 mod feed;
-mod options;
+pub mod options;
 mod partition_key;
 pub(crate) mod pipeline;
 pub mod query;
@@ -21,6 +21,7 @@ pub mod models;
 pub use clients::CosmosClient;
 
 pub use connection_string::*;
+pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;

@@ -7,6 +7,8 @@
 
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::CosmosResponse;
+use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, PartitionKey,
@@ -39,6 +41,7 @@ pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:
 pub const HUB_REGION: &str = EAST_US_2;
 pub const SATELLITE_REGION: &str = WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
+pub const EMULATOR_HOST: &str = "localhost";
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
@@ -100,6 +103,52 @@ fn get_shared_database_id() -> &'static str {
     });
 
     id.as_str()
+}
+
+pub fn get_effective_hub_endpoint() -> String {
+    let host = get_global_endpoint();
+
+    if host == EMULATOR_HOST.to_string() {
+        return host;
+    }
+
+    // Insert the hub region after the account name, before .documents.azure.com
+    // e.g., "account_name.documents.azure.com" -> "account_name-eastus2.documents.azure.com"
+    let region_suffix = HUB_REGION.to_lowercase().replace(' ', "");
+    if let Some(pos) = host.find(".documents.azure.com") {
+        let account_name = &host[..pos];
+        format!("{}-{}.documents.azure.com", account_name, region_suffix)
+    } else {
+        // Fallback: just return the host as-is if it doesn't match expected format
+        host.to_string()
+    }
+}
+
+pub fn get_global_endpoint() -> String {
+    let connection_string_env = std::env::var(CONNECTION_STRING_ENV_VAR)
+        .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
+
+    // If using emulator, just return the emulator endpoint
+    if connection_string_env == "emulator" || connection_string_env == EMULATOR_CONNECTION_STRING {
+        return EMULATOR_HOST.to_string();
+    }
+
+    // Parse the connection string to get the account endpoint
+    let connection_string: ConnectionString = connection_string_env
+        .parse()
+        .expect("Failed to parse connection string");
+
+    let account_endpoint = connection_string.account_endpoint.trim_end_matches('/');
+
+    // Parse the URL to extract the host and insert the hub region
+    // Expected format: https://accountname.documents.azure.com:443
+    // Target format: accountname-region.documents.azure.com (host only, no scheme/port)
+    let url = url::Url::parse(account_endpoint).expect("Failed to parse account endpoint URL");
+    let host = url
+        .host_str()
+        .expect("Failed to get host from account endpoint")
+        .to_string();
+    host
 }
 
 impl FromStr for CosmosTestMode {
@@ -377,7 +426,8 @@ impl TestRunContext {
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-    ) -> azure_core::Result<T>
+        options: Option<ItemOptions<'_>>,
+    ) -> azure_core::Result<CosmosResponse<T>>
     where
         T: serde::de::DeserializeOwned,
     {
@@ -389,10 +439,14 @@ impl TestRunContext {
 
         loop {
             match container
-                .read_item(partition_key.clone(), item_id.clone().as_str(), None)
+                .read_item(
+                    partition_key.clone(),
+                    item_id.clone().as_str(),
+                    options.clone(),
+                )
                 .await
             {
-                Ok(response) => return response.into_model(),
+                Ok(response) => return Ok(response),
                 Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
                     println!(
                         "Read item failed with {:?}: {}. Retrying after {:?}...",
