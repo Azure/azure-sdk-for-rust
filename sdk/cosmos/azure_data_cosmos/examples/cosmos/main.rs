@@ -13,6 +13,7 @@ mod patch;
 mod query;
 mod read;
 mod replace;
+mod transactional_batch;
 mod upsert;
 mod utils;
 
@@ -49,6 +50,7 @@ enum Subcommands {
     Replace(replace::ReplaceCommand),
     Upsert(upsert::UpsertCommand),
     Patch(patch::PatchCommand),
+    TransactionalBatch(transactional_batch::TransactionalBatchCommand),
 }
 
 #[tokio::main]
@@ -75,6 +77,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         Subcommands::Replace(cmd) => cmd.run(client).await,
         Subcommands::Upsert(cmd) => cmd.run(client).await,
         Subcommands::Patch(cmd) => cmd.run(client).await,
+        Subcommands::TransactionalBatch(cmd) => cmd.run(client).await,
     }
 }
 
