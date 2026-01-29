@@ -147,23 +147,18 @@ pub static STORAGE_ALLOWED_QUERY_PARAMETERS: &[&str] = &[
 
 /// Applies the default Azure Storage Blob logging configuration to client options.
 ///
-/// This function prepends the storage-specific allowed headers and query parameters
+/// This function adds the storage-specific allowed headers and query parameters
 /// to the user's existing logging options. User-specified options are preserved and
 /// take effect in addition to the storage defaults.
 pub(crate) fn apply_storage_logging_defaults(options: &mut ClientOptions) {
-    // Prepend storage-specific headers to any user-specified headers
-    let user_headers = std::mem::take(&mut options.logging.additional_allowed_header_names);
-    options.logging.additional_allowed_header_names = STORAGE_ALLOWED_HEADERS
-        .iter()
-        .map(|s| Cow::Borrowed(*s))
-        .chain(user_headers)
-        .collect();
+    options
+        .logging
+        .additional_allowed_header_names
+        .extend(STORAGE_ALLOWED_HEADERS.iter().map(|s| Cow::Borrowed(*s)));
 
-    // Prepend storage-specific query params to any user-specified query params
-    let user_query_params = std::mem::take(&mut options.logging.additional_allowed_query_params);
-    options.logging.additional_allowed_query_params = STORAGE_ALLOWED_QUERY_PARAMETERS
-        .iter()
-        .map(|s| Cow::Borrowed(*s))
-        .chain(user_query_params)
-        .collect();
+    options.logging.additional_allowed_query_params.extend(
+        STORAGE_ALLOWED_QUERY_PARAMETERS
+            .iter()
+            .map(|s| Cow::Borrowed(*s)),
+    );
 }
