@@ -34,5 +34,6 @@ extends:
     LiveTestMatrixConfigs:
       - Name: Cosmos_live_test
         Path: sdk/cosmos/live-platform-matrix.json
-        Selection: all
+        Selection: sparse
+        NonSparseParameters: RustToolchainName
         GenerateVMJobs: true
