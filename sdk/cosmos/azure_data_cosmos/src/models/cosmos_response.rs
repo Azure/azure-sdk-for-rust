@@ -42,14 +42,6 @@ impl<T> CosmosResponse<T> {
         self.response.headers()
     }
 
-    /// Gets a header value as a string by name.
-    ///
-    /// Returns `Ok(&str)` if the header exists and is valid UTF-8,
-    /// or an error otherwise.
-    pub fn get_header_str(&self, name: &HeaderName) -> azure_core::Result<&str> {
-        self.response.headers().get_str(name)
-    }
-
     /// Gets an optional header value as a string by name.
     ///
     /// Returns `Some(&str)` if the header exists,
