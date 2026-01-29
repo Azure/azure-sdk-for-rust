@@ -17,3 +17,5 @@ mod streams;
 pub use clients::*;
 pub use parsers::*;
 pub mod models;
+pub use models::error;
+pub use models::error::{Result, StorageError};

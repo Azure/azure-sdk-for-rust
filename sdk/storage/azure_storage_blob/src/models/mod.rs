@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 pub(crate) mod content_range;
+pub mod error;
 mod extensions;
-mod storage_error;
 
 pub use crate::generated::models::{
     AccessPolicy, AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
@@ -79,4 +79,4 @@ pub use crate::generated::models::{
     StorageServiceStats, UserDelegationKey,
 };
 
-pub use storage_error::StorageError;
+pub use error::{Result, StorageError};

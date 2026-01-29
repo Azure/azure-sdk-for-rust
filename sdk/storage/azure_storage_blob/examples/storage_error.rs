@@ -21,8 +21,7 @@
 //!
 //! ```bash
 //! az login
-//! $env:AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
-//! cargo run --package azure_storage_blob --example storage_error
+//! AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>" cargo run --package azure_storage_blob --example storage_error
 //! ```
 
 use azure_core::error::ErrorKind;
@@ -65,70 +64,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Convert the azure_core::Error to a StorageError for programmatic access
                 let storage_error: StorageError = error.try_into()?;
 
-                println!("\n=== StorageError Details ===");
+                // StorageError implements Display
+                println!("\n=== StorageError (Display) ===");
+                println!("{storage_error}");
 
-                // HTTP Status Code
-                println!("HTTP Status Code: {}", storage_error.status_code());
+                // For programmatic error handling, access fields directly:
+                println!("\n=== Programmatic Access ===");
+                println!("HTTP Status Code: {}", storage_error.status_code);
 
-                // Storage Error Code Model - Use this for programmatic error handling
-                if let Some(error_code) = storage_error.error_code() {
-                    println!("Storage Error Code: {:?}", error_code);
-
-                    // Example: Handle specific error codes
+                if let Some(error_code) = &storage_error.error_code {
+                    // Handle specific error codes
                     match error_code {
                         StorageErrorCode::BlobNotFound => {
-                            println!("  -> The blob does not exist.");
+                            println!("The blob does not exist.");
                         }
                         StorageErrorCode::ContainerNotFound => {
-                            println!("  -> The container does not exist.");
+                            println!("The container does not exist.");
                         }
                         StorageErrorCode::AuthorizationFailure => {
-                            println!("  -> Authorization failed. Check your permissions.");
+                            println!("Authorization failed. Check your permissions.");
                         }
                         StorageErrorCode::AuthenticationFailed => {
-                            println!("  -> Authentication failed. Verify your credentials.");
+                            println!("Authentication failed. Verify your credentials.");
                         }
                         _ => {
-                            println!("  -> Other error: {:?}", error_code);
+                            println!("Other error: {error_code}");
                         }
                     }
                 }
 
-                // Error message
-                if let Some(message) = storage_error.message() {
-                    println!("Error Message: {}", message);
+                // Request ID is useful for Azure support troubleshooting
+                if let Some(request_id) = &storage_error.request_id {
+                    println!("Request ID: {request_id}");
                 }
-
-                // Request ID - Useful for Azure support troubleshooting
-                if let Some(request_id) = storage_error.request_id() {
-                    println!("Request ID: {}", request_id);
-                }
-
-                // Copy source error details (for copy operations)
-                if let Some(copy_source_status) = storage_error.copy_source_status_code() {
-                    println!("\n=== Copy Source Error Details ===");
-                    println!("Copy Source Status Code: {}", copy_source_status);
-
-                    if let Some(code) = storage_error.copy_source_error_code() {
-                        println!("Copy Source Error Code: {}", code);
-                    }
-                    if let Some(message) = storage_error.copy_source_error_message() {
-                        println!("Copy Source Error Message: {}", message);
-                    }
-                }
-
-                // Additional error info from the Service (if any)
-                let additional_info = storage_error.additional_error_info();
-                if !additional_info.is_empty() {
-                    println!("\n=== Additional Error Information ===");
-                    for (key, value) in additional_info {
-                        println!("  {}: {}", key, value);
-                    }
-                }
-
-                // StorageError implements Display for easy logging
-                println!("\n=== Full Error Display ===");
-                println!("{}", storage_error);
             } else {
                 // Handle non-HTTP errors (e.g., network errors, timeouts)
                 println!("Non-HTTP error occurred: {:?}", error);
