@@ -8,6 +8,9 @@ use crate::routing::container_cache::ContainerCache;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::{Context, Response};
 use std::sync::Arc;
+use azure_core::http::headers::AsHeaders;
+use crate::{constants, PartitionKeyValue};
+use crate::resource_context::ResourceType::PartitionKey;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
@@ -58,12 +61,29 @@ impl ContainerConnection {
                 .container_cache
                 .resolve_by_id(container_rid.unwrap().parse()?, None, false)
                 .await?;
-            let pk_range = self
-                .pk_range_cache
-                .resolve_partition_key_range_by_id(&container_prop.id, "0".as_ref(), false)
-                .await;
 
-            cosmos_request.request_context.resolved_partition_key_range = pk_range;
+            container_prop.partition_key;
+            // let pk_range_by_id = self
+            //     .pk_range_cache
+            //     .resolve_partition_key_range_by_id(&container_prop.id, "0".as_ref(), false)
+            //     .await;
+
+            let routing_map = self
+                .pk_range_cache
+                .try_lookup(&container_prop.id, None)
+                .await?
+                .unwrap();
+
+            let key = cosmos_request.clone().partition_key.unwrap();
+            // key.get_effective_partition_key_string() //TODO: Implement this correctly.
+            let pk_range = routing_map.get_range_by_effective_partition_key(&*self.key_to_string(key))?;
+
+            // let keys = vec![
+            //     PartitionKeyValue::from("tenant1"),
+            // ];
+            // let partition_key = crate::PartitionKey::from(keys);
+
+            // cosmos_request.request_context.resolved_partition_key_range = pk_range_by_id;
 
             self.global_partition_endpoint_manager.try_add_partition_level_location_override(&mut cosmos_request);
         }
@@ -78,6 +98,13 @@ impl ContainerConnection {
     fn is_partition_level_failover_enabled(&self) -> bool {
         self.global_partition_endpoint_manager.is_partition_level_circuit_breaker_enabled()
             || self.global_partition_endpoint_manager.is_partition_level_automatic_failover_enabled()
+    }
+
+    pub fn key_to_string(&self, v: impl Into<crate::PartitionKey>) -> String {
+        let key = v.into();
+        let mut headers_iter = key.as_headers().unwrap();
+        let (name, value) = headers_iter.next().unwrap();
+        value.as_str().into()
     }
 }
 

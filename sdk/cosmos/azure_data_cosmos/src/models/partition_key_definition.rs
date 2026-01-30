@@ -77,6 +77,8 @@ pub enum PartitionKeyKind {
 
     /// The container is partitioned by hashing multiple, hierarchical, partition keys.
     MultiHash,
+
+    Range,
 }
 
 #[cfg(test)]

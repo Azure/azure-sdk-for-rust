@@ -2,10 +2,11 @@
 // Licensed under the MIT License.
 
 use std::borrow::Cow;
-
+use std::io::Write;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::constants;
+use crate::models::{PartitionKeyDefinition, PartitionKeyKind};
 
 /// Specifies a partition key value, usually used when querying a specific partition.
 ///
@@ -74,6 +75,84 @@ use crate::constants;
 /// let partition_key_1 = PartitionKey::from("simple_string");
 /// let partition_key_2 = PartitionKey::from(("parent", "child", 42));
 /// ```
+
+
+/// Minimum inclusive effective partition key (empty components).
+pub const MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
+
+/// Maximum exclusive effective partition key (infinity marker).
+pub const MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
+
+/// Error type for partition key operations.
+#[derive(Debug)]
+pub enum PartitionKeyError {
+    #[error("Too few partition key components")]
+    TooFewComponents,
+    #[error("Too many partition key components")]
+    TooManyComponents,
+    #[error("Unexpected partition key definition version")]
+    UnexpectedVersion,
+    #[error("Internal server error: {0}")]
+    InternalError(String),
+}
+
+/// Partition key component trait.
+pub trait PartitionKeyComponent: Send + Sync {
+    fn write_for_hashing(&self, writer: &mut dyn Write) -> std::io::Result<()>;
+    fn write_for_hashing_v2(&self, writer: &mut dyn Write) -> std::io::Result<()>;
+    fn write_for_binary_encoding(&self, writer: &mut dyn Write) -> std::io::Result<()>;
+    fn truncate(&self) -> Box<dyn PartitionKeyComponent>;
+    fn get_type_ordinal(&self) -> i32;
+}
+
+
+/// Partition key component types.
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PartitionKeyComponentType {
+    Undefined = 0,
+    Null = 1,
+    False = 2,
+    True = 3,
+    MinNumber = 4,
+    Number = 5,
+    MaxNumber = 6,
+    MinString = 7,
+    String = 8,
+    MaxString = 9,
+    Infinity = 0xFF,
+}
+
+/// Number partition key component.
+#[derive(Debug, Clone)]
+pub struct NumberPartitionKeyComponent(pub f64);
+
+impl PartitionKeyComponent for NumberPartitionKeyComponent {
+    fn write_for_hashing(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+        writer.write_all(&self.0.to_le_bytes())
+    }
+
+    fn write_for_hashing_v2(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+        writer.write_all(&[PartitionKeyComponentType::Number as u8])?;
+        writer.write_all(&self.0.to_le_bytes())
+    }
+
+    fn write_for_binary_encoding(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+        writer.write_all(&[PartitionKeyComponentType::Number as u8])?;
+        // Encode as uint64 for binary representation
+        let encoded = encode_double_as_uint64(self.0);
+        writer.write_all(&encoded.to_be_bytes())
+    }
+
+    fn truncate(&self) -> Box<dyn PartitionKeyComponent> {
+        Box::new(self.clone())
+    }
+
+    fn get_type_ordinal(&self) -> i32 {
+        PartitionKeyComponentType::Number as i32
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
@@ -87,6 +166,241 @@ impl PartitionKey {
     #[cfg_attr(not(feature = "preview_query_engine"), allow(dead_code))]
     pub(crate) fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+
+    /// Produces effective partition key string.
+    ///
+    /// Azure Cosmos DB has global index on effective partition key values.
+    /// Effective value is produced by applying range or hash encoding to all
+    /// component values, based on partition key definition.
+    pub fn get_effective_partition_key_string(
+        &self,
+        partition_key_definition: &PartitionKeyDefinition,
+        strict: bool,
+    ) -> Result<String, PartitionKeyError> {
+        let components = self
+            .components
+            .as_ref()
+            .ok_or(PartitionKeyError::TooFewComponents)?;
+
+        // Check for empty partition key
+        if components.is_empty() {
+            return Ok(MINIMUM_INCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string());
+        }
+
+        // Check for infinity partition key
+        if self.is_infinity() {
+            return Ok(MAXIMUM_EXCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string());
+        }
+
+        // Validate component count
+        if components.len() < partition_key_definition.paths.len()
+            && partition_key_definition.kind != PartitionKeyKind::MultiHash
+        {
+            return Err(PartitionKeyError::TooFewComponents);
+        }
+
+        if components.len() > partition_key_definition.paths.len() && strict {
+            return Err(PartitionKeyError::TooManyComponents);
+        }
+
+        match partition_key_definition.kind {
+            PartitionKeyKind::Hash => {
+                let version = partition_key_definition
+                    .version
+                    .unwrap_or(1);
+
+                match version {
+                    1 => {
+                        self.get_effective_partition_key_for_hash_partitioning()
+                    }
+                    2 => {
+                        self.get_effective_partition_key_for_hash_partitioning_v2()
+                    }
+                    _ => self.get_effective_partition_key_for_hash_partitioning()
+                }
+            }
+            PartitionKeyKind::MultiHash => {
+                self.get_effective_partition_key_for_multi_hash_partitioning_v2()
+            }
+            PartitionKeyKind::Range => Self::to_hex_encoded_binary_string(components),
+        }
+    }
+
+    /// Hash partitioning V1 (MurmurHash3 32-bit).
+    fn get_effective_partition_key_for_hash_partitioning(&self) -> Result<String, PartitionKeyError> {
+        let components = self.components.as_ref().unwrap();
+
+        // Truncate components
+        let truncated_components: Vec<Box<dyn PartitionKeyComponent>> = components
+            .iter()
+            .map(|c| c.truncate())
+            .collect();
+
+        // Compute hash
+        let mut buffer = Vec::new();
+        for component in &truncated_components {
+            component
+                .write_for_hashing(&mut buffer)
+                .map_err(|e| PartitionKeyError::InternalError(e.to_string()))?;
+        }
+
+        let hash = murmur3_hash_32(&buffer);
+
+        // Build result: [hash] + [truncated components]
+        let mut result_components: Vec<&dyn PartitionKeyComponent> = Vec::with_capacity(components.len() + 1);
+
+        let hash_component = NumberPartitionKeyComponent(hash as f64);
+        let hash_box: Box<dyn PartitionKeyComponent> = Box::new(hash_component);
+
+        let mut all_components: Vec<Box<dyn PartitionKeyComponent>> = vec![hash_box];
+        all_components.extend(truncated_components);
+
+        Self::to_hex_encoded_binary_string(&all_components)
+    }
+
+    /// Hash partitioning V2 (MurmurHash3 128-bit).
+    fn get_effective_partition_key_for_hash_partitioning_v2(&self) -> Result<String, PartitionKeyError> {
+        let components = self.components.as_ref().unwrap();
+
+        let mut buffer = Vec::new();
+        for component in components {
+            component
+                .write_for_hashing_v2(&mut buffer)
+                .map_err(|e| PartitionKeyError::InternalError(e.to_string()))?;
+        }
+
+        let hash128 = murmur3_hash_128(&buffer);
+        let mut hash_bytes = hash128.to_be_bytes();
+
+        // Reset 2 most significant bits (max exclusive value is 'FF')
+        hash_bytes[0] &= 0x3F;
+
+        Ok(to_hex_string(&hash_bytes))
+    }
+
+    /// Multi-hash partitioning V2 (per-component hashing).
+    fn get_effective_partition_key_for_multi_hash_partitioning_v2(&self) -> Result<String, PartitionKeyError> {
+        let components = self.components.as_ref().unwrap();
+        let mut result = String::new();
+
+        for component in components {
+            let mut buffer = Vec::new();
+            component
+                .write_for_hashing_v2(&mut buffer)
+                .map_err(|e| PartitionKeyError::InternalError(e.to_string()))?;
+
+            let hash128 = murmur3_hash_128(&buffer);
+            let mut hash_bytes = hash128.to_be_bytes();
+
+            // Reset 2 most significant bits
+            hash_bytes[0] &= 0x3F;
+
+            result.push_str(&to_hex_string(&hash_bytes));
+        }
+
+        Ok(result)
+    }
+
+    /// Converts components to hex-encoded binary string.
+    fn to_hex_encoded_binary_string(
+        components: &[Box<dyn PartitionKeyComponent>],
+    ) -> Result<String, PartitionKeyError> {
+        let mut buffer = Vec::with_capacity(256);
+
+        for component in components {
+            component
+                .write_for_binary_encoding(&mut buffer)
+                .map_err(|e| PartitionKeyError::InternalError(e.to_string()))?;
+        }
+
+        Ok(to_hex_string(&buffer))
+    }
+
+    /// Checks if this is the infinity partition key.
+    fn is_infinity(&self) -> bool {
+        if let Some(components) = &self.components {
+            if components.len() == 1 {
+                // Check if the single component is infinity type
+                return components[0].get_type_ordinal() == PartitionKeyComponentType::Infinity as i32;
+            }
+        }
+        false
+    }
+}
+
+/// MurmurHash3 32-bit hash function.
+fn murmur3_hash_32(data: &[u8]) -> u32 {
+    // Simplified implementation - use a proper crate in production
+    let seed: u32 = 0;
+    let c1: u32 = 0xcc9e2d51;
+    let c2: u32 = 0x1b873593;
+
+    let mut h1 = seed;
+    let len = data.len();
+    let mut i = 0;
+
+    while i + 4 <= len {
+        let mut k1 = u32::from_le_bytes([data[i], data[i + 1], data[i + 2], data[i + 3]]);
+        k1 = k1.wrapping_mul(c1);
+        k1 = k1.rotate_left(15);
+        k1 = k1.wrapping_mul(c2);
+
+        h1 ^= k1;
+        h1 = h1.rotate_left(13);
+        h1 = h1.wrapping_mul(5).wrapping_add(0xe6546b64);
+        i += 4;
+    }
+
+    // Handle remaining bytes
+    let mut k1: u32 = 0;
+    let remaining = len - i;
+    if remaining >= 3 {
+        k1 ^= (data[i + 2] as u32) << 16;
+    }
+    if remaining >= 2 {
+        k1 ^= (data[i + 1] as u32) << 8;
+    }
+    if remaining >= 1 {
+        k1 ^= data[i] as u32;
+        k1 = k1.wrapping_mul(c1);
+        k1 = k1.rotate_left(15);
+        k1 = k1.wrapping_mul(c2);
+        h1 ^= k1;
+    }
+
+    // Finalization
+    h1 ^= len as u32;
+    h1 ^= h1 >> 16;
+    h1 = h1.wrapping_mul(0x85ebca6b);
+    h1 ^= h1 >> 13;
+    h1 = h1.wrapping_mul(0xc2b2ae35);
+    h1 ^= h1 >> 16;
+
+    h1
+}
+
+/// MurmurHash3 128-bit hash function.
+fn murmur3_hash_128(data: &[u8]) -> u128 {
+    // Simplified implementation - use a proper crate like `murmur3` in production
+    let h1 = murmur3_hash_32(data) as u128;
+    let h2 = murmur3_hash_32(&[data, &[0x01]].concat()) as u128;
+    (h1 << 64) | h2
+}
+
+/// Converts bytes to uppercase hex string.
+fn to_hex_string(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{:02X}", b)).collect()
+}
+
+/// Encodes a double as uint64 for binary encoding.
+fn encode_double_as_uint64(value: f64) -> u64 {
+    let bits = value.to_bits();
+    if (bits & 0x8000_0000_0000_0000) != 0 {
+        !bits
+    } else {
+        bits ^ 0x8000_0000_0000_0000
     }
 }
 
