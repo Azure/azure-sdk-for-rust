@@ -713,4 +713,57 @@ mod tests {
             "Parsed tokens do not match expected tokens"
         );
     }
+
+    #[test]
+    fn parse_new_with_arbitrary_function_call() {
+        // Test that arbitrary function calls (not Ok/Arc::new) are passed through unchanged,
+        // preserving their semicolons.
+        setup_tracing();
+        let attr = quote!("Az.TestNamespace");
+        let new_function = quote! {
+            pub fn from_url(
+                url: Url,
+                options: Option<ClientOptions>,
+            ) -> Result<Self> {
+                let mut options = options.unwrap_or_default();
+                apply_defaults(&mut options.client_options);
+                Ok(Self {
+                    url,
+                })
+            }
+        };
+        let actual =
+            parse_new(attr, new_function).expect("Failed to parse new function declaration");
+
+        println!("Parsed tokens: {actual}");
+
+        let expected = quote! {
+            pub fn from_url(
+                url: Url,
+                options: Option<ClientOptions>
+            ) -> Result<Self> {
+                let mut options = options.unwrap_or_default();
+                apply_defaults(&mut options.client_options);
+                Ok(Self {
+                    tracer: options
+                        .client_options
+                        .instrumentation
+                        .tracer_provider
+                        .as_ref()
+                        .map(|tracer_provider| {
+                            tracer_provider.get_tracer(
+                                Some("Az.TestNamespace"),
+                                option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
+                                option_env!("CARGO_PKG_VERSION"),
+                            )
+                        }),
+                    url,
+                })
+            }
+        };
+        assert!(
+            crate::tracing::tests::compare_token_stream(actual, expected),
+            "Parsed tokens do not match expected tokens"
+        );
+    }
 }
