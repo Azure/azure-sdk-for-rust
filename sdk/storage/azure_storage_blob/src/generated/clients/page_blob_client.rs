@@ -140,9 +140,7 @@ impl PageBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("clear")
-            .append_pair("comp", "page");
+        query_builder.append_pair("comp", "page");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -619,9 +617,7 @@ impl PageBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "pagelist")
-            .append_key_only("diff");
+        query_builder.append_pair("comp", "pagelist");
         if let Some(marker) = options.marker.as_ref() {
             query_builder.set_pair("marker", marker);
         }
@@ -730,9 +726,7 @@ impl PageBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("Resize")
-            .append_pair("comp", "properties");
+        query_builder.append_pair("comp", "properties");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -839,9 +833,7 @@ impl PageBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("UpdateSequenceNumber")
-            .append_pair("comp", "properties");
+        query_builder.append_pair("comp", "properties");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -949,9 +941,7 @@ impl PageBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "page")
-            .append_key_only("update");
+        query_builder.append_pair("comp", "page");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -1107,10 +1097,7 @@ impl PageBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "page")
-            .append_key_only("fromUrl")
-            .append_key_only("update");
+        query_builder.append_pair("comp", "page");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
