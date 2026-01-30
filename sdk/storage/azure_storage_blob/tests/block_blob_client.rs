@@ -15,10 +15,12 @@ use azure_storage_blob::{
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, predicates, ClientOptionsExt,
-    StorageAccount, TestPolicy,
+    StorageAccount, TestPolicy, KB, MB,
 };
+use bytes::{BufMut, BytesMut};
 use std::{
     error::Error,
+    io::Write,
     num::NonZero,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -318,6 +320,61 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         data
     );
     assert_eq!(request_count.load(Ordering::Relaxed), 1);
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let stage_block_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(
+        stage_block_count.clone(),
+        Some(Arc::new(predicates::is_stage_block_request)),
+    ));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let data_len = 50 * MB;
+    let expected_stage_block_count = data_len / MB / 4;
+    let mut bytes = BytesMut::with_capacity(data_len).writer();
+    {
+        let mut buf = [0u8; 4 * KB];
+        for _ in (0..data_len).step_by(buf.len()) {
+            buf = recording.random();
+            bytes.write_all(&buf)?;
+        }
+    }
+    let bytes = bytes.into_inner().freeze();
+
+    stage_block_count.store(0, Ordering::Relaxed);
+    {
+        let _scope = count_policy.check_request_scope();
+        block_blob_client
+            .managed_upload(bytes.clone().into(), None)
+            .await?;
+    }
+    assert_eq!(
+        blob_client
+            .download(None)
+            .await?
+            .into_body()
+            .collect()
+            .await?[..],
+        bytes[..]
+    );
+    assert_eq!(
+        stage_block_count.load(Ordering::Relaxed),
+        expected_stage_block_count
+    );
 
     Ok(())
 }

@@ -27,6 +27,10 @@ use azure_storage_blob::{
 use bytes::BytesMut;
 use futures::{AsyncRead, AsyncReadExt};
 
+pub const KB: usize = 1024;
+pub const MB: usize = KB * 1024;
+pub const GB: usize = MB * 1024;
+
 /// Specifies which storage account to use for testing.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StorageAccount {
