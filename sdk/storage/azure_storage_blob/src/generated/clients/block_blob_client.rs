@@ -5,7 +5,8 @@
 
 use crate::generated::models::{
     BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
+    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockOptions,
     BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlOptions,
     BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadOptions,
     BlockBlobClientUploadResult, BlockList, BlockListType, BlockLookupList,
@@ -381,6 +382,157 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
+    /// a URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `block_id` - A valid Base64 string value that identifies the block. Prior to encoding, the string must be less than
+    ///   or equal to 64 bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the
+    ///   same size for each block.
+    /// * `content_length` - The length of the request.
+    /// * `source_url` - Specify a URL to the copy source.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientStageBlockFromUrlResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockFromUrlResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("content-md5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(content_crc64) = response.content_crc64()? {
+    ///         println!("x-ms-content-crc64: {:?}", content_crc64);
+    ///     }
+    ///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
+    ///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_md5) - content-md5
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    ///
+    /// [`BlockBlobClientStageBlockFromUrlResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders
+    #[tracing::function("Storage.Blob.BlockBlob.stageBlockFromUrl")]
+    pub async fn stage_block_from_url(
+        &self,
+        block_id: &[u8],
+        content_length: u64,
+        source_url: String,
+        options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "block")
+            .append_key_only("fromURL");
+        query_builder.set_pair("blockid", encode(block_id));
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Put);
+        request.insert_header("content-length", content_length.to_string());
+        request.insert_header("content-type", "application/xml");
+        request.insert_header("x-ms-copy-source", source_url);
+        if let Some(copy_source_authorization) = options.copy_source_authorization.as_ref() {
+            request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
+        }
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
+            request.insert_header(
+                "x-ms-encryption-algorithm",
+                encryption_algorithm.to_string(),
+            );
+        }
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
+            request.insert_header("x-ms-encryption-key", encryption_key);
+        }
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
+            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
+        }
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
+            request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent.as_ref() {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
+        }
+        if let Some(lease_id) = options.lease_id.as_ref() {
+            request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(source_content_crc64) = options.source_content_crc64 {
+            request.insert_header("x-ms-source-content-crc64", encode(source_content_crc64));
+        }
+        if let Some(source_content_md5) = options.source_content_md5 {
+            request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
+        }
+        if let Some(source_encryption_algorithm) = options.source_encryption_algorithm.as_ref() {
+            request.insert_header(
+                "x-ms-source-encryption-algorithm",
+                source_encryption_algorithm.to_string(),
+            );
+        }
+        if let Some(source_encryption_key) = options.source_encryption_key.as_ref() {
+            request.insert_header("x-ms-source-encryption-key", source_encryption_key);
+        }
+        if let Some(source_encryption_key_sha256) = options.source_encryption_key_sha256.as_ref() {
+            request.insert_header(
+                "x-ms-source-encryption-key-sha256",
+                source_encryption_key_sha256,
+            );
+        }
+        if let Some(source_if_match) = options.source_if_match.as_ref() {
+            request.insert_header("x-ms-source-if-match", source_if_match);
+        }
+        if let Some(source_if_modified_since) = options.source_if_modified_since {
+            request.insert_header(
+                "x-ms-source-if-modified-since",
+                to_rfc7231(&source_if_modified_since),
+            );
+        }
+        if let Some(source_if_none_match) = options.source_if_none_match.as_ref() {
+            request.insert_header("x-ms-source-if-none-match", source_if_none_match);
+        }
+        if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
+            request.insert_header(
+                "x-ms-source-if-unmodified-since",
+                to_rfc7231(&source_if_unmodified_since),
+            );
+        }
+        if let Some(source_range) = options.source_range.as_ref() {
+            request.insert_header("x-ms-source-range", source_range);
+        }
+        request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
             .send(

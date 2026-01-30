@@ -539,6 +539,10 @@ pub struct Block {
 #[derive(SafeDebug)]
 pub struct BlockBlobClientCommitBlockListResult;
 
+/// Contains results for `BlockBlobClient::stage_block_from_url()`
+#[derive(SafeDebug)]
+pub struct BlockBlobClientStageBlockFromUrlResult;
+
 /// Contains results for `BlockBlobClient::stage_block()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;

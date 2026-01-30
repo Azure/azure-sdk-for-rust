@@ -13,10 +13,11 @@ use super::{
     BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
-    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult, BlockList, CopyStatus,
-    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PageBlobClientClearPagesResult,
-    PageBlobClientCreateResult, PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+    BlockBlobClientUploadResult, BlockList, CopyStatus, ImmutabilityPolicyMode, LeaseDuration,
+    LeaseState, LeaseStatus, PageBlobClientClearPagesResult, PageBlobClientCreateResult,
+    PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
     PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
     PublicAccessType, RehydratePriority, SignedIdentifiers, SkuName,
 };
@@ -1915,6 +1916,70 @@ impl BlockBlobClientCommitBlockListResultHeaders
     }
 }
 
+/// Provides access to typed response headers for `BlockBlobClient::stage_block_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("content-md5: {:?}", content_md5);
+///     }
+///     if let Some(content_crc64) = response.content_crc64()? {
+///         println!("x-ms-content-crc64: {:?}", content_crc64);
+///     }
+///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
+///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
+    fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+    fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
+    fn encryption_key_sha256(&self) -> Result<Option<String>>;
+    fn encryption_scope(&self) -> Result<Option<String>>;
+    fn is_server_encrypted(&self) -> Result<Option<bool>>;
+}
+
+impl BlockBlobClientStageBlockFromUrlResultHeaders
+    for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>
+{
+    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
+    /// client can check for message content integrity.
+    fn content_md5(&self) -> Result<Option<Vec<u8>>> {
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+    }
+
+    /// This response header is returned so that the client can check for the integrity of the copied content.
+    fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+    }
+
+    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
+    /// with a customer-provided key.
+    fn encryption_key_sha256(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
+    }
+
+    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
+    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
+    /// header, with the latter calculated from the requested range
+    fn encryption_scope(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
+    }
+
+    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
+    /// algorithm, and false otherwise.
+    fn is_server_encrypted(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
+    }
+}
+
 /// Provides access to typed response headers for `BlockBlobClient::stage_block()`
 ///
 /// # Examples
@@ -2688,9 +2753,10 @@ mod private {
         BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
         BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult, BlockList,
-        PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+        BlockBlobClientUploadResult, BlockList, PageBlobClientClearPagesResult,
+        PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
         PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
     };
@@ -2720,6 +2786,7 @@ mod private {
     impl Sealed for Response<BlobContainerClientRenewLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobServiceClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientCommitBlockListResult, NoFormat> {}
+    impl Sealed for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadResult, NoFormat> {}

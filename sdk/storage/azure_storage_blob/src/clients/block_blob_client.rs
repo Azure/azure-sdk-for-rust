@@ -4,13 +4,13 @@
 use crate::{
     generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
     generated::models::{
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
     },
     models::{
         BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions, BlockList,
-        BlockListType, BlockLookupList,
+        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadBlobFromUrlOptions, BlockList, BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
 };
@@ -176,8 +176,8 @@ impl BlockBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `block_id` - The unique identifier for the block. The identifier should be less than or equal to 64 bytes in size.
-    ///   For a given blob, the `block_id` must be the same size for each block.
+    /// * `block_id` - A unique identifier for the block (up to 64 bytes). The SDK will Base64-encode this value
+    ///   before sending to the service. For a given blob, the `block_id` must be the same size for each block.
     /// * `content_length` - Total length of the blob data to be staged.
     /// * `data` - The content of the block.
     /// * `options` - Optional configuration for the request.
@@ -224,5 +224,27 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
         self.client.upload_blob_from_url(copy_source, options).await
+    }
+
+    /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
+    /// a URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `block_id` - A unique identifier for the block (up to 64 bytes). This value will be base64-encoded automatically.
+    ///   For a given blob, the `block_id` must be the same size for each block.
+    /// * `content_length` - The length of the request.
+    /// * `source_url` - Specify a URL to the copy source.
+    /// * `options` - Optional configuration for the request.
+    pub async fn stage_block_from_url(
+        &self,
+        block_id: &[u8],
+        content_length: u64,
+        source_url: String,
+        options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>> {
+        self.client
+            .stage_block_from_url(block_id, content_length, source_url, options)
+            .await
     }
 }

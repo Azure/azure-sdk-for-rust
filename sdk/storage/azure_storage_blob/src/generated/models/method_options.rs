@@ -1459,6 +1459,73 @@ pub struct BlockBlobClientStageBlockOptions<'a> {
     pub transactional_content_md5: Option<Vec<u8>>,
 }
 
+/// Options to be passed to `BlockBlobClient::stage_block_from_url()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlockBlobClientStageBlockFromUrlOptions<'a> {
+    /// Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source.
+    pub copy_source_authorization: Option<String>,
+
+    /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
+    /// AES256.
+    pub encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Optional. Version 2019-07-07 and later. Specifies the encryption key to use to encrypt the data provided in the request.
+    /// If not specified, the request will be encrypted with the root account key.
+    pub encryption_key: Option<String>,
+
+    /// Optional. Version 2019-07-07 and later. Specifies the SHA256 hash of the encryption key used to encrypt the data provided
+    /// in the request. This header is only used for encryption with a customer-provided key. If the request is authenticated
+    /// with a client token, this header should be specified using the SHA256 hash of the encryption key.
+    pub encryption_key_sha256: Option<String>,
+
+    /// Optional. Version 2019-07-07 and later. Specifies the encryption scope to use to encrypt the data provided in the request.
+    /// If not specified, the request will be encrypted with the root account key.
+    pub encryption_scope: Option<String>,
+
+    /// Valid value is backup
+    pub file_request_intent: Option<FileShareTokenIntent>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Specify the crc64 calculated for the range of bytes that must be read from the copy source.
+    pub source_content_crc64: Option<Vec<u8>>,
+
+    /// Specify the md5 calculated for the range of bytes that must be read from the copy source.
+    pub source_content_md5: Option<Vec<u8>>,
+
+    /// The algorithm used to produce the source encryption key hash. Currently, the only accepted value is "AES256". Must be
+    /// provided if the x-ms-source-encryption-key is provided.
+    pub source_encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Optional. Specifies the source encryption key to use to encrypt the source data provided in the request.
+    pub source_encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided source encryption key. Must be provided if the x-ms-source-encryption-key header is provided.
+    pub source_encryption_key_sha256: Option<String>,
+
+    /// Specify an ETag value to operate only on blobs with a matching value.
+    pub source_if_match: Option<String>,
+
+    /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
+    pub source_if_modified_since: Option<OffsetDateTime>,
+
+    /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
+    pub source_if_none_match: Option<String>,
+
+    /// Specify this header value to operate only on a blob if it has not been modified since the specified date/time.
+    pub source_if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Bytes of source data in the specified range.
+    pub source_range: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
 /// Options to be passed to `BlockBlobClient::upload()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientUploadOptions<'a> {

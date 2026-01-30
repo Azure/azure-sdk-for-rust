@@ -2,6 +2,10 @@
 
 ## 0.9.0 (Unreleased)
 
+### Features Added
+
+- Added support for `set_access_policy` to `BlobContainerClient`.
+
 ### Breaking Changes
 
 - Renamed `BlobItemInternal` to `BlobItem`.
