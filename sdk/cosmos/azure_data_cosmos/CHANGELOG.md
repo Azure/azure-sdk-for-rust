@@ -1,5 +1,17 @@
 # Release History
 
+## 0.31.0 (Unreleased)
+
+### Features Added
+
+- Added basic multi-region writes support. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482) and [#3495](https://github.com/Azure/azure-sdk-for-rust/pull/3495))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.30.0 (2026-01-21)
 
 ### Features Added

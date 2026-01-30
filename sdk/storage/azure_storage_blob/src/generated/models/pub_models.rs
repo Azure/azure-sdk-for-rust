@@ -941,6 +941,10 @@ pub struct JsonTextConfiguration {
 /// Key information
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyInfo {
+    /// The delegated user tenant id in Azure AD.
+    #[serde(rename = "DelegatedUserTid", skip_serializing_if = "Option::is_none")]
+    pub delegated_user_tid: Option<String>,
+
     /// The date-time the key expires.
     #[serde(rename = "Expiry", skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
@@ -1317,6 +1321,13 @@ pub struct StorageServiceStats {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct UserDelegationKey {
+    /// The delegated user tenant id in Azure AD. Return if DelegatedUserTid is specified.
+    #[serde(
+        rename = "SignedDelegatedUserTid",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub signed_delegated_user_tid: Option<String>,
+
     /// The date-time the key expires.
     #[serde(rename = "SignedExpiry", skip_serializing_if = "Option::is_none")]
     pub signed_expiry: Option<String>,
