@@ -16,4 +16,5 @@ mod pipeline;
 mod streams;
 pub use clients::*;
 pub use parsers::*;
+mod logging;
 pub mod models;
