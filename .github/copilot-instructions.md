@@ -8,9 +8,38 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 
 > **Note**: For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and repository structure, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
 
-## Prerequisites
+## Build, Test, and Lint
 
-- To use Azure SDK MCP tool calls, the user must have PowerShell installed. Provide [PowerShell installation instructions](https://learn.microsoft.com/powershell/scripting/install/installing-powershell) if not installed, and recommend restarting the IDE to start the MCP server.
+```bash
+# Build a specific crate
+cargo build -p <crate-name>
+
+# Run all tests for a crate
+cargo test -p <crate-name>
+
+# Run a single test by name
+cargo test -p <crate-name> --test <test-file> <test-name>
+
+# Run clippy lints
+cargo clippy -p <crate-name>
+
+# Format code
+cargo fmt -p <crate-name>
+
+# Record integration tests (requires provisioned Azure resources)
+AZURE_TEST_MODE=record cargo test -p <crate-name> --test <test-file>
+```
+
+## Architecture
+
+-   **Core crates** (`sdk/core/`): Foundation libraries that all service crates depend on.
+    -   `azure_core`: HTTP pipeline, credentials, error types, `Result<T>` alias.
+    -   `typespec`/`typespec_client_core`: Base types for TypeSpec-generated clients.
+    -   `azure_core_test`: Test utilities including `#[recorded::test]` for integration tests.
+-   **Service crates** (`sdk/<service>/<crate>/`): Azure service clients (e.g., `azure_security_keyvault_secrets`).
+    -   Most contain a `generated/` subdirectory with TypeSpec-generated code — **never edit these files**.
+    -   Hand-written code in `src/` adds convenience methods or customizations.
+-   **Identity crate** (`sdk/identity/azure_identity`): Authentication via `DefaultAzureCredential` and related types.
 
 ## Code Generation
 
@@ -50,3 +79,15 @@ Use these instructions for test generation as well.
 -   The `tests` module should always import APIs from `super`.
 -   Do not begin test function names with "test" unless necessary to disambiguate from the function being tested.
 -   Test functions do not need to be public.
+
+## Integration Tests
+
+-   Integration tests go in a crate's `tests/` directory and use `#[recorded::test]` (from `azure_core_test`).
+-   Recorded tests replay HTTP traffic from recordings in `sdk/<service>/assets/` (referenced via `assets.json`).
+-   To record new sessions, set `AZURE_TEST_MODE=record` and provide credentials/config via environment variables.
+-   Use `#[recorded::test(live)]` for tests that cannot be recorded (non-HTTP or non-automated provisioning).
+
+## Error Handling
+
+-   Service crate code returns `azure_core::Result<T>` (defaults to `azure_core::Error`).
+-   Examples should return `Result<(), Box<dyn std::error::Error>>`.
