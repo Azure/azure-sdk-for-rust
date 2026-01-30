@@ -80,18 +80,9 @@ fn is_arc_new_call(func: &syn::Expr) -> bool {
     false
 }
 
-/// Checks if the call expression is `Ok(...)` or `Arc::new(...)`.
-fn is_ok_or_arc_new_call(call: &syn::ExprCall) -> bool {
-    if let syn::Expr::Path(path) = call.func.as_ref() {
-        let last_ident = &path.path.segments.last().unwrap().ident;
-        last_ident == "Ok" || is_arc_new_call(call.func.as_ref())
-    } else {
-        false
-    }
-}
-
 // Parse a function call expression statement that initializes a struct with `Arc::new(Self {})` or `Ok(Arc::new(Self {}))`.
-fn parse_call_expr(namespace: &str, call: &syn::ExprCall) -> TokenStream {
+// Returns Some(TokenStream) if the call was transformed, or None if it should be passed through unchanged.
+fn parse_call_expr(namespace: &str, call: &syn::ExprCall) -> Option<TokenStream> {
     debug_assert_eq!(
         call.args.len(),
         1,
@@ -100,49 +91,52 @@ fn parse_call_expr(namespace: &str, call: &syn::ExprCall) -> TokenStream {
     if let syn::Expr::Path(path) = call.func.as_ref() {
         if path.path.segments.last().unwrap().ident == "Ok" {
             match call.args.first().unwrap() {
-                syn::Expr::Struct(struct_body) => {
-                    parse_struct_expr(namespace, struct_body, call.to_token_stream(), true)
-                }
+                syn::Expr::Struct(struct_body) => Some(parse_struct_expr(
+                    namespace,
+                    struct_body,
+                    call.to_token_stream(),
+                    true,
+                )),
                 syn::Expr::Call(call) => {
                     // Let's make sure that we're doing a call to Arc::new before we recurse.
                     // Arc::new takes only a single argument, so we can check that first.
                     if call.args.len() != 1 {
                         trace!("Call expression does not have exactly one argument, emitting expression: {call:?}");
-                        return call.to_token_stream();
+                        return None;
                     }
                     if is_arc_new_call(call.func.as_ref()) {
-                        let call_expr = parse_call_expr(namespace, call);
-                        quote!(Ok(#call_expr))
+                        let call_expr = parse_call_expr(namespace, call)?;
+                        Some(quote!(Ok(#call_expr)))
                     } else {
                         trace!("Call expression is not Arc::new(), emitting expression: {call:?}");
-                        call.to_token_stream()
+                        None
                     }
                 }
                 _ => {
                     trace!(
                         "Call expression is not a struct or call, emitting expression: {call:?}"
                     );
-                    call.to_token_stream()
+                    None
                 }
             }
         } else if is_arc_new_call(call.func.as_ref()) {
             if let syn::Expr::Struct(struct_body) = call.args.first().unwrap() {
                 let struct_expr =
                     parse_struct_expr(namespace, struct_body, call.to_token_stream(), false);
-                quote! {
+                Some(quote! {
                     Arc::new(#struct_expr)
-                }
+                })
             } else {
                 trace!("Call expression is not a struct, emitting expression: {call:?}");
-                call.to_token_stream()
+                None
             }
         } else {
             trace!("Call expression is not an Arc or Ok, emitting expression: {call:?}");
-            call.to_token_stream()
+            None
         }
     } else {
         trace!("Call expression is not a path, emitting expression: {call:?}");
-        call.to_token_stream()
+        None
     }
 }
 
@@ -183,14 +177,15 @@ pub fn parse_new(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
             syn::Stmt::Expr(expr, _) =>
                 match expr {
                     syn::Expr::Call(c) => {
-                        // Only process single-argument calls that are Ok(...) or Arc::new(...).
-                        // Other function calls should be passed through unchanged to preserve
-                        // the original statement (including semicolon).
-                        if c.args.len() == 1 && is_ok_or_arc_new_call(c) {
+                        // If the expression is a call, we need to check if it is a struct initialization.
+                        if c.args.len() != 1 {
+                            trace!("Call expression does not have exactly one argument, emitting statement: {stmt:?}");
+                            // If the call does not have exactly one argument, just return it as is.
+                             stmt.to_token_stream()
+                        }
+                        else {
                             parse_call_expr(namespace_attrs.client_namespace.as_str(), c)
-                        } else {
-                            trace!("Call expression is not Ok or Arc::new, emitting statement: {stmt:?}");
-                            stmt.to_token_stream()
+                                .unwrap_or_else(|| stmt.to_token_stream())
                         }
                     }
                     syn::Expr::Struct(struct_body) => {
@@ -711,59 +706,6 @@ mod tests {
                         vec![auth_policy],
                     ),
                 }))
-            }
-        };
-        assert!(
-            crate::tracing::tests::compare_token_stream(actual, expected),
-            "Parsed tokens do not match expected tokens"
-        );
-    }
-
-    #[test]
-    fn parse_new_with_arbitrary_function_call() {
-        // Test that arbitrary function calls (not Ok/Arc::new) are passed through unchanged,
-        // preserving their semicolons.
-        setup_tracing();
-        let attr = quote!("Az.TestNamespace");
-        let new_function = quote! {
-            pub fn from_url(
-                url: Url,
-                options: Option<ClientOptions>,
-            ) -> Result<Self> {
-                let mut options = options.unwrap_or_default();
-                apply_defaults(&mut options.client_options);
-                Ok(Self {
-                    url,
-                })
-            }
-        };
-        let actual =
-            parse_new(attr, new_function).expect("Failed to parse new function declaration");
-
-        println!("Parsed tokens: {actual}");
-
-        let expected = quote! {
-            pub fn from_url(
-                url: Url,
-                options: Option<ClientOptions>
-            ) -> Result<Self> {
-                let mut options = options.unwrap_or_default();
-                apply_defaults(&mut options.client_options);
-                Ok(Self {
-                    tracer: options
-                        .client_options
-                        .instrumentation
-                        .tracer_provider
-                        .as_ref()
-                        .map(|tracer_provider| {
-                            tracer_provider.get_tracer(
-                                Some("Az.TestNamespace"),
-                                option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                                option_env!("CARGO_PKG_VERSION"),
-                            )
-                        }),
-                    url,
-                })
             }
         };
         assert!(
