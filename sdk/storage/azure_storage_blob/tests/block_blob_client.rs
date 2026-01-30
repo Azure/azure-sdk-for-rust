@@ -234,6 +234,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_blob_client = blob_client.block_blob_client();
 
     let data: [u8; 1024] = recording.random();
+    let bytes: Bytes = data.to_vec().into();
 
     for (parallel, partition_size, expected_stage_block_calls) in [
         (1, 2048, 0), // put blob expected
@@ -251,7 +252,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         {
             let _scope = count_policy.check_request_scope();
             block_blob_client
-                .managed_upload(data.to_vec().into(), Some(options))
+                .managed_upload(bytes.clone().into(), Some(options))
                 .await?;
         }
         assert_eq!(
@@ -295,6 +296,7 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_blob_client = blob_client.block_blob_client();
 
     let data = [];
+    let bytes: Bytes = data.to_vec().into();
 
     request_count.store(0, Ordering::Relaxed);
     let options = BlockBlobClientManagedUploadOptions {
@@ -303,7 +305,7 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     {
         let _scope = count_policy.check_request_scope();
         block_blob_client
-            .managed_upload(data.to_vec().into(), Some(options))
+            .managed_upload(bytes.clone().into(), Some(options))
             .await?;
     }
     assert_eq!(
