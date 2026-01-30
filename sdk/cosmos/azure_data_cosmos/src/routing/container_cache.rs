@@ -151,6 +151,7 @@ impl ContainerCache {
 mod tests {
     use super::*;
     use crate::resource_context::ResourceType;
+    use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
     use std::borrow::Cow;
@@ -169,10 +170,16 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
+        let partition_manager = GlobalPartitionEndpointManager::new(
+            endpoint_manager.clone(),
+            false,
+            false,
+        );
         Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             endpoint_manager,
+            partition_manager,
             CosmosClientOptions::default(),
         ))
     }

@@ -26,6 +26,7 @@ use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -41,9 +42,10 @@ impl GatewayPipeline {
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
         options: CosmosClientOptions,
     ) -> Self {
-        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
+        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager, global_partition_endpoint_manager);
         GatewayPipeline {
             endpoint,
             pipeline,

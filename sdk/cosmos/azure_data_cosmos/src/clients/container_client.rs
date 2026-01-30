@@ -19,6 +19,7 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
@@ -38,6 +39,7 @@ impl ContainerClient {
         database_link: &ResourceLink,
         container_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
@@ -59,6 +61,8 @@ impl ContainerClient {
             pipeline.clone(),
             container_cache,
             partition_key_range_cache,
+            global_endpoint_manager.clone(),
+            global_partition_endpoint_manager.clone(),
         ));
 
         Self {

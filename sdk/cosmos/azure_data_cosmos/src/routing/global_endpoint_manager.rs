@@ -377,7 +377,7 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// `Ok(Response<AccountProperties>)` with account metadata, or `Err` if request failed
-    async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
+    pub async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
         let options = ReadDatabaseOptions {
             ..Default::default()
         };

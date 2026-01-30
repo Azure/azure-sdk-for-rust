@@ -16,6 +16,7 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use azure_core::http::response::Response;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -26,6 +27,7 @@ pub struct DatabaseClient {
     database_id: String,
     pipeline: Arc<GatewayPipeline>,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl DatabaseClient {
@@ -33,6 +35,7 @@ impl DatabaseClient {
         pipeline: Arc<GatewayPipeline>,
         database_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
@@ -44,6 +47,7 @@ impl DatabaseClient {
             database_id,
             pipeline,
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         }
     }
 
@@ -57,6 +61,7 @@ impl DatabaseClient {
             &self.link,
             name,
             self.global_endpoint_manager.clone(),
+            self.global_partition_endpoint_manager.clone(),
         )
     }
 

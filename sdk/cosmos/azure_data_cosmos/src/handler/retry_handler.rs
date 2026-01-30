@@ -10,6 +10,7 @@ use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
 use std::sync::Arc;
 use tracing::debug;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -69,6 +70,7 @@ pub trait RetryHandler: Send + Sync {
 #[derive(Debug, Clone)]
 pub struct BackOffRetryHandler {
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl BackOffRetryHandler {
@@ -90,13 +92,14 @@ impl BackOffRetryHandler {
                 self.global_endpoint_manager.clone(),
             ))
         } else {
-            RetryPolicy::Client(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
+            RetryPolicy::Client(ClientRetryPolicy::new(self.global_endpoint_manager.clone(), self.global_partition_endpoint_manager.clone(),))
         }
     }
 
-    pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>) -> Self {
+    pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>, global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,) -> Self {
         Self {
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         }
     }
 }

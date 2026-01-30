@@ -8,6 +8,8 @@ use crate::routing::container_cache::ContainerCache;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::{Context, Response};
 use std::sync::Arc;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Handler for managing transport-level operations with Cosmos DB.
 #[derive(Debug, Clone)]
@@ -15,6 +17,8 @@ pub struct ContainerConnection {
     pipeline: Arc<GatewayPipeline>,
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
+    endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl ContainerConnection {
@@ -29,20 +33,51 @@ impl ContainerConnection {
         pipeline: Arc<GatewayPipeline>,
         container_cache: Arc<ContainerCache>,
         pk_range_cache: Arc<PartitionKeyRangeCache>,
+        endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
         Self {
             pipeline,
             container_cache,
             pk_range_cache,
+            endpoint_manager,
+            global_partition_endpoint_manager,
         }
     }
 
     pub async fn send<T>(
         &self,
-        cosmos_request: CosmosRequest,
+        mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
+
+        if self.is_partition_level_failover_enabled() && cosmos_request.resource_type.is_partitioned() {
+            // let container_rid = cosmos_request.clone().partition_key_range_identity.unwrap().collection_rid;
+            let container_rid = cosmos_request.clone().collection_name;
+            let container_prop = self
+                .container_cache
+                .resolve_by_id(container_rid.unwrap().parse()?, None, false)
+                .await?;
+            let pk_range = self
+                .pk_range_cache
+                .resolve_partition_key_range_by_id(&container_prop.id, "0".as_ref(), false)
+                .await;
+
+            cosmos_request.request_context.resolved_partition_key_range = pk_range;
+
+            self.global_partition_endpoint_manager.try_add_partition_level_location_override(&mut cosmos_request);
+        }
+
         self.pipeline.send(cosmos_request, context).await
+    }
+
+    /// Checks if partition level failover is enabled.
+    ///
+    /// Returns `true` if either partition level circuit breaker or partition level
+    /// automatic failover is enabled.
+    fn is_partition_level_failover_enabled(&self) -> bool {
+        self.global_partition_endpoint_manager.is_partition_level_circuit_breaker_enabled()
+            || self.global_partition_endpoint_manager.is_partition_level_automatic_failover_enabled()
     }
 }
 
@@ -53,6 +88,7 @@ mod tests {
     use crate::operation_context::OperationType;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+    use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
     use std::borrow::Cow;
@@ -75,7 +111,7 @@ mod tests {
     // Helper function to create a test GatewayPipeline
     fn create_gateway_pipeline(
         endpoint_manager: Arc<GlobalEndpointManager>,
-    ) -> Arc<GatewayPipeline> {
+    ) -> (Arc<GatewayPipeline>, Arc<GlobalPartitionEndpointManager>) {
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -85,12 +121,18 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        Arc::new(GatewayPipeline::new(
+        let partition_manager = GlobalPartitionEndpointManager::new(
+            endpoint_manager.clone(),
+            false,
+            false,
+        );
+        (Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             endpoint_manager,
+            partition_manager.clone(),
             CosmosClientOptions::default(),
-        ))
+        )), partition_manager)
     }
 
     // Helper function to create a test ContainerCache
@@ -160,11 +202,17 @@ mod tests {
             vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
             pipeline.clone(),
         ));
+        let partition_manager = GlobalPartitionEndpointManager::new(
+            endpoint_manager.clone(),
+            false,
+            false,
+        );
 
         let gateway_pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline,
             endpoint_manager.clone(),
+            partition_manager.clone(),
             CosmosClientOptions::default(),
         ));
 
@@ -173,11 +221,11 @@ mod tests {
         let pk_range_cache = create_pk_range_cache(
             gateway_pipeline.clone(),
             container_cache.clone(),
-            endpoint_manager,
+            endpoint_manager.clone(),
         );
 
         let connection =
-            ContainerConnection::new(gateway_pipeline, container_cache, pk_range_cache);
+            ContainerConnection::new(gateway_pipeline, container_cache, pk_range_cache, endpoint_manager, partition_manager);
 
         // Verify the connection was created successfully with preferred locations
         assert!(std::mem::size_of_val(&connection) > 0);
@@ -186,23 +234,27 @@ mod tests {
     #[test]
     fn multiple_container_connections_share_caches() {
         let endpoint_manager = create_endpoint_manager();
-        let pipeline = create_gateway_pipeline(endpoint_manager.clone());
+        let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
         let pk_range_cache =
-            create_pk_range_cache(pipeline.clone(), container_cache.clone(), endpoint_manager);
+            create_pk_range_cache(pipeline.clone(), container_cache.clone(), endpoint_manager.clone());
 
         // Create multiple connections sharing the same caches
         let connection1 = ContainerConnection::new(
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
+            endpoint_manager.clone(),
+            partition_manager.clone(),
         );
         let connection2 = ContainerConnection::new(
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
+            endpoint_manager.clone(),
+            partition_manager.clone(),
         );
-        let connection3 = ContainerConnection::new(pipeline, container_cache, pk_range_cache);
+        let connection3 = ContainerConnection::new(pipeline, container_cache, pk_range_cache, endpoint_manager, partition_manager);
 
         // All connections should be valid
         assert!(std::mem::size_of_val(&connection1) > 0);
@@ -266,12 +318,12 @@ mod tests {
     #[test]
     fn container_connection_debug_implementation() {
         let endpoint_manager = create_endpoint_manager();
-        let pipeline = create_gateway_pipeline(endpoint_manager.clone());
+        let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
         let pk_range_cache =
-            create_pk_range_cache(pipeline.clone(), container_cache.clone(), endpoint_manager);
+            create_pk_range_cache(pipeline.clone(), container_cache.clone(), endpoint_manager.clone());
 
-        let connection = ContainerConnection::new(pipeline, container_cache, pk_range_cache);
+        let connection = ContainerConnection::new(pipeline, container_cache, pk_range_cache, endpoint_manager, partition_manager);
 
         // Verify Debug trait is properly implemented
         let debug_str = format!("{:?}", connection);

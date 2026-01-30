@@ -297,6 +297,7 @@ pub enum SubStatusCode {
     RUBudgetExceeded = 3200,
     GatewayThrottled = 3201,
     StoredProcedureConcurrency = 3084,
+    SystemResourceUnavailable = 3092,
 }
 
 impl SubStatusCode {

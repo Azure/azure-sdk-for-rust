@@ -1,17 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::PartitionKey;
 use azure_core::http::RawResponse;
 use std::collections::HashMap;
 use url::Url;
-
-/// Placeholder for a resolved physical partition key range.
-///
-/// In a fuller implementation this would include identifiers and possibly
-/// the min/max effective partition key values that define the range.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct PartitionKeyRange;
 
 /// Carries per-request routing, partition resolution, retry and regional state.
 ///

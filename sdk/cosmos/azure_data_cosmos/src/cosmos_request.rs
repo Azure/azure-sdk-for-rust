@@ -175,6 +175,7 @@ pub struct CosmosRequestBuilder {
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
+    container_name: Option<String>,
     // Flags
     is_feed: bool,
     use_gateway_mode: bool,
@@ -186,6 +187,7 @@ pub struct CosmosRequestBuilder {
 #[allow(dead_code)]
 impl CosmosRequestBuilder {
     pub fn new(operation_type: OperationType, resource_link: ResourceLink) -> CosmosRequestBuilder {
+        let t_link = resource_link.clone().to_string();
         CosmosRequestBuilder {
             operation_type,
             resource_link,
@@ -196,6 +198,7 @@ impl CosmosRequestBuilder {
             headers: Headers::new(),
             continuation: None,
             entity_id: None,
+            container_name: Some(t_link),
             is_feed: false,
             use_gateway_mode: false,
             force_name_cache_refresh: false,
@@ -265,6 +268,7 @@ impl CosmosRequestBuilder {
         req.force_collection_routing_map_refresh = self.force_collection_routing_map_refresh;
         req.continuation = self.continuation;
         req.entity_id = self.entity_id;
+        req.collection_name = self.container_name;
 
         Ok(req)
     }

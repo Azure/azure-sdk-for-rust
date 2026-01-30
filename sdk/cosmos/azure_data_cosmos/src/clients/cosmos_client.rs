@@ -22,6 +22,8 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 use azure_core::http::{LoggingOptions, RetryOptions};
+use crate::models::AccountProperties;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -29,6 +31,7 @@ pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl CosmosClient {
@@ -83,10 +86,17 @@ impl CosmosClient {
             pipeline_core.clone(),
         ));
 
+        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> = Arc::from(GlobalPartitionEndpointManager::new(
+            global_endpoint_manager.clone(),
+            true,
+            true
+        ));
+
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             global_endpoint_manager.clone(),
+            global_partition_endpoint_manager.clone(),
             options,
         ));
 
@@ -94,6 +104,7 @@ impl CosmosClient {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         })
     }
 
@@ -148,10 +159,21 @@ impl CosmosClient {
             pipeline_core.clone(),
         ));
 
+        // TODO: Get PPAF Enablement Flag from Account Properties.
+        // let account_properties: AccountProperties =
+        //     global_endpoint_manager.get_database_account().await?.into_body().json()?;
+
+        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> = Arc::from(GlobalPartitionEndpointManager::new(
+            global_endpoint_manager.clone(),
+            true,
+            true
+        ));
+
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             global_endpoint_manager.clone(),
+            global_partition_endpoint_manager.clone(),
             options,
         ));
 
@@ -159,6 +181,7 @@ impl CosmosClient {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         })
     }
 
@@ -201,6 +224,7 @@ impl CosmosClient {
             self.pipeline.clone(),
             id,
             self.global_endpoint_manager.clone(),
+            self.global_partition_endpoint_manager.clone(),
         )
     }
 
