@@ -3,6 +3,7 @@
 
 pub(crate) mod content_range;
 mod extensions;
+pub mod method_options;
 
 pub use crate::generated::models::{
     AccessPolicy, AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
