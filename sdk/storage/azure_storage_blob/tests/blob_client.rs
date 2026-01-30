@@ -825,19 +825,20 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
     let storage_error: StorageError = error_response.try_into()?;
 
     // Assert
-    assert_eq!(storage_error.status_code(), StatusCode::NotFound);
+    assert_eq!(storage_error.status_code, StatusCode::NotFound);
     assert_eq!(
-        storage_error.error_code(),
+        storage_error.error_code.as_ref(),
         Some(&StorageErrorCode::BlobNotFound)
     );
     assert!(
         storage_error
-            .message()
+            .message
+            .as_deref()
             .is_some_and(|m| m.starts_with("The specified blob does not exist.")),
         "Expected message to start with 'The specified blob does not exist.'"
     );
     assert!(
-        storage_error.request_id().is_some(),
+        storage_error.request_id.is_some(),
         "Expected request_id to be populated."
     );
 
@@ -861,18 +862,18 @@ async fn test_storage_error_model_bodiless(ctx: TestContext) -> Result<(), Box<d
     let storage_error: StorageError = error_response.try_into()?;
 
     // Assert
-    assert_eq!(storage_error.status_code(), StatusCode::NotFound);
+    assert_eq!(storage_error.status_code, StatusCode::NotFound);
     assert_eq!(
-        storage_error.message(),
+        storage_error.message.as_deref(),
         Some("Not Found"),
         "Expected canonical reason phrase for bodiless response."
     );
     assert!(
-        storage_error.request_id().is_some(),
+        storage_error.request_id.is_some(),
         "Expected request_id to be populated from headers."
     );
     assert!(
-        storage_error.additional_error_info().is_empty(),
+        storage_error.additional_error_info.is_empty(),
         "Expected no additional_error_info for bodiless response."
     );
 
@@ -923,14 +924,17 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
     let storage_error: StorageError = error.try_into()?;
 
     // Assert
-    assert_eq!(storage_error.status_code(), StatusCode::NotFound);
+    assert_eq!(storage_error.status_code, StatusCode::NotFound);
     assert_eq!(
-        storage_error.copy_source_status_code(),
+        storage_error.copy_source_status_code,
         Some(StatusCode::NotFound)
     );
-    assert_eq!(storage_error.copy_source_error_code(), Some("BlobNotFound"));
     assert_eq!(
-        storage_error.copy_source_error_message(),
+        storage_error.copy_source_error_code.as_deref(),
+        Some("BlobNotFound")
+    );
+    assert_eq!(
+        storage_error.copy_source_error_message.as_deref(),
         Some("The specified blob does not exist.")
     );
 
