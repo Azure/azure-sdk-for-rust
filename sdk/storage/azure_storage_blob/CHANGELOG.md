@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added support for `set_access_policy` to `BlobContainerClient`.
+- Added support for `stage_block_from_url` to `BlockBlobClient`.
 
 ### Breaking Changes
 
