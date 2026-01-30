@@ -23,7 +23,7 @@ impl BackgroundProcessor {
     fn new(processor: Arc<EventProcessor>) -> Self {
         Self {
             background_task: AsyncMutex::new(None),
-            processor: processor.clone(),
+            processor,
         }
     }
 
