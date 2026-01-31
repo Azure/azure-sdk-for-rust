@@ -1,14 +1,15 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
 use crate::http::{
     headers::{HeaderValue, USER_AGENT},
     options::UserAgentOptions,
 };
-use std::env::consts::{ARCH, OS};
-use std::sync::Arc;
-use typespec_client_core::http::policies::{Policy, PolicyResult};
-use typespec_client_core::http::{Context, Request};
+use std::{
+    env::consts::{ARCH, OS},
+    sync::Arc,
+};
+use typespec_client_core::http::{
+    policies::{Policy, PolicyResult},
+    Context, Request,
+};
 
 /// Sets the `User-Agent` header with useful information in a typical format for Azure SDKs.
 #[derive(Clone, Debug)]
@@ -79,7 +80,14 @@ impl Policy for UserAgentPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        request.insert_header(USER_AGENT, HeaderValue::from(self.header.to_string()));
+        if self.header.contains(['\r', '\n']) {
+            return Err(crate::error::Error::new(
+                crate::error::ErrorKind::DataConversion,
+                "User agent header contains invalid characters",
+            ));
+        }
+
+        request.insert_header(USER_AGENT, HeaderValue::from(self.header.clone()));
 
         next[0].send(ctx, request, &next[1..]).await
     }
@@ -162,5 +170,53 @@ mod tests {
             policy.header,
             format!("exactly_24_characters! azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
+    }
+
+    #[tokio::test]
+    async fn test_user_agent_invalid_chars() {
+        use crate::http::headers::Headers;
+        use typespec_client_core::http::{AsyncRawResponse, Method, StatusCode};
+        let options = UserAgentOptions {
+            application_id: Some("invalid\nheader".to_string()),
+        };
+        let policy = UserAgentPolicy::new_with_rustc_version(
+            Some("test"),
+            Some("1.2.3"),
+            Some("4.5.6"),
+            &options,
+        );
+
+        let mut request = Request::new("http://example.com".parse().unwrap(), Method::Get);
+        let ctx = Context::default();
+        // Since we are testing send, we need to provide a "next" policy.
+        // However, the error should happen *before* calling next.
+        #[derive(Debug)]
+        struct MockPolicy;
+        #[async_trait::async_trait]
+        impl Policy for MockPolicy {
+            async fn send(
+                &self,
+                _ctx: &Context,
+                _request: &mut Request,
+                _next: &[Arc<dyn Policy>],
+            ) -> PolicyResult {
+                // Return a dummy successful response if reached (should not be reached)
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    crate::Bytes::new(),
+                ))
+            }
+        }
+        let next: Vec<Arc<dyn Policy>> = vec![Arc::new(MockPolicy)];
+
+        let result = policy.send(&ctx, &mut request, &next).await;
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err.kind(),
+            crate::error::ErrorKind::DataConversion
+        ));
     }
 }
