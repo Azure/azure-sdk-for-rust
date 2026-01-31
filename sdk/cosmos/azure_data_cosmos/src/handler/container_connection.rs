@@ -62,7 +62,7 @@ impl ContainerConnection {
                 .resolve_by_id(container_rid.unwrap().parse()?, None, false)
                 .await?;
 
-            container_prop.partition_key;
+            let pk_def = container_prop.partition_key;
             // let pk_range_by_id = self
             //     .pk_range_cache
             //     .resolve_partition_key_range_by_id(&container_prop.id, "0".as_ref(), false)
@@ -75,15 +75,12 @@ impl ContainerConnection {
                 .unwrap();
 
             let key = cosmos_request.clone().partition_key.unwrap();
+            let epk = key.get_hashed_partition_key_string(pk_def.kind, pk_def.version.unwrap() as u8);
+            // key.
             // key.get_effective_partition_key_string() //TODO: Implement this correctly.
-            let pk_range = routing_map.get_range_by_effective_partition_key(&*self.key_to_string(key))?;
-
-            // let keys = vec![
-            //     PartitionKeyValue::from("tenant1"),
-            // ];
-            // let partition_key = crate::PartitionKey::from(keys);
-
-            // cosmos_request.request_context.resolved_partition_key_range = pk_range_by_id;
+            let pk_range = routing_map.get_range_by_effective_partition_key(&*epk)?;
+            cosmos_request.request_context.resolved_partition_key_range = Some(pk_range.clone());
+            cosmos_request.request_context.resolved_collection_rid = Some(container_prop.id.into_owned());
 
             self.global_partition_endpoint_manager.try_add_partition_level_location_override(&mut cosmos_request);
         }

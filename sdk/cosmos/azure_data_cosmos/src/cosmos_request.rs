@@ -37,7 +37,7 @@ pub struct PartitionKeyRangeIdentity {
 /// It collects operation intent (create/read/query/etc.), resource routing
 /// information, partition key, optional item-level options and flags that
 /// influence retry or gateway behaviors.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub struct CosmosRequest {
     pub operation_type: OperationType,

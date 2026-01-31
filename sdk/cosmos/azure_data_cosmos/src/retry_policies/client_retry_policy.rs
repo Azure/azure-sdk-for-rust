@@ -133,7 +133,6 @@ impl ClientRetryPolicy {
         // c) The refresh_location operation has failed. In the event of a failure,
         //    the error is logged and the request should not be blocked.
         // Hence, the outcome of the operation is ignored here.
-        self.request = Some(request.clone());
         _ = self.global_endpoint_manager.refresh_location(false).await;
         self.operation_type = Some(request.operation_type);
         self.can_use_multiple_write_locations = self
@@ -184,6 +183,7 @@ impl ClientRetryPolicy {
                 .request_context
                 .route_to_location_endpoint(endpoint.clone());
         }
+        self.request = Some(request.clone());
     }
 
     /// Determines whether a Data Plane request should be retried based on the response or error
@@ -380,7 +380,7 @@ impl ClientRetryPolicy {
         }
 
         // automatic failover support needed to be plugged in.
-        if !self.can_use_multiple_write_locations && !self.operation_type.unwrap().is_read_only() {
+        if !self.can_use_multiple_write_locations && !self.operation_type.unwrap().is_read_only() && !self.partition_key_range_location_cache.is_partition_level_automatic_failover_enabled() {
             return RetryResult::DoNotRetry;
         }
 

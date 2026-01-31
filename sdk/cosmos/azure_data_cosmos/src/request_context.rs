@@ -14,7 +14,7 @@ use url::Url;
 /// or explicit endpoint), resolved partition ranges, session tokens, and
 /// various internal flags influencing retries and cache refresh behavior.
 #[allow(dead_code)]
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct RequestContext {
     pub force_refresh_address_cache: bool,
     pub original_request_consistency_level: Option<String>, // Use enum if available

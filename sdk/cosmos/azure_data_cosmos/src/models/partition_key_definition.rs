@@ -3,6 +3,7 @@
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
+use crate::hash::PartitionKeyKind;
 
 /// Represents the partition key definition for a container.
 #[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -66,24 +67,10 @@ impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
     }
 }
 
-/// Represents the kind of a partition key.
-#[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
-#[safe(true)]
-#[serde(rename_all = "PascalCase")]
-pub enum PartitionKeyKind {
-    /// The container is partitioned by hashing the value of a single partition key.
-    #[default]
-    Hash,
-
-    /// The container is partitioned by hashing multiple, hierarchical, partition keys.
-    MultiHash,
-
-    Range,
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::models::{PartitionKeyDefinition, PartitionKeyKind};
+    use crate::hash::PartitionKeyKind;
+    use crate::models::{PartitionKeyDefinition};
 
     #[test]
     pub fn from_single() {
