@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 pub(crate) mod content_range;
+pub mod error;
 mod extensions;
 pub mod method_options;
 
@@ -72,3 +73,5 @@ pub use crate::generated::models::{
     SignedIdentifier, SignedIdentifiers, SignedIdentifiersHeaders, SkuName, StaticWebsite,
     StorageErrorCode, StorageServiceStats,
 };
+
+pub use error::{Result, StorageError};
