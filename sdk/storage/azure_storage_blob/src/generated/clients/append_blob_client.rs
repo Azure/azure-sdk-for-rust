@@ -224,9 +224,7 @@ impl AppendBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "appendblock")
-            .append_key_only("fromUrl");
+        query_builder.append_pair("comp", "appendblock");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }

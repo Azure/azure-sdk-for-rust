@@ -454,9 +454,7 @@ impl BlockBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "block")
-            .append_key_only("fromURL");
+        query_builder.append_pair("comp", "block");
         query_builder.set_pair("blockid", encode(block_id));
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -779,9 +777,6 @@ impl BlockBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("BlockBlob")
-            .append_key_only("fromUrl");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }

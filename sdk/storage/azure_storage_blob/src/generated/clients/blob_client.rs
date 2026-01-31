@@ -89,9 +89,7 @@ impl BlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("acquire")
-            .append_pair("comp", "lease");
+        query_builder.append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -180,9 +178,7 @@ impl BlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("break")
-            .append_pair("comp", "lease");
+        query_builder.append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -275,9 +271,7 @@ impl BlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("change")
-            .append_pair("comp", "lease");
+        query_builder.append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -763,7 +757,6 @@ impl BlobClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder
-            .append_key_only("blob")
             .append_pair("comp", "properties")
             .append_pair("restype", "account");
         if let Some(timeout) = options.timeout {
@@ -1047,9 +1040,7 @@ impl BlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "lease")
-            .append_key_only("release");
+        query_builder.append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -1138,9 +1129,7 @@ impl BlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "lease")
-            .append_key_only("renew");
+        query_builder.append_pair("comp", "lease");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -1374,9 +1363,7 @@ impl BlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("SetHTTPHeaders")
-            .append_pair("comp", "properties");
+        query_builder.append_pair("comp", "properties");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }

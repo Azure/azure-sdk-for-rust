@@ -92,7 +92,6 @@ impl BlobContainerClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder
-            .append_key_only("acquire")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
@@ -175,7 +174,6 @@ impl BlobContainerClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder
-            .append_key_only("break")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
@@ -262,7 +260,6 @@ impl BlobContainerClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder
-            .append_key_only("change")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
@@ -706,7 +703,6 @@ impl BlobContainerClient {
         let mut query_builder = first_url.query_builder();
         query_builder
             .append_pair("comp", "list")
-            .append_key_only("flat")
             .append_pair("restype", "container");
         if let Some(include) = options.include.as_ref() {
             query_builder.set_pair(
@@ -824,7 +820,6 @@ impl BlobContainerClient {
         let mut query_builder = url.query_builder();
         query_builder
             .append_pair("comp", "lease")
-            .append_key_only("release")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -907,7 +902,6 @@ impl BlobContainerClient {
         let mut query_builder = url.query_builder();
         query_builder
             .append_pair("comp", "lease")
-            .append_key_only("renew")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
