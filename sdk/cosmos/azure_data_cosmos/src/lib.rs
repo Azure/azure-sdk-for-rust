@@ -6,6 +6,7 @@
 
 mod account_endpoint;
 mod account_reference;
+pub mod change_feed;
 pub mod clients;
 mod connection_string;
 pub mod constants;

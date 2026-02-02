@@ -39,6 +39,7 @@ The following section provides several code snippets covering some of the most c
 
 * [Create Client](#create-cosmos-db-client "Create Cosmos DB client")
 * [CRUD operation on Items](#crud-operation-on-items "CRUD operation on Items")
+* [Change Feed](#change-feed "Change Feed")
 
 ### Create Cosmos DB Client
 
@@ -118,6 +119,81 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
     // Delete an item
     container.delete_item("partition1", "1", None).await?;
+    Ok(())
+}
+```
+
+### Change Feed
+
+The change feed is a log of all creates and updates to items in a container. You can read the change feed to track changes over time or process them incrementally.
+
+```rust
+use serde::{Serialize, Deserialize};
+use azure_data_cosmos::{
+    CosmosClient,
+    QueryChangeFeedOptions,
+    change_feed::{ChangeFeedStartFrom, ChangeFeedMode},
+};
+use futures::StreamExt;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Item {
+    pub id: String,
+    pub partition_key: String,
+    pub value: String,
+}
+
+async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer");
+
+    // Read feed ranges for the container (useful for parallelizing change feed processing)
+    let feed_ranges = container.read_feed_ranges(None).await?;
+    println!("Container has {} feed ranges", feed_ranges.len());
+
+    // Read change feed from the beginning
+    let mut options = QueryChangeFeedOptions::default();
+    options.start_from = Some(ChangeFeedStartFrom::Beginning);
+    options.mode = Some(ChangeFeedMode::LatestVersion);
+    options.max_item_count = Some(100);
+
+    let pager = container.query_items_change_feed::<Item>(Some(options))?;
+    futures::pin_mut!(pager);
+
+    while let Some(result) = pager.next().await {
+        let page = result?;
+        for item in page.into_items()? {
+            println!("Change feed item: {:?}", item);
+        }
+    }
+
+    Ok(())
+}
+```
+
+#### Feed Range Persistence
+
+You can serialize feed ranges to persist them for later use:
+
+```rust
+use azure_data_cosmos::{CosmosClient, change_feed::FeedRange};
+
+async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer");
+
+    // Get feed ranges
+    let feed_ranges = container.read_feed_ranges(None).await?;
+
+    // Serialize for persistence
+    for range in &feed_ranges {
+        let serialized = range.to_string_representation();
+        // Store `serialized` in your persistence layer
+        println!("Serialized feed range: {}", serialized);
+
+        // Later, restore from persistence
+        let restored = FeedRange::from_string_representation(&serialized)?;
+        println!("Restored feed range successfully");
+    }
+
     Ok(())
 }
 ```

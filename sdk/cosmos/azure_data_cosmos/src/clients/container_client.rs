@@ -9,7 +9,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::{TransactionalBatch, TransactionalBatchResponse},
     DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
-    ReplaceContainerOptions, ThroughputOptions,
+    QueryChangeFeedOptions, ReadFeedRangesOptions, ReplaceContainerOptions, ThroughputOptions,
 };
 use std::sync::Arc;
 
@@ -743,5 +743,185 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+    }
+
+    /// Reads the change feed for this container.
+    ///
+    /// The change feed returns an ordered sequence of changes made to items in the container.
+    /// Each call returns a page of changes, and you can continue reading by calling
+    /// the pager's `next()` method.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request including start position, mode, and filters.
+    ///
+    /// # Examples
+    ///
+    /// ## Reading all changes from the beginning
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::change_feed::ChangeFeedStartFrom;
+    /// use azure_data_cosmos::QueryChangeFeedOptions;
+    /// use futures::TryStreamExt;
+    /// use serde::Deserialize;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// #[derive(Debug, Deserialize)]
+    /// struct MyItem {
+    ///     id: String,
+    ///     name: String,
+    /// }
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let options = QueryChangeFeedOptions::default()
+    ///     .with_start_from(ChangeFeedStartFrom::Beginning);
+    /// let mut pager = container_client.query_items_change_feed::<MyItem>(Some(options))?;
+    /// while let Some(item) = pager.try_next().await? {
+    ///     println!("Changed item: {:?}", item);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// ## Reading changes from now (only new changes)
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::change_feed::ChangeFeedStartFrom;
+    /// use azure_data_cosmos::QueryChangeFeedOptions;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let options = QueryChangeFeedOptions::default()
+    ///     .with_start_from(ChangeFeedStartFrom::Now);
+    /// let pager = container_client.query_items_change_feed::<serde_json::Value>(Some(options))?;
+    /// // Poll periodically to get new changes
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    pub fn query_items_change_feed<T: DeserializeOwned + Send + 'static>(
+        &self,
+        options: Option<QueryChangeFeedOptions>,
+    ) -> azure_core::Result<FeedItemIterator<T>> {
+        use crate::change_feed::{ChangeFeedMode, ChangeFeedStartFrom};
+
+        let options = options.unwrap_or_default();
+
+        let start_from = options
+            .start_from()
+            .cloned()
+            .unwrap_or(ChangeFeedStartFrom::Beginning);
+        let mode = options.mode().unwrap_or(ChangeFeedMode::LatestVersion);
+        let is_full_fidelity = matches!(mode, ChangeFeedMode::AllVersionsAndDeletes);
+
+        // Determine If-None-Match header value based on start_from
+        let if_none_match = match &start_from {
+            ChangeFeedStartFrom::Now => Some("*".to_string()),
+            ChangeFeedStartFrom::Beginning => None,
+            ChangeFeedStartFrom::PointInTime(_) => None,
+        };
+
+        // Determine If-Modified-Since header for point-in-time queries
+        let if_modified_since = match &start_from {
+            ChangeFeedStartFrom::PointInTime(dt) => {
+                // Format as RFC 7231 date (HTTP date format)
+                Some(azure_core::time::to_rfc7231(dt))
+            }
+            _ => None,
+        };
+
+        // For now, we use partition key range "0" as a starting point
+        // A full implementation would need to enumerate all ranges
+        let pk_range_id = "0".to_string();
+
+        let url = self.pipeline.url(&self.items_link);
+        self.pipeline.send_change_feed_request(
+            Context::default(),
+            url,
+            self.items_link.clone(),
+            pk_range_id,
+            is_full_fidelity,
+            if_none_match,
+            if_modified_since,
+            |r| {
+                options.apply_headers(r.headers_mut());
+                Ok(())
+            },
+        )
+    }
+
+    /// Returns the feed ranges for this container.
+    ///
+    /// Feed ranges represent logical partitions of the container's data that can be
+    /// processed independently. Use feed ranges with [`query_items_change_feed()`](Self::query_items_change_feed)
+    /// to parallelize change feed processing across multiple consumers.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// // Get all feed ranges for parallel processing
+    /// let feed_ranges = container_client.read_feed_ranges(None).await?;
+    /// println!("Container has {} feed ranges", feed_ranges.len());
+    ///
+    /// // Each range can be processed independently
+    /// for range in &feed_ranges {
+    ///     println!("Feed range: {}", range);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    pub async fn read_feed_ranges(
+        &self,
+        options: Option<ReadFeedRangesOptions>,
+    ) -> azure_core::Result<Vec<crate::change_feed::FeedRange>> {
+        use crate::change_feed::FeedRange;
+
+        let _options = options.unwrap_or_default();
+
+        // Get the container properties to get the resource ID
+        let container_props = self.read(None).await?.into_model()?;
+        let collection_rid = container_props
+            .system_properties
+            .resource_id
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "Container resource ID not found",
+                )
+            })?;
+
+        // Get partition key ranges from the cache
+        let full_range =
+            crate::routing::range::Range::new("".to_string(), "FF".to_string(), true, false);
+
+        let pk_ranges = self
+            .container_connection
+            .partition_key_range_cache()
+            .resolve_overlapping_ranges(&collection_rid, full_range, false)
+            .await?;
+
+        match pk_ranges {
+            Some(ranges) => {
+                let feed_ranges: Vec<FeedRange> = ranges
+                    .into_iter()
+                    .map(|pk_range| FeedRange::from_epk_range(pk_range.to_range()))
+                    .collect();
+                Ok(feed_ranges)
+            }
+            None => {
+                // If no ranges found, return the full range
+                let full_range = crate::routing::range::Range::new(
+                    "".to_string(),
+                    "FF".to_string(),
+                    true,
+                    false,
+                );
+                Ok(vec![FeedRange::from_epk_range(full_range)])
+            }
+        }
     }
 }

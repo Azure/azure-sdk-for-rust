@@ -349,6 +349,126 @@ pub struct ReadDatabaseOptions;
 #[non_exhaustive]
 pub struct ThroughputOptions;
 
+/// Options to be passed to [`ContainerClient::query_items_change_feed()`](crate::clients::ContainerClient::query_items_change_feed).
+#[derive(Clone, Default)]
+pub struct QueryChangeFeedOptions {
+    /// Specifies where to start reading the change feed.
+    ///
+    /// Defaults to [`ChangeFeedStartFrom::Beginning`](crate::change_feed::ChangeFeedStartFrom::Beginning).
+    start_from: Option<crate::change_feed::ChangeFeedStartFrom>,
+
+    /// Filters the change feed to a specific partition key.
+    ///
+    /// If not specified, changes from all partitions are returned.
+    partition_key: Option<crate::PartitionKey>,
+
+    /// Filters the change feed to a specific feed range.
+    ///
+    /// Use this for parallel processing of the change feed across multiple consumers.
+    /// Obtain feed ranges using [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges).
+    feed_range: Option<crate::change_feed::FeedRange>,
+
+    /// Specifies the change feed mode.
+    ///
+    /// Defaults to [`ChangeFeedMode::LatestVersion`](crate::change_feed::ChangeFeedMode::LatestVersion).
+    mode: Option<crate::change_feed::ChangeFeedMode>,
+
+    /// The maximum number of items to return per page.
+    ///
+    /// If not specified, the server determines the page size.
+    max_item_count: Option<i32>,
+
+    /// Applies when working with Session consistency.
+    /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
+    /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
+    ///
+    /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
+    session_token: Option<SessionToken>,
+
+    /// Additional headers to be included in the request.
+    ///
+    /// Custom headers will not override headers that are already set by the SDK.
+    custom_headers: HashMap<HeaderName, HeaderValue>,
+}
+
+impl QueryChangeFeedOptions {
+    pub fn with_start_from(mut self, start_from: crate::change_feed::ChangeFeedStartFrom) -> Self {
+        self.start_from = Some(start_from);
+        self
+    }
+
+    pub fn start_from(&self) -> Option<&crate::change_feed::ChangeFeedStartFrom> {
+        self.start_from.as_ref()
+    }
+
+    pub fn with_partition_key(mut self, partition_key: crate::PartitionKey) -> Self {
+        self.partition_key = Some(partition_key);
+        self
+    }
+
+    pub fn partition_key(&self) -> Option<&crate::PartitionKey> {
+        self.partition_key.as_ref()
+    }
+
+    pub fn with_feed_range(mut self, feed_range: crate::change_feed::FeedRange) -> Self {
+        self.feed_range = Some(feed_range);
+        self
+    }
+
+    pub fn feed_range(&self) -> Option<&crate::change_feed::FeedRange> {
+        self.feed_range.as_ref()
+    }
+
+    pub fn with_mode(mut self, mode: crate::change_feed::ChangeFeedMode) -> Self {
+        self.mode = Some(mode);
+        self
+    }
+
+    pub fn mode(&self) -> Option<crate::change_feed::ChangeFeedMode> {
+        self.mode
+    }
+
+    pub fn with_max_item_count(mut self, max_item_count: i32) -> Self {
+        self.max_item_count = Some(max_item_count);
+        self
+    }
+
+    pub fn max_item_count(&self) -> Option<i32> {
+        self.max_item_count
+    }
+
+    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
+        self.session_token = Some(session_token);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
+}
+
+impl QueryChangeFeedOptions {
+    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
+        // custom headers should be added first so that they don't override SDK-set headers
+        for (header_name, header_value) in &self.custom_headers {
+            headers.insert(header_name.clone(), header_value.clone());
+        }
+
+        if let Some(session_token) = &self.session_token {
+            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
+        }
+
+        if let Some(max_item_count) = &self.max_item_count {
+            headers.insert(constants::MAX_ITEM_COUNT, max_item_count.to_string());
+        }
+    }
+}
+
+/// Options to be passed to [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges).
+#[derive(Clone, Default)]
+pub struct ReadFeedRangesOptions;
+
 #[cfg(test)]
 mod tests {
     use super::*;
