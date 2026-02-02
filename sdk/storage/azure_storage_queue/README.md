@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let queue_client = QueueClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
         "queue-name",                                            // queue name
-        credential,                                              // credential
+        Some(credential),                                        // credential
         Some(QueueClientOptions::default()),                     // QueueClient options
     )?;
     Ok(())
