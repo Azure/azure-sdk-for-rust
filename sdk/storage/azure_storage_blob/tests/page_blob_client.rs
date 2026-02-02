@@ -3,13 +3,10 @@
 
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{
-    format_page_range,
-    models::{
-        BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-        PageBlobClientCreateOptions, PageBlobClientSetSequenceNumberOptions,
-        PageBlobClientSetSequenceNumberResultHeaders, SequenceNumberActionType,
-    },
+use azure_storage_blob::models::{
+    BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType, HttpRange,
+    PageBlobClientCreateOptions, PageBlobClientSetSequenceNumberOptions,
+    PageBlobClientSetSequenceNumberResultHeaders, SequenceNumberActionType,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use std::error::Error;
@@ -69,7 +66,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512),
             None,
         )
         .await?;
@@ -100,13 +97,13 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512),
             None,
         )
         .await?;
 
     page_blob_client
-        .clear_page(format_page_range(0, 512)?, None)
+        .clear_page(HttpRange::new(0, 512), None)
         .await?;
 
     // Assert
@@ -137,7 +134,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            format_page_range(0, 1024)?,
+            HttpRange::new(0, 1024),
             None,
         )
         .await;
@@ -150,7 +147,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            format_page_range(0, 1024)?,
+            HttpRange::new(0, 1024),
             None,
         )
         .await?;
@@ -234,7 +231,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_page(
             RequestContent::from(data_b.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512),
             None,
         )
         .await?;
@@ -245,16 +242,16 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_page(
             RequestContent::from(data_a.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512),
             None,
         )
         .await?;
     page_blob_client_2
         .upload_pages_from_url(
             blob_client_1.url().as_str().into(),
-            format_page_range(0, data_b.len() as u64)?,
+            HttpRange::new(0, data_b.len() as u64),
             data_b.len() as u64,
-            format_page_range(512, data_b.len() as u64)?,
+            HttpRange::new(512, data_b.len() as u64),
             None,
         )
         .await?;
@@ -295,7 +292,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512),
             None,
         )
         .await?;
