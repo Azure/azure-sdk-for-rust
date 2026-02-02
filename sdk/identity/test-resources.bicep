@@ -65,7 +65,7 @@ resource storageRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-0
 
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = if (deployResources) {
   location: location
-  name: uniqueString(resourceGroup().id)
+  name: 'acr${uniqueString(baseName)}'
   sku: {
     name: 'Basic'
   }
