@@ -36,6 +36,13 @@ pub struct GatewayPipeline {
     options: CosmosClientOptions,
 }
 
+/// Constants for change feed header values.
+pub(crate) mod change_feed_headers {
+    pub const INCREMENTAL_FEED: &str = "Incremental feed";
+    pub const FULL_FIDELITY_FEED: &str = "FullFidelityFeed";
+    pub const WIRE_FORMAT_VERSION: &str = "2021-09-15";
+}
+
 impl GatewayPipeline {
     pub fn new(
         endpoint: Url,
@@ -220,6 +227,90 @@ impl GatewayPipeline {
         self.send_raw(context, &mut req, offer_link)
             .await
             .map(Into::into)
+    }
+
+    /// Creates a change feed request for reading changes from a container.
+    ///
+    /// This method sets up the appropriate headers and returns a pager that
+    /// can be used to iterate through changes.
+    #[allow(clippy::too_many_arguments)]
+    pub fn send_change_feed_request<T: DeserializeOwned + Send>(
+        &self,
+        ctx: Context<'_>,
+        url: Url,
+        resource_link: ResourceLink,
+        partition_key_range_id: String,
+        is_full_fidelity: bool,
+        if_none_match: Option<String>,
+        if_modified_since: Option<String>,
+        apply_request_headers: impl Fn(&mut Request) -> azure_core::Result<()>,
+    ) -> azure_core::Result<FeedPager<T>> {
+        let mut base_request = Request::new(url, Method::Get);
+
+        // Set change feed headers
+        if is_full_fidelity {
+            base_request.insert_header(constants::A_IM, change_feed_headers::FULL_FIDELITY_FEED);
+            base_request.insert_header(
+                constants::COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION,
+                change_feed_headers::WIRE_FORMAT_VERSION,
+            );
+        } else {
+            base_request.insert_header(constants::A_IM, change_feed_headers::INCREMENTAL_FEED);
+        }
+
+        // Set partition key range ID
+        base_request.insert_header(constants::PARTITION_KEY_RANGE_ID, partition_key_range_id);
+
+        // Set If-None-Match header (etag for continuation)
+        if let Some(etag) = if_none_match {
+            base_request.insert_header(constants::IF_NONE_MATCH, etag);
+        }
+
+        // Set If-Modified-Since header for point-in-time queries
+        if let Some(date) = if_modified_since {
+            base_request.insert_header("if-modified-since", date);
+        }
+
+        apply_request_headers(&mut base_request)?;
+
+        // Apply client-level headers if not already present
+        for (name, value) in self
+            .options
+            .as_headers()
+            .expect("CosmosClientOptions is infallible")
+        {
+            let header_val = base_request.headers().get_optional_str(&name);
+            if header_val.is_none() {
+                base_request.insert_header(name, value);
+            }
+        }
+
+        let pipeline = self.pipeline.clone();
+        let options = PagerOptions {
+            context: ctx.with_value(resource_link).into_owned(),
+            ..Default::default()
+        };
+
+        Ok(FeedPager::new(
+            move |continuation, pager_options| {
+                let pipeline = pipeline.clone();
+                let mut req = base_request.clone();
+                Box::pin(async move {
+                    if let PagerState::More(continuation) = continuation {
+                        // For change feed, continuation is the etag
+                        req.insert_header(constants::IF_NONE_MATCH, continuation);
+                    }
+
+                    let resp = pipeline
+                        .send(&pager_options.context, &mut req, None)
+                        .await?;
+                    let page = FeedPage::<T>::from_response(resp).await?;
+
+                    Ok(page.into())
+                })
+            },
+            Some(options),
+        ))
     }
 }
 

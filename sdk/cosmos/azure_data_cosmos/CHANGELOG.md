@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added basic multi-region writes support. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482) and [#3495](https://github.com/Azure/azure-sdk-for-rust/pull/3495))
+- Added change feed pull model support with `ContainerClient::query_items_change_feed()` and `ContainerClient::read_feed_ranges()` methods. ([#3458](https://github.com/Azure/azure-sdk-for-rust/issues/3458))
 
 ### Breaking Changes
 
