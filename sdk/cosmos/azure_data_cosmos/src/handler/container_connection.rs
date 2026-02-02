@@ -3,10 +3,11 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
+use crate::models::CosmosResponse;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use azure_core::http::{Context, Response};
+use azure_core::http::Context;
 use std::sync::Arc;
 
 /// Handler for managing transport-level operations with Cosmos DB.
@@ -41,7 +42,7 @@ impl ContainerConnection {
         &self,
         cosmos_request: CosmosRequest,
         context: Context<'_>,
-    ) -> azure_core::Result<(Response<T>, CosmosRequest)> {
+    ) -> azure_core::Result<CosmosResponse<T>> {
         self.pipeline.send(cosmos_request, context).await
     }
 }

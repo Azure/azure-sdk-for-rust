@@ -93,7 +93,6 @@ impl DatabaseClient {
         self.pipeline
             .send(cosmos_request?, options.method_options.context)
             .await
-            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Executes a query against containers in the database.
@@ -160,7 +159,6 @@ impl DatabaseClient {
         self.pipeline
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Deletes this database.
@@ -180,7 +178,6 @@ impl DatabaseClient {
         self.pipeline
             .send(cosmos_request?, options.method_options.context)
             .await
-            .map(|(response, endpoint)| CosmosResponse::new(response, endpoint))
     }
 
     /// Reads database throughput properties, if any.

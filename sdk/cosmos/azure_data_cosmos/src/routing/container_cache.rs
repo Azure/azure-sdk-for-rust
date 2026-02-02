@@ -6,8 +6,10 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadContainerOptions};
-use azure_core::http::Response;
+use crate::{
+    models::ContainerProperties, resource_context::ResourceLink, CosmosResponse,
+    ReadContainerOptions,
+};
 use azure_core::Error;
 use std::sync::Arc;
 
@@ -125,7 +127,7 @@ impl ContainerCache {
         &self,
         container_link: ResourceLink,
         options: Option<ReadContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
@@ -143,8 +145,7 @@ impl ContainerCache {
             .with_value(container_link)
             .into_owned();
 
-        let (response, _) = self.pipeline.send(cosmos_request, ctx_owned).await?;
-        Ok(response)
+        self.pipeline.send(cosmos_request, ctx_owned).await
     }
 }
 

@@ -276,6 +276,5 @@ impl CosmosClient {
         self.pipeline
             .send(cosmos_request, options.method_options.context)
             .await
-            .map(|(response, request)| CosmosResponse::new(response, request))
     }
 }

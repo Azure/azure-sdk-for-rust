@@ -57,21 +57,13 @@ fn assert_response<T>(
     }
 
     assert_eq!(
-        response.endpoint().host_str().unwrap(),
+        response.request().clone().into_raw_request().url().host_str().unwrap(),
         expected_endpoint,
         "unexpected endpoint"
     );
     assert!(
         response.session_token().is_some(),
         "expected session token to be present"
-    );
-    assert!(
-        response.activity_id().is_some(),
-        "expected activity ID to be present"
-    );
-    assert!(
-        !response.activity_id().unwrap().is_empty(),
-        "expected activity ID to be non-empty"
     );
 }
 

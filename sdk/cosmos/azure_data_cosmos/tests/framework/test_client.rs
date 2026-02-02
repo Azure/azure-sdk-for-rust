@@ -35,6 +35,7 @@ pub struct TestClientOptions {
 }
 
 pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+pub const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
@@ -125,24 +126,14 @@ pub fn get_effective_hub_endpoint() -> String {
 }
 
 pub fn get_global_endpoint() -> String {
-    let connection_string_env = std::env::var(CONNECTION_STRING_ENV_VAR)
-        .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
+    let account_host =
+        std::env::var(ACCOUNT_HOST_ENV_VAR).unwrap_or_else(|_| EMULATOR_HOST.to_string());
 
-    // If using emulator, just return the emulator endpoint
-    if connection_string_env == "emulator" || connection_string_env == EMULATOR_CONNECTION_STRING {
-        return EMULATOR_HOST.to_string();
-    }
-
-    // Parse the connection string to get the account endpoint
-    let connection_string: ConnectionString = connection_string_env
-        .parse()
-        .expect("Failed to parse connection string");
-
-    let account_endpoint = connection_string.account_endpoint.trim_end_matches('/');
+    let account_endpoint = account_host.trim_end_matches('/');
 
     // Parse the URL to extract the host and insert the hub region
     // Expected format: https://accountname.documents.azure.com:443
-    // Target format: accountname-region.documents.azure.com (host only, no scheme/port)
+    // Target format: accountname.documents.azure.com (host only, no scheme/port)
     let url = url::Url::parse(account_endpoint).expect("Failed to parse account endpoint URL");
     let host = url
         .host_str()
