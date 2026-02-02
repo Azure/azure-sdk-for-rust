@@ -25,6 +25,7 @@ CELA
 RNTBD
 dedicatedgateway
 enablepreview
+westus
 eastus
 accountname
 

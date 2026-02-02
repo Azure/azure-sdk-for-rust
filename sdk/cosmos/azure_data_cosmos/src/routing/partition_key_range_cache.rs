@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
-use crate::constants::{A_IM_TYPE, IF_NONE_MATCH, MAXIMUM_ITEM_COUNT};
+use crate::constants::{A_IM, IF_NONE_MATCH, MAX_ITEM_COUNT};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::pipeline::GatewayPipeline;
@@ -264,13 +264,10 @@ impl PartitionKeyRangeCache {
         let mut cosmos_request = builder
             .resource_id(collection_rid.to_string())
             .header(
-                MAXIMUM_ITEM_COUNT.as_str().to_string(),
+                MAX_ITEM_COUNT.as_str().to_string(),
                 PAGE_SIZE_STRING.to_string(),
             )
-            .header(
-                A_IM_TYPE.as_str().to_string(),
-                "Incremental Feed".to_string(),
-            )
+            .header(A_IM.as_str().to_string(), "Incremental Feed".to_string())
             .build()?;
 
         if let Some(value) = if_none_match {

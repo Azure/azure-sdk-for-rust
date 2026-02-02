@@ -52,6 +52,11 @@ jobs:
           echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
           echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
 
+      - name: Install azsdk mcp server
+        shell: pwsh
+        run: |
+          ./eng/common/mcp/azure-sdk-mcp.ps1 -InstallDirectory $HOME/bin
+
       - name: Verify workspace setup
         run: |
           # Test that we can run basic cargo commands
@@ -76,3 +81,4 @@ jobs:
           echo "=== Workspace Structure ==="
           find . -name "Cargo.toml" | head -10
           echo "=== Environment Ready for Copilot Coding Agent ==="
+

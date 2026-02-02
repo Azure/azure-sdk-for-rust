@@ -52,11 +52,12 @@ mod tests {
     use super::*;
     use crate::cosmos_request::CosmosRequest;
     use crate::operation_context::OperationType;
+    use crate::pipeline::GatewayPipeline;
+    use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
-    use std::borrow::Cow;
     use url::Url;
 
     // Helper function to create a test GlobalEndpointManager
@@ -158,7 +159,7 @@ mod tests {
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
         let endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
-            vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            vec![RegionName::from("East US"), RegionName::from("West US")],
             pipeline.clone(),
         ));
 
