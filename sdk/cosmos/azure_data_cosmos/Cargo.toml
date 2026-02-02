@@ -16,7 +16,12 @@ categories = ["api-bindings"]
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
+<<<<<<< HEAD
 azure_core = { version = "0.32.0", default-features = false }
+=======
+azure_core.workspace = true
+base64.workspace = true
+>>>>>>> e92439e9b (Add change feed pull model support)
 futures.workspace = true
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }

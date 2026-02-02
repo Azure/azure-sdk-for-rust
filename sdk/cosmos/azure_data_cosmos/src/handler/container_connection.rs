@@ -145,6 +145,11 @@ impl ContainerConnection {
         // Delegate to the retry handler, providing the sender callback
         self.pipeline.send(cosmos_request, context).await
     }
+
+    /// Returns a reference to the partition key range cache.
+    pub fn partition_key_range_cache(&self) -> &PartitionKeyRangeCache {
+        &self.pk_range_cache
+    }
 }
 
 #[cfg(test)]

@@ -10,6 +10,7 @@
 - Added new `CosmosResponse` that wraps `azure_core::Response` for all operations except queries. ([#3622](https://github.com/Azure/azure-sdk-for-rust/pull/3622))
 - Added transactional batch support for executing multiple operations atomically within the same partition key. ([#3664](https://github.com/Azure/azure-sdk-for-rust/pull/3664))
 - Added fault injection support for testing cosmosdb clients in disaster scenarios. Fault injection is behind the feature flag `fault_injection`. ([#3599](https://github.com/Azure/azure-sdk-for-rust/pull/3599))
+- Added change feed pull model support with `ContainerClient::query_items_change_feed()` and `ContainerClient::read_feed_ranges()` methods. ([#3458](https://github.com/Azure/azure-sdk-for-rust/issues/3458))
 
 ### Breaking Changes
 
