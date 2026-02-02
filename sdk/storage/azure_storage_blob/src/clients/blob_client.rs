@@ -2,45 +2,50 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::AppendBlobClient as GeneratedAppendBlobClient,
-    generated::clients::BlobClient as GeneratedBlobClient,
-    generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
-    generated::clients::PageBlobClient as GeneratedPageBlobClient,
-    generated::models::{
-        BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
-        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlockBlobClientUploadResult,
+    generated::{
+        clients::{
+            AppendBlobClient as GeneratedAppendBlobClient, BlobClient as GeneratedBlobClient,
+            BlockBlobClient as GeneratedBlockBlobClient, PageBlobClient as GeneratedPageBlobClient,
+        },
+        models::{
+            BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
+            BlobClientCreateSnapshotResult, BlobClientDownloadResult,
+            BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+            BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
+        },
     },
     logging::apply_storage_logging_defaults,
     models::{
-        AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientCreateSnapshotOptions,
-        BlobClientDeleteImmutabilityPolicyOptions, BlobClientDeleteOptions,
-        BlobClientDownloadOptions, BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions,
-        BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
-        BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
-        BlobClientSetTierOptions, BlobClientUndeleteOptions, BlobTags,
-        BlockBlobClientUploadOptions, StorageErrorCode,
+        method_options::BlobClientManagedDownloadOptions, AccessTier,
+        BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions, BlobClientChangeLeaseOptions,
+        BlobClientCreateSnapshotOptions, BlobClientDeleteImmutabilityPolicyOptions,
+        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
+        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
+        BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
+        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobClientUndeleteOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
     },
+    partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
+use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
-        Url, UrlExt, XmlFormat,
+        AsyncRawResponse, AsyncResponse, ClientOptions, NoFormat, Pipeline, RequestContent,
+        Response, StatusCode, Url, UrlExt, XmlFormat,
     },
     time::OffsetDateTime,
     tracing, Bytes, Result,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
+use futures::Stream;
+use std::{collections::HashMap, num::NonZero, ops::Range};
+use std::{pin::Pin, sync::Arc};
 
 /// Options used when creating a [`BlobClient`].
 #[derive(Clone, SafeDebug)]
@@ -118,6 +123,38 @@ impl GeneratedBlobClient {
             version: options.version,
             pipeline,
         })
+    }
+
+    pub async fn managed_download<'a>(
+        &'a self,
+        options: Option<BlobClientManagedDownloadOptions<'a>>,
+        // TODO use PinnedStream
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<Bytes>> + Unpin + 'a>>> {
+        let options = options.unwrap_or_default();
+        let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
+        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+        // construct exhaustively to ensure we catch new options when added
+        let get_range_options = BlobClientDownloadOptions {
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key,
+            encryption_key_sha256: options.encryption_key_sha256,
+            if_match: options.if_match,
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match,
+            if_tags: options.if_tags,
+            if_unmodified_since: options.if_unmodified_since,
+            lease_id: options.lease_id,
+            method_options: options.method_options,
+            range: None,
+            range_get_content_crc64: options.range_get_content_crc64,
+            range_get_content_md5: options.range_get_content_md5,
+            snapshot: options.snapshot,
+            structured_body_type: options.structured_body_type,
+            timeout: options.timeout,
+            version_id: options.version_id,
+        };
+
+        partitioned_transfer::download(parallel, partition_size, self, get_range_options).await
     }
 }
 impl BlobClient {
@@ -585,5 +622,49 @@ impl BlobClient {
         options: Option<BlobClientCreateSnapshotOptions<'_>>,
     ) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>> {
         self.client.create_snapshot(options).await
+    }
+
+    pub async fn managed_download<'a>(
+        &'a self,
+        options: Option<BlobClientManagedDownloadOptions<'a>>,
+        // TODO use PinnedStream
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<Bytes>> + Unpin + 'a>>> {
+        self.client.managed_download(options).await
+    }
+}
+
+// unwrap evaluated at compile time
+const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
+const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+
+// struct BlobClientDownloadBehavior<'a> {
+//     client: &'a GeneratedBlobClient,
+//     get_range_options: BlobClientDownloadOptions<'a>,
+// }
+
+// impl<'a> BlobClientDownloadBehavior<'a> {
+//     fn new(
+//         client: &'a GeneratedBlobClient,
+//         get_range_options: BlobClientDownloadOptions<'a>,
+//     ) -> Self {
+//         Self {
+//             client,
+//             get_range_options,
+//         }
+//     }
+// }
+
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl<'a> PartitionedDownloadBehavior<'a, BlobClientDownloadOptions<'a>> for GeneratedBlobClient {
+    async fn transfer_range(
+        &'a self,
+        range: Range<u64>,
+        mut options: BlobClientDownloadOptions<'a>,
+    ) -> Result<AsyncRawResponse> {
+        options.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
+        self.download(Some(options))
+            .await
+            .map(AsyncRawResponse::from)
     }
 }

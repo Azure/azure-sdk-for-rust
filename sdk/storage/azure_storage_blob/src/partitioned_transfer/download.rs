@@ -12,8 +12,15 @@ use crate::models::content_range::ContentRange;
 use super::*;
 
 #[async_trait::async_trait]
-pub(crate) trait PartitionedDownloadBehavior {
-    async fn transfer_range(&self, range: Range<u64>) -> AzureResult<AsyncRawResponse>;
+pub(crate) trait PartitionedDownloadBehavior<'a, Options>
+where
+    Options: 'a,
+{
+    async fn transfer_range(
+        &'a self,
+        range: Range<u64>,
+        options: Options,
+    ) -> AzureResult<AsyncRawResponse>;
 }
 
 /// Returns a stream that runs up to parallel-many ranged downloads at a time.
@@ -25,14 +32,21 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// A download that has completed buffering but has not yet returned its buffer in the resulting
 /// stream will still count when determining current running operations. This is so the stream can
 /// promise its buffered bytes do not exceed parallel * partition_size.
-pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
+pub(crate) async fn download<'a, Behavior, Options>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
-    client: &'a T,
-) -> AzureResult<Pin<Box<dyn Stream<Item = AzureResult<Bytes>> + Unpin + 'a>>> {
+    client: &'a Behavior,
+    options: Options,
+) -> AzureResult<Pin<Box<dyn Stream<Item = AzureResult<Bytes>> + Unpin + 'a>>>
+where
+    Behavior: PartitionedDownloadBehavior<'a, Options>,
+    Options: Clone + 'a,
+{
     let parallel = parallel.get();
     let partition_size = partition_size.get() as u64;
-    let initial_response = client.transfer_range(0..partition_size).await?;
+    let initial_response = client
+        .transfer_range(0..partition_size, options.clone())
+        .await?;
     let content_range: ContentRange = initial_response.headers().get_as(&"content-range".into())?;
     let total_ranges = content_range.total_length().div_ceil(partition_size);
 
@@ -55,7 +69,11 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
         // fill to max parallel ops
         while ops.len() < parallel {
             match ranges.next() {
-                Some(range) => ops.push_back(Box::pin(download_range_to_bytes(client, range))),
+                Some(range) => ops.push_back(Box::pin(download_range_to_bytes(
+                    client,
+                    options.clone(),
+                    range,
+                ))),
                 None => break,
             }
         }
@@ -66,11 +84,16 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
     Ok(Box::pin(stream))
 }
 
-async fn download_range_to_bytes<Client: PartitionedDownloadBehavior>(
-    client: &Client,
+async fn download_range_to_bytes<'a, Behavior, Options>(
+    client: &'a Behavior,
+    options: Options,
     range: Range<u64>,
-) -> AzureResult<Bytes> {
-    let response = client.transfer_range(range).await?;
+) -> AzureResult<Bytes>
+where
+    Behavior: PartitionedDownloadBehavior<'a, Options>,
+    Options: Clone + 'a,
+{
+    let response = client.transfer_range(range, options).await?;
     response.into_body().collect().await
 }
 
@@ -112,8 +135,12 @@ mod tests {
     }
 
     #[async_trait::async_trait]
-    impl PartitionedDownloadBehavior for MockPartitionedDownloadBehavior {
-        async fn transfer_range(&self, range: Range<u64>) -> AzureResult<AsyncRawResponse> {
+    impl<'a> PartitionedDownloadBehavior<'a, ()> for MockPartitionedDownloadBehavior {
+        async fn transfer_range(
+            &'a self,
+            range: Range<u64>,
+            _options: (),
+        ) -> AzureResult<AsyncRawResponse> {
             {
                 self.invocations.lock().await.push(
                     MockPartitionedDownloadBehaviorInvocation::TransferRange(range.clone()),
@@ -150,7 +177,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, &mock, ())
             .await?
             .buffer_all()
             .await?;
@@ -170,7 +197,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, &mock, ())
             .await?
             .buffer_all()
             .await?;
@@ -191,7 +218,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, &mock, ())
             .await?
             .buffer_all()
             .await?;
@@ -212,7 +239,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, &mock, ())
             .await?
             .buffer_all()
             .await?;
@@ -233,7 +260,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, &mock, ())
             .await?
             .buffer_all()
             .await?;
@@ -254,7 +281,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = MockPartitionedDownloadBehavior::new(data.clone(), Some(1..5));
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, &mock, ())
             .await?
             .buffer_all()
             .await?;
