@@ -7,21 +7,19 @@ use super::{
     AccountKind, AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockResult,
     AppendBlobClientCreateResult, AppendBlobClientSealResult, ArchiveStatus,
     BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-    BlobClientCopyFromUrlResult, BlobClientCreateSnapshotResult, BlobClientDownloadResult,
-    BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
-    BlobClientRenewLeaseResult, BlobClientSetExpiryResult, BlobClientStartCopyFromUrlResult,
+    BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
+    BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
     BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
     BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
-    BlockBlobClientCommitBlockListResult, BlockBlobClientQueryResult,
-    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult, BlockList, CopyStatus,
-    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PageBlobClientClearPagesResult,
-    PageBlobClientCopyIncrementalResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
-    PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
-    PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifiers, SkuName,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+    BlockBlobClientUploadResult, BlockList, CopyStatus, ImmutabilityPolicyMode, LeaseDuration,
+    LeaseState, LeaseStatus, PageBlobClientClearPagesResult, PageBlobClientCreateResult,
+    PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
+    PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
+    PublicAccessType, RehydratePriority, SignedIdentifiers, SkuName,
 };
 use azure_core::{
     base64::decode,
@@ -34,7 +32,6 @@ use azure_core::{
 };
 use std::collections::HashMap;
 
-const ACCEPT_RANGES: HeaderName = HeaderName::from_static("accept-ranges");
 const ACCESS_TIER: HeaderName = HeaderName::from_static("x-ms-access-tier");
 const ACCESS_TIER_CHANGE_TIME: HeaderName = HeaderName::from_static("x-ms-access-tier-change-time");
 const ACCESS_TIER_INFERRED: HeaderName = HeaderName::from_static("x-ms-access-tier-inferred");
@@ -549,82 +546,6 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::copy_from_url()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{BlobClientCopyFromUrlResult, BlobClientCopyFromUrlResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<BlobClientCopyFromUrlResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(content_md5) = response.content_md5()? {
-///         println!("content-md5: {:?}", content_md5);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("last-modified: {:?}", last_modified);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait BlobClientCopyFromUrlResultHeaders: private::Sealed {
-    fn content_md5(&self) -> Result<Option<Vec<u8>>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
-    fn copy_id(&self) -> Result<Option<String>>;
-    fn encryption_scope(&self) -> Result<Option<String>>;
-    fn version_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientCopyFromUrlResultHeaders for Response<BlobClientCopyFromUrlResult, NoFormat> {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
-    fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// This response header is returned so that the client can check for the integrity of the copied content.
-    fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
-    }
-
-    /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
-    /// pass to Abort Copy Blob to abort a pending copy.
-    fn copy_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_ID)
-    }
-
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
-    fn encryption_scope(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
-    }
-
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
-    fn version_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
 }
 
@@ -1468,107 +1389,6 @@ impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, 
     }
 }
 
-/// Provides access to typed response headers for `BlobClient::set_expiry()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{BlobClientSetExpiryResult, BlobClientSetExpiryResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<BlobClientSetExpiryResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("last-modified: {:?}", last_modified);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait BlobClientSetExpiryResultHeaders: private::Sealed {
-    fn etag(&self) -> Result<Option<String>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-}
-
-impl BlobClientSetExpiryResultHeaders for Response<BlobClientSetExpiryResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::start_copy_from_url()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{BlobClientStartCopyFromUrlResult, BlobClientStartCopyFromUrlResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<BlobClientStartCopyFromUrlResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("last-modified: {:?}", last_modified);
-///     }
-///     if let Some(copy_id) = response.copy_id()? {
-///         println!("x-ms-copy-id: {:?}", copy_id);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
-    fn etag(&self) -> Result<Option<String>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn copy_id(&self) -> Result<Option<String>>;
-    fn copy_status(&self) -> Result<Option<CopyStatus>>;
-    fn version_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientStartCopyFromUrlResultHeaders
-    for Response<BlobClientStartCopyFromUrlResult, NoFormat>
-{
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
-    /// pass to Abort Copy Blob to abort a pending copy.
-    fn copy_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_ID)
-    }
-
-    /// State of the copy operation identified by x-ms-copy-id.
-    fn copy_status(&self) -> Result<Option<CopyStatus>> {
-        Headers::get_optional_as(self.headers(), &COPY_STATUS)
-    }
-
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
-    fn version_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION_ID)
-    }
-}
-
 /// Provides access to typed response headers for `BlobContainerClient::acquire_lease()`
 ///
 /// # Examples
@@ -2096,236 +1916,6 @@ impl BlockBlobClientCommitBlockListResultHeaders
     }
 }
 
-/// Provides access to typed response headers for `BlockBlobClient::query()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::AsyncResponse};
-/// use azure_storage_blob::models::{BlockBlobClientQueryResult, BlockBlobClientQueryResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: AsyncResponse<BlockBlobClientQueryResult> = unimplemented!();
-///     // Access response headers
-///     if let Some(accept_ranges) = response.accept_ranges()? {
-///         println!("accept-ranges: {:?}", accept_ranges);
-///     }
-///     if let Some(cache_control) = response.cache_control()? {
-///         println!("cache-control: {:?}", cache_control);
-///     }
-///     if let Some(content_disposition) = response.content_disposition()? {
-///         println!("content-disposition: {:?}", content_disposition);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait BlockBlobClientQueryResultHeaders: private::Sealed {
-    fn accept_ranges(&self) -> Result<Option<String>>;
-    fn cache_control(&self) -> Result<Option<String>>;
-    fn content_disposition(&self) -> Result<Option<String>>;
-    fn content_encoding(&self) -> Result<Option<String>>;
-    fn content_language(&self) -> Result<Option<String>>;
-    fn content_length(&self) -> Result<Option<u64>>;
-    fn content_md5(&self) -> Result<Option<Vec<u8>>>;
-    fn content_range(&self) -> Result<Option<String>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn blob_committed_block_count(&self) -> Result<Option<i32>>;
-    fn blob_content_md5(&self) -> Result<Option<Vec<u8>>>;
-    fn blob_sequence_number(&self) -> Result<Option<i64>>;
-    fn blob_type(&self) -> Result<Option<BlobType>>;
-    fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
-    fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>>;
-    fn copy_id(&self) -> Result<Option<String>>;
-    fn copy_progress(&self) -> Result<Option<String>>;
-    fn copy_source(&self) -> Result<Option<String>>;
-    fn copy_status(&self) -> Result<Option<CopyStatus>>;
-    fn copy_status_description(&self) -> Result<Option<String>>;
-    fn encryption_key_sha256(&self) -> Result<Option<String>>;
-    fn encryption_scope(&self) -> Result<Option<String>>;
-    fn duration(&self) -> Result<Option<LeaseDuration>>;
-    fn lease_state(&self) -> Result<Option<LeaseState>>;
-    fn lease_status(&self) -> Result<Option<LeaseStatus>>;
-    fn metadata(&self) -> Result<HashMap<String, String>>;
-    fn is_server_encrypted(&self) -> Result<Option<bool>>;
-}
-
-impl BlockBlobClientQueryResultHeaders for AsyncResponse<BlockBlobClientQueryResult> {
-    /// Indicates that the service supports requests for partial blob content.
-    fn accept_ranges(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ACCEPT_RANGES)
-    }
-
-    /// This header is returned if it was previously specified for the blob.
-    fn cache_control(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CACHE_CONTROL)
-    }
-
-    /// This header returns the value that was specified for the 'x-ms-blob-content-disposition' header. The Content-Disposition
-    /// response header field conveys additional information about how to process the response payload, and also can be used to
-    /// attach additional metadata. For example, if set to attachment, it indicates that the user-agent should not display the
-    /// response, but instead show a Save As dialog with a filename other than the blob name specified.
-    fn content_disposition(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CONTENT_DISPOSITION)
-    }
-
-    /// This header returns the value that was specified for the Content-Encoding request header
-    fn content_encoding(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CONTENT_ENCODING)
-    }
-
-    /// This header returns the value that was specified for the Content-Language request header.
-    fn content_language(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CONTENT_LANGUAGE)
-    }
-
-    /// The number of bytes present in the response body.
-    fn content_length(&self) -> Result<Option<u64>> {
-        Headers::get_optional_as(self.headers(), &CONTENT_LENGTH)
-    }
-
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
-    fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
-    }
-
-    /// Indicates the range of bytes returned in the event that the client requested a subset of the blob by setting the 'Range'
-    /// request header.
-    fn content_range(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CONTENT_RANGE)
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The number of committed blocks present in the blob. This header is returned only for append blobs.
-    fn blob_committed_block_count(&self) -> Result<Option<i32>> {
-        Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
-    }
-
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
-    fn blob_content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &BLOB_CONTENT_MD5, |h| decode(h.as_str()))
-    }
-
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
-    fn blob_sequence_number(&self) -> Result<Option<i64>> {
-        Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
-    }
-
-    /// The type of the blob.
-    fn blob_type(&self) -> Result<Option<BlobType>> {
-        Headers::get_optional_as(self.headers(), &BLOB_TYPE)
-    }
-
-    /// This response header is returned so that the client can check for the integrity of the copied content.
-    fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
-    }
-
-    /// Conclusion time of the last attempted Copy Blob operation where this blob was the destination blob. This value can specify
-    /// the time of a completed, aborted, or failed copy attempt. This header does not appear if a copy is pending, if this blob
-    /// has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob
-    /// operation using Set Blob Properties, Put Blob, or Put Block List.
-    fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &COPY_COMPLETION_TIME, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
-    /// pass to Abort Copy Blob to abort a pending copy.
-    fn copy_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_ID)
-    }
-
-    /// Contains the number of bytes copied and the total bytes in the source in the last attempted Copy Blob operation where
-    /// this blob was the destination blob. Can show between 0 and Content-Length bytes copied. This header does not appear if
-    /// this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded
-    /// Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List
-    fn copy_progress(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_PROGRESS)
-    }
-
-    /// URL up to 2 KB in length that specifies the source blob or file used in the last attempted Copy Blob operation where this
-    /// blob was the destination blob. This header does not appear if this blob has never been the destination in a Copy Blob
-    /// operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob,
-    /// or Put Block List.
-    fn copy_source(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE)
-    }
-
-    /// State of the copy operation identified by x-ms-copy-id.
-    fn copy_status(&self) -> Result<Option<CopyStatus>> {
-        Headers::get_optional_as(self.headers(), &COPY_STATUS)
-    }
-
-    /// Only appears when x-ms-copy-status is failed or pending. Describes the cause of the last fatal or non-fatal copy operation
-    /// failure. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this
-    /// blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List
-    fn copy_status_description(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_STATUS_DESCRIPTION)
-    }
-
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
-    fn encryption_key_sha256(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
-    }
-
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
-    fn encryption_scope(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
-    }
-
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
-    fn duration(&self) -> Result<Option<LeaseDuration>> {
-        Headers::get_optional_as(self.headers(), &LEASE_DURATION)
-    }
-
-    /// Lease state of the blob.
-    fn lease_state(&self) -> Result<Option<LeaseState>> {
-        Headers::get_optional_as(self.headers(), &LEASE_STATE)
-    }
-
-    /// The lease status of the blob.
-    fn lease_status(&self) -> Result<Option<LeaseStatus>> {
-        Headers::get_optional_as(self.headers(), &LEASE_STATUS)
-    }
-
-    /// The metadata headers.
-    fn metadata(&self) -> Result<HashMap<String, String>> {
-        let mut values = HashMap::new();
-        for h in self.headers().iter() {
-            let name = h.0.as_str();
-            if name.len() > META.len() && name.starts_with(META) {
-                values.insert(name[META.len()..].to_owned(), h.1.as_str().to_owned());
-            }
-        }
-        Ok(values)
-    }
-
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
-    fn is_server_encrypted(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
-    }
-}
-
 /// Provides access to typed response headers for `BlockBlobClient::stage_block_from_url()`
 ///
 /// # Examples
@@ -2717,62 +2307,6 @@ impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPages
     }
 }
 
-/// Provides access to typed response headers for `PageBlobClient::copy_incremental()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{PageBlobClientCopyIncrementalResult, PageBlobClientCopyIncrementalResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<PageBlobClientCopyIncrementalResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("last-modified: {:?}", last_modified);
-///     }
-///     if let Some(copy_id) = response.copy_id()? {
-///         println!("x-ms-copy-id: {:?}", copy_id);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait PageBlobClientCopyIncrementalResultHeaders: private::Sealed {
-    fn etag(&self) -> Result<Option<String>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn copy_id(&self) -> Result<Option<String>>;
-    fn copy_status(&self) -> Result<Option<CopyStatus>>;
-}
-
-impl PageBlobClientCopyIncrementalResultHeaders
-    for Response<PageBlobClientCopyIncrementalResult, NoFormat>
-{
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
-    /// pass to Abort Copy Blob to abort a pending copy.
-    fn copy_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_ID)
-    }
-
-    /// State of the copy operation identified by x-ms-copy-id.
-    fn copy_status(&self) -> Result<Option<CopyStatus>> {
-        Headers::get_optional_as(self.headers(), &COPY_STATUS)
-    }
-}
-
 /// Provides access to typed response headers for `PageBlobClient::create()`
 ///
 /// # Examples
@@ -3114,9 +2648,28 @@ impl PageBlobClientUploadPagesResultHeaders
     }
 }
 
-/// Provides access to typed response headers for the following methods:
-/// * `PageBlobClient::get_page_ranges()`
-/// * `PageBlobClient::get_page_ranges_diff()`
+/// Provides access to typed response headers for `PageBlobClient::get_page_ranges()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{PageList, PageListHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageList, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("last-modified: {:?}", last_modified);
+///     }
+///     if let Some(blob_content_length) = response.blob_content_length()? {
+///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageListHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -3193,18 +2746,16 @@ mod private {
     use super::{
         AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockResult,
         AppendBlobClientCreateResult, AppendBlobClientSealResult, BlobClientAcquireLeaseResult,
-        BlobClientBreakLeaseResult, BlobClientChangeLeaseResult, BlobClientCopyFromUrlResult,
-        BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
-        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlobClientSetExpiryResult, BlobClientStartCopyFromUrlResult,
+        BlobClientBreakLeaseResult, BlobClientChangeLeaseResult, BlobClientCreateSnapshotResult,
+        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
         BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientQueryResult,
-        BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult, BlockList,
-        PageBlobClientClearPagesResult, PageBlobClientCopyIncrementalResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+        BlockBlobClientUploadResult, BlockList, PageBlobClientClearPagesResult,
         PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
         PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
@@ -3214,7 +2765,6 @@ mod private {
     pub trait Sealed {}
 
     impl Sealed for AsyncResponse<BlobClientDownloadResult> {}
-    impl Sealed for AsyncResponse<BlockBlobClientQueryResult> {}
     impl Sealed for Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientAppendBlockResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientCreateResult, NoFormat> {}
@@ -3222,14 +2772,11 @@ mod private {
     impl Sealed for Response<BlobClientAcquireLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientBreakLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientChangeLeaseResult, NoFormat> {}
-    impl Sealed for Response<BlobClientCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobClientCreateSnapshotResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobClientReleaseLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientRenewLeaseResult, NoFormat> {}
-    impl Sealed for Response<BlobClientSetExpiryResult, NoFormat> {}
-    impl Sealed for Response<BlobClientStartCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientAcquireLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientBreakLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientChangeLeaseResult, NoFormat> {}
@@ -3245,7 +2792,6 @@ mod private {
     impl Sealed for Response<BlockBlobClientUploadResult, NoFormat> {}
     impl Sealed for Response<BlockList, XmlFormat> {}
     impl Sealed for Response<PageBlobClientClearPagesResult, NoFormat> {}
-    impl Sealed for Response<PageBlobClientCopyIncrementalResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientCreateResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientResizeResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientSetSequenceNumberResult, NoFormat> {}

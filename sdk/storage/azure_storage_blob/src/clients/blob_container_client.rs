@@ -20,18 +20,38 @@ use crate::{
     logging::apply_storage_logging_defaults,
     models::{FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode},
     pipeline::StorageHeadersPolicy,
-    BlobClient, BlobContainerClientOptions,
+    BlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pager, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
+        ClientOptions, NoFormat, Pager, Pipeline, RequestContent, Response, StatusCode, Url,
+        XmlFormat,
     },
     tracing, Result,
 };
 use std::{collections::HashMap, sync::Arc};
+
+/// Options used when creating a [`BlobContainerClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobContainerClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for BlobContainerClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with a specified Azure storage container, although that container may not yet exist.
 pub struct BlobContainerClient {

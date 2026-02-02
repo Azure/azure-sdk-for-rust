@@ -5,33 +5,51 @@ use crate::{
     generated::{
         clients::BlockBlobClient as GeneratedBlockBlobClient,
         models::{
-            BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-            BlockBlobClientUploadBlobFromUrlResult,
+            BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+            BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
         },
     },
     logging::apply_storage_logging_defaults,
     models::{
         method_options::BlockBlobClientManagedUploadOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-        BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions, BlockList,
-        BlockListType, BlockLookupList,
+        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
+        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
     pipeline::StorageHeadersPolicy,
-    BlockBlobClientOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
+        Body, ClientOptions, NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Bytes, Result,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
 use uuid::Uuid;
+
+/// Options used when creating a [`BlockBlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlockBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for BlockBlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with a specific Azure storage Block blob, although that blob may not yet exist.
 pub struct BlockBlobClient {
@@ -262,8 +280,8 @@ impl BlockBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `block_id` - The unique identifier for the block. The identifier should be less than or equal to 64 bytes in size.
-    ///   For a given blob, the `block_id` must be the same size for each block.
+    /// * `block_id` - A unique identifier for the block (up to 64 bytes). The SDK will Base64-encode this value
+    ///   before sending to the service. For a given blob, the `block_id` must be the same size for each block.
     /// * `content_length` - Total length of the blob data to be staged.
     /// * `data` - The content of the block.
     /// * `options` - Optional configuration for the request.
@@ -310,6 +328,28 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
         self.client.upload_blob_from_url(copy_source, options).await
+    }
+
+    /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
+    /// a URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `block_id` - A unique identifier for the block (up to 64 bytes). This value will be base64-encoded automatically.
+    ///   For a given blob, the `block_id` must be the same size for each block.
+    /// * `content_length` - The length of the request.
+    /// * `source_url` - Specify a URL to the copy source.
+    /// * `options` - Optional configuration for the request.
+    pub async fn stage_block_from_url(
+        &self,
+        block_id: &[u8],
+        content_length: u64,
+        source_url: String,
+        options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>> {
+        self.client
+            .stage_block_from_url(block_id, content_length, source_url, options)
+            .await
     }
 
     /// The managed upload operation updates the content of an existing block blob. Updating an existing block blob overwrites

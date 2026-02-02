@@ -5,27 +5,22 @@
 
 use crate::generated::models::{
     BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientQueryOptions, BlockBlobClientQueryResult,
-    BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockFromUrlResult,
-    BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadBlobFromUrlResult,
-    BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockList, BlockListType,
-    BlockLookupList, QueryRequest,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
+    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockOptions,
+    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlOptions,
+    BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadOptions,
+    BlockBlobClientUploadResult, BlockList, BlockListType, BlockLookupList,
 };
 use azure_core::{
     base64::encode,
-    credentials::TokenCredential,
     error::CheckSuccessOptions,
-    fmt::SafeDebug,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncResponse, ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions,
-        PipelineStreamOptions, Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent, Response, Url,
+        UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
 };
-use std::sync::Arc;
 
 #[tracing::client]
 pub struct BlockBlobClient {
@@ -34,56 +29,7 @@ pub struct BlockBlobClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a `BlockBlobClient`
-#[derive(Clone, SafeDebug)]
-pub struct BlockBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
 impl BlockBlobClient {
-    /// Creates a new BlockBlobClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.BlockBlob")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<BlockBlobClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -337,137 +283,6 @@ impl BlockBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Query operation enables users to select/project on blob data by providing simple query expressions.
-    ///
-    /// # Arguments
-    ///
-    /// * `query_request` - The query request
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlockBlobClientQueryResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::AsyncResponse};
-    /// use azure_storage_blob::models::{BlockBlobClientQueryResult, BlockBlobClientQueryResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: AsyncResponse<BlockBlobClientQueryResult> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(accept_ranges) = response.accept_ranges()? {
-    ///         println!("accept-ranges: {:?}", accept_ranges);
-    ///     }
-    ///     if let Some(cache_control) = response.cache_control()? {
-    ///         println!("cache-control: {:?}", cache_control);
-    ///     }
-    ///     if let Some(content_disposition) = response.content_disposition()? {
-    ///         println!("content-disposition: {:?}", content_disposition);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`accept_ranges`()](crate::generated::models::BlockBlobClientQueryResultHeaders::accept_ranges) - accept-ranges
-    /// * [`cache_control`()](crate::generated::models::BlockBlobClientQueryResultHeaders::cache_control) - cache-control
-    /// * [`content_disposition`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_disposition) - content-disposition
-    /// * [`content_encoding`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_encoding) - content-encoding
-    /// * [`content_language`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_language) - content-language
-    /// * [`content_length`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_length) - content-length
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_md5) - content-md5
-    /// * [`content_range`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_range) - content-range
-    /// * [`etag`()](crate::generated::models::BlockBlobClientQueryResultHeaders::etag) - etag
-    /// * [`last_modified`()](crate::generated::models::BlockBlobClientQueryResultHeaders::last_modified) - last-modified
-    /// * [`blob_committed_block_count`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
-    /// * [`blob_content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_content_md5) - x-ms-blob-content-md5
-    /// * [`blob_sequence_number`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
-    /// * [`blob_type`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_type) - x-ms-blob-type
-    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_crc64) - x-ms-content-crc64
-    /// * [`copy_completion_time`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_completion_time) - x-ms-copy-completion-time
-    /// * [`copy_id`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_id) - x-ms-copy-id
-    /// * [`copy_progress`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_progress) - x-ms-copy-progress
-    /// * [`copy_source`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_source) - x-ms-copy-source
-    /// * [`copy_status`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_status) - x-ms-copy-status
-    /// * [`copy_status_description`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_status_description) - x-ms-copy-status-description
-    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientQueryResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
-    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientQueryResultHeaders::encryption_scope) - x-ms-encryption-scope
-    /// * [`duration`()](crate::generated::models::BlockBlobClientQueryResultHeaders::duration) - x-ms-lease-duration
-    /// * [`lease_state`()](crate::generated::models::BlockBlobClientQueryResultHeaders::lease_state) - x-ms-lease-state
-    /// * [`lease_status`()](crate::generated::models::BlockBlobClientQueryResultHeaders::lease_status) - x-ms-lease-status
-    /// * [`metadata`()](crate::generated::models::BlockBlobClientQueryResultHeaders::metadata) - x-ms-meta
-    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientQueryResultHeaders::is_server_encrypted) - x-ms-server-encrypted
-    ///
-    /// [`BlockBlobClientQueryResultHeaders`]: crate::generated::models::BlockBlobClientQueryResultHeaders
-    #[tracing::function("Storage.Blob.BlockBlob.query")]
-    pub async fn query(
-        &self,
-        query_request: RequestContent<QueryRequest, XmlFormat>,
-        options: Option<BlockBlobClientQueryOptions<'_>>,
-    ) -> Result<AsyncResponse<BlockBlobClientQueryResult>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
-        query_builder.append_pair("comp", "query");
-        if let Some(snapshot) = options.snapshot.as_ref() {
-            query_builder.set_pair("snapshot", snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let mut request = Request::new(url, Method::Post);
-        request.insert_header("accept", "application/octet-stream");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match.as_ref() {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match.as_ref() {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
-            request.insert_header(
-                "x-ms-encryption-algorithm",
-                encryption_algorithm.to_string(),
-            );
-        }
-        if let Some(encryption_key) = options.encryption_key.as_ref() {
-            request.insert_header("x-ms-encryption-key", encryption_key);
-        }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
-            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
-        }
-        if let Some(if_tags) = options.if_tags.as_ref() {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id.as_ref() {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        request.set_body(query_request);
-        let rsp = self
-            .pipeline
-            .stream(
-                &ctx,
-                &mut request,
-                Some(PipelineStreamOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200, 206],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
     /// The Stage Block operation creates a new block to be committed as part of a blob
     ///
     /// # Arguments
@@ -639,9 +454,7 @@ impl BlockBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "block")
-            .append_key_only("fromURL");
+        query_builder.append_pair("comp", "block");
         query_builder.set_pair("blockid", encode(block_id));
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -964,9 +777,6 @@ impl BlockBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_key_only("BlockBlob")
-            .append_key_only("fromUrl");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -1109,14 +919,5 @@ impl BlockBlobClient {
             )
             .await?;
         Ok(rsp.into())
-    }
-}
-
-impl Default for BlockBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
     }
 }
