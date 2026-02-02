@@ -48,6 +48,8 @@ cargo install --path . --root target
 Write-Host "##[endgroup]"
 
 Write-Host "##[group]Building container image"
+$acrName = $DeploymentOutputs['IDENTITY_ACR_NAME']
+Write-Host "Logging into ACR: $acrName"
 az acr login -n $DeploymentOutputs['IDENTITY_ACR_NAME']
 $image = "$($DeploymentOutputs['IDENTITY_ACR_LOGIN_SERVER'])/live-test"
 Set-Content -Path Dockerfile -Value @"
