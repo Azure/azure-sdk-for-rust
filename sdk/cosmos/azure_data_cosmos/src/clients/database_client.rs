@@ -1,17 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    clients::ContainerClient,
-    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
-    options::ReadDatabaseOptions,
-    pipeline::GatewayPipeline,
-    resource_context::{ResourceLink, ResourceType},
-    CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
-    ThroughputOptions,
-};
+use crate::{clients::ContainerClient, models::{ContainerProperties, DatabaseProperties, ThroughputProperties}, options::ReadDatabaseOptions, pipeline::GatewayPipeline, resource_context::{ResourceLink, ResourceType}, CosmosClient, CosmosClientOptions, CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions, ThroughputOptions};
 use std::sync::Arc;
-
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -26,6 +17,7 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     pipeline: Arc<GatewayPipeline>,
+    client_options: CosmosClientOptions,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -33,6 +25,7 @@ pub struct DatabaseClient {
 impl DatabaseClient {
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
+        client_options: CosmosClientOptions,
         database_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
@@ -46,6 +39,7 @@ impl DatabaseClient {
             containers_link,
             database_id,
             pipeline,
+            client_options,
             global_endpoint_manager,
             global_partition_endpoint_manager,
         }
@@ -58,6 +52,7 @@ impl DatabaseClient {
     pub fn container_client(&self, name: &str) -> ContainerClient {
         ContainerClient::new(
             self.pipeline.clone(),
+            self.client_options.clone(),
             &self.link,
             name,
             self.global_endpoint_manager.clone(),

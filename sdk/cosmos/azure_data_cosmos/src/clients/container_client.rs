@@ -1,14 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    models::{ContainerProperties, PatchDocument, ThroughputProperties},
-    options::{QueryOptions, ReadContainerOptions},
-    pipeline::GatewayPipeline,
-    resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
-    ThroughputOptions,
-};
+use crate::{models::{ContainerProperties, PatchDocument, ThroughputProperties}, options::{QueryOptions, ReadContainerOptions}, pipeline::GatewayPipeline, resource_context::{ResourceLink, ResourceType}, CosmosClientOptions, DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions, ThroughputOptions};
 use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
@@ -36,6 +29,7 @@ pub struct ContainerClient {
 impl ContainerClient {
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
+        client_options: CosmosClientOptions,
         database_link: &ResourceLink,
         container_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
@@ -59,6 +53,7 @@ impl ContainerClient {
         ));
         let container_connection = Arc::from(ContainerConnection::new(
             pipeline.clone(),
+            client_options,
             container_cache,
             partition_key_range_cache,
             global_endpoint_manager.clone(),

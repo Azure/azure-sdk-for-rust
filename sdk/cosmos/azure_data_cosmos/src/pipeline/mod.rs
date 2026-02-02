@@ -5,7 +5,7 @@ mod authorization_policy;
 mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::handler::retry_handler::{BackOffRetryHandler, ConditionalSend, RetryHandler};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
     constants,
@@ -86,12 +86,24 @@ impl GatewayPipeline {
             .await
     }
 
+    pub async fn send_with_callback<Sender, Fut>(
+        &self,
+        mut request: &mut CosmosRequest,
+        sender: Sender,
+    ) -> azure_core::Result<RawResponse>
+    where
+        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
+        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
+    {
+        // Delegate to the retry handler, providing the sender callback
+        self.retry_handler.send(&mut request, sender).await
+    }
+
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
-        cosmos_request.client_headers(&self.options);
         // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
             let ctx = context.clone();
@@ -101,8 +113,7 @@ impl GatewayPipeline {
         };
 
         // Delegate to the retry handler, providing the sender callback
-        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
-
+        let res = self.send_with_callback(&mut cosmos_request, sender).await;
         // Convert RawResponse into typed Response<T>
         res.map(Into::into)
     }

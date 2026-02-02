@@ -9,7 +9,8 @@ use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::{Context, Response};
 use std::sync::Arc;
 use azure_core::http::headers::AsHeaders;
-use crate::{constants, PartitionKeyValue};
+use crate::{constants, CosmosClientOptions, PartitionKeyValue};
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::resource_context::ResourceType::PartitionKey;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
@@ -18,8 +19,10 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 #[derive(Debug, Clone)]
 pub struct ContainerConnection {
     pipeline: Arc<GatewayPipeline>,
+    client_options: CosmosClientOptions,
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
+    retry_handler: BackOffRetryHandler,
     endpoint_manager: Arc<GlobalEndpointManager>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -34,15 +37,20 @@ impl ContainerConnection {
     /// * `pk_range_cache` - The cache used to resolve partition key ranges.
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
+        options: CosmosClientOptions,
         container_cache: Arc<ContainerCache>,
         pk_range_cache: Arc<PartitionKeyRangeCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
+        let retry_handler = BackOffRetryHandler::new(endpoint_manager.clone(), global_partition_endpoint_manager.clone());
+
         Self {
             pipeline,
+            client_options: options,
             container_cache,
             pk_range_cache,
+            retry_handler,
             endpoint_manager,
             global_partition_endpoint_manager,
         }
@@ -54,38 +62,47 @@ impl ContainerConnection {
         context: Context<'_>,
     ) -> azure_core::Result<Response<T>> {
 
-        if self.is_partition_level_failover_enabled() && cosmos_request.resource_type.is_partitioned() {
-            // let container_rid = cosmos_request.clone().partition_key_range_identity.unwrap().collection_rid;
+        cosmos_request.client_headers(&self.client_options);
+
+        if self.is_partition_level_failover_enabled() {
             let container_rid = cosmos_request.clone().collection_name;
-            let container_prop = self
-                .container_cache
+            let container_prop = self.container_cache
                 .resolve_by_id(container_rid.unwrap().parse()?, None, false)
                 .await?;
 
             let pk_def = container_prop.partition_key;
-            // let pk_range_by_id = self
-            //     .pk_range_cache
-            //     .resolve_partition_key_range_by_id(&container_prop.id, "0".as_ref(), false)
-            //     .await;
-
-            let routing_map = self
-                .pk_range_cache
+            let routing_map = self.pk_range_cache
                 .try_lookup(&container_prop.id, None)
                 .await?
                 .unwrap();
 
-            let key = cosmos_request.clone().partition_key.unwrap();
-            let epk = key.get_hashed_partition_key_string(pk_def.kind, pk_def.version.unwrap() as u8);
-            // key.
-            // key.get_effective_partition_key_string() //TODO: Implement this correctly.
+            let partition_key = cosmos_request.clone().partition_key.unwrap();
+            let epk = partition_key.get_hashed_partition_key_string(pk_def.kind, pk_def.version.unwrap() as u8);
             let pk_range = routing_map.get_range_by_effective_partition_key(&*epk)?;
             cosmos_request.request_context.resolved_partition_key_range = Some(pk_range.clone());
             cosmos_request.request_context.resolved_collection_rid = Some(container_prop.id.into_owned());
-
-            self.global_partition_endpoint_manager.try_add_partition_level_location_override(&mut cosmos_request);
         }
 
-        self.pipeline.send(cosmos_request, context).await
+        let sender = |req: &mut CosmosRequest| {
+            let pipeline = self.pipeline.clone();
+            let global_partition_endpoint_manager = self.global_partition_endpoint_manager.clone();
+            let ctx = context.clone();
+            let mut req_clone = req.clone();
+
+            async move {
+                if self.is_partition_level_failover_enabled() && req_clone.resource_type.is_partitioned() {
+                    global_partition_endpoint_manager.try_add_partition_level_location_override(&mut req_clone);
+                }
+                let url = req_clone.resource_link.clone();
+                let mut raw_req = req_clone.clone().into_raw_request();
+                pipeline.send_raw(ctx, &mut raw_req, url).await
+            }
+        };
+
+        // Delegate to the retry handler, providing the sender callback
+        let res = self.pipeline.send_with_callback(&mut cosmos_request, sender).await;
+        res.map(Into::into)
+
     }
 
     /// Checks if partition level failover is enabled.
@@ -249,7 +266,7 @@ mod tests {
         );
 
         let connection =
-            ContainerConnection::new(gateway_pipeline, container_cache, pk_range_cache, endpoint_manager, partition_manager);
+            ContainerConnection::new(gateway_pipeline, CosmosClientOptions::default(), container_cache, pk_range_cache, endpoint_manager, partition_manager);
 
         // Verify the connection was created successfully with preferred locations
         assert!(std::mem::size_of_val(&connection) > 0);
@@ -266,6 +283,7 @@ mod tests {
         // Create multiple connections sharing the same caches
         let connection1 = ContainerConnection::new(
             pipeline.clone(),
+            CosmosClientOptions::default(),
             container_cache.clone(),
             pk_range_cache.clone(),
             endpoint_manager.clone(),
@@ -273,12 +291,13 @@ mod tests {
         );
         let connection2 = ContainerConnection::new(
             pipeline.clone(),
+            CosmosClientOptions::default(),
             container_cache.clone(),
             pk_range_cache.clone(),
             endpoint_manager.clone(),
             partition_manager.clone(),
         );
-        let connection3 = ContainerConnection::new(pipeline, container_cache, pk_range_cache, endpoint_manager, partition_manager);
+        let connection3 = ContainerConnection::new(pipeline, CosmosClientOptions::default(), container_cache, pk_range_cache, endpoint_manager, partition_manager);
 
         // All connections should be valid
         assert!(std::mem::size_of_val(&connection1) > 0);
@@ -347,7 +366,7 @@ mod tests {
         let pk_range_cache =
             create_pk_range_cache(pipeline.clone(), container_cache.clone(), endpoint_manager.clone());
 
-        let connection = ContainerConnection::new(pipeline, container_cache, pk_range_cache, endpoint_manager, partition_manager);
+        let connection = ContainerConnection::new(pipeline, CosmosClientOptions::default(), container_cache, pk_range_cache, endpoint_manager, partition_manager);
 
         // Verify Debug trait is properly implemented
         let debug_str = format!("{:?}", connection);
