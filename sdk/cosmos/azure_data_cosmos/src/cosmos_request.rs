@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::FaultOperationType;
 use crate::operation_context::OperationType;
 use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
@@ -11,8 +13,6 @@ use azure_core::http::{
     Method,
 };
 use serde::Serialize;
-#[cfg(feature = "fault_injection")]
-use crate::fault_injection::FaultOperationType;
 
 /// Specifies which form of authorization token should be used when signing
 /// the request. The SDK generally uses the primary key, but some operations
@@ -168,18 +168,36 @@ impl CosmosRequest {
             // Document operations
             (OperationType::Read, ResourceType::Documents) => Some(FaultOperationType::ReadItem),
             (OperationType::Query, ResourceType::Documents) => Some(FaultOperationType::QueryItem),
-            (OperationType::Create, ResourceType::Documents) => Some(FaultOperationType::CreateItem),
-            (OperationType::Upsert, ResourceType::Documents) => Some(FaultOperationType::UpsertItem),
-            (OperationType::Replace, ResourceType::Documents) => Some(FaultOperationType::ReplaceItem),
-            (OperationType::Delete, ResourceType::Documents) => Some(FaultOperationType::DeleteItem),
+            (OperationType::Create, ResourceType::Documents) => {
+                Some(FaultOperationType::CreateItem)
+            }
+            (OperationType::Upsert, ResourceType::Documents) => {
+                Some(FaultOperationType::UpsertItem)
+            }
+            (OperationType::Replace, ResourceType::Documents) => {
+                Some(FaultOperationType::ReplaceItem)
+            }
+            (OperationType::Delete, ResourceType::Documents) => {
+                Some(FaultOperationType::DeleteItem)
+            }
             (OperationType::Patch, ResourceType::Documents) => Some(FaultOperationType::PatchItem),
             (OperationType::Batch, ResourceType::Documents) => Some(FaultOperationType::BatchItem),
-            (OperationType::ReadFeed, ResourceType::Documents) => Some(FaultOperationType::ChangeFeedItem),
+            (OperationType::ReadFeed, ResourceType::Documents) => {
+                Some(FaultOperationType::ChangeFeedItem)
+            }
             // Metadata operations
-            (OperationType::Read, ResourceType::Containers) => Some(FaultOperationType::MetadataReadContainer),
-            (OperationType::Read, ResourceType::DatabaseAccount) => Some(FaultOperationType::MetadataReadDatabaseAccount),
-            (OperationType::QueryPlan, ResourceType::Documents) => Some(FaultOperationType::MetadataQueryPlan),
-            (OperationType::ReadFeed, ResourceType::PartitionKeyRanges) => Some(FaultOperationType::MetadataPartitionKeyRanges),
+            (OperationType::Read, ResourceType::Containers) => {
+                Some(FaultOperationType::MetadataReadContainer)
+            }
+            (OperationType::Read, ResourceType::DatabaseAccount) => {
+                Some(FaultOperationType::MetadataReadDatabaseAccount)
+            }
+            (OperationType::QueryPlan, ResourceType::Documents) => {
+                Some(FaultOperationType::MetadataQueryPlan)
+            }
+            (OperationType::ReadFeed, ResourceType::PartitionKeyRanges) => {
+                Some(FaultOperationType::MetadataPartitionKeyRanges)
+            }
             _ => None,
         };
 

@@ -2,15 +2,17 @@
 // Licensed under the MIT License.
 #![cfg(feature = "key_auth")]
 #[cfg(feature = "fault_injection")]
-
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
 use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::fault_injection::{
+    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionRuleBuilder,
+    FaultInjectionServerError, FaultInjectionServerErrorBuilder, FaultInjectionServerErrorType,
+};
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
-use azure_data_cosmos::fault_injection::{FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionRuleBuilder, FaultInjectionServerError, FaultInjectionServerErrorBuilder, FaultInjectionServerErrorType};
 use framework::TestClient;
 use framework::TestRunContext;
 use framework::{get_effective_hub_endpoint, get_global_endpoint};
@@ -1007,4 +1009,3 @@ pub async fn item_read_with_fault_injection() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-

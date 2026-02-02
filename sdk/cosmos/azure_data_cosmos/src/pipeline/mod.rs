@@ -103,8 +103,7 @@ impl GatewayPipeline {
 
         #[cfg(feature = "fault_injection")]
         if self.fault_injection_enabled {
-            cosmos_request
-                .add_fault_injection_headers();
+            cosmos_request.add_fault_injection_headers();
         }
         // Delegate to the retry handler, providing the sender callback
         let res = self.retry_handler.send(&mut cosmos_request, sender).await;

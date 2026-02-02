@@ -31,7 +31,8 @@ impl FaultInjectionClientBuilder {
     /// This wraps the existing transport (or creates a default one) with the fault injection client.
     pub fn inject(&self, mut options: CosmosClientOptions) -> CosmosClientOptions {
         // Create a default http client
-        let inner_client: Arc<dyn azure_core::http::HttpClient> = azure_core::http::new_http_client();
+        let inner_client: Arc<dyn azure_core::http::HttpClient> =
+            azure_core::http::new_http_client();
 
         let fault_client = FaultClient::new(inner_client, self.rules.clone());
         options.client_options.transport = Some(Transport::new(Arc::new(fault_client)));
@@ -52,4 +53,3 @@ impl Default for FaultInjectionClientBuilder {
         Self::new()
     }
 }
-

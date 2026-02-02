@@ -1,14 +1,12 @@
+use super::fault_injection_result::{FaultInjectionResult, FaultInjectionServerErrorType};
+use super::fault_injection_rule::FaultInjectionRule;
+use crate::constants::SubStatusCode::PartitionKeyRangeGone;
+use async_trait::async_trait;
+use azure_core::error::ErrorKind;
+use azure_core::http::{AsyncRawResponse, HttpClient, Request, StatusCode};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use async_trait::async_trait;
-use azure_core::http::{AsyncRawResponse, HttpClient, Request, StatusCode};
-use azure_core::error::ErrorKind;
-use crate::constants::SubStatusCode::PartitionKeyRangeGone;
-use super::fault_injection_result::{
-    FaultInjectionResult, FaultInjectionServerErrorType,
-};
-use super::fault_injection_rule::FaultInjectionRule;
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
@@ -34,10 +32,7 @@ struct RuleState {
 
 impl FaultClient {
     /// Creates a new instance of the FaultClient.
-    pub fn new(
-        inner: Arc<dyn HttpClient>,
-        rules: Vec<FaultInjectionRule>,
-    ) -> Self {
+    pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<FaultInjectionRule>) -> Self {
         let rule_states = rules
             .into_iter()
             .map(|rule| RuleState {
@@ -89,7 +84,7 @@ impl FaultClient {
     /// Checks if the request matches the rule's condition.
     fn matches_condition(&self, request: &Request, rule: &FaultInjectionRule) -> bool {
         let condition = &rule.condition;
-        
+
         // Check endpoints if specified
         if let Some(ref endpoints) = condition.endpoints {
             let request_url = request.url().as_str();
@@ -97,20 +92,23 @@ impl FaultClient {
                 return true;
             }
         }
-        
+
         // Check region if specified
         if let Some(ref region) = condition.region {
             if request.url().as_str().contains(region) {
                 return true;
             }
         }
-        
+
         // If no conditions are specified, match all requests
-        if condition.endpoints.is_none() && condition.region.is_none() 
-            && condition.operation_type.is_none() && condition.container_id.is_none() {
+        if condition.endpoints.is_none()
+            && condition.region.is_none()
+            && condition.operation_type.is_none()
+            && condition.container_id.is_none()
+        {
             return true;
         }
-        
+
         false
     }
 
@@ -135,30 +133,41 @@ impl FaultClient {
             }
 
             // Apply delay before injecting the error
-            if server_error.delay > Duration::ZERO {
+            if server_error.delay > Duration::ZERO
+                && server_error.error_type == FaultInjectionServerErrorType::ConnectionDelay
+            {
                 // Convert std::time::Duration to azure_core::time::Duration for sleep
                 let delay = azure_core::time::Duration::try_from(server_error.delay)
                     .unwrap_or(azure_core::time::Duration::ZERO);
-                azure_core::async_runtime::get_async_runtime().sleep(delay).await;
+                azure_core::async_runtime::get_async_runtime()
+                    .sleep(delay)
+                    .await;
             }
 
             // Generate the appropriate error based on error type
             let (status_code, _sub_status, message) = match server_error.error_type {
-                FaultInjectionServerErrorType::InternalServerError => {
-                    (StatusCode::InternalServerError, None, "Internal Server Error - Injected fault")
-                }
-                FaultInjectionServerErrorType::TooManyRequests => {
-                    (StatusCode::TooManyRequests, None, "Too Many Requests - Injected fault")
-                }
-                FaultInjectionServerErrorType::ReadSessionNotAvailable => {
-                    (StatusCode::NotFound, Some(PartitionKeyRangeGone), "Read Session Not Available - Injected fault")
-                }
-                FaultInjectionServerErrorType::Timeout => {
-                    (StatusCode::RequestTimeout, None, "Request Timeout - Injected fault")
-                }
+                FaultInjectionServerErrorType::InternalServerError => (
+                    StatusCode::InternalServerError,
+                    None,
+                    "Internal Server Error - Injected fault",
+                ),
+                FaultInjectionServerErrorType::TooManyRequests => (
+                    StatusCode::TooManyRequests,
+                    None,
+                    "Too Many Requests - Injected fault",
+                ),
+                FaultInjectionServerErrorType::ReadSessionNotAvailable => (
+                    StatusCode::NotFound,
+                    Some(PartitionKeyRangeGone),
+                    "Read Session Not Available - Injected fault",
+                ),
+                FaultInjectionServerErrorType::Timeout => (
+                    StatusCode::RequestTimeout,
+                    None,
+                    "Request Timeout - Injected fault",
+                ),
                 FaultInjectionServerErrorType::ResponseDelay => {
-                    // For response delay, we just add a delay but don't return an error
-                    // The delay was already applied above
+                    // For response delay, will be added after receiving a response
                     return None;
                 }
                 FaultInjectionServerErrorType::ConnectionDelay => {
@@ -166,19 +175,26 @@ impl FaultClient {
                     // The delay was already applied above
                     return None;
                 }
-                FaultInjectionServerErrorType::ServiceUnavailable => {
-                    (StatusCode::ServiceUnavailable, None, "Service Unavailable - Injected fault")
-                }
-                FaultInjectionServerErrorType::PartitionIsGone => {
-                    (StatusCode::Gone, Some(PartitionKeyRangeGone), "Partition Is Gone - Injected fault")
-                }
+                FaultInjectionServerErrorType::ServiceUnavailable => (
+                    StatusCode::ServiceUnavailable,
+                    None,
+                    "Service Unavailable - Injected fault",
+                ),
+                FaultInjectionServerErrorType::PartitionIsGone => (
+                    StatusCode::Gone,
+                    Some(PartitionKeyRangeGone),
+                    "Partition Is Gone - Injected fault",
+                ),
             };
 
-            let error = azure_core::Error::with_message(ErrorKind::HttpResponse {
-                status: status_code,
-                error_code: Some("Injected Fault".to_string()),
-                raw_response: None,
-            }, message);
+            let error = azure_core::Error::with_message(
+                ErrorKind::HttpResponse {
+                    status: status_code,
+                    error_code: Some("Injected Fault".to_string()),
+                    raw_response: None,
+                },
+                message,
+            );
 
             return Some(Err(error));
         }
@@ -196,7 +212,9 @@ impl HttpClient for FaultClient {
             let mut applicable_rule_index: Option<usize> = None;
 
             for (index, rule_state) in rules.iter_mut().enumerate() {
-                if self.is_rule_applicable(rule_state) && self.matches_condition(request, &rule_state.rule) {
+                if self.is_rule_applicable(rule_state)
+                    && self.matches_condition(request, &rule_state.rule)
+                {
                     applicable_rule_index = Some(index);
                     break;
                 }
@@ -215,13 +233,29 @@ impl HttpClient for FaultClient {
         };
 
         // Apply the fault outside the lock
-        if let Some(result) = fault_result {
+        if let Some(ref result) = fault_result {
             if let Some(fault_response) = self.apply_fault(result.as_ref()).await {
                 return fault_response;
             }
         }
 
         // No fault injection or delay-only fault, proceed with actual request
-        self.inner.execute_request(request).await
+        let resp = self.inner.execute_request(request).await;
+
+        // Apply response delay if configured
+        if let Some(result) = fault_result {
+            if let Some(se) = result.as_server_error() {
+                if se.error_type == FaultInjectionServerErrorType::ResponseDelay {
+                    // Convert std::time::Duration to azure_core::time::Duration for sleep
+                    let delay = azure_core::time::Duration::try_from(se.delay)
+                        .unwrap_or(azure_core::time::Duration::ZERO);
+                    azure_core::async_runtime::get_async_runtime()
+                        .sleep(delay)
+                        .await;
+                }
+            }
+        }
+
+        resp
     }
 }

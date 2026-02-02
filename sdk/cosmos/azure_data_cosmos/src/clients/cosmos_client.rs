@@ -86,7 +86,7 @@ impl CosmosClient {
             pipeline_core,
             global_endpoint_manager.clone(),
             options,
-            fault_injection_enabled
+            fault_injection_enabled,
         ));
 
         Ok(Self {
