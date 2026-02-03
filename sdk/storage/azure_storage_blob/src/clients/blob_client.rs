@@ -25,21 +25,40 @@ use crate::{
         BlockBlobClientUploadOptions, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
-    AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
-        XmlFormat,
+        AsyncResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
+        Url, UrlExt, XmlFormat,
     },
     time::OffsetDateTime,
     tracing, Bytes, Result,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
+
+/// Options used when creating a [`BlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for BlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
