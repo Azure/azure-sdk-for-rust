@@ -59,6 +59,11 @@ foreach ($packageName in $outputPackageNames) {
     continue
   }
 
+  if ($output -match 'error: no crates with library targets selected') {
+    Write-Warning "$packageName is not a lib crate and will be ignored"
+    continue
+  }
+
   $finalExitCode = $finalExitCode -bor $LASTEXITCODE
   $output | Write-Host
 }
