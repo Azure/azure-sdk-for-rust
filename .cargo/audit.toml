@@ -1,0 +1,27 @@
+# Cargo audit configuration
+#
+# This file configures cargo-audit to fail on critical severity vulnerabilities.
+#
+# Severity Threshold Behavior:
+# ==============================
+# The `severity_threshold` option determines the minimum CVSS severity level
+# required for cargo-audit to fail (exit code 1). Available levels:
+# - "none": Reports all advisories but doesn't fail on any severity
+# - "low": Fails on low, medium, high, and critical severity issues
+# - "medium": Fails on medium, high, and critical severity issues  
+# - "high": Fails on high and critical severity issues
+# - "critical": Only fails on critical severity issues (strictest for failures)
+#
+# Behavior in Various Scenarios:
+# - If a vulnerability with severity >= threshold is found: exit code 1 (failure)
+# - If only vulnerabilities below threshold are found: exit code 0 (success, but warnings shown)
+# - If no vulnerabilities are found: exit code 0 (success)
+# - If there's an error (e.g., can't fetch advisory DB): exit code 2
+#
+# With this configuration set to "critical", cargo-audit will:
+# - FAIL (exit 1): When critical severity vulnerabilities are detected
+# - PASS (exit 0): When only high, medium, low, or no vulnerabilities are found
+#   (though lower severity issues will still be reported as warnings)
+
+[advisories]
+severity_threshold = "critical"
