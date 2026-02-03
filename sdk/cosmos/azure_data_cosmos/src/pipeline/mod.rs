@@ -5,8 +5,9 @@ mod authorization_policy;
 mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::retry_handler::{BackOffRetryHandler, ConditionalSend, RetryHandler};
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
     constants,
     models::ThroughputProperties,
@@ -26,7 +27,6 @@ use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -45,7 +45,8 @@ impl GatewayPipeline {
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
         options: CosmosClientOptions,
     ) -> Self {
-        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager, global_partition_endpoint_manager);
+        let retry_handler =
+            BackOffRetryHandler::new(global_endpoint_manager, global_partition_endpoint_manager);
         GatewayPipeline {
             endpoint,
             pipeline,
@@ -86,19 +87,6 @@ impl GatewayPipeline {
             .await
     }
 
-    pub async fn send_with_callback<Sender, Fut>(
-        &self,
-        mut request: &mut CosmosRequest,
-        sender: Sender,
-    ) -> azure_core::Result<RawResponse>
-    where
-        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
-        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
-    {
-        // Delegate to the retry handler, providing the sender callback
-        self.retry_handler.send(&mut request, sender).await
-    }
-
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,
@@ -113,7 +101,7 @@ impl GatewayPipeline {
         };
 
         // Delegate to the retry handler, providing the sender callback
-        let res = self.send_with_callback(&mut cosmos_request, sender).await;
+        let res = self.retry_handler.send(&mut cosmos_request, sender).await;
         // Convert RawResponse into typed Response<T>
         res.map(Into::into)
     }

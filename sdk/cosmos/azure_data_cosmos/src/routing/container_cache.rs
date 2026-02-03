@@ -170,11 +170,8 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        let partition_manager = GlobalPartitionEndpointManager::new(
-            endpoint_manager.clone(),
-            false,
-            false,
-        );
+        let partition_manager =
+            GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
         Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,

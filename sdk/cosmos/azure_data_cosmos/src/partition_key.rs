@@ -99,7 +99,8 @@ impl PartitionKey {
     /// # Returns
     /// A hex-encoded string representing the hashed partition key
     pub fn get_hashed_partition_key_string(&self, kind: PartitionKeyKind, version: u8) -> String {
-        let inner_values: Vec<InnerPartitionKeyValue> = self.0.iter().map(|v| v.0.clone()).collect();
+        let inner_values: Vec<InnerPartitionKeyValue> =
+            self.0.iter().map(|v| v.0.clone()).collect();
         get_hashed_partition_key_string(&inner_values, kind, version)
     }
 }
@@ -247,7 +248,10 @@ impl From<f32> for PartitionKeyValue {
     ///
     /// This method panics if given an Infinite or NaN value.
     fn from(value: f32) -> Self {
-        assert!(!value.is_infinite() && !value.is_nan(), "value should be a non-infinite number");
+        assert!(
+            !value.is_infinite() && !value.is_nan(),
+            "value should be a non-infinite number"
+        );
         InnerPartitionKeyValue::Number(value as f64).into()
     }
 }
@@ -259,7 +263,10 @@ impl From<f64> for PartitionKeyValue {
     ///
     /// This method panics if given an Infinite or NaN value.
     fn from(value: f64) -> Self {
-        assert!(!value.is_infinite() && !value.is_nan(), "value should be a non-infinite number");
+        assert!(
+            !value.is_infinite() && !value.is_nan(),
+            "value should be a non-infinite number"
+        );
         InnerPartitionKeyValue::Number(value).into()
     }
 }

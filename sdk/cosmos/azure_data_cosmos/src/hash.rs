@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use std::fmt::Write;
-use serde::{Deserialize, Serialize};
-use azure_core::fmt::SafeDebug;
 use crate::murmur_hash::{murmurhash3_128, murmurhash3_32};
+use azure_core::fmt::SafeDebug;
+use serde::{Deserialize, Serialize};
+use std::fmt::Write;
 
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
 const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
@@ -31,7 +31,7 @@ pub enum InnerPartitionKeyValue {
     Undefined,
 }
 
-#[derive(PartialEq, Eq, Clone, Default, SafeDebug, Deserialize, Serialize,)]
+#[derive(PartialEq, Eq, Clone, Default, SafeDebug, Deserialize, Serialize)]
 pub enum PartitionKeyKind {
     #[default]
     Hash,
@@ -111,8 +111,8 @@ impl InnerPartitionKeyValue {
                 } else {
                     std::cmp::min(utf8.len(), MAX_STRING_BYTES_TO_APPEND + 1)
                 };
-                for i in 0..write_len {
-                    let b = utf8[i].wrapping_add(1); // unconditional +1
+                for item in utf8.iter().take(write_len) {
+                    let b = item.wrapping_add(1); // unconditional +1
                     writer.push(b);
                 }
                 if short {
@@ -212,7 +212,9 @@ pub fn get_hashed_partition_key_string(
 }
 
 /// V2: encode components with `_write_for_hashing_v2`, hash the concatenated bytes,
-fn get_effective_partition_key_for_hash_partitioning_v2(pk_value: &[InnerPartitionKeyValue]) -> String {
+fn get_effective_partition_key_for_hash_partitioning_v2(
+    pk_value: &[InnerPartitionKeyValue],
+) -> String {
     let mut ms: Vec<u8> = Vec::new();
     for comp in pk_value {
         comp.write_for_hashing_v2(&mut ms);
@@ -245,7 +247,9 @@ fn get_effective_partition_key_for_hash_partitioning_v2(pk_value: &[InnerPartiti
 /// V1: compute 32-bit murmur hash over concatenated component encodings (suffix 0x00 for strings),
 /// convert hash (u32) to f64 (possible precision loss is intentional to mirror other sdks), then binary-encode
 /// [hash_value_as_number] + truncated original components using V1 binary rules.
-fn get_effective_partition_key_for_hash_partitioning_v1(pk_value: &[InnerPartitionKeyValue]) -> String {
+fn get_effective_partition_key_for_hash_partitioning_v1(
+    pk_value: &[InnerPartitionKeyValue],
+) -> String {
     // Truncate string components for hashing path first
     let mut truncated: Vec<InnerPartitionKeyValue> = Vec::with_capacity(pk_value.len());
     let mut hashing_bytes: Vec<u8> = Vec::new();
@@ -262,7 +266,7 @@ fn get_effective_partition_key_for_hash_partitioning_v1(pk_value: &[InnerPartiti
     // Prepend hash value as first component
     let mut components: Vec<InnerPartitionKeyValue> = Vec::with_capacity(truncated.len() + 1);
     components.push(InnerPartitionKeyValue::Number(hash_value_f64));
-    components.extend(truncated.into_iter());
+    components.extend(truncated);
 
     to_hex_encoded_binary_string_v1(&components)
 }
@@ -364,7 +368,10 @@ mod tests {
                 InnerPartitionKeyValue::String(thousand_a),
                 "332BDF5512AE49615F32C7D98C2DB86C",
             ),
-            (InnerPartitionKeyValue::Null, "378867E4430E67857ACE5C908374FE16"),
+            (
+                InnerPartitionKeyValue::Null,
+                "378867E4430E67857ACE5C908374FE16",
+            ),
             (
                 InnerPartitionKeyValue::Undefined,
                 "11622DAA78F835834610ABE56EFF5CB5",

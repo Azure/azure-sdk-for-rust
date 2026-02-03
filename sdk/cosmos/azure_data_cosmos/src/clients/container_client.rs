@@ -1,7 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{models::{ContainerProperties, PatchDocument, ThroughputProperties}, options::{QueryOptions, ReadContainerOptions}, pipeline::GatewayPipeline, resource_context::{ResourceLink, ResourceType}, CosmosClientOptions, DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions, ThroughputOptions};
+use crate::{
+    models::{ContainerProperties, PatchDocument, ThroughputProperties},
+    options::{QueryOptions, ReadContainerOptions},
+    pipeline::GatewayPipeline,
+    resource_context::{ResourceLink, ResourceType},
+    CosmosClientOptions, DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query,
+    ReplaceContainerOptions, ThroughputOptions,
+};
 use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
@@ -9,10 +16,10 @@ use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::response::Response;
 use serde::{de::DeserializeOwned, Serialize};
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///

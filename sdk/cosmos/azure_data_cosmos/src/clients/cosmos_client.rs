@@ -19,11 +19,10 @@ use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 use azure_core::http::{LoggingOptions, RetryOptions};
-use crate::models::AccountProperties;
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -87,11 +86,8 @@ impl CosmosClient {
             pipeline_core.clone(),
         ));
 
-        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> = Arc::from(GlobalPartitionEndpointManager::new(
-            global_endpoint_manager.clone(),
-            true,
-            true
-        ));
+        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
+            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true);
 
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
@@ -165,11 +161,9 @@ impl CosmosClient {
         // let account_properties: AccountProperties =
         //     global_endpoint_manager.get_database_account().await?.into_body().json()?;
 
-        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> = Arc::from(GlobalPartitionEndpointManager::new(
-            global_endpoint_manager.clone(),
-            true,
-            true
-        ));
+        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> = Arc::from(
+            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true),
+        );
 
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,

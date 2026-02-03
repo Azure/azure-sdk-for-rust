@@ -23,18 +23,12 @@ use url::Url;
 /// The numeric values indicate priority for replica selection (lower = healthier).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(i32)]
-pub enum HealthStatus {
-    /// The address is connected and healthy.
-    Connected = 100,
+pub enum PartitionHealthStatus {
+    /// The partition is marked as healthy.
+    Healthy = 100,
 
-    /// The health status of the address is unknown.
-    Unknown = 200,
-
-    /// The address is pending unhealthy status confirmation.
-    UnhealthyPending = 300,
-
-    /// The address is confirmed unhealthy.
-    Unhealthy = 400,
+    /// The partition is confirmed unhealthy.
+    Unhealthy = 200,
 }
 
 /// This struct is used to failover single partitions to different regions.
@@ -233,10 +227,10 @@ impl GlobalPartitionEndpointManager {
         }
 
         println!("{}", "GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() - Attempting to open connections to unhealthy endpoints and initiate failback.");
-        
+
         let mut pk_range_to_endpoint_mappings: HashMap<
             PartitionKeyRange,
-            (String, String, HealthStatus),
+            (String, String, PartitionHealthStatus),
         > = HashMap::new();
 
         // Scope the guard so it's dropped before any async operations
@@ -254,15 +248,14 @@ impl GlobalPartitionEndpointManager {
                 if Instant::now().duration_since(first_request_failure_time)
                     > Duration::seconds(self.partition_unavailability_duration_secs)
                 {
-                    let original_failed_location =
-                        partition_failover.first_failed_location.clone();
+                    let original_failed_location = partition_failover.first_failed_location.clone();
 
                     pk_range_to_endpoint_mappings.insert(
                         pk_range,
                         (
                             partition_failover.collection_rid.clone(),
                             original_failed_location,
-                            HealthStatus::Unhealthy,
+                            PartitionHealthStatus::Unhealthy,
                         ),
                     );
                 }
@@ -276,7 +269,7 @@ impl GlobalPartitionEndpointManager {
             for (pk_range, (_, original_failed_location, current_health_state)) in
                 pk_range_to_endpoint_mappings
             {
-                if current_health_state == HealthStatus::Connected {
+                if current_health_state == PartitionHealthStatus::Healthy {
                     info!(
                         "Initiating Failback to endpoint: {}, for partition key range: {:?}",
                         original_failed_location, pk_range
@@ -295,7 +288,9 @@ impl GlobalPartitionEndpointManager {
     pub fn mark_endpoints_to_healthy(
         pk_range_uri_mappings: &mut HashMap<
             PartitionKeyRange,
-            (String, String, HealthStatus)>) {
+            (String, String, PartitionHealthStatus),
+        >,
+    ) {
         for (pk_range, mapping) in pk_range_uri_mappings.iter_mut() {
             info!(
                 "Un-deterministically marking the original failed endpoint: {}, for the PkRange: {}, collectionRid: {} back to healthy.",
@@ -304,7 +299,7 @@ impl GlobalPartitionEndpointManager {
                 mapping.1
             );
 
-            mapping.2 = HealthStatus::Connected;
+            mapping.2 = PartitionHealthStatus::Healthy;
         }
     }
 
@@ -434,18 +429,6 @@ impl GlobalPartitionEndpointManager {
         }
 
         false
-    }
-
-    /// Sets whether PPAF is enabled.
-    pub fn set_is_ppaf_enabled(&self, is_enabled: bool) {
-        self.is_partition_level_automatic_failover_enabled
-            .store(if is_enabled { 1 } else { 0 }, Ordering::SeqCst);
-    }
-
-    /// Sets whether PPCB is enabled.
-    pub fn set_is_ppcb_enabled(&self, is_enabled: bool) {
-        self.is_partition_level_circuit_breaker_enabled
-            .store(if is_enabled { 1 } else { 0 }, Ordering::SeqCst);
     }
 
     /// Returns whether partition level automatic failover is enabled.

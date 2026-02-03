@@ -14,7 +14,7 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::sync::Arc;
-use tracing::{error, warn};
+use tracing::error;
 use url::Url;
 
 /// An integer indicating the default retry intervals between two retry attempts.
@@ -94,7 +94,10 @@ impl ClientRetryPolicy {
     ///
     /// # Returns
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
-    pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>, partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>) -> Self {
+    pub fn new(
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
+        partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
+    ) -> Self {
         // let partition_key_range_location_cache =
         //     GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true);
         Self {
@@ -185,7 +188,8 @@ impl ClientRetryPolicy {
         }
 
         if self.is_partition_level_failover_enabled() && request.resource_type.is_partitioned() {
-            self.partition_key_range_location_cache.try_add_partition_level_location_override(request);
+            self.partition_key_range_location_cache
+                .try_add_partition_level_location_override(request);
         }
 
         self.request = Some(request.clone());
@@ -196,10 +200,13 @@ impl ClientRetryPolicy {
     /// Returns `true` if either partition level circuit breaker or partition level
     /// automatic failover is enabled.
     fn is_partition_level_failover_enabled(&self) -> bool {
-        self.partition_key_range_location_cache.is_partition_level_circuit_breaker_enabled()
-            || self.partition_key_range_location_cache.is_partition_level_automatic_failover_enabled()
+        self.partition_key_range_location_cache
+            .is_partition_level_circuit_breaker_enabled()
+            || self
+                .partition_key_range_location_cache
+                .is_partition_level_automatic_failover_enabled()
     }
-    
+
     /// Determines whether a Data Plane request should be retried based on the response or error
     ///
     /// # Summary
@@ -394,7 +401,12 @@ impl ClientRetryPolicy {
         }
 
         // automatic failover support needed to be plugged in.
-        if !self.can_use_multiple_write_locations && !self.operation_type.unwrap().is_read_only() && !self.partition_key_range_location_cache.is_partition_level_automatic_failover_enabled() {
+        if !self.can_use_multiple_write_locations
+            && !self.operation_type.unwrap().is_read_only()
+            && !self
+                .partition_key_range_location_cache
+                .is_partition_level_automatic_failover_enabled()
+        {
             return RetryResult::DoNotRetry;
         }
 

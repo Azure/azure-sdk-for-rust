@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::hash::PartitionKeyKind;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
-use crate::hash::PartitionKeyKind;
 
 /// Represents the partition key definition for a container.
 #[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -70,7 +70,7 @@ impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
 #[cfg(test)]
 mod tests {
     use crate::hash::PartitionKeyKind;
-    use crate::models::{PartitionKeyDefinition};
+    use crate::models::PartitionKeyDefinition;
 
     #[test]
     pub fn from_single() {
