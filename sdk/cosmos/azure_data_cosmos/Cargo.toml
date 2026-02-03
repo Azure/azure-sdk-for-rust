@@ -43,6 +43,7 @@ preview_query_engine = ["serde_json/raw_value"] # Enables support for the PREVIE
 fault_injection = [] # Enables support for fault injection testing
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
+fault_injection = [] # Enables support for fault injection testing
 
 [package.metadata.docs.rs]
 features = [

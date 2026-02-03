@@ -11,7 +11,6 @@ use azure_core::http::{
     StatusCode,
 };
 use serde::de::DeserializeOwned;
-use url::Url;
 
 /// A response from a Cosmos DB operation.
 ///
@@ -21,15 +20,15 @@ use url::Url;
 pub struct CosmosResponse<T> {
     /// The underlying typed HTTP response.
     response: Response<T>,
-    /// The final endpoint used to fulfill the operation.
-    endpoint: Url,
+    /// The final request used to fulfill the operation.
+    #[allow(dead_code)]
+    request: CosmosRequest,
 }
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
     pub fn new(response: Response<T>, request: CosmosRequest) -> Self {
-        let endpoint = request.clone().into_raw_request().url().clone();
-        Self { response, endpoint }
+        Self { response, request }
     }
 
     /// Returns the HTTP status code of the response.
@@ -42,14 +41,6 @@ impl<T> CosmosResponse<T> {
         self.response.headers()
     }
 
-    /// Gets a header value as a string by name.
-    ///
-    /// Returns `Ok(&str)` if the header exists and is valid UTF-8,
-    /// or an error otherwise.
-    pub fn get_header_str(&self, name: &HeaderName) -> azure_core::Result<&str> {
-        self.response.headers().get_str(name)
-    }
-
     /// Gets an optional header value as a string by name.
     ///
     /// Returns `Some(&str)` if the header exists,
@@ -58,9 +49,12 @@ impl<T> CosmosResponse<T> {
         self.response.headers().get_optional_str(name)
     }
 
-    /// Returns the final endpoint used to fulfill the operation.
-    pub fn endpoint(&self) -> Url {
-        self.endpoint.clone()
+    /// Returns the final request used to fulfill the operation.
+    /// This api is subject to change without a major version bump.
+    ///
+    #[cfg(feature = "fault_injection")]
+    pub fn request(&self) -> &CosmosRequest {
+        &self.request
     }
 
     /// Consumes the response and returns the response body.
@@ -72,11 +66,6 @@ impl<T> CosmosResponse<T> {
     pub fn request_charge(&self) -> Option<f64> {
         self.get_optional_header_str(&crate::constants::REQUEST_CHARGE)
             .and_then(|s| s.parse::<f64>().ok())
-    }
-
-    /// Returns the activity ID for this request, if available.
-    pub fn activity_id(&self) -> Option<&str> {
-        self.get_optional_header_str(&crate::constants::ACTIVITY_ID)
     }
 
     /// Returns the session token from this response, if available.
