@@ -520,24 +520,7 @@ impl ClientRetryPolicy {
         &mut self,
         is_system_resource_unavailable_for_write: bool,
     ) -> RetryResult {
-        // let location = self.request
-        //     .as_ref()
-        //     .and_then(|r| Some(r.request_context))
-        //     .and_then(|ctx| ctx.location_endpoint_to_route.clone());
-        //
-        // let resource_address = self.request
-        //     .as_ref()
-        //     .map(|r| r.resource_link);
-
-        // warn!(
-        //     "ClientRetryPolicy: ServiceUnavailable. Refresh cache and retry. \
-        //      Failed Location: {}; ResourceAddress: {}",
-        //     location, resource_address
-        // );
-
-        // drop(request);
         self.try_mark_endpoint_unavailable_for_pk_range(is_system_resource_unavailable_for_write);
-
         self.should_retry_on_unavailable_endpoint_status_codes()
     }
 
@@ -567,7 +550,7 @@ impl ClientRetryPolicy {
     ) -> bool {
         self.can_use_multiple_write_locations
             && status_code == Some(StatusCode::TooManyRequests)
-            && sub_status_code == Some(SubStatusCode::SystemResourceUnavailable)
+            && sub_status_code == Some(SubStatusCode::SYSTEM_RESOURCE_NOT_AVAILABLE)
     }
 
     /// Checks if request is eligible for per-partition automatic failover.

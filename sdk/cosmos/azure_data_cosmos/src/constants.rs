@@ -393,6 +393,8 @@ impl SubStatusCode {
     pub(crate) const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);
     #[allow(dead_code)]
     pub(crate) const STORED_PROCEDURE_CONCURRENCY: SubStatusCode = SubStatusCode(3084);
+    #[allow(dead_code)]
+    pub(crate) const SYSTEM_RESOURCE_NOT_AVAILABLE: SubStatusCode = SubStatusCode(3092);
 
     // Additional aliases for backwards compatibility (internal use only)
     #[allow(dead_code)]
