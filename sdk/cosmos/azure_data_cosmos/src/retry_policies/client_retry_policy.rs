@@ -452,11 +452,12 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::Forbidden
             && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
-            if self
-                .partition_key_range_location_cache
-                .try_mark_endpoint_unavailable_for_partition_key_range(
-                    &self.request.clone().unwrap(),
-                )
+            if self.is_partition_level_failover_enabled()
+                && self
+                    .partition_key_range_location_cache
+                    .try_mark_endpoint_unavailable_for_partition_key_range(
+                        &self.request.clone().unwrap(),
+                    )
             {
                 return Some(RetryResult::Retry {
                     after: Duration::ZERO,
