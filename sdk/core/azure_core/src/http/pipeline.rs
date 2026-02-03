@@ -159,9 +159,15 @@ impl Pipeline {
             push_unique(&mut per_call_policies, public_api_policy);
         }
 
-        let user_agent_policy =
-            UserAgentPolicy::new(crate_name, crate_version, &core_client_options.user_agent);
-        push_unique(&mut per_call_policies, user_agent_policy);
+        match UserAgentPolicy::new(crate_name, crate_version, &core_client_options.user_agent) {
+            Ok(policy) => push_unique(&mut per_call_policies, policy),
+            Err(e) => {
+                tracing::warn!(
+                    "Failed to create UserAgentPolicy: {}. User-Agent header will be missing.",
+                    e
+                );
+            }
+        }
 
         let mut per_try_policies = per_try_policies.clone();
         if let Some(ref tracer) = tracer {
@@ -448,7 +454,7 @@ mod tests {
                 // The user agent should contain the custom application_id followed by the standard Azure SDK format
                 // Expected format: my-custom-app/2.1.0 azsdk-rust-test-crate/1.0.0 (<rustc_version>; <OS>; <ARCH>)
                 assert!(
-                    user_agent.starts_with("my-custom-app/2.1.0 azsdk-rust-test-crate/1.0.0 "),
+                    user_agent.starts_with("my-custom-app%2F2.1.0 azsdk-rust-test-crate/1.0.0 "),
                     "User-Agent header should start with custom application_id and expected prefix, got: {}",
                     user_agent
                 );
