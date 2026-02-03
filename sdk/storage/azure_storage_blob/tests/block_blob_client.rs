@@ -9,7 +9,8 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
         method_options::BlockBlobClientManagedUploadOptions, BlobClientDownloadResultHeaders,
-        BlockBlobClientUploadBlobFromUrlOptions, BlockListType, BlockLookupList,
+        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
+        BlockListType, BlockLookupList,
     },
     BlobContainerClientOptions,
 };
@@ -210,6 +211,134 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
             Some(source_auth_options),
         )
         .await?;
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let source_content = b"Hello from source blob!";
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(source_content.to_vec())),
+        None,
+    )
+    .await?;
+
+    let dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = dest_blob_client.block_blob_client();
+    let block_id: Vec<u8> = b"block1".to_vec();
+
+    // Regular Scenario
+    block_blob_client
+        .stage_block_from_url(
+            &block_id,
+            u64::try_from(source_content.len())?,
+            source_blob_client.url().as_str().into(),
+            None,
+        )
+        .await?;
+
+    // Staged Block Scenario
+    let block_list = block_blob_client
+        .get_block_list(BlockListType::All, None)
+        .await?
+        .into_model()?;
+
+    // Assert
+    assert!(block_list.committed_blocks.is_none());
+    assert_eq!(
+        1,
+        block_list
+            .uncommitted_blocks
+            .expect("expected uncommitted_blocks")
+            .len()
+    );
+
+    let block_lookup_list = BlockLookupList {
+        committed: Some(Vec::new()),
+        latest: Some(vec![block_id]),
+        uncommitted: Some(Vec::new()),
+    };
+
+    block_blob_client
+        .commit_block_list(block_lookup_list.try_into()?, None)
+        .await?;
+
+    // Committed Block Scenario
+    let response = dest_blob_client.download(None).await?;
+    let content_length = response.content_length()?;
+    let (status_code, _, response_body) = response.deconstruct();
+
+    // Assert
+    assert!(status_code.is_success());
+    assert_eq!(source_content.len(), content_length.unwrap() as usize);
+    assert_eq!(
+        Bytes::from_static(source_content),
+        response_body.collect().await?.as_ref(),
+    );
+
+    // Source Authorization Scenario
+    let access_token = format!(
+        "Bearer {}",
+        recording
+            .credential()
+            .get_token(&["https://storage.azure.com/.default"], None)
+            .await?
+            .token
+            .secret()
+    );
+
+    let source_auth_options = BlockBlobClientStageBlockFromUrlOptions {
+        copy_source_authorization: Some(access_token),
+        ..Default::default()
+    };
+
+    let block_id_2: Vec<u8> = b"block2".to_vec();
+    let source_blob_client_2 = container_client.blob_client(&get_blob_name(recording));
+    let source_content_2 = b"Authorized content!";
+    create_test_blob(
+        &source_blob_client_2,
+        Some(RequestContent::from(source_content_2.to_vec())),
+        None,
+    )
+    .await?;
+
+    block_blob_client
+        .stage_block_from_url(
+            &block_id_2,
+            u64::try_from(source_content_2.len())?,
+            source_blob_client_2.url().as_str().into(),
+            Some(source_auth_options),
+        )
+        .await?;
+
+    let block_lookup_list_2 = BlockLookupList {
+        committed: Some(Vec::new()),
+        latest: Some(vec![block_id_2]),
+        uncommitted: Some(Vec::new()),
+    };
+
+    block_blob_client
+        .commit_block_list(block_lookup_list_2.try_into()?, None)
+        .await?;
+
+    let response = dest_blob_client.download(None).await?;
+    let (status_code, _, response_body) = response.deconstruct();
+
+    // Assert
+    assert!(status_code.is_success());
+    assert_eq!(
+        Bytes::from_static(source_content_2),
+        response_body.collect().await?.as_ref(),
+    );
 
     container_client.delete_container(None).await?;
     Ok(())

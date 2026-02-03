@@ -22,7 +22,7 @@ use azure_storage_blob::{
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+    create_test_blob, get_blob_name, get_container_client, get_container_name, StorageAccount,
 };
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -571,11 +571,11 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
     );
 
-    let container_name = "test-container-encoding-edge-cases";
+    let container_name = get_container_name(recording);
     // Create Container & Container Client
     let container_client = BlobContainerClient::new(
         &endpoint,
-        container_name,
+        &container_name,
         Some(recording.credential()),
         Some(container_client_options.clone()),
     )?;
@@ -602,7 +602,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         // Test Case 1: Initialize BlobClient using new() constructor
         let blob_client_new = BlobClient::new(
             &endpoint,
-            container_name,
+            &container_name,
             blob_name,
             Some(recording.credential()),
             Some(blob_client_options.clone()),
@@ -627,7 +627,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         blob_url
             .path_segments_mut()
             .expect("Storage Endpoint must be a valid base URL with http/https scheme")
-            .push(container_name)
+            .push(&container_name)
             .push(blob_name);
 
         let blob_client_from_url = BlobClient::from_url(
