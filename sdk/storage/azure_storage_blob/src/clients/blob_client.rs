@@ -6,23 +6,21 @@ use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
-    generated::models::{
-        BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
-        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlockBlobClientUploadResult,
-    },
     logging::apply_storage_logging_defaults,
     models::{
-        AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientCreateSnapshotOptions,
-        BlobClientDeleteImmutabilityPolicyOptions, BlobClientDeleteOptions,
-        BlobClientDownloadOptions, BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions,
-        BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
-        BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
-        BlobClientSetTierOptions, BlobClientUndeleteOptions, BlobTags,
-        BlockBlobClientUploadOptions, StorageErrorCode,
+        AccessTier, BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResult,
+        BlobClientBreakLeaseOptions, BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions,
+        BlobClientChangeLeaseResult, BlobClientCreateSnapshotOptions,
+        BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyOptions,
+        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientDownloadResult,
+        BlobClientGetAccountInfoOptions, BlobClientGetAccountInfoResult,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult, BlobClientGetTagsOptions,
+        BlobClientReleaseLeaseOptions, BlobClientReleaseLeaseResult, BlobClientRenewLeaseOptions,
+        BlobClientRenewLeaseResult, BlobClientSetImmutabilityPolicyOptions,
+        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobClientUndeleteOptions, BlobTags, BlockBlobClientUploadOptions,
+        BlockBlobClientUploadResult, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlockBlobClient, PageBlobClient,
@@ -289,7 +287,7 @@ impl BlobClient {
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
     ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
-        self.client.download(options).await
+        self.client.download_internal(options).await
     }
 
     /// Creates a new blob from a data source.
@@ -316,7 +314,7 @@ impl BlobClient {
 
         self.block_blob_client()
             .client
-            .upload(data, content_length, Some(options))
+            .upload_internal(data, content_length, Some(options))
             .await
     }
 
