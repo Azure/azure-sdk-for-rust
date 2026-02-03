@@ -86,3 +86,104 @@ impl<T: DeserializeOwned> CosmosResponse<T> {
         self.response.into_body().json()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::operation_context::OperationType;
+    use crate::resource_context::{ResourceLink, ResourceType};
+    use crate::PartitionKey;
+    use azure_core::http::{RawResponse, StatusCode};
+    use azure_core::Bytes;
+    use serde::Deserialize;
+
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct TestModel {
+        id: String,
+        value: i32,
+    }
+
+    fn create_mock_request() -> CosmosRequest {
+        let resource_link = ResourceLink::root(ResourceType::Databases);
+        CosmosRequest::builder(OperationType::Read, resource_link)
+            .partition_key(PartitionKey::from("test"))
+            .build()
+            .unwrap()
+    }
+
+    fn create_response_with_body(body: &str) -> CosmosResponse<TestModel> {
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            Bytes::from(body.to_string()),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        CosmosResponse::new(typed_response, create_mock_request())
+    }
+
+    #[test]
+    fn into_model_with_valid_json_succeeds() {
+        let body = r#"{"id": "test-id", "value": 42}"#;
+        let response = create_response_with_body(body);
+        let result = response.into_model();
+
+        assert!(result.is_ok());
+        let model = result.unwrap();
+        assert_eq!(model.id, "test-id");
+        assert_eq!(model.value, 42);
+    }
+
+    #[test]
+    fn into_model_with_malformed_json_returns_error() {
+        let body = r#"{"id": "test-id", "value": not_a_number}"#;
+        let response = create_response_with_body(body);
+        let result = response.into_model();
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        // The error should be a JSON parsing error
+        let error_message = error.to_string();
+        assert!(
+            error_message.contains("expected")
+                || error_message.contains("JSON")
+                || error_message.contains("parse"),
+            "Expected JSON parse error, got: {}",
+            error_message
+        );
+    }
+
+    #[test]
+    fn into_model_with_empty_json_returns_error() {
+        let body = "";
+        let response = create_response_with_body(body);
+        let result = response.into_model();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn into_model_with_incomplete_json_returns_error() {
+        let body = r#"{"id": "test-id""#;
+        let response = create_response_with_body(body);
+        let result = response.into_model();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn into_model_with_missing_required_field_returns_error() {
+        // Missing "value" field which is required in TestModel
+        let body = r#"{"id": "test-id"}"#;
+        let response = create_response_with_body(body);
+        let result = response.into_model();
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        let error_message = error.to_string();
+        assert!(
+            error_message.contains("value") || error_message.contains("missing"),
+            "Expected missing field error, got: {}",
+            error_message
+        );
+    }
+}
