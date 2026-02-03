@@ -273,6 +273,10 @@ impl BlobContainerClient {
     pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
+        // Are we happy with keeping this as a raw string, and then just providing a helper that accepts HashMap and will formulate it?
+        // Users are already trained on this as this is the case in Python and .NET.
+        // .NET: https://learn.microsoft.com/en-us/dotnet/api/azure.storage.blobs.blobserviceclient.findblobsbytags?view=azure-dotnet
+        // Python: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/storage/azure-storage-blob/azure/storage/blob/_container_client.py#L976
         options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         self.client

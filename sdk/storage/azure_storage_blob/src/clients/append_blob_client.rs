@@ -181,6 +181,9 @@ impl AppendBlobClient {
         &self,
         data: RequestContent<Bytes, NoFormat>,
         content_length: u64,
+        // Curious if we want to keep content_length here? Key considerations: The length can always be derived from the data param, Both .NET & Python do not take a required content_length here (Python optional).
+        // .NET: https://learn.microsoft.com/en-us/dotnet/api/azure.storage.blobs.specialized.appendblobclient.appendblock?view=azure-dotnet
+        // Python: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/storage/azure-storage-blob/azure/storage/blob/_blob_client.py#L3145
         options: Option<AppendBlobClientAppendBlockOptions<'_>>,
     ) -> Result<Response<AppendBlobClientAppendBlockResult, NoFormat>> {
         self.client

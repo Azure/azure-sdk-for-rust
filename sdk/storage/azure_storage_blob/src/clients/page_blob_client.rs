@@ -217,6 +217,9 @@ impl PageBlobClient {
         &self,
         data: RequestContent<Bytes, NoFormat>,
         content_length: u64,
+        // Same feedback here regarding content_length being able to be resolved from provided data parameter. However, no historical reason as Python requires length param, .NET just takes an offset.
+        // Python: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/storage/azure-storage-blob/azure/storage/blob/_blob_client.py#L2842
+        // .NET: https://learn.microsoft.com/en-us/dotnet/api/azure.storage.blobs.specialized.pageblobclient.uploadpages?view=azure-dotnet
         range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
@@ -257,6 +260,9 @@ impl PageBlobClient {
         source_url: String,
         source_range: String,
         content_length: u64,
+        // Same feedback here regarding content_length being able to be resolved from provided data parameter. However, no historical reason as Python requires length param, .NET just takes an offset.
+        // Python: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/storage/azure-storage-blob/azure/storage/blob/_blob_client.py#L2948
+        // .NET: https://learn.microsoft.com/en-us/dotnet/api/azure.storage.blobs.specialized.pageblobclient.uploadpagesfromuri?view=azure-dotnet
         range: String,
         options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, NoFormat>> {

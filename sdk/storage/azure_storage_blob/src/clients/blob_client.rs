@@ -305,7 +305,10 @@ impl BlobClient {
         &self,
         data: RequestContent<Bytes, NoFormat>,
         overwrite: bool,
+        // Still need a final decision here on how to handle overwrite. Historically languages such as Python and .NET are both False by default (Python going a step further, overwrite is optional.)
+        // See email for more context.
         content_length: u64,
+        // Same suggestion here, is that content_length could possibly be removed (and in partitioned upload it is already gone, so moot point here)
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
         let mut options = options.unwrap_or_default();
