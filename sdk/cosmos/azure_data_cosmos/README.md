@@ -158,12 +158,11 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
     options.mode = Some(ChangeFeedMode::LatestVersion);
     options.max_item_count = Some(100);
 
-    let pager = container.query_items_change_feed::<Item>(Some(options))?;
-    futures::pin_mut!(pager);
+    let mut pager = container.query_items_change_feed::<Item>(Some(options))?.into_pages();
 
     while let Some(result) = pager.next().await {
         let page = result?;
-        for item in page.into_items()? {
+        for item in page.into_items() {
             println!("Change feed item: {:?}", item);
         }
     }
@@ -187,7 +186,7 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
     // Serialize for persistence
     for range in &feed_ranges {
-        let serialized = range.to_string_representation();
+        let serialized = range.to_string_representation()?;
         // Store `serialized` in your persistence layer
         println!("Serialized feed range: {}", serialized);
 
