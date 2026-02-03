@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn test_application_id_encoding() {
         let options = UserAgentOptions {
-            application_id: Some("my/app".to_string()),
+            application_id: Some("test-app/id".to_string()),
         };
         let policy = UserAgentPolicy::new_with_rustc_version(
             Some("test"),
@@ -204,7 +204,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             policy.header.as_str(),
-            format!("my%2Fapp azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
+            format!("test-app%2Fid azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
     }
 
@@ -219,7 +219,7 @@ mod tests {
         // UserAgentPolicy::new takes crate_name.
         // But let's check if the previous test case application_id="invalid\nheader" matches what we expect now.
         // It should be encoded now, so it should NOT fail, unless we want to forbid newlines entirely before encoding?
-        // The requirements said: "URL Encode Application ID". So "invalid\nheader" becomes "invalid%0Aheader".
+        // The requirements said: "URL Encode Application ID". So "invalid\n a header" becomes "invalid%0A a header".
         // This is a valid header value.
         // So the old test expectation that it fails might be wrong now if we encode it.
         // Maintainer said: "use HeaderValue::try_from(header_string) inside the constructor to validate the entire final User-Agent string."
