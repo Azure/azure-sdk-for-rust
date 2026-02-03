@@ -196,10 +196,7 @@ impl LocationCache {
         let mut effective_preferred_locations = self.locations_info.preferred_locations.clone();
 
         // Use HashSet for O(1) lookups instead of O(n) linear search
-        let existing: HashSet<RegionName> = effective_preferred_locations
-            .iter()
-            .cloned()
-            .collect();
+        let existing: HashSet<RegionName> = effective_preferred_locations.iter().cloned().collect();
 
         // Extend with read locations not already in preferred locations - O(n)
         for location in &read_locations {
@@ -521,11 +518,8 @@ impl LocationCache {
             .cloned()
             .map(|v| v.into_iter().map(RegionName::from).collect())
             .unwrap_or_else(|| self.client_excluded_regions.clone());
-        effective_preferred_locations.retain(|location| {
-            !excluded_regions
-                .iter()
-                .any(|excluded| excluded == location)
-        });
+        effective_preferred_locations
+            .retain(|location| !excluded_regions.iter().any(|excluded| excluded == location));
 
         for location in &effective_preferred_locations {
             // Checks if preferred location exists in endpoints_by_location

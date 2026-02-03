@@ -633,7 +633,8 @@ mod tests {
     fn test_applicable_excluded_endpoints() {
         let manager = create_test_manager();
         // Exclude all regions to test behavior - should still return default endpoint
-        let excluded_regions: Vec<Cow<'static, str>> = vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")];
+        let excluded_regions: Vec<Cow<'static, str>> =
+            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")];
         let endpoints = manager.applicable_endpoints(OperationType::Read, Some(&excluded_regions));
         assert!(!endpoints.is_empty());
         let endpoints =
