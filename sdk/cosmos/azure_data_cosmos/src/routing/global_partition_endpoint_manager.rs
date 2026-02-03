@@ -15,7 +15,7 @@ use crate::resource_context::ResourceType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use azure_core::async_runtime::get_async_runtime;
-use tokio_util::sync::CancellationToken;
+// use tokio_util::sync::CancellationToken;
 use tracing::info;
 use url::Url;
 
@@ -38,9 +38,6 @@ pub enum PartitionHealthStatus {
 pub struct GlobalPartitionEndpointManager {
     /// An instance of GlobalEndpointManager.
     global_endpoint_manager: Arc<GlobalEndpointManager>,
-
-    /// Cancellation token used to cancel the background connection initialization task.
-    cancellation_token: CancellationToken,
 
     /// Partition unavailability duration in seconds, before it can be considered for a refresh.
     partition_unavailability_duration_secs: i64,
@@ -74,7 +71,6 @@ impl std::fmt::Debug for GlobalPartitionEndpointManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("GlobalPartitionEndpointManager")
             .field("global_endpoint_manager", &self.global_endpoint_manager)
-            .field("cancellation_token", &self.cancellation_token)
             .field(
                 "partition_unavailability_duration_secs",
                 &self.partition_unavailability_duration_secs,
@@ -116,7 +112,6 @@ impl GlobalPartitionEndpointManager {
     ) -> Arc<Self> {
         let instance = Arc::new(Self {
             global_endpoint_manager,
-            cancellation_token: CancellationToken::new(),
             partition_unavailability_duration_secs:
                 Self::get_allowed_partition_unavailability_duration_secs(5),
             background_connection_init_interval_secs:
@@ -165,10 +160,6 @@ impl GlobalPartitionEndpointManager {
 
     /// Initialize and start the background connection periodic refresh task.
     fn initialize_and_start_circuit_breaker_failback_background_refresh(self: &Arc<Self>) {
-        if self.cancellation_token.is_cancelled() {
-            return;
-        }
-
         if self
             .is_background_connection_init_active
             .load(Ordering::SeqCst)
@@ -200,10 +191,6 @@ impl GlobalPartitionEndpointManager {
         let interval = Duration::seconds(self.background_connection_init_interval_secs);
 
         loop {
-            if self.cancellation_token.is_cancelled() {
-                break;
-            }
-
             // Use the runtime-agnostic sleep from azure_core
             get_async_runtime().sleep(interval).await;
 
@@ -222,11 +209,7 @@ impl GlobalPartitionEndpointManager {
     async fn try_open_connection_to_unhealthy_endpoints_and_initiate_failback(
         &self,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        if self.cancellation_token.is_cancelled() {
-            return Ok(());
-        }
-
-        println!("{}", "GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() - Attempting to open connections to unhealthy endpoints and initiate failback.");
+        info!("GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() - Attempting to open connections to unhealthy endpoints and initiate failback.");
 
         let mut pk_range_to_endpoint_mappings: HashMap<
             PartitionKeyRange,
