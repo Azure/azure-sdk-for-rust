@@ -13,11 +13,9 @@ use crate::routing::range::Range;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompositeContinuationToken {
     /// The continuation token (etag) from the server.
-    #[serde(rename = "token")]
     pub token: Option<String>,
 
     /// The feed range this token applies to.
-    #[serde(rename = "range")]
     pub range: Range<String>,
 }
 
