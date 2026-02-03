@@ -26,7 +26,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
-percent-encoding = "2.3"
+percent-encoding.workspace = true
 tracing.workspace = true
 typespec = { workspace = true, features = ["http", "json"] }
 typespec_client_core = { workspace = true, default-features = false, features = [
