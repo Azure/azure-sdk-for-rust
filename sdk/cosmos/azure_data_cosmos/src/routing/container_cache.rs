@@ -150,11 +150,11 @@ impl ContainerCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::regions::RegionName;
     use crate::resource_context::ResourceType;
     use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
-    use std::borrow::Cow;
     use url::Url;
 
     // Helper function to create a test CosmosPipeline
@@ -208,7 +208,7 @@ mod tests {
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
         Arc::new(GlobalEndpointManager::new(
             endpoint,
-            vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            vec![RegionName::from("East US"), RegionName::from("West US")],
             pipeline,
         ))
     }
