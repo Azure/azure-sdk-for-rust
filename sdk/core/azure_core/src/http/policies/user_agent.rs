@@ -87,12 +87,7 @@ impl<'a> UserAgentPolicy {
             ));
         }
 
-        let header = HeaderValue::try_from(header_str).map_err(|e| {
-            crate::error::Error::new(
-                crate::error::ErrorKind::DataConversion,
-                format!("Invalid User-Agent header value: {}", e),
-            )
-        })?;
+        let header = HeaderValue::from(header_str);
 
         Ok(UserAgentPolicy { header })
     }
