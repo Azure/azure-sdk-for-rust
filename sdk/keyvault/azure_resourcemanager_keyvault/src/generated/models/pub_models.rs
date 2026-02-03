@@ -1005,7 +1005,7 @@ pub struct MHSMPrivateEndpointConnectionsListResult {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct MHSMPrivateLinkResource {
-    /// The Azure Resource Manager resource ID for the managed HSM Pool.
+    /// Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
@@ -1013,11 +1013,11 @@ pub struct MHSMPrivateLinkResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
 
-    /// The supported Azure location where the managed HSM Pool should be created.
+    /// The geo-location where the resource lives
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 
-    /// The name of the managed HSM Pool.
+    /// The name of the resource
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
@@ -1029,15 +1029,15 @@ pub struct MHSMPrivateLinkResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sku: Option<ManagedHsmSku>,
 
-    /// Metadata pertaining to creation and last modification of the key vault resource.
+    /// Azure Resource Manager metadata containing createdBy and modifiedBy information.
     #[serde(rename = "systemData", skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 
-    /// Resource tags
+    /// Resource tags.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<HashMap<String, String>>,
 
-    /// The resource type of the managed HSM Pool.
+    /// The type of the resource. E.g. "Microsoft.Compute/virtualMachines" or "Microsoft.Storage/storageAccounts"
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_prop: Option<String>,
 }

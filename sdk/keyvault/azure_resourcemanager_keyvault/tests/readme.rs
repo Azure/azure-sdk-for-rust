@@ -13,18 +13,17 @@ async fn readme(ctx: TestContext) -> Result<()> {
     let mut options = azure_resourcemanager_keyvault::KeyVaultClientOptions::default();
     recording.instrument(&mut options.client_options);
 
-    let subscription_id = recording.var("AZURE_SUBSCRIPTION_ID", None);
+    let subscription_id = recording.var("KEYVAULT_SUBSCRIPTION_ID", None);
     let client = KeyVaultClient::new(
-        "https://management.azure.com",
-        recording.credential(),
         subscription_id,
+        recording.credential(),
         Some(options),
     )?;
 
     // Define variables used in README examples
-    let resource_group = recording.var("AZURE_RESOURCE_GROUP", None);
-    let vault_name = recording.var("AZURE_KEYVAULT_NAME", None);
-    let tenant_id = recording.var("AZURE_TENANT_ID", None);
+    let resource_group = recording.var("KEYVAULT_RESOURCE_GROUP", None);
+    let vault_name = recording.random_string::<16>(Some("t"));
+    let tenant_id = recording.var("KEYVAULT_TENANT_ID", None);
 
     // Each macro invocation is in its own block to prevent errors with duplicate imports.
     println!("Create a vault");

@@ -126,10 +126,6 @@ use std::collections::HashMap;
 // Get the vaults client
 let vaults = client.get_key_vault_vaults_client();
 
-// Parse tenant ID
-let tenant_id = tenant_id.parse()
-    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
-
 // Create vault parameters
 let vault_params = VaultCreateOrUpdateParameters {
     location: Some("eastus".into()),
@@ -163,15 +159,15 @@ println!("Created vault: {:?}", vault.name);
 
 ### List vaults
 
-This example lists all Key Vaults in the current subscription.
+This example lists all Key Vaults in a resource group.
 
 ```rust ignore list_vaults
 use futures::TryStreamExt;
 
 let vaults = client.get_key_vault_vaults_client();
 
-// List all vaults in the subscription
-let mut pager = vaults.list_by_subscription(None)?.into_stream();
+// List all vaults in the resource group
+let mut pager = vaults.list_by_resource_group(&resource_group, None)?.into_stream();
 
 while let Some(vault) = pager.try_next().await? {
     println!("Found vault: {:?}", vault.name);
