@@ -18,7 +18,8 @@ pub mod test_client;
 pub mod test_data;
 
 pub use test_client::{
-    TestClient, TestOptions, TestRunContext, DEFAULT_TEST_TIMEOUT, HUB_REGION, SATELLITE_REGION,
+    get_effective_hub_endpoint, get_global_endpoint, TestClient, TestOptions, TestRunContext,
+    DEFAULT_TEST_TIMEOUT, HUB_REGION, SATELLITE_REGION,
 };
 
 use serde::{Deserialize, Serialize};

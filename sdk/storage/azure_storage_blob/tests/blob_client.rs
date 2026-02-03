@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
+    error::ErrorKind,
     http::{ClientOptions, RequestContent, StatusCode, Url},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
@@ -15,12 +16,13 @@ use azure_storage_blob::{
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
-        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
+        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, StorageError,
+        StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+    create_test_blob, get_blob_name, get_container_client, get_container_name, StorageAccount,
 };
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -569,11 +571,11 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
     );
 
-    let container_name = "test-container-encoding-edge-cases";
+    let container_name = get_container_name(recording);
     // Create Container & Container Client
     let container_client = BlobContainerClient::new(
         &endpoint,
-        container_name,
+        &container_name,
         Some(recording.credential()),
         Some(container_client_options.clone()),
     )?;
@@ -600,7 +602,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         // Test Case 1: Initialize BlobClient using new() constructor
         let blob_client_new = BlobClient::new(
             &endpoint,
-            container_name,
+            &container_name,
             blob_name,
             Some(recording.credential()),
             Some(blob_client_options.clone()),
@@ -625,7 +627,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         blob_url
             .path_segments_mut()
             .expect("Storage Endpoint must be a valid base URL with http/https scheme")
-            .push(container_name)
+            .push(&container_name)
             .push(blob_name);
 
         let blob_client_from_url = BlobClient::from_url(
@@ -806,5 +808,136 @@ async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     blob_client.delete(None).await?;
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Act - Download a blob that doesn't exist (container exists but blob doesn't)
+    let response = blob_client.download(None).await;
+    let error_response = response.unwrap_err();
+    let storage_error: StorageError = error_response.try_into()?;
+
+    // Assert
+    assert_eq!(storage_error.status_code, StatusCode::NotFound);
+    assert_eq!(
+        storage_error.error_code.as_ref(),
+        Some(&StorageErrorCode::BlobNotFound)
+    );
+    assert!(
+        storage_error
+            .message
+            .as_deref()
+            .is_some_and(|m| m.starts_with("The specified blob does not exist.")),
+        "Expected message to start with 'The specified blob does not exist.'"
+    );
+    assert!(
+        storage_error.request_id.is_some(),
+        "Expected request_id to be populated."
+    );
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model_bodiless(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Act - get_properties returns a bodiless 404 response
+    let response = blob_client.get_properties(None).await;
+    let error_response = response.unwrap_err();
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+    let storage_error: StorageError = error_response.try_into()?;
+
+    // Assert
+    assert_eq!(storage_error.status_code, StatusCode::NotFound);
+    assert_eq!(
+        storage_error.message.as_deref(),
+        Some("Not Found"),
+        "Expected canonical reason phrase for bodiless response."
+    );
+    assert!(
+        storage_error.request_id.is_some(),
+        "Expected request_id to be populated from headers."
+    );
+    assert!(
+        storage_error.additional_error_info.is_empty(),
+        "Expected no additional_error_info for bodiless response."
+    );
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&source_blob_client, None, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let blob_name = get_blob_name(recording);
+
+    // Act
+    let overwrite_blob_client = container_client.blob_client(&blob_name);
+    create_test_blob(
+        &overwrite_blob_client,
+        Some(RequestContent::from(b"overruled!".to_vec())),
+        None,
+    )
+    .await?;
+
+    // Inject an erroneous 'c' so we raise Copy Source Errors
+    let container_name = container_client
+        .url()
+        .path_segments()
+        .and_then(|mut segments| segments.next())
+        .unwrap();
+    let overwrite_url = format!(
+        "{}{}c/{}",
+        overwrite_blob_client.url(),
+        container_name,
+        blob_name
+    );
+
+    // Copy Source Error Scenario
+    let response = blob_client
+        .block_blob_client()
+        .upload_blob_from_url(overwrite_url.clone(), None)
+        .await;
+
+    let error = response.unwrap_err();
+    assert_eq!(StatusCode::NotFound, error.http_status().unwrap());
+    let storage_error: StorageError = error.try_into()?;
+
+    // Assert
+    assert_eq!(storage_error.status_code, StatusCode::NotFound);
+    assert_eq!(
+        storage_error.copy_source_status_code,
+        Some(StatusCode::NotFound)
+    );
+    assert_eq!(
+        storage_error.copy_source_error_code.as_deref(),
+        Some("BlobNotFound")
+    );
+    assert_eq!(
+        storage_error.copy_source_error_message.as_deref(),
+        Some("The specified blob does not exist.")
+    );
+
+    container_client.delete_container(None).await?;
     Ok(())
 }

@@ -6,8 +6,10 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::{models::ContainerProperties, resource_context::ResourceLink, ReadContainerOptions};
-use azure_core::http::Response;
+use crate::{
+    models::ContainerProperties, resource_context::ResourceLink, CosmosResponse,
+    ReadContainerOptions,
+};
 use azure_core::Error;
 use std::sync::Arc;
 
@@ -125,7 +127,7 @@ impl ContainerCache {
         &self,
         container_link: ResourceLink,
         options: Option<ReadContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
@@ -150,10 +152,10 @@ impl ContainerCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::regions::RegionName;
     use crate::resource_context::ResourceType;
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
-    use std::borrow::Cow;
     use url::Url;
 
     // Helper function to create a test CosmosPipeline
@@ -204,7 +206,7 @@ mod tests {
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
         Arc::new(GlobalEndpointManager::new(
             endpoint,
-            vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            vec![RegionName::from("East US"), RegionName::from("West US")],
             pipeline,
         ))
     }

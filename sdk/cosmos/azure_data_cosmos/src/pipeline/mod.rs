@@ -5,6 +5,15 @@ mod authorization_policy;
 mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::models::CosmosResponse;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::{
+    constants,
+    models::ThroughputProperties,
+    resource_context::{ResourceLink, ResourceType},
+    CosmosClientOptions, FeedPage, FeedPager, Query,
+};
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
@@ -56,7 +65,7 @@ impl GatewayPipeline {
         &self,
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
-    ) -> azure_core::Result<RawResponse> {
+    ) -> azure_core::Result<CosmosResponse<T>> {
         cosmos_request.client_headers(&self.options);
         // Prepare a callback delegate to invoke the http request.
         let sender = |req: &mut CosmosRequest| {
