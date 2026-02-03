@@ -10,6 +10,7 @@
 
 - Renamed `BlobItemInternal` to `BlobItem`.
 - Renamed `BlobPropertiesInternal` to `BlobProperties`.
+- Changed `BlobClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
 
 ## 0.8.0 (2026-01-21)
 

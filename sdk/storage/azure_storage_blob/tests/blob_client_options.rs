@@ -111,7 +111,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
 
     // Set Metadata on Current Version (Creates Version 2)
     let metadata_v2 = HashMap::from([("version".to_string(), "two".to_string())]);
-    blob_client.set_metadata(metadata_v2.clone(), None).await?;
+    blob_client.set_metadata(&metadata_v2, None).await?;
     let response = blob_client.get_properties(None).await?;
     let version_2 = response.version_id()?.unwrap();
 
@@ -600,9 +600,7 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
 
     // Modify Current (Base) Blob Metadata
     let new_base_metadata = HashMap::from([("end".to_string(), "game".to_string())]);
-    blob_client
-        .set_metadata(new_base_metadata.clone(), None)
-        .await?;
+    blob_client.set_metadata(&new_base_metadata, None).await?;
 
     // Verify Snapshots Unchanged
     let props_1 = snapshot_1_client.get_properties(None).await?;
@@ -861,7 +859,7 @@ async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn 
 
     // Try to Set Metadata
     let metadata = HashMap::from([("test_value".to_string(), "test_key".to_string())]);
-    let result = snapshot_client.set_metadata(metadata, None).await;
+    let result = snapshot_client.set_metadata(&metadata, None).await;
     assert!(result.is_err());
 
     // Try to Upload to Snapshot

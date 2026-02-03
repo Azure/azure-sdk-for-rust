@@ -290,16 +290,14 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     // Set Metadata With Values
     let update_metadata = HashMap::from([("updated".to_string(), "values".to_string())]);
-    blob_client
-        .set_metadata(update_metadata.clone(), None)
-        .await?;
+    blob_client.set_metadata(&update_metadata, None).await?;
     // Assert
     let response = blob_client.get_properties(None).await?;
     let response_metadata = response.metadata()?;
     assert_eq!(update_metadata, response_metadata);
 
     // Set Metadata No Values (Clear Metadata)
-    blob_client.set_metadata(HashMap::new(), None).await?;
+    blob_client.set_metadata(&HashMap::new(), None).await?;
     // Assert
     let response = blob_client.get_properties(None).await?;
     let response_metadata = response.metadata()?;
@@ -419,7 +417,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     blob_client
-        .set_metadata(update_metadata.clone(), Some(set_metadata_options))
+        .set_metadata(&update_metadata, Some(set_metadata_options))
         .await?;
 
     let set_tier_options = BlobClientSetTierOptions {

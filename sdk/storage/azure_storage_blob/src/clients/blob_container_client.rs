@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlobClient as GeneratedBlobClient,
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
@@ -175,14 +174,12 @@ impl BlobContainerClient {
             .expect("Invalid endpoint URL: Cannot append blob_name to the blob endpoint.")
             .extend([blob_name]);
 
-        let client = GeneratedBlobClient {
+        BlobClient {
             endpoint: blob_url,
             pipeline: self.client.pipeline.clone(),
             version: self.client.version.clone(),
             tracer: self.client.tracer.clone(),
-        };
-
-        BlobClient { client }
+        }
     }
 
     /// Gets the URL of the resource this client is configured for.
