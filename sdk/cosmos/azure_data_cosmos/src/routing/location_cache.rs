@@ -201,7 +201,7 @@ impl LocationCache {
         // Extend with read locations not already in preferred locations - O(n)
         for location in &read_locations {
             if !existing.contains(&location.name) {
-                effective_preferred_locations.push(RegionName::from(location.name.clone()));
+                effective_preferred_locations.push(location.name.clone());
             }
         }
 
