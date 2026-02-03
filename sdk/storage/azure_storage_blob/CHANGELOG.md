@@ -4,7 +4,7 @@
 
 ### Features Added
 
-### Breaking Changesa
+### Breaking Changes
 
 ### Bugs Fixed
 
