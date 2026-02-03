@@ -637,8 +637,7 @@ impl BlobClient {
 const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
 const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait::async_trait]
 impl<'a> PartitionedDownloadBehavior<'a, BlobClientDownloadOptions<'a>> for GeneratedBlobClient {
     async fn transfer_range(
         &'a self,
