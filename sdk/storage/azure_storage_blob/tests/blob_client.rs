@@ -22,8 +22,8 @@ use azure_storage_blob::{
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, get_container_name, predicates,
-    ClientOptionsExt, StorageAccount, TestPolicy,
+    create_test_blob, get_blob_name, get_container_client, get_container_name, ClientOptionsExt,
+    StorageAccount, TestPolicy,
 };
 use bytes::{BufMut, BytesMut};
 use futures::TryStreamExt;
