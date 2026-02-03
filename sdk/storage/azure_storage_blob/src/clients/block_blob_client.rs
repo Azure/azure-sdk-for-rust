@@ -2,32 +2,58 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
-    generated::models::{
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult,
+    generated::{
+        clients::BlockBlobClient as GeneratedBlockBlobClient,
+        models::{
+            BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+            BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+        },
     },
+    logging::apply_storage_logging_defaults,
     models::{
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions, BlockList,
-        BlockListType, BlockLookupList,
+        method_options::BlockBlobClientManagedUploadOptions, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
+        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
     },
+    partitioned_transfer::{self, PartitionedUploadBehavior},
     pipeline::StorageHeadersPolicy,
-    BlockBlobClientOptions,
 };
+use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
+        Body, ClientOptions, NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Bytes, Result,
 };
-use std::sync::Arc;
+use futures::lock::Mutex;
+use std::{num::NonZero, sync::Arc};
+use uuid::Uuid;
+
+/// Options used when creating a [`BlockBlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlockBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for BlockBlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with a specific Azure storage Block blob, although that blob may not yet exist.
 pub struct BlockBlobClient {
-    pub(super) client: GeneratedBlockBlobClient,
+    pub(crate) client: GeneratedBlockBlobClient,
 }
 
 impl GeneratedBlockBlobClient {
@@ -45,6 +71,7 @@ impl GeneratedBlockBlobClient {
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        apply_storage_logging_defaults(&mut options.client_options);
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options
@@ -82,6 +109,101 @@ impl GeneratedBlockBlobClient {
             version: options.version,
             pipeline,
         })
+    }
+
+    #[tracing::function("Storage.Blob.BlockBlob.managedUpload")]
+    pub async fn managed_upload(
+        &self,
+        content: RequestContent<Bytes, NoFormat>,
+        options: Option<BlockBlobClientManagedUploadOptions<'_>>,
+    ) -> Result<()> {
+        let options = options.unwrap_or_default();
+        let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
+        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+        // construct exhaustively to ensure we catch new options when added
+        let oneshot_options = BlockBlobClientUploadOptions {
+            blob_cache_control: options.blob_cache_control.clone(),
+            blob_content_disposition: options.blob_content_disposition.clone(),
+            blob_content_encoding: options.blob_content_encoding.clone(),
+            blob_content_language: options.blob_content_language.clone(),
+            blob_content_md5: options.blob_content_md5.clone(),
+            blob_content_type: options.blob_content_type.clone(),
+            blob_tags_string: options.blob_tags_string.clone(),
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key.clone(),
+            encryption_key_sha256: options.encryption_key_sha256.clone(),
+            encryption_scope: options.encryption_scope.clone(),
+            if_match: options.if_match.clone(),
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match.clone(),
+            if_tags: options.if_tags.clone(),
+            if_unmodified_since: options.if_unmodified_since,
+            immutability_policy_expiry: options.immutability_policy_expiry,
+            immutability_policy_mode: options.immutability_policy_mode,
+            lease_id: options.lease_id.clone(),
+            legal_hold: options.legal_hold,
+            metadata: options.metadata.clone(),
+            method_options: options.method_options.clone(),
+            structured_body_type: None,
+            structured_content_length: None,
+            tier: options.tier.clone(),
+            timeout: options.per_request_timeout,
+            transactional_content_crc64: None,
+            transactional_content_md5: None,
+        };
+        let stage_block_options = BlockBlobClientStageBlockOptions {
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key.clone(),
+            encryption_key_sha256: options.encryption_key_sha256.clone(),
+            encryption_scope: options.encryption_scope.clone(),
+            lease_id: options.lease_id.clone(),
+            method_options: options.method_options.clone(),
+            structured_body_type: None,
+            structured_content_length: None,
+            timeout: options.per_request_timeout,
+            transactional_content_crc64: None,
+            transactional_content_md5: None,
+        };
+        let commit_block_list_options = BlockBlobClientCommitBlockListOptions {
+            blob_cache_control: options.blob_cache_control,
+            blob_content_disposition: options.blob_content_disposition,
+            blob_content_encoding: options.blob_content_encoding,
+            blob_content_language: options.blob_content_language,
+            blob_content_md5: options.blob_content_md5,
+            blob_content_type: options.blob_content_type,
+            blob_tags_string: options.blob_tags_string,
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key,
+            encryption_key_sha256: options.encryption_key_sha256,
+            encryption_scope: options.encryption_scope,
+            if_match: options.if_match,
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match,
+            if_tags: options.if_tags,
+            if_unmodified_since: options.if_unmodified_since,
+            immutability_policy_expiry: options.immutability_policy_expiry,
+            immutability_policy_mode: options.immutability_policy_mode,
+            lease_id: options.lease_id,
+            legal_hold: options.legal_hold,
+            metadata: options.metadata,
+            method_options: options.method_options,
+            tier: options.tier,
+            timeout: options.per_request_timeout,
+            transactional_content_crc64: None,
+            transactional_content_md5: None,
+        };
+        partitioned_transfer::upload(
+            content.into(),
+            parallel,
+            partition_size,
+            &BlockBlobClientUploadBehavior::new(
+                self,
+                oneshot_options,
+                stage_block_options,
+                commit_block_list_options,
+            ),
+        )
+        .await
     }
 }
 
@@ -158,8 +280,8 @@ impl BlockBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `block_id` - The unique identifier for the block. The identifier should be less than or equal to 64 bytes in size.
-    ///   For a given blob, the `block_id` must be the same size for each block.
+    /// * `block_id` - A unique identifier for the block (up to 64 bytes). The SDK will Base64-encode this value
+    ///   before sending to the service. For a given blob, the `block_id` must be the same size for each block.
     /// * `content_length` - Total length of the blob data to be staged.
     /// * `data` - The content of the block.
     /// * `options` - Optional configuration for the request.
@@ -206,5 +328,140 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
         self.client.upload_blob_from_url(copy_source, options).await
+    }
+
+    /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
+    /// a URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `block_id` - A unique identifier for the block (up to 64 bytes). This value will be base64-encoded automatically.
+    ///   For a given blob, the `block_id` must be the same size for each block.
+    /// * `content_length` - The length of the request.
+    /// * `source_url` - Specify a URL to the copy source.
+    /// * `options` - Optional configuration for the request.
+    pub async fn stage_block_from_url(
+        &self,
+        block_id: &[u8],
+        content_length: u64,
+        source_url: String,
+        options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>> {
+        self.client
+            .stage_block_from_url(block_id, content_length, source_url, options)
+            .await
+    }
+
+    /// The managed upload operation updates the content of an existing block blob. Updating an existing block blob overwrites
+    /// any existing metadata on the blob. Partial updates are not supported; the content of the existing blob is
+    /// overwritten with the content of the new blob. To perform a partial update of the content of a block blob, use the Put
+    /// Block List operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `body` - The body of the request.
+    /// * `options` - Optional parameters for the request.
+    pub async fn managed_upload(
+        &self,
+        content: RequestContent<Bytes, NoFormat>,
+        options: Option<BlockBlobClientManagedUploadOptions<'_>>,
+    ) -> Result<()> {
+        self.client.managed_upload(content, options).await
+    }
+}
+
+// unwrap evaluated at compile time
+const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
+const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+
+struct BlockInfo {
+    offset: u64,
+    block_id: Uuid,
+}
+
+struct BlockBlobClientUploadBehavior<'c, 'opt> {
+    client: &'c GeneratedBlockBlobClient,
+    oneshot_options: BlockBlobClientUploadOptions<'opt>,
+    stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
+    commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
+    blocks: Mutex<Vec<BlockInfo>>,
+}
+
+impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
+    fn new(
+        client: &'c GeneratedBlockBlobClient,
+        oneshot_options: BlockBlobClientUploadOptions<'opt>,
+        stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
+        commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
+    ) -> Self {
+        Self {
+            client,
+            oneshot_options,
+            stage_block_options,
+            commit_block_list_options,
+            blocks: Mutex::new(vec![]),
+        }
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
+    async fn transfer_oneshot(&self, content: Body) -> Result<()> {
+        let content_len = content.len() as u64;
+        self.client
+            .upload(
+                content.into(),
+                content_len,
+                Some(self.oneshot_options.clone()),
+            )
+            .await?;
+        Ok(())
+    }
+
+    async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
+        let block_id = Uuid::new_v4();
+        let content_len = content.len().try_into().unwrap();
+        {
+            self.blocks.lock().await.push(BlockInfo {
+                offset: offset as u64,
+                block_id,
+            });
+        }
+        self.client
+            .stage_block(
+                block_id.as_bytes(),
+                content_len,
+                content.into(),
+                Some(self.stage_block_options.clone()),
+            )
+            .await?;
+        Ok(())
+    }
+
+    async fn initialize(&self, _content_len: usize) -> Result<()> {
+        Ok(())
+    }
+
+    async fn finalize(&self) -> Result<()> {
+        let mut blocks = self.blocks.lock().await;
+        blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
+        let blocklist = BlockLookupList {
+            latest: Some(
+                blocks
+                    .iter()
+                    .map(|bi| bi.block_id.as_bytes().to_vec())
+                    .collect(),
+            ),
+            ..Default::default()
+        };
+        self.client
+            .commit_block_list(
+                blocklist.try_into()?,
+                Some(self.commit_block_list_options.clone()),
+            )
+            .await?;
+
+        Ok(())
     }
 }

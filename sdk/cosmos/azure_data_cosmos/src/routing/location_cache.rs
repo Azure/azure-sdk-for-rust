@@ -5,9 +5,9 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::{AccountProperties, AccountRegion};
 use crate::operation_context::OperationType;
+use crate::regions::RegionName;
 use crate::resource_context::ResourceType;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::{
     collections::{HashMap, HashSet},
     sync::RwLock,
@@ -58,16 +58,16 @@ impl RequestOperation {
 #[derive(Clone, Default, Debug)]
 pub struct DatabaseAccountLocationsInfo {
     /// User-specified preferred Azure regions for request routing
-    pub preferred_locations: Vec<Cow<'static, str>>,
+    pub preferred_locations: Vec<RegionName>,
     /// List of regions where write operations are supported
     pub account_write_locations: Vec<AccountRegion>,
     /// List of regions where read operations are supported
     pub account_read_locations: Vec<AccountRegion>,
     /// Map from location name to write endpoint URL
-    pub account_write_endpoints_by_location: HashMap<String, Url>,
+    pub account_write_endpoints_by_location: HashMap<RegionName, Url>,
     /// Map from location name to read endpoint URL
-    pub(crate) account_read_endpoints_by_location: HashMap<String, Url>,
-    /// Ordered list of available write endpoint URLs
+    pub(crate) account_read_endpoints_by_location: HashMap<RegionName, Url>,
+    /// Ordered list of available write endpoint URLs (preferred first, unavailable last)
     pub write_endpoints: Vec<Url>,
     /// Ordered list of available read endpoint URLs
     pub read_endpoints: Vec<Url>,
@@ -96,7 +96,7 @@ pub struct LocationCache {
     /// Thread-safe map tracking unavailable endpoints and when they were last checked
     pub location_unavailability_info_map: RwLock<HashMap<Url, LocationUnavailabilityInfo>>,
     /// Client level excluded regions. Empty if no regions are excluded.
-    pub client_excluded_regions: Vec<Cow<'static, str>>,
+    pub client_excluded_regions: Vec<RegionName>,
 }
 
 impl LocationCache {
@@ -116,8 +116,8 @@ impl LocationCache {
     /// A new `LocationCache` instance ready for endpoint management
     pub fn new(
         default_endpoint: Url,
-        preferred_locations: Vec<Cow<'static, str>>,
-        excluded_regions: Vec<Cow<'static, str>>,
+        preferred_locations: Vec<RegionName>,
+        excluded_regions: Vec<RegionName>,
     ) -> Self {
         Self {
             default_endpoint,
@@ -195,15 +195,15 @@ impl LocationCache {
         let mut effective_preferred_locations = self.locations_info.preferred_locations.clone();
 
         // Use HashSet for O(1) lookups instead of O(n) linear search
-        let existing: HashSet<String> = effective_preferred_locations
+        let existing: HashSet<RegionName> = effective_preferred_locations
             .iter()
-            .map(|s| s.to_ascii_lowercase())
+            .cloned()
             .collect();
 
         // Extend with read locations not already in preferred locations - O(n)
         for location in &read_locations {
-            if !existing.contains(&location.name.to_ascii_lowercase()) {
-                effective_preferred_locations.push(Cow::Owned(location.name.clone()));
+            if !existing.contains(&location.name) {
+                effective_preferred_locations.push(RegionName::from(location.name.clone()));
             }
         }
 
@@ -465,7 +465,7 @@ impl LocationCache {
         &mut self,
         locations: Vec<AccountRegion>,
         is_write: bool,
-    ) -> (HashMap<String, Url>, Vec<AccountRegion>) {
+    ) -> (HashMap<RegionName, Url>, Vec<AccountRegion>) {
         // Separates locations into a hashmap and list
         let mut endpoints_by_location = HashMap::new();
         let mut parsed_locations = Vec::new();
@@ -507,7 +507,7 @@ impl LocationCache {
     /// An ordered vector of endpoint URLs (preferred available, preferred unavailable, default)
     fn get_preferred_available_endpoints(
         &self,
-        endpoints_by_location: &HashMap<String, Url>,
+        endpoints_by_location: &HashMap<RegionName, Url>,
         request: RequestOperation,
         default_endpoint: &Url,
         request_excluded_regions: Option<&Vec<String>>,
@@ -518,17 +518,17 @@ impl LocationCache {
         // Remove excluded regions from effective preferred locations
         let excluded_regions = request_excluded_regions
             .cloned()
-            .map(|v| v.into_iter().map(Cow::Owned).collect())
+            .map(|v| v.into_iter().map(RegionName::from).collect())
             .unwrap_or_else(|| self.client_excluded_regions.clone());
         effective_preferred_locations.retain(|location| {
             !excluded_regions
                 .iter()
-                .any(|excluded| excluded.eq_ignore_ascii_case(location.as_ref()))
+                .any(|excluded| excluded == location)
         });
 
         for location in &effective_preferred_locations {
             // Checks if preferred location exists in endpoints_by_location
-            if let Some(endpoint) = endpoints_by_location.get(location.as_ref()) {
+            if let Some(endpoint) = endpoints_by_location.get(location) {
                 // Check if endpoint is available, if not add to unavailable_endpoints
                 // If it is then add to endpoints
                 if !self.is_endpoint_unavailable(endpoint, request) {
@@ -582,8 +582,8 @@ mod tests {
         Url,
         Vec<AccountRegion>,
         Vec<AccountRegion>,
-        Vec<Cow<'static, str>>,
-        Vec<Cow<'static, str>>,
+        Vec<RegionName>,
+        Vec<RegionName>,
     );
 
     fn create_test_data() -> TestData {
@@ -592,27 +592,29 @@ mod tests {
 
         let location_1 = AccountRegion {
             database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
-            name: "Location 1".to_string(),
+            name: RegionName::from("Location 1"),
         };
         let location_2 = AccountRegion {
             database_account_endpoint: "https://location2.documents.example.com".parse().unwrap(),
-            name: "Location 2".to_string(),
+            name: RegionName::from("Location 2"),
         };
         let location_3 = AccountRegion {
             database_account_endpoint: "https://location3.documents.example.com".parse().unwrap(),
-            name: "Location 3".to_string(),
+            name: RegionName::from("Location 3"),
         };
         let location_4 = AccountRegion {
             database_account_endpoint: "https://location4.documents.example.com".parse().unwrap(),
-            name: "Location 4".to_string(),
+            name: RegionName::from("Location 4"),
         };
         let write_locations = Vec::from([location_1.clone(), location_2.clone()]);
 
         let read_locations = Vec::from([location_1, location_2, location_3, location_4]);
 
-        let preferred_locations: Vec<Cow<'static, str>> =
-            vec![Cow::Borrowed("Location 1"), Cow::Borrowed("Location 2")];
-        let excluded_regions: Vec<Cow<'static, str>> = vec![];
+        let preferred_locations: Vec<RegionName> = vec![
+            RegionName::from("Location 1"),
+            RegionName::from("Location 2"),
+        ];
+        let excluded_regions: Vec<RegionName> = vec![];
 
         (
             default_endpoint,
@@ -649,10 +651,10 @@ mod tests {
             mut excluded_regions,
         ) = create_test_data();
         if let Some(regions) = pref_regions {
-            preferred_locations = regions.into_iter().map(Cow::Owned).collect();
+            preferred_locations = regions.into_iter().map(RegionName::from).collect();
         }
         if let Some(regions) = excl_regions {
-            excluded_regions = regions.into_iter().map(Cow::Owned).collect();
+            excluded_regions = regions.into_iter().map(RegionName::from).collect();
         }
 
         let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
@@ -674,10 +676,8 @@ mod tests {
         assert_eq!(
             cache.locations_info.preferred_locations,
             vec![
-                "Location 1".to_string(),
-                "Location 2".to_string(),
-                "Location 3".to_string(),
-                "Location 4".to_string()
+                RegionName::from("Location 1"),
+                RegionName::from("Location 2")
             ]
         );
 
@@ -689,9 +689,9 @@ mod tests {
             .cloned()
             .map(|account_region| account_region.name)
             .collect();
-        let expected_account_write_locations: HashSet<String> = ["Location 1", "Location 2"]
+        let expected_account_write_locations: HashSet<RegionName> = ["Location 1", "Location 2"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| RegionName::from(*s))
             .collect();
         assert_eq!(
             actual_account_write_locations,
@@ -706,10 +706,10 @@ mod tests {
             .cloned()
             .map(|account_region| account_region.name)
             .collect();
-        let expected_account_read_locations: HashSet<String> =
+        let expected_account_read_locations: HashSet<RegionName> =
             ["Location 1", "Location 2", "Location 3", "Location 4"]
                 .iter()
-                .map(|s| s.to_string())
+                .map(|s| RegionName::from(*s))
                 .collect();
 
         assert_eq!(
@@ -721,11 +721,11 @@ mod tests {
             cache.locations_info.account_write_endpoints_by_location,
             HashMap::from([
                 (
-                    "Location 1".to_string(),
+                    RegionName::from("Location 1"),
                     Url::parse("https://location1.documents.example.com").unwrap()
                 ),
                 (
-                    "Location 2".to_string(),
+                    RegionName::from("Location 2"),
                     Url::parse("https://location2.documents.example.com").unwrap()
                 )
             ])
@@ -735,19 +735,19 @@ mod tests {
             cache.locations_info.account_read_endpoints_by_location,
             HashMap::from([
                 (
-                    "Location 1".to_string(),
+                    RegionName::from("Location 1"),
                     Url::parse("https://location1.documents.example.com").unwrap()
                 ),
                 (
-                    "Location 2".to_string(),
+                    RegionName::from("Location 2"),
                     Url::parse("https://location2.documents.example.com").unwrap()
                 ),
                 (
-                    "Location 3".to_string(),
+                    RegionName::from("Location 3"),
                     Url::parse("https://location3.documents.example.com").unwrap()
                 ),
                 (
-                    "Location 4".to_string(),
+                    RegionName::from("Location 4"),
                     Url::parse("https://location4.documents.example.com").unwrap()
                 )
             ])
@@ -799,9 +799,9 @@ mod tests {
             cache.locations_info.preferred_locations,
             vec![
                 preferred_locations[0].clone(),
-                Cow::from("Location 2".to_string()),
-                Cow::from("Location 3".to_string()),
-                Cow::from("Location 4".to_string())
+                RegionName::from("Location 2"),
+                RegionName::from("Location 3"),
+                RegionName::from("Location 4")
             ]
         );
 

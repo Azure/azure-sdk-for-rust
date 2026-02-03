@@ -6,14 +6,28 @@ use azure_core::{
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::models::{
-    BlobClientDownloadResultHeaders, BlockBlobClientUploadBlobFromUrlOptions, BlockListType,
-    BlockLookupList,
+use azure_storage_blob::{
+    models::{
+        method_options::BlockBlobClientManagedUploadOptions, BlobClientDownloadResultHeaders,
+        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
+        BlockListType, BlockLookupList,
+    },
+    BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+    create_test_blob, get_blob_name, get_container_client, predicates, ClientOptionsExt,
+    StorageAccount, TestPolicy, KB, MB,
 };
-use std::error::Error;
+use bytes::{BufMut, BytesMut};
+use std::{
+    error::Error,
+    io::Write,
+    num::NonZero,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 #[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -199,5 +213,297 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let source_content = b"Hello from source blob!";
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(source_content.to_vec())),
+        None,
+    )
+    .await?;
+
+    let dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = dest_blob_client.block_blob_client();
+    let block_id: Vec<u8> = b"block1".to_vec();
+
+    // Regular Scenario
+    block_blob_client
+        .stage_block_from_url(
+            &block_id,
+            u64::try_from(source_content.len())?,
+            source_blob_client.url().as_str().into(),
+            None,
+        )
+        .await?;
+
+    // Staged Block Scenario
+    let block_list = block_blob_client
+        .get_block_list(BlockListType::All, None)
+        .await?
+        .into_model()?;
+
+    // Assert
+    assert!(block_list.committed_blocks.is_none());
+    assert_eq!(
+        1,
+        block_list
+            .uncommitted_blocks
+            .expect("expected uncommitted_blocks")
+            .len()
+    );
+
+    let block_lookup_list = BlockLookupList {
+        committed: Some(Vec::new()),
+        latest: Some(vec![block_id]),
+        uncommitted: Some(Vec::new()),
+    };
+
+    block_blob_client
+        .commit_block_list(block_lookup_list.try_into()?, None)
+        .await?;
+
+    // Committed Block Scenario
+    let response = dest_blob_client.download(None).await?;
+    let content_length = response.content_length()?;
+    let (status_code, _, response_body) = response.deconstruct();
+
+    // Assert
+    assert!(status_code.is_success());
+    assert_eq!(source_content.len(), content_length.unwrap() as usize);
+    assert_eq!(
+        Bytes::from_static(source_content),
+        response_body.collect().await?.as_ref(),
+    );
+
+    // Source Authorization Scenario
+    let access_token = format!(
+        "Bearer {}",
+        recording
+            .credential()
+            .get_token(&["https://storage.azure.com/.default"], None)
+            .await?
+            .token
+            .secret()
+    );
+
+    let source_auth_options = BlockBlobClientStageBlockFromUrlOptions {
+        copy_source_authorization: Some(access_token),
+        ..Default::default()
+    };
+
+    let block_id_2: Vec<u8> = b"block2".to_vec();
+    let source_blob_client_2 = container_client.blob_client(&get_blob_name(recording));
+    let source_content_2 = b"Authorized content!";
+    create_test_blob(
+        &source_blob_client_2,
+        Some(RequestContent::from(source_content_2.to_vec())),
+        None,
+    )
+    .await?;
+
+    block_blob_client
+        .stage_block_from_url(
+            &block_id_2,
+            u64::try_from(source_content_2.len())?,
+            source_blob_client_2.url().as_str().into(),
+            Some(source_auth_options),
+        )
+        .await?;
+
+    let block_lookup_list_2 = BlockLookupList {
+        committed: Some(Vec::new()),
+        latest: Some(vec![block_id_2]),
+        uncommitted: Some(Vec::new()),
+    };
+
+    block_blob_client
+        .commit_block_list(block_lookup_list_2.try_into()?, None)
+        .await?;
+
+    let response = dest_blob_client.download(None).await?;
+    let (status_code, _, response_body) = response.deconstruct();
+
+    // Assert
+    assert!(status_code.is_success());
+    assert_eq!(
+        Bytes::from_static(source_content_2),
+        response_body.collect().await?.as_ref(),
+    );
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+// TODO successfully record block ID generation to remove live-only marker
+#[recorded::test(live)]
+async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let stage_block_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(
+        stage_block_count.clone(),
+        Some(Arc::new(predicates::is_stage_block_request)),
+    ));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let data: [u8; 1024] = recording.random();
+    let bytes: Bytes = data.to_vec().into();
+
+    for (parallel, partition_size, expected_stage_block_calls) in [
+        (1, 2048, 0), // put blob expected
+        (2, 1024, 0), // put blob expected
+        (2, 512, 2),
+        (1, 256, 4),
+        (8, 31, 34),
+    ] {
+        stage_block_count.store(0, Ordering::Relaxed);
+        let options = BlockBlobClientManagedUploadOptions {
+            parallel: Some(NonZero::new(parallel).unwrap()),
+            partition_size: Some(NonZero::new(partition_size).unwrap()),
+            ..Default::default()
+        };
+        {
+            let _scope = count_policy.check_request_scope();
+            block_blob_client
+                .managed_upload(bytes.clone().into(), Some(options))
+                .await?;
+        }
+        assert_eq!(
+            blob_client
+                .download(None)
+                .await?
+                .into_body()
+                .collect()
+                .await?[..],
+            data,
+            "Failed parallel={},partition_size={}",
+            parallel,
+            partition_size
+        );
+        assert_eq!(
+            stage_block_count.load(Ordering::Relaxed),
+            expected_stage_block_calls,
+            "Failed parallel={},partition_size={}",
+            parallel,
+            partition_size
+        );
+    }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let data = [];
+    let bytes: Bytes = data.to_vec().into();
+
+    request_count.store(0, Ordering::Relaxed);
+    let options = BlockBlobClientManagedUploadOptions {
+        ..Default::default()
+    };
+    {
+        let _scope = count_policy.check_request_scope();
+        block_blob_client
+            .managed_upload(bytes.clone().into(), Some(options))
+            .await?;
+    }
+    assert_eq!(
+        blob_client
+            .download(None)
+            .await?
+            .into_body()
+            .collect()
+            .await?[..],
+        data
+    );
+    assert_eq!(request_count.load(Ordering::Relaxed), 1);
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let stage_block_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(
+        stage_block_count.clone(),
+        Some(Arc::new(predicates::is_stage_block_request)),
+    ));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let data_len = 50 * MB;
+    let expected_stage_block_count = data_len / MB / 4;
+    let mut bytes = BytesMut::with_capacity(data_len).writer();
+    {
+        let mut buf = [0u8; 4 * KB];
+        for _ in (0..data_len).step_by(buf.len()) {
+            buf = recording.random();
+            bytes.write_all(&buf)?;
+        }
+    }
+    let bytes = bytes.into_inner().freeze();
+
+    stage_block_count.store(0, Ordering::Relaxed);
+    {
+        let _scope = count_policy.check_request_scope();
+        block_blob_client
+            .managed_upload(bytes.clone().into(), None)
+            .await?;
+    }
+    assert_eq!(
+        blob_client
+            .download(None)
+            .await?
+            .into_body()
+            .collect()
+            .await?[..],
+        bytes[..]
+    );
+    assert_eq!(
+        stage_block_count.load(Ordering::Relaxed),
+        expected_stage_block_count
+    );
+
     Ok(())
 }
