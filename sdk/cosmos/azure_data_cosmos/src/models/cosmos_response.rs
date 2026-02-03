@@ -21,6 +21,7 @@ pub struct CosmosResponse<T> {
     /// The underlying typed HTTP response.
     response: Response<T>,
     /// The final request used to fulfill the operation.
+    #[allow(dead_code)]
     request: CosmosRequest,
 }
 
