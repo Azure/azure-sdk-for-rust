@@ -11,6 +11,7 @@ use azure_core::http::{
     Method,
 };
 use serde::Serialize;
+use std::borrow::Cow;
 
 /// Specifies which form of authorization token should be used when signing
 /// the request. The SDK generally uses the primary key, but some operations
@@ -61,7 +62,7 @@ pub struct CosmosRequest {
     pub query_string: Option<String>,
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
-    pub excluded_regions: Option<Vec<String>>,
+    pub excluded_regions: Option<Vec<Cow<'static, str>>>,
 }
 
 impl CosmosRequest {
@@ -177,7 +178,7 @@ pub struct CosmosRequestBuilder {
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
-    excluded_regions: Option<Vec<String>>,
+    excluded_regions: Option<Vec<Cow<'static, str>>>,
     // Flags
     is_feed: bool,
     use_gateway_mode: bool,
@@ -225,7 +226,7 @@ impl CosmosRequestBuilder {
         self
     }
 
-    pub fn excluded_regions(mut self, excluded_regions: Option<Vec<String>>) -> Self {
+    pub fn excluded_regions(mut self, excluded_regions: Option<Vec<Cow<'static, str>>>) -> Self {
         // Sets the excluded regions for the given request. If None is provided,
         // client-level excluded regions will be used. If an empty vector is provided,
         // no regions will be excluded for this request.

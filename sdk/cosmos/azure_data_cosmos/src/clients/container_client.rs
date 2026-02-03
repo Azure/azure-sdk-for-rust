@@ -468,9 +468,10 @@ impl ContainerClient {
             .excluded_regions(options.excluded_regions)
             .build()?;
 
-        self.container_connection
+        let xxx = self.container_connection
             .send(cosmos_request, options.method_options.context)
-            .await
+            .await;
+        return xxx
     }
 
     /// Reads a specific item from the container.

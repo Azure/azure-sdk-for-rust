@@ -12,6 +12,7 @@ use crate::routing::location_cache::{LocationCache, RequestOperation};
 use crate::ReadDatabaseOptions;
 use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -203,7 +204,7 @@ impl GlobalEndpointManager {
     pub fn applicable_endpoints(
         &self,
         operation_type: OperationType,
-        excluded_regions: Option<&Vec<String>>,
+        excluded_regions: Option<&Vec<Cow<'static, str>>>,
     ) -> Vec<Url> {
         self.location_cache
             .lock()
@@ -632,7 +633,7 @@ mod tests {
     fn test_applicable_excluded_endpoints() {
         let manager = create_test_manager();
         // Exclude all regions to test behavior - should still return default endpoint
-        let excluded_regions = vec!["West US".to_string(), "East US".to_string()];
+        let excluded_regions: Vec<Cow<'static, str>> = vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")];
         let endpoints = manager.applicable_endpoints(OperationType::Read, Some(&excluded_regions));
         assert!(!endpoints.is_empty());
         let endpoints =
