@@ -234,6 +234,7 @@ For detailed guidance, see:
 
 Additional specialized instructions for specific workflows can be found in:
 
+- `.github/copilot-instructions.md` - Code style and other requirements for Copilot
 - `.github/instructions/` - Task-specific agent instructions
 - `.github/prompts/` - Reusable Copilot prompts (use `#prompt` in Copilot)
 
