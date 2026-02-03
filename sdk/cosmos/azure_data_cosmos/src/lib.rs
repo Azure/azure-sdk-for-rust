@@ -4,6 +4,7 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub mod change_feed;
 pub mod clients;
 mod connection_string;
 pub mod constants;

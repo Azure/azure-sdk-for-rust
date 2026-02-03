@@ -320,6 +320,7 @@ dependencies = [
  "azure_core",
  "azure_core_test",
  "azure_identity",
+ "base64",
  "clap",
  "futures",
  "reqwest",
