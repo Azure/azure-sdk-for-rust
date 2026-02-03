@@ -36,13 +36,13 @@ impl OperationType {
             | OperationType::Upsert
             | OperationType::Batch
             | OperationType::Patch
+            | OperationType::QueryPlan
             | OperationType::Execute => Some(ContentType::APPLICATION_JSON),
             OperationType::Read
             | OperationType::ReadFeed
             | OperationType::Delete
             | OperationType::Head
-            | OperationType::HeadFeed
-            | OperationType::QueryPlan => None,
+            | OperationType::HeadFeed => None,
         }
     }
 

@@ -27,6 +27,11 @@ pub struct QueryExecutor<T: DeserializeOwned + ConditionalSend> {
     base_headers: Headers,
     continuation: Option<String>,
     complete: bool,
+    // Why is our phantom type a function? Because that represents how we _use_ the type T.
+    // Normally, PhantomData<T> is only Send/Sync if T is, because PhantomData is indicating that while we don't _name_ T in a field, we should act as though we have a field of type T.
+    // However, we don't store any T values in this, we only RETURN them.
+    // That means we use a function pointer to indicate that we don't actually operate on T directly, we just return it.
+    // Because of this, PhantomData<fn() -> T> is Send/Sync even if T isn't (see https://doc.rust-lang.org/stable/nomicon/phantom-data.html#table-of-phantomdata-patterns)
     phantom: std::marker::PhantomData<fn() -> T>,
 }
 

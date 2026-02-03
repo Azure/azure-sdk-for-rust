@@ -62,8 +62,19 @@ impl GatewayPipeline {
         let sender = |req: &mut CosmosRequest| {
             let pipeline = self.pipeline.clone();
             let ctx = context.clone();
+            // Success codes: 200-299 range plus 304 (Not Modified)
+            const SUCCESS_CODES: [u16; 101] = {
+                let mut codes = [0u16; 101];
+                let mut i = 0;
+                while i < 100 {
+                    codes[i] = 200 + i as u16;
+                    i += 1;
+                }
+                codes[100] = 304;
+                codes
+            };
             let success_options = CheckSuccessOptions {
-                success_codes: &[200, 201, 202, 204, 304],
+                success_codes: &SUCCESS_CODES,
             };
             let pipeline_send_options = PipelineSendOptions {
                 skip_checks: false,
