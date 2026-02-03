@@ -102,14 +102,7 @@ impl GatewayPipeline {
         // Delegate to the retry handler, providing the sender callback
         let res = self.retry_handler.send(&mut cosmos_request, sender).await;
 
-        // Extract the final endpoint URL from the request context
-        // let endpoint = cosmos_request
-        //     .request_context
-        //     .location_endpoint_to_route
-        //     .clone()
-        //     .unwrap_or_else(|| self.endpoint.clone());
-
-        // Convert RawResponse into CosmosResponse with the final endpoint
+        // Convert RawResponse into CosmosResponse with the final request
         res.map(|r| CosmosResponse::new(r.into(), cosmos_request))
     }
 
