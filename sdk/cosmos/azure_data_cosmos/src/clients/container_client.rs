@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    models::{ContainerProperties, PatchDocument, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -90,7 +90,7 @@ impl ContainerClient {
     pub async fn read(
         &self,
         options: Option<ReadContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
@@ -134,7 +134,7 @@ impl ContainerClient {
         &self,
         properties: ContainerProperties,
         options: Option<ReplaceContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
             .json(&properties)
@@ -204,7 +204,7 @@ impl ContainerClient {
     pub async fn delete(
         &self,
         options: Option<DeleteContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
@@ -284,7 +284,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())
             .request_headers(&options)
@@ -369,7 +369,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
@@ -457,7 +457,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
             .request_headers(&options)
@@ -506,7 +506,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<T>> {
+    ) -> azure_core::Result<CosmosResponse<T>> {
         let mut options = options.unwrap_or_default();
 
         // Read APIs should always return the item, ignoring whatever the user set.
@@ -549,7 +549,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
@@ -624,7 +624,7 @@ impl ContainerClient {
         item_id: &str,
         patch: PatchDocument,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let link = self.items_link.item(item_id);
         let cosmos_request = CosmosRequest::builder(OperationType::Patch, link)
