@@ -83,24 +83,24 @@ impl ContainerConnection {
             cosmos_request.request_context.resolved_collection_rid = Some(container_prop.id.into_owned());
         }
 
-        let sender = |req: &mut CosmosRequest| {
-            let pipeline = self.pipeline.clone();
-            let global_partition_endpoint_manager = self.global_partition_endpoint_manager.clone();
-            let ctx = context.clone();
-            let mut req_clone = req.clone();
-
-            async move {
-                if self.is_partition_level_failover_enabled() && req_clone.resource_type.is_partitioned() {
-                    global_partition_endpoint_manager.try_add_partition_level_location_override(&mut req_clone);
-                }
-                let url = req_clone.resource_link.clone();
-                let mut raw_req = req_clone.clone().into_raw_request();
-                pipeline.send_raw(ctx, &mut raw_req, url).await
-            }
-        };
+        // let sender = |req: &mut CosmosRequest| {
+        //     let pipeline = self.pipeline.clone();
+        //     let global_partition_endpoint_manager = self.global_partition_endpoint_manager.clone();
+        //     let ctx = context.clone();
+        //     let mut req_clone = req.clone();
+        //
+        //     async move {
+        //         // if self.is_partition_level_failover_enabled() && req_clone.resource_type.is_partitioned() {
+        //         //     global_partition_endpoint_manager.try_add_partition_level_location_override(&mut req_clone);
+        //         // }
+        //         let url = req_clone.resource_link.clone();
+        //         let mut raw_req = req_clone.clone().into_raw_request();
+        //         pipeline.send_raw(ctx, &mut raw_req, url).await
+        //     }
+        // };
 
         // Delegate to the retry handler, providing the sender callback
-        let res = self.pipeline.send_with_callback(&mut cosmos_request, sender).await;
+        let res = self.pipeline.send(cosmos_request, context).await;
         res.map(Into::into)
 
     }

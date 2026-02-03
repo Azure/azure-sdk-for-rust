@@ -74,19 +74,6 @@ pub struct GlobalPartitionEndpointManager {
 
     /// Flag to determine if partition level circuit breaker is enabled.
     is_partition_level_circuit_breaker_enabled: AtomicI32,
-
-    /// Callback for background connection refresh task.
-    background_open_connection_task: RwLock<
-        Option<
-            Arc<
-                dyn Fn(
-                        HashMap<PartitionKeyRange, (String, String, HealthStatus)>,
-                    ) -> futures::future::BoxFuture<'static, ()>
-                    + Send
-                    + Sync,
-            >,
-        >,
-    >,
 }
 
 impl std::fmt::Debug for GlobalPartitionEndpointManager {
@@ -121,15 +108,6 @@ impl std::fmt::Debug for GlobalPartitionEndpointManager {
             .field(
                 "is_partition_level_circuit_breaker_enabled",
                 &self.is_partition_level_circuit_breaker_enabled,
-            )
-            .field(
-                "background_open_connection_task",
-                &self
-                    .background_open_connection_task
-                    .read()
-                    .unwrap()
-                    .as_ref()
-                    .map(|_| "<callback>"),
             )
             .finish()
     }
@@ -169,7 +147,6 @@ impl GlobalPartitionEndpointManager {
                     0
                 },
             ),
-            background_open_connection_task: RwLock::new(None),
         });
 
         instance.initialize_and_start_circuit_breaker_failback_background_refresh();
@@ -217,7 +194,8 @@ impl GlobalPartitionEndpointManager {
             .store(true, Ordering::SeqCst);
 
         let self_clone = Arc::clone(self);
-        get_async_runtime().spawn(Box::pin(async move {
+        // Use the runtime-agnostic spawn from azure_core
+        let _ = get_async_runtime().spawn(Box::pin(async move {
             self_clone.initiate_circuit_breaker_failback_loop().await;
         }));
     }
@@ -227,14 +205,13 @@ impl GlobalPartitionEndpointManager {
     async fn initiate_circuit_breaker_failback_loop(self: Arc<Self>) {
         let interval = Duration::seconds(self.background_connection_init_interval_secs);
 
-        // TODO: tokio is not a runtime dependency. Need to use a runtime-agnostic approach.
         loop {
             if self.cancellation_token.is_cancelled() {
                 break;
             }
 
+            // Use the runtime-agnostic sleep from azure_core
             get_async_runtime().sleep(interval).await;
-            let _ = interval; // suppress unused warning
 
             info!("GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() trying to get address and open connections for failed locations.");
 
@@ -244,8 +221,6 @@ impl GlobalPartitionEndpointManager {
             {
                 tracing::error!("GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() - Unable to get address and open connections. Exception: {}", e);
             }
-
-            break; // TODO: Remove this once we have a proper async sleep implementation
         }
     }
 
@@ -257,64 +232,80 @@ impl GlobalPartitionEndpointManager {
             return Ok(());
         }
 
-        let background_task = self.background_open_connection_task.read().unwrap().clone();
-        if let Some(task) = background_task {
-            let mut pk_range_to_endpoint_mappings: HashMap<
-                PartitionKeyRange,
-                (String, String, HealthStatus),
-            > = HashMap::new();
+        println!("{}", "GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() - Attempting to open connections to unhealthy endpoints and initiate failback.");
+        
+        let mut pk_range_to_endpoint_mappings: HashMap<
+            PartitionKeyRange,
+            (String, String, HealthStatus),
+        > = HashMap::new();
 
-            // Scope the guard so it's dropped before to await
-            {
-                let guard = self
-                    .partition_key_range_to_location_for_read_and_write
-                    .lock()
-                    .map_err(|e| e.to_string())?;
-                for (pk_range, partition_failover) in guard.iter() {
-                    let pk_range = pk_range.clone();
+        // Scope the guard so it's dropped before any async operations
+        {
+            let guard = self
+                .partition_key_range_to_location_for_read_and_write
+                .lock()
+                .map_err(|e| e.to_string())?;
+            for (pk_range, partition_failover) in guard.iter() {
+                let pk_range = pk_range.clone();
 
-                    let (first_request_failure_time, _) =
-                        partition_failover.snapshot_partition_failover_timestamps();
+                let (first_request_failure_time, _) =
+                    partition_failover.snapshot_partition_failover_timestamps();
 
-                    if Instant::now().duration_since(first_request_failure_time)
-                        > Duration::seconds(self.partition_unavailability_duration_secs)
-                    {
-                        let original_failed_location =
-                            partition_failover.first_failed_location.clone();
-
-                        pk_range_to_endpoint_mappings.insert(
-                            pk_range,
-                            (
-                                partition_failover.collection_rid.clone(),
-                                original_failed_location,
-                                HealthStatus::Unhealthy,
-                            ),
-                        );
-                    }
-                }
-            } // guard is dropped here
-
-            if !pk_range_to_endpoint_mappings.is_empty() {
-                task(pk_range_to_endpoint_mappings.clone()).await;
-
-                for (pk_range, (_, original_failed_location, current_health_state)) in
-                    pk_range_to_endpoint_mappings
+                if Instant::now().duration_since(first_request_failure_time)
+                    > Duration::seconds(self.partition_unavailability_duration_secs)
                 {
-                    if current_health_state == HealthStatus::Connected {
-                        info!(
-                            "Initiating Failback to endpoint: {}, for partition key range: {:?}",
-                            original_failed_location, pk_range
-                        );
-                        self.partition_key_range_to_location_for_read_and_write
-                            .lock()
-                            .unwrap()
-                            .remove(&pk_range);
-                    }
+                    let original_failed_location =
+                        partition_failover.first_failed_location.clone();
+
+                    pk_range_to_endpoint_mappings.insert(
+                        pk_range,
+                        (
+                            partition_failover.collection_rid.clone(),
+                            original_failed_location,
+                            HealthStatus::Unhealthy,
+                        ),
+                    );
+                }
+            }
+        } // guard is dropped here
+
+        if !pk_range_to_endpoint_mappings.is_empty() {
+            // Mark endpoints as healthy directly
+            Self::mark_endpoints_to_healthy(&mut pk_range_to_endpoint_mappings);
+
+            for (pk_range, (_, original_failed_location, current_health_state)) in
+                pk_range_to_endpoint_mappings
+            {
+                if current_health_state == HealthStatus::Connected {
+                    info!(
+                        "Initiating Failback to endpoint: {}, for partition key range: {:?}",
+                        original_failed_location, pk_range
+                    );
+                    self.partition_key_range_to_location_for_read_and_write
+                        .lock()
+                        .unwrap()
+                        .remove(&pk_range);
                 }
             }
         }
 
         Ok(())
+    }
+
+    pub fn mark_endpoints_to_healthy(
+        pk_range_uri_mappings: &mut HashMap<
+            PartitionKeyRange,
+            (String, String, HealthStatus)>) {
+        for (pk_range, mapping) in pk_range_uri_mappings.iter_mut() {
+            info!(
+                "Un-deterministically marking the original failed endpoint: {}, for the PkRange: {}, collectionRid: {} back to healthy.",
+                mapping.0,
+                pk_range.id,
+                mapping.1
+            );
+
+            mapping.2 = HealthStatus::Connected;
+        }
     }
 
     /// Determines if a request is eligible for per-partition automatic failover.
@@ -723,7 +714,7 @@ impl PartitionKeyRangeFailoverInfo {
             consecutive_read_request_failure_count: AtomicI32::new(0),
             consecutive_write_request_failure_count: AtomicI32::new(0),
             read_request_failure_counter_threshold:
-                Self::get_circuit_breaker_consecutive_failure_count_for_reads(10),
+                Self::get_circuit_breaker_consecutive_failure_count_for_reads(2),
             write_request_failure_counter_threshold:
                 Self::get_circuit_breaker_consecutive_failure_count_for_writes(5),
             timeout_counter_reset_window: Duration::seconds(
