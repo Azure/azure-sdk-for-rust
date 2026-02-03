@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::regions::RegionName;
+use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::PartitionKey;
 use azure_core::http::RawResponse;
 use std::collections::HashMap;
