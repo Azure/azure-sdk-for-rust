@@ -6,6 +6,7 @@ mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::models::CosmosResponse;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
     constants,
@@ -88,7 +89,7 @@ impl GatewayPipeline {
         &self,
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
-    ) -> azure_core::Result<Response<T>> {
+    ) -> azure_core::Result<CosmosResponse<T>> {
         cosmos_request.client_headers(&self.options);
         // Prepare a callback delegate to invoke the http request.
         let sender = move |req: &mut CosmosRequest| {
@@ -101,8 +102,8 @@ impl GatewayPipeline {
         // Delegate to the retry handler, providing the sender callback
         let res = self.retry_handler.send(&mut cosmos_request, sender).await;
 
-        // Convert RawResponse into typed Response<T>
-        res.map(Into::into)
+        // Convert RawResponse into CosmosResponse with the final request
+        res.map(|r| CosmosResponse::new(r.into(), cosmos_request))
     }
 
     pub fn send_query_request<T: DeserializeOwned + Send>(

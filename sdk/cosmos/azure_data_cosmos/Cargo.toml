@@ -42,6 +42,7 @@ key_auth = [] # Enables support for key-based authentication (Primary Keys and R
 preview_query_engine = ["serde_json/raw_value"] # Enables support for the PREVIEW external query engine
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
+fault_injection = [] # Enables support for fault injection testing
 
 [package.metadata.docs.rs]
 features = [
