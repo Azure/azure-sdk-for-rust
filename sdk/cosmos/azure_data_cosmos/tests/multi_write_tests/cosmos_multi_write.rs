@@ -9,14 +9,14 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
+use azure_data_cosmos::regions::RegionName;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
     CosmosClientOptions, CreateContainerOptions,
 };
-use tracing_subscriber::layer::SubscriberExt;
-use azure_data_cosmos::regions::RegionName;
 use framework::{TestClient, HUB_REGION, SATELLITE_REGION};
+use tracing_subscriber::layer::SubscriberExt;
 
 /// A simple layer that captures log messages into a shared buffer
 struct CaptureLayer {
@@ -192,7 +192,8 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // write to satellite region
     TestClient::run_with_unique_db(
         async |_, db_client| {
-            create_container_and_write_item(db_client, CONTAINER_ID, SATELLITE_REGION.as_str()).await
+            create_container_and_write_item(db_client, CONTAINER_ID, SATELLITE_REGION.as_str())
+                .await
         },
         Some(options_with_preferred_locations(vec![
             SATELLITE_REGION.into(),
