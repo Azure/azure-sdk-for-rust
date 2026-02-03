@@ -55,12 +55,12 @@ $finalExitCode = 0
 foreach ($packageName in $outputPackageNames) {
   $output = Invoke-LoggedCommand "cargo +$Toolchain semver-checks --package $packageName" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
   if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
-    Write-Warning "$packageName base version is a placeholder and will be ignored"
+    LogWarning "$packageName base version is a placeholder and will be ignored"
     continue
   }
 
   if ($output -match 'error: no crates with library targets selected') {
-    Write-Warning "$packageName is not a lib crate and will be ignored"
+    LogWarning "$packageName is not a lib crate and will be ignored"
     continue
   }
 
