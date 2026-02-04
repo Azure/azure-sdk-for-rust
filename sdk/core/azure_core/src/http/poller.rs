@@ -38,7 +38,7 @@ const MIN_RETRY_TIME: Duration = Duration::seconds(1);
 
 /// Represents the state of a [`Poller`].
 ///
-/// The generic parameter `C` is the type of the continuation token (typically an operation URL) passed 
+/// The generic parameter `C` is the type of the continuation token (typically an operation URL) passed
 /// to the poller callback closure. The default type is [`Url`], and most long-running operations use
 /// complete URLs to poll for status.
 ///

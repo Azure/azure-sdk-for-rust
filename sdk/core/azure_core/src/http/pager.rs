@@ -1688,9 +1688,7 @@ mod tests {
                                 r#"{"items":[1],"page":1}"#,
                             )
                             .into(),
-                            continuation: "https://example.com/page?next=token1"
-                                .parse()
-                                .unwrap(),
+                            continuation: "https://example.com/page?next=token1".parse().unwrap(),
                         }),
                         PagerState::More(url) if url.as_str().contains("token1") => {
                             Ok(PagerResult::Done {
