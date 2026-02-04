@@ -163,10 +163,12 @@ pub struct ChangeFeedRequestHeaders {
 impl ChangeFeedRequestHeaders {
     /// Creates headers for a change feed request based on the current state.
     pub fn from_state(state: &ChangeFeedState, pk_range_id: Option<&str>) -> Self {
+        use crate::pipeline::change_feed_headers;
+
         let a_im = if state.is_full_fidelity() {
-            "FullFidelityFeed"
+            change_feed_headers::FULL_FIDELITY_FEED
         } else {
-            "Incremental feed"
+            change_feed_headers::INCREMENTAL_FEED
         };
 
         let if_none_match = match &state.start_from.start_type {
@@ -193,7 +195,7 @@ impl ChangeFeedRequestHeaders {
         });
 
         let wire_format_version = if state.is_full_fidelity() {
-            Some("2021-09-15")
+            Some(change_feed_headers::WIRE_FORMAT_VERSION)
         } else {
             None
         };
