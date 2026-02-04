@@ -38,7 +38,7 @@ use serde::{Deserialize, Serialize};
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Default, SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
 #[safe(true)]
 pub struct PatchDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -160,7 +160,7 @@ impl PatchDocument {
     }
 }
 
-#[derive(SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(tag = "op")]
 #[serde(rename_all = "camelCase")]

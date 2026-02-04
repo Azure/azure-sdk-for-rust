@@ -16,6 +16,7 @@ pub(crate) mod resource_context;
 pub(crate) mod utils;
 
 pub mod models;
+pub mod transactional_batch;
 
 #[doc(inline)]
 pub use clients::CosmosClient;
@@ -25,6 +26,9 @@ pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
+pub use transactional_batch::{
+    TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
+};
 
 pub use feed::{FeedPage, FeedPager};
 mod cosmos_request;
