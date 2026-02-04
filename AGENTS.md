@@ -121,9 +121,11 @@ cargo build --workspace
 
 ### Testing
 
+When running `cargo test`, use `--all-features` to ensure no tests are missed.
+
 ```bash
 # Run tests for a specific crate
-cargo test -p <crate-name>
+cargo test -p <crate-name> --all-features
 
 # Run integration tests with recordings
 cargo test -p <crate-name> --test <test-name>
