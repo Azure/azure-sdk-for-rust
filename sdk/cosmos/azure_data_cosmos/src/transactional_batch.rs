@@ -202,6 +202,30 @@ impl TransactionalBatch {
 }
 
 /// Represents a single operation within a transactional batch.
+///
+/// Each operation is serialized with the "operationType" field indicating the type
+/// of operation (e.g., "Create", "Read", "Delete"). The variant names match the
+/// Cosmos DB REST API requirements for transactional batch operations.
+///
+/// # Serialization Format
+///
+/// Operations are serialized as JSON objects with the following structure:
+///
+/// ```json
+/// {
+///   "operationType": "Create",
+///   "resourceBody": { /* item data */ }
+/// }
+/// ```
+///
+/// Or for operations that reference an existing item:
+///
+/// ```json
+/// {
+///   "operationType": "Read",
+///   "id": "item-id"
+/// }
+/// ```
 #[derive(Clone, SafeDebug, Serialize, Deserialize)]
 #[safe(true)]
 #[serde(tag = "operationType")]
