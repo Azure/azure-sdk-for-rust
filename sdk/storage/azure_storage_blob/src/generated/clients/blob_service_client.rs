@@ -6,7 +6,7 @@
 use crate::generated::models::{
     BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
     BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
-    BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersSegmentOptions,
+    BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersOptions,
     BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
     ListContainersSegmentResponse, StorageServiceStats,
 };
@@ -252,9 +252,9 @@ impl BlobServiceClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Service.listContainersSegment")]
-    pub fn list_containers_segment(
+    pub fn list_containers(
         &self,
-        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
+        options: Option<BlobServiceClientListContainersOptions<'_>>,
     ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat, String>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();

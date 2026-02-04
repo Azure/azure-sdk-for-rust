@@ -11,7 +11,7 @@ use azure_storage_blob::models::{
     BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
     BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlobContainerClientListBlobFlatSegmentOptions, BlobTags,
+    BlobClientSetTierOptions, BlobContainerClientListBlobsOptions, BlobTags,
     BlockBlobClientUploadOptions, DeleteSnapshotsOptionType, ListBlobsIncludeItem,
 };
 use azure_storage_blob_test::{
@@ -253,7 +253,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     assert_eq!(2, blob_items.len());
 
     // List Blobs With Versions
-    let list_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_options = BlobContainerClientListBlobsOptions {
         include: Some(vec![ListBlobsIncludeItem::Versions]),
         ..Default::default()
     };
@@ -650,7 +650,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     }
 
     // List Blobs With Snapshots
-    let list_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_options = BlobContainerClientListBlobsOptions {
         include: Some(vec![ListBlobsIncludeItem::Snapshots]),
         ..Default::default()
     };

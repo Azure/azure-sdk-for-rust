@@ -5,7 +5,7 @@ use azure_core::http::{ClientOptions, RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
-    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersOptions,
     BlobServiceProperties, BlockBlobClientUploadOptions, GeoReplicationStatusType,
 };
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
@@ -96,7 +96,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
         container_clients.push(container_client);
     }
 
-    let list_containers_options = BlobServiceClientListContainersSegmentOptions {
+    let list_containers_options = BlobServiceClientListContainersOptions {
         maxresults: Some(2),
         ..Default::default()
     };

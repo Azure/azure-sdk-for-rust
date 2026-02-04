@@ -1,13 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Re-export the generated BlobClient as the public type.
 pub use crate::generated::clients::BlobClient;
 
 use crate::{
-    generated::clients::AppendBlobClient as GeneratedAppendBlobClient,
-    generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
-    generated::clients::PageBlobClient as GeneratedPageBlobClient,
     logging::apply_storage_logging_defaults,
     models::{
         BlobClientDownloadOptions, BlobClientDownloadResult, BlockBlobClientUploadOptions,
@@ -136,40 +132,34 @@ impl BlobClient {
     /// Returns a new instance of AppendBlobClient.
     pub fn append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
-            client: GeneratedAppendBlobClient {
-                endpoint: self.endpoint.clone(),
-                pipeline: self.pipeline.clone(),
-                version: self.version.clone(),
-                tracer: self.tracer.clone(),
-            },
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
         }
     }
 
     /// Returns a new instance of BlockBlobClient.
     pub fn block_blob_client(&self) -> BlockBlobClient {
         BlockBlobClient {
-            client: GeneratedBlockBlobClient {
-                endpoint: self.endpoint.clone(),
-                pipeline: self.pipeline.clone(),
-                version: self.version.clone(),
-                tracer: self.tracer.clone(),
-            },
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
         }
     }
 
     /// Returns a new instance of PageBlobClient.
     pub fn page_blob_client(&self) -> PageBlobClient {
         PageBlobClient {
-            client: GeneratedPageBlobClient {
-                endpoint: self.endpoint.clone(),
-                pipeline: self.pipeline.clone(),
-                version: self.version.clone(),
-                tracer: self.tracer.clone(),
-            },
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
         }
     }
 
-    // TODO: Can we just rename endpoint() on generated to this?
+    // TODO: Can we just rename endpoint() on generated to this? Applies widely.
     /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.endpoint
@@ -217,6 +207,7 @@ impl BlobClient {
         })
     }
 
+    // TODO: Partitioned upload will obsolete this wrapper.
     /// Downloads a blob from the service, including its metadata and properties.
     ///
     /// * `options` - Optional configuration for the request.
@@ -227,6 +218,7 @@ impl BlobClient {
         self.download_internal(options).await
     }
 
+    // TODO: Partitioned upload will obsolete this wrapper.
     /// Creates a new blob from a data source.
     ///
     /// # Arguments
@@ -250,7 +242,6 @@ impl BlobClient {
         }
 
         self.block_blob_client()
-            .client
             .upload_internal(data, content_length, Some(options))
             .await
     }

@@ -7,11 +7,11 @@ use crate::generated::models::{
     BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
     BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientCreateContainerOptions, BlobContainerClientDeleteContainerOptions,
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
     BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsFlatSegmentResponse,
@@ -301,9 +301,9 @@ impl BlobContainerClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.create")]
-    pub async fn create(
+    pub async fn create_container(
         &self,
-        options: Option<BlobContainerClientCreateOptions<'_>>,
+        options: Option<BlobContainerClientCreateContainerOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
@@ -357,9 +357,9 @@ impl BlobContainerClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.delete")]
-    pub async fn delete(
+    pub async fn delete_container(
         &self,
-        options: Option<BlobContainerClientDeleteOptions<'_>>,
+        options: Option<BlobContainerClientDeleteContainerOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
@@ -693,9 +693,9 @@ impl BlobContainerClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.listBlobFlatSegment")]
-    pub fn list_blob_flat_segment(
+    pub fn list_blobs(
         &self,
-        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat, String>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();

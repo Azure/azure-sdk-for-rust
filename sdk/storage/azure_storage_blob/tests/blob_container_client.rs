@@ -10,7 +10,7 @@ use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
     SignedIdentifiers,
 };
@@ -76,7 +76,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     // Set Metadata With Values
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
     container_client
-        .set_metadata(update_metadata.clone(), None)
+        .set_metadata(&update_metadata, None)
         .await?;
 
     // Assert
@@ -85,7 +85,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(update_metadata, response_metadata);
 
     // Set Metadata No Values (Clear Metadata)
-    container_client.set_metadata(HashMap::new(), None).await?;
+    container_client.set_metadata(&HashMap::new(), None).await?;
 
     // Assert
     let response = container_client.get_properties(None).await?;
@@ -177,7 +177,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Continuation Token with Token Provided
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
         maxresults: Some(2),
         ..Default::default()
     };
@@ -195,7 +195,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
         marker: continuation_token,
         ..Default::default()
     };
@@ -279,7 +279,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
         ..Default::default()
     };
     container_client
-        .set_metadata(update_metadata, Some(set_metadata_options))
+        .set_metadata(&update_metadata, Some(set_metadata_options))
         .await?;
 
     // Change Lease
