@@ -16,10 +16,9 @@ use azure_storage_blob::{
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
-        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, StorageError,
-        StorageErrorCode,
+        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, StorageErrorCode,
     },
-    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, get_container_name, StorageAccount,
@@ -692,7 +691,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         );
     }
 
-    container_client.delete(None).await?;
+    // container_client.delete(None).await?;
 
     Ok(())
 }

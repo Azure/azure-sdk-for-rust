@@ -74,7 +74,10 @@
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft
 
 # PRLabel: %Event Hubs
-/sdk/eventhubs/          @j7nw4r @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft @ronniegeraghty
+/sdk/eventhubs/          @j7nw4r
+
+% PRLabel: %Event hubs %Storage
+/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/          @j7nw4r @vincenttran-msft @jalauzon-msft
 
 # ServiceLabel: %Event Hubs
 # AzureSDKOwners: @j7nw4r
