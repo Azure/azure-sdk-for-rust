@@ -192,7 +192,6 @@ impl TestClient {
     ///
     /// This method supports:
     /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
-
     /// - Custom CosmosClient options
     pub async fn run_with_options<F>(
         mut test: F,
@@ -242,24 +241,21 @@ impl TestClient {
                 loop {
                     let test_result = test(&run).await;
 
-                    match &test_result {
-                        Err(e) => {
-                            // Check if the error is a 429
-                            let is_429 = e.to_string().contains("429")
-                                || e.to_string().contains("TooManyRequests")
-                                || e.to_string().contains("Too Many Requests");
+                    if let Err(e) = &test_result {
+                        // Check if the error is a 429
+                        let is_429 = e.to_string().contains("429")
+                            || e.to_string().contains("TooManyRequests")
+                            || e.to_string().contains("Too Many Requests");
 
-                            if is_429 {
-                                println!(
-                                    "Test got 429 (Too Many Requests). Retrying after {:?}...",
-                                    backoff
-                                );
-                                tokio::time::sleep(backoff).await;
-                                backoff = (backoff * 2).min(MAX_BACKOFF);
-                                continue;
-                            }
+                        if is_429 {
+                            println!(
+                                "Test got 429 (Too Many Requests). Retrying after {:?}...",
+                                backoff
+                            );
+                            tokio::time::sleep(backoff).await;
+                            backoff = (backoff * 2).min(MAX_BACKOFF);
+                            continue;
                         }
-                        _ => {}
                     }
 
                     break test_result;
