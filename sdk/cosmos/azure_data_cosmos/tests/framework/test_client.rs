@@ -7,7 +7,7 @@
 
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::regions::{EAST_US_2, WEST_US_3};
+use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, PartitionKey,
     Query,
@@ -36,8 +36,8 @@ pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-pub const HUB_REGION: &str = EAST_US_2;
-pub const SATELLITE_REGION: &str = WEST_US_3;
+pub const HUB_REGION: RegionName = EAST_US_2;
+pub const SATELLITE_REGION: RegionName = WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 
 /// Default timeout for tests (80 seconds).
