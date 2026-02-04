@@ -218,13 +218,13 @@ impl CheckpointStore for BlobCheckpointStore {
 
         debug!("Using checkpoint prefix: {}", prefix);
 
-        let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobsOptions {
-                prefix: Some(prefix),
-                include: Some(vec![ListBlobsIncludeItem::Metadata]),
-                ..Default::default()
-            },
-        ))?;
+        let mut blobs =
+            self.blob_container_client
+                .list_blobs(Some(BlobContainerClientListBlobsOptions {
+                    prefix: Some(prefix),
+                    include: Some(vec![ListBlobsIncludeItem::Metadata]),
+                    ..Default::default()
+                }))?;
         let mut checkpoints = Vec::new();
 
         let checkpoint = Checkpoint {
@@ -282,13 +282,13 @@ impl CheckpointStore for BlobCheckpointStore {
 
         debug!("Using ownership prefix: {}", prefix);
 
-        let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobsOptions {
-                prefix: Some(prefix),
-                include: Some(vec![ListBlobsIncludeItem::Metadata]),
-                ..Default::default()
-            },
-        ))?;
+        let mut blobs =
+            self.blob_container_client
+                .list_blobs(Some(BlobContainerClientListBlobsOptions {
+                    prefix: Some(prefix),
+                    include: Some(vec![ListBlobsIncludeItem::Metadata]),
+                    ..Default::default()
+                }))?;
         let mut ownerships = Vec::new();
 
         let ownership = Ownership {
