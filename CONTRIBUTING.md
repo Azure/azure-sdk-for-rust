@@ -84,6 +84,20 @@ or its dependencies, this is generally unnecessary nor recommended. It will take
 
 ### Building on Windows
 
+Developers on Windows must enable Developer Mode to support symlinks used in this repository. See [Developer Mode for Windows](https://learn.microsoft.com/windows/advanced-settings/developer-mode) for instructions on enabling Developer Mode.
+
+After enabling Developer Mode, you must also enable symlinks for Git in this repository:
+
+```pwsh
+git config core.symlinks true
+```
+
+Alternatively, you can enable symlinks globally for all Git repositories:
+
+```pwsh
+git config --global core.symlinks true
+```
+
 By default we use the [`openssl`](https://crates.io/crates/openssl) crate and, indirectly, the [`openssl-sys`](https://crates.io/crates/openssl-sys) crate. On Windows, you may need to download and build openssl before you can successfully compile.
 Since `openssl-sys` supports [vcpkg](https://learn.microsoft.com/vcpkg/), you can bootstrap OpenSSL:
 
