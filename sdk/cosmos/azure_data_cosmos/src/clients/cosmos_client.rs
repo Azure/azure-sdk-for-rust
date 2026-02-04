@@ -156,9 +156,8 @@ impl CosmosClient {
         // let account_properties: AccountProperties =
         //     global_endpoint_manager.get_database_account().await?.into_body().json()?;
 
-        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> = Arc::from(
-            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true),
-        );
+        let global_partition_endpoint_manager =
+            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true);
 
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,

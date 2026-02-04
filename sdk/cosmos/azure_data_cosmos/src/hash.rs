@@ -420,7 +420,7 @@ mod tests {
                 "19C08621B135968252FB34B4CF66F811",
             ),
             (
-                InnerPartitionKeyValue::Number(5.12312419050912359123),
+                InnerPartitionKeyValue::Number(5.123_124_190_509_12),
                 "0EF2E2D82460884AF0F6440BE4F726A8",
             ),
             (
@@ -517,8 +517,11 @@ mod tests {
         ];
 
         for (component, expected) in cases {
-            let actual =
-                get_hashed_partition_key_string(&[component.clone()], PartitionKeyKind::Hash, 1);
+            let actual = get_hashed_partition_key_string(
+                std::slice::from_ref(&component),
+                PartitionKeyKind::Hash,
+                1,
+            );
             assert_eq!(
                 actual, expected,
                 "Mismatch for V1 component hash (enable test after implementation)"

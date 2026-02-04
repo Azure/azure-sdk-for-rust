@@ -237,9 +237,9 @@ mod tests {
     fn test_murmurhash3_128_float() {
         let value: f64 = 374.0;
         let ba_le: [u8; 8] = value.to_le_bytes();
-        let mut ba_vec: Vec<u8> = ba_le.to_vec();
+        let ba_vec: Vec<u8> = ba_le.to_vec();
         let seed: u128 = 0;
-        let h = murmurhash3_128(&mut ba_vec, seed);
+        let h = murmurhash3_128(&ba_vec, seed);
         let _u128 = h;
         // known results
         assert_eq!(low64(h), 16628891264555680919);
@@ -262,9 +262,9 @@ mod tests {
     fn test_murmurhash3_32_float() {
         let value: f64 = 374.0;
         let ba_le: [u8; 8] = value.to_le_bytes();
-        let mut ba_vec: Vec<u8> = ba_le.to_vec();
+        let ba_vec: Vec<u8> = ba_le.to_vec();
         let seed: u32 = 0;
-        let h = murmurhash3_32(&mut ba_vec, seed);
+        let h = murmurhash3_32(&ba_vec, seed);
         let _u32 = h;
         // known results
         assert_eq!(h, 3717946798);
