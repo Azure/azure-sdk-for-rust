@@ -11,8 +11,8 @@ use crate::{
     options::ReadDatabaseOptions,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query,
-    QueryContainersOptions, ThroughputOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
+    ThroughputOptions,
 };
 use azure_core::http::response::Response;
 use std::sync::Arc;
@@ -25,7 +25,6 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     pipeline: Arc<GatewayPipeline>,
-    client_options: CosmosClientOptions,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -33,7 +32,6 @@ pub struct DatabaseClient {
 impl DatabaseClient {
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
-        client_options: CosmosClientOptions,
         database_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
@@ -47,7 +45,6 @@ impl DatabaseClient {
             containers_link,
             database_id,
             pipeline,
-            client_options,
             global_endpoint_manager,
             global_partition_endpoint_manager,
         }
@@ -60,7 +57,6 @@ impl DatabaseClient {
     pub fn container_client(&self, name: &str) -> ContainerClient {
         ContainerClient::new(
             self.pipeline.clone(),
-            self.client_options.clone(),
             &self.link,
             name,
             self.global_endpoint_manager.clone(),

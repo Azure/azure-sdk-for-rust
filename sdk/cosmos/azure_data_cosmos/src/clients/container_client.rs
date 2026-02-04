@@ -6,8 +6,8 @@ use crate::{
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query,
-    ReplaceContainerOptions, ThroughputOptions,
+    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
+    ThroughputOptions,
 };
 use std::sync::Arc;
 
@@ -36,7 +36,6 @@ pub struct ContainerClient {
 impl ContainerClient {
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
-        client_options: CosmosClientOptions,
         database_link: &ResourceLink,
         container_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
@@ -60,7 +59,6 @@ impl ContainerClient {
         ));
         let container_connection = Arc::from(ContainerConnection::new(
             pipeline.clone(),
-            client_options,
             container_cache,
             partition_key_range_cache,
             global_endpoint_manager.clone(),

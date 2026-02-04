@@ -3,14 +3,12 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::retry_handler::BackOffRetryHandler;
 use crate::models::CosmosResponse;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use crate::CosmosClientOptions;
 use azure_core::http::Context;
 use std::sync::Arc;
 
@@ -18,10 +16,8 @@ use std::sync::Arc;
 #[derive(Debug, Clone)]
 pub struct ContainerConnection {
     pipeline: Arc<GatewayPipeline>,
-    client_options: CosmosClientOptions,
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
-    retry_handler: BackOffRetryHandler,
     endpoint_manager: Arc<GlobalEndpointManager>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -36,23 +32,15 @@ impl ContainerConnection {
     /// * `pk_range_cache` - The cache used to resolve partition key ranges.
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
-        options: CosmosClientOptions,
         container_cache: Arc<ContainerCache>,
         pk_range_cache: Arc<PartitionKeyRangeCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
-        let retry_handler = BackOffRetryHandler::new(
-            endpoint_manager.clone(),
-            global_partition_endpoint_manager.clone(),
-        );
-
         Self {
             pipeline,
-            client_options: options,
             container_cache,
             pk_range_cache,
-            retry_handler,
             endpoint_manager,
             global_partition_endpoint_manager,
         }
@@ -63,8 +51,6 @@ impl ContainerConnection {
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<CosmosResponse<T>> {
-        cosmos_request.client_headers(&self.client_options);
-
         if self.is_partition_level_failover_enabled() {
             let container_rid = cosmos_request.clone().collection_name;
             let container_prop = self
@@ -248,7 +234,6 @@ mod tests {
 
         let connection = ContainerConnection::new(
             gateway_pipeline,
-            CosmosClientOptions::default(),
             container_cache,
             pk_range_cache,
             endpoint_manager,
@@ -273,7 +258,6 @@ mod tests {
         // Create multiple connections sharing the same caches
         let connection1 = ContainerConnection::new(
             pipeline.clone(),
-            CosmosClientOptions::default(),
             container_cache.clone(),
             pk_range_cache.clone(),
             endpoint_manager.clone(),
@@ -281,7 +265,6 @@ mod tests {
         );
         let connection2 = ContainerConnection::new(
             pipeline.clone(),
-            CosmosClientOptions::default(),
             container_cache.clone(),
             pk_range_cache.clone(),
             endpoint_manager.clone(),
@@ -289,7 +272,6 @@ mod tests {
         );
         let connection3 = ContainerConnection::new(
             pipeline,
-            CosmosClientOptions::default(),
             container_cache,
             pk_range_cache,
             endpoint_manager,
@@ -368,7 +350,6 @@ mod tests {
 
         let connection = ContainerConnection::new(
             pipeline,
-            CosmosClientOptions::default(),
             container_cache,
             pk_range_cache,
             endpoint_manager,

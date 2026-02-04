@@ -26,7 +26,6 @@ use azure_core::http::{LoggingOptions, RetryOptions};
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
-    client_options: CosmosClientOptions,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -97,7 +96,6 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            client_options: options,
             global_endpoint_manager,
             global_partition_endpoint_manager,
         })
@@ -173,7 +171,6 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
-            client_options: options,
             global_endpoint_manager,
             global_partition_endpoint_manager,
         })
@@ -216,7 +213,6 @@ impl CosmosClient {
     pub fn database_client(&self, id: &str) -> DatabaseClient {
         DatabaseClient::new(
             self.pipeline.clone(),
-            self.client_options.clone(),
             id,
             self.global_endpoint_manager.clone(),
             self.global_partition_endpoint_manager.clone(),
