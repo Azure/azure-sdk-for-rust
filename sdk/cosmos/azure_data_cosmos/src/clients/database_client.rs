@@ -15,7 +15,6 @@ use std::sync::Arc;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use azure_core::http::response::Response;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
