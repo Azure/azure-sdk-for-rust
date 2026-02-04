@@ -30,7 +30,6 @@ use crate::{
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
-use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
