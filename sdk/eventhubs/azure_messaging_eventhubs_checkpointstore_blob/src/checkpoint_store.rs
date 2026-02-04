@@ -17,7 +17,7 @@ use azure_messaging_eventhubs::{
 };
 use azure_storage_blob::{
     models::{
-        BlobClientSetMetadataOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobClientSetMetadataOptions, BlobContainerClientListBlobsOptions,
         BlockBlobClientUploadOptions, BlockBlobClientUploadResultHeaders, ListBlobsIncludeItem,
     },
     BlobContainerClient,
@@ -70,7 +70,7 @@ impl BlobCheckpointStore {
     ) -> Result<(Option<OffsetDateTime>, Option<Etag>)> {
         let blob_client = self.blob_container_client.blob_client(blob_name);
 
-        let result = blob_client.set_metadata(metadata.clone(), None).await;
+        let result = blob_client.set_metadata(&metadata, None).await;
         match result {
             Ok(r) => Ok(Self::process_storage_response_metadata(
                 r.headers().get_optional_string(&LAST_MODIFIED),
@@ -115,8 +115,9 @@ impl BlobCheckpointStore {
                 if_match: etag.map(|e| e.to_string()),
                 ..Default::default()
             };
+            let metadata_ref = metadata.unwrap_or_default();
             let result = blob_client
-                .set_metadata(metadata.unwrap_or_default(), Some(options))
+                .set_metadata(&metadata_ref, Some(options))
                 .await?;
             return Self::process_storage_response_metadata(
                 result.headers().get_optional_string(&LAST_MODIFIED),
@@ -218,7 +219,7 @@ impl CheckpointStore for BlobCheckpointStore {
         debug!("Using checkpoint prefix: {}", prefix);
 
         let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobFlatSegmentOptions {
+            BlobContainerClientListBlobsOptions {
                 prefix: Some(prefix),
                 include: Some(vec![ListBlobsIncludeItem::Metadata]),
                 ..Default::default()
@@ -282,7 +283,7 @@ impl CheckpointStore for BlobCheckpointStore {
         debug!("Using ownership prefix: {}", prefix);
 
         let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobFlatSegmentOptions {
+            BlobContainerClientListBlobsOptions {
                 prefix: Some(prefix),
                 include: Some(vec![ListBlobsIncludeItem::Metadata]),
                 ..Default::default()
