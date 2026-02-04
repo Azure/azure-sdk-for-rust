@@ -5,14 +5,14 @@ mod authorization_policy;
 mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::retry_handler::BackOffRetryHandler;
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::models::CosmosResponse;
 use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::CosmosClientOptions;
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
-use azure_core::http::{Context, PipelineSendOptions};
+use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
 use std::sync::Arc;
 use url::Url;
 
@@ -89,7 +89,9 @@ impl GatewayPipeline {
         };
 
         // Delegate to the retry handler, providing the sender callback
-        let raw_response = self.retry_handler.send(&mut cosmos_request, sender).await?;
-        Ok(raw_response.into())
+        let raw_response: RawResponse =
+            self.retry_handler.send(&mut cosmos_request, sender).await?;
+        let typed_response: Response<T> = raw_response.into();
+        Ok(CosmosResponse::new(typed_response, cosmos_request))
     }
 }

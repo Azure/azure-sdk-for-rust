@@ -3,13 +3,13 @@
 
 use std::{pin::Pin, task};
 
-use azure_core::http::{headers::Headers, pager::PagerResult, RawResponse};
+use azure_core::http::{headers::Headers, pager::PagerResult};
 #[cfg(not(target_arch = "wasm32"))]
 use futures::stream::BoxStream;
 use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
-use crate::{conditional_send::ConditionalSend, constants};
+use crate::{conditional_send::ConditionalSend, constants, models::CosmosResponse};
 
 /// Represents a single page of results from a Cosmos DB feed.
 ///
@@ -85,19 +85,21 @@ impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>, String> {
 }
 
 #[derive(Deserialize)]
-struct FeedBody<T> {
+pub(crate) struct FeedBody<T> {
     #[serde(alias = "Documents")]
     #[serde(alias = "DocumentCollections")]
     #[serde(alias = "Databases")]
     #[serde(alias = "Offers")]
-    items: Vec<T>,
+    pub(crate) items: Vec<T>,
 }
 
 impl<T: DeserializeOwned> FeedPage<T> {
-    pub(crate) async fn from_response(response: RawResponse) -> azure_core::Result<Self> {
+    pub(crate) async fn from_response(
+        response: CosmosResponse<FeedBody<T>>,
+    ) -> azure_core::Result<Self> {
         let headers = response.headers().clone();
         let continuation = headers.get_optional_string(&constants::CONTINUATION);
-        let body: FeedBody<T> = response.into_body().json()?;
+        let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self {
             items: body.items,

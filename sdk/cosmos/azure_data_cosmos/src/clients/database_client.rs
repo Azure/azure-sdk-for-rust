@@ -214,7 +214,7 @@ impl DatabaseClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions<'_>>,
-    ) -> azure_core::Result<Response<ThroughputProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.

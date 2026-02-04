@@ -11,9 +11,15 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
 use crate::{
-    conditional_send::ConditionalSend, constants, cosmos_request::CosmosRequest,
-    cosmos_request::CosmosRequestBuilder, operation_context::OperationType,
-    pipeline::GatewayPipeline, resource_context::ResourceLink, FeedPage, Query,
+    conditional_send::ConditionalSend,
+    constants,
+    cosmos_request::CosmosRequest,
+    cosmos_request::CosmosRequestBuilder,
+    feed::FeedBody,
+    operation_context::OperationType,
+    pipeline::GatewayPipeline,
+    resource_context::ResourceLink,
+    FeedPage, Query,
 };
 
 /// A query executor that sends queries directly to the gateway endpoint.
@@ -93,7 +99,7 @@ impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
         // Send through the pipeline
         let resp = self
             .http_pipeline
-            .send_raw(cosmos_request, self.context.to_borrowed())
+            .send::<FeedBody<T>>(cosmos_request, self.context.to_borrowed())
             .await?;
 
         let page = FeedPage::<T>::from_response(resp).await?;
