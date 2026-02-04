@@ -16,6 +16,18 @@ use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResp
 use std::sync::Arc;
 use url::Url;
 
+/// Success codes: 200-299 range plus 304 (Not Modified)
+const SUCCESS_CODES: [u16; 101] = {
+    let mut codes = [0u16; 101];
+    let mut i = 0;
+    while i < 100 {
+        codes[i] = 200 + i as u16;
+        i += 1;
+    }
+    codes[100] = 304;
+    codes
+};
+
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
 pub struct GatewayPipeline {
@@ -60,17 +72,6 @@ impl GatewayPipeline {
         let sender = |req: &mut CosmosRequest| {
             let pipeline = self.pipeline.clone();
             let ctx = context.clone();
-            // Success codes: 200-299 range plus 304 (Not Modified)
-            const SUCCESS_CODES: [u16; 101] = {
-                let mut codes = [0u16; 101];
-                let mut i = 0;
-                while i < 100 {
-                    codes[i] = 200 + i as u16;
-                    i += 1;
-                }
-                codes[100] = 304;
-                codes
-            };
             let success_options = CheckSuccessOptions {
                 success_codes: &SUCCESS_CODES,
             };
