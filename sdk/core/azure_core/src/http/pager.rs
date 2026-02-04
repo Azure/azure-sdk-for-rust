@@ -17,6 +17,46 @@ use pin_project::pin_project;
 use std::{fmt, future::Future, ops::Deref, pin::Pin, sync::Arc, task};
 
 /// Represents the state of a [`Pager`] or [`PageIterator`].
+///
+/// The generic parameter `C` is the type of the continuation token passed to the pager callback closure.
+/// The default type is [`Url`], but it can be any type that makes sense for your pagination pattern.
+///
+/// # Common Continuation Token Types
+///
+/// - **[`Url`] (default)**: Use this when the API returns a complete URL for the next page.
+///   The callback can use the URL directly without modification, or update query parameters as needed.
+///   This pattern is common with REST APIs that follow the "next link" pagination pattern.
+///
+///   ```rust,no_run
+///   # use azure_core::http::{pager::{PagerState, PagerResult, Pager}, Url};
+///   # fn example(next_link: PagerState<Url>) {
+///   match next_link {
+///       PagerState::Initial => { /* fetch first page */ }
+///       PagerState::More(url) => {
+///           // Use the URL directly or modify query parameters
+///           // let mut url = url.clone();
+///           // url.query_pairs_mut().append_pair("api-version", "2024-01-01");
+///       }
+///   }
+///   # }
+///   ```
+///
+/// - **[`String`]**: Use this when the API returns a simple string token (marker) for the next page.
+///   The callback typically adds this as a query parameter to a base URL.
+///   This pattern is common with marker-based pagination (e.g., Azure Storage services).
+///
+///   ```rust,no_run
+///   # use azure_core::http::{pager::{PagerState, PagerResult, Pager}, Url};
+///   # fn example(marker: PagerState<String>, mut base_url: Url) {
+///   match marker {
+///       PagerState::Initial => { /* fetch first page */ }
+///       PagerState::More(marker) => {
+///           // Add the marker as a query parameter
+///           // base_url.query_pairs_mut().append_pair("marker", &marker);
+///       }
+///   }
+///   # }
+///   ```
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum PagerState<C = Url> {
     /// The pager should fetch the initial page.
@@ -195,6 +235,16 @@ where
 /// }
 /// # Ok(()) }
 /// ```
+///
+/// # Continuation Token Types
+///
+/// The `C` type parameter specifies the type of continuation token used for pagination.
+/// The default is [`Url`], but you can specify other types based on your pagination pattern:
+///
+/// - **[`Url`] (default)**: For APIs that return complete URLs for the next page (e.g., KeyVault services)
+/// - **[`String`]**: For APIs that return simple string tokens/markers (e.g., Azure Storage services)
+///
+/// See [`PagerState`] for more information about choosing the appropriate continuation token type.
 pub type Pager<P, F = JsonFormat, C = Url> = ItemIterator<Response<P, F>, C>;
 
 /// A pinned boxed [`Future`] that can be stored and called dynamically.
@@ -1620,5 +1670,83 @@ mod tests {
                 }
             })
         }
+    }
+
+    /// Test demonstrating that Pager works with Url continuation tokens (typical for KeyVault-style APIs)
+    #[tokio::test]
+    async fn pager_with_url_continuation() {
+        use crate::http::Url;
+
+        let pager: Pager<Page, JsonFormat, Url> = Pager::new(
+            |continuation: PagerState<Url>, _ctx| {
+                Box::pin(async move {
+                    match continuation {
+                        PagerState::Initial => Ok(PagerResult::More {
+                            response: RawResponse::from_bytes(
+                                StatusCode::Ok,
+                                HashMap::new().into(),
+                                r#"{"items":[1],"page":1}"#,
+                            )
+                            .into(),
+                            continuation: "https://example.com/page?next=token1"
+                                .parse()
+                                .unwrap(),
+                        }),
+                        PagerState::More(url) if url.as_str().contains("token1") => {
+                            Ok(PagerResult::Done {
+                                response: RawResponse::from_bytes(
+                                    StatusCode::Ok,
+                                    HashMap::new().into(),
+                                    r#"{"items":[2],"page":2}"#,
+                                )
+                                .into(),
+                            })
+                        }
+                        _ => panic!("Unexpected continuation URL"),
+                    }
+                })
+            },
+            None,
+        );
+
+        let items: Vec<i32> = pager.try_collect().await.unwrap();
+        assert_eq!(vec![1, 2], items.as_slice());
+    }
+
+    /// Test demonstrating that Pager works with String continuation tokens (typical for Storage-style APIs)
+    #[tokio::test]
+    async fn pager_with_string_continuation() {
+        let pager: Pager<Page, JsonFormat, String> = Pager::new(
+            |continuation: PagerState<String>, _ctx| {
+                Box::pin(async move {
+                    match continuation {
+                        PagerState::Initial => Ok(PagerResult::More {
+                            response: RawResponse::from_bytes(
+                                StatusCode::Ok,
+                                HashMap::new().into(),
+                                r#"{"items":[10],"page":1}"#,
+                            )
+                            .into(),
+                            continuation: "marker-abc123".into(),
+                        }),
+                        PagerState::More(ref marker) if marker == "marker-abc123" => {
+                            Ok(PagerResult::Done {
+                                response: RawResponse::from_bytes(
+                                    StatusCode::Ok,
+                                    HashMap::new().into(),
+                                    r#"{"items":[20],"page":2}"#,
+                                )
+                                .into(),
+                            })
+                        }
+                        _ => panic!("Unexpected continuation marker"),
+                    }
+                })
+            },
+            None,
+        );
+
+        let items: Vec<i32> = pager.try_collect().await.unwrap();
+        assert_eq!(vec![10, 20], items.as_slice());
     }
 }

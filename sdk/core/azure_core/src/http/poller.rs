@@ -37,6 +37,32 @@ const DEFAULT_RETRY_TIME: Duration = Duration::seconds(30);
 const MIN_RETRY_TIME: Duration = Duration::seconds(1);
 
 /// Represents the state of a [`Poller`].
+///
+/// The generic parameter `C` is the type of the continuation token (typically an operation URL) passed 
+/// to the poller callback closure. The default type is [`Url`], and most long-running operations use
+/// complete URLs to poll for status.
+///
+/// # Continuation Token Type
+///
+/// - **[`Url`] (default)**: The standard choice for polling operations. The operation URL returned from
+///   the initial request or status response is passed to subsequent polling requests.
+///   
+///   ```rust,no_run
+///   # use azure_core::http::{poller::{PollerState, PollerResult}, Url};
+///   # fn example(operation_url: PollerState<Url>) {
+///   match operation_url {
+///       PollerState::Initial => { /* Start the operation */ }
+///       PollerState::More(url) => {
+///           // Poll the operation status at the URL
+///           // let mut url = url.clone();
+///           // url.query_pairs_mut().append_pair("api-version", "2024-01-01");
+///       }
+///   }
+///   # }
+///   ```
+///
+/// - **Other types**: The generic `C` type must implement `AsRef<str> + ConditionalSend + 'static`,
+///   allowing for alternative implementations if needed. However, `Url` is recommended for consistency.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum PollerState<C = Url> {
     /// The poller should fetch the initial status.
@@ -388,7 +414,8 @@ where
     /// Creates a [`Poller`] from a callback that will be called repeatedly to monitor a long-running operation (LRO).
     ///
     /// This method expects a callback that accepts a single [`PollerState`] parameter, and returns a [`PollerResult`] value asynchronously.
-    /// The `N` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
+    /// The `C` type parameter is the type of the continuation token (typically an operation URL). It may be any type that implements
+    /// `AsRef<str> + ConditionalSend + 'static`. The default and recommended type is [`Url`].
     /// The `M` type parameter must implement [`StatusMonitor`].
     ///
     /// The stream will yield [`Response`] values for each intermediate response while the operation is in progress
@@ -1853,5 +1880,57 @@ mod tests {
 
         // Verify both calls were made
         assert_eq!(*call_count.lock().unwrap(), 2);
+    }
+
+    /// Test demonstrating that Poller works with Url continuation tokens (standard pattern)
+    #[tokio::test]
+    async fn poller_with_url_continuation() {
+        let poller: Poller<TestStatus> = Poller::new(
+            |state: PollerState<Url>, _options| {
+                Box::pin(async move {
+                    match state {
+                        PollerState::Initial => Ok(PollerResult::InProgress {
+                            response: RawResponse::from_bytes(
+                                StatusCode::Accepted,
+                                Headers::new(),
+                                r#"{"status":"InProgress"}"#,
+                            )
+                            .into(),
+                            retry_after: Duration::seconds(1),
+                            continuation_token: "https://example.com/operations/123"
+                                .parse()
+                                .unwrap(),
+                        }),
+                        PollerState::More(url) if url.as_str().contains("123") => {
+                            Ok(PollerResult::Succeeded {
+                                response: RawResponse::from_bytes(
+                                    StatusCode::Ok,
+                                    Headers::new(),
+                                    r#"{"status":"Succeeded"}"#,
+                                )
+                                .into(),
+                                target: Box::new(|| {
+                                    Box::pin(async {
+                                        Ok(RawResponse::from_bytes(
+                                            StatusCode::Ok,
+                                            Headers::new(),
+                                            r#"{"id":"123","name":"test"}"#,
+                                        )
+                                        .into())
+                                    })
+                                }),
+                            })
+                        }
+                        _ => panic!("Unexpected poller state"),
+                    }
+                })
+            },
+            None,
+        );
+
+        let result = poller.await.unwrap();
+        let output: TestOutput = result.into_model().unwrap();
+        assert_eq!(output.id.as_deref(), Some("123"));
+        assert_eq!(output.name.as_deref(), Some("test"));
     }
 }
