@@ -450,6 +450,28 @@ mod tests {
     }
 
     #[test]
+    fn to_raw_request_batch_sets_batch_headers() {
+        let req = make_base_request(OperationType::Batch);
+        let raw = req.into_raw_request();
+        let has_batch_request = raw
+            .headers()
+            .iter()
+            .any(|(n, v)| n == &constants::COSMOS_IS_BATCH_REQUEST && v.as_str() == "True");
+        let has_batch_atomic = raw
+            .headers()
+            .iter()
+            .any(|(n, v)| n == &constants::COSMOS_BATCH_ATOMIC && v.as_str() == "True");
+        assert!(
+            has_batch_request,
+            "Expected x-ms-cosmos-is-batch-request header to be set"
+        );
+        assert!(
+            has_batch_atomic,
+            "Expected x-ms-cosmos-batch-atomic header to be set"
+        );
+    }
+
+    #[test]
     fn to_raw_request_read_omits_write_headers() {
         let req = make_base_request(OperationType::Read);
         let raw = req.into_raw_request();

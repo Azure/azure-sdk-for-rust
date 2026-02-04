@@ -418,4 +418,30 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn serialize_batch_operations_format() -> Result<(), Box<dyn std::error::Error>> {
+        let item = TestItem {
+            id: "item1".to_string(),
+            value: 42,
+        };
+
+        let batch = TransactionalBatch::new("test_partition")
+            .create_item(&item)?
+            .read_item("item2")
+            .replace_item("item3", &item)?;
+
+        let operations = batch.operations();
+        let serialized = serde_json::to_string_pretty(operations)?;
+
+        // Verify the structure matches Cosmos DB expectations
+        assert!(serialized.contains("\"operationType\": \"Create\""));
+        assert!(serialized.contains("\"operationType\": \"Read\""));
+        assert!(serialized.contains("\"operationType\": \"Replace\""));
+        assert!(serialized.contains("\"resourceBody\""));
+        assert!(serialized.contains("\"id\": \"item2\""));
+        assert!(serialized.contains("\"id\": \"item3\""));
+
+        Ok(())
+    }
 }
