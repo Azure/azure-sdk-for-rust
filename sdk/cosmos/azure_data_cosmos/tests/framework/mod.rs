@@ -17,9 +17,6 @@
 pub mod test_client;
 pub mod test_data;
 
-#[cfg(feature = "preview_query_engine")]
-pub mod query_engine;
-
 pub use test_client::{
     get_effective_hub_endpoint, get_global_endpoint, TestClient, TestOptions, TestRunContext,
     DEFAULT_TEST_TIMEOUT, HUB_REGION, SATELLITE_REGION,
