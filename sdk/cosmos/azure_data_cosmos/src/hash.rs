@@ -420,7 +420,7 @@ mod tests {
                 "19C08621B135968252FB34B4CF66F811",
             ),
             (
-                InnerPartitionKeyValue::Number(5.123_124_190_509_123_591_23),
+                InnerPartitionKeyValue::Number(5.123_124_190_509_124),
                 "0EF2E2D82460884AF0F6440BE4F726A8",
             ),
             (
