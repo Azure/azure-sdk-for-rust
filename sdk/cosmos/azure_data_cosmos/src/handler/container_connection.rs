@@ -11,7 +11,7 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use crate::CosmosClientOptions;
-use azure_core::http::{Context, Response};
+use azure_core::http::Context;
 use std::sync::Arc;
 
 /// Handler for managing transport-level operations with Cosmos DB.

@@ -180,9 +180,10 @@ impl GlobalPartitionEndpointManager {
 
         let self_clone = Arc::clone(self);
         // Use the runtime-agnostic spawn from azure_core
-        let _ = get_async_runtime().spawn(Box::pin(async move {
+        // Explicitly drop the JoinHandle since this is a fire-and-forget background task
+        drop(get_async_runtime().spawn(Box::pin(async move {
             self_clone.initiate_circuit_breaker_failback_loop().await;
-        }));
+        })));
     }
 
     /// Runs a continuous loop to refresh connections to failed backend replicas.

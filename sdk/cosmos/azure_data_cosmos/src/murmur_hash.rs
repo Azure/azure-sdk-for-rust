@@ -124,7 +124,7 @@ pub fn murmurhash3_128(span: &[u8], seed: u128) -> u128 {
         k2 ^= (span[position + 9] as u64) << 8;
     }
     if n >= 9 {
-        k2 ^= (span[position + 8] as u64) << 0;
+        k2 ^= span[position + 8] as u64;
     }
 
     if k2 != 0 {
@@ -156,7 +156,7 @@ pub fn murmurhash3_128(span: &[u8], seed: u128) -> u128 {
         k1 ^= (span[position + 1] as u64) << 8;
     }
     if n >= 1 {
-        k1 ^= (span[position + 0] as u64) << 0;
+        k1 ^= span[position] as u64;
         k1 = k1.wrapping_mul(c1);
         k1 = rotate_left_64(k1, 31);
         k1 = k1.wrapping_mul(c2);

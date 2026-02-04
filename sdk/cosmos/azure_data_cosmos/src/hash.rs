@@ -147,8 +147,8 @@ impl InnerPartitionKeyValue {
                     short_string = true;
                     size
                 };
-                for i in 0..write_len {
-                    let mut b = utf8[i];
+                for item in utf8.iter().take(write_len) {
+                    let mut b = *item;
                     if b < 0xFF {
                         b = b.wrapping_add(1);
                     }
@@ -243,7 +243,6 @@ fn get_effective_partition_key_for_hash_partitioning_v2(
 //     }
 //     pieces.join("").to_uppercase()
 // }
-
 /// V1: compute 32-bit murmur hash over concatenated component encodings (suffix 0x00 for strings),
 /// convert hash (u32) to f64 (possible precision loss is intentional to mirror other sdks), then binary-encode
 /// [hash_value_as_number] + truncated original components using V1 binary rules.
