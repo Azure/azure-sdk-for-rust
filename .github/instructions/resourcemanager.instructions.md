@@ -38,3 +38,11 @@ applyTo: "sdk/*/azure_resourcemanager_*/"
     - Troubleshooting information.
     - Contributing information.
     - Run markdownlint on the `README.md` and fix all issues.
+
+- `Cargo.toml` should have a `dev-dependency` on `azure_core_test` to add the `tracing` feature:
+
+    ```toml
+    azure_core_test = { workspace = true, features = [
+        "tracing",
+    ] }
+    ```

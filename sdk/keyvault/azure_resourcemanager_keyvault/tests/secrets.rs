@@ -19,13 +19,10 @@ async fn secret_lifecycle(ctx: TestContext) -> Result<()> {
     recording.instrument(&mut options.client_options);
 
     let subscription_id = recording.var("KEYVAULT_SUBSCRIPTION_ID", None);
-    let client = KeyVaultClient::new(
-        subscription_id,
-        recording.credential(),
-        Some(options),
-    )?;
+    let client = KeyVaultClient::new(subscription_id, recording.credential(), Some(options))?;
 
     let resource_group = recording.var("KEYVAULT_RESOURCE_GROUP", None);
+    let location = recording.var("KEYVAULT_LOCATION", None);
     let vault_name = recording.random_string::<16>(Some("t"));
     let secret_name = recording.random_string::<16>(Some("s"));
     let tenant_id = recording.var("KEYVAULT_TENANT_ID", None);
@@ -41,7 +38,7 @@ async fn secret_lifecycle(ctx: TestContext) -> Result<()> {
     // First, create a vault to hold the secret
     println!("Creating vault: {}", vault_name);
     let vault_params = VaultCreateOrUpdateParameters {
-        location: Some("eastus".into()),
+        location: Some(location),
         properties: Some(VaultProperties {
             tenant_id: Some(tenant_id),
             sku: Some(Sku {

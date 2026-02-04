@@ -55,7 +55,7 @@ impl KeyVaultClient {
             .as_deref()
             .map_or_else(Default::default, Clone::clone);
         let endpoint = super::endpoint(&cloud)?;
-        let scope = super::audience(&cloud)?;
+        let scope = String::from(super::audience(&cloud)?) + "/.default";
         let auth_policy: Arc<dyn Policy> =
             Arc::new(BearerTokenAuthorizationPolicy::new(credential, vec![scope]));
         Ok(Self {

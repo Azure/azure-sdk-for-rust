@@ -22,6 +22,7 @@ async fn managed_hsm_lifecycle(ctx: TestContext) -> Result<()> {
     let client = KeyVaultClient::new(subscription_id, recording.credential(), Some(options))?;
 
     let resource_group = recording.var("KEYVAULT_RESOURCE_GROUP", None);
+    let location = recording.var("KEYVAULT_LOCATION", None);
     let hsm_name = recording.random_string::<16>(Some("t"));
     let tenant_id = recording.var("KEYVAULT_TENANT_ID", None);
     let object_id = recording.var("KEYVAULT_OBJECT_ID", None);
@@ -36,7 +37,7 @@ async fn managed_hsm_lifecycle(ctx: TestContext) -> Result<()> {
     // Create managed HSM parameters
     println!("Creating managed HSM: {}", hsm_name);
     let hsm_params = ManagedHsm {
-        location: Some("eastus".into()),
+        location: Some(location),
         properties: Some(ManagedHsmProperties {
             tenant_id: Some(tenant_id),
             initial_admin_object_ids: Some(vec![object_id.clone()]),
