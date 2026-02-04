@@ -74,7 +74,7 @@
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft
 
 # PRLabel: %Event Hubs
-/sdk/eventhubs/          @j7nw4r
+/sdk/eventhubs/          @j7nw4r @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft @ronniegeraghty
 
 # ServiceLabel: %Event Hubs
 # AzureSDKOwners: @j7nw4r
