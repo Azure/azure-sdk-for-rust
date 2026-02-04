@@ -5,27 +5,16 @@ mod authorization_policy;
 mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
-use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
+use crate::handler::retry_handler::BackOffRetryHandler;
 use crate::models::CosmosResponse;
+use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::{
-    constants,
-    models::ThroughputProperties,
-    resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, FeedPage, FeedPager, Query,
-};
+use crate::CosmosClientOptions;
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
-use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
+use azure_core::http::{Context, PipelineSendOptions};
 use std::sync::Arc;
 use url::Url;
-
-use crate::{
-    handler::retry_handler::{BackOffRetryHandler, RetryHandler},
-    resource_context::ResourceLink,
-    routing::global_endpoint_manager::GlobalEndpointManager,
-    CosmosClientOptions,
-};
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -61,7 +50,7 @@ impl GatewayPipeline {
         link.url(&self.endpoint)
     }
 
-    pub async fn send_raw(
+    pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
@@ -100,15 +89,7 @@ impl GatewayPipeline {
         };
 
         // Delegate to the retry handler, providing the sender callback
-        self.retry_handler.send(&mut cosmos_request, sender).await
-    }
-
-    pub async fn send<T>(
-        &self,
-        cosmos_request: CosmosRequest,
-        context: Context<'_>,
-    ) -> azure_core::Result<Response<T>> {
-        let raw_response = self.send_raw(cosmos_request, context).await?;
+        let raw_response = self.retry_handler.send(&mut cosmos_request, sender).await?;
         Ok(raw_response.into())
     }
 }

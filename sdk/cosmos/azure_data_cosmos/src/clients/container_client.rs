@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
+    clients::OffersClient,
     models::{ContainerProperties, CosmosResponse, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,

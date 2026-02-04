@@ -8,13 +8,13 @@
 
 use crate::{
     cosmos_request::CosmosRequest,
-    models::ThroughputProperties,
+    models::{CosmosResponse, ThroughputProperties},
     operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     FeedPage, Query,
 };
-use azure_core::http::{response::Response, Context};
+use azure_core::http::Context;
 use futures::TryStreamExt;
 use std::sync::Arc;
 
@@ -74,7 +74,7 @@ impl OffersClient {
         &self,
         context: Context<'_>,
         throughput: ThroughputProperties,
-    ) -> azure_core::Result<Response<ThroughputProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
         let response = self.read(context.clone()).await?;
         let mut current_throughput = response.unwrap_or_default();
         current_throughput.offer = throughput.offer;
@@ -87,9 +87,6 @@ impl OffersClient {
             .json(current_throughput)
             .build()?;
 
-        self.pipeline
-            .send_raw(cosmos_request, context)
-            .await
-            .map(Into::into)
+        self.pipeline.send(cosmos_request, context).await
     }
 }
