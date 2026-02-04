@@ -5,7 +5,6 @@ use crate::http::{
     headers::{HeaderValue, USER_AGENT},
     options::UserAgentOptions,
 };
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use std::{
     env::consts::{ARCH, OS},
     sync::Arc,
@@ -28,11 +27,14 @@ impl<'a> UserAgentPolicy {
     ///
     /// Panics if [`UserAgentOptions::application_id`] is greater than 24 characters.
     /// See [guidelines](https://azure.github.io/azure-sdk/general_azurecore.html#azurecore-http-telemetry-appid-length) for details.
+    ///
+    /// Panics if [`UserAgentOptions::application_id`] contains invalid characters.
+    /// Only RFC 9110 "tchar" tokens are allowed.
     pub fn new(
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,
         options: &UserAgentOptions,
-    ) -> crate::Result<Self> {
+    ) -> Self {
         Self::new_with_rustc_version(
             crate_name,
             crate_version,
@@ -46,7 +48,7 @@ impl<'a> UserAgentPolicy {
         crate_version: Option<&'a str>,
         rustc_version: Option<&'a str>,
         options: &UserAgentOptions,
-    ) -> crate::Result<Self> {
+    ) -> Self {
         const UNKNOWN: &str = "unknown";
         let mut crate_name = crate_name.unwrap_or(UNKNOWN);
         let crate_version = crate_version.unwrap_or(UNKNOWN);
@@ -66,30 +68,42 @@ impl<'a> UserAgentPolicy {
                         MAX_APPLICATION_ID_LEN + 1
                     );
                 }
-                // Allow unreserved characters: -, _, ., ~
-                // NON_ALPHANUMERIC includes everything except A-Z, a-z, 0-9.
-                // We remove the unreserved characters from the set to prevent encoding them.
-                const ENCODE_SET: percent_encoding::AsciiSet = NON_ALPHANUMERIC
-                    .remove(b'-')
-                    .remove(b'_')
-                    .remove(b'.')
-                    .remove(b'~');
-                let encoded_app_id = utf8_percent_encode(application_id, &ENCODE_SET);
-                format!("{encoded_app_id} azsdk-rust-{crate_name}/{crate_version} {platform_info}")
+
+                // RFC 9110 tchar validation
+                // tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+                //       / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+                //       / DIGIT / ALPHA
+                if !application_id.chars().all(|c| {
+                    c.is_ascii_alphanumeric()
+                        || matches!(
+                            c,
+                            '!' | '#'
+                                | '$'
+                                | '%'
+                                | '&'
+                                | '\''
+                                | '*'
+                                | '+'
+                                | '-'
+                                | '.'
+                                | '^'
+                                | '_'
+                                | '`'
+                                | '|'
+                                | '~'
+                        )
+                }) {
+                    panic!("application_id contains invalid characters. Only RFC 9110 tokens are allowed.");
+                }
+
+                format!("{application_id} azsdk-rust-{crate_name}/{crate_version} {platform_info}")
             }
             None => format!("azsdk-rust-{crate_name}/{crate_version} {platform_info}"),
         };
 
-        if header_str.contains(['\r', '\n']) {
-            return Err(crate::error::Error::new(
-                crate::error::ErrorKind::DataConversion,
-                "User agent header contains invalid characters",
-            ));
-        }
-
         let header = HeaderValue::from(header_str);
 
-        Ok(UserAgentPolicy { header })
+        UserAgentPolicy { header }
     }
 }
 
@@ -118,8 +132,7 @@ mod tests {
             Some("1.2.3"),
             Some("4.5.6"),
             &UserAgentOptions::default(),
-        )
-        .unwrap();
+        );
         assert_eq!(
             policy.header.as_str(),
             format!("azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
@@ -136,8 +149,7 @@ mod tests {
             Some("1.2.3"),
             Some("4.5.6"),
             &options,
-        )
-        .unwrap();
+        );
         assert_eq!(
             policy.header.as_str(),
             format!("my_app azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
@@ -148,8 +160,7 @@ mod tests {
     fn missing_env() {
         // Would simulate if option_env!("CARGO_PKG_NAME"), for example, returned None.
         let policy =
-            UserAgentPolicy::new_with_rustc_version(None, None, None, &UserAgentOptions::default())
-                .unwrap();
+            UserAgentPolicy::new_with_rustc_version(None, None, None, &UserAgentOptions::default());
         assert_eq!(
             policy.header.as_str(),
             format!("azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})")
@@ -175,73 +186,34 @@ mod tests {
     #[test]
     fn works_with_application_id_at_limit() {
         let options = UserAgentOptions {
-            application_id: Some("exactly_24_characters!".to_string()), // Exactly 24 characters
+            application_id: Some("exactly_24_characters!!!".to_string()), // Exactly 24 characters
         };
         let policy = UserAgentPolicy::new_with_rustc_version(
             Some("test"),
             Some("1.2.3"),
             Some("4.5.6"),
             &options,
-        )
-        .unwrap();
+        );
         assert_eq!(
             policy.header.as_str(),
-            format!("exactly_24_characters%21 azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
+            format!("exactly_24_characters!!! azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
     }
 
     #[test]
-    fn test_application_id_encoding() {
+    #[should_panic(
+        expected = "application_id contains invalid characters. Only RFC 9110 tokens are allowed."
+    )]
+    fn test_user_agent_invalid_chars() {
+        // "Space" is not allowed in tchar.
         let options = UserAgentOptions {
-            application_id: Some("test-app/id".to_string()),
+            application_id: Some("invalid application id".to_string()),
         };
-        let policy = UserAgentPolicy::new_with_rustc_version(
+        let _policy = UserAgentPolicy::new_with_rustc_version(
             Some("test"),
             Some("1.2.3"),
             Some("4.5.6"),
             &options,
-        )
-        .unwrap();
-        assert_eq!(
-            policy.header.as_str(),
-            format!("test-app%2Fid azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
-    }
-
-    #[tokio::test]
-    async fn test_user_agent_invalid_chars() {
-        // Now that validation is in new(), we should check that it returns an error
-        // for characters that cannot be in a header value even after encoding (if any).
-        // Standard ASCII control chars might be caught by HeaderValue::try_from.
-        // However, we are encoding the application_id.
-        // The rest of the string is constructed from crate_name/version which we assume are safe or don't control as easily here.
-        // Let's try to inject a newline via crate_name if possible?
-        // UserAgentPolicy::new takes crate_name.
-        // But let's check if the previous test case application_id="invalid\nheader" matches what we expect now.
-        // It should be encoded now, so it should NOT fail, unless we want to forbid newlines entirely before encoding?
-        // The requirements said: "URL Encode Application ID". So "invalid\n a header" becomes "invalid%0A a header".
-        // This is a valid header value.
-        // So the old test expectation that it fails might be wrong now if we encode it.
-        // Maintainer said: "use HeaderValue::try_from(header_string) inside the constructor to validate the entire final User-Agent string."
-        // If try_from fails, return DataConversion error.
-
-        // If we pass a crate_name with newline, that gets put directly into the string:
-        // format!("{encoded_app_id} azsdk-rust-{crate_name}/{crate_version} ...")
-        // So let's try injecting newline via crate_name to verify validation work.
-
-        let options = UserAgentOptions::default();
-        let result = UserAgentPolicy::new_with_rustc_version(
-            Some("te\nst"),
-            Some("1.2.3"),
-            Some("4.5.6"),
-            &options,
-        );
-
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            crate::error::ErrorKind::DataConversion
-        ));
     }
 }
