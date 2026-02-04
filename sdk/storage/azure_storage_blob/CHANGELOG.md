@@ -10,7 +10,14 @@
 
 - Renamed `BlobItemInternal` to `BlobItem`.
 - Renamed `BlobPropertiesInternal` to `BlobProperties`.
+- Renamed `PageBlobClient::upload_page()` to `upload_pages()`.
+- Renamed `PageBlobClient::clear_page()` to `clear_pages()`.
+- Renamed `BlobContainerClientListBlobFlatSegmentOptions` to `BlobContainerClientListBlobsOptions`.
+- Renamed `BlobServiceClientListContainersSegmentOptions` to `BlobServiceClientListContainersOptions`.
+- Renamed `BlobContainerClientCreateContainerOptions` to `BlobContainerClientCreateOptions`.
+- Renamed `BlobContainerClientDeleteContainerOptions` to `BlobContainerClientDeleteOptions`.
 - Changed `BlobClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
+- Changed `BlobContainerClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
 
 ## 0.8.0 (2026-01-21)
 

@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if container_client.exists().await? {
         println!("Container already exists, continuing...");
     } else {
-        container_client.create_container(None).await?;
+        container_client.create(None).await?;
         println!("Container created successfully");
     }
 

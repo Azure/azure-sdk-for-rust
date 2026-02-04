@@ -48,7 +48,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let mut container_clients = Vec::new();
     for container_name in container_names.keys() {
         let container_client = service_client.blob_container_client(&container_name.to_string());
-        container_client.create_container(None).await?;
+        container_client.create(None).await?;
         container_clients.push(container_client);
     }
 
@@ -72,7 +72,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     }
 
     for container_client in container_clients {
-        container_client.delete_container(None).await?;
+        container_client.delete(None).await?;
     }
 
     Ok(())
@@ -92,7 +92,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     let mut container_clients = Vec::new();
     for container_name in container_names.keys() {
         let container_client = service_client.blob_container_client(&container_name.to_string());
-        container_client.create_container(None).await?;
+        container_client.create(None).await?;
         container_clients.push(container_client);
     }
 
@@ -126,7 +126,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     assert!(page_count >= 2);
 
     for container_client in container_clients {
-        container_client.delete_container(None).await?;
+        container_client.delete(None).await?;
     }
 
     Ok(())
@@ -259,8 +259,8 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         "Failed to find \"{blob3_name}\" in filtered blob results."
     );
 
-    container_client_1.delete_container(None).await?;
-    container_client_2.delete_container(None).await?;
+    container_client_1.delete(None).await?;
+    container_client_2.delete(None).await?;
     Ok(())
 }
 

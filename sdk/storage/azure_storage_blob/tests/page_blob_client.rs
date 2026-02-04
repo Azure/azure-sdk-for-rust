@@ -51,7 +51,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(1024, content_length.unwrap());
     assert_eq!(BlobType::PageBlob, blob_type.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -82,7 +82,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(512, content_length.unwrap());
     assert_eq!(data, response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -117,7 +117,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(512, content_length.unwrap());
     assert_eq!(vec![0; 512], response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -165,7 +165,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(512, content_length.unwrap());
     assert_eq!(vec![b'A'; 512], response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -212,7 +212,7 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
     let blob_sequence_number = response.blob_sequence_number()?;
     assert_eq!(8, blob_sequence_number.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -268,7 +268,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     data_a.extend(&data_b);
     assert_eq!(data_a, response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -308,6 +308,6 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         assert_eq!(511, range.end.unwrap());
     }
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }

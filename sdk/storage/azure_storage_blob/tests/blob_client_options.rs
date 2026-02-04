@@ -82,7 +82,7 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
     );
     assert_eq!(version_2, props_v2.version_id()?.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -158,7 +158,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
     let retrieved_tags: HashMap<String, String> = response_tags.into();
     assert_eq!(HashMap::new(), retrieved_tags);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -220,7 +220,7 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
         props_current.access_tier()?.unwrap()
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -289,7 +289,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     assert_eq!(3, version_counts[blob_2_name.as_str()]);
     assert_eq!(2, current_versions);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -358,7 +358,7 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     let conditional_response = lease_blob_client.get_properties(Some(get_options)).await?;
     assert_eq!(2, conditional_response.content_length()?.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -369,7 +369,7 @@ async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(
     let container_client =
         get_container_client(recording, false, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
 
     // Create Version 1 & 2
     create_test_blob(&blob_client, None, None).await?;
@@ -475,7 +475,7 @@ async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn E
     let error = result.unwrap_err().http_status();
     assert_eq!(StatusCode::NotFound, error.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -554,7 +554,7 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
     assert!(status_code.is_success());
     assert_eq!(data_v2.to_vec(), response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -612,7 +612,7 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
     let base_props = blob_client.get_properties(None).await?;
     assert_eq!(new_base_metadata, base_props.metadata()?);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -682,7 +682,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     assert_eq!(3, snapshot_counts[blob_2_name.as_str()]);
     assert_eq!(2, base_blob_count);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -747,7 +747,7 @@ async fn test_blob_snapshot_delete_operations(ctx: TestContext) -> Result<(), Bo
     let result = blob_client.get_properties(None).await;
     assert!(result.is_err());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -808,7 +808,7 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
     let snapshot_tag_map: HashMap<String, String> = snapshot_tags.into();
     assert_eq!(HashMap::new(), snapshot_tag_map);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -874,6 +874,6 @@ async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn 
         .await;
     assert!(result.is_err());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }

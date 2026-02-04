@@ -976,9 +976,9 @@ pub struct BlobContainerClientChangeLeaseOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobContainerClient::create_container()`
+/// Options to be passed to `BlobContainerClient::create()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientCreateContainerOptions<'a> {
+pub struct BlobContainerClientCreateOptions<'a> {
     /// The public access setting for the container.
     pub access: Option<PublicAccessType>,
 
@@ -1000,9 +1000,9 @@ pub struct BlobContainerClientCreateContainerOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobContainerClient::delete_container()`
+/// Options to be passed to `BlobContainerClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientDeleteContainerOptions<'a> {
+pub struct BlobContainerClientDeleteOptions<'a> {
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 

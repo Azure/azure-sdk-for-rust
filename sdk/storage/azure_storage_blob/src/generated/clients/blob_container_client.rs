@@ -7,7 +7,7 @@ use crate::generated::models::{
     BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
     BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
-    BlobContainerClientCreateContainerOptions, BlobContainerClientDeleteContainerOptions,
+    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
@@ -301,9 +301,9 @@ impl BlobContainerClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.create")]
-    pub async fn create_container(
+    pub async fn create(
         &self,
-        options: Option<BlobContainerClientCreateContainerOptions<'_>>,
+        options: Option<BlobContainerClientCreateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
@@ -357,9 +357,9 @@ impl BlobContainerClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.delete")]
-    pub async fn delete_container(
+    pub async fn delete(
         &self,
-        options: Option<BlobContainerClientDeleteContainerOptions<'_>>,
+        options: Option<BlobContainerClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
@@ -692,7 +692,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.listBlobFlatSegment")]
+    #[tracing::function("Storage.Blob.Container.listBlobs")]
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,

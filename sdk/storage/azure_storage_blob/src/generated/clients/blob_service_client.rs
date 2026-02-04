@@ -251,7 +251,7 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Service.listContainersSegment")]
+    #[tracing::function("Storage.Blob.Service.listContainers")]
     pub fn list_containers(
         &self,
         options: Option<BlobServiceClientListContainersOptions<'_>>,
