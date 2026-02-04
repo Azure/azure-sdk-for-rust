@@ -10,7 +10,6 @@ mod key_vault_clients;
 use azure_core::{
     cloud::{CloudConfiguration, CustomConfiguration},
     error::ErrorKind,
-    http::Url,
     Error, Result,
 };
 
@@ -22,8 +21,8 @@ pub struct Audience;
 ///
 /// Use this when requesting tokens for Azure Resource Manager. Custom clouds must define an
 /// audience for `Audience` in the provided [`CustomConfiguration`].
-fn audience(cloud: &CloudConfiguration) -> Result<String> {
-    let audience = match cloud {
+fn audience(cloud: &CloudConfiguration) -> Result<&str> {
+    match cloud {
         CloudConfiguration::AzurePublic => Ok("https://management.core.windows.net/"),
         CloudConfiguration::AzureGovernment => Ok("https://management.core.usgovcloudapi.net/"),
         CloudConfiguration::AzureChina => Ok("https://management.core.chinacloudapi.cn/"),
@@ -39,10 +38,7 @@ fn audience(cloud: &CloudConfiguration) -> Result<String> {
             ErrorKind::Other,
             "cloud configuration is not supported",
         )),
-    }?;
-    let mut scope = Url::parse(audience)?;
-    scope.set_path("/.default");
-    Ok(scope.to_string())
+    }
 }
 
 /// Returns the default Azure Resource Manager endpoint for the specified cloud configuration.
