@@ -41,10 +41,6 @@ pub async fn change_feed_basic() -> Result<(), Box<dyn Error>> {
                 .await?;
             let container_client = db_client.container_client(&container_id);
 
-            // Start reading change feed from now
-            let mut options = QueryChangeFeedOptions::default();
-            options.start_from = Some(ChangeFeedStartFrom::Now);
-
             // Create some items
             let pk = format!("PK-{}", Uuid::new_v4());
             for i in 0..3 {
