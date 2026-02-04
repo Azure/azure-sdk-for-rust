@@ -152,18 +152,21 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
     let feed_ranges = container.read_feed_ranges(None).await?;
     println!("Container has {} feed ranges", feed_ranges.len());
 
-    // Read change feed from the beginning
-    let mut options = QueryChangeFeedOptions::default();
-    options.start_from = Some(ChangeFeedStartFrom::Beginning);
-    options.mode = Some(ChangeFeedMode::LatestVersion);
-    options.max_item_count = Some(100);
+    // Process each feed range separately (enables parallel processing)
+    for feed_range in feed_ranges {
+        let mut options = QueryChangeFeedOptions::default();
+        options.start_from = Some(ChangeFeedStartFrom::Beginning);
+        options.mode = Some(ChangeFeedMode::LatestVersion);
+        options.feed_range = Some(feed_range);
+        options.max_item_count = Some(100);
 
-    let mut pager = container.query_items_change_feed::<Item>(Some(options))?.into_pages();
+        let mut pager = container.query_items_change_feed::<Item>(Some(options))?.into_pages();
 
-    while let Some(result) = pager.next().await {
-        let page = result?;
-        for item in page.into_items() {
-            println!("Change feed item: {:?}", item);
+        while let Some(result) = pager.next().await {
+            let page = result?;
+            for item in page.into_items() {
+                println!("Change feed item: {:?}", item);
+            }
         }
     }
 
