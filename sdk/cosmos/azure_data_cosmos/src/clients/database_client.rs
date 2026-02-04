@@ -7,7 +7,7 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
     clients::ContainerClient,
-    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -94,7 +94,7 @@ impl DatabaseClient {
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<DatabaseProperties>> {
+    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
@@ -156,7 +156,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<ContainerProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
@@ -179,7 +179,7 @@ impl DatabaseClient {
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();

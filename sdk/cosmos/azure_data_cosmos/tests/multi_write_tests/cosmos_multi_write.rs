@@ -9,14 +9,14 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
+use azure_data_cosmos::regions::RegionName;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
     CosmosClientOptions, CreateContainerOptions,
 };
-use tracing_subscriber::layer::SubscriberExt;
-
 use framework::{TestClient, HUB_REGION, SATELLITE_REGION};
+use tracing_subscriber::layer::SubscriberExt;
 
 /// A simple layer that captures log messages into a shared buffer
 struct CaptureLayer {
@@ -68,7 +68,7 @@ fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
 }
 
 // Helper to avoid duplicating the same preferred-locations setup.
-fn options_with_preferred_locations(locations: Vec<Cow<'static, str>>) -> TestOptions {
+fn options_with_preferred_locations(locations: Vec<RegionName>) -> TestOptions {
     let client_options = CosmosClientOptions {
         application_preferred_regions: locations,
         ..Default::default()
@@ -153,7 +153,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // write to hub region
     TestClient::run_with_unique_db(
         async |_, db_client| {
-            create_container_and_write_item(db_client, CONTAINER_ID, HUB_REGION).await
+            create_container_and_write_item(db_client, CONTAINER_ID, HUB_REGION.as_str()).await
         },
         Some(options_with_preferred_locations(vec![
             HUB_REGION.into(),
@@ -176,7 +176,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
         // Verify the endpoint contains the hub region
         let hub_log = upsert_logs.iter().find(|log| {
             log.to_lowercase()
-                .contains(&HUB_REGION.to_lowercase().replace(" ", ""))
+                .contains(&HUB_REGION.as_str().to_lowercase().replace(" ", ""))
         });
         assert!(
             hub_log.is_some(),
@@ -192,7 +192,8 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // write to satellite region
     TestClient::run_with_unique_db(
         async |_, db_client| {
-            create_container_and_write_item(db_client, CONTAINER_ID, SATELLITE_REGION).await
+            create_container_and_write_item(db_client, CONTAINER_ID, SATELLITE_REGION.as_str())
+                .await
         },
         Some(options_with_preferred_locations(vec![
             SATELLITE_REGION.into(),
@@ -215,7 +216,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
         // Verify the endpoint contains the satellite region
         let satellite_log = upsert_logs.iter().find(|log| {
             log.to_lowercase()
-                .contains(&SATELLITE_REGION.to_lowercase().replace(" ", ""))
+                .contains(&SATELLITE_REGION.as_str().to_lowercase().replace(" ", ""))
         });
         assert!(
             satellite_log.is_some(),

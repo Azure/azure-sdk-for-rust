@@ -4,6 +4,7 @@
 
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::BackOffRetryHandler;
+use crate::models::CosmosResponse;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -61,7 +62,7 @@ impl ContainerConnection {
         &self,
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
-    ) -> azure_core::Result<Response<T>> {
+    ) -> azure_core::Result<CosmosResponse<T>> {
         cosmos_request.client_headers(&self.client_options);
 
         if self.is_partition_level_failover_enabled() {
