@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added support for `stage_block_from_url` to `BlockBlobClient`.
+- Added navigation method `BlobServiceClient::blob_client()`.
 
 ### Breaking Changes
 
@@ -18,6 +19,7 @@
 - Renamed `BlobServiceClientListContainersSegmentOptions` to `BlobServiceClientListContainersOptions`.
 - Renamed `BlobContainerClientCreateContainerOptions` to `BlobContainerClientCreateOptions`.
 - Renamed `BlobContainerClientDeleteContainerOptions` to `BlobContainerClientDeleteOptions`.
+- Removed `BlobServiceClient::from_url()`.
 - Changed `BlobClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
 - Changed `BlobContainerClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
 
