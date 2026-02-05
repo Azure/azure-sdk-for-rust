@@ -11,7 +11,7 @@ use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
 use framework::TestClient;
 use framework::TestRunContext;
-use framework::{get_effective_hub_endpoint, get_global_endpoint};
+use framework::get_effective_hub_endpoint;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
 use uuid::Uuid;
