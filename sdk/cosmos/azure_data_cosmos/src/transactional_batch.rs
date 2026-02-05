@@ -84,7 +84,7 @@ impl TransactionalBatch {
     /// Adds a create operation to the batch.
     ///
     /// # Arguments
-    /// * `item` - The item to create. Must implement [`Serialize`](serde::Serialize).
+    /// * `item` - The item to create. Must implement [`Serialize`].
     ///
     /// # Examples
     ///
@@ -123,7 +123,7 @@ impl TransactionalBatch {
     /// Adds an upsert operation to the batch.
     ///
     /// # Arguments
-    /// * `item` - The item to upsert. Must implement [`Serialize`](serde::Serialize).
+    /// * `item` - The item to upsert. Must implement [`Serialize`].
     pub fn upsert_item<T: Serialize>(mut self, item: T) -> Result<Self, serde_json::Error> {
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Upsert {
@@ -139,7 +139,7 @@ impl TransactionalBatch {
     ///
     /// # Arguments
     /// * `item_id` - The id of the item to replace.
-    /// * `item` - The new item data. Must implement [`Serialize`](serde::Serialize).
+    /// * `item` - The new item data. Must implement [`Serialize`].
     pub fn replace_item<T: Serialize>(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
