@@ -195,13 +195,13 @@ impl GlobalPartitionEndpointManager {
             // Use the runtime-agnostic sleep from azure_core
             get_async_runtime().sleep(interval).await;
 
-            info!("GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() trying to get address and open connections for failed locations.");
+            info!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() trying to get address and open connections for failed locations.");
 
             if let Err(e) = self
                 .try_open_connection_to_unhealthy_endpoints_and_initiate_failback()
                 .await
             {
-                tracing::error!("GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() - Unable to get address and open connections. Exception: {}", e);
+                tracing::error!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - Unable to get address and open connections. Exception: {}", e);
             }
         }
     }
@@ -210,7 +210,7 @@ impl GlobalPartitionEndpointManager {
     async fn try_open_connection_to_unhealthy_endpoints_and_initiate_failback(
         &self,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        info!("GlobalPartitionEndpointManager: InitiateCircuitBreakerFailbackLoop() - Attempting to open connections to unhealthy endpoints and initiate failback.");
+        info!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - Attempting to open connections to unhealthy endpoints and initiate failback.");
 
         let mut pk_range_to_endpoint_mappings: HashMap<
             PartitionKeyRange,
@@ -255,7 +255,7 @@ impl GlobalPartitionEndpointManager {
             {
                 if current_health_state == PartitionHealthStatus::Healthy {
                     info!(
-                        "Initiating Failback to endpoint: {}, for partition key range: {:?}",
+                        "Initiating failback to endpoint: {}, for partition key range: {:?}",
                         original_failed_location, pk_range
                     );
                     self.partition_key_range_to_location_for_read_and_write
@@ -427,6 +427,15 @@ impl GlobalPartitionEndpointManager {
         self.is_partition_level_circuit_breaker_enabled
             .load(Ordering::SeqCst)
             == 1
+    }
+
+    /// Checks if partition level failover is enabled.
+    ///
+    /// Returns `true` if either partition level circuit breaker or partition level
+    /// automatic failover is enabled.
+    pub fn is_partition_level_failover_enabled(&self) -> bool {
+        self.is_partition_level_circuit_breaker_enabled()
+            || self.is_partition_level_automatic_failover_enabled()
     }
 
     pub fn try_add_partition_level_location_override(&self, request: &mut CosmosRequest) -> bool {

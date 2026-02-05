@@ -248,14 +248,14 @@ mod tests {
 
     #[test]
     fn test_murmurhash3_128_string() {
-        let s = "afdgdd";
+        let s = "sample-test";
         let bytes = s.as_bytes();
         let seed: u128 = 0;
         let h = murmurhash3_128(bytes, seed);
         let _u128 = h;
         // known results
-        assert_eq!(low64(h), 2792699143512860960);
-        assert_eq!(high64(h), 15069672278200047189);
+        assert_eq!(low64(h), 9863137013172825203);
+        assert_eq!(high64(h), 15859947107521786564);
     }
 
     #[test]
@@ -272,12 +272,12 @@ mod tests {
 
     #[test]
     fn test_murmurhash3_32_string() {
-        let s = "afdgdd";
+        let s = "sample-test";
         let bytes = s.as_bytes();
         let seed: u32 = 0;
         let h = murmurhash3_32(bytes, seed);
         let _u32 = h;
         // known results
-        assert_eq!(h, 1099701186);
+        assert_eq!(h, 2066086989);
     }
 }

@@ -51,7 +51,10 @@ impl ContainerConnection {
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<CosmosResponse<T>> {
-        if self.is_partition_level_failover_enabled() {
+        if self
+            .global_partition_endpoint_manager
+            .is_partition_level_failover_enabled()
+        {
             let container_rid = cosmos_request.clone().collection_name;
             let container_prop = self
                 .container_cache
@@ -76,18 +79,6 @@ impl ContainerConnection {
 
         // Delegate to the retry handler, providing the sender callback
         self.pipeline.send(cosmos_request, context).await
-    }
-
-    /// Checks if partition level failover is enabled.
-    ///
-    /// Returns `true` if either partition level circuit breaker or partition level
-    /// automatic failover is enabled.
-    fn is_partition_level_failover_enabled(&self) -> bool {
-        self.global_partition_endpoint_manager
-            .is_partition_level_circuit_breaker_enabled()
-            || self
-                .global_partition_endpoint_manager
-                .is_partition_level_automatic_failover_enabled()
     }
 }
 

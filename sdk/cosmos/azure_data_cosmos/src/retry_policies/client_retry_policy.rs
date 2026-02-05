@@ -186,24 +186,16 @@ impl ClientRetryPolicy {
                 .route_to_location_endpoint(endpoint.clone());
         }
 
-        if self.is_partition_level_failover_enabled() && request.resource_type.is_partitioned() {
+        if self
+            .partition_key_range_location_cache
+            .is_partition_level_failover_enabled()
+            && request.resource_type.is_partitioned()
+        {
             self.partition_key_range_location_cache
                 .try_add_partition_level_location_override(request);
         }
 
         self.request = Some(request.clone());
-    }
-
-    /// Checks if partition level failover is enabled.
-    ///
-    /// Returns `true` if either partition level circuit breaker or partition level
-    /// automatic failover is enabled.
-    fn is_partition_level_failover_enabled(&self) -> bool {
-        self.partition_key_range_location_cache
-            .is_partition_level_circuit_breaker_enabled()
-            || self
-                .partition_key_range_location_cache
-                .is_partition_level_automatic_failover_enabled()
     }
 
     /// Determines whether a Data Plane request should be retried based on the response or error
@@ -452,7 +444,9 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::Forbidden
             && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
-            if self.is_partition_level_failover_enabled()
+            if self
+                .partition_key_range_location_cache
+                .is_partition_level_failover_enabled()
                 && self
                     .partition_key_range_location_cache
                     .try_mark_endpoint_unavailable_for_partition_key_range(
