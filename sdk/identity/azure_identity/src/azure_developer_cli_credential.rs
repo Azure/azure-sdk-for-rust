@@ -15,7 +15,7 @@ use azure_core::{
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
-use std::{ffi::OsString, sync::Arc};
+use std::{borrow::Cow, ffi::OsString, sync::Arc};
 use time::format_description::well_known::Rfc3339;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -34,6 +34,17 @@ where
     OffsetDateTime::parse(s, &Rfc3339).map_err(de::Error::custom)
 }
 
+/// The JSON structure that `azd` writes to stderr on errors.
+#[derive(Debug, Deserialize)]
+struct AzdErrorOutput {
+    data: AzdErrorData,
+}
+
+#[derive(Debug, Deserialize)]
+struct AzdErrorData {
+    message: String,
+}
+
 impl OutputProcessor for AzdTokenResponse {
     fn credential_name() -> &'static str {
         "AzureDeveloperCliCredential"
@@ -44,13 +55,16 @@ impl OutputProcessor for AzdTokenResponse {
         Ok(AccessToken::new(response.access_token, response.expires_on))
     }
 
-    fn get_error_message(stderr: &str) -> Option<&str> {
-        // azd embeds its "you need to log in" error message in JSON, so in that case we can provide a clearer one
-        if stderr.contains("azd auth login") {
-            Some("please run `azd auth login` from a command prompt before using this credential")
-        } else {
-            None
+    fn get_error_message(stderr: &str) -> Option<Cow<'_, str>> {
+        // Try to parse azd's JSON error output and extract the message
+        if let Ok(error_output) = from_json::<_, AzdErrorOutput>(stderr) {
+            let message = error_output.data.message.trim();
+            if !message.is_empty() {
+                return Some(Cow::Owned(message.to_string()));
+            }
         }
+        // Fall back to raw stderr if parsing fails or message is empty
+        None
     }
 
     fn tool_name() -> &'static str {
@@ -215,10 +229,57 @@ mod tests {
 
     #[tokio::test]
     async fn not_logged_in() {
-        let stderr = r#"{{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"\nERROR: not logged in, run `azd auth login` to login\n"}}"#;
+        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"\nERROR: not logged in, run `azd auth login` to login\n"}}"#;
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
+        // Should parse the JSON and extract the message (trimmed)
+        assert!(err.to_string().contains("ERROR: not logged in"));
         assert!(err.to_string().contains("azd auth login"));
+        // Should NOT contain the raw JSON
+        assert!(!err.to_string().contains("consoleMessage"));
+    }
+
+    #[tokio::test]
+    async fn json_error_parsing() {
+        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"ERROR: fetching token: some error occurred"}}"#;
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        // Should parse the JSON and extract the message
+        assert!(err
+            .to_string()
+            .contains("ERROR: fetching token: some error occurred"));
+        // Should NOT contain the raw JSON
+        assert!(!err.to_string().contains("consoleMessage"));
+        assert!(!err.to_string().contains("timestamp"));
+    }
+
+    #[tokio::test]
+    async fn invalid_json_fallback() {
+        let stderr = "not valid json at all";
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        // Should fall back to raw stderr when JSON parsing fails
+        assert!(err.to_string().contains("not valid json at all"));
+    }
+
+    #[tokio::test]
+    async fn empty_message_fallback() {
+        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"   "}}"#;
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        // Should fall back to raw stderr when message is empty/whitespace
+        assert!(err.to_string().contains("consoleMessage"));
+    }
+
+    #[tokio::test]
+    async fn whitespace_trimming() {
+        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"  \n  ERROR: some error  \n  "}}"#;
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        // Should trim whitespace from the extracted message
+        assert!(err.to_string().contains("ERROR: some error"));
+        // Should NOT have leading/trailing whitespace in the message part
+        assert!(!err.to_string().contains("  ERROR"));
     }
 
     #[tokio::test]

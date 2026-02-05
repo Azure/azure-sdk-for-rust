@@ -14,7 +14,7 @@ use azure_core::{
     time::OffsetDateTime,
 };
 use serde::Deserialize;
-use std::{ffi::OsString, sync::Arc};
+use std::{borrow::Cow, ffi::OsString, sync::Arc};
 use tracing::trace;
 
 /// The response from `az account get-access-token --output json`.
@@ -51,7 +51,7 @@ impl OutputProcessor for CliTokenResponse {
         "AzureCliCredential"
     }
 
-    fn get_error_message(_stderr: &str) -> Option<&str> {
+    fn get_error_message(_stderr: &str) -> Option<Cow<'_, str>> {
         // Azure CLI's errors are generally clear and more helpful than anything we'd write here
         None
     }
