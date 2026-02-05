@@ -3,7 +3,10 @@
 
 use std::{pin::Pin, task};
 
-use azure_core::http::{headers::Headers, pager::PagerResult};
+use azure_core::http::{
+    headers::Headers,
+    pager::{PagerContinuation, PagerResult},
+};
 #[cfg(not(target_arch = "wasm32"))]
 use futures::stream::BoxStream;
 use futures::Stream;
@@ -77,7 +80,7 @@ impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>> {
         match continuation {
             Some(continuation) => PagerResult::More {
                 response: value,
-                continuation: continuation.into(),
+                continuation: PagerContinuation::Token(continuation),
             },
             None => PagerResult::Done { response: value },
         }

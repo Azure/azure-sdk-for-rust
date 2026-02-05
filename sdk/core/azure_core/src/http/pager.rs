@@ -15,7 +15,7 @@ use crate::{
 use async_trait::async_trait;
 use futures::{stream::FusedStream, FutureExt, Stream};
 use pin_project::pin_project;
-use std::{fmt, future::Future, pin::Pin, str::FromStr, sync::Arc, task};
+use std::{fmt, future::Future, pin::Pin, sync::Arc, task};
 use typespec::error::ResultExt;
 
 /// Represents the state of a [`Pager`] or [`PageIterator`].
@@ -53,7 +53,7 @@ impl<P, F> PagerResult<Response<P, F>> {
         match response.headers().get_optional_string(header_name) {
             Some(continuation) => PagerResult::More {
                 response,
-                continuation: continuation.into(),
+                continuation: PagerContinuation::Token(continuation),
             },
             None => PagerResult::Done { response },
         }
@@ -74,49 +74,48 @@ impl<P> fmt::Debug for PagerResult<P> {
 
 /// Information returned by the server to continue to the next page.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PagerContinuation(String);
+#[non_exhaustive]
+pub enum PagerContinuation {
+    /// The continuation is a next link for client paging.
+    Link(Url),
+
+    /// The continuation is a token for server paging.
+    Token(String),
+}
 
 impl AsRef<str> for PagerContinuation {
     fn as_ref(&self) -> &str {
-        self.0.as_str()
+        match self {
+            Self::Link(next_link) => next_link.as_str(),
+            Self::Token(continuation_token) => continuation_token.as_str(),
+        }
     }
 }
 
 impl fmt::Display for PagerContinuation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.0.as_str())
+        f.write_str(self.as_ref())
     }
 }
 
-impl From<&str> for PagerContinuation {
-    fn from(value: &str) -> Self {
-        Self(value.into())
-    }
-}
-
-impl From<String> for PagerContinuation {
-    fn from(value: String) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Url> for PagerContinuation {
-    fn from(value: Url) -> Self {
-        Self(value.into())
-    }
-}
-
-impl FromStr for PagerContinuation {
-    type Err = std::convert::Infallible;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(s.into())
+impl From<PagerContinuation> for String {
+    fn from(value: PagerContinuation) -> Self {
+        match value {
+            PagerContinuation::Link(next_link) => String::from(next_link.as_str()),
+            PagerContinuation::Token(continuation_token) => continuation_token,
+        }
     }
 }
 
 impl TryFrom<PagerContinuation> for Url {
     type Error = crate::Error;
     fn try_from(value: PagerContinuation) -> Result<Self, Self::Error> {
-        value.0.parse().with_kind(ErrorKind::DataConversion)
+        match value {
+            PagerContinuation::Link(next_link) => Ok(next_link),
+            PagerContinuation::Token(continuation_token) => continuation_token
+                .parse()
+                .with_kind(ErrorKind::DataConversion),
+        }
     }
 }
 
@@ -210,8 +209,7 @@ pub type PagerResultFuture<P> =
     Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
 
 #[cfg(not(target_arch = "wasm32"))]
-type PagerFn<P> =
-    Box<dyn Fn(PagerState, PagerOptions<'static>) -> crate::Result<PagerResultFuture<P>> + Send>;
+type PagerFn<P> = Box<dyn Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send>;
 
 /// A pinned boxed [`Future`] that can be stored and called dynamically.
 ///
@@ -221,10 +219,7 @@ pub type PagerResultFuture<P> =
     Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + 'static>>;
 
 #[cfg(target_arch = "wasm32")]
-type PagerFn<P> = Box<
-    dyn Fn(PagerState, PagerOptions<'static>) -> crate::Result<PagerResultFuture<P>>
-        + ConditionalSend,
->;
+type PagerFn<P> = Box<dyn Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P>>;
 
 /// Options for configuring the behavior of a [`Pager`].
 #[derive(Clone)]
@@ -378,7 +373,7 @@ where
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{RawResponse, ItemIterator, pager::{Page, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, ItemIterator, pager::{Page, PagerContinuation, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -402,9 +397,9 @@ where
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
     ///     let mut req = base_req.clone();
-    ///     Ok(Box::pin(async move {
+    ///     Box::pin(async move {
     ///         if let PagerState::More(next_link) = next_link {
-    ///             let next_link: Url = next_link.try_into()?;
+    ///             let next_link: Url = next_link.try_into().expect("expected Url");
     ///             // Ensure the api-version from the client is appended.
     ///             let qp = next_link
     ///                 .query_pairs()
@@ -425,11 +420,11 @@ where
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
-    ///                 continuation: next_link.into(),
+    ///                 continuation: PagerContinuation::Link(next_link.parse()?),
     ///             },
     ///             None => PagerResult::Done { response: resp }
     ///         })
-    ///     }))
+    ///     })
     /// }, None);
     /// ```
     ///
@@ -457,7 +452,7 @@ where
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
-    ///     Ok(Box::pin(async move {
+    ///     Box::pin(async move {
     ///         if let PagerState::More(continuation) = continuation {
     ///             req.insert_header("x-ms-continuation", continuation.as_ref().to_string());
     ///         }
@@ -466,13 +461,11 @@ where
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
-    ///     }))
+    ///     })
     /// }, None);
     /// ```
     pub fn new<
-        F: Fn(PagerState, PagerOptions<'static>) -> crate::Result<PagerResultFuture<P>>
-            + ConditionalSend
-            + 'static,
+        F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + ConditionalSend + 'static,
     >(
         make_request: F,
         options: Option<PagerOptions<'static>>,
@@ -675,7 +668,7 @@ where
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{RawResponse, pager::{PageIterator, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, pager::{PageIterator, PagerContinuation, PagerOptions, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -690,9 +683,9 @@ where
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
     ///     let mut req = base_req.clone();
-    ///     Ok(Box::pin(async move {
+    ///     Box::pin(async move {
     ///         if let PagerState::More(next_link) = next_link {
-    ///             let next_link: Url = next_link.try_into()?;
+    ///             let next_link: Url = next_link.try_into().expect("expected Url");
     ///             // Ensure the api-version from the client is appended.
     ///             let qp = next_link
     ///                 .query_pairs()
@@ -713,11 +706,11 @@ where
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
-    ///                 continuation: next_link.into(),
+    ///                 continuation: PagerContinuation::Link(next_link.parse()?),
     ///             },
     ///             None => PagerResult::Done { response: resp }
     ///         })
-    ///     }))
+    ///     })
     /// }, None);
     /// ```
     ///
@@ -736,7 +729,7 @@ where
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
-    ///     Ok(Box::pin(async move {
+    ///     Box::pin(async move {
     ///         if let PagerState::More(continuation) = continuation {
     ///             req.insert_header("x-ms-continuation", continuation.as_ref().to_string());
     ///         }
@@ -745,13 +738,11 @@ where
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-ms-continuation")))
-    ///     }))
+    ///     })
     /// }, None);
     /// ```
     pub fn new<
-        F: Fn(PagerState, PagerOptions<'static>) -> crate::Result<PagerResultFuture<P>>
-            + ConditionalSend
-            + 'static,
+        F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + ConditionalSend + 'static,
     >(
         make_request: F,
         options: Option<PagerOptions<'static>>,
@@ -834,7 +825,7 @@ where
             State::Init => {
                 tracing::debug!("initial page request");
                 let options = this.options.clone();
-                let mut fut = (this.make_request)(PagerState::Initial, options)?;
+                let mut fut = (this.make_request)(PagerState::Initial, options);
 
                 match fut.poll_unpin(cx) {
                     task::Poll::Ready(result) => result,
@@ -854,7 +845,7 @@ where
                     .expect("expected continuation_token");
                 tracing::debug!("subsequent page request to {:?}", &continuation_token,);
 
-                let mut fut = (this.make_request)(PagerState::More(continuation_token), options)?;
+                let mut fut = (this.make_request)(PagerState::More(continuation_token), options);
 
                 match fut.poll_unpin(cx) {
                     task::Poll::Ready(result) => result,
@@ -972,7 +963,9 @@ impl<P> PartialEq for State<P> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ItemIterator, PageIterator, Pager, PagerOptions, PagerResult, PagerState};
+    use super::{
+        ItemIterator, PageIterator, Pager, PagerContinuation, PagerOptions, PagerResult, PagerState,
+    };
     use crate::http::{
         headers::{HeaderName, HeaderValue},
         pager::PagerResultFuture,
@@ -1004,7 +997,7 @@ mod tests {
     async fn callback_item_pagination() {
         let pager: Pager<Page> = Pager::new(
             |continuation: PagerState, _ctx| {
-                Ok(Box::pin(async move {
+                Box::pin(async move {
                     match continuation {
                         PagerState::Initial => Ok(PagerResult::More {
                             response: RawResponse::from_bytes(
@@ -1017,7 +1010,7 @@ mod tests {
                                 r#"{"items":[1],"page":1}"#,
                             )
                             .into(),
-                            continuation: "1".into(),
+                            continuation: PagerContinuation::Token("1".into()),
                         }),
                         PagerState::More(ref i) if i.as_ref() == "1" => Ok(PagerResult::More {
                             response: RawResponse::from_bytes(
@@ -1030,7 +1023,7 @@ mod tests {
                                 r#"{"items":[2],"page":2}"#,
                             )
                             .into(),
-                            continuation: "2".into(),
+                            continuation: PagerContinuation::Token("2".into()),
                         }),
                         PagerState::More(ref i) if i.as_ref() == "2" => Ok(PagerResult::Done {
                             response: RawResponse::from_bytes(
@@ -1048,7 +1041,7 @@ mod tests {
                             panic!("Unexpected continuation value")
                         }
                     }
-                }))
+                })
             },
             None,
         );
@@ -1060,7 +1053,7 @@ mod tests {
     async fn callback_item_pagination_error() {
         let pager: Pager<Page> = ItemIterator::new(
             |continuation: PagerState, _options| {
-                Ok(Box::pin(async move {
+                Box::pin(async move {
                     match continuation {
                         PagerState::Initial => Ok(PagerResult::More {
                             response: RawResponse::from_bytes(
@@ -1073,7 +1066,7 @@ mod tests {
                                 r#"{"items":[1],"page":1}"#,
                             )
                             .into(),
-                            continuation: "1".into(),
+                            continuation: PagerContinuation::Token("1".into()),
                         }),
                         PagerState::More(ref i) if i.as_ref() == "1" => {
                             Err(crate::Error::with_message(
@@ -1085,7 +1078,7 @@ mod tests {
                             panic!("Unexpected continuation value")
                         }
                     }
-                }))
+                })
             },
             None,
         );
@@ -1560,10 +1553,9 @@ mod tests {
 
     #[allow(clippy::type_complexity)]
     fn make_three_page_callback(
-    ) -> impl Fn(PagerState, PagerOptions<'_>) -> crate::Result<PagerResultFuture<Response<Page>>>
-    {
+    ) -> impl Fn(PagerState, PagerOptions<'_>) -> PagerResultFuture<Response<Page>> {
         |continuation: PagerState, _options| {
-            Ok(Box::pin(async move {
+            Box::pin(async move {
                 match continuation {
                     PagerState::Initial => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
@@ -1572,7 +1564,7 @@ mod tests {
                             r#"{"items":[1,2,3],"page":1}"#,
                         )
                         .into(),
-                        continuation: "next-token-1".into(),
+                        continuation: PagerContinuation::Token("next-token-1".into()),
                     }),
                     PagerState::More(continuation) if continuation.as_ref() == "next-token-1" => {
                         Ok(PagerResult::More {
@@ -1586,7 +1578,7 @@ mod tests {
                                 r#"{"items":[4,5,6],"page":2}"#,
                             )
                             .into(),
-                            continuation: "next-token-2".into(),
+                            continuation: PagerContinuation::Token("next-token-2".into()),
                         })
                     }
                     PagerState::More(continuation) if continuation.as_ref() == "next-token-2" => {
@@ -1607,7 +1599,7 @@ mod tests {
                         panic!("Unexpected continuation value: {:?}", continuation)
                     }
                 }
-            }))
+            })
         }
     }
 }

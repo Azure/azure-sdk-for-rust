@@ -13,7 +13,7 @@ use crate::generated::models::{
 use azure_core::{
     error::CheckSuccessOptions,
     http::{
-        pager::{PagerResult, PagerState},
+        pager::{PagerContinuation, PagerResult, PagerState},
         Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
         RequestContent, Response, Url, UrlExt, XmlFormat,
     },
@@ -298,7 +298,7 @@ impl BlobServiceClient {
                 request.insert_header("content-type", "application/xml");
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
-                Ok(Box::pin(async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -317,11 +317,11 @@ impl BlobServiceClient {
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_marker.into(),
+                            continuation: PagerContinuation::Token(next_marker),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }))
+                })
             },
             Some(options.method_options),
         ))

@@ -17,7 +17,7 @@ use crate::generated::models::{
 use azure_core::{
     error::CheckSuccessOptions,
     http::{
-        pager::{PagerResult, PagerState},
+        pager::{PagerContinuation, PagerResult, PagerState},
         Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
         RequestContent, Response, Url, UrlExt,
     },
@@ -264,7 +264,7 @@ impl SecretClient {
             move |next_link: PagerState, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let mut next_link: Url = next_link.try_into()?;
+                        let mut next_link: Url = next_link.try_into().expect("expected Url");
                         let mut query_builder = next_link.query_builder();
                         query_builder.set_pair("api-version", &api_version);
                         query_builder.build();
@@ -275,7 +275,7 @@ impl SecretClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Ok(Box::pin(async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -294,11 +294,11 @@ impl SecretClient {
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_link.into(),
+                            continuation: PagerContinuation::Link(next_link.parse()?),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }))
+                })
             },
             Some(options.method_options),
         ))
@@ -333,7 +333,7 @@ impl SecretClient {
             move |next_link: PagerState, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let mut next_link: Url = next_link.try_into()?;
+                        let mut next_link: Url = next_link.try_into().expect("expected Url");
                         let mut query_builder = next_link.query_builder();
                         query_builder.set_pair("api-version", &api_version);
                         query_builder.build();
@@ -344,7 +344,7 @@ impl SecretClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Ok(Box::pin(async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -363,11 +363,11 @@ impl SecretClient {
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_link.into(),
+                            continuation: PagerContinuation::Link(next_link.parse()?),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }))
+                })
             },
             Some(options.method_options),
         ))
@@ -411,7 +411,7 @@ impl SecretClient {
             move |next_link: PagerState, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let mut next_link: Url = next_link.try_into()?;
+                        let mut next_link: Url = next_link.try_into().expect("expected Url");
                         let mut query_builder = next_link.query_builder();
                         query_builder.set_pair("api-version", &api_version);
                         query_builder.build();
@@ -422,7 +422,7 @@ impl SecretClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Ok(Box::pin(async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -441,11 +441,11 @@ impl SecretClient {
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_link.into(),
+                            continuation: PagerContinuation::Link(next_link.parse()?),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }))
+                })
             },
             Some(options.method_options),
         ))

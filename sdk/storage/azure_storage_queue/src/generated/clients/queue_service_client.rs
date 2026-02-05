@@ -16,7 +16,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        pager::{PagerResult, PagerState},
+        pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, UrlExt, XmlFormat,
@@ -261,7 +261,7 @@ impl QueueServiceClient {
                 request.insert_header("content-type", "application/xml");
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
-                Ok(Box::pin(async move {
+                Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -280,11 +280,11 @@ impl QueueServiceClient {
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_marker.into(),
+                            continuation: PagerContinuation::Token(next_marker),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                }))
+                })
             },
             Some(options.method_options),
         ))
