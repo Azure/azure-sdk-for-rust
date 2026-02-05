@@ -4,9 +4,18 @@
 
 ### Features Added
 
+- Added `PagerContinuation` for `Pager` continuation.
+
 ### Breaking Changes
 
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+- Changed paging APIs to use `PagerContinuation` and non-generic `PagerState`/`PagerResult` types.
+- Renamed `PagerOptions::continuation_token` to `continuation`.
+- Renamed `Pager::continuation_token` to `continuation`.
+- Renamed `Pager::into_continuation_token` to `into_continuation`.
+- Renamed `PageIterator::continuation_token` to `continuation`.
+- Renamed `PageIterator::into_continuation_token` to `into_continuation`.
+- `Pager` callbacks must now return `Result`.
 
 ### Bugs Fixed
 

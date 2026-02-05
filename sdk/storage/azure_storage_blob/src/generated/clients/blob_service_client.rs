@@ -255,7 +255,7 @@ impl BlobServiceClient {
     pub fn list_containers_segment(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat, String>> {
+    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -286,11 +286,11 @@ impl BlobServiceClient {
         query_builder.build();
         let version = self.version.clone();
         Ok(Pager::new(
-            move |marker: PagerState<String>, pager_options| {
+            move |marker: PagerState, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", &marker);
+                    query_builder.set_pair("marker", marker.as_ref());
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
@@ -298,7 +298,7 @@ impl BlobServiceClient {
                 request.insert_header("content-type", "application/xml");
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
-                Box::pin(async move {
+                Ok(Box::pin(async move {
                     let rsp = pipeline
                         .send(
                             &pager_options.context,
@@ -317,11 +317,11 @@ impl BlobServiceClient {
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_marker,
+                            continuation: next_marker.into(),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
-                })
+                }))
             },
             Some(options.method_options),
         ))

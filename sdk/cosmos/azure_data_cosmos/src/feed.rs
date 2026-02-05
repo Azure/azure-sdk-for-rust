@@ -71,13 +71,13 @@ impl<T> FeedPage<T> {
     }
 }
 
-impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>, String> {
+impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>> {
     fn from(value: FeedPage<T>) -> Self {
         let continuation = value.continuation.clone();
         match continuation {
             Some(continuation) => PagerResult::More {
                 response: value,
-                continuation,
+                continuation: continuation.into(),
             },
             None => PagerResult::Done { response: value },
         }
