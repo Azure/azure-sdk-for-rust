@@ -10,6 +10,8 @@
 
 - Renamed `BlobItemInternal` to `BlobItem`.
 - Renamed `BlobPropertiesInternal` to `BlobProperties`.
+- Renamed `BlobContainerClient::create_container()` to `create()`.
+- Renamed `BlobContainerClient::delete_container()` to `delete()`.
 - Renamed `PageBlobClient::upload_page()` to `upload_pages()`.
 - Renamed `PageBlobClient::clear_page()` to `clear_pages()`.
 - Renamed `BlobContainerClientListBlobFlatSegmentOptions` to `BlobContainerClientListBlobsOptions`.
