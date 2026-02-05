@@ -36,15 +36,15 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        response::PinnedStream,
         AsyncRawResponse, AsyncResponse, ClientOptions, NoFormat, Pipeline, RequestContent,
         Response, StatusCode, Url, UrlExt, XmlFormat,
     },
     time::OffsetDateTime,
     tracing, Bytes, Result,
 };
-use futures::Stream;
+use std::sync::Arc;
 use std::{collections::HashMap, num::NonZero, ops::Range};
-use std::{pin::Pin, sync::Arc};
 
 /// Options used when creating a [`BlobClient`].
 #[derive(Clone, SafeDebug)]
@@ -124,11 +124,10 @@ impl GeneratedBlobClient {
         })
     }
 
-    pub async fn managed_download<'a>(
-        &'a self,
-        options: Option<BlobClientManagedDownloadOptions<'a>>,
-        // TODO use PinnedStream
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<Bytes>> + Unpin + 'a>>> {
+    pub async fn managed_download(
+        &self,
+        options: Option<BlobClientManagedDownloadOptions<'_>>,
+    ) -> Result<PinnedStream> {
         let options = options.unwrap_or_default();
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
@@ -143,7 +142,7 @@ impl GeneratedBlobClient {
             if_tags: options.if_tags,
             if_unmodified_since: options.if_unmodified_since,
             lease_id: options.lease_id,
-            method_options: options.method_options,
+            // TODO: method_options: options.method_options,
             range: None,
             range_get_content_crc64: options.range_get_content_crc64,
             range_get_content_md5: options.range_get_content_md5,
@@ -151,11 +150,21 @@ impl GeneratedBlobClient {
             structured_body_type: options.structured_body_type,
             timeout: options.timeout,
             version_id: options.version_id,
+            ..Default::default()
         };
 
-        partitioned_transfer::download(parallel, partition_size, self, get_range_options).await
+        let client = GeneratedBlobClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        };
+        let client = BlobClientDownloadBehavior::new(client, get_range_options);
+
+        partitioned_transfer::download(parallel, partition_size, Arc::new(client)).await
     }
 }
+
 impl BlobClient {
     /// Creates a new BlobClient, using Entra ID authentication.
     ///
@@ -627,7 +636,7 @@ impl BlobClient {
         &'a self,
         options: Option<BlobClientManagedDownloadOptions<'a>>,
         // TODO use PinnedStream
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<Bytes>> + Unpin + 'a>>> {
+    ) -> Result<PinnedStream> {
         self.client.managed_download(options).await
     }
 }
@@ -636,15 +645,23 @@ impl BlobClient {
 const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
 const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
 
+struct BlobClientDownloadBehavior<'a> {
+    client: GeneratedBlobClient,
+    options: BlobClientDownloadOptions<'a>,
+}
+impl<'a> BlobClientDownloadBehavior<'a> {
+    fn new(client: GeneratedBlobClient, options: BlobClientDownloadOptions<'a>) -> Self {
+        Self { client, options }
+    }
+}
+
 #[async_trait::async_trait]
-impl<'a> PartitionedDownloadBehavior<'a, BlobClientDownloadOptions<'a>> for GeneratedBlobClient {
-    async fn transfer_range(
-        &'a self,
-        range: Range<u64>,
-        mut options: BlobClientDownloadOptions<'a>,
-    ) -> Result<AsyncRawResponse> {
-        options.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
-        self.download(Some(options))
+impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
+    async fn transfer_range(&self, range: Range<u64>) -> Result<AsyncRawResponse> {
+        let mut opt = self.options.clone();
+        opt.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
+        self.client
+            .download(Some(opt))
             .await
             .map(AsyncRawResponse::from)
     }
