@@ -99,7 +99,7 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
         assert_eq!(read_item.value, 100);
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -191,7 +191,7 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
         assert!(read_result.is_err());
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -256,7 +256,7 @@ pub async fn batch_with_patch() -> Result<(), Box<dyn Error>> {
         assert_eq!(read_item1.name, "Patched Item");
 
         Ok(())
-    })
+    }, None)
     .await
 }
 
@@ -308,6 +308,6 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
         );
 
         Ok(())
-    })
+    }, None)
     .await
 }
