@@ -5,7 +5,7 @@ use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
     logging::apply_storage_logging_defaults,
     models::{
-        PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
+        HttpRange, PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
         PageBlobClientCreateOptions, PageBlobClientCreateResult,
         PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
         PageBlobClientResizeResult, PageBlobClientSetSequenceNumberOptions,
@@ -178,14 +178,14 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `range` - The range of bytes to clear. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
+    /// * `range` - The range of bytes to clear.
     /// * `options` - Optional configuration for the request.
     pub async fn clear_page(
         &self,
-        range: String,
+        range: HttpRange,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>> {
-        self.client.clear_pages(range, options).await
+        self.client.clear_pages(range.into(), options).await
     }
 
     /// Resizes a Page blob to the specified size. If the specified value is less than
@@ -211,17 +211,17 @@ impl PageBlobClient {
     /// * `data` - The contents of the page.
     /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
     ///   content_length specified must be a modulus of 512.
-    /// * `range` - The range of the bytes to write. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
+    /// * `range` - The range of the bytes to write.
     /// * `options` - Optional configuration for the request.
     pub async fn upload_page(
         &self,
         data: RequestContent<Bytes, NoFormat>,
         content_length: u64,
-        range: String,
+        range: HttpRange,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
         self.client
-            .upload_pages(data, content_length, range, options)
+            .upload_pages(data, content_length, range.into(), options)
             .await
     }
 
@@ -248,20 +248,26 @@ impl PageBlobClient {
     /// # Arguments
     ///
     /// * `source_url` - The URL of the copy source.
-    /// * `source_range` - Range of bytes from the source to be uploaded. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
+    /// * `source_range` - Range of bytes from the source to be uploaded.
     /// * `content_length` - Total length of the blob data to be uploaded.
-    /// * `range` - Range of bytes where the source data should be written on the destination Page blob. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
+    /// * `range` - Range of bytes where the source data should be written on the destination Page blob.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_pages_from_url(
         &self,
         source_url: String,
-        source_range: String,
+        source_range: HttpRange,
         content_length: u64,
-        range: String,
+        range: HttpRange,
         options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, NoFormat>> {
         self.client
-            .upload_pages_from_url(source_url, source_range, content_length, range, options)
+            .upload_pages_from_url(
+                source_url,
+                source_range.into(),
+                content_length,
+                range.into(),
+                options,
+            )
             .await
     }
 

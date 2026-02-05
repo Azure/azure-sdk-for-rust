@@ -9,16 +9,84 @@ use azure_core_test::{recorded, TestContext, VarOptions};
 use azure_storage_blob::models::{
     AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientCreateSnapshotOptions,
     BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
-    BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
-    BlobClientSetImmutabilityPolicyOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlobContainerClientListBlobFlatSegmentOptions, BlobTags,
-    BlockBlobClientUploadOptions, DeleteSnapshotsOptionType, ListBlobsIncludeItem,
+    BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+    BlobContainerClientListBlobFlatSegmentOptions, BlobTags, BlockBlobClientUploadOptions,
+    DeleteSnapshotsOptionType, HttpRange, ListBlobsIncludeItem,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
 };
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
+
+#[recorded::test]
+async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"hello rusty world";
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(data.to_vec())),
+        None,
+    )
+    .await?;
+
+    // Bounded Range Download (first 5 bytes: "hello")
+    let download_options = BlobClientDownloadOptions {
+        range: Some(HttpRange::new(0, 5).into()),
+        ..Default::default()
+    };
+    let response = blob_client.download(Some(download_options)).await?;
+
+    // Assert
+    let content_length = response.content_length()?;
+    let content_range = response.content_range()?;
+    assert_eq!(5, content_length.unwrap());
+    assert_eq!("bytes 0-4/17", content_range.unwrap());
+    let (status_code, _, response_body) = response.deconstruct();
+    assert!(status_code.is_success());
+    assert_eq!(b"hello".to_vec(), response_body.collect().await?.to_vec());
+
+    // Bounded Range Download (middle 6 bytes: " rusty")
+    let download_options = BlobClientDownloadOptions {
+        range: Some(HttpRange::new(5, 6).into()),
+        ..Default::default()
+    };
+    let response = blob_client.download(Some(download_options)).await?;
+
+    // Assert
+    let content_length = response.content_length()?;
+    let content_range = response.content_range()?;
+    assert_eq!(6, content_length.unwrap());
+    assert_eq!("bytes 5-10/17", content_range.unwrap());
+    let (status_code, _, response_body) = response.deconstruct();
+    assert!(status_code.is_success());
+    assert_eq!(b" rusty".to_vec(), response_body.collect().await?.to_vec());
+
+    // Open-ended Range Download (from offset 11: " world")
+    let download_options = BlobClientDownloadOptions {
+        range: Some(HttpRange::from_offset(11).into()),
+        ..Default::default()
+    };
+    let response = blob_client.download(Some(download_options)).await?;
+
+    // Assert
+    let content_length = response.content_length()?;
+    let content_range = response.content_range()?;
+    assert_eq!(6, content_length.unwrap());
+    assert_eq!("bytes 11-16/17", content_range.unwrap());
+    let (status_code, _, response_body) = response.deconstruct();
+    assert!(status_code.is_success());
+    assert_eq!(b" world".to_vec(), response_body.collect().await?.to_vec());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
