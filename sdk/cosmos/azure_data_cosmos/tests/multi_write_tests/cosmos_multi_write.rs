@@ -16,7 +16,6 @@ use azure_data_cosmos::{
 };
 use framework::{TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION};
 use tracing_subscriber::layer::SubscriberExt;
-
 /// A simple layer that captures log messages into a shared buffer
 struct CaptureLayer {
     buffer: Arc<Mutex<Vec<String>>>,

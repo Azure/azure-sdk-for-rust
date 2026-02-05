@@ -2,12 +2,13 @@
 // Licensed under the MIT License.
 
 use crate::{
+    clients::OffersClient,
     models::{ContainerProperties, CosmosResponse, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
-    ThroughputOptions,
+    DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
+    ReplaceContainerOptions, ThroughputOptions,
 };
 use std::sync::Arc;
 
@@ -17,7 +18,7 @@ use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use azure_core::http::response::Response;
+use azure_core::http::headers::AsHeaders;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -164,9 +165,8 @@ impl ContainerClient {
             .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        self.pipeline
-            .read_throughput_offer(options.method_options.context, &resource_id)
-            .await
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client.read(options.method_options.context).await
     }
 
     /// Replaces the container throughput properties.
@@ -179,7 +179,7 @@ impl ContainerClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions<'_>>,
-    ) -> azure_core::Result<Response<ThroughputProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
@@ -189,8 +189,9 @@ impl ContainerClient {
             .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        self.pipeline
-            .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client
+            .replace(options.method_options.context, throughput)
             .await
     }
 
@@ -248,7 +249,7 @@ impl ContainerClient {
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
     /// If you want the new item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -333,7 +334,7 @@ impl ContainerClient {
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
     /// If you want the replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -422,7 +423,7 @@ impl ContainerClient {
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
     /// If you want the created/replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -589,7 +590,7 @@ impl ContainerClient {
     ///
     /// By default, the patched item is *not* returned in the HTTP response.
     /// If you want the patched item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// For example:
     ///
@@ -703,33 +704,28 @@ impl ContainerClient {
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions<'_>>,
-    ) -> azure_core::Result<FeedPager<T>> {
-        #[cfg_attr(not(feature = "preview_query_engine"), allow(unused_mut))]
-        let mut options = options.unwrap_or_default();
+    ) -> azure_core::Result<FeedItemIterator<T>> {
+        let options = options.unwrap_or_default();
         let partition_key = partition_key.into();
         let query = query.into();
-        let ctx = options.method_options.context.clone();
 
-        #[cfg(feature = "preview_query_engine")]
-        if partition_key.is_empty() {
-            if let Some(query_engine) = options.query_engine.take() {
-                return crate::query::executor::QueryExecutor::new(
-                    self.pipeline.clone(),
-                    self.link.clone(),
-                    query,
-                    options,
-                    query_engine,
-                )?
-                .into_stream();
-            }
+        let mut headers = azure_core::http::headers::Headers::new();
+
+        // Use AsHeaders trait to convert PartitionKey and options into headers
+        for (name, value) in partition_key.as_headers()? {
+            headers.insert(name, value);
+        }
+        for (name, value) in options.as_headers()? {
+            headers.insert(name, value);
         }
 
-        let url = self.pipeline.url(&self.items_link);
-        self.pipeline
-            .send_query_request(ctx, query, url, self.items_link.clone(), |r| {
-                r.insert_headers(&options)?;
-                r.insert_headers(&partition_key)?;
-                Ok(())
-            })
+        crate::query::executor::QueryExecutor::new(
+            self.pipeline.clone(),
+            self.items_link.clone(),
+            options.method_options.context.into_owned(),
+            query,
+            headers,
+        )
+        .into_stream()
     }
 }

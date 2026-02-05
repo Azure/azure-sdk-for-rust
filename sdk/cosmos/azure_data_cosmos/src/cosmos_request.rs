@@ -8,10 +8,7 @@ use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{constants, PartitionKey};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue, Headers};
-use azure_core::http::{
-    request::{options::ContentType, Request},
-    Method,
-};
+use azure_core::http::{request::Request, Method};
 use serde::Serialize;
 
 /// Specifies which form of authorization token should be used when signing
@@ -149,8 +146,8 @@ impl CosmosRequest {
             req.insert_headers(pk).unwrap();
         }
 
-        if !OperationType::is_read_only(&self.operation_type) {
-            req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
+        if let Some(ct) = self.operation_type.body_content_type() {
+            req.insert_headers(&ct).unwrap();
             if self.operation_type == OperationType::Upsert {
                 req.insert_header(constants::IS_UPSERT, "true");
             }

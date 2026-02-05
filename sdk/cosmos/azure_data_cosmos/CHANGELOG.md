@@ -10,6 +10,8 @@
 
 ### Breaking Changes
 
+- Changed return type of query methods from `FeedPager<T>` (an alias for `ItemIterator<FeedPage<T>, String>`) to `FeedItemIterator<T>`, which implements `Stream<Item = Result<T>>` and provides `into_pages()` for page-level access. ([#3515](https://github.com/Azure/azure-sdk-for-rust/pull/3515))
+
 ### Bugs Fixed
 
 ### Other Changes
