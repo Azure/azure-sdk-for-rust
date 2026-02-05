@@ -5,6 +5,15 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
+# Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
+$global:LASTEXITCODE = 0
+
+# Skip emulator setup if AZURE_COSMOS_CONNECTION_STRING is already set
+if ($env:AZURE_COSMOS_CONNECTION_STRING) {
+    Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
+    return
+}
+
 $IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
 if($IsAzDo) {
     $AzDoEmulatorPath = Join-Path $env:AGENT_HOMEDIRECTORY "..\..\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
@@ -17,6 +26,7 @@ if($IsAzDo) {
     }
 }
 
+
 if ($IsWindows) {
     $EmulatorPath = $null
 
@@ -26,7 +36,7 @@ if ($IsWindows) {
     } else {
         LogGroupStart "Installing Cosmos DB Emulator"
         & "$PSScriptRoot\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
-            -StartParameters "/noexplorer /noui /disableratelimiting /enableaadauthentication /partitioncount=50" `
+            -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
             -Stage "Install"
         LogGroupEnd
     }
@@ -91,6 +101,3 @@ if ($IsWindows) {
     # We can't run the emulator on the macOS agent, and we don't want to fail local builds because the emulator isn't installed.
     Write-Host "Cosmos DB Emulator is not available on this platform. Skipping test setup."
 }
-
-# Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
-$global:LASTEXITCODE = 0

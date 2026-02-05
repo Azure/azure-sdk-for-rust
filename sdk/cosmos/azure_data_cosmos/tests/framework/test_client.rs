@@ -5,17 +5,23 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
+use azure_core::http::{StatusCode, Transport};
+use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::CosmosResponse;
+use azure_data_cosmos::options::ItemOptions;
+use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
+use azure_data_cosmos::{
+    clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, PartitionKey,
+    Query,
+};
+use futures::TryStreamExt;
+use reqwest::ClientBuilder;
+
+use std::time::Duration;
 use std::{
     str::FromStr,
     sync::{Arc, OnceLock},
 };
-
-use azure_core::http::{StatusCode, Transport};
-use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, Query,
-};
-use futures::TryStreamExt;
-use reqwest::ClientBuilder;
 use tracing_subscriber::EnvFilter;
 
 /// Represents a Cosmos DB client connected to a test account.
@@ -28,10 +34,46 @@ pub struct TestClientOptions {
     pub allow_invalid_certificates: bool,
 }
 
-const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
-const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
-const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
-const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
+pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+pub const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
+pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
+pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
+pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
+pub const HUB_REGION: RegionName = EAST_US_2;
+pub const SATELLITE_REGION: RegionName = WEST_US_3;
+pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
+pub const EMULATOR_HOST: &str = "localhost";
+
+/// Default timeout for tests (80 seconds).
+pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
+
+/// Options for configuring test execution.
+#[derive(Default, Clone)]
+pub struct TestOptions {
+    /// CosmosClient options to use for the test.
+    pub client_options: Option<CosmosClientOptions>,
+    /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
+    pub timeout: Option<Duration>,
+}
+
+impl TestOptions {
+    /// Creates a new TestOptions with default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the client options.
+    pub fn with_client_options(mut self, options: CosmosClientOptions) -> Self {
+        self.client_options = Some(options);
+        self
+    }
+
+    /// Sets the timeout for the test.
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = Some(timeout);
+        self
+    }
+}
 
 static IS_AZURE_PIPELINES: OnceLock<bool> = OnceLock::new();
 
@@ -45,6 +87,59 @@ enum CosmosTestMode {
 
     /// Tests can run if the env vars are set, but will not fail if they are not.
     Allowed,
+}
+
+fn get_shared_database_id() -> &'static str {
+    static SHARED_DATABASE_ID: OnceLock<String> = OnceLock::new();
+
+    let id = SHARED_DATABASE_ID.get_or_init(|| {
+        std::env::var(DATABASE_NAME_ENV_VAR).unwrap_or_else(|_| {
+            panic!(
+                "{} is not set. Create a Cosmos DB database for tests, then set {} to its name (e.g. export {}=my-test-db).",
+                DATABASE_NAME_ENV_VAR,
+                DATABASE_NAME_ENV_VAR,
+                DATABASE_NAME_ENV_VAR
+            )
+        })
+    });
+
+    id.as_str()
+}
+
+pub fn get_effective_hub_endpoint() -> String {
+    let host = get_global_endpoint();
+
+    if host == EMULATOR_HOST.to_string() {
+        return host;
+    }
+
+    // Insert the hub region after the account name, before .documents.azure.com
+    // e.g., "account_name.documents.azure.com" -> "account_name-eastus2.documents.azure.com"
+    let region_suffix = HUB_REGION.as_str().to_lowercase().replace(' ', "");
+    if let Some(pos) = host.find(".documents.azure.com") {
+        let account_name = &host[..pos];
+        format!("{}-{}.documents.azure.com", account_name, region_suffix)
+    } else {
+        // Fallback: just return the host as-is if it doesn't match expected format
+        host.to_string()
+    }
+}
+
+pub fn get_global_endpoint() -> String {
+    let account_host =
+        std::env::var(ACCOUNT_HOST_ENV_VAR).unwrap_or_else(|_| EMULATOR_HOST.to_string());
+
+    let account_endpoint = account_host.trim_end_matches('/');
+
+    // Parse the URL to extract the host and insert the hub region
+    // Expected format: https://accountname.documents.azure.com:443
+    // Target format: accountname.documents.azure.com (host only, no scheme/port)
+    let url = url::Url::parse(account_endpoint).expect("Failed to parse account endpoint URL");
+    let host = url
+        .host_str()
+        .expect("Failed to get host from account endpoint")
+        .to_string();
+    host
 }
 
 impl FromStr for CosmosTestMode {
@@ -128,7 +223,23 @@ impl TestClient {
     /// Runs a test function with a new [`TestClient`], ensuring proper setup and cleanup of the database.
     pub async fn run<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: AsyncFnOnce(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
+        F: AsyncFnMut(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
+    {
+        Self::run_with_options(test, TestOptions::new()).await
+    }
+
+    /// Runs a test function with a new [`TestClient`] and custom test options.
+    ///
+    /// This method supports:
+    /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
+
+    /// - Custom CosmosClient options
+    pub async fn run_with_options<F>(
+        mut test: F,
+        options: TestOptions,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        F: AsyncFnMut(&TestRunContext) -> Result<(), Box<dyn std::error::Error>>,
     {
         let test_mode = if let Ok(s) = std::env::var(TEST_MODE_ENV_VAR) {
             CosmosTestMode::from_str(&s).map_err(|_| {
@@ -155,14 +266,54 @@ impl TestClient {
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        let test_client = Self::from_env(None)?;
+        let test_client = Self::from_env(options.client_options)?;
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(account) = test_client.cosmos_client.clone() {
             let run = TestRunContext::new(account);
-            let result = test(&run).await;
+
+            // Apply timeout around entire test including retries on 429s
+            let timeout = options.timeout.unwrap_or(DEFAULT_TEST_TIMEOUT);
+
+            let result = tokio::time::timeout(timeout, async {
+                let mut backoff = Duration::from_millis(500);
+                const MAX_BACKOFF: Duration = Duration::from_secs(30);
+
+                loop {
+                    let test_result = test(&run).await;
+
+                    match &test_result {
+                        Err(e) => {
+                            // Check if the error is a 429
+                            let is_429 = e.to_string().contains("429")
+                                || e.to_string().contains("TooManyRequests")
+                                || e.to_string().contains("Too Many Requests");
+
+                            if is_429 {
+                                println!(
+                                    "Test got 429 (Too Many Requests). Retrying after {:?}...",
+                                    backoff
+                                );
+                                tokio::time::sleep(backoff).await;
+                                backoff = (backoff * 2).min(MAX_BACKOFF);
+                                continue;
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    break test_result;
+                }
+            })
+            .await;
+
+            // Always cleanup, even if test timed out
             run.cleanup().await?;
-            result
+
+            match result {
+                Ok(test_result) => test_result,
+                Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
+            }
         } else if test_mode == CosmosTestMode::Required {
             panic!("Cosmos Test Mode is 'required' but no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
         } else {
@@ -172,14 +323,34 @@ impl TestClient {
         }
     }
 
-    pub async fn run_with_db<F>(test: F) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn run_with_unique_db<F>(
+        mut test: F,
+        options: Option<TestOptions>,
+    ) -> Result<(), Box<dyn std::error::Error>>
     where
-        F: AsyncFnOnce(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
+        F: AsyncFnMut(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
-        Self::run(async |run_context| {
-            let db_client = run_context.create_db().await?;
-            test(run_context, &db_client).await
-        })
+        Self::run_with_options(
+            async |run_context| {
+                let db_client = run_context.create_db().await?;
+                test(run_context, &db_client).await
+            },
+            options.unwrap_or_default(),
+        )
+        .await
+    }
+
+    pub async fn run_with_shared_db<F>(
+        mut test: F,
+        options: Option<TestOptions>,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        F: AsyncFnMut(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
+    {
+        Self::run_with_options(
+            async |run_context| test(run_context, &run_context.shared_db_client()).await,
+            options.unwrap_or_default(),
+        )
         .await
     }
 }
@@ -205,6 +376,11 @@ impl TestRunContext {
     /// Gets the underlying [`CosmosClient`].
     pub fn client(&self) -> &CosmosClient {
         &self.client
+    }
+
+    /// Gets the shared database client.
+    pub fn shared_db_client(&self) -> DatabaseClient {
+        self.client().database_client(get_shared_database_id())
     }
 
     /// Creates a new, empty, database for this test run with default throughput options.
@@ -233,6 +409,141 @@ impl TestRunContext {
 
         let db_client = self.client().database_client(&props.id);
         Ok(db_client)
+    }
+
+    /// Reads an item from the specified container with exponential backoff retries on 404 errors.
+    /// This is useful for tests where eventual consistency may cause transient read failures.
+    pub async fn read_item<T>(
+        &self,
+        container: &ContainerClient,
+        partition_key: impl Into<PartitionKey>,
+        item_id: &str,
+        options: Option<ItemOptions<'_>>,
+    ) -> azure_core::Result<CosmosResponse<T>>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        // Own the inputs so no borrowed data must live across `.await`.
+        let partition_key = partition_key.into().to_owned();
+        let item_id = item_id.to_owned();
+        let mut backoff = Duration::from_millis(100);
+        const MAX_BACKOFF: Duration = Duration::from_secs(10);
+
+        loop {
+            match container
+                .read_item(
+                    partition_key.clone(),
+                    item_id.clone().as_str(),
+                    options.clone(),
+                )
+                .await
+            {
+                Ok(response) => return Ok(response),
+                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    println!(
+                        "Read item failed with {:?}: {}. Retrying after {:?}...",
+                        e.http_status(),
+                        e,
+                        backoff
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+
+    /// Queries items from the specified container with exponential backoff retries on 404 errors.
+    /// This is useful for tests where eventual consistency may cause transient query failures.
+    pub async fn query_items<T>(
+        &self,
+        container: &ContainerClient,
+        query: impl Into<Query>,
+        partition_key: impl Into<PartitionKey>,
+    ) -> azure_core::Result<Vec<T>>
+    where
+        T: serde::de::DeserializeOwned + std::marker::Send + 'static,
+    {
+        let query = query.into();
+        let partition_key = partition_key.into().to_owned();
+        let mut backoff = Duration::from_millis(100);
+        const MAX_BACKOFF: Duration = Duration::from_secs(10);
+
+        loop {
+            match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
+                Ok(pager) => match pager.try_collect::<Vec<T>>().await {
+                    Ok(items) => return Ok(items),
+                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                        println!(
+                            "Query items failed with {:?}: {}. Retrying after {:?}...",
+                            e.http_status(),
+                            e,
+                            backoff
+                        );
+                        tokio::time::sleep(backoff).await;
+                        backoff = (backoff * 2).min(MAX_BACKOFF);
+                    }
+                    Err(e) => return Err(e),
+                },
+                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    println!(
+                        "Query items failed with {:?}: {}. Retrying after {:?}...",
+                        e.http_status(),
+                        e,
+                        backoff
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+
+    /// Creates a container with exponential backoff retries on 429 (Too Many Requests) errors.
+    /// This is useful for tests where rate limiting may cause transient failures.
+    pub async fn create_container(
+        &self,
+        db_client: &DatabaseClient,
+        properties: azure_data_cosmos::models::ContainerProperties,
+        options: Option<azure_data_cosmos::CreateContainerOptions<'_>>,
+    ) -> azure_core::Result<ContainerClient> {
+        let mut backoff = Duration::from_millis(100);
+        const MAX_BACKOFF: Duration = Duration::from_secs(10);
+
+        loop {
+            match db_client
+                .create_container(properties.clone(), options.clone())
+                .await
+            {
+                Ok(response) => {
+                    let created = response.into_model()?;
+                    return Ok(db_client.container_client(&created.id));
+                }
+                Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
+                    println!(
+                        "Create container got 429 (Too Many Requests). Retrying after {:?}...",
+                        backoff
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
+                }
+                Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+                    // Container already exists, delete and recreate it, then return a client
+                    let container_client = db_client.container_client(&properties.id);
+                    container_client.delete(None).await?;
+
+                    // recreate
+                    let response = db_client
+                        .create_container(properties.clone(), options.clone())
+                        .await?;
+                    let created = response.into_model()?;
+                    return Ok(db_client.container_client(&created.id));
+                }
+                Err(e) => return Err(e),
+            }
+        }
     }
 
     /// Cleans up test resources.
