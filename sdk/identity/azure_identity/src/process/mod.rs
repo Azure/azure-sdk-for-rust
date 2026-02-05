@@ -9,7 +9,6 @@ use azure_core::{
     error::{Error, ErrorKind, Result},
 };
 use std::{
-    borrow::Cow,
     ffi::{OsStr, OsString},
     fmt, io,
     process::Output,
@@ -93,7 +92,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             let message = if let Some(error_message) = T::get_error_message(&stderr) {
-                error_message.into_owned()
+                error_message
             } else if output.status.code() == Some(127) || stderr.contains("' is not recognized") {
                 format!("{} not found on PATH", T::tool_name())
             } else {
@@ -130,7 +129,7 @@ pub(crate) trait OutputProcessor: Send + Sized + Sync + 'static {
 
     /// Optionally convert stderr to a user-friendly error message.
     /// When this method returns None, the error message will include stderr verbatim.
-    fn get_error_message(stderr: &str) -> Option<Cow<'_, str>>;
+    fn get_error_message(stderr: &str) -> Option<String>;
 
     /// Name of the tool used to get the token e.g. "azd"
     fn tool_name() -> &'static str;
