@@ -16,7 +16,7 @@
 //!
 //! ```no_run
 //! use azure_core::{
-//!     arm::{RPRegistrationOptions, RPRegistrationPolicy},
+//!     resourcemanager::{RPRegistrationOptions, RPRegistrationPolicy},
 //!     credentials::TokenCredential,
 //!     http::{ClientOptions, Pipeline},
 //! };
@@ -55,7 +55,7 @@
 //!
 //! ```rust
 //! use azure_core::{
-//!     arm::{arm_exponential_retry_options, arm_exponential_retry_options_with, ArmExponentialRetryOptions},
+//!     resourcemanager::{arm_exponential_retry_options, arm_exponential_retry_options_with, ArmExponentialRetryOptions},
 //!     http::ClientOptions,
 //!     time::Duration,
 //! };
@@ -82,7 +82,7 @@
 //!
 //! ```no_run
 //! use azure_core::{
-//!     arm::{arm_exponential_retry_options, RPRegistrationOptions, RPRegistrationPolicy},
+//!     resourcemanager::{arm_exponential_retry_options, RPRegistrationOptions, RPRegistrationPolicy},
 //!     credentials::TokenCredential,
 //!     http::{ClientOptions, Pipeline},
 //! };

@@ -120,7 +120,7 @@ impl From<ArmFixedRetryOptions> for FixedRetryOptions {
 /// # Example
 ///
 /// ```rust
-/// use azure_core::{arm::arm_exponential_retry_options, http::ClientOptions};
+/// use azure_core::{resourcemanager::arm_exponential_retry_options, http::ClientOptions};
 ///
 /// let mut client_options = ClientOptions::default();
 /// arm_exponential_retry_options(&mut client_options);
@@ -135,7 +135,7 @@ pub fn arm_exponential_retry_options(client_options: &mut ClientOptions) {
 ///
 /// ```rust
 /// use azure_core::{
-///     arm::{arm_exponential_retry_options_with, ArmExponentialRetryOptions},
+///     resourcemanager::{arm_exponential_retry_options_with, ArmExponentialRetryOptions},
 ///     http::ClientOptions,
 ///     time::Duration,
 /// };
@@ -160,7 +160,7 @@ pub fn arm_exponential_retry_options_with(
 /// # Example
 ///
 /// ```rust
-/// use azure_core::{arm::arm_fixed_retry_options, http::ClientOptions};
+/// use azure_core::{resourcemanager::arm_fixed_retry_options, http::ClientOptions};
 ///
 /// let mut client_options = ClientOptions::default();
 /// arm_fixed_retry_options(&mut client_options);
@@ -175,7 +175,7 @@ pub fn arm_fixed_retry_options(client_options: &mut ClientOptions) {
 ///
 /// ```rust
 /// use azure_core::{
-///     arm::{arm_fixed_retry_options_with, ArmFixedRetryOptions},
+///     resourcemanager::{arm_fixed_retry_options_with, ArmFixedRetryOptions},
 ///     http::ClientOptions,
 ///     time::Duration,
 /// };

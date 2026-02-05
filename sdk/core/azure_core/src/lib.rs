@@ -10,12 +10,12 @@
 #[macro_use]
 mod macros;
 
-pub mod arm;
 pub mod cloud;
 pub mod credentials;
 pub mod error;
 pub mod hmac;
 pub mod http;
+pub mod resourcemanager;
 #[cfg(feature = "test")]
 pub mod test;
 
