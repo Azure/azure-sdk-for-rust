@@ -14,9 +14,9 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 use crate::routing::service_identity::ServiceIdentity;
-use crate::ReadDatabaseOptions;
+use crate::{CosmosResponse, ReadDatabaseOptions};
 use azure_core::http::headers::HeaderName;
-use azure_core::http::{Response, StatusCode};
+use azure_core::http::StatusCode;
 use azure_core::Error;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -256,7 +256,7 @@ impl PartitionKeyRangeCache {
         collection_rid: &str,
         resource_link: ResourceLink,
         if_none_match: Option<String>,
-    ) -> azure_core::Result<Response<()>> {
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let options = ReadDatabaseOptions {
             ..Default::default()
         };

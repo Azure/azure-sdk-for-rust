@@ -473,7 +473,7 @@ async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_blob_client = blob_client.block_blob_client();
 
     let data_len = 50 * MB;
-    let expected_stage_block_count = data_len / MB / 4;
+    let expected_stage_block_count = data_len.div_ceil(4 * MB);
     let mut bytes = BytesMut::with_capacity(data_len).writer();
     {
         let mut buf = [0u8; 4 * KB];
