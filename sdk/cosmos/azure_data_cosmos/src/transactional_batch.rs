@@ -303,12 +303,25 @@ pub(crate) enum TransactionalBatchOperation {
 }
 
 /// Response from executing a transactional batch.
-#[derive(Clone, SafeDebug, Deserialize)]
+///
+/// The Cosmos DB batch API returns a raw JSON array of operation results,
+/// so we implement a custom deserializer to handle this format.
+#[derive(Clone, SafeDebug)]
 #[safe(true)]
 pub struct TransactionalBatchResponse {
     /// The results of each operation in the batch.
-    #[serde(rename = "results")]
     pub results: Vec<TransactionalBatchOperationResult>,
+}
+
+impl<'de> Deserialize<'de> for TransactionalBatchResponse {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        // The Cosmos DB batch API returns a raw JSON array, not an object with a "results" field
+        let results = Vec::<TransactionalBatchOperationResult>::deserialize(deserializer)?;
+        Ok(TransactionalBatchResponse { results })
+    }
 }
 
 /// Result of a single operation within a transactional batch.

@@ -155,6 +155,7 @@ impl CosmosRequest {
             if self.operation_type == OperationType::Batch {
                 req.insert_header(constants::COSMOS_IS_BATCH_REQUEST, "True");
                 req.insert_header(constants::COSMOS_BATCH_ATOMIC, "True");
+                req.insert_header(constants::COSMOS_BATCH_CONTINUE_ON_ERROR, "False");
             }
             if let Some(ref body) = self.body {
                 req.set_body(body.clone());

@@ -8,7 +8,8 @@ use super::framework;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, PatchDocument};
-use azure_data_cosmos::TransactionalBatch;
+use azure_data_cosmos::options::ItemOptions;
+use azure_data_cosmos::{CosmosResponse, TransactionalBatch};
 use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
@@ -44,270 +45,391 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
 
 #[tokio::test]
 pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(async |run_context, _db_client| {
-        let container_client = create_container(run_context).await?;
-        let partition_key = format!("pk-{}", Uuid::new_v4());
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
 
-        let item1 = BatchTestItem {
-            id: "item1".to_string(),
-            partition_key: partition_key.clone(),
-            value: 100,
-            name: "First Item".to_string(),
-        };
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "First Item".to_string(),
+            };
 
-        let item2 = BatchTestItem {
-            id: "item2".to_string(),
-            partition_key: partition_key.clone(),
-            value: 200,
-            name: "Second Item".to_string(),
-        };
+            let item2 = BatchTestItem {
+                id: "item2".to_string(),
+                partition_key: partition_key.clone(),
+                value: 200,
+                name: "Second Item".to_string(),
+            };
 
-        // Create a batch with create and read operations
-        let batch = TransactionalBatch::new(&partition_key)
-            .create_item(&item1)?
-            .create_item(&item2)?
-            .read_item("item1");
+            // Create a batch with create and read operations
+            let batch = TransactionalBatch::new(&partition_key)
+                .create_item(&item1)?
+                .create_item(&item2)?
+                .read_item("item1");
 
-        let response = container_client
-            .execute_transactional_batch(batch, None)
-            .await?;
+            let options = ItemOptions {
+                enable_content_response_on_write: true,
+                ..Default::default()
+            };
 
-        assert_eq!(response.status(), StatusCode::Ok);
+            let response = container_client
+                .execute_transactional_batch(batch, Some(options))
+                .await?;
 
-        let batch_response = response.into_model()?;
-        assert_eq!(batch_response.results.len(), 3);
+            assert_eq!(response.status(), StatusCode::Ok);
 
-        // Verify all operations succeeded
-        for result in &batch_response.results {
-            assert!(
-                result.is_success(),
-                "Operation failed with status code: {}",
-                result.status_code
-            );
-        }
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 3);
 
-        // The first two operations are creates (status 201)
-        assert_eq!(batch_response.results[0].status_code, 201);
-        assert_eq!(batch_response.results[1].status_code, 201);
+            // Verify all operations succeeded
+            for result in &batch_response.results {
+                assert!(
+                    result.is_success(),
+                    "Operation failed with status code: {}",
+                    result.status_code
+                );
+            }
 
-        // The third operation is a read (status 200)
-        assert_eq!(batch_response.results[2].status_code, 200);
-        let read_item: BatchTestItem = batch_response.results[2]
-            .deserialize_body()?
-            .expect("Read operation should return an item");
-        assert_eq!(read_item.id, "item1");
-        assert_eq!(read_item.value, 100);
+            // The first two operations are creates (status 201)
+            assert_eq!(batch_response.results[0].status_code, 201);
+            assert_eq!(batch_response.results[1].status_code, 201);
 
-        Ok(())
-    }, None)
+            // The third operation is a read (status 200)
+            assert_eq!(batch_response.results[2].status_code, 200);
+            let read_item: BatchTestItem = batch_response.results[2]
+                .deserialize_body()?
+                .expect("Read operation should return an item");
+            assert_eq!(read_item.id, "item1");
+            assert_eq!(read_item.value, 100);
+
+            Ok(())
+        },
+        None,
+    )
     .await
 }
 
 #[tokio::test]
 pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(async |run_context, _db_client| {
-        let container_client = create_container(run_context).await?;
-        let partition_key = format!("pk-{}", Uuid::new_v4());
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
 
-        // First create some items directly
-        let item1 = BatchTestItem {
-            id: "item1".to_string(),
-            partition_key: partition_key.clone(),
-            value: 100,
-            name: "First Item".to_string(),
-        };
+            // First create some items directly
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "First Item".to_string(),
+            };
 
-        let item2 = BatchTestItem {
-            id: "item2".to_string(),
-            partition_key: partition_key.clone(),
-            value: 200,
-            name: "Second Item".to_string(),
-        };
+            let item2 = BatchTestItem {
+                id: "item2".to_string(),
+                partition_key: partition_key.clone(),
+                value: 200,
+                name: "Second Item".to_string(),
+            };
 
-        container_client
-            .create_item(&partition_key, &item1, None)
-            .await?;
-        container_client
-            .create_item(&partition_key, &item2, None)
-            .await?;
+            container_client
+                .create_item(&partition_key, &item1, None)
+                .await?;
+            container_client
+                .create_item(&partition_key, &item2, None)
+                .await?;
 
-        // Now execute a batch with mixed operations
-        let updated_item1 = BatchTestItem {
-            id: "item1".to_string(),
-            partition_key: partition_key.clone(),
-            value: 150,
-            name: "Updated First Item".to_string(),
-        };
+            // Now execute a batch with mixed operations
+            let updated_item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 150,
+                name: "Updated First Item".to_string(),
+            };
 
-        let item3 = BatchTestItem {
-            id: "item3".to_string(),
-            partition_key: partition_key.clone(),
-            value: 300,
-            name: "Third Item".to_string(),
-        };
+            let item3 = BatchTestItem {
+                id: "item3".to_string(),
+                partition_key: partition_key.clone(),
+                value: 300,
+                name: "Third Item".to_string(),
+            };
 
-        let batch = TransactionalBatch::new(&partition_key)
-            .replace_item("item1", &updated_item1)?
-            .create_item(&item3)?
-            .delete_item("item2");
+            let batch = TransactionalBatch::new(&partition_key)
+                .replace_item("item1", &updated_item1)?
+                .create_item(&item3)?
+                .delete_item("item2");
 
-        let response = container_client
-            .execute_transactional_batch(batch, None)
-            .await?;
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await?;
 
-        assert_eq!(response.status(), StatusCode::Ok);
+            assert_eq!(response.status(), StatusCode::Ok);
 
-        let batch_response = response.into_model()?;
-        assert_eq!(batch_response.results.len(), 3);
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 3);
 
-        // Verify all operations succeeded
-        for result in &batch_response.results {
-            assert!(
-                result.is_success(),
-                "Operation failed with status code: {}",
-                result.status_code
-            );
-        }
+            // Verify all operations succeeded
+            for result in &batch_response.results {
+                assert!(
+                    result.is_success(),
+                    "Operation failed with status code: {}",
+                    result.status_code
+                );
+            }
 
-        // Verify item1 was replaced
-        let read_item1 = run_context
-            .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
-            .await?
-            .into_model()?;
-        assert_eq!(read_item1.value, 150);
-        assert_eq!(read_item1.name, "Updated First Item");
+            // Verify item1 was replaced
+            let read_item1 = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?
+                .into_model()?;
+            assert_eq!(read_item1.value, 150);
+            assert_eq!(read_item1.name, "Updated First Item");
 
-        // Verify item3 was created
-        let read_item3 = run_context
-            .read_item::<BatchTestItem>(&container_client, &partition_key, "item3", None)
-            .await?
-            .into_model()?;
-        assert_eq!(read_item3.value, 300);
+            // Verify item3 was created
+            let read_item3 = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item3", None)
+                .await?
+                .into_model()?;
+            assert_eq!(read_item3.value, 300);
 
-        // Verify item2 was deleted (should return 404)
-        let read_result = run_context
-            .read_item::<BatchTestItem>(&container_client, &partition_key, "item2", None)
-            .await;
-        assert!(read_result.is_err());
+            // Verify item2 was deleted (should return 404)
+            // Use container_client directly, not run_context which retries 404s
+            let read_result: azure_core::Result<CosmosResponse<BatchTestItem>> = container_client
+                .read_item(&partition_key, "item2", None)
+                .await;
+            assert!(read_result.is_err());
 
-        Ok(())
-    }, None)
+            Ok(())
+        },
+        None,
+    )
     .await
 }
 
 #[tokio::test]
 pub async fn batch_with_patch() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(async |run_context, _db_client| {
-        let container_client = create_container(run_context).await?;
-        let partition_key = format!("pk-{}", Uuid::new_v4());
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
 
-        // Create an item first
-        let item1 = BatchTestItem {
-            id: "item1".to_string(),
-            partition_key: partition_key.clone(),
-            value: 100,
-            name: "First Item".to_string(),
-        };
+            // Create an item first
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "First Item".to_string(),
+            };
 
-        container_client
-            .create_item(&partition_key, &item1, None)
-            .await?;
+            container_client
+                .create_item(&partition_key, &item1, None)
+                .await?;
 
-        // Execute a batch with patch operation
-        let patch = PatchDocument::default()
-            .with_set("/value", 999)?
-            .with_set("/name", "Patched Item")?;
+            // Execute a batch with patch operation
+            let patch = PatchDocument::default()
+                .with_set("/value", 999)?
+                .with_set("/name", "Patched Item")?;
 
-        let item2 = BatchTestItem {
-            id: "item2".to_string(),
-            partition_key: partition_key.clone(),
-            value: 200,
-            name: "Second Item".to_string(),
-        };
+            let item2 = BatchTestItem {
+                id: "item2".to_string(),
+                partition_key: partition_key.clone(),
+                value: 200,
+                name: "Second Item".to_string(),
+            };
 
-        let batch = TransactionalBatch::new(&partition_key)
-            .patch_item("item1", patch)
-            .create_item(&item2)?;
+            let batch = TransactionalBatch::new(&partition_key)
+                .patch_item("item1", patch)
+                .create_item(&item2)?;
 
-        let response = container_client
-            .execute_transactional_batch(batch, None)
-            .await?;
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await?;
 
-        assert_eq!(response.status(), StatusCode::Ok);
+            assert_eq!(response.status(), StatusCode::Ok);
 
-        let batch_response = response.into_model()?;
-        assert_eq!(batch_response.results.len(), 2);
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 2);
 
-        // Verify all operations succeeded
-        for result in &batch_response.results {
-            assert!(
-                result.is_success(),
-                "Operation failed with status code: {}",
-                result.status_code
-            );
-        }
+            // Verify all operations succeeded
+            for result in &batch_response.results {
+                assert!(
+                    result.is_success(),
+                    "Operation failed with status code: {}",
+                    result.status_code
+                );
+            }
 
-        // Verify item1 was patched
-        let read_item1 = run_context
-            .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
-            .await?
-            .into_model()?;
-        assert_eq!(read_item1.value, 999);
-        assert_eq!(read_item1.name, "Patched Item");
+            // Verify item1 was patched
+            let read_item1 = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?
+                .into_model()?;
+            assert_eq!(read_item1.value, 999);
+            assert_eq!(read_item1.name, "Patched Item");
 
-        Ok(())
-    }, None)
+            Ok(())
+        },
+        None,
+    )
     .await
 }
 
 #[tokio::test]
 pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(async |run_context, _db_client| {
-        let container_client = create_container(run_context).await?;
-        let partition_key = format!("pk-{}", Uuid::new_v4());
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
 
-        // Create an item first
-        let item1 = BatchTestItem {
-            id: "item1".to_string(),
-            partition_key: partition_key.clone(),
-            value: 100,
-            name: "First Item".to_string(),
-        };
+            // Create an item first
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "First Item".to_string(),
+            };
 
-        container_client
-            .create_item(&partition_key, &item1, None)
-            .await?;
+            container_client
+                .create_item(&partition_key, &item1, None)
+                .await?;
 
-        // Try to create a batch that will fail (trying to delete a non-existent item)
-        // This should cause the entire batch to fail and roll back
-        let item2 = BatchTestItem {
-            id: "item2".to_string(),
-            partition_key: partition_key.clone(),
-            value: 200,
-            name: "Second Item".to_string(),
-        };
+            // Try to create a batch that will fail (trying to delete a non-existent item)
+            // This should cause the entire batch to fail and roll back
+            let item2 = BatchTestItem {
+                id: "item2".to_string(),
+                partition_key: partition_key.clone(),
+                value: 200,
+                name: "Second Item".to_string(),
+            };
 
-        let batch = TransactionalBatch::new(&partition_key)
-            .create_item(&item2)?
-            .delete_item("nonexistent_item"); // This will fail
+            let batch = TransactionalBatch::new(&partition_key)
+                .create_item(&item2)?
+                .delete_item("nonexistent_item"); // This will fail with 404
 
-        let response = container_client
-            .execute_transactional_batch(batch, None)
-            .await;
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await?;
 
-        // The batch should fail
-        assert!(response.is_err(), "Expected batch to fail");
+            // When one operation in a batch fails, the response is still successful (207 Multi-Status)
+            // but individual operation results contain their status codes
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 2);
 
-        // Verify item2 was NOT created (due to rollback)
-        let read_result = run_context
-            .read_item::<BatchTestItem>(&container_client, &partition_key, "item2", None)
-            .await;
-        assert!(
-            read_result.is_err(),
-            "item2 should not exist due to batch rollback"
-        );
+            // First operation (create item2) should have 424 Failed Dependency
+            // because a subsequent operation failed
+            assert_eq!(
+                batch_response.results[0].status_code, 424,
+                "First operation should have 424 (Failed Dependency) status"
+            );
 
-        Ok(())
-    }, None)
+            // Second operation (delete nonexistent) should have 404 Not Found
+            assert_eq!(
+                batch_response.results[1].status_code, 404,
+                "Second operation should have 404 (Not Found) status"
+            );
+
+            // Verify item2 was NOT created (due to rollback)
+            // Use container_client directly, not run_context which retries 404s
+            let read_result: azure_core::Result<CosmosResponse<BatchTestItem>> = container_client
+                .read_item(&partition_key, "item2", None)
+                .await;
+            assert!(
+                read_result.is_err(),
+                "item2 should not exist due to batch rollback"
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
+
+            // Create a batch with 101 operations (exceeds the 100 operation limit)
+            let mut batch = TransactionalBatch::new(&partition_key);
+            for i in 0..101 {
+                let item = BatchTestItem {
+                    id: format!("item{}", i),
+                    partition_key: partition_key.clone(),
+                    value: i,
+                    name: format!("Item #{}", i),
+                };
+                batch = batch.create_item(&item)?;
+            }
+
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await;
+
+            // The batch should fail with BadRequest (400) for exceeding max operations
+            assert!(
+                response.is_err(),
+                "Expected batch to fail when exceeding 100 operations"
+            );
+            let err = response.unwrap_err();
+            assert_eq!(
+                err.http_status(),
+                Some(StatusCode::BadRequest),
+                "Expected BadRequest (400) status code"
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
+
+            // Create a batch with a large payload (> 2MB)
+            // Each item will have a large string field to exceed the limit
+            let large_string = "x".repeat(500_000); // 500KB per item
+            let mut batch = TransactionalBatch::new(&partition_key);
+
+            // 5 items × 500KB = ~2.5MB, which exceeds the 2MB limit
+            for i in 0..5 {
+                let item = serde_json::json!({
+                    "id": format!("large_item_{}", i),
+                    "partition_key": partition_key.clone(),
+                    "large_data": large_string.clone(),
+                });
+                batch = batch.create_item(&item)?;
+            }
+
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await;
+
+            // The batch should fail with RequestEntityTooLarge (413) for exceeding max payload size
+            assert!(
+                response.is_err(),
+                "Expected batch to fail when exceeding 2MB payload size"
+            );
+            let err = response.unwrap_err();
+            assert_eq!(
+                err.http_status(),
+                Some(StatusCode::PayloadTooLarge),
+                "Expected RequestEntityTooLarge (413) status code"
+            );
+
+            Ok(())
+        },
+        None,
+    )
     .await
 }
