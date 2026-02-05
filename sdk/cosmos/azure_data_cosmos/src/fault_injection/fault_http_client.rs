@@ -92,7 +92,7 @@ impl FaultClient {
             let request_op = request
                 .headers()
                 .get_optional_str(&constants::FAULT_INJECTION_OPERATION)
-                .and_then(FaultOperationType::from_str);
+                .and_then(FaultOperationType::parse);
 
             match request_op {
                 Some(op) if op == *expected_op => {
@@ -128,8 +128,7 @@ impl FaultClient {
         &self,
         server_error: FaultInjectionResult,
     ) -> Option<azure_core::Result<AsyncRawResponse>> {
-        // Check if it's a server error type
-        // Check probability (simple implementation without rand)
+        // Check probability
         if server_error.probability < 1.0 {
             // Use a simple time-based pseudo-random check
             let nanos = std::time::SystemTime::now()
@@ -137,7 +136,10 @@ impl FaultClient {
                 .unwrap_or_default()
                 .subsec_nanos();
             let random = (nanos % 1000) as f32 / 1000.0;
-            if random > server_error.probability {
+            if !server_error.probability.is_finite()
+                || server_error.probability <= 0.0
+                || random >= server_error.probability
+            {
                 return None; // Don't inject fault this time
             }
         }
@@ -199,18 +201,6 @@ impl FaultClient {
                 Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
                 "Database Account Not Found - Injected fault",
             ),
-            FaultInjectionErrorType::TcpConnectionFailure => {
-                // TCP connection failure - no HTTP response, just return None to pass through
-                return None;
-            }
-            FaultInjectionErrorType::DnsResolutionFailure => {
-                // DNS resolution failure - no HTTP response, just return None to pass through
-                return None;
-            }
-            FaultInjectionErrorType::ResponseTimeout => {
-                // Response timeout is handled separately; no error to inject here
-                return None;
-            }
         };
 
         let error = azure_core::Error::with_message(
@@ -269,7 +259,7 @@ impl HttpClient for FaultClient {
             .remove(constants::FAULT_INJECTION_OPERATION);
 
         // No fault injection or delay-only fault, proceed with actual request
-         let resp = self.inner.execute_request(&clean_request).await;
+        let resp = self.inner.execute_request(&clean_request).await;
 
         // Apply response delay if configured
         if let Some(result) = fault_result {
@@ -339,13 +329,6 @@ mod tests {
             Url::parse("https://test.cosmos.azure.com/dbs/testdb").unwrap(),
             Method::Get,
         )
-    }
-
-    fn create_test_rule(id: &str) -> crate::fault_injection::FaultInjectionRule {
-        let error = FaultInjectionResultBuilder::new()
-            .with_error(FaultInjectionErrorType::Timeout)
-            .build();
-        FaultInjectionRuleBuilder::new(id, error).build()
     }
 
     #[tokio::test]
@@ -484,8 +467,8 @@ mod tests {
     async fn execute_request_response_delay_passes_through() {
         let mock_client = Arc::new(MockHttpClient::new());
 
+        // Create a rule with only delay, no error type - should pass through after delay
         let error = FaultInjectionResultBuilder::new()
-            .with_error(FaultInjectionErrorType::ServiceUnavailable)
             .with_delay(Duration::from_millis(200))
             .build();
         let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
@@ -493,7 +476,7 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
         let request = create_test_request();
 
-        // ServiceUnavailable with delay should inject error after delay
+        // Delay-only should pass through to actual request after delay
         let start = std::time::Instant::now();
         let result = fault_client.execute_request(&request).await;
         let elapsed = start.elapsed();

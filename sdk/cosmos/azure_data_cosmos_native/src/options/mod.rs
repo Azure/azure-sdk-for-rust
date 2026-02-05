@@ -36,12 +36,13 @@ impl TryFrom<&ClientOptions> for CosmosClientOptions {
             panic!("at least one HTTP transport feature must be enabled");
 
             let transport = azure_core::http::Transport::new(std::sync::Arc::new(client));
-            let mut options = Self::default();
-            options.client_options = azure_core::http::ClientOptions {
-                transport: Some(transport),
+            Ok(Self {
+                client_options: azure_core::http::ClientOptions {
+                    transport: Some(transport),
+                    ..Default::default()
+                },
                 ..Default::default()
-            };
-            Ok(options)
+            })
         } else {
             Ok(Default::default())
         }

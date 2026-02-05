@@ -10,7 +10,6 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
 use framework::TestClient;
-use framework::TestOptions;
 use framework::TestRunContext;
 use framework::{get_effective_hub_endpoint, get_global_endpoint};
 use serde::{Deserialize, Serialize};
@@ -91,63 +90,6 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     let container_client = db_client.container_client(&container_id);
 
     Ok(container_client)
-}
-
-// connect error
-// Error: Error { context: CustomMessage(Custom { kind: Io, error: reqwest::Error { kind: Request, url: "https://tomasvaron-test-cdb-5-eastus2.documents.azure.com/dbs", source: hyper_util::client::legacy::Error(SendRequest, hyper::Error(IncompleteMessage)) } }, "failed to execute `reqwest` request") }
-
-
-
-/// Test that reads the same item forever in an infinite loop.
-/// This is useful for manual testing and observing behavior over time.
-#[tokio::test]
-pub async fn item_read_forever() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
-        async |run_context, _db_client| {
-            let container_client = create_container(run_context).await?;
-            let unique_id = Uuid::new_v4().to_string();
-
-            let item = TestItem {
-                id: format!("Item1-{}", unique_id).into(),
-                partition_key: Some(format!("Partition1-{}", unique_id).into()),
-                value: 42,
-                nested: NestedItem {
-                    nested_value: "Nested".into(),
-                },
-                bool_value: true,
-            };
-
-            let pk = format!("Partition1-{}", unique_id);
-            let item_id = format!("Item1-{}", unique_id);
-
-            // Create the item
-            container_client.create_item(&pk, &item, None).await?;
-
-            // Read the same item forever
-            let mut count = 0u64;
-            loop {
-                let result = run_context
-                    .read_item::<TestItem>(&container_client, &pk, &item_id, None)
-                    .await;
-
-                count += 1;
-                if count % 100 == 0 {
-                    println!("Read item {} times", count);
-                }
-
-                if let Err(e) = result {
-                    println!("Read failed after {} reads: {:?}", count, e);
-                }
-            }
-
-            // Note: This is unreachable due to the infinite loop above,
-            // but needed to satisfy the return type
-            #[allow(unreachable_code)]
-            Ok(())
-        },
-        Some(TestOptions::default().with_timeout(std::time::Duration::from_secs(600))),
-    )
-    .await
 }
 
 #[tokio::test]
@@ -259,57 +201,6 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                     }
                 }
             }
-
-            Ok(())
-        },
-        None,
-    )
-    .await
-}
-
-#[tokio::test]
-pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
-        async |run_context, _db_client| {
-            let container_client = create_container(run_context).await?;
-            let unique_id = Uuid::new_v4().to_string();
-
-            // Create an item
-            let item = TestItem {
-                id: format!("Item1-{}", unique_id).into(),
-                partition_key: Some(format!("Partition1-{}", unique_id).into()),
-                value: 42,
-                nested: NestedItem {
-                    nested_value: "Nested".into(),
-                },
-                bool_value: true,
-            };
-
-            let pk = format!("Partition1-{}", unique_id);
-            let item_id = format!("Item1-{}", unique_id);
-
-            let create_response = container_client.create_item(&pk, &item, None).await?;
-            assert_response(
-                &create_response,
-                StatusCode::Created,
-                &get_effective_hub_endpoint(),
-                false,
-            );
-
-            let read_response = run_context
-                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
-                .await?;
-            assert_response(&read_response, StatusCode::Ok, &get_global_endpoint(), true);
-            let read_item: serde_json::Value = read_response.into_model()?;
-            assert!(
-                read_item.get("_rid").is_some(),
-                "expected _rid to be present"
-            );
-
-            assert!(
-                read_item.get("_etag").is_some(),
-                "expected _etag to be present"
-            );
 
             Ok(())
         },

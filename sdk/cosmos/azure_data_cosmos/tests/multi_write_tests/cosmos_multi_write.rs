@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex};
 
 use azure_data_cosmos::regions::RegionName;
 use azure_data_cosmos::{
+    clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
     CosmosClientOptions,
 };
@@ -75,11 +76,11 @@ fn options_with_preferred_locations(locations: Vec<RegionName>) -> TestOptions {
 }
 
 async fn create_container_and_write_item(
+    db_client: &DatabaseClient,
     run_context: &TestRunContext,
     container_id: &str,
     _expected_region: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let db_client = run_context.shared_db_client();
     let properties = ContainerProperties {
         id: Cow::Owned(String::from(container_id)),
         partition_key: "/id".into(),
@@ -128,7 +129,13 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // write to hub region
     TestClient::run_with_unique_db(
         async |run_context, _db_client| {
-            create_container_and_write_item(run_context, CONTAINER_ID, HUB_REGION.as_str()).await
+            create_container_and_write_item(
+                _db_client,
+                run_context,
+                CONTAINER_ID,
+                HUB_REGION.as_str(),
+            )
+            .await
         },
         Some(options_with_preferred_locations(vec![
             HUB_REGION.into(),
@@ -167,8 +174,13 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // write to satellite region
     TestClient::run_with_unique_db(
         async |run_context, _db_client| {
-            create_container_and_write_item(run_context, CONTAINER_ID, SATELLITE_REGION.as_str())
-                .await
+            create_container_and_write_item(
+                _db_client,
+                run_context,
+                CONTAINER_ID,
+                SATELLITE_REGION.as_str(),
+            )
+            .await
         },
         Some(options_with_preferred_locations(vec![
             SATELLITE_REGION.into(),

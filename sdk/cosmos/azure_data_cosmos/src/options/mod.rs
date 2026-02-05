@@ -35,6 +35,8 @@ pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
     pub application_name: Option<String>,
     pub application_region: Option<RegionName>,
+    // when the cosmos client options is changed to builder pattern, this shouldn't be exposed directly to customers
+    // right now it is exposed behind a feature flag
     #[cfg(feature = "fault_injection")]
     pub fault_injection_enabled: bool,
     pub application_preferred_regions: Vec<RegionName>,

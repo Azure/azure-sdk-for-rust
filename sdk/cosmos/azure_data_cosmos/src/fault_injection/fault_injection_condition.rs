@@ -16,6 +16,7 @@ pub struct FaultInjectionCondition {
     pub(crate) region: Option<RegionName>,
     /// The partition key range ID to which the fault injection applies.
     /// By default, the fault injection applies to all partition key ranges.
+    #[allow(dead_code)] // TODO: Will implement this and add a test in this pr
     pub(crate) partition_key_range_id: Option<String>,
     /// The container ID to which the fault injection applies.
     /// By default, the fault injection applies to all containers.
@@ -77,7 +78,7 @@ impl From<FaultOperationType> for &'static str {
 impl FaultOperationType {
     /// Attempts to parse a FaultOperationType from a string.
     /// Returns None if the string does not match any known operation type.
-    pub fn from_str(s: &str) -> Option<FaultOperationType> {
+    pub fn parse(s: &str) -> Option<FaultOperationType> {
         match s {
             "ReadItem" => Some(FaultOperationType::ReadItem),
             "QueryItem" => Some(FaultOperationType::QueryItem),

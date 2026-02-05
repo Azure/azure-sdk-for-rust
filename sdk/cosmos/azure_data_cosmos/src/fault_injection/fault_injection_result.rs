@@ -24,12 +24,6 @@ pub enum FaultInjectionErrorType {
     WriteForbidden,
     /// 403-1008 Forbidden from server.
     DatabaseAccountNotFound,
-    /// Simulate DNS resolution failure.
-    DnsResolutionFailure,
-    /// Simulate TCP connection failure.
-    TcpConnectionFailure,
-    /// Simulate client timed out waiting for a response.
-    ResponseTimeout,
 }
 
 /// Represents a server error to be injected.
@@ -39,6 +33,7 @@ pub struct FaultInjectionResult {
     pub(crate) error_type: Option<FaultInjectionErrorType>,
     /// Number of times to inject the error.
     /// Default is that it will be injected forever.
+    #[allow(dead_code)] // TODO: add a test for this in this pr
     pub(crate) times: Option<u32>,
     /// Delay before injecting the error.
     /// default is no delay.

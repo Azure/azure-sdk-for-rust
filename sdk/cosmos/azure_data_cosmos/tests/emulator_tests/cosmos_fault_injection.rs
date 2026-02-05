@@ -22,7 +22,7 @@ use framework::{
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
@@ -51,145 +51,74 @@ fn create_test_item(unique_id: &str) -> TestItem {
     }
 }
 
-/// Test ResponseDelay fault injection - request should succeed but take longer.
-// #[tokio::test]
-// pub async fn fault_injection_response_delay() -> Result<(), Box<dyn Error>> {
-//     let delay_duration = Duration::from_millis(1000);
-//
-//     let server_error = FaultInjectionResultBuilder::new()
-//         .with_error(FaultInjectionErrorType::ResponseDelay)
-//         .with_delay(delay_duration)
-//         .build();
-//
-//     let condition = FaultInjectionConditionBuilder::new()
-//         .with_operation_type(FaultOperationType::ReadItem)
-//         .build();
-//
-//     let rule = FaultInjectionRuleBuilder::new("response-delay", server_error)
-//         .with_condition(condition)
-//         .build();
-//
-//     let mut fault_builder = FaultInjectionClientBuilder::new();
-//     fault_builder.with_rule(rule);
-//     let fault_options = fault_builder.inject(CosmosClientOptions::default());
-//
-//     TestClient::run_with_unique_db(
-//         async |run_context, db_client| {
-//             let container_id = format!("Container-{}", Uuid::new_v4());
-//             let container_client = run_context
-//                 .create_container_with_throughput(
-//                     db_client,
-//                     ContainerProperties {
-//                         id: container_id.clone().into(),
-//                         partition_key: "/partition_key".into(),
-//                         ..Default::default()
-//                     },
-//                     ThroughputProperties::manual(400),
-//                 )
-//                 .await?;
-//
-//             let unique_id = Uuid::new_v4().to_string();
-//             let item = create_test_item(&unique_id);
-//             let pk = format!("Partition-{}", unique_id);
-//             let item_id = format!("Item-{}", unique_id);
-//
-//             container_client.create_item(&pk, &item, None).await?;
-//
-//             let fault_client = run_context
-//                 .fault_client()
-//                 .expect("fault client should be available");
-//             let fault_db_client = fault_client.database_client(&db_client.id());
-//             let fault_container_client = fault_db_client.container_client(&container_id);
-//
-//             let start = Instant::now();
-//             let result = run_context
-//                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
-//                 .await;
-//             let elapsed = start.elapsed();
-//
-//             assert!(result.is_ok(), "request should succeed with response delay");
-//             assert!(
-//                 elapsed >= delay_duration,
-//                 "request should take at least {:?}, took {:?}",
-//                 delay_duration,
-//                 elapsed
-//             );
-//
-//             Ok(())
-//         },
-//         Some(TestOptions::new().with_fault_client_options(fault_options)),
-//     )
-//     .await
-// }
-//
-// /// Test probability fault injection - fault should only apply based on probability.
-// /// With probability 0.0, the fault should never be applied.
-// #[tokio::test]
-// pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
-//     let server_error = FaultInjectionResultBuilder::new()
-//         .with_error(FaultInjectionErrorType::ServiceUnavailable)
-//         .with_probability(0.0) // Never inject
-//         .build();
-//
-//     let condition = FaultInjectionConditionBuilder::new()
-//         .with_operation_type(FaultOperationType::ReadItem)
-//         .build();
-//
-//     let rule = FaultInjectionRuleBuilder::new("probability-zero", server_error)
-//         .with_condition(condition)
-//         .build();
-//
-//     let mut fault_builder = FaultInjectionClientBuilder::new();
-//     fault_builder.with_rule(rule);
-//     let fault_options = fault_builder.inject(CosmosClientOptions::default());
-//
-//     TestClient::run_with_unique_db(
-//         async |run_context, db_client| {
-//             let container_id = format!("Container-{}", Uuid::new_v4());
-//             let container_client = run_context
-//                 .create_container_with_throughput(
-//                     db_client,
-//                     ContainerProperties {
-//                         id: container_id.clone().into(),
-//                         partition_key: "/partition_key".into(),
-//                         ..Default::default()
-//                     },
-//                     ThroughputProperties::manual(400),
-//                 )
-//                 .await?;
-//
-//             let unique_id = Uuid::new_v4().to_string();
-//             let item = create_test_item(&unique_id);
-//             let pk = format!("Partition-{}", unique_id);
-//             let item_id = format!("Item-{}", unique_id);
-//
-//             container_client.create_item(&pk, &item, None).await?;
-//
-//             let fault_client = run_context
-//                 .fault_client()
-//                 .expect("fault client should be available");
-//             let fault_db_client = fault_client.database_client(&db_client.id());
-//             let fault_container_client = fault_db_client.container_client(&container_id);
-//
-//             // With probability 0.0, all reads should succeed
-//             for i in 1..=5 {
-//                 let result = fault_container_client
-//                     .read_item::<TestItem>(&pk, &item_id, None)
-//                     .await;
-//                 assert!(
-//                     result.is_ok(),
-//                     "read {} should succeed with probability 0.0: {:?}",
-//                     i,
-//                     result.err()
-//                 );
-//             }
-//
-//             Ok(())
-//         },
-//         Some(TestOptions::new().with_fault_client_options(fault_options)),
-//     )
-//     .await
-// }
+/// Test probability fault injection - fault should only apply based on probability.
+/// With probability 0.0, the fault should never be applied.
+#[tokio::test]
+pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .with_probability(0.0) // Never inject
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("probability-zero", server_error)
+        .with_condition(condition)
+        .build();
+
+    let mut fault_builder = FaultInjectionClientBuilder::new();
+    fault_builder.with_rule(rule);
+    let fault_options = fault_builder.inject(CosmosClientOptions::default());
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // With probability 0.0, all reads should succeed
+            for i in 1..=5 {
+                let result = fault_container_client
+                    .read_item::<TestItem>(&pk, &item_id, None)
+                    .await;
+                assert!(
+                    result.is_ok(),
+                    "read {} should succeed with probability 0.0: {:?}",
+                    i,
+                    result.err()
+                );
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
 
 /// Test probability fault injection - with probability 1.0, fault should always apply.
 #[tokio::test]
@@ -260,81 +189,6 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
     )
     .await
 }
-
-/// Test ConnectionDelay fault injection - simulates slow connection.
-// #[tokio::test]
-// pub async fn fault_injection_connection_delay() -> Result<(), Box<dyn Error>> {
-//     let delay_duration = Duration::from_millis(65000);
-//
-//     let server_error = FaultInjectionResultBuilder::new()
-//         .with_error(FaultInjectionErrorType::ConnectionDelay)
-//         .with_delay(delay_duration)
-//         .build();
-//
-//     let condition = FaultInjectionConditionBuilder::new()
-//         .with_operation_type(FaultOperationType::ReadItem)
-//         .build();
-//
-//     let rule = FaultInjectionRuleBuilder::new("connection-delay", server_error)
-//         .with_condition(condition)
-//         .build();
-//
-//     let mut fault_builder = FaultInjectionClientBuilder::new();
-//     fault_builder.with_rule(rule);
-//     let fault_options = fault_builder.inject(CosmosClientOptions::default());
-//
-//     TestClient::run_with_unique_db(
-//         async |run_context, db_client| {
-//             let container_id = format!("Container-{}", Uuid::new_v4());
-//             let container_client = run_context
-//                 .create_container_with_throughput(
-//                     db_client,
-//                     ContainerProperties {
-//                         id: container_id.clone().into(),
-//                         partition_key: "/partition_key".into(),
-//                         ..Default::default()
-//                     },
-//                     ThroughputProperties::manual(400),
-//                 )
-//                 .await?;
-//
-//             let unique_id = Uuid::new_v4().to_string();
-//             let item = create_test_item(&unique_id);
-//             let pk = format!("Partition-{}", unique_id);
-//             let item_id = format!("Item-{}", unique_id);
-//
-//             container_client.create_item(&pk, &item, None).await?;
-//
-//             let fault_client = run_context
-//                 .fault_client()
-//                 .expect("fault client should be available");
-//             let fault_db_client = fault_client.database_client(&db_client.id());
-//             let fault_container_client = fault_db_client.container_client(&container_id);
-//
-//             let start = Instant::now();
-//             let result = fault_container_client
-//                 .read_item::<TestItem>(&pk, &item_id, None)
-//                 .await;
-//             let elapsed = start.elapsed();
-//
-//             assert!(
-//                 result.is_ok(),
-//                 "request should succeed with connection delay"
-//             );
-//             assert!(
-//                 elapsed >= delay_duration,
-//                 "request should take at least {:?}, took {:?}",
-//                 delay_duration,
-//                 elapsed
-//             );
-//
-//             Ok(())
-//         },
-//         // this timeout can be lowered later once have a way to change timeouts
-//         Some(TestOptions::new().with_fault_client_options(fault_options)),
-//     )
-//     .await
-// }
 
 /// Test retry on transient errors with hit_limit.
 /// Injects 429 for the first 2 requests, verifies 3rd succeeds.
@@ -572,7 +426,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
             // Create a container with name "FaultyContainer" and verify read fails
             let faulty_container_id = "FaultyContainer";
-            let faulty_container_client = run_context
+            run_context
                 .create_container_with_throughput(
                     db_client,
                     ContainerProperties {
@@ -999,7 +853,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
-            let container_client = run_context
+            run_context
                 .create_container_with_throughput(
                     db_client,
                     ContainerProperties {
