@@ -107,28 +107,22 @@ fn get_shared_database_id() -> &'static str {
 }
 
 pub fn get_effective_hub_endpoint() -> String {
-    println!("[DEBUG] get_effective_hub_endpoint: Starting...");
     let host = get_global_endpoint();
-    println!("[DEBUG] get_effective_hub_endpoint: Got global endpoint host = {}", host);
 
     if host == EMULATOR_HOST.to_string() {
-        println!("[DEBUG] get_effective_hub_endpoint: Host is emulator, returning as-is");
         return host;
     }
 
     // Insert the hub region after the account name, before .documents.azure.com
     // e.g., "account_name.documents.azure.com" -> "account_name-eastus2.documents.azure.com"
     let region_suffix = HUB_REGION.as_str().to_lowercase().replace(' ', "");
-    println!("[DEBUG] get_effective_hub_endpoint: HUB_REGION = {:?}, region_suffix = {}", HUB_REGION.as_str(), region_suffix);
-    
+
     if let Some(pos) = host.find(".documents.azure.com") {
         let account_name = &host[..pos];
         let result = format!("{}-{}.documents.azure.com", account_name, region_suffix);
-        println!("[DEBUG] get_effective_hub_endpoint: Found .documents.azure.com at pos {}, account_name = {}, result = {}", pos, account_name, result);
         result
     } else {
         // Fallback: just return the host as-is if it doesn't match expected format
-        println!("[DEBUG] get_effective_hub_endpoint: No .documents.azure.com found, returning host as-is: {}", host);
         host.to_string()
     }
 }
@@ -136,45 +130,18 @@ pub fn get_effective_hub_endpoint() -> String {
 pub fn get_global_endpoint() -> String {
     let account_host =
         std::env::var(ACCOUNT_HOST_ENV_VAR).unwrap_or_else(|_| EMULATOR_HOST.to_string());
-    println!("[DEBUG] get_global_endpoint: ACCOUNT_HOST env var = {:?}", std::env::var(ACCOUNT_HOST_ENV_VAR));
-    println!("[DEBUG] get_global_endpoint: account_host = {}", account_host);
 
     let account_endpoint = account_host.trim_end_matches('/');
-    println!("[DEBUG] get_global_endpoint: account_endpoint (trimmed) = {}", account_endpoint);
 
     // Parse the URL to extract the host and insert the hub region
     // Expected format: https://accountname.documents.azure.com:443
     // Target format: accountname.documents.azure.com (host only, no scheme/port)
-    println!("[DEBUG] get_global_endpoint: Attempting to parse URL...");
-    let url = match url::Url::parse(account_endpoint) {
-        Ok(u) => {
-            println!("[DEBUG] get_global_endpoint: Successfully parsed URL: {:?}", u);
-            u
-        }
-        Err(e) => {
-            println!("[ERROR] get_global_endpoint: Failed to parse '{}' as URL: {}", account_endpoint, e);
-            println!("[DEBUG] get_global_endpoint: Attempting to add https:// prefix...");
-            // Try adding https:// prefix if it's missing
-            let with_scheme = format!("https://{}", account_endpoint);
-            println!("[DEBUG] get_global_endpoint: Trying to parse: {}", with_scheme);
-            match url::Url::parse(&with_scheme) {
-                Ok(u) => {
-                    println!("[DEBUG] get_global_endpoint: Successfully parsed with scheme: {:?}", u);
-                    u
-                }
-                Err(e2) => {
-                    panic!("Failed to parse account endpoint URL '{}' (also tried '{}'): original error: {}, second error: {}", 
-                           account_endpoint, with_scheme, e, e2);
-                }
-            }
-        }
-    };
+    let url = url::Url::parse(account_endpoint).expect("Failed to parse account endpoint URL");
     
     let host = url
         .host_str()
         .expect("Failed to get host from account endpoint")
         .to_string();
-    println!("[DEBUG] get_global_endpoint: Extracted host = {}", host);
     host
 }
 
