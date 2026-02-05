@@ -8,8 +8,8 @@ use crate::{
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::{TransactionalBatch, TransactionalBatchResponse},
-    DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
-    ThroughputOptions,
+    DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
+    ReplaceContainerOptions, ThroughputOptions,
 };
 use std::sync::Arc;
 
