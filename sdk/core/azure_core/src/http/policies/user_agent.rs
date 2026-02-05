@@ -5,15 +5,19 @@ use crate::http::{
     headers::{HeaderValue, USER_AGENT},
     options::UserAgentOptions,
 };
-use std::env::consts::{ARCH, OS};
-use std::sync::Arc;
-use typespec_client_core::http::policies::{Policy, PolicyResult};
-use typespec_client_core::http::{Context, Request};
+use std::{
+    env::consts::{ARCH, OS},
+    sync::Arc,
+};
+use typespec_client_core::http::{
+    policies::{Policy, PolicyResult},
+    Context, Request,
+};
 
 /// Sets the `User-Agent` header with useful information in a typical format for Azure SDKs.
 #[derive(Clone, Debug)]
 pub struct UserAgentPolicy {
-    header: String,
+    header: HeaderValue,
 }
 
 impl<'a> UserAgentPolicy {
@@ -23,6 +27,9 @@ impl<'a> UserAgentPolicy {
     ///
     /// Panics if [`UserAgentOptions::application_id`] is greater than 24 characters.
     /// See [guidelines](https://azure.github.io/azure-sdk/general_azurecore.html#azurecore-http-telemetry-appid-length) for details.
+    ///
+    /// Panics if [`UserAgentOptions::application_id`] contains invalid characters.
+    /// Only RFC 9110 "tchar" tokens are allowed.
     pub fn new(
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,
@@ -53,7 +60,7 @@ impl<'a> UserAgentPolicy {
         }
 
         const MAX_APPLICATION_ID_LEN: usize = 24;
-        let header = match &options.application_id {
+        let header_str = match &options.application_id {
             Some(application_id) => {
                 if application_id.len() > MAX_APPLICATION_ID_LEN {
                     panic!(
@@ -61,12 +68,42 @@ impl<'a> UserAgentPolicy {
                         MAX_APPLICATION_ID_LEN + 1
                     );
                 }
+
+                // RFC 9110 tchar validation
+                // tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+                //       / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+                //       / DIGIT / ALPHA
+                if !application_id.chars().all(|c| {
+                    c.is_ascii_alphanumeric()
+                        || matches!(
+                            c,
+                            '!' | '#'
+                                | '$'
+                                | '%'
+                                | '&'
+                                | '\''
+                                | '*'
+                                | '+'
+                                | '-'
+                                | '.'
+                                | '^'
+                                | '_'
+                                | '`'
+                                | '|'
+                                | '~'
+                        )
+                }) {
+                    panic!("application_id contains invalid characters. Only RFC 9110 tokens are allowed.");
+                }
+
                 format!("{application_id} azsdk-rust-{crate_name}/{crate_version} {platform_info}")
             }
             None => format!("azsdk-rust-{crate_name}/{crate_version} {platform_info}"),
         };
 
-        UserAgentPolicy { header }
+        UserAgentPolicy {
+            header: HeaderValue::from(header_str),
+        }
     }
 }
 
@@ -79,8 +116,7 @@ impl Policy for UserAgentPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        request.insert_header(USER_AGENT, HeaderValue::from(self.header.to_string()));
-
+        request.insert_header(USER_AGENT, self.header.clone());
         next[0].send(ctx, request, &next[1..]).await
     }
 }
@@ -98,7 +134,7 @@ mod tests {
             &UserAgentOptions::default(),
         );
         assert_eq!(
-            policy.header,
+            policy.header.as_str(),
             format!("azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
     }
@@ -115,7 +151,7 @@ mod tests {
             &options,
         );
         assert_eq!(
-            policy.header,
+            policy.header.as_str(),
             format!("my_app azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
     }
@@ -126,7 +162,7 @@ mod tests {
         let policy =
             UserAgentPolicy::new_with_rustc_version(None, None, None, &UserAgentOptions::default());
         assert_eq!(
-            policy.header,
+            policy.header.as_str(),
             format!("azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})")
         );
     }
@@ -150,7 +186,7 @@ mod tests {
     #[test]
     fn works_with_application_id_at_limit() {
         let options = UserAgentOptions {
-            application_id: Some("exactly_24_characters!".to_string()), // Exactly 24 characters
+            application_id: Some("exactly_24_characters!!!".to_string()), // Exactly 24 characters
         };
         let policy = UserAgentPolicy::new_with_rustc_version(
             Some("test"),
@@ -159,8 +195,25 @@ mod tests {
             &options,
         );
         assert_eq!(
-            policy.header,
-            format!("exactly_24_characters! azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
+            policy.header.as_str(),
+            format!("exactly_24_characters!!! azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
+        );
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "application_id contains invalid characters. Only RFC 9110 tokens are allowed."
+    )]
+    fn test_user_agent_invalid_chars() {
+        // "Space" is not allowed in tchar.
+        let options = UserAgentOptions {
+            application_id: Some("invalid application id".to_string()),
+        };
+        let _policy = UserAgentPolicy::new_with_rustc_version(
+            Some("test"),
+            Some("1.2.3"),
+            Some("4.5.6"),
+            &options,
         );
     }
 }
