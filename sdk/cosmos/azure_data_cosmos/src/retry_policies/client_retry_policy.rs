@@ -8,10 +8,10 @@ use super::{
 use crate::constants::{self, SubStatusCode};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
+use crate::regions::RegionName;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
-use std::borrow::Cow;
 use std::sync::Arc;
 use url::Url;
 
@@ -68,7 +68,7 @@ pub struct ClientRetryPolicy {
     retry_context: Option<RetryContext>,
 
     /// Regions excluded from routing for the current request
-    excluded_regions: Option<Vec<Cow<'static, str>>>,
+    excluded_regions: Option<Vec<RegionName>>,
 
     /// Underlying policy for handling resource throttling (429) with exponential backoff
     throttling_retry: ResourceThrottleRetryPolicy,
@@ -91,7 +91,7 @@ impl ClientRetryPolicy {
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
     pub fn new(
         global_endpoint_manager: Arc<GlobalEndpointManager>,
-        excluded_regions: Option<Vec<Cow<'static, str>>>,
+        excluded_regions: Option<Vec<RegionName>>,
     ) -> Self {
         Self {
             global_endpoint_manager,

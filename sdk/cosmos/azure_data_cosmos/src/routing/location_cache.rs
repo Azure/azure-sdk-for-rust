@@ -9,7 +9,6 @@ use crate::regions::RegionName;
 use crate::resource_context::ResourceType;
 use serde::{Deserialize, Serialize};
 use std::{
-    borrow::Cow,
     collections::{HashMap, HashSet},
     sync::RwLock,
     time::{Duration, SystemTime},
@@ -418,7 +417,7 @@ impl LocationCache {
     pub fn get_applicable_endpoints(
         &self,
         operation_type: OperationType,
-        excluded_regions: Option<&Vec<Cow<'static, str>>>,
+        excluded_regions: Option<&Vec<RegionName>>,
     ) -> Vec<Url> {
         // Select endpoints based on operation type.
         if operation_type.is_read_only() {
@@ -508,7 +507,7 @@ impl LocationCache {
         endpoints_by_location: &HashMap<RegionName, Url>,
         request: RequestOperation,
         default_endpoint: &Url,
-        request_excluded_regions: Option<&Vec<Cow<'static, str>>>,
+        request_excluded_regions: Option<&Vec<RegionName>>,
     ) -> Vec<Url> {
         let mut endpoints = Vec::new();
         let mut unavailable_endpoints = Vec::new();
@@ -516,7 +515,6 @@ impl LocationCache {
         // Remove excluded regions from effective preferred locations
         let excluded_regions = request_excluded_regions
             .cloned()
-            .map(|v| v.into_iter().map(RegionName::from).collect())
             .unwrap_or_else(|| self.client_excluded_regions.clone());
         effective_preferred_locations
             .retain(|location| !excluded_regions.iter().any(|excluded| excluded == location));

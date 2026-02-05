@@ -7,7 +7,6 @@ use crate::regions::RegionName;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use azure_core::time::Duration;
-use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::convert::Infallible;
 use std::fmt;
@@ -269,7 +268,7 @@ pub struct ItemOptions<'a> {
     /// If all regions were excluded, the primary/hub region will be used to route requests.
     /// If None is provided, client-level excluded regions will be used.
     /// If an empty vector is provided, no regions will be excluded for this request.
-    pub excluded_regions: Option<Vec<Cow<'static, str>>>,
+    pub excluded_regions: Option<Vec<RegionName>>,
 }
 
 impl AsHeaders for ItemOptions<'_> {
