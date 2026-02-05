@@ -10,12 +10,6 @@ use crate::models::CosmosResponse;
 use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
-use crate::{
-    constants,
-    models::ThroughputProperties,
-    resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, FeedPage, FeedPager, Query,
-};
 use crate::CosmosClientOptions;
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;

@@ -83,8 +83,8 @@ impl BackOffRetryHandler {
         } else {
             RetryPolicy::Client(Box::from(ClientRetryPolicy::new(
                 self.global_endpoint_manager.clone(),
-                request.excluded_regions.clone(),
                 self.global_partition_endpoint_manager.clone(),
+                request.excluded_regions.clone(),
             )))
         }
     }
