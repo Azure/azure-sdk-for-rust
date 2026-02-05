@@ -639,9 +639,9 @@ impl BlobClient {
     ///
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
-    pub async fn managed_download<'a>(
-        &'a self,
-        options: Option<BlobClientManagedDownloadOptions<'a>>,
+    pub async fn managed_download(
+        &self,
+        options: Option<BlobClientManagedDownloadOptions<'_>>,
     ) -> Result<PinnedStream> {
         self.client.managed_download(options).await
     }
