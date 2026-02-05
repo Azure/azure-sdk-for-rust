@@ -160,10 +160,6 @@ impl CosmosClient {
             pipeline_core.clone(),
         ));
 
-        // TODO: Get PPAF Enablement Flag from Account Properties.
-        // let account_properties: AccountProperties =
-        //     global_endpoint_manager.get_database_account().await?.into_body().json()?;
-
         let global_partition_endpoint_manager =
             GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true);
 
