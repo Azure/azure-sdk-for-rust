@@ -29,8 +29,7 @@ pub use fault_injection_condition::{
 
 #[cfg(feature = "fault_injection")]
 pub use fault_injection_result::{
-    FaultInjectionResult, FaultInjectionServerError, FaultInjectionServerErrorBuilder,
-    FaultInjectionServerErrorType,
+    FaultInjectionErrorType, FaultInjectionResult, FaultInjectionResultBuilder,
 };
 
 #[cfg(feature = "fault_injection")]

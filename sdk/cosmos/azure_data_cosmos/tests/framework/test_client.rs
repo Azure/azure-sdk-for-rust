@@ -7,12 +7,12 @@
 
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::CosmosResponse;
+use azure_data_cosmos::models::{CosmosResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions, PartitionKey,
-    Query,
+    clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions,
+    CreateContainerOptions, PartitionKey, Query,
 };
 use futures::TryStreamExt;
 use reqwest::ClientBuilder;
@@ -22,6 +22,7 @@ use std::{
     str::FromStr,
     sync::{Arc, OnceLock},
 };
+use tracing::Value;
 use tracing_subscriber::EnvFilter;
 
 /// Represents a Cosmos DB client connected to a test account.
@@ -50,8 +51,11 @@ pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 /// Options for configuring test execution.
 #[derive(Default, Clone)]
 pub struct TestOptions {
-    /// CosmosClient options to use for the test.
+    /// CosmosClient options to use for the normal (non-fault) client.
     pub client_options: Option<CosmosClientOptions>,
+    /// CosmosClient options to use for the fault injection client.
+    /// If provided, a separate client will be created with these options.
+    pub fault_client_options: Option<CosmosClientOptions>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
 }
@@ -62,9 +66,16 @@ impl TestOptions {
         Self::default()
     }
 
-    /// Sets the client options.
+    /// Sets the client options for the normal (non-fault) client.
     pub fn with_client_options(mut self, options: CosmosClientOptions) -> Self {
         self.client_options = Some(options);
+        self
+    }
+
+    /// Sets the client options for the fault injection client.
+    /// When set, a separate client will be created with fault injection capabilities.
+    pub fn with_fault_client_options(mut self, options: CosmosClientOptions) -> Self {
+        self.fault_client_options = Some(options);
         self
     }
 
@@ -232,8 +243,12 @@ impl TestClient {
     ///
     /// This method supports:
     /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
-
-    /// - Custom CosmosClient options
+    /// - Custom CosmosClient options for the normal client
+    /// - Custom CosmosClient options for the fault injection client
+    ///
+    /// The test function receives a [`TestRunContext`] which provides access to both:
+    /// - A normal client via `client()` and `shared_db_client()`
+    /// - A fault injection client via `fault_client()` and `fault_db_client()` (if fault_client_options was set)
     pub async fn run_with_options<F>(
         mut test: F,
         options: TestOptions,
@@ -266,11 +281,19 @@ impl TestClient {
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        let test_client = Self::from_env(options.client_options)?;
+        let test_client = Self::from_env(options.client_options.clone())?;
+
+        // Create fault injection client if options were provided
+        let fault_client = if options.fault_client_options.is_some() {
+            Some(Self::from_env(options.fault_client_options)?)
+        } else {
+            None
+        };
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(account) = test_client.cosmos_client.clone() {
-            let run = TestRunContext::new(account);
+            let fault_cosmos_client = fault_client.and_then(|fc| fc.cosmos_client);
+            let run = TestRunContext::new(account, fault_cosmos_client);
 
             // Apply timeout around entire test including retries on 429s
             let timeout = options.timeout.unwrap_or(DEFAULT_TEST_TIMEOUT);
@@ -284,9 +307,9 @@ impl TestClient {
 
                     match &test_result {
                         Err(e) => {
+                            println!("Error running test: {}", e);
                             // Check if the error is a 429
-                            let is_429 = e.to_string().contains("429")
-                                || e.to_string().contains("TooManyRequests")
+                            let is_429 = e.to_string().contains("TooManyRequests")
                                 || e.to_string().contains("Too Many Requests");
 
                             if is_429 {
@@ -355,15 +378,27 @@ impl TestClient {
     }
 }
 
+/// Context for a test run, providing access to both normal and fault injection clients.
+///
+/// The normal client is always available via `client()` and `shared_db_client()`.
+/// The fault injection client is available via `fault_client()` and `fault_db_client()`
+/// only if `TestOptions::with_fault_client_options()` was called.
 pub struct TestRunContext {
     run_id: String,
+    /// The normal (non-fault) Cosmos client.
     client: CosmosClient,
+    /// The fault injection Cosmos client (if configured).
+    fault_client: Option<CosmosClient>,
 }
 
 impl TestRunContext {
-    pub fn new(client: CosmosClient) -> Self {
+    pub fn new(client: CosmosClient, fault_client: Option<CosmosClient>) -> Self {
         let run_id = uuid::Uuid::new_v4().simple().to_string();
-        Self { run_id, client }
+        Self {
+            run_id,
+            client,
+            fault_client,
+        }
     }
 
     /// Generates a unique database ID including the [`TestRunContext::run_id`].
@@ -373,14 +408,31 @@ impl TestRunContext {
         format!("auto-test-{}", self.run_id)
     }
 
-    /// Gets the underlying [`CosmosClient`].
+    /// Gets the underlying normal (non-fault) [`CosmosClient`].
     pub fn client(&self) -> &CosmosClient {
         &self.client
     }
 
-    /// Gets the shared database client.
+    /// Gets the fault injection [`CosmosClient`], if configured.
+    ///
+    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_client_options()` was called,
+    /// otherwise returns `None`.
+    pub fn fault_client(&self) -> Option<&CosmosClient> {
+        self.fault_client.as_ref()
+    }
+
+    /// Gets the shared database client using the normal (non-fault) client.
     pub fn shared_db_client(&self) -> DatabaseClient {
         self.client().database_client(get_shared_database_id())
+    }
+
+    /// Gets the shared database client using the fault injection client.
+    ///
+    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_client_options()` was called,
+    /// otherwise returns `None`.
+    pub fn fault_db_client(&self) -> Option<DatabaseClient> {
+        self.fault_client()
+            .map(|c| c.database_client(get_shared_database_id()))
     }
 
     /// Creates a new, empty, database for this test run with default throughput options.
@@ -544,6 +596,114 @@ impl TestRunContext {
                 Err(e) => return Err(e),
             }
         }
+    }
+
+    /// Creates a container with specified throughput and waits for it to be fully created.
+    ///
+    /// This method:
+    /// 1. Creates the container with the specified properties and throughput
+    /// 2. Creates two clients with preferred regions (hub and satellite)
+    /// 3. Polls until both clients can successfully read the container
+    /// 4. Returns a [`ContainerClient`] for the created container
+    ///
+    /// This is useful for tests that need to ensure the container is fully available
+    /// in multiple regions before performing operations on it.
+    pub async fn create_container_with_throughput(
+        &self,
+        db_client: &DatabaseClient,
+        properties: azure_data_cosmos::models::ContainerProperties,
+        throughput: ThroughputProperties,
+    ) -> azure_core::Result<ContainerClient> {
+        let created_properties = db_client
+            .create_container(
+                properties,
+                Some(CreateContainerOptions {
+                    throughput: Some(throughput),
+                    ..Default::default()
+                }),
+            )
+            .await?
+            .into_model()?;
+
+        // Create two clients with different preferred regions to ensure container is available in both
+        let hub_client = Self::create_client_with_preferred_region(HUB_REGION)?;
+        let satellite_client = Self::create_client_with_preferred_region(SATELLITE_REGION)?;
+
+        let container_id = &created_properties.id;
+
+        // Wait for hub region client to successfully read the container
+        loop {
+            match hub_client
+                .database_client(db_client.id())
+                .container_client(container_id)
+                .read(None)
+                .await
+            {
+                Ok(_) => break,
+                Err(e) => {
+                    println!(
+                        "waiting for container to be created in hub region ({}): {}",
+                        HUB_REGION.as_str(),
+                        e
+                    );
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+
+        // Wait for satellite region client to successfully read the container
+        loop {
+            match satellite_client
+                .database_client(db_client.id())
+                .container_client(container_id)
+                .read(None)
+                .await
+            {
+                Ok(_) => break,
+                Err(e) => {
+                    println!(
+                        "waiting for container to be created in satellite region ({}): {}",
+                        SATELLITE_REGION.as_str(),
+                        e
+                    );
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+
+        Ok(db_client.container_client(container_id))
+    }
+
+    /// Creates a CosmosClient with a specific preferred region.
+    fn create_client_with_preferred_region(
+        region: RegionName,
+    ) -> Result<CosmosClient, azure_core::Error> {
+        let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
+            .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
+
+        let connection_string = if env_var == "emulator" {
+            EMULATOR_CONNECTION_STRING
+        } else {
+            &env_var
+        };
+
+        let parsed: ConnectionString = connection_string.parse().map_err(|e| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("Failed to parse connection string: {}", e),
+            )
+        })?;
+
+        let options = CosmosClientOptions {
+            application_preferred_regions: vec![region.into()],
+            ..Default::default()
+        };
+
+        CosmosClient::with_key(
+            &parsed.account_endpoint,
+            parsed.account_key.clone(),
+            Some(options),
+        )
     }
 
     /// Cleans up test resources.

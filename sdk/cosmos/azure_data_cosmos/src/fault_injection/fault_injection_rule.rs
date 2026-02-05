@@ -14,7 +14,7 @@ pub struct FaultInjectionRule {
     /// The condition under which to inject the fault.
     pub condition: FaultInjectionCondition,
     /// The result to inject when the condition is met.
-    pub result: Box<dyn FaultInjectionResult>,
+    pub result: Box<FaultInjectionResult>,
     /// Duration for which the fault injection is active.
     /// default is infinite duration.
     pub duration: Duration,
@@ -34,7 +34,7 @@ pub struct FaultInjectionRuleBuilder {
     /// The condition under which to inject the fault.
     condition: FaultInjectionCondition,
     /// The result to inject when the condition is met.
-    result: Box<dyn FaultInjectionResult>,
+    result: Box<FaultInjectionResult>,
     /// Duration for which the fault injection is active.
     /// default is infinite duration.
     duration: Duration,
@@ -51,7 +51,7 @@ pub struct FaultInjectionRuleBuilder {
 
 impl FaultInjectionRuleBuilder {
     /// Creates a new FaultInjectionRuleBuilder with default values.
-    pub fn new(id: impl Into<String>, result: impl FaultInjectionResult + 'static) -> Self {
+    pub fn new(id: impl Into<String>, result: FaultInjectionResult) -> Self {
         Self {
             condition: FaultInjectionCondition::default(),
             result: Box::new(result),
@@ -69,7 +69,7 @@ impl FaultInjectionRuleBuilder {
     }
 
     /// Sets the result to inject when the condition is met.
-    pub fn with_result(mut self, result: impl FaultInjectionResult + 'static) -> Self {
+    pub fn with_result(mut self, result: FaultInjectionResult) -> Self {
         self.result = Box::new(result);
         self
     }
@@ -105,5 +105,151 @@ impl FaultInjectionRuleBuilder {
             hit_limit: self.hit_limit,
             id: self.id,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FaultInjectionRuleBuilder;
+    use crate::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultOperationType,
+    };
+    use crate::regions;
+    use std::time::Duration;
+
+    fn create_test_error() -> crate::fault_injection::FaultInjectionResult {
+        FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::Timeout)
+            .build()
+    }
+
+    #[test]
+    fn builder_default_values() {
+        let rule = FaultInjectionRuleBuilder::new("test-rule", create_test_error()).build();
+
+        assert_eq!(rule.id, "test-rule");
+        assert_eq!(rule.duration, Duration::MAX);
+        assert_eq!(rule.start_delay, Duration::ZERO);
+        assert!(rule.hit_limit.is_none());
+        assert!(rule.condition.operation_type.is_none());
+    }
+
+    #[test]
+    fn builder_with_condition() {
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::CreateItem)
+            .with_region(regions::EAST_US)
+            .build();
+
+        let rule = FaultInjectionRuleBuilder::new("rule-1", create_test_error())
+            .with_condition(condition)
+            .build();
+
+        assert_eq!(
+            rule.condition.operation_type,
+            Some(FaultOperationType::CreateItem)
+        );
+        assert_eq!(rule.condition.region, Some(regions::EAST_US));
+    }
+
+    #[test]
+    fn builder_with_duration() {
+        let rule = FaultInjectionRuleBuilder::new("rule-2", create_test_error())
+            .with_duration(Duration::from_secs(60))
+            .build();
+
+        assert_eq!(rule.duration, Duration::from_secs(60));
+    }
+
+    #[test]
+    fn builder_with_start_delay() {
+        let rule = FaultInjectionRuleBuilder::new("rule-3", create_test_error())
+            .with_start_delay(Duration::from_secs(10))
+            .build();
+
+        assert_eq!(rule.start_delay, Duration::from_secs(10));
+    }
+
+    #[test]
+    fn builder_with_hit_limit() {
+        let rule = FaultInjectionRuleBuilder::new("rule-4", create_test_error())
+            .with_hit_limit(5)
+            .build();
+
+        assert_eq!(rule.hit_limit, Some(5));
+    }
+
+    #[test]
+    fn builder_with_result() {
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::TooManyRequests)
+            .with_times(3)
+            .build();
+
+        let rule = FaultInjectionRuleBuilder::new("rule-5", create_test_error())
+            .with_result(error)
+            .build();
+
+        assert_eq!(
+            rule.result.error_type,
+            Some(FaultInjectionErrorType::TooManyRequests)
+        );
+        assert_eq!(rule.result.times, Some(3));
+    }
+
+    #[test]
+    fn builder_chained() {
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::DeleteItem)
+            .build();
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+
+        let rule = FaultInjectionRuleBuilder::new("full-rule", error)
+            .with_condition(condition)
+            .with_duration(Duration::from_secs(120))
+            .with_start_delay(Duration::from_secs(5))
+            .with_hit_limit(10)
+            .build();
+
+        assert_eq!(rule.id, "full-rule");
+        assert_eq!(
+            rule.condition.operation_type,
+            Some(FaultOperationType::DeleteItem)
+        );
+        assert_eq!(rule.duration, Duration::from_secs(120));
+        assert_eq!(rule.start_delay, Duration::from_secs(5));
+        assert_eq!(rule.hit_limit, Some(10));
+        assert_eq!(
+            rule.result.error_type,
+            Some(FaultInjectionErrorType::ServiceUnavailable)
+        );
+    }
+
+    #[test]
+    fn rule_clone() {
+        let rule = FaultInjectionRuleBuilder::new("clone-test", create_test_error())
+            .with_hit_limit(3)
+            .build();
+
+        let cloned = rule.clone();
+
+        assert_eq!(cloned.id, rule.id);
+        assert_eq!(cloned.hit_limit, rule.hit_limit);
+        assert_eq!(cloned.duration, rule.duration);
+    }
+
+    #[test]
+    fn id_accepts_string_types() {
+        let rule1 = FaultInjectionRuleBuilder::new("static-str", create_test_error()).build();
+        assert_eq!(rule1.id, "static-str");
+
+        let rule2 =
+            FaultInjectionRuleBuilder::new(String::from("owned-string"), create_test_error())
+                .build();
+        assert_eq!(rule2.id, "owned-string");
     }
 }

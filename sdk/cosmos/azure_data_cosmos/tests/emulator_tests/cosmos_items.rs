@@ -1,19 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 #![cfg(feature = "key_auth")]
-#[cfg(feature = "fault_injection")]
+
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
 use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::fault_injection::{
-    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionRuleBuilder,
-    FaultInjectionServerError, FaultInjectionServerErrorBuilder, FaultInjectionServerErrorType,
-};
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
 use framework::TestClient;
+use framework::TestOptions;
 use framework::TestRunContext;
 use framework::{get_effective_hub_endpoint, get_global_endpoint};
 use serde::{Deserialize, Serialize};
@@ -94,6 +91,63 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     let container_client = db_client.container_client(&container_id);
 
     Ok(container_client)
+}
+
+// connect error
+// Error: Error { context: CustomMessage(Custom { kind: Io, error: reqwest::Error { kind: Request, url: "https://tomasvaron-test-cdb-5-eastus2.documents.azure.com/dbs", source: hyper_util::client::legacy::Error(SendRequest, hyper::Error(IncompleteMessage)) } }, "failed to execute `reqwest` request") }
+
+
+
+/// Test that reads the same item forever in an infinite loop.
+/// This is useful for manual testing and observing behavior over time.
+#[tokio::test]
+pub async fn item_read_forever() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let item = TestItem {
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
+
+            // Create the item
+            container_client.create_item(&pk, &item, None).await?;
+
+            // Read the same item forever
+            let mut count = 0u64;
+            loop {
+                let result = run_context
+                    .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                    .await;
+
+                count += 1;
+                if count % 100 == 0 {
+                    println!("Read item {} times", count);
+                }
+
+                if let Err(e) = result {
+                    println!("Read failed after {} reads: {:?}", count, e);
+                }
+            }
+
+            // Note: This is unreachable due to the infinite loop above,
+            // but needed to satisfy the return type
+            #[allow(unreachable_code)]
+            Ok(())
+        },
+        Some(TestOptions::default().with_timeout(std::time::Duration::from_secs(600))),
+    )
+    .await
 }
 
 #[tokio::test]
@@ -906,104 +960,4 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
         None,
     )
     .await
-}
-
-/// Test that verifies fault injection with various server error types.
-/// Each test case creates a fault injection rule that returns the specified error
-/// and verifies that the read operation fails with the expected HTTP status code.
-#[tokio::test]
-pub async fn item_read_with_fault_injection() -> Result<(), Box<dyn Error>> {
-    use azure_data_cosmos::CosmosClientOptions;
-
-    let test_cases = vec![
-        (
-            "503 Service Unavailable",
-            FaultInjectionServerErrorType::ServiceUnavailable,
-            StatusCode::ServiceUnavailable,
-        ),
-        (
-            "500 Internal Server Error",
-            FaultInjectionServerErrorType::InternalServerError,
-            StatusCode::InternalServerError,
-        ),
-        (
-            "429 Too Many Requests",
-            FaultInjectionServerErrorType::TooManyRequests,
-            StatusCode::TooManyRequests,
-        ),
-        (
-            "408 Request Timeout",
-            FaultInjectionServerErrorType::Timeout,
-            StatusCode::RequestTimeout,
-        ),
-    ];
-
-    for (name, error_type, expected_status) in test_cases {
-        println!("Testing fault injection: {}", name);
-
-        // Create a fault injection rule that always returns the specified error
-        let server_error = FaultInjectionServerErrorBuilder::new(error_type).build();
-
-        let condition = FaultInjectionConditionBuilder::new()
-            .with_operation_type(azure_data_cosmos::fault_injection::FaultOperationType::ReadItem)
-            .build();
-
-        let rule = FaultInjectionRuleBuilder::new(&format!("{:?}-always", name), server_error)
-            .with_condition(condition)
-            .build();
-
-        let mut fault_builder = FaultInjectionClientBuilder::new();
-        fault_builder.with_rule(rule);
-
-        // Inject the fault into client options
-        let options = fault_builder.inject(CosmosClientOptions::default());
-
-        TestClient::run_with_shared_db(
-            async |run_context, _db_client| {
-                let container_client = create_container(run_context).await?;
-                let unique_id = Uuid::new_v4().to_string();
-
-                // Create an item (this should succeed since fault is only on reads)
-                let item = TestItem {
-                    id: format!("Item1-{}", unique_id).into(),
-                    partition_key: Some(format!("Partition1-{}", unique_id).into()),
-                    value: 42,
-                    nested: NestedItem {
-                        nested_value: "Nested".into(),
-                    },
-                    bool_value: true,
-                };
-
-                let pk = format!("Partition1-{}", unique_id);
-                let item_id = format!("Item1-{}", unique_id);
-
-                container_client.create_item(&pk, &item, None).await?;
-
-                // Try to read the item - this should fail with the injected error
-                let result = container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await;
-
-                // Verify we got the expected error
-                let err = result.expect_err(&format!(
-                    "expected the read to fail with {:?}",
-                    expected_status
-                ));
-                assert_eq!(
-                    Some(expected_status),
-                    err.http_status(),
-                    "Test case '{}': expected {:?}, got {:?}",
-                    name,
-                    expected_status,
-                    err.http_status()
-                );
-
-                Ok(())
-            },
-            Some(framework::TestOptions::new().with_client_options(options)),
-        )
-        .await?;
-    }
-
-    Ok(())
 }

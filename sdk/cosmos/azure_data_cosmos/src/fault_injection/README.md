@@ -1,232 +1,274 @@
-# Fault Injection Utility for Azure Cosmos DB Testing
+# Fault Injection for Azure Cosmos DB Rust SDK
 
-This module provides a fault injection framework for testing error handling in Azure Cosmos DB client code. It allows you to intercept HTTP requests at the transport layer and inject various error conditions or transform responses.
+This module provides a fault injection framework for testing error handling and resilience in Azure Cosmos DB client applications. It allows you to simulate various server errors and network conditions at the HTTP transport layer.
 
 ## Overview
 
-The fault injection utility is inspired by the Python SDK's fault injection transport and provides similar capabilities in Rust. It implements the `Policy` trait from `azure_core::http::policies`, making it easy to integrate into the request pipeline.
+The fault injection utility intercepts HTTP requests before they reach the Cosmos DB service and can inject errors based on configurable conditions. This enables testing of:
+
+- Error handling for various HTTP status codes (503, 500, 429, 408, etc.)
+- Retry logic and backoff behavior
+- Regional failover scenarios
+- Operation-specific error handling
+
+## Enabling Fault Injection
+
+Fault injection requires the `fault_injection` feature flag:
+
+```toml
+[dependencies]
+azure_data_cosmos = { version = "0.31", features = ["fault_injection"] }
+```
 
 ## Core Components
 
-### FaultInjectionPolicy
+### FaultInjectionClientBuilder
 
-The main policy that wraps an inner transport policy and applies fault injection rules. It maintains:
-- **Fault rules**: Conditions and errors to inject
-- **Response transformations**: Functions to modify responses
-- **Counters**: Track fault injection statistics
+The entry point for configuring fault injection. It wraps the default HTTP transport with a fault-injecting client.
 
-### Predicates
+### FaultInjectionCondition
 
-Functions that determine when a fault should be applied to a request:
+Defines when a fault should be applied. Conditions can filter by:
 
-- `predicate_url_contains_id(id)` - Match URLs containing a specific ID
-- `predicate_targets_region(endpoint)` - Match requests to a specific region endpoint
-- `predicate_req_payload_contains_id(id)` - Match request payloads containing an ID
-- `predicate_req_payload_contains_field(field, value)` - Match payloads with specific field
-- `predicate_req_for_document_with_id(id)` - Match document operations by ID
-- `predicate_is_database_account_call()` - Match database account operations
-- `predicate_is_document_operation()` - Match document operations
-- `predicate_is_resource_type(type)` - Match specific resource types
-- `predicate_is_operation_type(type)` - Match specific operation types
-- `predicate_is_write_operation(uri_prefix)` - Match write operations to a URI prefix
+- **Operation Type**: Target specific operations (ReadItem, CreateItem, QueryItem, etc.)
+- **Region**: Target requests to specific regions
+- **Container ID**: Target requests to specific containers
 
-### Fault Factories
+### FaultInjectionServerError
 
-Pre-built error generators for common scenarios:
+Defines what error to inject. Supported error types:
 
-- `error_write_forbidden()` - HTTP 403 Forbidden error
-- `error_request_timeout()` - HTTP 408 Request Timeout error
-- `error_internal_server_error()` - HTTP 500 Internal Server Error
-- `error_region_down()` - IO error simulating connection failure
-- `error_service_response()` - Generic service error
-- `error_after_delay(ms, error_factory)` - Inject error after a delay
+| Error Type | HTTP Status | Description |
+|------------|-------------|-------------|
+| `ServiceUnavailable` | 503 | Service temporarily unavailable |
+| `InternalServerError` | 500 | Internal server error |
+| `TooManyRequests` | 429 | Rate limiting / throttling |
+| `Timeout` | 408 | Request timeout |
+| `ReadSessionNotAvailable` | 404 (substatus 1002) | Session consistency error |
+| `PartitionIsGone` | 410 (substatus 1002) | Partition moved/split |
+| `ResponseDelay` | - | Adds delay to response |
+| `ConnectionDelay` | - | Adds delay before connection |
 
-### Response Transformations
+### FaultInjectionRule
 
-- `create_mock_response(status, json_body)` - Create a mock HTTP response
+Combines a condition with a result and additional controls:
 
-## Usage Example
+- **Duration**: How long the rule remains active
+- **Start Delay**: Delay before the rule becomes active
+- **Hit Limit**: Maximum number of times to apply the fault
+
+## Supported Operation Types
 
 ```rust
-use azure_core::http::{policies::Policy, Transport};
-use azure_data_cosmos::CosmosClientOptions;
-use std::sync::Arc;
-
-// Import fault injection utilities
-use framework::fault_injection::*;
-
-// Create a Cosmos client with fault injection
-let mut options = CosmosClientOptions::default();
-
-// Get the default transport
-let inner_transport = Transport::default();
-
-// Create a transport policy from the inner transport  
-// (You'll need to create this based on how your transport is structured)
-
-// Wrap it with fault injection
-let fault_policy = FaultInjectionPolicy::new(inner_policy);
-
-// Add a fault that triggers on specific document IDs
-fault_policy.add_fault(
-    predicate_url_contains_id("test-doc-123".to_string()),
-    error_request_timeout(),
-    None, // No max count - always trigger
-    None, // No after_max_count handler
-);
-
-// Add a fault with limited occurrences
-fault_policy.add_fault(
-    predicate_is_write_operation("dbs/mydb".to_string()),
-    error_write_forbidden(),
-    Some(3), // Only trigger 3 times
-    None,
-);
-
-// Add a response transformation
-fault_policy.add_response_transformation(
-    predicate_is_database_account_call(),
-    Arc::new(|request, response| {
-        // Modify the response (e.g., change topology)
-        response
-    }),
-);
-
-// Use the client for testing...
-// The faults will be injected based on the configured rules
+pub enum FaultOperationType {
+    // Document operations
+    ReadItem,
+    QueryItem,
+    CreateItem,
+    UpsertItem,
+    ReplaceItem,
+    DeleteItem,
+    PatchItem,
+    BatchItem,
+    ChangeFeedItem,
+    
+    // Metadata operations
+    MetadataReadContainer,
+    MetadataReadDatabaseAccount,
+    MetadataQueryPlan,
+    MetadataPartitionKeyRanges,
+}
 ```
 
-## Integration with Cosmos Client
+## Usage Examples
 
-To integrate with the Cosmos client, you can provide a custom transport policy:
+### Basic Setup
 
 ```rust
-use azure_core::http::Transport;
-use typespec_client_core::http::policies::TransportPolicy;
+use azure_data_cosmos::fault_injection::{
+    FaultInjectionClientBuilder,
+    FaultInjectionConditionBuilder,
+    FaultInjectionRuleBuilder,
+    FaultInjectionServerErrorBuilder,
+    FaultInjectionServerErrorType,
+    FaultOperationType,
+};
+use azure_data_cosmos::CosmosClientOptions;
 
-// Create your fault injection policy with an inner transport
-let transport = Transport::default();
-let transport_policy = Arc::new(TransportPolicy::new(transport));
-let fault_policy = Arc::new(FaultInjectionPolicy::new(transport_policy));
+// Create a server error to inject
+let server_error = FaultInjectionServerErrorBuilder::new(
+    FaultInjectionServerErrorType::ServiceUnavailable
+)
+.build();
 
-// Create a custom transport using the fault injection policy
-let custom_transport = Transport::with_policy(fault_policy);
+// Create a condition for when to inject the fault
+let condition = FaultInjectionConditionBuilder::new()
+    .with_operation_type(FaultOperationType::ReadItem)
+    .build();
 
-// Set it in client options
-let mut options = CosmosClientOptions::default();
-options.client_options.transport = Some(custom_transport);
+// Create a rule combining the condition and error
+let rule = FaultInjectionRuleBuilder::new("read-503-rule", server_error)
+    .with_condition(condition)
+    .build();
 
-// Create the Cosmos client
+// Build the fault injection client
+let mut fault_builder = FaultInjectionClientBuilder::new();
+fault_builder.with_rule(rule);
+
+// Inject into CosmosClientOptions
+let options = fault_builder.inject(CosmosClientOptions::default());
+
+// Create your Cosmos client with fault injection enabled
 let client = CosmosClient::with_key(&endpoint, key, Some(options))?;
 ```
 
-## Testing Scenarios
-
-### Test Request Timeouts
+### Inject 503 Errors on All Read Operations
 
 ```rust
-fault_policy.add_fault(
-    predicate_is_document_operation(),
-    error_request_timeout(),
-    Some(1), // Fail once
-    None,
-);
+let server_error = FaultInjectionServerErrorBuilder::new(
+    FaultInjectionServerErrorType::ServiceUnavailable
+)
+.build();
 
-// Your test code that performs document operations
-// The first operation will timeout, subsequent ones will succeed
+let condition = FaultInjectionConditionBuilder::new()
+    .with_operation_type(FaultOperationType::ReadItem)
+    .build();
+
+let rule = FaultInjectionRuleBuilder::new("read-503", server_error)
+    .with_condition(condition)
+    .build();
 ```
 
-### Test Region Failover
+### Inject Errors with Hit Limit
 
 ```rust
-fault_policy.add_fault(
-    predicate_targets_region("https://eastus.documents.azure.com".to_string()),
-    error_region_down(),
-    None, // Always fail
-    None,
-);
+// Only fail the first 3 requests
+let server_error = FaultInjectionServerErrorBuilder::new(
+    FaultInjectionServerErrorType::TooManyRequests
+)
+.build();
 
-// Test that your code correctly fails over to another region
+let rule = FaultInjectionRuleBuilder::new("throttle-3-times", server_error)
+    .with_condition(condition)
+    .with_hit_limit(3)
+    .build();
 ```
 
-### Test Write Restrictions
+### Inject Errors with Probability
 
 ```rust
-fault_policy.add_fault(
-    predicate_is_write_operation("dbs/mydb".to_string()),
-    error_write_forbidden(),
-    None,
-    None,
-);
-
-// Test read-only scenarios
+// Fail 50% of requests
+let server_error = FaultInjectionServerErrorBuilder::new(
+    FaultInjectionServerErrorType::InternalServerError
+)
+.with_probability(0.5)
+.build();
 ```
 
-### Test Delayed Responses
+### Inject Errors After Delay
 
 ```rust
-fault_policy.add_fault(
-    predicate_url_contains_id("slow-doc".to_string()),
-    error_after_delay(5000, error_request_timeout()),
-    None,
-    None,
-);
+use std::time::Duration;
 
-// Test timeout handling with actual delays
+let server_error = FaultInjectionServerErrorBuilder::new(
+    FaultInjectionServerErrorType::Timeout
+)
+.with_delay(Duration::from_secs(5))
+.build();
+```
+
+### Target Specific Region
+
+```rust
+let condition = FaultInjectionConditionBuilder::new()
+    .with_operation_type(FaultOperationType::CreateItem)
+    .with_region("eastus")
+    .build();
+```
+
+### Target Specific Container
+
+```rust
+let condition = FaultInjectionConditionBuilder::new()
+    .with_operation_type(FaultOperationType::QueryItem)
+    .with_container_id("my-container")
+    .build();
+```
+
+### Rule with Duration and Start Delay
+
+```rust
+use std::time::Duration;
+
+let rule = FaultInjectionRuleBuilder::new("delayed-rule", server_error)
+    .with_condition(condition)
+    .with_start_delay(Duration::from_secs(10))  // Start after 10 seconds
+    .with_duration(Duration::from_secs(60))     // Active for 60 seconds
+    .build();
+```
+
+## Testing with Fault Injection
+
+### Test Framework Integration
+
+When using the test framework, you can use `TestOptions` to configure fault injection:
+
+```rust
+use framework::{TestClient, TestOptions};
+
+// Create fault injection options
+let fault_options = fault_builder.inject(CosmosClientOptions::default());
+
+// Run test with both normal and fault clients
+TestClient::run_with_shared_db(
+    async |run_context, db_client| {
+        // Use db_client for normal operations (setup)
+        
+        // Use fault client for testing error scenarios
+        let fault_db_client = run_context.fault_db_client()
+            .expect("fault client should be available");
+        
+        // Test that operations fail as expected
+        let result = fault_db_client
+            .container_client("my-container")
+            .read_item::<MyItem>(&pk, &id, None)
+            .await;
+        
+        assert!(result.is_err());
+        
+        Ok(())
+    },
+    Some(TestOptions::new().with_fault_client_options(fault_options)),
+).await?;
 ```
 
 ## Thread Safety
 
-The `FaultInjectionPolicy` is thread-safe and can be shared across multiple threads. All internal state is protected by mutexes.
+The `FaultClient` is thread-safe. All internal state is protected by `Arc` and `Mutex`, allowing safe concurrent access from multiple threads.
 
-## Counters
+## Implementation Details
 
-The utility tracks fault injection statistics:
+### How It Works
 
-```rust
-// Get the current count
-let count = fault_policy.get_counter("error_with_counter");
+1. `FaultInjectionClientBuilder::inject()` wraps the default HTTP client with `FaultClient`
+2. For each request, `FaultClient` checks all rules in order
+3. If a rule's condition matches and the rule is applicable (timing, hit limit), the fault is applied
+4. Internal fault injection headers are removed before forwarding requests to the service
 
-// Reset all counters
-fault_policy.reset_counters();
+### Rule Evaluation Order
 
-// Use the counter function to track a specific error
-let error = fault_policy.error_with_counter(some_error);
-```
+Rules are evaluated in the order they were added. The first matching rule is applied.
 
-## Cleaning Up
+### Condition Matching
 
-```rust
-// Clear all fault rules
-fault_policy.clear_faults();
+All specified conditions in a `FaultInjectionCondition` must match (AND logic):
+- If `operation_type` is set, it must match
+- If `region` is set, the URL must contain the region
+- If `container_id` is set, the URL must contain the container ID
 
-// Clear all response transformations  
-fault_policy.clear_transforms();
-
-// Reset counters
-fault_policy.reset_counters();
-```
-
-## Comparison with Python Implementation
-
-This Rust implementation provides similar capabilities to the Python SDK's fault injection:
-
-| Feature | Python | Rust |
-|---------|--------|------|
-| Request predicates | ✓ | ✓ |
-| Fault factories | ✓ | ✓ |
-| Response transformations | ✓ | ✓ |
-| Max count with fallback | ✓ | ✓ |
-| Counters | ✓ | ✓ |
-| Thread-safe | - | ✓ |
-
-Key differences:
-- Rust version uses `Arc` and `Mutex` for thread safety
-- Rust version integrates with the `Policy` trait from azure_core
-- Rust version uses type-safe error handling with `Result` types
-- Rust predicates and factories use closures with `Arc` for sharing
+If no conditions are specified, the rule matches all requests.
 
 ## See Also
 
-- `tests/fault_injection_example.rs` - Example usage and tests
-- Python SDK fault injection: Similar concept from Azure Cosmos DB Python SDK
+- [Azure Cosmos DB Documentation](https://docs.microsoft.com/azure/cosmos-db/)
+- [Rust SDK Examples](../examples/)

@@ -35,6 +35,7 @@ pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
     pub application_name: Option<String>,
     pub application_region: Option<RegionName>,
+    #[cfg(feature = "fault_injection")]
     pub fault_injection_enabled: bool,
     pub application_preferred_regions: Vec<RegionName>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,

@@ -245,7 +245,6 @@ impl SubStatusCode {
     // 410: StatusCodeType_Gone: sub-status
     #[allow(dead_code)]
     pub(crate) const NAME_CACHE_IS_STALE: SubStatusCode = SubStatusCode(1000);
-    #[allow(dead_code)]
     pub(crate) const PARTITION_KEY_RANGE_GONE: SubStatusCode = SubStatusCode(1002);
     #[allow(dead_code)]
     pub(crate) const COMPLETING_SPLIT: SubStatusCode = SubStatusCode(1007);

@@ -5,24 +5,9 @@
 
 use std::time::Duration;
 
-/// Trait for fault injection results.
-pub trait FaultInjectionResult: Send + Sync + std::fmt::Debug {
-    /// Clones this result into a boxed trait object.
-    fn clone_box(&self) -> Box<dyn FaultInjectionResult>;
-
-    /// Returns this result as a server error if it is one.
-    fn as_server_error(&self) -> Option<&FaultInjectionServerError>;
-}
-
-impl Clone for Box<dyn FaultInjectionResult> {
-    fn clone(&self) -> Self {
-        self.clone_box()
-    }
-}
-
 /// Represents different server error types that can be injected for fault testing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FaultInjectionServerErrorType {
+pub enum FaultInjectionErrorType {
     /// 500 from server.
     InternalServerError,
     /// 429 from server.
@@ -31,59 +16,61 @@ pub enum FaultInjectionServerErrorType {
     ReadSessionNotAvailable,
     /// 408 from server.
     Timeout,
-    /// Response delay, when it is over request timeout, can simulate transit timeout.
-    ResponseDelay,
-    /// Simulate high channel acquisition, when it is over connection timeout, can simulate connectionTimeoutException.
-    ConnectionDelay,
     /// Simulate service unavailable (503).
     ServiceUnavailable,
     /// 410-1002 from server.
     PartitionIsGone,
+    /// 403-3 Forbidden from server.
+    WriteForbidden,
+    /// 403-1008 Forbidden from server.
+    DatabaseAccountNotFound,
+    /// Simulate DNS resolution failure.
+    DnsResolutionFailure,
+    /// Simulate TCP connection failure.
+    TcpConnectionFailure,
+    /// Simulate client timed out waiting for a response.
+    ResponseTimeout,
 }
 
 /// Represents a server error to be injected.
 #[derive(Clone, Debug)]
-pub struct FaultInjectionServerError {
+pub struct FaultInjectionResult {
     /// The type of server error to inject.
-    pub error_type: FaultInjectionServerErrorType,
+    pub(crate) error_type: Option<FaultInjectionErrorType>,
     /// Number of times to inject the error.
     /// Default is that it will be injected forever.
-    pub times: Option<u32>,
+    pub(crate) times: Option<u32>,
     /// Delay before injecting the error.
     /// default is no delay.
-    pub delay: Duration,
+    pub(crate) delay: Duration,
     /// Probability of injecting the error (0.0 to 1.0).
     /// Default is 1.0 (always inject).
-    pub probability: f32,
+    pub(crate) probability: f32,
 }
 
-impl FaultInjectionResult for FaultInjectionServerError {
-    fn clone_box(&self) -> Box<dyn FaultInjectionResult> {
-        Box::new(self.clone())
-    }
-
-    fn as_server_error(&self) -> Option<&FaultInjectionServerError> {
-        Some(self)
-    }
-}
-
-/// Builder for creating a FaultInjectionServerError.
-pub struct FaultInjectionServerErrorBuilder {
-    error_type: FaultInjectionServerErrorType,
+/// Builder for creating a FaultInjectionResult.
+pub struct FaultInjectionResultBuilder {
+    error_type: Option<FaultInjectionErrorType>,
     times: Option<u32>,
     delay: Duration,
     probability: f32,
 }
 
-impl FaultInjectionServerErrorBuilder {
-    /// Creates a new FaultInjectionServerErrorBuilder with the specified error type.
-    pub fn new(error_type: FaultInjectionServerErrorType) -> Self {
+impl FaultInjectionResultBuilder {
+    /// Creates a new FaultInjectionResultBuilder with default values.
+    pub fn new() -> Self {
         Self {
-            error_type,
+            error_type: None,
             times: None,
             delay: Duration::ZERO,
             probability: 1.0,
         }
+    }
+
+    /// Sets the error type to inject.
+    pub fn with_error(mut self, error_type: FaultInjectionErrorType) -> Self {
+        self.error_type = Some(error_type);
+        self
     }
 
     /// Sets the number of times to inject the error.
@@ -104,13 +91,76 @@ impl FaultInjectionServerErrorBuilder {
         self
     }
 
-    /// Builds the FaultInjectionServerError.
-    pub fn build(self) -> FaultInjectionServerError {
-        FaultInjectionServerError {
+    /// Builds the FaultInjectionResult.
+    ///
+    pub fn build(self) -> FaultInjectionResult {
+        FaultInjectionResult {
             error_type: self.error_type,
             times: self.times,
             delay: self.delay,
             probability: self.probability,
         }
+    }
+}
+
+impl Default for FaultInjectionResultBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{FaultInjectionErrorType, FaultInjectionResultBuilder};
+    use std::time::Duration;
+
+    #[test]
+    fn builder_default_values() {
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::Timeout)
+            .build();
+
+        assert_eq!(error.error_type.unwrap(), FaultInjectionErrorType::Timeout);
+        assert!(error.times.is_none());
+        assert_eq!(error.delay, Duration::ZERO);
+        assert!((error.probability - 1.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn builder_probability_clamped_above() {
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .with_probability(1.5)
+            .build();
+
+        assert!((error.probability - 1.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn builder_probability_clamped_below() {
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .with_probability(-0.5)
+            .build();
+
+        assert!(error.probability.abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn builder_chained() {
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::PartitionIsGone)
+            .with_times(3)
+            .with_delay(Duration::from_millis(100))
+            .with_probability(0.8)
+            .build();
+
+        assert_eq!(
+            error.error_type.unwrap(),
+            FaultInjectionErrorType::PartitionIsGone
+        );
+        assert_eq!(error.times, Some(3));
+        assert_eq!(error.delay, Duration::from_millis(100));
+        assert!((error.probability - 0.8).abs() < f32::EPSILON);
     }
 }

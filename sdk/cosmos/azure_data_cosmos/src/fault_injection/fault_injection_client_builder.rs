@@ -15,7 +15,7 @@ use super::fault_injection_rule::FaultInjectionRule;
 /// Builder for creating a fault injection client.
 pub struct FaultInjectionClientBuilder {
     /// The fault injection rules to apply.
-    /// Rules will be applied from first to last.
+    /// First valid rule will be applied.
     rules: Vec<FaultInjectionRule>,
 }
 
@@ -51,5 +51,20 @@ impl FaultInjectionClientBuilder {
 impl Default for FaultInjectionClientBuilder {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FaultInjectionClientBuilder;
+    use crate::options::CosmosClientOptions;
+
+    #[test]
+    fn builder_default() {
+        let builder = FaultInjectionClientBuilder::default();
+        let options = builder.inject(CosmosClientOptions::default());
+
+        assert!(options.fault_injection_enabled);
+        assert!(options.client_options.transport.is_some());
     }
 }
