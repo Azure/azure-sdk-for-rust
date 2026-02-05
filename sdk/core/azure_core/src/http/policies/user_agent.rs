@@ -101,9 +101,9 @@ impl<'a> UserAgentPolicy {
             None => format!("azsdk-rust-{crate_name}/{crate_version} {platform_info}"),
         };
 
-        let header = HeaderValue::from(header_str);
-
-        UserAgentPolicy { header }
+        UserAgentPolicy {
+            header: HeaderValue::from(header_str),
+        }
     }
 }
 
