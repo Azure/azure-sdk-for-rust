@@ -5,7 +5,6 @@
 ### Features Added
 - Added `excluded_regions` to `CosmosClientOptions` and `ItemOptions` for additional regional routing options. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
 - Added `effective_preferred_regions` to the client, ensuring multi-region accounts use all regions without supplying `application_preferred_regions` to their client. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
-
 - Added basic multi-region writes support. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482) and [#3495](https://github.com/Azure/azure-sdk-for-rust/pull/3495))
 - Added new `CosmosResponse` that wraps `azure_core::Response` for all operations except queries. ([#3622](https://github.com/Azure/azure-sdk-for-rust/pull/3622))
 - Added transactional batch support for executing multiple operations atomically within the same partition key. ([#3664](https://github.com/Azure/azure-sdk-for-rust/pull/3664))
