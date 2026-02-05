@@ -6,7 +6,6 @@ use crate::cosmos_request::CosmosRequest;
 use crate::models::CosmosResponse;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::container_cache::ContainerCache;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::Context;
@@ -18,7 +17,6 @@ pub struct ContainerConnection {
     pipeline: Arc<GatewayPipeline>,
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
-    endpoint_manager: Arc<GlobalEndpointManager>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
@@ -34,14 +32,12 @@ impl ContainerConnection {
         pipeline: Arc<GatewayPipeline>,
         container_cache: Arc<ContainerCache>,
         pk_range_cache: Arc<PartitionKeyRangeCache>,
-        endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
         Self {
             pipeline,
             container_cache,
             pk_range_cache,
-            endpoint_manager,
             global_partition_endpoint_manager,
         }
     }
@@ -227,7 +223,6 @@ mod tests {
             gateway_pipeline,
             container_cache,
             pk_range_cache,
-            endpoint_manager,
             partition_manager,
         );
 
@@ -251,23 +246,16 @@ mod tests {
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
-            endpoint_manager.clone(),
             partition_manager.clone(),
         );
         let connection2 = ContainerConnection::new(
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
-            endpoint_manager.clone(),
             partition_manager.clone(),
         );
-        let connection3 = ContainerConnection::new(
-            pipeline,
-            container_cache,
-            pk_range_cache,
-            endpoint_manager,
-            partition_manager,
-        );
+        let connection3 =
+            ContainerConnection::new(pipeline, container_cache, pk_range_cache, partition_manager);
 
         // All connections should be valid
         assert!(std::mem::size_of_val(&connection1) > 0);
@@ -339,13 +327,8 @@ mod tests {
             endpoint_manager.clone(),
         );
 
-        let connection = ContainerConnection::new(
-            pipeline,
-            container_cache,
-            pk_range_cache,
-            endpoint_manager,
-            partition_manager,
-        );
+        let connection =
+            ContainerConnection::new(pipeline, container_cache, pk_range_cache, partition_manager);
 
         // Verify Debug trait is properly implemented
         let debug_str = format!("{:?}", connection);

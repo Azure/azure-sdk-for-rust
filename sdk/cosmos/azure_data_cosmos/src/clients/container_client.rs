@@ -61,7 +61,6 @@ impl ContainerClient {
             pipeline.clone(),
             container_cache,
             partition_key_range_cache,
-            global_endpoint_manager.clone(),
             global_partition_endpoint_manager.clone(),
         ));
 

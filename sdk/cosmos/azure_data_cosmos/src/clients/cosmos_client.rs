@@ -83,7 +83,11 @@ impl CosmosClient {
         ));
 
         let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
-            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true);
+            GlobalPartitionEndpointManager::new(
+                global_endpoint_manager.clone(),
+                false,
+                options.enable_partition_level_circuit_breaker,
+            );
 
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,

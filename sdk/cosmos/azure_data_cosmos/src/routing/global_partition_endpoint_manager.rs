@@ -8,14 +8,12 @@ use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Instant;
 
-// use tokio::sync::Notify;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::resource_context::ResourceType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use azure_core::async_runtime::get_async_runtime;
-// use tokio_util::sync::CancellationToken;
 use tracing::info;
 use url::Url;
 
@@ -197,17 +195,14 @@ impl GlobalPartitionEndpointManager {
 
             info!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() trying to get address and open connections for failed locations.");
 
-            if let Err(e) = self
-                .try_open_connection_to_unhealthy_endpoints_and_initiate_failback()
-                .await
-            {
+            if let Err(e) = self.initiate_failback_to_unhealthy_endpoints().await {
                 tracing::error!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - Unable to get address and open connections. Exception: {}", e);
             }
         }
     }
 
-    /// Attempts to open connections to unhealthy endpoints and initiates failback if successful.
-    async fn try_open_connection_to_unhealthy_endpoints_and_initiate_failback(
+    /// Attempts to initiate failback to unhealthy endpoints un-deterministically.
+    async fn initiate_failback_to_unhealthy_endpoints(
         &self,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - Attempting to open connections to unhealthy endpoints and initiate failback.");
