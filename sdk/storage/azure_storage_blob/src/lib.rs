@@ -20,3 +20,23 @@ mod logging;
 pub mod models;
 pub use models::error;
 pub use models::error::{Result, StorageError};
+
+#[cfg(not(target_arch = "wasm32"))]
+mod conditional_send {
+    /// Conditionally implements [`Send`] based on the `target_arch`.
+    ///
+    /// This implementation requires `Send`.
+    pub trait ConditionalSend: Send {}
+
+    impl<T> ConditionalSend for T where T: Send {}
+}
+
+#[cfg(target_arch = "wasm32")]
+mod conditional_send {
+    /// Conditionally implements [`Send`] based on the `target_arch`.
+    ///
+    /// This implementation does not require `Send`.
+    pub trait ConditionalSend {}
+
+    impl<T> ConditionalSend for T {}
+}

@@ -7,7 +7,7 @@ use azure_core::http::{response::PinnedStream, AsyncRawResponse};
 use bytes::Bytes;
 use futures::{stream::FuturesOrdered, StreamExt};
 
-use crate::models::content_range::ContentRange;
+use crate::{conditional_send::ConditionalSend, models::content_range::ContentRange};
 
 use super::*;
 
@@ -49,7 +49,7 @@ where
 
     // the first operation has a different type from the others.
     // fully type this variable out to specify dyn.
-    let fut: Pin<Box<dyn Future<Output = AzureResult<Bytes>> + Send>> =
+    let fut: Pin<Box<dyn DownloadRangeFuture<Output = AzureResult<Bytes>>>> =
         Box::pin(initial_response.into_body().collect());
     let mut ops = FuturesOrdered::new();
     ops.push_back(fut);
@@ -78,6 +78,9 @@ async fn download_range_to_bytes(
     let response = client.transfer_range(range).await?;
     response.into_body().collect().await
 }
+
+trait DownloadRangeFuture: Future + ConditionalSend {}
+impl<T: Future + ConditionalSend> DownloadRangeFuture for T {}
 
 #[cfg(test)]
 mod tests {
