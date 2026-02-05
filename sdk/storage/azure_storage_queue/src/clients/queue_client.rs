@@ -7,8 +7,11 @@ use crate::generated::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{NoFormat, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat},
-    xml, Result,
+    http::{
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        NoFormat, Pipeline, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat,
+    },
+    tracing, xml, Result,
 };
 use std::{collections::HashMap, sync::Arc};
 
@@ -17,14 +20,83 @@ pub struct QueueClient {
     pub(super) client: GeneratedQueueClient,
 }
 
+impl GeneratedQueueClient {
+    /// Creates a new GeneratedQueueClient from a queue URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_url` - The full URL of the queue, for example `https://myaccount.queue.core.windows.net/myqueue`
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating. If None, the URL must contain authentication information (e.g., SAS token).
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Queues.Queue")]
+    pub fn from_url(
+        queue_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<QueueClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !queue_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{queue_url} must use https"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
+
+        Ok(Self {
+            endpoint: queue_url,
+            version: options.version,
+            pipeline,
+        })
+    }
+}
+
 impl QueueClient {
+    /// Creates a new QueueClient from a queue URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_url` - The full URL of the queue, for example `https://myaccount.queue.core.windows.net/myqueue`
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating. If None, the URL must contain authentication information (e.g., SAS token).
+    /// * `options` - Optional configuration for the client.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the new `QueueClient` if successful, or an error if the endpoint URL is invalid
+    pub fn from_url(
+        queue_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<QueueClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedQueueClient::from_url(queue_url, credential, options)?;
+        Ok(Self { client })
+    }
+
     /// Creates a new QueueClient using Entra ID authentication.
     ///
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `queue_name` - The name of the queue to interact with.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `queue_name` - The name of the queue to interact with
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating. If None, the URL must contain authentication information (e.g., SAS token).
     /// * `options` - Optional configuration for the client.
     ///
     /// # Returns
@@ -33,28 +105,26 @@ impl QueueClient {
     pub fn new(
         endpoint: &str,
         queue_name: &str,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueClientOptions>,
     ) -> Result<Self> {
-        let options = options.unwrap_or_default();
+        let mut url = Url::parse(endpoint)?;
+        url.path_segments_mut()
+            .map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?
+            .push(queue_name);
 
-        let client = GeneratedQueueClient::new(
-            endpoint,
-            credential.clone(),
-            queue_name.to_string(),
-            Some(options),
-        )?;
+        let client = GeneratedQueueClient::from_url(url, credential, options)?;
         Ok(Self { client })
     }
 
     /// Returns the endpoint URL of the Azure storage account this client is associated with.
     pub fn endpoint(&self) -> &Url {
         self.client.endpoint()
-    }
-
-    /// Returns the name of the queue this client is associated with.
-    pub fn queue_name(&self) -> &str {
-        &self.client.queue_name
     }
 
     /// Creates a new queue under the given account.

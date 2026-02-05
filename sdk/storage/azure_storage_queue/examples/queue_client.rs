@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use azure_core::{
-    http::{Response, StatusCode, XmlFormat},
+    http::{Response, StatusCode, Url, XmlFormat},
     Error,
 };
 use azure_identity::DeveloperToolsCredential;
@@ -172,16 +172,7 @@ async fn peek_and_receive_messages(
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-
-    // Retrieve the storage account endpoint from environment variable.
-    let endpoint = get_endpoint();
-
-    let queue_name = get_random_queue_name();
-    let queue_client = QueueClient::new(&endpoint, &queue_name, credential.clone(), None)?;
-
+async fn run_queue_tests(queue_client: &QueueClient) -> Result<(), Box<dyn std::error::Error>> {
     // Create and manage queue
     let result = queue_client.create(None).await;
     log_operation_result(&result, "create");
@@ -190,13 +181,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log_operation_result(&result, "check_exists");
 
     // Set and get queue metadata
-    set_and_get_metadata(&queue_client).await?;
+    set_and_get_metadata(queue_client).await?;
 
-    let result = send_message(&queue_client, "Example Message").await;
+    let result = send_message(queue_client, "Example Message").await;
     log_operation_result(&result, "send_message");
 
     send_and_update_message(
-        &queue_client,
+        queue_client,
         "Example message created from Rust, ready for update",
     )
     .await?;
@@ -207,22 +198,95 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Send and process messages
     send_and_delete_message(
-        &queue_client,
+        queue_client,
         "Example message created from Rust, ready for deletion",
     )
     .await?;
 
     // Peek and Receive messages
-    peek_and_receive_messages(&queue_client).await?;
+    peek_and_receive_messages(queue_client).await?;
 
     // Cleanup
     let result = queue_client.delete(None).await;
     log_operation_result(&result, "delete");
 
-    let non_existing_queue_client =
-        QueueClient::new(&endpoint, "non-existent-queue", credential.clone(), None)?;
+    Ok(())
+}
+
+async fn test_with_sas_token() -> Result<(), Box<dyn std::error::Error>> {
+    // Try to get SAS URL from environment variable
+    let sas_url = match std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT_SAS_URL") {
+        Ok(url) => url,
+        Err(_) => {
+            println!("Skipping SAS token test - AZURE_QUEUE_STORAGE_ACCOUNT_SAS_URL not set");
+            return Ok(());
+        }
+    };
+
+    println!("\n=== Testing with SAS Token Authentication ===");
+
+    let parsed_url = Url::parse(&sas_url)?;
+    let queue_name = get_random_queue_name();
+
+    // Construct the queue URL by appending the queue name to the service URL
+    let mut queue_url = parsed_url.clone();
+    queue_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, "Invalid SAS URL")
+        })?
+        .push(&queue_name);
+
+    let queue_client = QueueClient::from_url(queue_url, None, None)?;
+
+    // Run the same tests with SAS authentication
+    run_queue_tests(&queue_client).await?;
+
+    println!("=== SAS Token Authentication Test Complete ===\n");
+
+    // Test using the `new` constructor with SAS token
+    println!("=== Testing with SAS Token using new() constructor ===");
+
+    let queue_name = get_random_queue_name();
+    let queue_client = QueueClient::new(&sas_url, &queue_name, None, None)?;
+
+    // Run the same tests with SAS authentication using new constructor
+    run_queue_tests(&queue_client).await?;
+
+    println!("=== SAS Token new() Constructor Test Complete ===\n");
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DeveloperToolsCredential::new(None)?;
+
+    // Retrieve the storage account endpoint from environment variable.
+    let endpoint = get_endpoint();
+
+    let queue_name = get_random_queue_name();
+    let queue_client = QueueClient::new(&endpoint, &queue_name, Some(credential.clone()), None)?;
+
+    println!("=== Testing with Entra ID Authentication ===");
+
+    // Run tests with Entra ID authentication
+    run_queue_tests(&queue_client).await?;
+
+    // Check non-existent queue
+    let non_existing_queue_client = QueueClient::new(
+        &endpoint,
+        "non-existent-queue",
+        Some(credential.clone()),
+        None,
+    )?;
     let result = non_existing_queue_client.exists().await;
     log_operation_result(&result, "check_non_existent");
+
+    println!("=== Entra ID Authentication Test Complete ===\n");
+
+    // Test with SAS token authentication if available
+    test_with_sas_token().await?;
 
     Ok(())
 }

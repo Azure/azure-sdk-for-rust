@@ -3,7 +3,10 @@
 
 use std::sync::Arc;
 
-use azure_core::{http::StatusCode, Error};
+use azure_core::{
+    http::{StatusCode, Url},
+    Error,
+};
 use azure_storage_queue::{
     models::{
         CorsRule, ListQueuesIncludeType, ListQueuesResponse, QueueServiceClientListQueuesOptions,
@@ -104,7 +107,7 @@ async fn get_statistics(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let secondary_endpoint = get_secondary_endpoint();
     let secondary_queue_client =
-        QueueServiceClient::new(&secondary_endpoint, credential.clone(), None)?;
+        QueueServiceClient::new(&secondary_endpoint, Some(credential.clone()), None)?;
     let result = secondary_queue_client.get_statistics(None).await;
     log_operation_result(&result, "get_statistics");
 
@@ -123,6 +126,78 @@ async fn get_statistics(
     Ok(())
 }
 
+async fn test_sas_token() -> Result<(), Box<dyn std::error::Error>> {
+    // Try to get SAS URL from environment variable
+    let sas_url = match std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT_SAS_URL") {
+        Ok(url) => url,
+        Err(_) => {
+            println!("Skipping SAS token test - AZURE_QUEUE_STORAGE_ACCOUNT_SAS_URL not set");
+            return Ok(());
+        }
+    };
+
+    println!("\n=== Testing SAS Token Authentication ===");
+
+    let parsed_url = Url::parse(&sas_url)?;
+    let queue_client = QueueServiceClient::from_url(parsed_url, None, None)?;
+
+    let queue_name = get_random_queue_name();
+
+    // Create queue using SAS token
+    let result = queue_client.create_queue(&queue_name, None).await;
+    log_operation_result(&result, "create_queue_with_sas");
+
+    // List queues and validate the created queue exists
+    let list_result = queue_client.list_queues(None);
+    match list_result {
+        Ok(pager) => {
+            let mut found = false;
+            let mut pager = pager.into_pages();
+            while let Some(page_result) = pager.next().await {
+                match page_result {
+                    Ok(response) => {
+                        let queue_list: ListQueuesResponse = response.into_model()?;
+                        for queue in queue_list.queue_items {
+                            if queue.name.as_ref() == Some(&queue_name) {
+                                found = true;
+                                println!(
+                                    "Successfully validated queue '{}' exists in list",
+                                    queue_name
+                                );
+                                break;
+                            }
+                        }
+                        if found {
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Error listing queues with SAS: {}", e);
+                        break;
+                    }
+                }
+            }
+            if !found {
+                eprintln!(
+                    "Warning: Queue '{}' was created but not found in list",
+                    queue_name
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("Error listing queues with SAS: {}", e);
+        }
+    }
+
+    // Delete queue using SAS token
+    let result = queue_client.delete_queue(&queue_name, None).await;
+    log_operation_result(&result, "delete_queue_with_sas");
+
+    println!("=== SAS Token Authentication Test Complete ===\n");
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
@@ -131,7 +206,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let endpoint = get_endpoint();
 
     let queue_name = get_random_queue_name();
-    let queue_client = QueueServiceClient::new(&endpoint, credential.clone(), None)?;
+    let queue_client = QueueServiceClient::new(&endpoint, Some(credential.clone()), None)?;
 
     // Create and manage queue
     let result = queue_client.create_queue(&queue_name, None).await;
@@ -148,6 +223,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Cleanup
     let result = queue_client.delete_queue(&queue_name, None).await;
     log_operation_result(&result, "delete_queue");
+
+    // Test SAS token authentication if available
+    test_sas_token().await?;
 
     Ok(())
 }

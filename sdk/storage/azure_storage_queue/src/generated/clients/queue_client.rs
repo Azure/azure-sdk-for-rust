@@ -29,7 +29,6 @@ use std::{collections::HashMap, sync::Arc};
 pub struct QueueClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
-    pub(crate) queue_name: String,
     pub(crate) version: String,
 }
 
@@ -50,13 +49,11 @@ impl QueueClient {
     /// * `endpoint` - Service host
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
-    /// * `queue_name` - The name of the queue.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Queue")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        queue_name: String,
         options: Option<QueueClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -73,7 +70,6 @@ impl QueueClient {
         ));
         Ok(Self {
             endpoint,
-            queue_name,
             version: options.version,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
@@ -104,9 +100,7 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/messages");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
+        url.append_path("/messages");
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -138,9 +132,6 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
         let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -182,9 +173,6 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
         let mut query_builder = url.query_builder();
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -237,9 +225,8 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/messages/{messageId}");
+        let mut path = String::from("/messages/{messageId}");
         path = path.replace("{messageId}", message_id);
-        path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("popReceipt", pop_receipt);
@@ -298,9 +285,6 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.append_pair("comp", "acl");
         if let Some(timeout) = options.timeout {
@@ -361,9 +345,6 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.append_pair("comp", "metadata");
         if let Some(timeout) = options.timeout {
@@ -402,9 +383,7 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/messages");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
+        url.append_path("/messages");
         let mut query_builder = url.query_builder();
         query_builder.append_pair("peekonly", "true");
         if let Some(number_of_messages) = options.number_of_messages {
@@ -445,9 +424,7 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/messages");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
+        url.append_path("/messages");
         let mut query_builder = url.query_builder();
         if let Some(number_of_messages) = options.number_of_messages {
             query_builder.set_pair("numofmessages", number_of_messages.to_string());
@@ -499,9 +476,7 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/messages");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
+        url.append_path("/messages");
         let mut query_builder = url.query_builder();
         if let Some(message_time_to_live) = options.message_time_to_live {
             query_builder.set_pair("messageTtl", message_time_to_live.to_string());
@@ -569,9 +544,6 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.append_pair("comp", "acl");
         if let Some(timeout) = options.timeout {
@@ -613,9 +585,6 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/");
-        path = path.replace("{queueName}", &self.queue_name);
-        url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.append_pair("comp", "metadata");
         if let Some(timeout) = options.timeout {
@@ -676,9 +645,8 @@ impl QueueClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("/{queueName}/messages/{messageId}");
+        let mut path = String::from("/messages/{messageId}");
         path = path.replace("{messageId}", message_id);
-        path = path.replace("{queueName}", &self.queue_name);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("popReceipt", pop_receipt);
