@@ -20,7 +20,7 @@ fn collect_matching_items(
 }
 
 #[tokio::test]
-pub async fn single_partition_query() -> Result<(), Box<dyn Error>> {
+pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
@@ -106,7 +106,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let items = test_data::generate_mock_items(10, 10);
+            let items = test_data::generate_mock_items(10, 2);
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 

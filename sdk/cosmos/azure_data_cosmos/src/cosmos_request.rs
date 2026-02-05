@@ -2,14 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::operation_context::OperationType;
+use crate::regions::RegionName;
 use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{constants, PartitionKey};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue, Headers};
-use azure_core::http::{
-    request::{options::ContentType, Request},
-    Method,
-};
+use azure_core::http::{request::Request, Method};
 use serde::Serialize;
 
 /// Specifies which form of authorization token should be used when signing
@@ -61,6 +59,7 @@ pub struct CosmosRequest {
     pub query_string: Option<String>,
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
+    pub excluded_regions: Option<Vec<RegionName>>,
 }
 
 impl CosmosRequest {
@@ -88,6 +87,7 @@ impl CosmosRequest {
             query_string: None,
             continuation: None,
             entity_id: None,
+            excluded_regions: None,
         }
     }
 
@@ -147,8 +147,8 @@ impl CosmosRequest {
             req.insert_headers(pk).unwrap();
         }
 
-        if !OperationType::is_read_only(&self.operation_type) {
-            req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
+        if let Some(ct) = self.operation_type.body_content_type() {
+            req.insert_headers(&ct).unwrap();
             if self.operation_type == OperationType::Upsert {
                 req.insert_header(constants::IS_UPSERT, "true");
             }
@@ -176,6 +176,7 @@ pub struct CosmosRequestBuilder {
     continuation: Option<String>,
     entity_id: Option<String>,
     container_name: Option<String>,
+    excluded_regions: Option<Vec<RegionName>>,
     // Flags
     is_feed: bool,
     use_gateway_mode: bool,
@@ -204,6 +205,7 @@ impl CosmosRequestBuilder {
             force_name_cache_refresh: false,
             force_partition_key_range_refresh: false,
             force_collection_routing_map_refresh: false,
+            excluded_regions: None,
         }
     }
 
@@ -221,6 +223,14 @@ impl CosmosRequestBuilder {
                 self.headers.insert(name, value);
             }
         }
+        self
+    }
+
+    pub fn excluded_regions(mut self, excluded_regions: Option<Vec<RegionName>>) -> Self {
+        // Sets the excluded regions for the given request. If None is provided,
+        // client-level excluded regions will be used. If an empty vector is provided,
+        // no regions will be excluded for this request.
+        self.excluded_regions = excluded_regions;
         self
     }
 
@@ -269,6 +279,7 @@ impl CosmosRequestBuilder {
         req.continuation = self.continuation;
         req.entity_id = self.entity_id;
         req.collection_name = self.container_name;
+        req.excluded_regions = self.excluded_regions;
 
         Ok(req)
     }

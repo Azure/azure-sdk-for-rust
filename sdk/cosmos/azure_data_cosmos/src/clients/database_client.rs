@@ -6,16 +6,19 @@ use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
-    clients::ContainerClient,
+    clients::{ContainerClient, OffersClient},
     models::{ContainerProperties, CosmosResponse, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
-    CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
-use azure_core::http::response::Response;
 use std::sync::Arc;
+
+use crate::cosmos_request::CosmosRequest;
+use crate::operation_context::OperationType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -127,17 +130,17 @@ impl DatabaseClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions<'_>>,
-    ) -> azure_core::Result<FeedPager<ContainerProperties>> {
+    ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.containers_link);
 
-        self.pipeline.send_query_request(
-            options.method_options.context,
-            query.into(),
-            url,
+        crate::query::executor::QueryExecutor::new(
+            self.pipeline.clone(),
             self.containers_link.clone(),
-            |_| Ok(()),
+            options.method_options.context.into_owned(),
+            query.into(),
+            azure_core::http::headers::Headers::new(),
         )
+        .into_stream()
     }
 
     /// Creates a new container.
@@ -204,9 +207,8 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        self.pipeline
-            .read_throughput_offer(options.method_options.context, &resource_id)
-            .await
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client.read(options.method_options.context).await
     }
 
     /// Replaces the database throughput properties.
@@ -219,7 +221,7 @@ impl DatabaseClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions<'_>>,
-    ) -> azure_core::Result<Response<ThroughputProperties>> {
+    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
@@ -229,8 +231,9 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        self.pipeline
-            .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        offers_client
+            .replace(options.method_options.context, throughput)
             .await
     }
 }

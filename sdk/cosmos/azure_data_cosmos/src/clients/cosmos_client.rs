@@ -6,7 +6,7 @@ use crate::{
     models::{CosmosResponse, DatabaseProperties},
     pipeline::{AuthorizationPolicy, GatewayPipeline},
     resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
+    CosmosClientOptions, CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::{credentials::TokenCredential, http::Url};
 use serde::Serialize;
@@ -76,9 +76,11 @@ impl CosmosClient {
         );
 
         let preferred_regions = options.application_preferred_regions.clone();
+        let excluded_regions = options.excluded_regions.clone();
         let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
+            excluded_regions,
             pipeline_core.clone(),
         ));
 
@@ -150,9 +152,11 @@ impl CosmosClient {
         );
 
         let preferred_regions = options.application_preferred_regions.clone();
+        let excluded_regions = options.excluded_regions.clone();
         let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
+            excluded_regions,
             pipeline_core.clone(),
         ));
 
@@ -255,17 +259,17 @@ impl CosmosClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions<'_>>,
-    ) -> azure_core::Result<FeedPager<DatabaseProperties>> {
+    ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.databases_link);
 
-        self.pipeline.send_query_request(
-            options.method_options.context,
-            query.into(),
-            url,
+        crate::query::executor::QueryExecutor::new(
+            self.pipeline.clone(),
             self.databases_link.clone(),
-            |_| Ok(()),
+            options.method_options.context.into_owned(),
+            query.into(),
+            azure_core::http::headers::Headers::new(),
         )
+        .into_stream()
     }
 
     /// Creates a new database.

@@ -116,9 +116,11 @@ pub fn get_effective_hub_endpoint() -> String {
     // Insert the hub region after the account name, before .documents.azure.com
     // e.g., "account_name.documents.azure.com" -> "account_name-eastus2.documents.azure.com"
     let region_suffix = HUB_REGION.as_str().to_lowercase().replace(' ', "");
+
     if let Some(pos) = host.find(".documents.azure.com") {
         let account_name = &host[..pos];
-        format!("{}-{}.documents.azure.com", account_name, region_suffix)
+        let result = format!("{}-{}.documents.azure.com", account_name, region_suffix);
+        result
     } else {
         // Fallback: just return the host as-is if it doesn't match expected format
         host.to_string()
@@ -135,6 +137,7 @@ pub fn get_global_endpoint() -> String {
     // Expected format: https://accountname.documents.azure.com:443
     // Target format: accountname.documents.azure.com (host only, no scheme/port)
     let url = url::Url::parse(account_endpoint).expect("Failed to parse account endpoint URL");
+
     let host = url
         .host_str()
         .expect("Failed to get host from account endpoint")
@@ -232,7 +235,6 @@ impl TestClient {
     ///
     /// This method supports:
     /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
-
     /// - Custom CosmosClient options
     pub async fn run_with_options<F>(
         mut test: F,
@@ -282,24 +284,21 @@ impl TestClient {
                 loop {
                     let test_result = test(&run).await;
 
-                    match &test_result {
-                        Err(e) => {
-                            // Check if the error is a 429
-                            let is_429 = e.to_string().contains("429")
-                                || e.to_string().contains("TooManyRequests")
-                                || e.to_string().contains("Too Many Requests");
+                    if let Err(e) = &test_result {
+                        // Check if the error is a 429
+                        let is_429 = e.to_string().contains("429")
+                            || e.to_string().contains("TooManyRequests")
+                            || e.to_string().contains("Too Many Requests");
 
-                            if is_429 {
-                                println!(
-                                    "Test got 429 (Too Many Requests). Retrying after {:?}...",
-                                    backoff
-                                );
-                                tokio::time::sleep(backoff).await;
-                                backoff = (backoff * 2).min(MAX_BACKOFF);
-                                continue;
-                            }
+                        if is_429 {
+                            println!(
+                                "Test got 429 (Too Many Requests). Retrying after {:?}...",
+                                backoff
+                            );
+                            tokio::time::sleep(backoff).await;
+                            backoff = (backoff * 2).min(MAX_BACKOFF);
+                            continue;
                         }
-                        _ => {}
                     }
 
                     break test_result;

@@ -103,7 +103,12 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        Arc::new(GlobalEndpointManager::new(endpoint, vec![], pipeline))
+        Arc::new(GlobalEndpointManager::new(
+            endpoint,
+            vec![],
+            vec![],
+            pipeline,
+        ))
     }
 
     // Helper function to create a test GatewayPipeline
@@ -198,6 +203,7 @@ mod tests {
         let endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
             vec![RegionName::from("East US"), RegionName::from("West US")],
+            vec![],
             pipeline.clone(),
         ));
         let partition_manager =
