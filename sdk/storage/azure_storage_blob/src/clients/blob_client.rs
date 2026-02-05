@@ -30,6 +30,7 @@ use crate::{
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
+use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
@@ -655,7 +656,8 @@ impl<'a> BlobClientDownloadBehavior<'a> {
     }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
     async fn transfer_range(&self, range: Range<u64>) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();

@@ -3,6 +3,7 @@
 
 use std::{cmp::min, ops::Range, sync::Arc};
 
+use async_trait::async_trait;
 use azure_core::http::{response::PinnedStream, AsyncRawResponse};
 use bytes::Bytes;
 use futures::{stream::FuturesOrdered, StreamExt};
@@ -11,7 +12,8 @@ use crate::{conditional_send::ConditionalSend, models::content_range::ContentRan
 
 use super::*;
 
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 pub(crate) trait PartitionedDownloadBehavior {
     async fn transfer_range(&self, range: Range<u64>) -> AzureResult<AsyncRawResponse>;
 }
