@@ -784,7 +784,7 @@ impl ContainerClient {
         batch: TransactionalBatch,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<CosmosResponse<TransactionalBatchResponse>> {
-        let options = options.unwrap_or_default();
+        let options = options.clone().unwrap_or_default();
         let partition_key = batch.partition_key().clone();
 
         let cosmos_request = CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
