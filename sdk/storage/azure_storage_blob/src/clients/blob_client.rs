@@ -633,10 +633,15 @@ impl BlobClient {
         self.client.create_snapshot(options).await
     }
 
+    /// The managed download operation retrieves the content of an existing blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `body` - The body of the request.
+    /// * `options` - Optional parameters for the request.
     pub async fn managed_download<'a>(
         &'a self,
         options: Option<BlobClientManagedDownloadOptions<'a>>,
-        // TODO use PinnedStream
     ) -> Result<PinnedStream> {
         self.client.managed_download(options).await
     }
