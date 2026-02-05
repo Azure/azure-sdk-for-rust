@@ -137,7 +137,7 @@ pub fn get_global_endpoint() -> String {
     // Expected format: https://accountname.documents.azure.com:443
     // Target format: accountname.documents.azure.com (host only, no scheme/port)
     let url = url::Url::parse(account_endpoint).expect("Failed to parse account endpoint URL");
-    
+
     let host = url
         .host_str()
         .expect("Failed to get host from account endpoint")
