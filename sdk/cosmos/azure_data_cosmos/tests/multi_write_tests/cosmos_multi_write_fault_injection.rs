@@ -11,7 +11,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::CosmosClientOptions;
+use azure_data_cosmos::{CosmosClientOptions, ItemOptions};
 use framework::{
     get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
@@ -427,6 +427,105 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
     .await
 }
 
-// TODO:
-//  Test for 404:1002 - try to perform read on satellite region using preferred regions
-//  the request should be retried on the hub region and succeed.
+/// Test 404:1002 retry - inject ReadSessionNotAvailable on satellite region,
+/// verify the read retries on the hub region and succeeds.
+#[tokio::test]
+pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn Error>> {
+    // Create a fault injection rule that returns 404:1002 for reads targeting the satellite region
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
+        .with_times(1)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(SATELLITE_REGION)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("satellite-region-404-1002", server_error)
+        .with_condition(condition)
+        .build();
+
+    let mut fault_builder = FaultInjectionClientBuilder::new();
+    fault_builder.with_rule(rule);
+    let client_options = CosmosClientOptions {
+        application_preferred_regions: vec![SATELLITE_REGION, HUB_REGION],
+        ..Default::default()
+    };
+    let fault_options = fault_builder.inject(client_options);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // Make sure the write has been replicated on both regions
+            let _ = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .await;
+            let options = ItemOptions {
+                excluded_regions: Some(vec![SATELLITE_REGION.into()]),
+                ..Default::default()
+            };
+            let _ = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
+                .await;
+
+            // after verifying replication, read using the fault client
+            // - should succeed via retry on hub region after satellite returns 404:1002
+            let result = fault_container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+
+            let response = result.unwrap();
+            let request_url = response
+                .request()
+                .clone()
+                .into_raw_request()
+                .url()
+                .to_string();
+            println!("Request succeeded via failover, final URL: {}", request_url);
+            // Verify the request was retried on the hub region
+            assert!(
+                request_url.contains(&HUB_REGION.as_str()),
+                "request should have failed over to hub region"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}

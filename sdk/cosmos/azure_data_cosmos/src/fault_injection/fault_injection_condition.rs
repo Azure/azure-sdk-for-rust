@@ -14,10 +14,6 @@ pub struct FaultInjectionCondition {
     /// The region to which the fault injection applies.
     /// By default, the fault injection applies to all regions.
     pub(crate) region: Option<RegionName>,
-    /// The partition key range ID to which the fault injection applies.
-    /// By default, the fault injection applies to all partition key ranges.
-    #[allow(dead_code)] // TODO: Will implement this and add a test in this pr
-    pub(crate) partition_key_range_id: Option<String>,
     /// The container ID to which the fault injection applies.
     /// By default, the fault injection applies to all containers.
     pub(crate) container_id: Option<String>,
@@ -102,7 +98,6 @@ impl FaultOperationType {
 pub struct FaultInjectionConditionBuilder {
     operation_type: Option<FaultOperationType>,
     region: Option<RegionName>,
-    partition_key_range_id: Option<String>,
     container_id: Option<String>,
 }
 
@@ -112,7 +107,6 @@ impl FaultInjectionConditionBuilder {
         Self {
             operation_type: None,
             region: None,
-            partition_key_range_id: None,
             container_id: None,
         }
     }
@@ -129,15 +123,6 @@ impl FaultInjectionConditionBuilder {
         self
     }
 
-    /// Sets the partition to which the fault injection applies.
-    pub fn with_partition_key_range_id(
-        mut self,
-        partition_key_range_id: impl Into<String>,
-    ) -> Self {
-        self.partition_key_range_id = Some(partition_key_range_id.into());
-        self
-    }
-
     /// Sets the container ID to which the fault injection applies.
     pub fn with_container_id(mut self, container_id: impl Into<String>) -> Self {
         self.container_id = Some(container_id.into());
@@ -149,7 +134,6 @@ impl FaultInjectionConditionBuilder {
         FaultInjectionCondition {
             operation_type: self.operation_type,
             region: self.region,
-            partition_key_range_id: self.partition_key_range_id,
             container_id: self.container_id,
         }
     }
@@ -172,7 +156,6 @@ mod tests {
         let condition = builder.build();
         assert!(condition.operation_type.is_none());
         assert!(condition.region.is_none());
-        assert!(condition.partition_key_range_id.is_none());
         assert!(condition.container_id.is_none());
     }
 
@@ -181,7 +164,6 @@ mod tests {
         let condition = FaultInjectionConditionBuilder::new()
             .with_operation_type(FaultOperationType::DeleteItem)
             .with_region(regions::WEST_US)
-            .with_partition_key_range_id("range-2")
             .with_container_id("container-2")
             .build();
 
@@ -190,10 +172,6 @@ mod tests {
             Some(FaultOperationType::DeleteItem)
         );
         assert_eq!(condition.region, Some(regions::WEST_US));
-        assert_eq!(
-            condition.partition_key_range_id,
-            Some("range-2".to_string())
-        );
         assert_eq!(condition.container_id, Some("container-2".to_string()));
     }
 }

@@ -7,7 +7,9 @@ use super::fault_injection_rule::FaultInjectionRule;
 use crate::constants::{self, SubStatusCode};
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
-use azure_core::http::{AsyncRawResponse, HttpClient, Request, StatusCode};
+use azure_core::http::{
+    headers::Headers, AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode,
+};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -75,9 +77,16 @@ impl FaultClient {
             }
         }
 
-        // Check if we've exceeded the hit limit
+        // Check if we've exceeded the hit limit on the rule
         if let Some(hit_limit) = rule.hit_limit {
             if rule_state.hit_count.load(Ordering::SeqCst) >= hit_limit {
+                return false;
+            }
+        }
+
+        // Check if we've exceeded the times limit on the result
+        if let Some(times) = rule.result.times {
+            if rule_state.hit_count.load(Ordering::SeqCst) >= times {
                 return false;
             }
         }
@@ -153,7 +162,7 @@ impl FaultClient {
             None => return None, // No error type set, pass through
         };
 
-        let (status_code, _sub_status, message) = match error_type {
+        let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
                 None,
@@ -196,11 +205,17 @@ impl FaultClient {
             ),
         };
 
+        let raw_response = sub_status.map(|ss| {
+            let mut headers = Headers::new();
+            headers.insert(constants::SUB_STATUS, ss.to_string());
+            Box::new(RawResponse::from_bytes(status_code, headers, vec![]))
+        });
+
         let error = azure_core::Error::with_message(
             ErrorKind::HttpResponse {
                 status: status_code,
                 error_code: Some("Injected Fault".to_string()),
-                raw_response: None,
+                raw_response,
             },
             message,
         );
@@ -276,6 +291,7 @@ impl HttpClient for FaultClient {
 #[cfg(test)]
 mod tests {
     use super::FaultClient;
+    use crate::constants::{SubStatusCode, SUB_STATUS};
     use crate::fault_injection::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
         FaultInjectionRuleBuilder, FaultOperationType,
@@ -536,5 +552,117 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn execute_request_with_times_limit_on_result() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        // Create a rule where the error is injected only 2 times via with_times on result
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .with_times(2)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("times-limited-rule", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let request = create_test_request();
+
+        // First request should hit the fault
+        let result1 = fault_client.execute_request(&request).await;
+        assert!(result1.is_err(), "first request should fail");
+        assert_eq!(
+            result1.unwrap_err().http_status(),
+            Some(azure_core::http::StatusCode::ServiceUnavailable)
+        );
+
+        // Second request should also hit the fault
+        let result2 = fault_client.execute_request(&request).await;
+        assert!(result2.is_err(), "second request should fail");
+        assert_eq!(
+            result2.unwrap_err().http_status(),
+            Some(azure_core::http::StatusCode::ServiceUnavailable)
+        );
+
+        // Third request should pass through (times limit reached)
+        let result3 = fault_client.execute_request(&request).await;
+        assert!(
+            result3.is_ok(),
+            "third request should succeed after times limit"
+        );
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn execute_request_error_includes_substatus_header() {
+        let test_cases = vec![
+            (
+                FaultInjectionErrorType::ReadSessionNotAvailable,
+                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            ),
+            (
+                FaultInjectionErrorType::PartitionIsGone,
+                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+            ),
+            (
+                FaultInjectionErrorType::WriteForbidden,
+                Some(SubStatusCode::WRITE_FORBIDDEN),
+            ),
+            (
+                FaultInjectionErrorType::DatabaseAccountNotFound,
+                Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
+            ),
+            (FaultInjectionErrorType::InternalServerError, None),
+            (FaultInjectionErrorType::ServiceUnavailable, None),
+            (FaultInjectionErrorType::TooManyRequests, None),
+            (FaultInjectionErrorType::Timeout, None),
+        ];
+
+        for (error_type, expected_substatus) in test_cases {
+            let mock_client = Arc::new(MockHttpClient::new());
+
+            let error = FaultInjectionResultBuilder::new()
+                .with_error(error_type)
+                .build();
+            let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
+
+            let fault_client = FaultClient::new(mock_client, vec![rule]);
+            let request = create_test_request();
+
+            let result = fault_client.execute_request(&request).await;
+            assert!(result.is_err(), "{:?} should produce an error", error_type);
+
+            let err = result.unwrap_err();
+            if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
+                match expected_substatus {
+                    Some(expected) => {
+                        let response = raw_response.as_ref().unwrap_or_else(|| {
+                            panic!("{:?} should have a raw_response with substatus", error_type)
+                        });
+                        let actual: u32 = response
+                            .headers()
+                            .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
+                            .unwrap_or_else(|_| {
+                                panic!("{:?} should have x-ms-substatus header", error_type)
+                            });
+                        assert_eq!(
+                            SubStatusCode::from(actual),
+                            expected,
+                            "{:?}: substatus mismatch",
+                            error_type
+                        );
+                    }
+                    None => {
+                        assert!(
+                            raw_response.is_none(),
+                            "{:?} should not have a raw_response",
+                            error_type
+                        );
+                    }
+                }
+            } else {
+                panic!("{:?} should produce an HttpResponse error kind", error_type);
+            }
+        }
     }
 }

@@ -33,7 +33,6 @@ pub struct FaultInjectionResult {
     pub(crate) error_type: Option<FaultInjectionErrorType>,
     /// Number of times to inject the error.
     /// Default is that it will be injected forever.
-    #[allow(dead_code)] // TODO: add a test for this in this pr
     pub(crate) times: Option<u32>,
     /// Delay before injecting the error.
     /// default is no delay.
