@@ -63,7 +63,7 @@ pub struct RPRegistrationOptions {
     pub polling_duration: Duration,
 
     /// HTTP status codes that trigger RP registration.
-    /// Default: [409] (Conflict)
+    /// Default: \[409\] (Conflict)
     pub status_codes: Vec<StatusCode>,
 
     /// The Azure management endpoint.
