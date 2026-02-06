@@ -433,3 +433,272 @@ pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn
     )
     .await
 }
+
+#[tokio::test]
+pub async fn batch_replace_with_etag_success() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
+
+            // First create an item
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "Original Item".to_string(),
+            };
+
+            let create_response = container_client
+                .create_item(&partition_key, &item1, None)
+                .await?;
+
+            // Read the item to get its etag
+            let read_response = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?;
+            let etag = read_response
+                .etag()
+                .expect("etag should be present")
+                .clone();
+
+            // Now use a batch to replace the item with the correct etag
+            let updated_item = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 200,
+                name: "Updated Item".to_string(),
+            };
+
+            let batch = TransactionalBatch::new(&partition_key).replace_item_with_etag(
+                "item1",
+                &updated_item,
+                etag,
+            )?;
+
+            let options = ItemOptions {
+                enable_content_response_on_write: true,
+                ..Default::default()
+            };
+
+            let response = container_client
+                .execute_transactional_batch(batch, Some(options))
+                .await?;
+
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 1);
+            assert!(
+                batch_response.results[0].is_success(),
+                "Replace with correct etag should succeed"
+            );
+
+            // Verify the item was updated
+            let read_response = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?;
+            let final_item = read_response.into_model()?;
+            assert_eq!(final_item.value, 200);
+            assert_eq!(final_item.name, "Updated Item");
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn batch_replace_with_wrong_etag_fails() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
+
+            // First create an item
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "Original Item".to_string(),
+            };
+
+            container_client
+                .create_item(&partition_key, &item1, None)
+                .await?;
+
+            // Try to replace with an incorrect etag
+            let updated_item = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 200,
+                name: "Updated Item".to_string(),
+            };
+
+            let wrong_etag = azure_core::http::Etag::from("wrong-etag-value");
+            let batch = TransactionalBatch::new(&partition_key).replace_item_with_etag(
+                "item1",
+                &updated_item,
+                wrong_etag,
+            )?;
+
+            let options = ItemOptions {
+                enable_content_response_on_write: true,
+                ..Default::default()
+            };
+
+            let response = container_client
+                .execute_transactional_batch(batch, Some(options))
+                .await?;
+
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 1);
+
+            // The operation should fail with PreconditionFailed (412)
+            assert_eq!(
+                batch_response.results[0].status_code, 412,
+                "Replace with wrong etag should return 412 (Precondition Failed)"
+            );
+
+            // Verify the item was NOT updated
+            let read_response = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?;
+            let final_item = read_response.into_model()?;
+            assert_eq!(final_item.value, 100, "Value should remain unchanged");
+            assert_eq!(
+                final_item.name, "Original Item",
+                "Name should remain unchanged"
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn batch_delete_with_etag_success() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
+
+            // First create an item
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "Original Item".to_string(),
+            };
+
+            container_client
+                .create_item(&partition_key, &item1, None)
+                .await?;
+
+            // Read the item to get its etag
+            let read_response = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?;
+            let etag = read_response
+                .etag()
+                .expect("etag should be present")
+                .clone();
+
+            // Now use a batch to delete the item with the correct etag
+            let batch =
+                TransactionalBatch::new(&partition_key).delete_item_with_etag("item1", etag);
+
+            let response = container_client
+                .execute_transactional_batch(batch, None)
+                .await?;
+
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 1);
+            assert!(
+                batch_response.results[0].is_success(),
+                "Delete with correct etag should succeed"
+            );
+
+            // Verify the item was deleted
+            let read_result: azure_core::Result<CosmosResponse<BatchTestItem>> = container_client
+                .read_item(&partition_key, "item1", None)
+                .await;
+            assert!(read_result.is_err(), "Item should not exist after deletion");
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn batch_upsert_with_etag_success() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let partition_key = format!("pk-{}", Uuid::new_v4());
+
+            // First create an item
+            let item1 = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 100,
+                name: "Original Item".to_string(),
+            };
+
+            container_client
+                .create_item(&partition_key, &item1, None)
+                .await?;
+
+            // Read the item to get its etag
+            let read_response = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?;
+            let etag = read_response
+                .etag()
+                .expect("etag should be present")
+                .clone();
+
+            // Now use a batch to upsert the item with the correct etag
+            let updated_item = BatchTestItem {
+                id: "item1".to_string(),
+                partition_key: partition_key.clone(),
+                value: 200,
+                name: "Upserted Item".to_string(),
+            };
+
+            let batch = TransactionalBatch::new(&partition_key)
+                .upsert_item_with_etag(&updated_item, etag)?;
+
+            let options = ItemOptions {
+                enable_content_response_on_write: true,
+                ..Default::default()
+            };
+
+            let response = container_client
+                .execute_transactional_batch(batch, Some(options))
+                .await?;
+
+            let batch_response = response.into_model()?;
+            assert_eq!(batch_response.results.len(), 1);
+            assert!(
+                batch_response.results[0].is_success(),
+                "Upsert with correct etag should succeed"
+            );
+
+            // Verify the item was updated
+            let read_response = run_context
+                .read_item::<BatchTestItem>(&container_client, &partition_key, "item1", None)
+                .await?;
+            let final_item = read_response.into_model()?;
+            assert_eq!(final_item.value, 200);
+            assert_eq!(final_item.name, "Upserted Item");
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
