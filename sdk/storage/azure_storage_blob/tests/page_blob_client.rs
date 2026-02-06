@@ -96,11 +96,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(
-            RequestContent::from(data),
-            format_page_range(0, 512)?,
-            None,
-        )
+        .upload_page(RequestContent::from(data), format_page_range(0, 512)?, None)
         .await?;
 
     page_blob_client
