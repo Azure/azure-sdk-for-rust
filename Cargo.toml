@@ -121,7 +121,7 @@ quick-xml = { version = "0.38.3", features = ["serialize", "serde-types"] }
 quote = "1.0.37"
 rand = "0.9.1"
 rand_chacha = "0.9"
-reqwest = { version = "0.12.23", features = [
+reqwest = { version = "0.13.1", features = [
   "stream",
 ], default-features = false }
 rust_decimal = "1.37.2"
@@ -136,7 +136,7 @@ sha2 = { version = "0.10" }
 syn = { version = "2.0.87", features = ["full"] }
 tar = { version = "0.4.44", default-features = false }
 thiserror = "1.0"
-time = { version = "0.3.41", features = [
+time = { version = "0.3.47", features = [
   "serde-well-known",
   "macros",
   "wasm-bindgen",
