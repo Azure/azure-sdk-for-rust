@@ -296,6 +296,3 @@ If no conditions are specified, the rule matches all requests.
 
 `FaultClient` is thread safe. All mutable rule state (hit counts, activation times) is protected by a `Mutex` that is held only during rule evaluation and released before any `.await` points.
 
-## See Also
-
-- [Azure Cosmos DB Documentation](https://docs.microsoft.com/azure/cosmos-db/)
