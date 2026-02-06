@@ -175,14 +175,13 @@ impl AppendBlobClient {
     /// # Arguments
     ///
     /// * `data` - The blob data to append.
-    /// * `content_length` - Total length of the blob data to be appended.
     /// * `options` - Optional configuration for the request.
     pub async fn append_block(
         &self,
         data: RequestContent<Bytes, NoFormat>,
-        content_length: u64,
         options: Option<AppendBlobClientAppendBlockOptions<'_>>,
     ) -> Result<Response<AppendBlobClientAppendBlockResult, NoFormat>> {
+        let content_length = data.body().len() as u64;
         self.client
             .append_block(data, content_length, options)
             .await

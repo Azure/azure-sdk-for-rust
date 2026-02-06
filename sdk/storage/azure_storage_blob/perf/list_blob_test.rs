@@ -98,7 +98,7 @@ impl PerfTest for ListBlobTest {
             let body = vec![0u8; 1024 * 1024]; // 1 MB blob
             let body_bytes = Bytes::from(body);
 
-            let _result = blob_client.upload(body_bytes.into(), true, 5, None).await?;
+            let _result = blob_client.upload(body_bytes.into(), true, None).await?;
         }
 
         Ok(())

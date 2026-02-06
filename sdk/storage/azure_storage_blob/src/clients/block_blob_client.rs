@@ -282,16 +282,15 @@ impl BlockBlobClient {
     ///
     /// * `block_id` - A unique identifier for the block (up to 64 bytes). The SDK will Base64-encode this value
     ///   before sending to the service. For a given blob, the `block_id` must be the same size for each block.
-    /// * `content_length` - Total length of the blob data to be staged.
-    /// * `data` - The content of the block.
+    /// * `body` - The content of the block.
     /// * `options` - Optional configuration for the request.
     pub async fn stage_block(
         &self,
         block_id: &[u8],
-        content_length: u64,
         body: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
+        let content_length = body.body().len() as u64;
         self.client
             .stage_block(block_id, content_length, body, options)
             .await

@@ -47,29 +47,14 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_3_id: Vec<u8> = b"3".to_vec();
 
     block_blob_client
-        .stage_block(
-            &block_1_id,
-            u64::try_from(block_1.len())?,
-            RequestContent::from(block_1.to_vec()),
-            None,
-        )
+        .stage_block(&block_1_id, RequestContent::from(block_1.to_vec()), None)
         .await?;
 
     block_blob_client
-        .stage_block(
-            &block_2_id,
-            u64::try_from(block_2.len())?,
-            RequestContent::from(block_2.to_vec()),
-            None,
-        )
+        .stage_block(&block_2_id, RequestContent::from(block_2.to_vec()), None)
         .await?;
     block_blob_client
-        .stage_block(
-            &block_3_id,
-            u64::try_from(block_3.len())?,
-            RequestContent::from(block_3.to_vec()),
-            None,
-        )
+        .stage_block(&block_3_id, RequestContent::from(block_3.to_vec()), None)
         .await?;
 
     // Three Staged Blocks Scenario

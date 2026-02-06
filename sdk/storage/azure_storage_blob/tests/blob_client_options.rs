@@ -305,35 +305,25 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Create Source Blob with Multiple Versions
     let data_v1 = b"source version 1";
     source_blob_client
-        .upload(
-            RequestContent::from(data_v1.to_vec()),
-            false,
-            u64::try_from(data_v1.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data_v1.to_vec()), false, None)
         .await?;
 
     let data_v2 = b"source version 2";
     source_blob_client
-        .upload(
-            RequestContent::from(data_v2.to_vec()),
-            true,
-            u64::try_from(data_v2.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data_v2.to_vec()), true, None)
         .await?;
 
     // Test: Lease on Current Version
     let lease_blob_name = format!("{}-lease", get_blob_name(recording));
     let lease_blob_client = container_client.blob_client(&lease_blob_name);
     lease_blob_client
-        .upload(RequestContent::from(b"v1".to_vec()), false, 2, None)
+        .upload(RequestContent::from(b"v1".to_vec()), false, None)
         .await?;
     let response = lease_blob_client.get_properties(None).await?;
     let lease_version_1 = response.version_id()?.unwrap();
 
     lease_blob_client
-        .upload(RequestContent::from(b"v2".to_vec()), true, 2, None)
+        .upload(RequestContent::from(b"v2".to_vec()), true, None)
         .await?;
 
     // Acquire Lease on Current Version
@@ -518,12 +508,7 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
     // Modify Base Blob
     let data_v2 = b"snapshot version 2";
     blob_client
-        .upload(
-            RequestContent::from(data_v2.to_vec()),
-            true,
-            u64::try_from(data_v2.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data_v2.to_vec()), true, None)
         .await?;
 
     // Create Second Snapshot
@@ -867,12 +852,7 @@ async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn 
     // Try to Upload to Snapshot
     let data = b"squash data";
     let result = snapshot_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            true,
-            u64::try_from(data.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data.to_vec()), true, None)
         .await;
     assert!(result.is_err());
 

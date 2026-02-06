@@ -85,9 +85,7 @@ impl BlobCheckpointStore {
                         ..Default::default()
                     };
 
-                    let upload_result = blob_client
-                        .upload(blob_content, true, 0, Some(options))
-                        .await;
+                    let upload_result = blob_client.upload(blob_content, true, Some(options)).await;
                     match upload_result {
                         Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
                         Err(e) => Err(e),
@@ -132,9 +130,7 @@ impl BlobCheckpointStore {
             ..Default::default()
         };
 
-        let upload_result = blob_client
-            .upload(blob_content, true, 0, Some(options))
-            .await;
+        let upload_result = blob_client.upload(blob_content, true, Some(options)).await;
         match upload_result {
             Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
             Err(e) => Err(e),

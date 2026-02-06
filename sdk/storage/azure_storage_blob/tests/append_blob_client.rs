@@ -48,18 +48,10 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Act
     append_blob_client
-        .append_block(
-            RequestContent::from(block_1.clone()),
-            u64::try_from(block_1.len())?,
-            None,
-        )
+        .append_block(RequestContent::from(block_1.clone()), None)
         .await?;
     append_blob_client
-        .append_block(
-            RequestContent::from(block_2.clone()),
-            u64::try_from(block_2.len())?,
-            None,
-        )
+        .append_block(RequestContent::from(block_2.clone()), None)
         .await?;
 
     // Assert
@@ -121,11 +113,7 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Act
     append_blob_client.seal(None).await?;
     let response = append_blob_client
-        .append_block(
-            RequestContent::from(test_block.clone()),
-            u64::try_from(test_block.len())?,
-            None,
-        )
+        .append_block(RequestContent::from(test_block.clone()), None)
         .await;
 
     // Assert

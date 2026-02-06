@@ -208,18 +208,16 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `data` - The contents of the page.
-    /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
-    ///   content_length specified must be a modulus of 512.
+    /// * `data` - The contents of the page. The length must be a multiple of 512 bytes.
     /// * `range` - The range of the bytes to write. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
     /// * `options` - Optional configuration for the request.
     pub async fn upload_page(
         &self,
         data: RequestContent<Bytes, NoFormat>,
-        content_length: u64,
         range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
+        let content_length = data.body().len() as u64;
         self.client
             .upload_pages(data, content_length, range, options)
             .await

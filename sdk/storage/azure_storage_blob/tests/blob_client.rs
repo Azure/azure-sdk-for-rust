@@ -110,12 +110,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // No Overwrite Scenario
     blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            false,
-            u64::try_from(data.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data.to_vec()), false, None)
         .await?;
 
     // Assert
@@ -134,12 +129,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Error Case (overwrite=false/none)
     let response = blob_client
-        .upload(
-            RequestContent::from(new_data.to_vec()),
-            false,
-            u64::try_from(new_data.len())?,
-            None,
-        )
+        .upload(RequestContent::from(new_data.to_vec()), false, None)
         .await;
 
     // Assert
@@ -149,12 +139,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Working Case (overwrite=true)
     let overwrite_response = blob_client
-        .upload(
-            RequestContent::from(new_data.to_vec()),
-            true,
-            u64::try_from(new_data.len())?,
-            None,
-        )
+        .upload(RequestContent::from(new_data.to_vec()), true, None)
         .await?;
     let response = blob_client.download(None).await?;
     let content_length = response.content_length()?;
@@ -235,12 +220,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data = b"hello rusty world";
 
     blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            false,
-            u64::try_from(data.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data.to_vec()), false, None)
         .await?;
     let response = blob_client.download(None).await?;
 
@@ -279,7 +259,6 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         .upload(
             RequestContent::from(data.to_vec()),
             false,
-            u64::try_from(data.len())?,
             Some(options_with_metadata),
         )
         .await?;
@@ -458,7 +437,6 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         .upload(
             RequestContent::from(data.to_vec()),
             true,
-            u64::try_from(data.len())?,
             Some(upload_options),
         )
         .await?;
@@ -613,7 +591,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             .upload(
                 RequestContent::from(b"hello rusty world".to_vec()),
                 true,
-                17,
                 None,
             )
             .await?;
@@ -641,7 +618,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             .upload(
                 RequestContent::from(b"hello rusty world".to_vec()),
                 true,
-                17,
                 None,
             )
             .await?;
@@ -658,7 +634,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             .upload(
                 RequestContent::from(b"hello rusty world".to_vec()),
                 true,
-                17,
                 None,
             )
             .await?;

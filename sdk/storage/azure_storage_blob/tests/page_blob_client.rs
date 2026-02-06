@@ -68,7 +68,6 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client
         .upload_page(
             RequestContent::from(data.clone()),
-            512,
             format_page_range(0, 512)?,
             None,
         )
@@ -99,7 +98,6 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client
         .upload_page(
             RequestContent::from(data),
-            512,
             format_page_range(0, 512)?,
             None,
         )
@@ -136,7 +134,6 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = page_blob_client
         .upload_page(
             RequestContent::from(data.clone()),
-            1024,
             format_page_range(0, 1024)?,
             None,
         )
@@ -149,7 +146,6 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client
         .upload_page(
             RequestContent::from(data.clone()),
-            1024,
             format_page_range(0, 1024)?,
             None,
         )
@@ -233,7 +229,6 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     page_blob_client_1
         .upload_page(
             RequestContent::from(data_b.clone()),
-            512,
             format_page_range(0, 512)?,
             None,
         )
@@ -244,7 +239,6 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     page_blob_client_2
         .upload_page(
             RequestContent::from(data_a.clone()),
-            512,
             format_page_range(0, 512)?,
             None,
         )
@@ -294,7 +288,6 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client
         .upload_page(
             RequestContent::from(data.clone()),
-            512,
             format_page_range(0, 512)?,
             None,
         )

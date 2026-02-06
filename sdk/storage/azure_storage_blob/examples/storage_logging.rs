@@ -140,7 +140,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .upload(
             RequestContent::from(content.to_vec()),
             true, // overwrite if exists
-            content.len() as u64,
             None,
         )
         .await?;

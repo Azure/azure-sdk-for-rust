@@ -155,17 +155,12 @@ pub async fn create_test_blob(
     options: Option<BlockBlobClientUploadOptions<'_>>,
 ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
     match data {
-        Some(content) => {
-            blob_client
-                .upload(content.clone(), true, content.body().len() as u64, options)
-                .await
-        }
+        Some(content) => blob_client.upload(content, true, options).await,
         None => {
             blob_client
                 .upload(
                     RequestContent::from(b"hello rusty world".to_vec()),
                     true,
-                    17,
                     options,
                 )
                 .await
