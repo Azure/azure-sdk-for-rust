@@ -256,5 +256,3 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
 [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
-
-Trivial change to trigger testing of azure_security_keyvault_secrets crate.
