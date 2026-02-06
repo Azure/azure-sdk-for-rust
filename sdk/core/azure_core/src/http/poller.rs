@@ -37,37 +37,13 @@ const DEFAULT_RETRY_TIME: Duration = Duration::seconds(30);
 const MIN_RETRY_TIME: Duration = Duration::seconds(1);
 
 /// Represents the state of a [`Poller`].
-#[derive(Debug, Default, PartialEq, Eq)]
-pub enum PollerState<C = Url> {
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum PollerState {
     /// The poller should fetch the initial status.
     #[default]
     Initial,
     /// The poller should fetch subsequent status.
-    More(C),
-}
-
-impl<C> PollerState<C> {
-    /// Maps a [`PollerState<C>`] to a [`PollerState<U>`] by applying a function to a next link `C` (if `PollerState::More`) or returns `PollerState::Initial` (if `PollerState::Initial`).
-    #[inline]
-    pub fn map<U, F>(self, f: F) -> PollerState<U>
-    where
-        F: FnOnce(C) -> U,
-    {
-        match self {
-            PollerState::Initial => PollerState::Initial,
-            PollerState::More(c) => PollerState::More(f(c)),
-        }
-    }
-}
-
-impl<C: Clone> Clone for PollerState<C> {
-    #[inline]
-    fn clone(&self) -> Self {
-        match self {
-            PollerState::Initial => PollerState::Initial,
-            PollerState::More(c) => PollerState::More(c.clone()),
-        }
-    }
+    More(PollerContinuation),
 }
 
 /// Long-running operation (LRO) status.
@@ -182,25 +158,25 @@ impl<'a> PollerOptions<'a> {
 }
 
 /// The result of fetching the status monitor from a [`Poller`], whether the long-running operation (LRO) is in progress or done.
-pub enum PollerResult<M, C, F = JsonFormat>
+pub enum PollerResult<M, F = JsonFormat>
 where
     M: StatusMonitor,
     F: Format,
 {
-    /// The long-running operation (LRO) is in progress and the next status monitor update may be fetched from `continuation_token`.
+    /// The long-running operation (LRO) is in progress and the next status monitor update may be fetched from `continuation`.
     ///
     /// # Fields
     ///
     /// * `response` contains the HTTP response with the status monitor.
     /// * `retry_after` is the optional client-specified [`Duration`] to wait. The default is 30 seconds.
-    /// * `continuation_token` is the next link / continuation token.
+    /// * `continuation` is the next link / continuation token.
     InProgress {
         /// The HTTP response with the status monitor.
         response: Response<M, F>,
         /// The optional client-specified [`Duration`] to wait before polling again.
         retry_after: Duration,
         /// The next link / continuation token.
-        continuation_token: C,
+        continuation: PollerContinuation,
     },
 
     /// The long-running operation (LRO) succeeded and contains the final output.
@@ -227,25 +203,48 @@ where
     },
 }
 
-impl<M, C, F> fmt::Debug for PollerResult<M, C, F>
+impl<M, F> fmt::Debug for PollerResult<M, F>
 where
     M: StatusMonitor,
-    C: fmt::Debug,
     F: Format,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InProgress {
                 retry_after,
-                continuation_token,
+                continuation,
                 ..
             } => f
                 .debug_struct("InProgress")
                 .field("retry_after", &retry_after)
-                .field("continuation_token", &continuation_token)
+                .field("continuation", &continuation)
                 .finish_non_exhaustive(),
             Self::Done { .. } => f.debug_struct("Done").finish_non_exhaustive(),
             Self::Succeeded { .. } => f.debug_struct("Succeeded").finish_non_exhaustive(),
+        }
+    }
+}
+
+/// Information returned by the server to poll subsequent status.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum PollerContinuation {
+    /// Polling status or result is found at the following links.
+    Links {
+        /// A link to poll subsequent status.
+        next_link: Url,
+
+        /// A link to get the final result.
+        ///
+        /// May be `None` if the final result is contained in the status monitor.
+        final_link: Option<Url>,
+    },
+}
+
+impl fmt::Display for PollerContinuation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PollerContinuation::Links { next_link, .. } => f.write_str(next_link.as_str()),
         }
     }
 }
@@ -282,8 +281,8 @@ mod types {
     pub type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>> + Send>;
 
     /// A pinned boxed [`Future`] that can be stored and called dynamically.
-    pub type PollerResultFuture<M, C, F> =
-        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, C, F>>> + Send + 'static>>;
+    pub type PollerResultFuture<M, F> =
+        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F>>> + Send + 'static>>;
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -302,8 +301,8 @@ mod types {
     pub type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
 
     /// A pinned boxed [`Future`] that can be stored and called dynamically.
-    pub type PollerResultFuture<M, C, F> =
-        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, C, F>>> + 'static>>;
+    pub type PollerResultFuture<M, F> =
+        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F>>> + 'static>>;
 }
 
 pub use types::PollerResultFuture;
@@ -404,7 +403,7 @@ where
     /// To poll a long-running operation:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, json, http::{Context, JsonFormat, Pipeline, RawResponse, Request, Response, Method, Url, poller::{Poller, PollerResult, PollerState, PollerStatus, StatusMonitor}}};
+    /// # use azure_core::{Result, json, http::{Context, JsonFormat, Pipeline, RawResponse, Request, Response, Method, Url, poller::{Poller, PollerContinuation, PollerResult, PollerState, PollerStatus, StatusMonitor}}};
     /// # use serde::Deserialize;
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
@@ -427,15 +426,19 @@ where
     /// let url = "https://example.com/my_operation".parse().unwrap();
     /// let mut req = Request::new(url, Method::Post);
     ///
-    /// let poller = Poller::new(move |operation_url: PollerState<Url>,  poller_options| {
+    /// let poller = Poller::new(move |operation_state: PollerState, poller_options| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
     ///     let mut req = req.clone();
     ///     Box::pin(async move {
-    ///         if let PollerState::More(operation_url) = operation_url {
-    ///             // Use the operation URL for polling
-    ///             *req.url_mut() = operation_url;
+    ///         if let PollerState::More(continuation) = operation_state {
+    ///             // Use the continuation to get the next URL for polling
+    ///             let next_link = match continuation {
+    ///                 PollerContinuation::Links { next_link, .. } => next_link,
+    ///                 _ => unreachable!(),
+    ///             };
+    ///             *req.url_mut() = next_link.clone();
     ///             req.set_method(Method::Get);
     ///         }
     ///
@@ -454,11 +457,11 @@ where
     ///         match result.status() {
     ///             PollerStatus::InProgress => {
     ///                 // Continue polling with the operation URL from the response
-    ///                 let operation_url = format!("https://example.com/operations/{}", result.id).parse()?;
+    ///                 let next_link = format!("https://example.com/operations/{}", result.id).parse()?;
     ///                 Ok(PollerResult::InProgress {
     ///                     response: resp,
     ///                     retry_after: poller_options.frequency,
-    ///                     continuation_token: operation_url
+    ///                     continuation: PollerContinuation::Links { next_link, final_link: None },
     ///                 })
     ///             }
     ///             PollerStatus::Succeeded => {
@@ -481,13 +484,12 @@ where
     ///     })
     /// }, None);
     /// ```
-    pub fn new<C, Fun>(make_request: Fun, options: Option<PollerOptions<'static>>) -> Self
+    pub fn new<Fun>(make_request: Fun, options: Option<PollerOptions<'static>>) -> Self
     where
         M: Send + 'static,
         M::Output: Send + 'static,
         M::Format: Send + 'static,
-        C: AsRef<str> + ConditionalSend + 'static,
-        Fun: Fn(PollerState<C>, PollerOptions<'static>) -> PollerResultFuture<M, C, F>
+        Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F>
             + ConditionalSend
             + 'static,
     {
@@ -564,9 +566,9 @@ where
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum State<C> {
+enum State {
     Init,
-    InProgress(C),
+    InProgress(PollerContinuation),
     Done,
 }
 
@@ -574,12 +576,12 @@ enum State<C> {
 type TargetTransmitterType<'a, M> = (Pin<BoxedFuture<M>>, Option<Context<'a>>);
 
 /// Represents the state used for each iteration through the poller stream.
-struct StreamState<'a, M, C, Fun>
+struct StreamState<'a, M, Fun>
 where
     M: StatusMonitor,
 {
     /// The current polling state (Init, InProgress, or Done)
-    state: State<C>,
+    state: State,
     /// The callback function to make requests
     make_request: Fun,
     /// Optional channel sender for the target future
@@ -593,10 +595,7 @@ where
 fn create_poller_stream<
     M,
     F: Format,
-    C: AsRef<str> + ConditionalSend + 'static,
-    Fun: Fn(PollerState<C>, PollerOptions<'static>) -> PollerResultFuture<M, C, F>
-        + ConditionalSend
-        + 'static,
+    Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + ConditionalSend + 'static,
 >(
     make_request: Fun,
     options: PollerOptions<'static>,
@@ -617,7 +616,7 @@ where
     );
     let stream = unfold(
         // We flow the `make_request` callback through the state value to avoid cloning.
-        StreamState::<M, C, Fun> {
+        StreamState::<M, Fun> {
             state: State::Init,
             make_request,
             target_tx: Some(target_tx),
@@ -641,13 +640,13 @@ where
                     )
                     .await
                 }
-                State::InProgress(n) => {
+                State::InProgress(continuation) => {
                     tracing::debug!(
                         "subsequent operation request to {:?}",
-                        AsRef::<str>::as_ref(&n)
+                        continuation.to_string()
                     );
                     (poller_stream_state.make_request)(
-                        PollerState::More(n),
+                        PollerState::More(continuation),
                         poller_stream_state.options.clone(),
                     )
                     .await
@@ -678,7 +677,7 @@ where
                 Ok(PollerResult::InProgress {
                     response,
                     retry_after,
-                    continuation_token: n,
+                    continuation: n,
                 }) => {
                     // Note that test-proxy automatically adds a transform that zeroes an existing `after-retry` header during playback, so don't check at runtime:
                     // <https://github.com/Azure/azure-sdk-tools/blob/a80b559d7682891f36a491b73f52fcb679d40923/tools/test-proxy/Azure.Sdk.Tools.TestProxy/RecordingHandler.cs#L1175>
@@ -931,7 +930,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -1015,7 +1017,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -1101,7 +1106,10 @@ mod tests {
                             PollerStatus::InProgress => Ok(PollerResult::InProgress {
                                 response,
                                 retry_after: Duration::ZERO,
-                                continuation_token: "",
+                                continuation: PollerContinuation::Links {
+                                    next_link: req.url().clone(),
+                                    final_link: None,
+                                },
                             }),
                             _ => Ok(PollerResult::Done { response }),
                         }
@@ -1187,7 +1195,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback to fetch the final resource
@@ -1292,7 +1303,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback to fetch the final resource
@@ -1411,7 +1425,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback
@@ -1497,7 +1514,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         _ => Ok(PollerResult::Done { response }),
                     }
@@ -1583,7 +1603,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         PollerStatus::Succeeded => {
                             // Return the status response with a callback
@@ -1691,7 +1714,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         PollerStatus::Succeeded => {
                             // The final result is already in the status response itself
@@ -1803,7 +1829,10 @@ mod tests {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
                             response,
                             retry_after: Duration::ZERO,
-                            continuation_token: "",
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
                         }),
                         PollerStatus::Succeeded => {
                             // The final result is already in the status response itself

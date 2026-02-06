@@ -3,7 +3,10 @@
 
 use std::{pin::Pin, task};
 
-use azure_core::http::{headers::Headers, pager::PagerResult};
+use azure_core::http::{
+    headers::Headers,
+    pager::{PagerContinuation, PagerResult},
+};
 #[cfg(not(target_arch = "wasm32"))]
 use futures::stream::BoxStream;
 use futures::Stream;
@@ -71,13 +74,13 @@ impl<T> FeedPage<T> {
     }
 }
 
-impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>, String> {
+impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>> {
     fn from(value: FeedPage<T>) -> Self {
         let continuation = value.continuation.clone();
         match continuation {
             Some(continuation) => PagerResult::More {
                 response: value,
-                continuation,
+                continuation: PagerContinuation::Token(continuation),
             },
             None => PagerResult::Done { response: value },
         }
