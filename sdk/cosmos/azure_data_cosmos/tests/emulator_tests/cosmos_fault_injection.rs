@@ -251,7 +251,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             // Verify the read succeeded
             assert!(
                 result.is_ok(),
-                "Read should succeed when fault targets CreateItem, but got error: {:?}",
+                "Read should succeed after hit_limit exhausted, but got error: {:?}",
                 result.err()
             );
 
