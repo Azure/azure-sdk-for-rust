@@ -12,7 +12,9 @@ use azure_data_cosmos::fault_injection::{
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::CosmosClientOptions;
-use framework::{get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
+use framework::{
+    get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
 use uuid::Uuid;

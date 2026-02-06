@@ -310,9 +310,9 @@ impl TestClient {
 
                     if let Err(e) = &test_result {
                         println!("Error running test: {}", e);
-                            // Check if the error is a 429
-                            let is_429 = e.to_string().contains("TooManyRequests")
-                                || e.to_string().contains("Too Many Requests");
+                        // Check if the error is a 429
+                        let is_429 = e.to_string().contains("TooManyRequests")
+                            || e.to_string().contains("Too Many Requests");
 
                         if is_429 {
                             println!(
