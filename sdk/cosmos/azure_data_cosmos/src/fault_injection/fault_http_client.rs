@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use super::fault_injection_condition::FaultOperationType;
 use super::fault_injection_result::{FaultInjectionErrorType, FaultInjectionResult};
 use super::fault_injection_rule::FaultInjectionRule;

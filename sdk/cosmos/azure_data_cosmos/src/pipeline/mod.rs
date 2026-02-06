@@ -93,6 +93,8 @@ impl GatewayPipeline {
         };
 
         #[cfg(feature = "fault_injection")]
+        // added flag because possible that fault injection feature flag is enabled
+        // but the transport isn't injected with the fault injection client
         if self.fault_injection_enabled {
             cosmos_request.add_fault_injection_headers();
         }
