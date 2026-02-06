@@ -36,7 +36,7 @@
 //! ```
 
 use crate::{models::PatchDocument, PartitionKey};
-use azure_core::{fmt::SafeDebug, http::Etag};
+use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -135,55 +135,6 @@ impl TransactionalBatch {
         Ok(self)
     }
 
-    /// Adds an upsert operation to the batch with an etag condition.
-    ///
-    /// The operation will only succeed if the current etag of the item matches the provided etag.
-    /// This is useful for implementing optimistic concurrency control.
-    ///
-    /// # Arguments
-    /// * `item` - The item to upsert. Must implement [`Serialize`].
-    /// * `etag` - The etag that must match for the operation to succeed.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use azure_data_cosmos::TransactionalBatch;
-    /// use azure_core::http::Etag;
-    /// use serde::Serialize;
-    ///
-    /// #[derive(Serialize)]
-    /// struct Product {
-    ///     id: String,
-    ///     name: String,
-    /// }
-    ///
-    /// # fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// let product = Product {
-    ///     id: "product1".to_string(),
-    ///     name: "Product #1".to_string(),
-    /// };
-    /// let etag = Etag::from("some-etag-value");
-    ///
-    /// let batch = TransactionalBatch::new("partition1")
-    ///     .upsert_item_with_etag(product, etag)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn upsert_item_with_etag<T: Serialize>(
-        mut self,
-        item: T,
-        etag: Etag,
-    ) -> Result<Self, serde_json::Error> {
-        let resource_body = serde_json::to_value(item)?;
-        self.operations.push(TransactionalBatchOperation::Upsert {
-            resource_body,
-            id: None,
-            if_match: Some(etag.to_string()),
-            if_none_match: None,
-        });
-        Ok(self)
-    }
-
     /// Adds a replace operation to the batch.
     ///
     /// # Arguments
@@ -199,57 +150,6 @@ impl TransactionalBatch {
             id: item_id.into(),
             resource_body,
             if_match: None,
-            if_none_match: None,
-        });
-        Ok(self)
-    }
-
-    /// Adds a replace operation to the batch with an etag condition.
-    ///
-    /// The operation will only succeed if the current etag of the item matches the provided etag.
-    /// This is useful for implementing optimistic concurrency control.
-    ///
-    /// # Arguments
-    /// * `item_id` - The id of the item to replace.
-    /// * `item` - The new item data. Must implement [`Serialize`].
-    /// * `etag` - The etag that must match for the operation to succeed.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use azure_data_cosmos::TransactionalBatch;
-    /// use azure_core::http::Etag;
-    /// use serde::Serialize;
-    ///
-    /// #[derive(Serialize)]
-    /// struct Product {
-    ///     id: String,
-    ///     name: String,
-    /// }
-    ///
-    /// # fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// let product = Product {
-    ///     id: "product1".to_string(),
-    ///     name: "Updated Product".to_string(),
-    /// };
-    /// let etag = Etag::from("some-etag-value");
-    ///
-    /// let batch = TransactionalBatch::new("partition1")
-    ///     .replace_item_with_etag("product1", product, etag)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn replace_item_with_etag<T: Serialize>(
-        mut self,
-        item_id: impl Into<Cow<'static, str>>,
-        item: T,
-        etag: Etag,
-    ) -> Result<Self, serde_json::Error> {
-        let resource_body = serde_json::to_value(item)?;
-        self.operations.push(TransactionalBatchOperation::Replace {
-            id: item_id.into(),
-            resource_body,
-            if_match: Some(etag.to_string()),
             if_none_match: None,
         });
         Ok(self)
@@ -276,42 +176,6 @@ impl TransactionalBatch {
         self.operations.push(TransactionalBatchOperation::Delete {
             id: item_id.into(),
             if_match: None,
-            if_none_match: None,
-        });
-        self
-    }
-
-    /// Adds a delete operation to the batch with an etag condition.
-    ///
-    /// The operation will only succeed if the current etag of the item matches the provided etag.
-    /// This is useful for implementing optimistic concurrency control.
-    ///
-    /// # Arguments
-    /// * `item_id` - The id of the item to delete.
-    /// * `etag` - The etag that must match for the operation to succeed.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use azure_data_cosmos::TransactionalBatch;
-    /// use azure_core::http::Etag;
-    ///
-    /// # fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// let etag = Etag::from("some-etag-value");
-    ///
-    /// let batch = TransactionalBatch::new("partition1")
-    ///     .delete_item_with_etag("product1", etag);
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn delete_item_with_etag(
-        mut self,
-        item_id: impl Into<Cow<'static, str>>,
-        etag: Etag,
-    ) -> Self {
-        self.operations.push(TransactionalBatchOperation::Delete {
-            id: item_id.into(),
-            if_match: Some(etag.to_string()),
             if_none_match: None,
         });
         self
