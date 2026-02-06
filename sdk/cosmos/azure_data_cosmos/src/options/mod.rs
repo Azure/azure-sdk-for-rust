@@ -40,6 +40,7 @@ pub struct CosmosClientOptions {
     #[cfg(feature = "fault_injection")]
     pub fault_injection_enabled: bool,
     pub application_preferred_regions: Vec<RegionName>,
+    pub excluded_regions: Vec<RegionName>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     /// Used to specify the consistency level for the operation.
     ///
@@ -267,6 +268,11 @@ pub struct ItemOptions<'a> {
     ///
     /// Custom headers will not override headers that are already set by the SDK.
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    /// Regions to be skipped from regional routing preferences. The regions in this list are specified as the names of the Azure Cosmos locations like, 'West US', 'East US' and so on.
+    /// If all regions were excluded, the primary/hub region will be used to route requests.
+    /// If None is provided, client-level excluded regions will be used.
+    /// If an empty vector is provided, no regions will be excluded for this request.
+    pub excluded_regions: Option<Vec<RegionName>>,
 }
 
 impl AsHeaders for ItemOptions<'_> {

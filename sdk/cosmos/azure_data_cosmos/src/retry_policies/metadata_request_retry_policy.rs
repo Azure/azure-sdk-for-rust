@@ -282,6 +282,7 @@ mod tests {
         Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![],
             pipeline,
         ))
     }
@@ -298,6 +299,7 @@ mod tests {
 
         Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
+            vec![],
             vec![],
             pipeline,
         ))
@@ -320,6 +322,7 @@ mod tests {
                 regions::WEST_US,
                 regions::NORTH_CENTRAL_US,
             ],
+            vec![],
             pipeline,
         ))
     }
