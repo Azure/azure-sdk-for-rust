@@ -71,6 +71,7 @@ reqwest = ["typespec_client_core/reqwest"]
 reqwest_deflate = ["reqwest", "typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["reqwest", "typespec_client_core/reqwest_gzip"]
 reqwest_native_tls = ["reqwest", "typespec_client_core/reqwest_native_tls"]
+resourcemanager = []
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
 wasm_bindgen = ["typespec_client_core/wasm_bindgen"]
@@ -89,6 +90,7 @@ features = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_native_tls",
+  "resourcemanager",
   "tokio",
   "wasm_bindgen",
   "xml",
