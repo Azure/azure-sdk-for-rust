@@ -22,7 +22,6 @@ use std::{
     str::FromStr,
     sync::{Arc, OnceLock},
 };
-use tracing::Value;
 use tracing_subscriber::EnvFilter;
 
 /// Represents a Cosmos DB client connected to a test account.
