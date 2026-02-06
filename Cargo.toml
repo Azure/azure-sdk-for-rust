@@ -36,7 +36,7 @@ authors = ["Microsoft"]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [workspace.dependencies.typespec]
 default-features = false

@@ -14,7 +14,7 @@ use std::io::{Error, ErrorKind};
 /// * `length` - Number of bytes to use for writing to a section of the blob.
 ///   The length specified must be a modulus of 512.
 pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
-    if offset % 512 != 0 {
+    if !offset.is_multiple_of(512) {
         return Err(Error::new(
             ErrorKind::InvalidInput,
             format!(
@@ -23,7 +23,7 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
             ),
         ));
     }
-    if length % 512 != 0 {
+    if !length.is_multiple_of(512) {
         return Err(Error::new(
             ErrorKind::InvalidInput,
             format!(
