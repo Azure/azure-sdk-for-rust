@@ -98,32 +98,20 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
             } else {
                 stderr.to_string()
             };
-            Err(Error::with_message_fn(ErrorKind::Credential, || {
-                format!("{} authentication failed: {message}", T::credential_name())
-            }))
+            Err(Error::with_message(ErrorKind::Credential, message))
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let message = format!(
-                "{} authentication failed: {program:?} wasn't found on PATH",
-                T::credential_name(),
-            );
+            let message = format!("{program:?} wasn't found on PATH");
             Err(Error::with_error(ErrorKind::Credential, e, message))
         }
         Err(e) => {
-            let message = format!(
-                "{} failed due to {} error: {e}",
-                T::credential_name(),
-                e.kind()
-            );
+            let message = format!("{} error: {e}", e.kind());
             Err(Error::with_error(ErrorKind::Credential, e, message))
         }
     }
 }
 
 pub(crate) trait OutputProcessor: Send + Sized + Sync + 'static {
-    /// The credential name to include in error messages
-    fn credential_name() -> &'static str;
-
     /// Deserialize an AccessToken from stdout
     fn deserialize_token(stdout: &str) -> Result<AccessToken>;
 
