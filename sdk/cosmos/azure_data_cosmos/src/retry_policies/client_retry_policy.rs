@@ -195,7 +195,7 @@ impl ClientRetryPolicy {
 
         if self
             .partition_key_range_location_cache
-            .is_partition_level_failover_enabled()
+            .partition_level_failover_enabled()
             && request.resource_type.is_partitioned()
         {
             self.partition_key_range_location_cache
@@ -403,7 +403,7 @@ impl ClientRetryPolicy {
             && !self.operation_type.unwrap().is_read_only()
             && !self
                 .partition_key_range_location_cache
-                .is_partition_level_automatic_failover_enabled()
+                .partition_level_automatic_failover_enabled()
         {
             return RetryResult::DoNotRetry;
         }
@@ -453,7 +453,7 @@ impl ClientRetryPolicy {
         {
             if self
                 .partition_key_range_location_cache
-                .is_partition_level_failover_enabled()
+                .partition_level_failover_enabled()
                 && self
                     .partition_key_range_location_cache
                     .try_mark_endpoint_unavailable_for_partition_key_range(

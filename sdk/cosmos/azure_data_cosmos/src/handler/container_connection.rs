@@ -49,7 +49,7 @@ impl ContainerConnection {
     ) -> azure_core::Result<CosmosResponse<T>> {
         if self
             .global_partition_endpoint_manager
-            .is_partition_level_failover_enabled()
+            .partition_level_failover_enabled()
         {
             let container_rid = cosmos_request.clone().collection_name;
             let container_prop = self

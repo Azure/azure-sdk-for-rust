@@ -407,6 +407,23 @@ impl GlobalEndpointManager {
             .await
             .map(Into::into)
     }
+
+    /// Updates the location cache with the given write and read regions.
+    ///
+    /// This is exposed as `pub(crate)` to allow other modules' tests to populate
+    /// endpoints without requiring a live service call to `refresh_location`.
+    #[cfg(test)]
+    pub(crate) fn update_location_cache(
+        &self,
+        write_locations: Vec<crate::models::AccountRegion>,
+        read_locations: Vec<crate::models::AccountRegion>,
+    ) {
+        let _ = self
+            .location_cache
+            .lock()
+            .unwrap()
+            .update(write_locations, read_locations);
+    }
 }
 
 #[cfg(test)]
