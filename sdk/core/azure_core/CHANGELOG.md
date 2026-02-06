@@ -5,11 +5,13 @@
 ### Features Added
 
 - Added `PagerContinuation` for `Pager` continuation.
+- Added `PollerContinuation` for `Poller` continuation.
 
 ### Breaking Changes
 
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Changed paging APIs to use `PagerContinuation` and non-generic `PagerState`/`PagerResult` types.
+- Changed polling APIs to use `PollerContinuation` and non-generic `PollerState`/`PollerResult` types.
 - Renamed `PagerOptions::continuation_token` to `continuation`.
 - Renamed `Pager::continuation_token` to `continuation`.
 - Renamed `Pager::into_continuation_token` to `into_continuation`.
