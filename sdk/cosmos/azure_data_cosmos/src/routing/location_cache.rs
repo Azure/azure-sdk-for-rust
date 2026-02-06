@@ -384,12 +384,11 @@ impl LocationCache {
     ///
     /// # Summary
     /// Retrieves the list of endpoints applicable for the request based on operation type.
-    /// Currently, returns read endpoints for all requests. . Used by retry policies to
-    /// determine available
-    /// failover endpoints.
+    /// Returns read endpoints for read-only operations and write endpoints for write operations.
+    /// Used by retry policies to determine available failover endpoints.
     ///
     /// # Arguments
-    /// * `_request` - The Cosmos DB request (currently unused, pending fix)
+    /// * `operation_type` - The type of Cosmos DB operation
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs

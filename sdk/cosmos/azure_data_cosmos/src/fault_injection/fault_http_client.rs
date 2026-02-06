@@ -144,16 +144,6 @@ impl FaultClient {
             }
         }
 
-        // Apply delay before sending request or injecting error
-        if server_error.delay > Duration::ZERO {
-            // Convert std::time::Duration to azure_core::time::Duration for sleep
-            let delay = azure_core::time::Duration::try_from(server_error.delay)
-                .unwrap_or(azure_core::time::Duration::ZERO);
-            azure_core::async_runtime::get_async_runtime()
-                .sleep(delay)
-                .await;
-        }
-
         // Generate the appropriate error based on error type
         let error_type = match server_error.error_type {
             Some(et) => et,
@@ -246,29 +236,34 @@ impl HttpClient for FaultClient {
         };
 
         // Apply the fault outside the lock
-        if let Some(ref result) = fault_result {
-            if let Some(fault_response) = self.apply_fault(result.clone()).await {
-                return fault_response;
-            }
-        }
+        let fault_response = if let Some(ref result) = fault_result {
+            self.apply_fault(result.clone()).await
+        } else {
+            None
+        };
 
-        // Clone the request and remove fault injection headers before forwarding
-        let mut clean_request = request.clone();
-        clean_request
-            .headers_mut()
-            .remove(constants::FAULT_INJECTION_OPERATION);
+        let resp = if let Some(fault_response) = fault_response {
+            fault_response
+        } else {
+            // Clone the request and remove fault injection headers before forwarding
+            let mut clean_request = request.clone();
+            clean_request
+                .headers_mut()
+                .remove(constants::FAULT_INJECTION_OPERATION);
 
-        // No fault injection or delay-only fault, proceed with actual request
-        let resp = self.inner.execute_request(&clean_request).await;
+            // No fault injection or delay-only fault, proceed with actual request
+            self.inner.execute_request(&clean_request).await
+        };
 
-        // Apply response delay if configured
+        // Apply delay after the request is sent
         if let Some(result) = fault_result {
-            // Convert std::time::Duration to azure_core::time::Duration for sleep
-            let delay = azure_core::time::Duration::try_from(result.delay)
-                .unwrap_or(azure_core::time::Duration::ZERO);
-            azure_core::async_runtime::get_async_runtime()
-                .sleep(delay)
-                .await;
+            if result.delay > Duration::ZERO {
+                let delay = azure_core::time::Duration::try_from(result.delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO);
+                azure_core::async_runtime::get_async_runtime()
+                    .sleep(delay)
+                    .await;
+            }
         }
 
         resp
