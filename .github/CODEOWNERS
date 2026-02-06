@@ -55,29 +55,29 @@
 ####################
 
 # PRLabel: %Cosmos
-/sdk/cosmos/             @Azure/azure-cosmos-rust-sdk
+/sdk/cosmos/    @Azure/azure-cosmos-rust-sdk
 
+# AzureSdkOwners: @heaths
 # ServiceLabel: %Cosmos
-# AzureSDKOwners: @heaths
 # ServiceOwners: @Pilchie
 
+# PRLabel: %Event Hubs
+/sdk/eventhubs/    @j7nw4r
+
+# AzureSdkOwners: @j7nw4r
+# ServiceLabel: %Event Hubs
+
 # PRLabel: %KeyVault
-/sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
+/sdk/keyvault/    @Azure/azure-sdk-write-keyvault @heaths
 
 # ServiceLabel: %KeyVault
 # ServiceOwners: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage
-/sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
+/sdk/storage/    @heaths @jalauzon-msft @LarryOsterman @RickWinter @vincenttran-msft
 
+# AzureSdkOwners: @jalauzon-msft @vincenttran-msft
 # ServiceLabel: %Storage
-# AzureSDKOwners: @vincenttran-msft @jalauzon-msft
-
-# PRLabel: %Event Hubs
-/sdk/eventhubs/          @j7nw4r
-
-# ServiceLabel: %Event Hubs
-# AzureSDKOwners: @j7nw4r
 
 ####################
 # Management Libraries

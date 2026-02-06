@@ -4,14 +4,29 @@
 
 ### Features Added
 
+<<<<<<< copilot/add-arm-pipeline-policies
 - Added `resourcemanager` feature with ARM-specific pipeline policies in `azure_core::resourcemanager` module.
   - `RPRegistrationPolicy`: Automatically registers unregistered Azure Resource Providers when encountering registration errors.
   - `RPRegistrationOptions`: Configuration for RP registration behavior (max attempts, polling intervals, endpoints).
   - `ArmExponentialRetryOptions` and `ArmFixedRetryOptions`: ARM-tuned retry configurations with appropriate defaults for management plane operations.
   - Helper functions to configure retry behavior: `arm_exponential_retry_options()`, `arm_fixed_retry_options()`, and their `_with` variants.
   - `ARM_RETRY_HEADERS`: Constant defining ARM-specific rate limit headers for retry logic.
+=======
+- Added `PagerContinuation` for `Pager` continuation.
+- Added `PollerContinuation` for `Poller` continuation.
+>>>>>>> main
 
 ### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+- Changed paging APIs to use `PagerContinuation` and non-generic `PagerState`/`PagerResult` types.
+- Changed polling APIs to use `PollerContinuation` and non-generic `PollerState`/`PollerResult` types.
+- Renamed `PagerOptions::continuation_token` to `continuation`.
+- Renamed `Pager::continuation_token` to `continuation`.
+- Renamed `Pager::into_continuation_token` to `into_continuation`.
+- Renamed `PageIterator::continuation_token` to `continuation`.
+- Renamed `PageIterator::into_continuation_token` to `into_continuation`.
+- `Pager` callbacks must now return `Result`.
 
 ### Bugs Fixed
 
