@@ -7,7 +7,6 @@ pr:
       - feature/*
       - hotfix/*
       - release/*
-      - djurek/*
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
