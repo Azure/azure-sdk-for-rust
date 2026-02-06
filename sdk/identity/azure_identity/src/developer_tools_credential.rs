@@ -228,9 +228,10 @@ mod tests {
         assert_eq!(mock1.call_count(), 1);
         assert_eq!(mock2.call_count(), 1);
         assert_eq!(mock3.call_count(), 1);
-        assert!(error_msg.contains("mock1 failed"));
-        assert!(error_msg.contains("mock2 failed"));
-        assert!(error_msg.contains("mock3 failed"));
+        assert_eq!(
+            "Multiple errors were encountered while attempting to authenticate:\nmock1 failed\nmock2 failed\nmock3 failed",
+            error_msg
+        );
     }
 
     #[tokio::test]
@@ -245,7 +246,14 @@ mod tests {
             .get_token(&["scope"], None)
             .await
             .expect_err("expected error");
-        assert!(err.to_string().contains("something went wrong"));
+        assert_eq!(
+            "Multiple errors were encountered while attempting to authenticate:\n\
+             AzureCliCredential authentication failed. other error error: something went wrong\n\
+             To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azure-cli - other error error: something went wrong - something went wrong\n\
+             AzureDeveloperCliCredential authentication failed. other error error: something went wrong\n\
+             To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd - other error error: something went wrong - something went wrong",
+            err.to_string()
+        );
         assert_eq!(
             2,
             executor.call_count(),

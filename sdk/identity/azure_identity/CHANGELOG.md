@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Removed redundant content from `Azure[Developer]CliCredential` error messages
+
 ### Other Changes
 
 ## 0.31.0 (2026-01-21)
