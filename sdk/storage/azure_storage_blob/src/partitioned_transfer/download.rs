@@ -1,17 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{cmp::min, ops::Range};
+use std::{cmp::min, ops::Range, sync::Arc};
 
-use azure_core::http::AsyncRawResponse;
+use async_trait::async_trait;
+use azure_core::http::{response::PinnedStream, AsyncRawResponse};
 use bytes::Bytes;
 use futures::{stream::FuturesOrdered, StreamExt};
 
-use crate::models::content_range::ContentRange;
+use crate::{conditional_send::ConditionalSend, models::content_range::ContentRange};
 
 use super::*;
 
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 pub(crate) trait PartitionedDownloadBehavior {
     async fn transfer_range(&self, range: Range<u64>) -> AzureResult<AsyncRawResponse>;
 }
@@ -25,11 +27,14 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// A download that has completed buffering but has not yet returned its buffer in the resulting
 /// stream will still count when determining current running operations. This is so the stream can
 /// promise its buffered bytes do not exceed parallel * partition_size.
-pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
+pub(crate) async fn download<Behavior>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
-    client: &'a T,
-) -> AzureResult<Pin<Box<dyn Stream<Item = AzureResult<Bytes>> + Unpin + 'a>>> {
+    client: Arc<Behavior>,
+) -> AzureResult<PinnedStream>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
     let parallel = parallel.get();
     let partition_size = partition_size.get() as u64;
     let initial_response = client.transfer_range(0..partition_size).await?;
@@ -46,7 +51,7 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
 
     // the first operation has a different type from the others.
     // fully type this variable out to specify dyn.
-    let fut: Pin<Box<dyn Future<Output = AzureResult<Bytes>>>> =
+    let fut: Pin<Box<dyn DownloadRangeFuture<Output = AzureResult<Bytes>>>> =
         Box::pin(initial_response.into_body().collect());
     let mut ops = FuturesOrdered::new();
     ops.push_back(fut);
@@ -55,7 +60,9 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
         // fill to max parallel ops
         while ops.len() < parallel {
             match ranges.next() {
-                Some(range) => ops.push_back(Box::pin(download_range_to_bytes(client, range))),
+                Some(range) => {
+                    ops.push_back(Box::pin(download_range_to_bytes(client.clone(), range)))
+                }
                 None => break,
             }
         }
@@ -66,13 +73,16 @@ pub(crate) async fn download<'a, T: PartitionedDownloadBehavior>(
     Ok(Box::pin(stream))
 }
 
-async fn download_range_to_bytes<Client: PartitionedDownloadBehavior>(
-    client: &Client,
+async fn download_range_to_bytes(
+    client: Arc<impl PartitionedDownloadBehavior>,
     range: Range<u64>,
 ) -> AzureResult<Bytes> {
     let response = client.transfer_range(range).await?;
     response.into_body().collect().await
 }
+
+trait DownloadRangeFuture: Future + ConditionalSend {}
+impl<T: Future + ConditionalSend> DownloadRangeFuture for T {}
 
 #[cfg(test)]
 mod tests {
@@ -148,9 +158,9 @@ mod tests {
         let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
-        let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -168,9 +178,9 @@ mod tests {
         let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
-        let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -189,9 +199,9 @@ mod tests {
         let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
-        let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -210,9 +220,9 @@ mod tests {
         let parallel = NonZero::new(2).unwrap();
 
         let data = get_random_data(data_size);
-        let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -231,9 +241,9 @@ mod tests {
         let data_size: usize = partition_size.get() * segments;
 
         let data = get_random_data(data_size);
-        let mock = MockPartitionedDownloadBehavior::new(data.clone(), None);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -252,9 +262,12 @@ mod tests {
         let data_size: usize = partition_size.get() * segments;
 
         let data = get_random_data(data_size);
-        let mock = MockPartitionedDownloadBehavior::new(data.clone(), Some(1..5));
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(
+            data.clone(),
+            Some(1..5),
+        ));
 
-        let downloaded_data = download(parallel, partition_size, &mock)
+        let downloaded_data = download(parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
