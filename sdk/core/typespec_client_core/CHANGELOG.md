@@ -10,6 +10,8 @@
 
 ### Other Changes
 
+- Updated `time` dependency from 0.3.41 to 0.3.47 to address RUSTSEC-2026-0009 (Denial of Service via Stack Exhaustion).
+
 ## 0.10.0 (2026-01-16)
 
 ### Features Added
