@@ -17,3 +17,4 @@ dylib
 cdylib
 staticlib
 cbindgen
+RUSTFLAGS

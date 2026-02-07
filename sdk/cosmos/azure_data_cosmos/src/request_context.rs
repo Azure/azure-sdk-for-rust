@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::regions::RegionName;
 use crate::PartitionKey;
 use azure_core::http::RawResponse;
 use std::collections::HashMap;
@@ -33,7 +34,7 @@ pub struct RequestContext {
     pub session_token: Option<String>,
     pub performed_background_address_refresh: bool,
     pub resolved_collection_rid: Option<String>,
-    pub region_name: Option<String>,
+    pub region_name: Option<RegionName>,
     pub local_region_request: bool,
     pub is_retry: bool,
     pub is_partition_failover_retry: bool,

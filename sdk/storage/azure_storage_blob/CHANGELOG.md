@@ -4,11 +4,13 @@
 
 ### Features Added
 
+- Added support for `stage_block_from_url` to `BlockBlobClient`.
+
 ### Breaking Changes
 
-### Bugs Fixed
-
-### Other Changes
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+- Renamed `BlobItemInternal` to `BlobItem`.
+- Renamed `BlobPropertiesInternal` to `BlobProperties`.
 
 ## 0.8.0 (2026-01-21)
 

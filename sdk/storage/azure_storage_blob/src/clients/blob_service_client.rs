@@ -5,6 +5,7 @@ use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     generated::models::BlobServiceClientGetAccountInfoResult,
+    logging::apply_storage_logging_defaults,
     models::{
         BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
         BlobServiceClientGetPropertiesOptions, BlobServiceClientGetStatisticsOptions,
@@ -13,17 +14,36 @@ use crate::{
         StorageServiceStats,
     },
     pipeline::StorageHeadersPolicy,
-    BlobContainerClient, BlobServiceClientOptions,
+    BlobContainerClient,
 };
 use azure_core::{
     credentials::TokenCredential,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pager, Pipeline, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, NoFormat, Pager, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     tracing, Result,
 };
 use std::sync::Arc;
+
+/// Options used when creating a [`BlobServiceClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobServiceClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for BlobServiceClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
@@ -45,6 +65,7 @@ impl GeneratedBlobServiceClient {
         options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        apply_storage_logging_defaults(&mut options.client_options);
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options
@@ -152,7 +173,7 @@ impl BlobServiceClient {
     pub fn list_containers(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat, String>> {
+    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
         self.client.list_containers_segment(options)
     }
 

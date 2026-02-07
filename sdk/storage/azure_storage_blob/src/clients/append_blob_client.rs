@@ -3,6 +3,7 @@
 
 use crate::{
     generated::clients::AppendBlobClient as GeneratedAppendBlobClient,
+    logging::apply_storage_logging_defaults,
     models::{
         AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockFromUrlResult,
         AppendBlobClientAppendBlockOptions, AppendBlobClientAppendBlockResult,
@@ -10,17 +11,35 @@ use crate::{
         AppendBlobClientSealResult,
     },
     pipeline::StorageHeadersPolicy,
-    AppendBlobClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, RequestContent, Response, Url,
+        ClientOptions, NoFormat, Pipeline, RequestContent, Response, Url,
     },
     tracing, Bytes, Result,
 };
 use std::sync::Arc;
+
+/// Options used when creating an [`AppendBlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct AppendBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for AppendBlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with a specific Azure storage Append blob, although that blob may not yet exist.
 pub struct AppendBlobClient {
@@ -42,6 +61,7 @@ impl GeneratedAppendBlobClient {
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        apply_storage_logging_defaults(&mut options.client_options);
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options

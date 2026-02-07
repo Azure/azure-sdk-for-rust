@@ -3,10 +3,11 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
+use crate::models::CosmosResponse;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use azure_core::http::{Context, Response};
+use azure_core::http::Context;
 use std::sync::Arc;
 
 /// Handler for managing transport-level operations with Cosmos DB.
@@ -41,7 +42,7 @@ impl ContainerConnection {
         &self,
         cosmos_request: CosmosRequest,
         context: Context<'_>,
-    ) -> azure_core::Result<Response<T>> {
+    ) -> azure_core::Result<CosmosResponse<T>> {
         self.pipeline.send(cosmos_request, context).await
     }
 }
@@ -51,15 +52,16 @@ mod tests {
     use super::*;
     use crate::cosmos_request::CosmosRequest;
     use crate::operation_context::OperationType;
+    use crate::pipeline::GatewayPipeline;
+    use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
-    use std::borrow::Cow;
     use url::Url;
 
     // Helper function to create a test GlobalEndpointManager
-    fn create_endpoint_manager() -> GlobalEndpointManager {
+    fn create_endpoint_manager() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -69,11 +71,18 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        GlobalEndpointManager::new(endpoint, vec![], pipeline)
+        Arc::new(GlobalEndpointManager::new(
+            endpoint,
+            vec![],
+            vec![],
+            pipeline,
+        ))
     }
 
     // Helper function to create a test GatewayPipeline
-    fn create_gateway_pipeline(endpoint_manager: &GlobalEndpointManager) -> Arc<GatewayPipeline> {
+    fn create_gateway_pipeline(
+        endpoint_manager: Arc<GlobalEndpointManager>,
+    ) -> Arc<GatewayPipeline> {
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -86,7 +95,7 @@ mod tests {
         Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
-            endpoint_manager.clone(),
+            endpoint_manager,
             CosmosClientOptions::default(),
         ))
     }
@@ -94,7 +103,7 @@ mod tests {
     // Helper function to create a test ContainerCache
     fn create_container_cache(
         pipeline: Arc<GatewayPipeline>,
-        endpoint_manager: GlobalEndpointManager,
+        endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Arc<ContainerCache> {
         let container_link = ResourceLink::root(ResourceType::Databases)
             .item("test_db")
@@ -153,11 +162,12 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        let endpoint_manager = GlobalEndpointManager::new(
+        let endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
-            vec![Cow::Borrowed("East US"), Cow::Borrowed("West US")],
+            vec![RegionName::from("East US"), RegionName::from("West US")],
+            vec![],
             pipeline.clone(),
-        );
+        ));
 
         let gateway_pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
@@ -171,7 +181,7 @@ mod tests {
         let pk_range_cache = create_pk_range_cache(
             gateway_pipeline.clone(),
             container_cache.clone(),
-            Arc::new(endpoint_manager),
+            endpoint_manager,
         );
 
         let connection =
@@ -184,13 +194,10 @@ mod tests {
     #[test]
     fn multiple_container_connections_share_caches() {
         let endpoint_manager = create_endpoint_manager();
-        let pipeline = create_gateway_pipeline(&endpoint_manager);
+        let pipeline = create_gateway_pipeline(endpoint_manager.clone());
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            pipeline.clone(),
-            container_cache.clone(),
-            Arc::new(endpoint_manager),
-        );
+        let pk_range_cache =
+            create_pk_range_cache(pipeline.clone(), container_cache.clone(), endpoint_manager);
 
         // Create multiple connections sharing the same caches
         let connection1 = ContainerConnection::new(
@@ -267,13 +274,10 @@ mod tests {
     #[test]
     fn container_connection_debug_implementation() {
         let endpoint_manager = create_endpoint_manager();
-        let pipeline = create_gateway_pipeline(&endpoint_manager);
+        let pipeline = create_gateway_pipeline(endpoint_manager.clone());
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            pipeline.clone(),
-            container_cache.clone(),
-            Arc::new(endpoint_manager),
-        );
+        let pk_range_cache =
+            create_pk_range_cache(pipeline.clone(), container_cache.clone(), endpoint_manager);
 
         let connection = ContainerConnection::new(pipeline, container_cache, pk_range_cache);
 

@@ -2,43 +2,68 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::AppendBlobClient as GeneratedAppendBlobClient,
-    generated::clients::BlobClient as GeneratedBlobClient,
-    generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
-    generated::clients::PageBlobClient as GeneratedPageBlobClient,
-    generated::models::{
-        BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
-        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlockBlobClientUploadResult,
+    generated::{
+        clients::{
+            AppendBlobClient as GeneratedAppendBlobClient, BlobClient as GeneratedBlobClient,
+            BlockBlobClient as GeneratedBlockBlobClient, PageBlobClient as GeneratedPageBlobClient,
+        },
+        models::{
+            BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
+            BlobClientCreateSnapshotResult, BlobClientDownloadResult,
+            BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+            BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
+        },
     },
+    logging::apply_storage_logging_defaults,
     models::{
-        AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientCreateSnapshotOptions,
-        BlobClientDeleteImmutabilityPolicyOptions, BlobClientDeleteOptions,
-        BlobClientDownloadOptions, BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions,
-        BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
-        BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
-        BlobClientSetTierOptions, BlobClientUndeleteOptions, BlobTags,
-        BlockBlobClientUploadOptions, StorageErrorCode,
+        method_options::BlobClientManagedDownloadOptions, AccessTier,
+        BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions, BlobClientChangeLeaseOptions,
+        BlobClientCreateSnapshotOptions, BlobClientDeleteImmutabilityPolicyOptions,
+        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
+        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
+        BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
+        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobClientUndeleteOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
     },
+    partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
-    AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
+use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
+    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
-        XmlFormat,
+        response::PinnedStream,
+        AsyncRawResponse, AsyncResponse, ClientOptions, NoFormat, Pipeline, RequestContent,
+        Response, StatusCode, Url, UrlExt, XmlFormat,
     },
     time::OffsetDateTime,
     tracing, Bytes, Result,
 };
-use std::collections::HashMap;
 use std::sync::Arc;
+use std::{collections::HashMap, num::NonZero, ops::Range};
+
+/// Options used when creating a [`BlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
+}
+
+impl Default for BlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
+    }
+}
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
@@ -60,6 +85,7 @@ impl GeneratedBlobClient {
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        apply_storage_logging_defaults(&mut options.client_options);
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options
@@ -98,7 +124,48 @@ impl GeneratedBlobClient {
             pipeline,
         })
     }
+
+    pub async fn managed_download(
+        &self,
+        options: Option<BlobClientManagedDownloadOptions<'_>>,
+    ) -> Result<PinnedStream> {
+        let options = options.unwrap_or_default();
+        let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
+        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+        // construct exhaustively to ensure we catch new options when added
+        let get_range_options = BlobClientDownloadOptions {
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key,
+            encryption_key_sha256: options.encryption_key_sha256,
+            if_match: options.if_match,
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match,
+            if_tags: options.if_tags,
+            if_unmodified_since: options.if_unmodified_since,
+            lease_id: options.lease_id,
+            // TODO: method_options: options.method_options,
+            range: None,
+            range_get_content_crc64: options.range_get_content_crc64,
+            range_get_content_md5: options.range_get_content_md5,
+            snapshot: options.snapshot,
+            structured_body_type: options.structured_body_type,
+            timeout: options.timeout,
+            version_id: options.version_id,
+            ..Default::default()
+        };
+
+        let client = GeneratedBlobClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        };
+        let client = BlobClientDownloadBehavior::new(client, get_range_options);
+
+        partitioned_transfer::download(parallel, partition_size, Arc::new(client)).await
+    }
 }
+
 impl BlobClient {
     /// Creates a new BlobClient, using Entra ID authentication.
     ///
@@ -564,5 +631,45 @@ impl BlobClient {
         options: Option<BlobClientCreateSnapshotOptions<'_>>,
     ) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>> {
         self.client.create_snapshot(options).await
+    }
+
+    /// The managed download operation retrieves the content of an existing blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `body` - The body of the request.
+    /// * `options` - Optional parameters for the request.
+    pub async fn managed_download(
+        &self,
+        options: Option<BlobClientManagedDownloadOptions<'_>>,
+    ) -> Result<PinnedStream> {
+        self.client.managed_download(options).await
+    }
+}
+
+// unwrap evaluated at compile time
+const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
+const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+
+struct BlobClientDownloadBehavior<'a> {
+    client: GeneratedBlobClient,
+    options: BlobClientDownloadOptions<'a>,
+}
+impl<'a> BlobClientDownloadBehavior<'a> {
+    fn new(client: GeneratedBlobClient, options: BlobClientDownloadOptions<'a>) -> Self {
+        Self { client, options }
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
+    async fn transfer_range(&self, range: Range<u64>) -> Result<AsyncRawResponse> {
+        let mut opt = self.options.clone();
+        opt.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
+        self.client
+            .download(Some(opt))
+            .await
+            .map(AsyncRawResponse::from)
     }
 }
