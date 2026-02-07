@@ -56,27 +56,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-#### Using SAS URLs
-
-You can also authenticate using a Shared Access Signature (SAS) URL. When using a SAS URL, you don't need to provide a credential:
-
-```rust no_run
-use azure_storage_queue::QueueClient;
-use azure_core::http::Url;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a QueueClient using a SAS URL (no credential needed)
-    let queue_url = Url::parse("https://<storage_account_name>.queue.core.windows.net/<queue-name>?<sas-token>")?;
-    let queue_client = QueueClient::from_url(
-        queue_url,
-        None,     // No credential needed when using SAS URL
-        None,     // QueueClient options
-    )?;
-    Ok(())
-}
-```
-
 #### Permissions
 
 You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Please see [Assign an Azure role for access to queue data] for more details.
