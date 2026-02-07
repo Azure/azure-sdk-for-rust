@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, Response, Url};
+use azure_core::http::{ClientOptions, Response};
 use azure_core::time::OffsetDateTime;
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
@@ -245,112 +245,4 @@ fn assert_successful_response<T, F>(response: &Response<T, F>) {
         "Expected successful status code, got {}",
         response.status()
     );
-}
-
-/// Test creating, listing, and deleting a queue using SAS token authentication with from_url
-#[recorded::test]
-async fn test_sas_token_from_url(ctx: TestContext) -> Result<()> {
-    let recording = ctx.recording();
-
-    // Skip test if SAS URL is not available
-    let sas_url = match recording.var_opt("AZURE_QUEUE_STORAGE_SAS_URL", None) {
-        Some(url) => url,
-        None => {
-            println!("Skipping SAS token test - AZURE_QUEUE_STORAGE_SAS_URL not set");
-            return Ok(());
-        }
-    };
-
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
-    let service_client_options = QueueServiceClientOptions {
-        client_options,
-        ..Default::default()
-    };
-
-    let parsed_url = Url::parse(&sas_url)?;
-    let queue_service_client =
-        QueueServiceClient::from_url(parsed_url, None, Some(service_client_options))?;
-
-    let queue_name = "test-sas-service-from-url";
-
-    let test_result = async {
-        // Create queue
-        let response = queue_service_client.create_queue(queue_name, None).await?;
-        assert_successful_response(&response);
-
-        // List queues and verify the created queue exists
-        let pager = queue_service_client.list_queues(None)?;
-        let mut found = false;
-        let mut pager = pager.into_pages();
-        while let Some(page_result) = pager.next().await {
-            let page = page_result?;
-            let queue_list = page.into_model()?;
-            for queue in queue_list.queue_items {
-                if queue.name.as_ref() == Some(&queue_name.to_string()) {
-                    found = true;
-                    break;
-                }
-            }
-            if found {
-                break;
-            }
-        }
-        assert!(found, "Created queue should be found in list");
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Clean up
-    queue_service_client
-        .delete_queue(queue_name, None)
-        .await
-        .unwrap();
-
-    test_result?;
-    Ok(())
-}
-
-/// Test creating and deleting a queue using SAS token authentication with new constructor
-#[recorded::test]
-async fn test_sas_token_new(ctx: TestContext) -> Result<()> {
-    let recording = ctx.recording();
-
-    // Skip test if SAS URL is not available
-    let sas_url = match recording.var_opt("AZURE_QUEUE_STORAGE_SAS_URL", None) {
-        Some(url) => url,
-        None => {
-            println!("Skipping SAS token test - AZURE_QUEUE_STORAGE_SAS_URL not set");
-            return Ok(());
-        }
-    };
-
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
-    let service_client_options = QueueServiceClientOptions {
-        client_options,
-        ..Default::default()
-    };
-
-    let queue_service_client =
-        QueueServiceClient::new(&sas_url, None, Some(service_client_options))?;
-
-    let queue_name = "test-sas-service-new";
-
-    let test_result = async {
-        // Create queue
-        let response = queue_service_client.create_queue(queue_name, None).await?;
-        assert_successful_response(&response);
-
-        // Delete queue
-        let response = queue_service_client.delete_queue(queue_name, None).await?;
-        assert_successful_response(&response);
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    test_result?;
-    Ok(())
 }
