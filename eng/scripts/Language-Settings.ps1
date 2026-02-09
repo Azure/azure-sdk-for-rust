@@ -131,8 +131,24 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 }
 
 function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
+  $additionalPackages = @()
+
+  [array]$allChangedFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' }
+
+  # If Cargo.lock is changed, add azure_core and typespec_client_core packages to validation set
+  if ($allChangedFiles -contains "Cargo.lock") {
+    foreach ($corePkgName in @("azure_core", "typespec_client_core")) {
+      $corePackage = $allPackageProperties | Where-Object { $_.Name -eq $corePkgName }
+      $alreadyIncluded = ($packagesWithChanges | Where-Object { $_.Name -eq $corePkgName }).Count -gt 0
+      if ($corePackage -and -not $alreadyIncluded) {
+        $corePackage.IncludedForValidation = $true
+        $additionalPackages += $corePackage
+      }
+    }
+  }
+
   # if the change was in a service directory, but not in a package directory, test all the packages in the service directory
-  [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
+  [array]$serviceFiles = $allChangedFiles | Where-Object { $_ -match "^sdk/.+/" }
 
   # remove files that target any specific package
   foreach ($package in $allPackageProperties) {
@@ -143,11 +159,13 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
   $affectedServiceDirectories = $serviceFiles | ForEach-Object { $_ -replace '^sdk/(.+?)/.*', '$1' } | Sort-Object -Unique
 
   $affectedPackages = @($allPackageProperties | Where-Object { $affectedServiceDirectories -contains $_.ServiceDirectory })
-  $additionalPackages = @($affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ })
+  $serviceAdditionalPackages = @($affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ -and $additionalPackages -notcontains $_ })
 
-  foreach ($package in $additionalPackages) {
+  foreach ($package in $serviceAdditionalPackages) {
     $package.IncludedForValidation = $true
   }
+
+  $additionalPackages += $serviceAdditionalPackages
 
   return $additionalPackages ?? @()
 }
