@@ -27,6 +27,7 @@ impl ContentRange {
         self.start
     }
 
+    /// Index of the final byte of the range (inclusive).
     pub fn end(&self) -> u64 {
         self.end
     }

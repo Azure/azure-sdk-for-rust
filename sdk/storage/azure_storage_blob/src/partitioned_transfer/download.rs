@@ -28,6 +28,7 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// stream will still count when determining current running operations. This is so the stream can
 /// promise its buffered bytes do not exceed parallel * partition_size.
 pub(crate) async fn download<Behavior>(
+    range: Option<Range<u64>>,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
@@ -37,17 +38,26 @@ where
 {
     let parallel = parallel.get();
     let partition_size = partition_size.get() as u64;
-    let initial_response = client.transfer_range(0..partition_size).await?;
-    let content_range: ContentRange = initial_response.headers().get_as(&"content-range".into())?;
-    let total_ranges = content_range.total_length().div_ceil(partition_size);
+    let range = range.unwrap_or(0..u64::MAX);
 
-    let mut ranges = (1..total_ranges).map(move |i| {
-        i * partition_size
-            ..min(
-                i * partition_size + partition_size,
-                content_range.total_length(),
-            )
-    });
+    let initial_response = client
+        .transfer_range(range.start..min(range.end, range.start + partition_size))
+        .await?;
+    let content_range: ContentRange = initial_response.headers().get_as(&"content-range".into())?;
+
+    let end_of_blob = content_range.end() + 1 == content_range.total_length();
+    let end_of_range = content_range.end() + 1 == range.end;
+    if end_of_blob || end_of_range {
+        // Bug in rust-analyzer. Need to manually type this.
+        let raw_stream: PinnedStream = Box::pin(initial_response.into_body());
+        return Ok(raw_stream);
+    }
+
+    let remainder_start = content_range.end() + 1;
+    let remainder_end = min(range.end, content_range.total_length());
+    let mut ranges = (remainder_start..remainder_end)
+        .step_by(partition_size as usize)
+        .map(move |i| i..min(i + partition_size, remainder_end));
 
     // the first operation has a different type from the others.
     // fully type this variable out to specify dyn.
@@ -160,7 +170,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, mock.clone())
+        let downloaded_data = download(None, parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -180,7 +190,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, mock.clone())
+        let downloaded_data = download(None, parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -201,7 +211,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, mock.clone())
+        let downloaded_data = download(None, parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -222,7 +232,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, mock.clone())
+        let downloaded_data = download(None, parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -243,7 +253,7 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(parallel, partition_size, mock.clone())
+        let downloaded_data = download(None, parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;
@@ -267,7 +277,7 @@ mod tests {
             Some(1..5),
         ));
 
-        let downloaded_data = download(parallel, partition_size, mock.clone())
+        let downloaded_data = download(None, parallel, partition_size, mock.clone())
             .await?
             .buffer_all()
             .await?;

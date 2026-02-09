@@ -177,7 +177,7 @@ impl BlobClient {
         };
         let client = BlobClientDownloadBehavior::new(client, get_range_options);
 
-        partitioned_transfer::download(parallel, partition_size, Arc::new(client)).await
+        partitioned_transfer::download(None, parallel, partition_size, Arc::new(client)).await
     }
 
     /// Returns a new instance of AppendBlobClient.
