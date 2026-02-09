@@ -12,11 +12,11 @@ use azure_storage_blob::{
     models::{
         method_options::BlobClientManagedDownloadOptions, AccessTier, AccountKind,
         BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-        BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
+        BlobClientDownloadInternalOptions, BlobClientDownloadInternalResultHeaders,
         BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, StorageError,
+        BlobTags, BlockBlobClientUploadInternalOptions, ImmutabilityPolicyMode, LeaseState, StorageError,
         StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
@@ -282,7 +282,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     // Upload Blob With Metadata
     let initial_metadata = HashMap::from([("initial".to_string(), "metadata".to_string())]);
 
-    let options_with_metadata = BlockBlobClientUploadOptions {
+    let options_with_metadata = BlockBlobClientUploadInternalOptions {
         metadata: Some(initial_metadata.clone()),
         ..Default::default()
     };
@@ -461,7 +461,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
 
     // Overwrite Upload
     let data = b"overruled!";
-    let upload_options = BlockBlobClientUploadOptions {
+    let upload_options = BlockBlobClientUploadInternalOptions {
         lease_id: Some(lease_id.clone()),
         ..Default::default()
     };
@@ -475,7 +475,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         .await?;
 
     // Assert
-    let download_options = BlobClientDownloadOptions {
+    let download_options = BlobClientDownloadInternalOptions {
         lease_id: Some(lease_id.clone()),
         ..Default::default()
     };

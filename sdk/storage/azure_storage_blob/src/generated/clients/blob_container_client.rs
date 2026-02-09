@@ -11,7 +11,7 @@ use crate::generated::models::{
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
     BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsFlatSegmentResponse,
@@ -692,10 +692,10 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.listBlobFlatSegment")]
-    pub fn list_blob_flat_segment(
+    #[tracing::function("Storage.Blob.Container.listBlobs")]
+    pub fn list_blobs(
         &self,
-        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();

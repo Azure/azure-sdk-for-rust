@@ -9,9 +9,10 @@ use crate::{
         },
         models::{
             BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-            BlobClientCreateSnapshotResult, BlobClientDownloadResult,
+            BlobClientCreateSnapshotResult, BlobClientDownloadInternalResult,
             BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-            BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlockBlobClientUploadResult,
+            BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+            BlockBlobClientUploadInternalResult,
         },
     },
     logging::apply_storage_logging_defaults,
@@ -19,12 +20,13 @@ use crate::{
         method_options::BlobClientManagedDownloadOptions, AccessTier,
         BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions, BlobClientChangeLeaseOptions,
         BlobClientCreateSnapshotOptions, BlobClientDeleteImmutabilityPolicyOptions,
-        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetAccountInfoOptions,
-        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
-        BlobClientRenewLeaseOptions, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetLegalHoldOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobClientUndeleteOptions, BlobTags, BlockBlobClientUploadOptions, StorageErrorCode,
+        BlobClientDeleteOptions, BlobClientDownloadInternalOptions,
+        BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
+        BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+        BlobClientSetTierOptions, BlobClientUndeleteOptions, BlobTags,
+        BlockBlobClientUploadInternalOptions, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -133,7 +135,7 @@ impl GeneratedBlobClient {
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
         // construct exhaustively to ensure we catch new options when added
-        let get_range_options = BlobClientDownloadOptions {
+        let get_range_options = BlobClientDownloadInternalOptions {
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key,
             encryption_key_sha256: options.encryption_key_sha256,
@@ -333,9 +335,9 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn download(
         &self,
-        options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
-        self.client.download(options).await
+        options: Option<BlobClientDownloadInternalOptions<'_>>,
+    ) -> Result<AsyncResponse<BlobClientDownloadInternalResult>> {
+        self.client.download_internal(options).await
     }
 
     /// Creates a new blob from a data source.
@@ -352,8 +354,8 @@ impl BlobClient {
         data: RequestContent<Bytes, NoFormat>,
         overwrite: bool,
         content_length: u64,
-        options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
+        options: Option<BlockBlobClientUploadInternalOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientUploadInternalResult, NoFormat>> {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {
@@ -362,7 +364,7 @@ impl BlobClient {
 
         self.block_blob_client()
             .client
-            .upload(data, content_length, Some(options))
+            .upload_internal(data, content_length, Some(options))
             .await
     }
 
@@ -653,10 +655,10 @@ const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unw
 
 struct BlobClientDownloadBehavior<'a> {
     client: GeneratedBlobClient,
-    options: BlobClientDownloadOptions<'a>,
+    options: BlobClientDownloadInternalOptions<'a>,
 }
 impl<'a> BlobClientDownloadBehavior<'a> {
-    fn new(client: GeneratedBlobClient, options: BlobClientDownloadOptions<'a>) -> Self {
+    fn new(client: GeneratedBlobClient, options: BlobClientDownloadInternalOptions<'a>) -> Self {
         Self { client, options }
     }
 }
@@ -668,7 +670,7 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         let mut opt = self.options.clone();
         opt.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
         self.client
-            .download(Some(opt))
+            .download_internal(Some(opt))
             .await
             .map(AsyncRawResponse::from)
     }

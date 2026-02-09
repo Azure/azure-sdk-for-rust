@@ -6,7 +6,7 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     format_page_range,
     models::{
-        BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
+        BlobClientDownloadInternalResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
         PageBlobClientCreateOptions, PageBlobClientSetSequenceNumberOptions,
         PageBlobClientSetSequenceNumberResultHeaders, SequenceNumberActionType,
     },

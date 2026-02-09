@@ -14,7 +14,7 @@ use crate::{
         method_options::BlockBlobClientManagedUploadOptions, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
-        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
+        BlockBlobClientUploadInternalOptions, BlockList, BlockListType, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -121,7 +121,7 @@ impl GeneratedBlockBlobClient {
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
         // construct exhaustively to ensure we catch new options when added
-        let oneshot_options = BlockBlobClientUploadOptions {
+        let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
             blob_content_disposition: options.blob_content_disposition.clone(),
             blob_content_encoding: options.blob_content_encoding.clone(),
@@ -381,7 +381,7 @@ struct BlockInfo {
 
 struct BlockBlobClientUploadBehavior<'c, 'opt> {
     client: &'c GeneratedBlockBlobClient,
-    oneshot_options: BlockBlobClientUploadOptions<'opt>,
+    oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
     stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
     commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     blocks: Mutex<Vec<BlockInfo>>,
@@ -390,7 +390,7 @@ struct BlockBlobClientUploadBehavior<'c, 'opt> {
 impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
     fn new(
         client: &'c GeneratedBlockBlobClient,
-        oneshot_options: BlockBlobClientUploadOptions<'opt>,
+        oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
         stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
         commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     ) -> Self {
@@ -410,7 +410,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
         let content_len = content.len() as u64;
         self.client
-            .upload(
+            .upload_internal(
                 content.into(),
                 content_len,
                 Some(self.oneshot_options.clone()),

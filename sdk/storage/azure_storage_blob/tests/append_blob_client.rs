@@ -4,7 +4,7 @@
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
+    BlobClientDownloadInternalResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,

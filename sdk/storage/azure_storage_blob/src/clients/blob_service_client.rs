@@ -9,7 +9,7 @@ use crate::{
     models::{
         BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
         BlobServiceClientGetPropertiesOptions, BlobServiceClientGetStatisticsOptions,
-        BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
+        BlobServiceClientListContainersOptions, BlobServiceClientSetPropertiesOptions,
         BlobServiceProperties, FilterBlobSegment, ListContainersSegmentResponse,
         StorageServiceStats,
     },
@@ -172,9 +172,9 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub fn list_containers(
         &self,
-        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
+        options: Option<BlobServiceClientListContainersOptions<'_>>,
     ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
-        self.client.list_containers_segment(options)
+        self.client.list_containers(options)
     }
 
     /// Returns a list of blobs across all containers whose tags match a given search expression.

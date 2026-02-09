@@ -10,8 +10,8 @@ use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadInternalOptions, LeaseState,
     SignedIdentifiers,
 };
 use azure_storage_blob_test::{
@@ -177,7 +177,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Continuation Token with Token Provided
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
         maxresults: Some(2),
         ..Default::default()
     };
@@ -195,7 +195,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
         marker: continuation_token,
         ..Default::default()
     };
@@ -361,7 +361,7 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
         &container_client.blob_client(&blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
         Some(
-            BlockBlobClientUploadOptions::default().with_tags(HashMap::from([
+            BlockBlobClientUploadInternalOptions::default().with_tags(HashMap::from([
                 ("foo".to_string(), "bar".to_string()),
                 ("alice".to_string(), "bob".to_string()),
             ])),
@@ -373,7 +373,7 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
     create_test_blob(
         &container_client.blob_client(&blob2_name.clone()),
         Some(RequestContent::from("ferris the crab".as_bytes().into())),
-        Some(BlockBlobClientUploadOptions::default().with_tags(blob2_tags.clone())),
+        Some(BlockBlobClientUploadInternalOptions::default().with_tags(blob2_tags.clone())),
     )
     .await?;
 

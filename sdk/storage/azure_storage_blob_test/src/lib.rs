@@ -20,7 +20,7 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult},
+    models::{BlockBlobClientUploadInternalOptions, BlockBlobClientUploadInternalResult},
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
@@ -152,8 +152,8 @@ pub async fn get_container_client(
 pub async fn create_test_blob(
     blob_client: &BlobClient,
     data: Option<RequestContent<Bytes, NoFormat>>,
-    options: Option<BlockBlobClientUploadOptions<'_>>,
-) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
+    options: Option<BlockBlobClientUploadInternalOptions<'_>>,
+) -> Result<Response<BlockBlobClientUploadInternalResult, NoFormat>> {
     match data {
         Some(content) => {
             blob_client

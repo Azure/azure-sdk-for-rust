@@ -3,7 +3,7 @@
 
 use crate::models::{
     AccessPolicy, AppendBlobClientCreateOptions, BlobTag, BlobTags,
-    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions,
+    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadInternalOptions,
     PageBlobClientCreateOptions, SignedIdentifier, SignedIdentifiers,
 };
 use std::collections::HashMap;
@@ -52,7 +52,7 @@ impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 /// * `tags` - A HashMap of key-value pairs representing the blob tags.
-impl BlockBlobClientUploadOptions<'_> {
+impl BlockBlobClientUploadInternalOptions<'_> {
     pub fn with_tags(self, tags: HashMap<String, String>) -> Self {
         let tags_string = tags
             .iter()

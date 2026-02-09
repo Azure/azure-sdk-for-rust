@@ -12,7 +12,7 @@ use crate::{
         BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
         BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+        BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
         BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
         BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetMetadataOptions, SignedIdentifiers,
@@ -250,9 +250,9 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub fn list_blobs(
         &self,
-        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
-        self.client.list_blob_flat_segment(options)
+        self.client.list_blobs(options)
     }
 
     /// Returns a list of blobs in the container whose tags match a given search expression.

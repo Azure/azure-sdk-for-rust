@@ -5,8 +5,8 @@ use azure_core::http::{ClientOptions, RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
-    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-    BlobServiceProperties, BlockBlobClientUploadOptions, GeoReplicationStatusType,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersOptions,
+    BlobServiceProperties, BlockBlobClientUploadInternalOptions, GeoReplicationStatusType,
 };
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use azure_storage_blob_test::{
@@ -96,7 +96,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
         container_clients.push(container_client);
     }
 
-    let list_containers_options = BlobServiceClientListContainersSegmentOptions {
+    let list_containers_options = BlobServiceClientListContainersOptions {
         maxresults: Some(2),
         ..Default::default()
     };
@@ -191,7 +191,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         &container_client_1.blob_client(&blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
         Some(
-            BlockBlobClientUploadOptions::default()
+            BlockBlobClientUploadInternalOptions::default()
                 .with_tags(HashMap::from([("foo".to_string(), "bar".to_string())])),
         ),
     )
@@ -201,7 +201,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         &container_client_1.blob_client(&blob2_name.clone()),
         Some(RequestContent::from("ferris the crab".as_bytes().into())),
         Some(
-            BlockBlobClientUploadOptions::default()
+            BlockBlobClientUploadInternalOptions::default()
                 .with_tags(HashMap::from([("fizz".to_string(), "buzz".to_string())])),
         ),
     )
@@ -211,7 +211,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     create_test_blob(
         &container_client_1.blob_client(&blob3_name.clone()),
         Some(RequestContent::from("six seven".as_bytes().into())),
-        Some(BlockBlobClientUploadOptions::default().with_tags(blob3_tags.clone())),
+        Some(BlockBlobClientUploadInternalOptions::default().with_tags(blob3_tags.clone())),
     )
     .await?;
 

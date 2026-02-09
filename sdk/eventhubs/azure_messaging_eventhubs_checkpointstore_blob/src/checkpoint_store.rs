@@ -17,8 +17,9 @@ use azure_messaging_eventhubs::{
 };
 use azure_storage_blob::{
     models::{
-        BlobClientSetMetadataOptions, BlobContainerClientListBlobFlatSegmentOptions,
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResultHeaders, ListBlobsIncludeItem,
+        BlobClientSetMetadataOptions, BlobContainerClientListBlobsOptions,
+        BlockBlobClientUploadInternalOptions, BlockBlobClientUploadInternalResultHeaders,
+        ListBlobsIncludeItem,
     },
     BlobContainerClient,
 };
@@ -80,7 +81,7 @@ impl BlobCheckpointStore {
                 Some(StatusCode::NotFound) => {
                     info!("Blob {blob_name} not found, creating.");
                     let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
-                    let options = BlockBlobClientUploadOptions {
+                    let options = BlockBlobClientUploadInternalOptions {
                         metadata: Some(metadata),
                         ..Default::default()
                     };
@@ -126,7 +127,7 @@ impl BlobCheckpointStore {
         debug!("Claiming ownership for {} without etag", blob_name);
 
         let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
-        let options = BlockBlobClientUploadOptions {
+        let options = BlockBlobClientUploadInternalOptions {
             metadata: metadata.clone(),
             if_none_match: Some("*".to_string()), // Upload without an etag, creating a new blob
             ..Default::default()
@@ -217,13 +218,13 @@ impl CheckpointStore for BlobCheckpointStore {
 
         debug!("Using checkpoint prefix: {}", prefix);
 
-        let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobFlatSegmentOptions {
-                prefix: Some(prefix),
-                include: Some(vec![ListBlobsIncludeItem::Metadata]),
-                ..Default::default()
-            },
-        ))?;
+        let mut blobs =
+            self.blob_container_client
+                .list_blobs(Some(BlobContainerClientListBlobsOptions {
+                    prefix: Some(prefix),
+                    include: Some(vec![ListBlobsIncludeItem::Metadata]),
+                    ..Default::default()
+                }))?;
         let mut checkpoints = Vec::new();
 
         let checkpoint = Checkpoint {
@@ -281,13 +282,13 @@ impl CheckpointStore for BlobCheckpointStore {
 
         debug!("Using ownership prefix: {}", prefix);
 
-        let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobFlatSegmentOptions {
-                prefix: Some(prefix),
-                include: Some(vec![ListBlobsIncludeItem::Metadata]),
-                ..Default::default()
-            },
-        ))?;
+        let mut blobs =
+            self.blob_container_client
+                .list_blobs(Some(BlobContainerClientListBlobsOptions {
+                    prefix: Some(prefix),
+                    include: Some(vec![ListBlobsIncludeItem::Metadata]),
+                    ..Default::default()
+                }))?;
         let mut ownerships = Vec::new();
 
         let ownership = Ownership {

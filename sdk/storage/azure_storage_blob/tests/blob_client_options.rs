@@ -8,11 +8,12 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext, VarOptions};
 use azure_storage_blob::models::{
     AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientCreateSnapshotOptions,
-    BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
-    BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
-    BlobClientSetImmutabilityPolicyOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlobContainerClientListBlobFlatSegmentOptions, BlobTags,
-    BlockBlobClientUploadOptions, DeleteSnapshotsOptionType, ListBlobsIncludeItem,
+    BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions,
+    BlobClientDownloadInternalOptions, BlobClientGetPropertiesOptions,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobContainerClientListBlobsOptions,
+    BlobTags, BlockBlobClientUploadInternalOptions, DeleteSnapshotsOptionType,
+    ListBlobsIncludeItem,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
@@ -59,7 +60,7 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
 
     // Create blob_client w/ version_2 with intention to actually download version_1 with options bag
     let version_2_client = blob_client.with_version(&version_2)?;
-    let download_options = BlobClientDownloadOptions {
+    let download_options = BlobClientDownloadInternalOptions {
         version_id: Some(version_1.clone()),
         ..Default::default()
     };
@@ -96,7 +97,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
 
     // Create Version 1 with Metadata
     let metadata_v1 = HashMap::from([("version".to_string(), "one".to_string())]);
-    let upload_options = BlockBlobClientUploadOptions {
+    let upload_options = BlockBlobClientUploadInternalOptions {
         metadata: Some(metadata_v1.clone()),
         ..Default::default()
     };
@@ -253,7 +254,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     assert_eq!(2, blob_items.len());
 
     // List Blobs With Versions
-    let list_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_options = BlobContainerClientListBlobsOptions {
         include: Some(vec![ListBlobsIncludeItem::Versions]),
         ..Default::default()
     };
@@ -538,7 +539,7 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
 
     // Test Snapshot Parameter Replacement (Options Override Client)
     let snapshot_2_client = blob_client.with_snapshot(&snapshot_2)?;
-    let download_options = BlobClientDownloadOptions {
+    let download_options = BlobClientDownloadInternalOptions {
         snapshot: Some(snapshot_1.clone()),
         ..Default::default()
     };
@@ -568,7 +569,7 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
 
     // Create Blob with Metadata
     let base_metadata = HashMap::from([("base".to_string(), "model".to_string())]);
-    let upload_options = BlockBlobClientUploadOptions {
+    let upload_options = BlockBlobClientUploadInternalOptions {
         metadata: Some(base_metadata.clone()),
         ..Default::default()
     };
@@ -652,7 +653,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     }
 
     // List Blobs With Snapshots
-    let list_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_options = BlobContainerClientListBlobsOptions {
         include: Some(vec![ListBlobsIncludeItem::Snapshots]),
         ..Default::default()
     };
