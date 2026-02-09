@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::{ContainerProperties, CosmosResponse};
+use crate::models::CosmosResponse;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
