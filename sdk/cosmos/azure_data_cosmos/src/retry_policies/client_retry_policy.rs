@@ -102,8 +102,6 @@ impl ClientRetryPolicy {
         partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
         excluded_regions: Option<Vec<RegionName>>,
     ) -> Self {
-        // let partition_key_range_location_cache =
-        //     GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), true, true);
         Self {
             global_endpoint_manager,
             partition_key_range_location_cache,
@@ -454,10 +452,11 @@ impl ClientRetryPolicy {
             if self
                 .partition_key_range_location_cache
                 .partition_level_failover_enabled()
+                && self.request.is_some()
                 && self
                     .partition_key_range_location_cache
                     .try_mark_endpoint_unavailable_for_partition_key_range(
-                        &self.request.clone().unwrap(),
+                        self.request.as_ref().unwrap(),
                     )
             {
                 return Some(RetryResult::Retry {

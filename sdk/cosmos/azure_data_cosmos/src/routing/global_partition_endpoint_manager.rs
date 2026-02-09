@@ -148,7 +148,7 @@ impl GlobalPartitionEndpointManager {
     /// This value controls how long a partition must remain marked unavailable before
     /// the background failback loop considers it eligible for health re-evaluation.
     /// Reads from the `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS`
-    /// environment variable, falling back to `default` if the variable is unset or unparseable.
+    /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn allowed_partition_unavailability_duration_secs(default: i64) -> i64 {
         std::env::var("AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS")
             .ok()
@@ -161,7 +161,7 @@ impl GlobalPartitionEndpointManager {
     /// This determines how frequently the background failback loop runs to check
     /// whether previously failed partitions can be restored to healthy status.
     /// Reads from the `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS`
-    /// environment variable, falling back to `default` if the variable is unset or unparseable.
+    /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn stale_partition_unavailability_refresh_interval_secs(default: i64) -> i64 {
         std::env::var(
             "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS",
@@ -213,7 +213,7 @@ impl GlobalPartitionEndpointManager {
             info!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() un-deterministically marking the failed partitions back to healthy.");
 
             if let Err(e) = self.initiate_failback_to_unhealthy_endpoints().await {
-                tracing::error!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - filed to mark the failed partitions back to healthy. Exception: {}", e);
+                tracing::error!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - failed to mark the failed partitions back to healthy. Exception: {}", e);
             }
         }
     }
@@ -309,9 +309,9 @@ impl GlobalPartitionEndpointManager {
         for (pk_range, mapping) in pk_range_uri_mappings.iter_mut() {
             info!(
                 "Un-deterministically marking the original failed endpoint: {}, for the PkRange: {}, collectionRid: {} back to healthy.",
-                mapping.0,
+                mapping.1,
                 pk_range.id,
-                mapping.1
+                mapping.0
             );
 
             mapping.2 = PartitionHealthStatus::Healthy;
@@ -449,7 +449,7 @@ impl GlobalPartitionEndpointManager {
     ///
     /// Looks up the partition key range in `partition_key_range_to_location_mapping`. If an
     /// override entry is found:
-    /// - For circuit-breakerâ€“eligible requests, it additionally verifies that the failure
+    /// - For circuit-breaker eligible requests, it additionally verifies that the failure
     ///   counters have exceeded the threshold before applying the override.
     /// - Updates [`request.request_context`] to route to the overridden location.
     ///
@@ -667,6 +667,10 @@ impl GlobalPartitionEndpointManager {
             RwLock<HashMap<PartitionKeyRange, PartitionKeyRangeFailoverInfo>>,
         >,
     ) -> bool {
+        if request.request_context.resolved_collection_rid.is_none() {
+            return false;
+        }
+
         let triggered_by = if self
             .partition_level_automatic_failover_enabled
             .load(Ordering::SeqCst)
@@ -676,7 +680,7 @@ impl GlobalPartitionEndpointManager {
             "Circuit Breaker"
         };
 
-        // Get the resolved collection RID from the request context
+        // Get the resolved collection RID from the request context, if available
         let collection_rid = request
             .request_context
             .resolved_collection_rid
@@ -742,6 +746,10 @@ impl GlobalPartitionEndpointManager {
         else {
             return false;
         };
+
+        if request.request_context.resolved_collection_rid.is_none() {
+            return false;
+        }
 
         let collection_rid = request
             .request_context
@@ -865,7 +873,7 @@ impl PartitionKeyRangeFailoverInfo {
     /// Returns the consecutive read failure count threshold for the circuit breaker.
     ///
     /// Reads from the `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS`
-    /// environment variable, falling back to `default` if the variable is unset or unparseable.
+    /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn circuit_breaker_consecutive_failure_count_for_reads(default: i32) -> i32 {
         std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS")
             .ok()
@@ -876,7 +884,7 @@ impl PartitionKeyRangeFailoverInfo {
     /// Returns the consecutive write failure count threshold for the circuit breaker.
     ///
     /// Reads from the `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES`
-    /// environment variable, falling back to `default` if the variable is unset or unparseable.
+    /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn circuit_breaker_consecutive_failure_count_for_writes(default: i32) -> i32 {
         std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES")
             .ok()
@@ -889,7 +897,7 @@ impl PartitionKeyRangeFailoverInfo {
     /// If the elapsed time between two consecutive failures exceeds this window,
     /// the read and write failure counters are reset to zero. Reads from the
     /// `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES`
-    /// environment variable, falling back to `default` if unset or unparseable.
+    /// environment variable, falling back to `default` if unset or not parseable.
     fn circuit_breaker_timeout_counter_reset_window_mins(default: i64) -> i64 {
         std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES")
             .ok()

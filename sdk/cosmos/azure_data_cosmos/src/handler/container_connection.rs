@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::CosmosResponse;
+use crate::models::{ContainerProperties, CosmosResponse};
 use crate::pipeline::GatewayPipeline;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
@@ -51,26 +51,75 @@ impl ContainerConnection {
             .global_partition_endpoint_manager
             .partition_level_failover_enabled()
         {
-            let container_rid = cosmos_request.clone().collection_name;
-            let container_prop = self
-                .container_cache
-                .resolve_by_id(container_rid.unwrap().parse()?, None, false)
-                .await?;
+            let mut container_properties = None;
+            if let Some(container_id) = cosmos_request.container_id() {
+                container_properties = Some(
+                    self.container_cache
+                        .resolve_by_id(container_id, None, false)
+                        .await?,
+                );
+            } else if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
+                if !pk_range.collection_rid.is_empty() {
+                    container_properties = Some(
+                        self.container_cache
+                            .resolve_by_id(pk_range.collection_rid.clone(), None, false)
+                            .await?,
+                    );
+                }
+            }
 
-            let pk_def = container_prop.partition_key;
-            let routing_map = self
-                .pk_range_cache
-                .try_lookup(&container_prop.id, None)
-                .await?
-                .unwrap();
+            if let Some(container_prop) = container_properties {
+                let pk_def = container_prop.partition_key;
+                if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
+                    let pk_range = self
+                        .pk_range_cache
+                        .resolve_partition_key_range_by_id(
+                            &pk_range.collection_rid,
+                            &pk_range.partition_key_range_id,
+                            false,
+                        )
+                        .await
+                        .unwrap();
 
-            let partition_key = cosmos_request.clone().partition_key.unwrap();
-            let epk = partition_key
-                .get_hashed_partition_key_string(pk_def.kind, pk_def.version.unwrap() as u8);
-            let pk_range = routing_map.get_range_by_effective_partition_key(&epk)?;
-            cosmos_request.request_context.resolved_partition_key_range = Some(pk_range.clone());
-            cosmos_request.request_context.resolved_collection_rid =
-                Some(container_prop.id.into_owned());
+                    cosmos_request.request_context.resolved_partition_key_range =
+                        Some(pk_range.clone());
+                } else if let Some(partition_key) = cosmos_request.partition_key.as_ref() {
+                    let routing_map = self
+                        .pk_range_cache
+                        .try_lookup(&container_prop.id, None)
+                        .await?;
+
+                    if let Some(routing_map) = routing_map {
+                        let pk_version = pk_def.version.unwrap_or_default() as u8;
+                        let epk =
+                            partition_key.get_hashed_partition_key_string(pk_def.kind, pk_version);
+                        let pk_range = routing_map.get_range_by_effective_partition_key(&epk)?;
+                        cosmos_request.request_context.resolved_partition_key_range =
+                            Some(pk_range.clone());
+
+                        if cosmos_request
+                            .request_context
+                            .resolved_partition_key_range
+                            .is_none()
+                        {
+                            let refreshed_routing_map = self
+                                .pk_range_cache
+                                .try_lookup(&container_prop.id, Some(routing_map))
+                                .await?;
+
+                            if let Some(refreshed_routing_map) = refreshed_routing_map {
+                                let pk_range = refreshed_routing_map
+                                    .get_range_by_effective_partition_key(&epk)?;
+                                cosmos_request.request_context.resolved_partition_key_range =
+                                    Some(pk_range.clone());
+                            }
+                        }
+                    }
+                }
+
+                cosmos_request.request_context.resolved_collection_rid =
+                    Some(container_prop.id.into_owned());
+            }
         }
 
         // Delegate to the retry handler, providing the sender callback

@@ -42,8 +42,6 @@ pub struct CosmosRequest {
     pub resource_type: ResourceType,
     pub resource_link: ResourceLink,
     pub resource_id: Option<String>,
-    pub database_name: Option<String>,
-    pub collection_name: Option<String>,
     pub document_name: Option<String>,
     pub partition_key: Option<PartitionKey>,
     pub is_feed: bool,
@@ -70,8 +68,6 @@ impl CosmosRequest {
             resource_type,
             resource_link,
             resource_id: None,
-            database_name: None,
-            collection_name: None,
             document_name: None,
             partition_key: Some(PartitionKey::EMPTY),
             is_feed: false,
@@ -101,6 +97,16 @@ impl CosmosRequest {
     /// Determines if the given operation type is read only.
     pub fn is_read_only_request(&self) -> bool {
         self.operation_type.is_read_only()
+    }
+
+    /// Returns the database ID extracted from the request's resource link, if present.
+    pub fn database_id(&self) -> Option<String> {
+        self.resource_link.database_id()
+    }
+
+    /// Returns the container ID extracted from the request's resource link, if present.
+    pub fn container_id(&self) -> Option<String> {
+        self.resource_link.container_id()
     }
 
     pub fn client_headers<T: AsHeaders>(&mut self, headers: &T) {
@@ -175,7 +181,6 @@ pub struct CosmosRequestBuilder {
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
-    container_name: Option<String>,
     excluded_regions: Option<Vec<RegionName>>,
     // Flags
     is_feed: bool,
@@ -188,7 +193,6 @@ pub struct CosmosRequestBuilder {
 #[allow(dead_code)]
 impl CosmosRequestBuilder {
     pub fn new(operation_type: OperationType, resource_link: ResourceLink) -> CosmosRequestBuilder {
-        let t_link = resource_link.clone().to_string();
         CosmosRequestBuilder {
             operation_type,
             resource_link,
@@ -199,7 +203,6 @@ impl CosmosRequestBuilder {
             headers: Headers::new(),
             continuation: None,
             entity_id: None,
-            container_name: Some(t_link),
             is_feed: false,
             use_gateway_mode: false,
             force_name_cache_refresh: false,
@@ -278,7 +281,6 @@ impl CosmosRequestBuilder {
         req.force_collection_routing_map_refresh = self.force_collection_routing_map_refresh;
         req.continuation = self.continuation;
         req.entity_id = self.entity_id;
-        req.collection_name = self.container_name;
         req.excluded_regions = self.excluded_regions;
 
         Ok(req)

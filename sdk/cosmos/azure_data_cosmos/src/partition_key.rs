@@ -179,14 +179,6 @@ impl AsHeaders for PartitionKey {
 /// You shouldn't need to construct this type directly. The various implementations of [`Into<PartitionKey>`] will handle it for you.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
-//
-// // We don't want to expose the implementation details of PartitionKeyValue (specifically the use of serde_json::Number), so we use this inner private enum to store the data.
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// enum InnerPartitionKeyValue {
-//     Null,
-//     String(Cow<'static, str>),
-//     Number(serde_json::Number), // serde_json::Number has special integer handling, so we'll use that.
-// }
 
 impl From<InnerPartitionKeyValue> for PartitionKeyValue {
     fn from(value: InnerPartitionKeyValue) -> Self {

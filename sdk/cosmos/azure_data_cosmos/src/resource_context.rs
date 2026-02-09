@@ -257,6 +257,34 @@ impl ResourceLink {
             .join(&self.path())
             .expect("ResourceLink should always be url-safe")
     }
+
+    /// Extracts the database ID from the resource link path.
+    ///
+    /// The resource link path follows the pattern `dbs/{db_id}/...`.
+    /// Returns `None` if the path does not contain a database segment.
+    pub fn database_id(&self) -> Option<String> {
+        let path = self.unencoded_path();
+        let segments: Vec<&str> = path.split('/').collect();
+        segments
+            .iter()
+            .position(|&s| s == "dbs")
+            .and_then(|i| segments.get(i + 1))
+            .map(|s| s.to_string())
+    }
+
+    /// Extracts the container ID from the resource link path.
+    ///
+    /// The resource link path follows the pattern `dbs/{db_id}/colls/{container_id}/...`.
+    /// Returns `None` if the path does not contain a container segment.
+    pub fn container_id(&self) -> Option<String> {
+        let path = self.unencoded_path();
+        let segments: Vec<&str> = path.split('/').collect();
+        segments
+            .iter()
+            .position(|&s| s == "colls")
+            .and_then(|i| segments.get(i + 1))
+            .map(|s| s.to_string())
+    }
 }
 
 impl std::fmt::Display for ResourceLink {
@@ -559,5 +587,59 @@ mod tests {
         } else {
             panic!("Expected item_id to be present");
         }
+    }
+
+    #[test]
+    pub fn database_id_from_resource_link() {
+        // Database-level link
+        let link = ResourceLink::root(ResourceType::Databases).item("TestDB");
+        assert_eq!(Some("TestDB".to_string()), link.database_id());
+
+        // Container-level link
+        let link = ResourceLink::root(ResourceType::Databases)
+            .item("TestDB")
+            .feed(ResourceType::Containers)
+            .item("TestContainer");
+        assert_eq!(Some("TestDB".to_string()), link.database_id());
+
+        // Document-level link
+        let link = ResourceLink::root(ResourceType::Databases)
+            .item("MyDB")
+            .feed(ResourceType::Containers)
+            .item("MyColl")
+            .feed(ResourceType::Documents)
+            .item("MyDoc");
+        assert_eq!(Some("MyDB".to_string()), link.database_id());
+
+        // Root feed link with no item
+        let link = ResourceLink::root(ResourceType::Databases);
+        assert_eq!(None, link.database_id());
+    }
+
+    #[test]
+    pub fn container_id_from_resource_link() {
+        // Container-level link
+        let link = ResourceLink::root(ResourceType::Databases)
+            .item("TestDB")
+            .feed(ResourceType::Containers)
+            .item("TestContainer");
+        assert_eq!(Some("TestContainer".to_string()), link.container_id());
+
+        // Document-level link
+        let link = ResourceLink::root(ResourceType::Databases)
+            .item("MyDB")
+            .feed(ResourceType::Containers)
+            .item("MyColl")
+            .feed(ResourceType::Documents)
+            .item("MyDoc");
+        assert_eq!(Some("MyColl".to_string()), link.container_id());
+
+        // Database-level link (no container)
+        let link = ResourceLink::root(ResourceType::Databases).item("TestDB");
+        assert_eq!(None, link.container_id());
+
+        // Root feed link
+        let link = ResourceLink::root(ResourceType::Databases);
+        assert_eq!(None, link.container_id());
     }
 }
