@@ -16,8 +16,8 @@ use azure_storage_blob::{
         BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadInternalOptions, ImmutabilityPolicyMode, LeaseState, StorageError,
-        StorageErrorCode,
+        BlobTags, BlockBlobClientUploadInternalOptions, ImmutabilityPolicyMode, LeaseState,
+        StorageError, StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };

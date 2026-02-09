@@ -11,8 +11,8 @@ use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadInternalOptions, LeaseState,
-    SignedIdentifiers,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadInternalOptions,
+    LeaseState, SignedIdentifiers,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
