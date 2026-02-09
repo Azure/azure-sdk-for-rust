@@ -8,6 +8,7 @@
 
 ### Breaking Changes
 
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ### Bugs Fixed
