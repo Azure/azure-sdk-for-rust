@@ -5,7 +5,6 @@
 
 /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum CurveName {
     /// The NIST P-256 elliptic curve, AKA SECG curve SECP256R1.
     P256,
@@ -27,7 +26,6 @@ pub enum CurveName {
 /// the certificate can be permanently deleted by a privileged user; otherwise, only the system can purge the certificate,
 /// at the end of the retention interval.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum DeletionRecoveryLevel {
     /// Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
     /// purge when 7 <= SoftDeleteRetentionInDays < 90).This level guarantees the recoverability of the deleted entity during
@@ -72,7 +70,6 @@ pub enum DeletionRecoveryLevel {
 
 /// An algorithm used for encryption and decryption.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum EncryptionAlgorithm {
     /// 128-bit AES-CBC.
     A128Cbc,
@@ -139,7 +136,6 @@ pub enum EncryptionAlgorithm {
 
 /// The encryption algorithm to use to protected the exported key material
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum KeyEncryptionAlgorithm {
     /// The CKM_RSA_AES_KEY_WRAP key wrap mechanism.
     CkmRsaAesKeyWrap,
@@ -156,7 +152,6 @@ pub enum KeyEncryptionAlgorithm {
 
 /// JSON web key operations. For more information, see JsonWebKeyOperation.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum KeyOperation {
     /// Indicates that the key can be used to decrypt.
     Decrypt,
@@ -188,7 +183,6 @@ pub enum KeyOperation {
 
 /// The type of the action. The value should be compared case-insensitively.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum KeyRotationPolicyAction {
     /// Trigger Event Grid events. Defaults to 30 days before expiry. Key Vault only.
     Notify,
@@ -199,7 +193,6 @@ pub enum KeyRotationPolicyAction {
 
 /// JsonWebKey Key Type (kty), as defined in <https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40>.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum KeyType {
     /// Elliptic Curve.
     Ec,
@@ -225,7 +218,6 @@ pub enum KeyType {
 
 /// The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum SignatureAlgorithm {
     /// ECDSA using P-256 and SHA-256, as described in <https://tools.ietf.org/html/rfc7518>.
     Es256,
