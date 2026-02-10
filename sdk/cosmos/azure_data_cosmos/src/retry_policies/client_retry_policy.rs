@@ -5,9 +5,10 @@ use super::{
     get_substatus_code_from_error, get_substatus_code_from_response,
     resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
 };
-use crate::constants::SubStatusCode;
+use crate::constants::{self, SubStatusCode};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
+use crate::regions::RegionName;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
@@ -60,14 +61,14 @@ pub struct ClientRetryPolicy {
     /// Whether the account supports writing to multiple locations simultaneously
     can_use_multiple_write_locations: bool,
 
-    /// Whether this is a write request in a multi-master configuration
-    is_multi_master_write_request: bool,
-
     /// The resolved endpoint URL for the current or next request attempt
     location_endpoint: Option<Url>,
 
     /// Context information for routing the next retry attempt to a specific location
     retry_context: Option<RetryContext>,
+
+    /// Regions excluded from routing for the current request
+    excluded_regions: Option<Vec<RegionName>>,
 
     /// Underlying policy for handling resource throttling (429) with exponential backoff
     throttling_retry: ResourceThrottleRetryPolicy,
@@ -88,18 +89,21 @@ impl ClientRetryPolicy {
     ///
     /// # Returns
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
-    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub fn new(
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
+        excluded_regions: Option<Vec<RegionName>>,
+    ) -> Self {
         Self {
-            global_endpoint_manager: Arc::new(global_endpoint_manager),
+            global_endpoint_manager,
             enable_endpoint_discovery: true,
             failover_retry_count: 0,
             session_token_retry_count: 0,
             service_unavailable_retry_count: 0,
             operation_type: None,
             can_use_multiple_write_locations: false,
-            is_multi_master_write_request: false,
             location_endpoint: None,
             retry_context: None,
+            excluded_regions,
             throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10),
         }
     }
@@ -126,17 +130,18 @@ impl ClientRetryPolicy {
         // Hence, the outcome of the operation is ignored here.
         _ = self.global_endpoint_manager.refresh_location(false).await;
         self.operation_type = Some(request.operation_type);
+        self.excluded_regions = request.excluded_regions.clone();
         self.can_use_multiple_write_locations = self
             .global_endpoint_manager
             .can_use_multiple_write_locations(request);
 
-        self.is_multi_master_write_request = !request.operation_type.is_read_only()
-            && self
-                .global_endpoint_manager
-                .can_support_multiple_write_locations(
-                    request.resource_type,
-                    request.operation_type,
-                );
+        if self.can_use_multiple_write_locations {
+            request
+                .headers
+                .insert(constants::ALLOW_TENTATIVE_WRITES, "true");
+        } else {
+            request.headers.remove(constants::ALLOW_TENTATIVE_WRITES);
+        }
 
         // Clear previous location-based routing directive
         request.request_context.clear_route_to_location();
@@ -232,7 +237,7 @@ impl ClientRetryPolicy {
         if self.can_use_multiple_write_locations {
             let endpoints = self
                 .global_endpoint_manager
-                .applicable_endpoints(self.operation_type.unwrap());
+                .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
             if self.session_token_retry_count > endpoints.len() as i32 {
                 // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
                 RetryResult::DoNotRetry
@@ -415,7 +420,7 @@ impl ClientRetryPolicy {
     ) -> Option<RetryResult> {
         // Forbidden - Write forbidden (403.3)
         if status_code == StatusCode::Forbidden
-            && sub_status_code == Some(SubStatusCode::WriteForbidden)
+            && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
             // automatic failover support needed to be plugged in here.
             return Some(
@@ -440,7 +445,7 @@ impl ClientRetryPolicy {
         if (status_code == StatusCode::InternalServerError
             && self.operation_type.unwrap().is_read_only())
             || (status_code == StatusCode::Gone
-                && sub_status_code == Some(SubStatusCode::LeaseNotFound))
+                && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND))
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
@@ -511,14 +516,15 @@ mod tests {
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
     use crate::regions;
+    use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
-    use std::borrow::Cow;
+    use std::sync::Arc;
 
-    fn create_test_endpoint_manager() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -528,31 +534,15 @@ mod tests {
             None,
         );
 
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
-            pipeline,
-        )
-    }
-
-    fn create_test_endpoint_manager_no_locations() -> GlobalEndpointManager {
-        let pipeline = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            ClientOptions::default(),
-            Vec::new(),
-            Vec::new(),
-            None,
-        );
-
-        GlobalEndpointManager::new(
-            "https://test.documents.azure.com".parse().unwrap(),
+            vec![RegionName::from("West US"), RegionName::from("East US")],
             vec![],
             pipeline,
-        )
+        ))
     }
 
-    fn create_test_endpoint_manager_with_preferred_locations() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager_no_locations() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -562,30 +552,49 @@ mod tests {
             None,
         );
 
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
+            "https://test.documents.azure.com".parse().unwrap(),
+            vec![],
+            vec![],
+            pipeline,
+        ))
+    }
+
+    fn create_test_endpoint_manager_with_preferred_locations() -> Arc<GlobalEndpointManager> {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+
+        Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
-                regions::EAST_ASIA.into(),
-                regions::WEST_US.into(),
-                regions::NORTH_CENTRAL_US.into(),
+                regions::EAST_ASIA,
+                regions::WEST_US,
+                regions::NORTH_CENTRAL_US,
             ],
+            vec![],
             pipeline,
-        )
+        ))
     }
 
     fn create_test_policy() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager();
-        ClientRetryPolicy::new(manager)
+        ClientRetryPolicy::new(manager, None)
     }
 
     fn create_test_policy_no_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_no_locations();
-        ClientRetryPolicy::new(manager)
+        ClientRetryPolicy::new(manager, None)
     }
 
     fn create_test_policy_with_preferred_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_with_preferred_locations();
-        ClientRetryPolicy::new(manager)
+        ClientRetryPolicy::new(manager, None)
     }
 
     fn create_test_request() -> CosmosRequest {
@@ -647,7 +656,6 @@ mod tests {
         assert_eq!(policy.session_token_retry_count, 0);
         assert_eq!(policy.service_unavailable_retry_count, 0);
         assert!(!policy.can_use_multiple_write_locations);
-        assert!(!policy.is_multi_master_write_request);
         assert!(policy.location_endpoint.is_none());
         assert!(policy.retry_context.is_none());
         assert!(policy.operation_type.is_none());
@@ -726,8 +734,10 @@ mod tests {
     async fn test_should_retry_gone_with_lease_not_found() {
         let mut policy = create_test_policy_with_preferred_locations();
         policy.operation_type = Some(OperationType::Read);
-        let error =
-            create_error_with_substatus(StatusCode::Gone, SubStatusCode::LeaseNotFound as u32);
+        let error = create_error_with_substatus(
+            StatusCode::Gone,
+            SubStatusCode::LEASE_NOT_FOUND.value() as u32,
+        );
 
         let result = policy.should_retry_error(&error).await;
 
@@ -747,7 +757,7 @@ mod tests {
         policy.location_endpoint = Some("https://test.documents.azure.com".parse().unwrap());
         let error = create_error_with_substatus(
             StatusCode::Forbidden,
-            SubStatusCode::WriteForbidden as u32,
+            SubStatusCode::WRITE_FORBIDDEN.value() as u32,
         );
 
         let result = policy.should_retry_error(&error).await;
@@ -768,7 +778,7 @@ mod tests {
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE as u32,
+            SubStatusCode::READ_SESSION_NOT_AVAILABLE.value() as u32,
         );
 
         let result = policy.should_retry_error(&error).await;
@@ -790,7 +800,7 @@ mod tests {
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE as u32,
+            SubStatusCode::READ_SESSION_NOT_AVAILABLE.value() as u32,
         );
 
         let result = policy.should_retry_error(&error).await;
@@ -812,7 +822,7 @@ mod tests {
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE as u32,
+            SubStatusCode::READ_SESSION_NOT_AVAILABLE.value() as u32,
         );
 
         let result = policy.should_retry_error(&error).await;

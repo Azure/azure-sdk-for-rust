@@ -3,6 +3,7 @@
 
 use std::{borrow::Cow, time::Duration};
 
+use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
@@ -47,7 +48,8 @@ where
 /// Also, note that the `id` and `partition_key` values are **required** by the server. You will get an error from the server if you omit them.
 ///
 /// [Struct Update]: https://doc.rust-lang.org/stable/book/ch05-01-defining-structs.html?highlight=Struct#creating-instances-from-other-instances-with-struct-update-syntax
-#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
     /// The ID of the container.
@@ -96,7 +98,8 @@ pub struct ContainerProperties {
 }
 
 /// Represents the vector embedding policy for a container.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbeddingPolicy {
     /// The [`VectorEmbedding`]s that describe the vector embeddings of items in the container.
@@ -105,7 +108,8 @@ pub struct VectorEmbeddingPolicy {
 }
 
 /// Represents the vector embedding policy for a container.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbedding {
     /// The path to the property containing the vector.
@@ -122,7 +126,8 @@ pub struct VectorEmbedding {
 }
 
 /// Defines the data types of the elements of a vector.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDataType {
     /// Represents the `float16` data type.
@@ -139,7 +144,8 @@ pub enum VectorDataType {
 }
 
 /// Defines the distance functions that can be used to calculate the distance between vectors.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDistanceFunction {
     /// Represents the `euclidian` distance function.
@@ -156,7 +162,8 @@ pub enum VectorDistanceFunction {
 /// Represents a unique key policy for a container.
 ///
 /// For more information see <https://learn.microsoft.com/azure/cosmos-db/unique-keys>
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKeyPolicy {
     /// The keys defined in this policy.
@@ -164,7 +171,8 @@ pub struct UniqueKeyPolicy {
 }
 
 /// Represents a single unique key for a container.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKey {
     /// The set of paths which must be unique for each item.
@@ -174,7 +182,8 @@ pub struct UniqueKey {
 /// Represents a conflict resolution policy for a container
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies>
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ConflictResolutionPolicy {
     /// The conflict resolution mode.
@@ -190,7 +199,8 @@ pub struct ConflictResolutionPolicy {
 }
 
 /// Defines conflict resolution types available in Azure Cosmos DB
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 #[serde(rename_all = "PascalCase")]
 pub enum ConflictResolutionMode {
     /// Conflict resolution will be performed by using the highest value of the property specified by [`ConflictResolutionPolicy::resolution_path`].

@@ -11,29 +11,23 @@ use crate::generated::models::{
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientListBlobFlatSegmentOptions,
-    BlobContainerClientListBlobHierarchySegmentOptions, BlobContainerClientReleaseLeaseOptions,
-    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenameOptions,
-    BlobContainerClientRenameResult, BlobContainerClientRenewLeaseOptions,
-    BlobContainerClientRenewLeaseResult, BlobContainerClientRestoreOptions,
-    BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyOptions,
+    BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
+    BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
     BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-    ListBlobsHierarchySegmentResponse, SignedIdentifiers,
+    SignedIdentifiers,
 };
 use azure_core::{
-    credentials::TokenCredential,
     error::CheckSuccessOptions,
-    fmt::SafeDebug,
     http::{
-        pager::{PagerResult, PagerState},
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        pager::{PagerContinuation, PagerResult, PagerState},
+        Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
+        RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 #[tracing::client]
 pub struct BlobContainerClient {
@@ -42,56 +36,7 @@ pub struct BlobContainerClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a `BlobContainerClient`
-#[derive(Clone, SafeDebug)]
-pub struct BlobContainerClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
 impl BlobContainerClient {
-    /// Creates a new BlobContainerClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Container")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<BlobContainerClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -147,7 +92,6 @@ impl BlobContainerClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder
-            .append_key_only("acquire")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
@@ -230,7 +174,6 @@ impl BlobContainerClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder
-            .append_key_only("break")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
@@ -317,7 +260,6 @@ impl BlobContainerClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder
-            .append_key_only("change")
             .append_pair("comp", "lease")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
@@ -609,21 +551,20 @@ impl BlobContainerClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<BlobContainerClientGetAccountInfoResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
     ///     if let Some(account_kind) = response.account_kind()? {
     ///         println!("x-ms-account-kind: {:?}", account_kind);
     ///     }
     ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
     ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
     ///     }
+    ///     if let Some(sku_name) = response.sku_name()? {
+    ///         println!("x-ms-sku-name: {:?}", sku_name);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::date) - date
     /// * [`account_kind`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::account_kind) - x-ms-account-kind
     /// * [`is_hierarchical_namespace_enabled`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::is_hierarchical_namespace_enabled) - x-ms-is-hns-enabled
     /// * [`sku_name`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
@@ -751,41 +692,17 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`ListBlobsFlatSegmentResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{ListBlobsFlatSegmentResponse, ListBlobsFlatSegmentResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<ListBlobsFlatSegmentResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListBlobsFlatSegmentResponseHeaders::date) - date
-    ///
-    /// [`ListBlobsFlatSegmentResponseHeaders`]: crate::generated::models::ListBlobsFlatSegmentResponseHeaders
-    #[tracing::function("Storage.Blob.Container.listBlobFlatSegment")]
-    pub fn list_blob_flat_segment(
+    #[tracing::function("Storage.Blob.Container.listBlobs")]
+    pub fn list_blobs(
         &self,
-        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat, String>> {
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut query_builder = first_url.query_builder();
         query_builder
             .append_pair("comp", "list")
-            .append_key_only("flat")
             .append_pair("restype", "container");
         if let Some(include) = options.include.as_ref() {
             query_builder.set_pair(
@@ -806,17 +723,20 @@ impl BlobContainerClient {
         if let Some(prefix) = options.prefix.as_ref() {
             query_builder.set_pair("prefix", prefix);
         }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
         let version = self.version.clone();
         Ok(Pager::new(
-            move |marker: PagerState<String>, pager_options| {
+            move |marker: PagerState, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", &marker);
+                    query_builder.set_pair("marker", marker.as_ref());
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
@@ -843,120 +763,7 @@ impl BlobContainerClient {
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_marker,
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
-                })
-            },
-            Some(options.method_options),
-        ))
-    }
-
-    /// The List Blobs operation returns a list of the blobs under the specified container. A delimiter can be used to traverse
-    /// a virtual hierarchy of blobs as though it were a file system.
-    ///
-    /// # Arguments
-    ///
-    /// * `delimiter` - When the request includes this parameter, the operation returns a BlobPrefix element in the response body
-    ///   that acts as a placeholder for all blobs whose names begin with the same substring up to the appearance of the delimiter
-    ///   character. The delimiter may be a single character or a string.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`ListBlobsHierarchySegmentResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{ListBlobsHierarchySegmentResponse, ListBlobsHierarchySegmentResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<ListBlobsHierarchySegmentResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::ListBlobsHierarchySegmentResponseHeaders::date) - date
-    ///
-    /// [`ListBlobsHierarchySegmentResponseHeaders`]: crate::generated::models::ListBlobsHierarchySegmentResponseHeaders
-    #[tracing::function("Storage.Blob.Container.listBlobHierarchySegment")]
-    pub fn list_blob_hierarchy_segment(
-        &self,
-        delimiter: &str,
-        options: Option<BlobContainerClientListBlobHierarchySegmentOptions<'_>>,
-    ) -> Result<Pager<ListBlobsHierarchySegmentResponse, XmlFormat, String>> {
-        let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
-        let mut first_url = self.endpoint.clone();
-        let mut query_builder = first_url.query_builder();
-        query_builder
-            .append_pair("comp", "list")
-            .append_key_only("hierarchy")
-            .append_pair("restype", "container");
-        query_builder.set_pair("delimiter", delimiter);
-        if let Some(include) = options.include.as_ref() {
-            query_builder.set_pair(
-                "include",
-                include
-                    .iter()
-                    .map(|i| i.to_string())
-                    .collect::<Vec<String>>()
-                    .join(","),
-            );
-        }
-        if let Some(marker) = options.marker.as_ref() {
-            query_builder.set_pair("marker", marker);
-        }
-        if let Some(maxresults) = options.maxresults {
-            query_builder.set_pair("maxresults", maxresults.to_string());
-        }
-        if let Some(prefix) = options.prefix.as_ref() {
-            query_builder.set_pair("prefix", prefix);
-        }
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let version = self.version.clone();
-        Ok(Pager::new(
-            move |marker: PagerState<String>, pager_options| {
-                let mut url = first_url.clone();
-                if let PagerState::More(marker) = marker {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", &marker);
-                    query_builder.build();
-                }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", "application/xml");
-                request.insert_header("content-type", "application/xml");
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListBlobsHierarchySegmentResponse = xml::from_xml(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_marker {
-                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: next_marker,
+                            continuation: PagerContinuation::Token(next_marker),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
@@ -1013,7 +820,6 @@ impl BlobContainerClient {
         let mut query_builder = url.query_builder();
         query_builder
             .append_pair("comp", "lease")
-            .append_key_only("release")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -1029,75 +835,6 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
-    /// Renames an existing container.
-    ///
-    /// # Arguments
-    ///
-    /// * `source_container_name` - Required. Specifies the name of the container to rename.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientRenameResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientRenameResult, BlobContainerClientRenameResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientRenameResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientRenameResultHeaders::date) - date
-    ///
-    /// [`BlobContainerClientRenameResultHeaders`]: crate::generated::models::BlobContainerClientRenameResultHeaders
-    #[tracing::function("Storage.Blob.Container.rename")]
-    pub async fn rename(
-        &self,
-        source_container_name: String,
-        options: Option<BlobContainerClientRenameOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRenameResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "rename")
-            .append_pair("restype", "container");
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
-        request.insert_header("x-ms-source-container-name", source_container_name);
-        if let Some(source_lease_id) = options.source_lease_id.as_ref() {
-            request.insert_header("x-ms-source-lease-id", source_lease_id);
-        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1165,7 +902,6 @@ impl BlobContainerClient {
         let mut query_builder = url.query_builder();
         query_builder
             .append_pair("comp", "lease")
-            .append_key_only("renew")
             .append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
@@ -1190,75 +926,6 @@ impl BlobContainerClient {
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
                         success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
-    /// Restores a previously-deleted container.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientRestoreResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientRestoreResult, BlobContainerClientRestoreResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientRestoreResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobContainerClientRestoreResultHeaders::date) - date
-    ///
-    /// [`BlobContainerClientRestoreResultHeaders`]: crate::generated::models::BlobContainerClientRestoreResultHeaders
-    #[tracing::function("Storage.Blob.Container.restore")]
-    pub async fn restore(
-        &self,
-        options: Option<BlobContainerClientRestoreOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRestoreResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "undelete")
-            .append_pair("restype", "container");
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
-        if let Some(deleted_container_name) = options.deleted_container_name.as_ref() {
-            request.insert_header("x-ms-deleted-container-name", deleted_container_name);
-        }
-        if let Some(deleted_container_version) = options.deleted_container_version.as_ref() {
-            request.insert_header("x-ms-deleted-container-version", deleted_container_version);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[201],
                     },
                     ..Default::default()
                 }),
@@ -1372,14 +1039,5 @@ impl BlobContainerClient {
             )
             .await?;
         Ok(rsp.into())
-    }
-}
-
-impl Default for BlobContainerClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2025-11-05"),
-        }
     }
 }

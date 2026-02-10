@@ -34,23 +34,33 @@ where
     OffsetDateTime::parse(s, &Rfc3339).map_err(de::Error::custom)
 }
 
-impl OutputProcessor for AzdTokenResponse {
-    fn credential_name() -> &'static str {
-        "AzureDeveloperCliCredential"
-    }
+/// The JSON structure that `azd` writes to stderr on errors.
+#[derive(Debug, Deserialize)]
+struct AzdErrorOutput {
+    data: AzdErrorData,
+}
 
+#[derive(Debug, Deserialize)]
+struct AzdErrorData {
+    message: String,
+}
+
+impl OutputProcessor for AzdTokenResponse {
     fn deserialize_token(stdout: &str) -> azure_core::Result<AccessToken> {
         let response: Self = from_json(stdout)?;
         Ok(AccessToken::new(response.access_token, response.expires_on))
     }
 
-    fn get_error_message(stderr: &str) -> Option<&str> {
-        // azd embeds its "you need to log in" error message in JSON, so in that case we can provide a clearer one
-        if stderr.contains("azd auth login") {
-            Some("please run `azd auth login` from a command prompt before using this credential")
-        } else {
-            None
+    fn get_error_message(stderr: &str) -> Option<String> {
+        // Try to parse azd's JSON error output and extract the message
+        if let Ok(error_output) = from_json::<_, AzdErrorOutput>(stderr) {
+            let message = &error_output.data.message;
+            if !message.is_empty() {
+                return Some(message.to_string());
+            }
         }
+        // Fall back to raw stderr if parsing fails or message is empty
+        None
     }
 
     fn tool_name() -> &'static str {
@@ -192,12 +202,14 @@ mod tests {
 
     #[tokio::test]
     async fn error_includes_stderr() {
-        let stderr = "something went wrong";
-        let err = run_test(1, "stdout", stderr, None)
+        let err = run_test(1, "stdout", "something went wrong", None)
             .await
             .expect_err("expected error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
-        assert!(err.to_string().contains(stderr));
+        assert_eq!(
+            "AzureDeveloperCliCredential authentication failed. something went wrong\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            err.to_string()
+        );
     }
 
     #[tokio::test]
@@ -215,10 +227,58 @@ mod tests {
 
     #[tokio::test]
     async fn not_logged_in() {
-        let stderr = r#"{{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"\nERROR: not logged in, run `azd auth login` to login\n"}}"#;
+        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"\nERROR: not logged in, run `azd auth login` to login\n"}}"#;
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
-        assert!(err.to_string().contains("azd auth login"));
+        assert_eq!(
+            "AzureDeveloperCliCredential authentication failed. \nERROR: not logged in, run `azd auth login` to login\n\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            err.to_string()
+        );
+    }
+
+    #[tokio::test]
+    async fn json_error_parsing() {
+        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"ERROR: fetching token: some error occurred"}}"#;
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            "AzureDeveloperCliCredential authentication failed. ERROR: fetching token: some error occurred\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            err.to_string()
+        );
+    }
+
+    #[tokio::test]
+    async fn invalid_json_fallback() {
+        let stderr = "not valid json at all";
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            "AzureDeveloperCliCredential authentication failed. not valid json at all\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            err.to_string()
+        );
+    }
+
+    #[tokio::test]
+    async fn empty_message_fallback() {
+        let stderr =
+            r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":""}}"#;
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            "AzureDeveloperCliCredential authentication failed. {\"type\":\"consoleMessage\",\"timestamp\":\"2038-01-18T00:00:00Z\",\"data\":{\"message\":\"\"}}\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            err.to_string()
+        );
+    }
+
+    #[tokio::test]
+    async fn message_with_whitespace() {
+        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"  \n  ERROR: some error  \n  "}}"#;
+        let err = run_test(1, "", stderr, None).await.expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert_eq!(
+            "AzureDeveloperCliCredential authentication failed.   \n  ERROR: some error  \n  \nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            err.to_string()
+        );
     }
 
     #[tokio::test]

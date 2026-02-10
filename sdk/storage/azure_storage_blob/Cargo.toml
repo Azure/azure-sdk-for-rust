@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_blob"
-version = "0.8.0"
+version = "0.9.0"
 description = "Microsoft Azure Blob Storage client library for Rust"
 readme = "README.md"
 authors.workspace = true
@@ -32,15 +32,19 @@ uuid.workspace = true
 workspace = true
 
 [dev-dependencies]
+azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = [
   "tracing",
 ] }
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
 futures.workspace = true
+opentelemetry-stdout.workspace = true
+opentelemetry_sdk.workspace = true
 rand.workspace = true
 tokio = { workspace = true, features = ["macros"] }
 tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [[bench]]
 name = "perf"

@@ -2,14 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::operation_context::OperationType;
+use crate::regions::RegionName;
 use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{constants, PartitionKey};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue, Headers};
-use azure_core::http::{
-    request::{options::ContentType, Request},
-    Method,
-};
+use azure_core::http::{request::Request, Method};
 use serde::Serialize;
 
 /// Specifies which form of authorization token should be used when signing
@@ -61,6 +59,7 @@ pub struct CosmosRequest {
     pub query_string: Option<String>,
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
+    pub excluded_regions: Option<Vec<RegionName>>,
 }
 
 impl CosmosRequest {
@@ -88,6 +87,7 @@ impl CosmosRequest {
             query_string: None,
             continuation: None,
             entity_id: None,
+            excluded_regions: None,
         }
     }
 
@@ -101,6 +101,18 @@ impl CosmosRequest {
     /// Determines if the given operation type is read only.
     pub fn is_read_only_request(&self) -> bool {
         self.operation_type.is_read_only()
+    }
+
+    pub fn client_headers<T: AsHeaders>(&mut self, headers: &T) {
+        // Collect all headers exposed by the `AsHeaders` implementation for client options
+        // always prioritize existing headers in the request over client-level headers.
+        if let Ok(iter) = headers.as_headers() {
+            for (name, value) in iter {
+                if self.headers.get_optional_str(&name).is_none() {
+                    self.headers.insert(name, value);
+                }
+            }
+        }
     }
 
     /// Gets the corresponding http method for the given `OperationType`.
@@ -135,8 +147,8 @@ impl CosmosRequest {
             req.insert_headers(pk).unwrap();
         }
 
-        if !OperationType::is_read_only(&self.operation_type) {
-            req.insert_headers(&ContentType::APPLICATION_JSON).unwrap();
+        if let Some(ct) = self.operation_type.body_content_type() {
+            req.insert_headers(&ct).unwrap();
             if self.operation_type == OperationType::Upsert {
                 req.insert_header(constants::IS_UPSERT, "true");
             }
@@ -163,6 +175,7 @@ pub struct CosmosRequestBuilder {
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
+    excluded_regions: Option<Vec<RegionName>>,
     // Flags
     is_feed: bool,
     use_gateway_mode: bool,
@@ -189,6 +202,7 @@ impl CosmosRequestBuilder {
             force_name_cache_refresh: false,
             force_partition_key_range_refresh: false,
             force_collection_routing_map_refresh: false,
+            excluded_regions: None,
         }
     }
 
@@ -197,8 +211,8 @@ impl CosmosRequestBuilder {
         self
     }
 
-    pub fn headers<T: AsHeaders>(mut self, headers: &T) -> Self {
-        // Collect all headers exposed by the `AsHeaders` implementation.
+    pub fn request_headers<T: AsHeaders>(mut self, headers: &T) -> Self {
+        // Collect all headers exposed by the `AsHeaders` implementation for request options
         // If conversion fails we silently ignore (the caller can always add
         // individual headers via `header()`).
         if let Ok(iter) = headers.as_headers() {
@@ -206,6 +220,14 @@ impl CosmosRequestBuilder {
                 self.headers.insert(name, value);
             }
         }
+        self
+    }
+
+    pub fn excluded_regions(mut self, excluded_regions: Option<Vec<RegionName>>) -> Self {
+        // Sets the excluded regions for the given request. If None is provided,
+        // client-level excluded regions will be used. If an empty vector is provided,
+        // no regions will be excluded for this request.
+        self.excluded_regions = excluded_regions;
         self
     }
 
@@ -253,6 +275,7 @@ impl CosmosRequestBuilder {
         req.force_collection_routing_map_refresh = self.force_collection_routing_map_refresh;
         req.continuation = self.continuation;
         req.entity_id = self.entity_id;
+        req.excluded_regions = self.excluded_regions;
 
         Ok(req)
     }
@@ -263,7 +286,9 @@ mod tests {
     use super::*;
     use crate::operation_context::OperationType;
     use crate::resource_context::ResourceType;
-    use crate::{constants, PartitionKey};
+    use crate::{
+        constants, ConsistencyLevel, CosmosClientOptions, ItemOptions, PartitionKey, PriorityLevel,
+    };
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
         let req = CosmosRequest::builder(op, ResourceLink::root(ResourceType::Documents))
@@ -368,6 +393,67 @@ mod tests {
             .iter()
             .any(|(n, _)| n == &constants::IS_UPSERT);
         assert!(has_upsert);
+    }
+
+    #[test]
+    fn prioritize_request_headers_over_client_headers() {
+        let mut request_custom_headers = std::collections::HashMap::new();
+        request_custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value"),
+        );
+
+        let item_options = ItemOptions {
+            consistency_level: Some(ConsistencyLevel::Session),
+            throughput_bucket: Some(1),
+            priority: Some(PriorityLevel::Low),
+            custom_headers: request_custom_headers,
+            ..Default::default()
+        };
+        let req = CosmosRequest::builder(
+            OperationType::Create,
+            ResourceLink::root(ResourceType::Documents),
+        )
+        .request_headers(&item_options)
+        .build()
+        .unwrap();
+
+        let mut req_with_client_headers = req.clone();
+        req_with_client_headers
+            .request_context
+            .location_endpoint_to_route = Some("https://example.com/".parse().unwrap());
+
+        let mut client_custom_headers = std::collections::HashMap::new();
+        client_custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value-2"),
+        );
+
+        let client_options = CosmosClientOptions {
+            consistency_level: Some(ConsistencyLevel::Strong),
+            throughput_bucket: Some(5),
+            priority: Some(PriorityLevel::High),
+            custom_headers: client_custom_headers,
+            ..Default::default()
+        };
+        req_with_client_headers.client_headers(&client_options);
+
+        let raw = req_with_client_headers.into_raw_request();
+        let get_header = |name: &HeaderName| {
+            raw.headers()
+                .iter()
+                .find(|(n, _)| n == &name)
+                .map(|(_, v)| v.as_str())
+                .unwrap()
+        };
+
+        assert_eq!(get_header(&constants::THROUGHPUT_BUCKET), "1");
+        assert_eq!(get_header(&constants::PRIORITY_LEVEL), "Low");
+        assert_eq!(get_header(&constants::CONSISTENCY_LEVEL), "Session");
+        assert_eq!(
+            get_header(&HeaderName::from_static("x-custom-header")),
+            "custom_value"
+        );
     }
 
     #[test]

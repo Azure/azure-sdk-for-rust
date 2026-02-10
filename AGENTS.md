@@ -25,7 +25,7 @@ Rust (MSRV: 1.85)
 
 ## Repository Structure
 
-```
+```text
 .
 ├── sdk/                       # Service-specific crates organized by service
 │   └── <service>/            # Service directory (e.g., "keyvault", "storage")
@@ -35,7 +35,7 @@ Rust (MSRV: 1.85)
 │       └── tsp-location.yaml # Pointer to TypeSpec in azure-rest-api-specs (may be under <crate>/)
 ├── eng/                      # Engineering system scripts and common tooling
 ├── doc/                      # Additional documentation
-├── .github/              
+├── .github/
 │   ├── copilot-instructions.md # Copilot-specific Rust coding guidelines
 │   ├── instructions/         # Agent instruction files for specific tasks
 │   └── prompts/              # Reusable Copilot prompts
@@ -121,9 +121,11 @@ cargo build --workspace
 
 ### Testing
 
+When running `cargo test`, use `--all-features` to ensure no tests are missed.
+
 ```bash
 # Run tests for a specific crate
-cargo test -p <crate-name>
+cargo test -p <crate-name> --all-features
 
 # Run integration tests with recordings
 cargo test -p <crate-name> --test <test-name>
@@ -167,39 +169,20 @@ cargo run --package <crate-name> --example <example-name>
 
 ## Coding Standards
 
-Agents should follow guidelines in `.github/copilot-instructions.md` and `CONTRIBUTING.md`, including:
+Agents must follow comprehensive Rust coding guidelines defined in `.github/copilot-instructions.md`. Key areas include:
 
-- **Naming Conventions**: 
-  - Types/variants: `PascalCase`
-  - Functions/fields/parameters: `snake_case`
-  - Constants: `UPPER_SNAKE_CASE`
-  - Crates/modules: `snake_case`
+- Naming conventions (PascalCase for types, snake_case for functions, UPPER_SNAKE_CASE for constants)
+- Import style (explicit imports, consolidated `use` statements, prefer `crate::`)
+- Error handling (use `azure_core::Result<T>` and `?` operator)
+- Documentation (all public APIs need `///` doc comments with examples)
+- Testing (unit tests in `#[cfg(test)] mod tests`, integration tests with `#[recorded::test]`)
 
-- **Import Style**:
-  - Explicit imports (no `use foo::*`)
-  - Consolidate related imports (e.g., `use std::{borrow::Cow, marker::PhantomData};`)
-  - Prefer `crate::` for internal references
-
-- **Error Handling**:
-  - Service crate code should return `azure_core::Result<T>` (where `E` defaults to `azure_core::Error`)
-  - Use the `?` operator for error propagation
-  - Examples should use `Result<(), Box<dyn std::error::Error>>`
-
-- **Documentation**:
-  - All public APIs need `///` doc comments
-  - Include runnable doc test examples where appropriate
-  - Hero scenario examples under the `examples/` directory should have `#[tokio::main]` async main functions
-  - Use absolute links in markdown files (e.g., `https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md`) instead of relative links (e.g., `../AGENTS.md`)
-  - Links must work both online (from github.com) and offline (when viewed in an IDE)
-
-- **Testing**:
-  - Place unit tests in `#[cfg(test)] mod tests`
-  - Use `#[recorded::test]` for integration tests (see `CONTRIBUTING.md`)
-  - Test names should be descriptive, not prefixed with "test"
+See `.github/copilot-instructions.md` for complete code generation rules.
 
 ## CI/CD Integration
 
 All pull requests trigger:
+
 - `cargo build` - Compilation check
 - `cargo test` - Unit and integration tests
 - `cargo clippy` - Lint checks
@@ -221,17 +204,22 @@ Integration tests use the Azure SDK Test Proxy for recording/playback. See `CONT
 
 For detailed guidance, see:
 
-- **Rust Coding Guidelines**: `.github/copilot-instructions.md`
-- **Contribution Workflows**: `CONTRIBUTING.md`
-- **Changelog Guidelines**: `.github/instructions/changelog.instructions.md`
-- **Git Commit Standards**: `doc/git-commit-instructions.md`
+- **Rust Coding Standards**: `.github/copilot-instructions.md`
+- **Contributing Guide**: `CONTRIBUTING.md`
+- **Testing Guide**: `CONTRIBUTING.md` (Test Proxy, recorded tests, debugging)
+- **Changelog Updates**: `.github/instructions/changelog.instructions.md`
+- **Git Commit Standards**: `.github/instructions/git-commit.instructions.md`
+- **GitHub Pull Request Standards**: `.github/instructions/github-pullrequest.instructions.md`
+- **PowerShell Scripts**: `.github/instructions/pwsh.instructions.md`
 - **Deprecation Process**: `doc/deprecation-process.md`
 - **Azure SDK Design Guidelines**: https://azure.github.io/azure-sdk/rust_introduction.html
 
 ## Agent-Specific Instructions
 
 Additional specialized instructions for specific workflows can be found in:
-- `.github/instructions/` - Task-specific agent instructions
+
+- `.github/copilot-instructions.md` - Comprehensive Rust coding guidelines
+- `.github/instructions/` - Task-specific instructions (loaded when pattern-matched)
 - `.github/prompts/` - Reusable Copilot prompts (use `#prompt` in Copilot)
 
 ## Getting Help
@@ -250,6 +238,6 @@ All contributions are licensed under the MIT License. See `LICENSE.txt`.
 
 ---
 
-**Last Updated**: 2025-01-20  
-**Version**: 1.0  
+**Last Updated**: 2026-01-08
+**Version**: 1.0
 **Canonical Spec**: https://agents.md

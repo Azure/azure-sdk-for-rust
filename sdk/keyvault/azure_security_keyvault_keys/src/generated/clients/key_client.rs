@@ -21,18 +21,14 @@ use crate::generated::models::{
     VerifyParameters,
 };
 use azure_core::{
-    credentials::TokenCredential,
     error::CheckSuccessOptions,
-    fmt::SafeDebug,
     http::{
-        pager::{PagerResult, PagerState},
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, UrlExt,
+        pager::{PagerContinuation, PagerResult, PagerState},
+        Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
+        RequestContent, Response, Url, UrlExt,
     },
     json, tracing, Result,
 };
-use std::sync::Arc;
 
 /// The key vault client performs cryptographic key operations and vault operations against the Key Vault service.
 #[tracing::client]
@@ -42,56 +38,7 @@ pub struct KeyClient {
     pub(crate) pipeline: Pipeline,
 }
 
-/// Options used when creating a [`KeyClient`](KeyClient)
-#[derive(Clone, SafeDebug)]
-pub struct KeyClientOptions {
-    /// The API version to use for this operation.
-    pub api_version: String,
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-}
-
 impl KeyClient {
-    /// Creates a new KeyClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("KeyVault")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<KeyClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://vault.azure.net/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            api_version: options.api_version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -696,10 +643,10 @@ impl KeyClient {
         query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
-            move |next_link: PagerState<Url>, pager_options| {
+            move |next_link: PagerState, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let mut next_link = next_link.clone();
+                        let mut next_link: Url = next_link.try_into().expect("expected Url");
                         let mut query_builder = next_link.query_builder();
                         query_builder.set_pair("api-version", &api_version);
                         query_builder.build();
@@ -729,7 +676,7 @@ impl KeyClient {
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_link.parse()?,
+                            continuation: PagerContinuation::Link(next_link.parse()?),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
@@ -765,10 +712,10 @@ impl KeyClient {
         query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
-            move |next_link: PagerState<Url>, pager_options| {
+            move |next_link: PagerState, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let mut next_link = next_link.clone();
+                        let mut next_link: Url = next_link.try_into().expect("expected Url");
                         let mut query_builder = next_link.query_builder();
                         query_builder.set_pair("api-version", &api_version);
                         query_builder.build();
@@ -798,7 +745,7 @@ impl KeyClient {
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_link.parse()?,
+                            continuation: PagerContinuation::Link(next_link.parse()?),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
@@ -842,10 +789,10 @@ impl KeyClient {
         query_builder.build();
         let api_version = self.api_version.clone();
         Ok(Pager::new(
-            move |next_link: PagerState<Url>, pager_options| {
+            move |next_link: PagerState, pager_options| {
                 let url = match next_link {
                     PagerState::More(next_link) => {
-                        let mut next_link = next_link.clone();
+                        let mut next_link: Url = next_link.try_into().expect("expected Url");
                         let mut query_builder = next_link.query_builder();
                         query_builder.set_pair("api-version", &api_version);
                         query_builder.build();
@@ -875,7 +822,7 @@ impl KeyClient {
                     Ok(match res.next_link {
                         Some(next_link) if !next_link.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_link.parse()?,
+                            continuation: PagerContinuation::Link(next_link.parse()?),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
@@ -1468,14 +1415,5 @@ impl KeyClient {
             )
             .await?;
         Ok(rsp.into())
-    }
-}
-
-impl Default for KeyClientOptions {
-    fn default() -> Self {
-        Self {
-            api_version: String::from("2025-07-01"),
-            client_options: ClientOptions::default(),
-        }
     }
 }

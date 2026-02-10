@@ -2,11 +2,11 @@
 
 - GitHub Pull Requests should follow the standard form for Git commits:
 
-  ```markdown
-  title of no more than 50 characters
+    ```markdown
+    title of no more than 50 characters
 
-  multi-line descriptions
-  ```
+    multi-line descriptions
+    ```
 
 - Summarize changes for a title of no more than 50 characters ideally, with a hard stop at 80 characters.
 - Descriptions can be multiple lines or even paragraphs using markdown.
@@ -17,3 +17,13 @@
 - Try to reason why changes were made and not about what was changed.
 - If any added comments in changed files reference fixing an issue like "Fixes #1234" include that same text in the description.
 - If multiple issues are fixed or resolved, include that same text separately for each issue like "Fixes #1234 and fixes #5678".
+- Do not leave coding agent plans in the description: always summarize changes before the PR is ready to review.
+
+## Code Requirements
+
+- All source files must have a copyright header using a language-appropriate comment e.g.,
+
+    ```rust
+    // Copyright (c) Microsoft Corporation. All rights reserved.
+    // Licensed under the MIT License.
+    ```

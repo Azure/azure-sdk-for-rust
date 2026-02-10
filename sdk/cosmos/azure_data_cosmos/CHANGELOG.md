@@ -1,19 +1,38 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.31.0 (Unreleased)
+
+### Features Added
+- Added `excluded_regions` to `CosmosClientOptions` and `ItemOptions` for additional regional routing options. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
+- Added `effective_preferred_regions` to the client, ensuring multi-region accounts use all regions without supplying `application_preferred_regions` to their client. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
+
+- Added basic multi-region writes support. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482) and [#3495](https://github.com/Azure/azure-sdk-for-rust/pull/3495))
+- Added new `CosmosResponse` that wraps `azure_core::Response` for all operations except queries. ([#3622](https://github.com/Azure/azure-sdk-for-rust/pull/3622))
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+- Changed return type of query methods from `FeedPager<T>` (an alias for `ItemIterator<FeedPage<T>, String>`) to `FeedItemIterator<T>`, which implements `Stream<Item = Result<T>>` and provides `into_pages()` for page-level access. ([#3515](https://github.com/Azure/azure-sdk-for-rust/pull/3515))
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.30.0 (2026-01-21)
 
 ### Features Added
 
 - Added GlobalEndpointManager, LocationCache to support Cross Regional Retry.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+- Added `throughput_bucket`, `priority`, and `custom_headers` to different request options. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482))
+- Added several new options to `QueryOptions`. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482))
 
 ### Breaking Changes
 
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
-### Bugs Fixed
-
 ### Other Changes
+- Added `ALLOWED_COSMOS_HEADERS` for use in default logging policy. ([#3554](https://github.com/Azure/azure-sdk-for-rust/pull/3554))
 
 ## 0.29.0 (2025-11-10)
 

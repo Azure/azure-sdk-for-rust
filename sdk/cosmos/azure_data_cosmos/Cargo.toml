@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.30.0"
+version = "0.31.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -22,13 +22,14 @@ serde.workspace = true
 tracing.workspace = true
 url.workspace = true
 async-lock.workspace = true
+pin-project.workspace = true
 
 [dev-dependencies]
 uuid.workspace = true
 azure_identity.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 clap.workspace = true
-reqwest.workspace = true
+reqwest = { workspace = true, features = ["http2"] }
 time.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
@@ -39,14 +40,13 @@ workspace = true
 [features]
 default = ["hmac_rust"]
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
-preview_query_engine = ["serde_json/raw_value"] # Enables support for the PREVIEW external query engine
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
+fault_injection = [] # Enables support for fault injection testing
 
 [package.metadata.docs.rs]
 features = [
   "key_auth",
-  "preview_query_engine",
   "hmac_rust",
   "hmac_openssl",
 ]

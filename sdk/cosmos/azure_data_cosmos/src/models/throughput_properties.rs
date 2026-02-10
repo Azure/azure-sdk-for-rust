@@ -3,14 +3,18 @@
 
 use std::borrow::Cow;
 
-use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::{
+    fmt::SafeDebug,
+    http::headers::{AsHeaders, HeaderName, HeaderValue},
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{constants, models::SystemProperties};
 
 const OFFER_VERSION_2: &str = "V2";
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ThroughputProperties {
     resource: String,
@@ -101,7 +105,8 @@ impl AsHeaders for ThroughputProperties {
     }
 }
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Offer {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -110,7 +115,8 @@ pub(crate) struct Offer {
     pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
 }
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct OfferAutoscaleSettings {
     pub max_throughput: usize,
@@ -118,14 +124,16 @@ pub(crate) struct OfferAutoscaleSettings {
     pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
 }
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AutoscaleAutoUpgradePolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub throughput_policy: Option<AutoscaleThroughputPolicy>,
 }
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize)]
+#[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AutoscaleThroughputPolicy {
     pub increment_percent: usize,

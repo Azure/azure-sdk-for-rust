@@ -9,6 +9,7 @@ copyid
 deletedwithversions
 deletetype
 firsttag
+GZRS
 immutabilitypolicy
 incrementalcopy
 legalhold
@@ -19,9 +20,17 @@ peekonly
 policyid
 prevsnapshot
 RAGRS
+RAGZRS
 restype
+rscc
+rscd
+rsce
+rscl
+rsct
 ruleid
 secondtag
+skoid
+sktid
 subsecond
 testblob1
 testblob2

@@ -145,8 +145,12 @@ fn get_substatus_code_from_error(err: &azure_core::Error) -> Option<SubStatusCod
     if let ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
         raw_response
             .as_ref()
-            .and_then(|r| r.headers().get_as(&SUB_STATUS).ok())
-            .and_then(|raw: u32| SubStatusCode::try_from(raw).ok())
+            .and_then(|r| {
+                r.headers()
+                    .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
+                    .ok()
+            })
+            .map(SubStatusCode::from)
     } else {
         None
     }
@@ -169,7 +173,7 @@ fn get_substatus_code_from_error(err: &azure_core::Error) -> Option<SubStatusCod
 fn get_substatus_code_from_response(response: &RawResponse) -> Option<SubStatusCode> {
     response
         .headers()
-        .get_as(&SUB_STATUS)
+        .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
         .ok()
-        .and_then(|raw: u32| SubStatusCode::try_from(raw).ok())
+        .map(SubStatusCode::from)
 }

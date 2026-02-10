@@ -58,14 +58,12 @@ impl MetadataRequestRetryPolicy {
     /// - Maximum unavailable endpoint retries based on preferred location count
     /// - Underlying throttling retry policy for 429 responses
     /// - Initial retry count set to zero
-    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>) -> Self {
+        let max_retry_count = max(global_endpoint_manager.preferred_location_count() as i32, 1);
         Self {
-            global_endpoint_manager: Arc::from(global_endpoint_manager.clone()),
+            global_endpoint_manager,
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
-            max_unavailable_endpoint_retry_count: max(
-                global_endpoint_manager.preferred_location_count() as i32,
-                1,
-            ),
+            max_unavailable_endpoint_retry_count: max_retry_count,
             retry_context: None,
             unavailable_endpoint_retry_count: 0,
         }
@@ -213,7 +211,7 @@ impl MetadataRequestRetryPolicy {
         if (status_code == StatusCode::ServiceUnavailable
             || status_code == StatusCode::InternalServerError
             || (status_code == StatusCode::Gone
-                && sub_status_code == Some(SubStatusCode::LeaseNotFound))
+                && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND))
             || (status_code == StatusCode::Forbidden
                 && sub_status_code == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)))
             && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
@@ -263,14 +261,15 @@ mod tests {
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
     use crate::regions;
+    use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
-    use std::borrow::Cow;
+    use std::sync::Arc;
 
-    fn create_test_endpoint_manager() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -280,31 +279,15 @@ mod tests {
             None,
         );
 
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![Cow::Borrowed("West US"), Cow::Borrowed("East US")],
-            pipeline,
-        )
-    }
-
-    fn create_test_endpoint_manager_no_locations() -> GlobalEndpointManager {
-        let pipeline = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            ClientOptions::default(),
-            Vec::new(),
-            Vec::new(),
-            None,
-        );
-
-        GlobalEndpointManager::new(
-            "https://test.documents.azure.com".parse().unwrap(),
+            vec![RegionName::from("West US"), RegionName::from("East US")],
             vec![],
             pipeline,
-        )
+        ))
     }
 
-    fn create_test_endpoint_manager_with_preferred_locations() -> GlobalEndpointManager {
+    fn create_test_endpoint_manager_no_locations() -> Arc<GlobalEndpointManager> {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -314,15 +297,34 @@ mod tests {
             None,
         );
 
-        GlobalEndpointManager::new(
+        Arc::new(GlobalEndpointManager::new(
+            "https://test.documents.azure.com".parse().unwrap(),
+            vec![],
+            vec![],
+            pipeline,
+        ))
+    }
+
+    fn create_test_endpoint_manager_with_preferred_locations() -> Arc<GlobalEndpointManager> {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+
+        Arc::new(GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
-                regions::EAST_ASIA.into(),
-                regions::WEST_US.into(),
-                regions::NORTH_CENTRAL_US.into(),
+                regions::EAST_ASIA,
+                regions::WEST_US,
+                regions::NORTH_CENTRAL_US,
             ],
+            vec![],
             pipeline,
-        )
+        ))
     }
 
     fn create_test_policy() -> MetadataRequestRetryPolicy {

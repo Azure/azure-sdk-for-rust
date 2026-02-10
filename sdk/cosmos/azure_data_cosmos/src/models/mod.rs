@@ -3,11 +3,12 @@
 
 //! Model types sent to and received from the Azure Cosmos DB API.
 
-use azure_core::{http::Etag, time::OffsetDateTime};
+use azure_core::{fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Deserializer, Serialize};
 
 mod account_properties;
 mod container_properties;
+mod cosmos_response;
 mod indexing_policy;
 mod partition_key_definition;
 mod patch_operations;
@@ -15,6 +16,7 @@ mod throughput_properties;
 
 pub use account_properties::*;
 pub use container_properties::*;
+pub use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;
 pub use partition_key_definition::*;
 pub use patch_operations::*;
@@ -39,33 +41,10 @@ where
     }
 }
 
-/// A page of query results from [`ContainerClient::query_items`](crate::clients::ContainerClient::query_items()) where each item is of type `T`.
-#[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize)]
-pub struct QueryResults<T> {
-    #[serde(alias = "Documents")]
-    pub items: Vec<T>,
-}
-
-/// A page of results from [`CosmosClient::query_databases`](crate::CosmosClient::query_databases())
-#[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize)]
-pub struct DatabaseQueryResults {
-    #[serde(alias = "Databases")]
-    pub databases: Vec<DatabaseProperties>,
-}
-
-/// A page of results from [`DatabaseClient::query_containers`](crate::clients::DatabaseClient::query_containers())
-#[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize)]
-pub struct ContainerQueryResults {
-    #[serde(alias = "DocumentCollections")]
-    pub containers: Vec<ContainerProperties>,
-}
-
 /// Common system properties returned for most Cosmos DB resources.
 #[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 pub struct SystemProperties {
     /// The entity tag associated with the resource.
     #[serde(default)]
@@ -98,7 +77,8 @@ pub struct SystemProperties {
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,

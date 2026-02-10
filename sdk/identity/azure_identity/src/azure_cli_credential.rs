@@ -47,11 +47,7 @@ impl CliTokenResponse {
 }
 
 impl OutputProcessor for CliTokenResponse {
-    fn credential_name() -> &'static str {
-        "AzureCliCredential"
-    }
-
-    fn get_error_message(_stderr: &str) -> Option<&str> {
+    fn get_error_message(_stderr: &str) -> Option<String> {
         // Azure CLI's errors are generally clear and more helpful than anything we'd write here
         None
     }
@@ -79,7 +75,7 @@ pub struct AzureCliCredential {
 /// Options for constructing an [`AzureCliCredential`].
 #[derive(Clone, Debug, Default)]
 pub struct AzureCliCredentialOptions {
-    /// The name or ID of a subscription
+    /// The name or ID of a subscription.
     ///
     /// Set this to acquire tokens for an account other than the Azure CLI's current account.
     pub subscription: Option<String>,
@@ -225,12 +221,14 @@ mod tests {
 
     #[tokio::test]
     async fn error_includes_stderr() {
-        let stderr = "something went wrong";
-        let err = run_test(1, "stdout", stderr, None, None)
+        let err = run_test(1, "stdout", "something went wrong", None, None)
             .await
             .expect_err("expected error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
-        assert!(err.to_string().contains(stderr));
+        assert_eq!(
+            "AzureCliCredential authentication failed. something went wrong\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azure-cli",
+            err.to_string()
+        );
     }
 
     #[tokio::test]
@@ -259,7 +257,10 @@ mod tests {
             .await
             .expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
-        assert!(err.to_string().contains("az login"));
+        assert_eq!(
+            "AzureCliCredential authentication failed. Please run 'az login' to setup account.\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azure-cli",
+            err.to_string()
+        );
     }
 
     #[tokio::test]

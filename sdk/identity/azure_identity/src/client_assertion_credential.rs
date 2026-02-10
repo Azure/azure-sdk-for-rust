@@ -15,7 +15,14 @@ use url::form_urlencoded;
 
 const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 
-/// Enables authentication of a Microsoft Entra service principal using a signed client assertion.
+/// Authenticates an application with client assertions.
+///
+/// This credential is for advanced scenarios. `ClientCertificateCredential` has a more convenient API for
+/// the most common assertion scenario, authenticating a service principal with a certificate.
+///
+/// See
+/// [Entra ID documentation](https://learn.microsoft.com/entra/identity-platform/certificate-credentials#assertion-format)
+/// for details of the assertion format.
 #[derive(Debug)]
 pub struct ClientAssertionCredential<C> {
     name: &'static str,
@@ -43,6 +50,13 @@ pub trait ClientAssertion: Send + Sync + Debug {
 
 impl<C: ClientAssertion> ClientAssertionCredential<C> {
     /// Create a new `ClientAssertionCredential`.
+    ///
+    /// # Arguments
+    /// - `tenant_id`: The tenant (directory) ID of the service principal.
+    /// - `client_id`: The client (application) ID of the service principal.
+    /// - `assertion`: an implementation of [`ClientAssertion`] that provides assertions to the credential.
+    /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
+    ///
     pub fn new(
         tenant_id: String,
         client_id: String,

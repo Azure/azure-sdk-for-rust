@@ -5,7 +5,7 @@
 
 pub mod option_vec_encoded_bytes_std {
     #![allow(clippy::type_complexity)]
-    use azure_core::base64::{decode, encode};
+    use azure_core::base64;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::result::Result;
 
@@ -18,7 +18,7 @@ pub mod option_vec_encoded_bytes_std {
             Some(to_deserialize) => {
                 let mut decoded0 = <Vec<Vec<u8>>>::new();
                 for v in to_deserialize {
-                    decoded0.push(decode(v).map_err(serde::de::Error::custom)?);
+                    decoded0.push(base64::decode(v).map_err(serde::de::Error::custom)?);
                 }
                 Ok(Some(decoded0))
             }
@@ -34,7 +34,7 @@ pub mod option_vec_encoded_bytes_std {
         S: Serializer,
     {
         if let Some(to_serialize) = to_serialize {
-            let encoded0 = to_serialize.iter().map(encode).collect();
+            let encoded0 = to_serialize.iter().map(base64::encode).collect();
             <Option<Vec<String>>>::serialize(&Some(encoded0), serializer)
         } else {
             serializer.serialize_none()

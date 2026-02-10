@@ -278,10 +278,18 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
             api_calls: vec![
                 ExpectedApiInformation {
                     api_name: Some("KeyVault.setSecret"),
-                    api_children: vec![ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Put,
-                        ..Default::default()
-                    }],
+                    api_children: vec![
+                        ExpectedRestApiSpan {
+                            api_verb: azure_core::http::Method::Put,
+                            expected_status_code: azure_core::http::StatusCode::Unauthorized,
+                            ..Default::default()
+                        },
+                        ExpectedRestApiSpan {
+                            api_verb: azure_core::http::Method::Put,
+                            expected_status_code: azure_core::http::StatusCode::Ok,
+                            ..Default::default()
+                        },
+                    ],
                     ..Default::default()
                 },
                 ExpectedApiInformation {
@@ -365,11 +373,18 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
             package_namespace: Some("KeyVault"),
             api_calls: vec![ExpectedApiInformation {
                 api_name: Some("KeyVault.getSecrets"),
-                api_children: vec![ExpectedRestApiSpan {
-                    api_verb: azure_core::http::Method::Get,
-                    is_wildcard: true,
-                    ..Default::default()
-                }],
+                api_children: vec![
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        expected_status_code: azure_core::http::StatusCode::Unauthorized,
+                        ..Default::default()
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        is_wildcard: true,
+                        ..Default::default()
+                    },
+                ],
                 ..Default::default()
             }],
         },
@@ -451,11 +466,18 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
             package_namespace: Some("KeyVault"),
             api_calls: vec![ExpectedApiInformation {
                 api_name: Some("KeyVault.getSecrets"),
-                api_children: vec![ExpectedRestApiSpan {
-                    api_verb: azure_core::http::Method::Get,
-                    is_wildcard: true,
-                    ..Default::default()
-                }],
+                api_children: vec![
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        expected_status_code: azure_core::http::StatusCode::Unauthorized,
+                        ..Default::default()
+                    },
+                    ExpectedRestApiSpan {
+                        api_verb: azure_core::http::Method::Get,
+                        is_wildcard: true,
+                        ..Default::default()
+                    },
+                ],
                 ..Default::default()
             }],
         },
@@ -536,12 +558,12 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 }
 
                 first_pager
-                    .into_continuation_token()
+                    .into_continuation()
                     .expect("expected continuation token to be created after first page")
             };
             let options = SecretClientListSecretPropertiesOptions {
                 method_options: PagerOptions {
-                    continuation_token: Some(rehydration_token),
+                    continuation: Some(rehydration_token),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -565,10 +587,17 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
             api_calls: vec![
                 ExpectedApiInformation {
                     api_name: Some("KeyVault.getSecrets"),
-                    api_children: vec![ExpectedRestApiSpan {
-                        api_verb: azure_core::http::Method::Get,
-                        ..Default::default()
-                    }],
+                    api_children: vec![
+                        ExpectedRestApiSpan {
+                            api_verb: azure_core::http::Method::Get,
+                            expected_status_code: azure_core::http::StatusCode::Unauthorized,
+                            ..Default::default()
+                        },
+                        ExpectedRestApiSpan {
+                            api_verb: azure_core::http::Method::Get,
+                            ..Default::default()
+                        },
+                    ],
                     ..Default::default()
                 },
                 ExpectedApiInformation {
