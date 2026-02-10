@@ -8,6 +8,7 @@
 
 ### Breaking Changes
 
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Renamed `BlobItemInternal` to `BlobItem`.
 - Renamed `BlobPropertiesInternal` to `BlobProperties`.
 

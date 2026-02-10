@@ -251,7 +251,7 @@ impl BlobContainerClient {
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat, String>> {
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
         self.client.list_blob_flat_segment(options)
     }
 

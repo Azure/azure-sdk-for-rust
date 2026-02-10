@@ -192,7 +192,7 @@ pub struct QueueServiceClientListQueuesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a, String>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only queues whose name begins with the specified prefix.
     pub prefix: Option<String>,
