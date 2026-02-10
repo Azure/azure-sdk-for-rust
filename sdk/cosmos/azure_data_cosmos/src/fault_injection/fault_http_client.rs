@@ -21,8 +21,6 @@ pub struct FaultClient {
     inner: Arc<dyn HttpClient>,
     /// The fault injection rules to apply.
     rules: Arc<Mutex<Vec<RuleState>>>,
-    /// The time when this client was created (for tracking rule start delays and durations).
-    created_at: Instant,
 }
 
 /// Tracks the state of a fault injection rule.
@@ -32,8 +30,6 @@ struct RuleState {
     rule: Arc<FaultInjectionRule>,
     /// Number of times this rule has been applied.
     hit_count: AtomicU32,
-    /// The time when this rule was first activated (after start_delay).
-    activated_at: Option<Instant>,
 }
 
 impl FaultClient {
@@ -44,20 +40,18 @@ impl FaultClient {
             .map(|rule| RuleState {
                 rule,
                 hit_count: AtomicU32::new(0),
-                activated_at: None,
             })
             .collect();
 
         Self {
             inner,
             rules: Arc::new(Mutex::new(rule_states)),
-            created_at: Instant::now(),
         }
     }
 
     /// Checks if a rule is currently applicable based on timing constraints.
-    fn is_rule_applicable(&self, rule_state: &mut RuleState) -> bool {
-        let elapsed = self.created_at.elapsed();
+    fn is_rule_applicable(&self, rule_state: &RuleState) -> bool {
+        let now = Instant::now();
         let rule = &rule_state.rule;
 
         // Check if the rule is enabled
@@ -65,19 +59,14 @@ impl FaultClient {
             return false;
         }
 
-        // Check if we've passed the start delay
-        if elapsed < rule.start_delay() {
+        // Check if the rule has started
+        if now < rule.start_time() {
             return false;
         }
 
-        // Activate the rule if not already activated
-        if rule_state.activated_at.is_none() {
-            rule_state.activated_at = Some(Instant::now());
-        }
-
-        // Check if the rule has exceeded its duration
-        if let Some(activated_at) = rule_state.activated_at {
-            if activated_at.elapsed() > rule.duration() {
+        // Check if the rule has expired
+        if let Some(end_time) = rule.end_time() {
+            if now >= end_time {
                 return false;
             }
         }
@@ -226,10 +215,10 @@ impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         // Find applicable rule and clone the result if needed
         let fault_result: Option<FaultInjectionResult> = {
-            let mut rules = self.rules.lock().unwrap();
+            let rules = self.rules.lock().unwrap();
             let mut applicable_rule_index: Option<usize> = None;
 
-            for (index, rule_state) in rules.iter_mut().enumerate() {
+            for (index, rule_state) in rules.iter().enumerate() {
                 if self.is_rule_applicable(rule_state)
                     && self.matches_condition(request, &rule_state.rule)
                 {
@@ -240,7 +229,7 @@ impl HttpClient for FaultClient {
 
             // Apply fault if we found an applicable rule
             if let Some(index) = applicable_rule_index {
-                let rule_state = &mut rules[index];
+                let rule_state = &rules[index];
                 // Increment hit count
                 rule_state.hit_count.fetch_add(1, Ordering::SeqCst);
                 // Clone and return the result
@@ -298,7 +287,7 @@ mod tests {
     use azure_core::http::{AsyncRawResponse, HttpClient, Method, Request, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     /// A mock HTTP client that tracks call counts and returns success.
     #[derive(Debug)]
@@ -407,20 +396,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn execute_request_with_start_delay() {
+    async fn execute_request_before_start_time() {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::InternalServerError)
             .build();
-        let rule = FaultInjectionRuleBuilder::new("delayed-rule", error)
-            .with_start_delay(Duration::from_secs(60)) // Long delay
+        let rule = FaultInjectionRuleBuilder::new("future-rule", error)
+            .with_start_time(Instant::now() + Duration::from_secs(60))
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        // Request should pass through because start delay hasn't elapsed
+        // Request should pass through because start_time is in the future
         let result = fault_client.execute_request(&request).await;
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);

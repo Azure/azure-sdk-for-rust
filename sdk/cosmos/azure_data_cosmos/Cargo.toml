@@ -40,9 +40,9 @@ workspace = true
 [features]
 default = ["hmac_rust"]
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
-fault_injection = [] # Enables support for fault injection testing
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
+fault_injection = [] # Enables support for fault injection testing
 
 [package.metadata.docs.rs]
 features = [

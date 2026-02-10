@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
@@ -533,25 +533,23 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
     .await
 }
 
-/// Test that first rule expires due to start_delay, allowing second rule to apply.
-/// First rule has a long start_delay, so it won't be active initially.
+/// Test that first rule is skipped because its start_time is in the future.
 /// Second rule applies immediately and should win.
 #[tokio::test]
-pub async fn fault_injection_first_rule_inactive_due_to_start_delay() -> Result<(), Box<dyn Error>>
-{
-    // First rule: 429 for ReadItem, but with a long start_delay (won't be active initially)
+pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(), Box<dyn Error>> {
+    // First rule: 429 for ReadItem, but with a future start_time (won't be active yet)
     let error1 = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::TooManyRequests)
         .build();
     let condition1 = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
         .build();
-    let rule1 = FaultInjectionRuleBuilder::new("first-rule-429-delayed", error1)
+    let rule1 = FaultInjectionRuleBuilder::new("first-rule-429-future", error1)
         .with_condition(condition1)
-        .with_start_delay(Duration::from_secs(300)) // 5 minutes delay - won't be active
+        .with_start_time(Instant::now() + Duration::from_secs(300))
         .build();
 
-    // Second rule: 503 for ReadItem (should be applied since first rule is not yet active)
+    // Second rule: 503 for ReadItem (should be applied since first rule hasn't started)
     let error2 = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
         .build();
@@ -604,7 +602,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_delay() -> Result<
             assert_eq!(
                 Some(StatusCode::ServiceUnavailable),
                 err.http_status(),
-                "second rule should apply (503) since first rule has start_delay"
+                "second rule should apply (503) since first rule has not started"
             );
 
             Ok(())
@@ -614,11 +612,11 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_delay() -> Result<
     .await
 }
 
-/// Test that first rule expires due to duration, allowing second rule to apply.
-/// First rule has a very short duration (already expired), so second rule should win.
+/// Test that first rule is expired because its end_time is in the past.
+/// Second rule should win.
 #[tokio::test]
-pub async fn fault_injection_first_rule_expired_due_to_duration() -> Result<(), Box<dyn Error>> {
-    // First rule: 429 for ReadItem, but with zero duration (immediately expired)
+pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), Box<dyn Error>> {
+    // First rule: 429 for ReadItem, but with an end_time in the past (already expired)
     let error1 = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::TooManyRequests)
         .build();
@@ -627,7 +625,7 @@ pub async fn fault_injection_first_rule_expired_due_to_duration() -> Result<(), 
         .build();
     let rule1 = FaultInjectionRuleBuilder::new("first-rule-429-expired", error1)
         .with_condition(condition1)
-        .with_duration(Duration::ZERO) // Zero duration - immediately expired
+        .with_end_time(Instant::now()) // Already expired
         .build();
 
     // Second rule: 503 for ReadItem (should be applied since first rule is expired)
@@ -686,7 +684,7 @@ pub async fn fault_injection_first_rule_expired_due_to_duration() -> Result<(), 
             assert_eq!(
                 Some(StatusCode::ServiceUnavailable),
                 err.http_status(),
-                "second rule should apply (503) since first rule's duration expired"
+                "second rule should apply (503) since first rule's end_time has passed"
             );
 
             Ok(())

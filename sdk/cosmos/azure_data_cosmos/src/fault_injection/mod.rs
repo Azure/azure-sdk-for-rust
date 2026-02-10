@@ -24,7 +24,7 @@
 //! # Core Components
 //!
 //! - [`FaultInjectionClientBuilder`] — Entry point for configuring fault injection. Wraps the
-//!   default HTTP transport with a [`FaultClient`](fault_http_client::FaultClient) and sets
+//!   default HTTP transport with a fault-injecting HTTP client and sets
 //!   `fault_injection_enabled` on [`CosmosClientOptions`](crate::CosmosClientOptions).
 //! - [`FaultInjectionCondition`] — Defines when a fault should be applied, filtering by
 //!   operation type, region, or container ID.
@@ -43,7 +43,7 @@
 //! };
 //! use azure_data_cosmos::CosmosClientOptions;
 //! use std::sync::Arc;
-//! use std::time::Duration;
+//! use std::time::{Duration, Instant};
 //!
 //! // 1. Define what error to inject
 //! let result = FaultInjectionResultBuilder::new()
@@ -62,7 +62,7 @@
 //! let rule = Arc::new(FaultInjectionRuleBuilder::new("region-failover-test", result)
 //!     .with_condition(condition)
 //!     .with_hit_limit(5)
-//!     .with_duration(Duration::from_secs(30))
+//!     .with_end_time(Instant::now() + Duration::from_secs(30))
 //!     .build());
 //!
 //! // 4. Inject into client options

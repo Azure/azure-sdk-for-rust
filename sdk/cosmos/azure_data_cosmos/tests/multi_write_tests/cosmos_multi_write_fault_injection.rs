@@ -415,6 +415,19 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
                 result.err()
             );
 
+            let response = result.unwrap();
+            let request_url = response
+                .request()
+                .clone()
+                .into_raw_request()
+                .url()
+                .to_string();
+            // Verify the request went to a different endpoint than the faulted one
+            assert!(
+                request_url.contains(&SATELLITE_REGION.as_str()),
+                "request should have failed over to secondary region"
+            );
+
             Ok(())
         },
         Some(TestOptions::new().with_fault_client_options(fault_options)),
