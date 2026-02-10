@@ -76,6 +76,9 @@
 # PRLabel: %Event Hubs
 /sdk/eventhubs/          @j7nw4r
 
+# PRLabel: %Event Hubs %Storage
+/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @j7nw4r @jalauzon-msft @vincenttran-msft
+
 # ServiceLabel: %Event Hubs
 # AzureSDKOwners: @j7nw4r
 
@@ -86,12 +89,12 @@
 ###########
 # Eng Sys
 ###########
-/eng/                    @hallipr @weshaggard @heaths @RickWinter
+/eng/                    @danieljurek @weshaggard @heaths @RickWinter
 /eng/common/             @Azure/azure-sdk-eng
 /.github/workflows/      @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
 /.config/1espt/          @benbp @weshaggard
-/sdk/canary/             @hallipr
+/sdk/canary/             @danieljurek
 
 # Add owners for notifications for specific pipelines
 /eng/common/pipelines/codeowners-linter.yml       @rickwinter

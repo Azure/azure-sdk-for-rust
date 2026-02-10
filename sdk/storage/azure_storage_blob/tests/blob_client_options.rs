@@ -11,7 +11,7 @@ use azure_storage_blob::models::{
     BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
     BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlobContainerClientListBlobFlatSegmentOptions, BlobTags,
+    BlobClientSetTierOptions, BlobContainerClientListBlobsOptions, BlobTags,
     BlockBlobClientUploadOptions, DeleteSnapshotsOptionType, ListBlobsIncludeItem,
 };
 use azure_storage_blob_test::{
@@ -82,7 +82,7 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
     );
     assert_eq!(version_2, props_v2.version_id()?.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -111,7 +111,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
 
     // Set Metadata on Current Version (Creates Version 2)
     let metadata_v2 = HashMap::from([("version".to_string(), "two".to_string())]);
-    blob_client.set_metadata(metadata_v2.clone(), None).await?;
+    blob_client.set_metadata(&metadata_v2, None).await?;
     let response = blob_client.get_properties(None).await?;
     let version_2 = response.version_id()?.unwrap();
 
@@ -158,7 +158,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
     let retrieved_tags: HashMap<String, String> = response_tags.into();
     assert_eq!(HashMap::new(), retrieved_tags);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -220,7 +220,7 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
         props_current.access_tier()?.unwrap()
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -253,7 +253,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     assert_eq!(2, blob_items.len());
 
     // List Blobs With Versions
-    let list_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_options = BlobContainerClientListBlobsOptions {
         include: Some(vec![ListBlobsIncludeItem::Versions]),
         ..Default::default()
     };
@@ -289,7 +289,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     assert_eq!(3, version_counts[blob_2_name.as_str()]);
     assert_eq!(2, current_versions);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -358,7 +358,7 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     let conditional_response = lease_blob_client.get_properties(Some(get_options)).await?;
     assert_eq!(2, conditional_response.content_length()?.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -369,7 +369,7 @@ async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(
     let container_client =
         get_container_client(recording, false, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
 
     // Create Version 1 & 2
     create_test_blob(&blob_client, None, None).await?;
@@ -475,7 +475,7 @@ async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn E
     let error = result.unwrap_err().http_status();
     assert_eq!(StatusCode::NotFound, error.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -554,7 +554,7 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
     assert!(status_code.is_success());
     assert_eq!(data_v2.to_vec(), response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -600,9 +600,7 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
 
     // Modify Current (Base) Blob Metadata
     let new_base_metadata = HashMap::from([("end".to_string(), "game".to_string())]);
-    blob_client
-        .set_metadata(new_base_metadata.clone(), None)
-        .await?;
+    blob_client.set_metadata(&new_base_metadata, None).await?;
 
     // Verify Snapshots Unchanged
     let props_1 = snapshot_1_client.get_properties(None).await?;
@@ -614,7 +612,7 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
     let base_props = blob_client.get_properties(None).await?;
     assert_eq!(new_base_metadata, base_props.metadata()?);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -652,7 +650,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     }
 
     // List Blobs With Snapshots
-    let list_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_options = BlobContainerClientListBlobsOptions {
         include: Some(vec![ListBlobsIncludeItem::Snapshots]),
         ..Default::default()
     };
@@ -684,7 +682,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     assert_eq!(3, snapshot_counts[blob_2_name.as_str()]);
     assert_eq!(2, base_blob_count);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -749,7 +747,7 @@ async fn test_blob_snapshot_delete_operations(ctx: TestContext) -> Result<(), Bo
     let result = blob_client.get_properties(None).await;
     assert!(result.is_err());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -810,7 +808,7 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
     let snapshot_tag_map: HashMap<String, String> = snapshot_tags.into();
     assert_eq!(HashMap::new(), snapshot_tag_map);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -861,7 +859,7 @@ async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn 
 
     // Try to Set Metadata
     let metadata = HashMap::from([("test_value".to_string(), "test_key".to_string())]);
-    let result = snapshot_client.set_metadata(metadata, None).await;
+    let result = snapshot_client.set_metadata(&metadata, None).await;
     assert!(result.is_err());
 
     // Try to Upload to Snapshot
@@ -876,6 +874,6 @@ async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn 
         .await;
     assert!(result.is_err());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }

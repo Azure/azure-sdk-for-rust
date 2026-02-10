@@ -10,19 +10,15 @@ use crate::generated::models::{
     AppendBlobClientSealResult,
 };
 use azure_core::{
-    base64::encode,
-    credentials::TokenCredential,
+    base64,
     error::CheckSuccessOptions,
-    fmt::SafeDebug,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
-        Response, Url, UrlExt,
+        Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent, Response, Url,
+        UrlExt,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
 };
-use std::sync::Arc;
 
 #[tracing::client]
 pub struct AppendBlobClient {
@@ -31,56 +27,7 @@ pub struct AppendBlobClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a `AppendBlobClient`
-#[derive(Clone, SafeDebug)]
-pub struct AppendBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
 impl AppendBlobClient {
-    /// Creates a new AppendBlobClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.AppendBlob")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<AppendBlobClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -149,7 +96,7 @@ impl AppendBlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", encode(transactional_content_md5));
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
         if let Some(if_match) = options.if_match.as_ref() {
@@ -171,7 +118,10 @@ impl AppendBlobClient {
             request.insert_header("x-ms-blob-condition-maxsize", max_size.to_string());
         }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
+            request.insert_header(
+                "x-ms-content-crc64",
+                base64::encode(transactional_content_crc64),
+            );
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
@@ -277,9 +227,7 @@ impl AppendBlobClient {
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "appendblock")
-            .append_key_only("fromUrl");
+        query_builder.append_pair("comp", "appendblock");
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -287,7 +235,7 @@ impl AppendBlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", encode(transactional_content_md5));
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
@@ -337,10 +285,16 @@ impl AppendBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         if let Some(source_content_crc64) = options.source_content_crc64 {
-            request.insert_header("x-ms-source-content-crc64", encode(source_content_crc64));
+            request.insert_header(
+                "x-ms-source-content-crc64",
+                base64::encode(source_content_crc64),
+            );
         }
         if let Some(source_content_md5) = options.source_content_md5 {
-            request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
+            request.insert_header(
+                "x-ms-source-content-md5",
+                base64::encode(source_content_md5),
+            );
         }
         if let Some(source_encryption_algorithm) = options.source_encryption_algorithm.as_ref() {
             request.insert_header(
@@ -475,7 +429,7 @@ impl AppendBlobClient {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
         if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
+            request.insert_header("x-ms-blob-content-md5", base64::encode(blob_content_md5));
         }
         if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
@@ -628,14 +582,5 @@ impl AppendBlobClient {
             )
             .await?;
         Ok(rsp.into())
-    }
-}
-
-impl Default for AppendBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
     }
 }

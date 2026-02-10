@@ -3,10 +3,10 @@
 
 use crate::constants;
 use crate::models::ThroughputProperties;
+use crate::regions::RegionName;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use azure_core::time::Duration;
-use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::convert::Infallible;
 use std::fmt;
@@ -34,8 +34,9 @@ impl Display for SessionToken {
 pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
     pub application_name: Option<String>,
-    pub application_region: Option<String>,
-    pub application_preferred_regions: Vec<Cow<'static, str>>,
+    pub application_region: Option<RegionName>,
+    pub application_preferred_regions: Vec<RegionName>,
+    pub excluded_regions: Vec<RegionName>,
     pub account_initialization_custom_endpoints: Option<HashSet<String>>,
     /// Used to specify the consistency level for the operation.
     ///
@@ -263,6 +264,11 @@ pub struct ItemOptions<'a> {
     ///
     /// Custom headers will not override headers that are already set by the SDK.
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    /// Regions to be skipped from regional routing preferences. The regions in this list are specified as the names of the Azure Cosmos locations like, 'West US', 'East US' and so on.
+    /// If all regions were excluded, the primary/hub region will be used to route requests.
+    /// If None is provided, client-level excluded regions will be used.
+    /// If an empty vector is provided, no regions will be excluded for this request.
+    pub excluded_regions: Option<Vec<RegionName>>,
 }
 
 impl AsHeaders for ItemOptions<'_> {
@@ -349,12 +355,6 @@ pub struct QueryDatabasesOptions<'a> {
 pub struct QueryOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 
-    /// An external query engine to use for executing the query.
-    ///
-    /// NOTE: This is an unstable feature and may change in the future.
-    /// Specifically, the query engine may be built-in to the SDK in the future, and this option may be removed entirely.
-    #[cfg(feature = "preview_query_engine")]
-    pub query_engine: Option<crate::query::QueryEngineRef>,
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
@@ -392,8 +392,6 @@ impl QueryOptions<'_> {
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
             },
-            #[cfg(feature = "preview_query_engine")]
-            query_engine: self.query_engine,
             session_token: self.session_token,
             consistency_level: self.consistency_level,
             throughput_bucket: self.throughput_bucket,

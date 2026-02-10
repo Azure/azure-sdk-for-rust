@@ -5,7 +5,6 @@
 
 /// The access tiers.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum AccessTier {
     /// The archive access tier.
     Archive,
@@ -61,7 +60,6 @@ pub enum AccessTier {
 
 /// The account kind.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum AccountKind {
     /// The storage account is a blob storage account.
     BlobStorage,
@@ -81,7 +79,6 @@ pub enum AccountKind {
 
 /// The archive status.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ArchiveStatus {
     /// The archive status is rehydrating pending to archive.
     RehydratePendingToCold,
@@ -98,7 +95,6 @@ pub enum ArchiveStatus {
 
 /// The blob copy source tags types.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum BlobCopySourceTags {
     /// The copy blob source tags option.
     Copy,
@@ -109,35 +105,13 @@ pub enum BlobCopySourceTags {
 
 /// The type of blob deletions.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum BlobDeleteType {
     /// Permanently delete the blob.
     Permanent,
 }
 
-/// The blob expiration options.
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum BlobExpiryOptions {
-    /// Absolute time.
-    Absolute,
-
-    /// Never expire.
-    NeverExpire,
-
-    /// Relative to creation time.
-    RelativeToCreation,
-
-    /// Relative to now.
-    RelativeToNow,
-
-    /// Any other value not defined in `BlobExpiryOptions`.
-    UnknownValue(String),
-}
-
 /// The blob type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum BlobType {
     /// The blob is an append blob.
     AppendBlob,
@@ -151,7 +125,6 @@ pub enum BlobType {
 
 /// The block list types.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum BlockListType {
     /// Both lists together.
     All,
@@ -165,7 +138,6 @@ pub enum BlockListType {
 
 /// The copy status.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum CopyStatus {
     /// The copy operation is aborted.
     Aborted,
@@ -182,7 +154,6 @@ pub enum CopyStatus {
 
 /// The delete snapshots option type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum DeleteSnapshotsOptionType {
     /// The delete snapshots include option is include.
     Include,
@@ -194,7 +165,6 @@ pub enum DeleteSnapshotsOptionType {
 /// The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided
 /// if the x-ms-encryption-key header is provided.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum EncryptionAlgorithmType {
     /// The AES256 encryption algorithm.
     Aes256,
@@ -202,7 +172,6 @@ pub enum EncryptionAlgorithmType {
 
 /// The file share token intent types.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum FileShareTokenIntent {
     /// The file share token intent is backup.
     Backup,
@@ -213,7 +182,6 @@ pub enum FileShareTokenIntent {
 
 /// The filter blobs includes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum FilterBlobsIncludeItem {
     /// The filter includes no versions.
     None,
@@ -224,7 +192,6 @@ pub enum FilterBlobsIncludeItem {
 
 /// The geo replication status.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum GeoReplicationStatusType {
     /// The geo replication is bootstrap.
     Bootstrap,
@@ -241,7 +208,6 @@ pub enum GeoReplicationStatusType {
 
 /// The immutability policy mode used in requests and responses.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ImmutabilityPolicyMode {
     /// The immutability policy is locked.
     Locked,
@@ -255,7 +221,6 @@ pub enum ImmutabilityPolicyMode {
 
 /// The lease duration.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum LeaseDuration {
     /// The lease is of fixed duration.
     Fixed,
@@ -266,7 +231,6 @@ pub enum LeaseDuration {
 
 /// The lease state.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum LeaseState {
     /// The lease is available.
     Available,
@@ -286,7 +250,6 @@ pub enum LeaseState {
 
 /// The lease status.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum LeaseStatus {
     /// The lease is locked.
     Locked,
@@ -297,7 +260,6 @@ pub enum LeaseStatus {
 
 /// The list blob includes parameter values.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ListBlobsIncludeItem {
     /// The include copies.
     Copy,
@@ -332,7 +294,6 @@ pub enum ListBlobsIncludeItem {
 
 /// Include this parameter to specify that the container's metadata be returned as part of the response body.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ListContainersIncludeType {
     /// Include deleted
     Deleted,
@@ -346,7 +307,6 @@ pub enum ListContainersIncludeType {
 
 /// The premium page blob access tier types.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum PremiumPageBlobAccessTier {
     /// The premium page blob access tier is P10.
     P10,
@@ -387,7 +347,6 @@ pub enum PremiumPageBlobAccessTier {
 
 /// The public access types.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum PublicAccessType {
     /// Blob access.
     Blob,
@@ -399,35 +358,9 @@ pub enum PublicAccessType {
     UnknownValue(String),
 }
 
-/// The query request, note only SQL supported
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum QueryRequestType {
-    /// The SQL request query type.
-    Sql,
-}
-
-/// The query format type.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum QueryType {
-    /// The query format type is Apache Arrow.
-    Arrow,
-
-    /// The query format type is delimited.
-    Delimited,
-
-    /// The query format type is JSON.
-    Json,
-
-    /// The query format type is Parquet.
-    Parquet,
-}
-
 /// If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High
 /// and Standard.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum RehydratePriority {
     /// The rehydrate priority is high.
     High,
@@ -441,7 +374,6 @@ pub enum RehydratePriority {
 
 /// The sequence number actions.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum SequenceNumberActionType {
     /// Increment the sequence number.
     Increment,
@@ -455,7 +387,6 @@ pub enum SequenceNumberActionType {
 
 /// The SKU types
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum SkuName {
     /// The premium LRS SKU.
     PremiumLrs,
@@ -484,7 +415,6 @@ pub enum SkuName {
 
 /// Error codes returned by the Azure Blob Storage service.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum StorageErrorCode {
     /// Account already exists.
     AccountAlreadyExists,

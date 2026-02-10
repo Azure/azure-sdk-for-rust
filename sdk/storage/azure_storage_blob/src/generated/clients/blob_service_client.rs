@@ -6,24 +6,19 @@
 use crate::generated::models::{
     BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
     BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
-    BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
-    BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
-    BlobServiceProperties, FilterBlobSegment, KeyInfo, ListContainersSegmentResponse,
-    StorageServiceStats, UserDelegationKey,
+    BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersOptions,
+    BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
+    ListContainersSegmentResponse, StorageServiceStats,
 };
 use azure_core::{
-    credentials::TokenCredential,
     error::CheckSuccessOptions,
-    fmt::SafeDebug,
     http::{
-        pager::{PagerResult, PagerState},
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        pager::{PagerContinuation, PagerResult, PagerState},
+        Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
+        RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     tracing, xml, Result,
 };
-use std::sync::Arc;
 
 #[tracing::client]
 pub struct BlobServiceClient {
@@ -32,56 +27,7 @@ pub struct BlobServiceClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a `BlobServiceClient`
-#[derive(Clone, SafeDebug)]
-pub struct BlobServiceClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
 impl BlobServiceClient {
-    /// Creates a new BlobServiceClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Service")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<BlobServiceClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -300,60 +246,16 @@ impl BlobServiceClient {
         Ok(rsp.into())
     }
 
-    /// Retrieves a user delegation key for the Blob service. This is only a valid operation when using bearer token authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `key_info` - Key information provided in the request
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Service.getUserDelegationKey")]
-    pub async fn get_user_delegation_key(
-        &self,
-        key_info: RequestContent<KeyInfo, XmlFormat>,
-        options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
-    ) -> Result<Response<UserDelegationKey, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
-        query_builder
-            .append_pair("comp", "userdelegationkey")
-            .append_pair("restype", "service");
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let mut request = Request::new(url, Method::Post);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        request.insert_header("x-ms-version", &self.version);
-        request.set_body(key_info);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
     /// The List Containers Segment operation returns a list of the containers under the specified account
     ///
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Service.listContainersSegment")]
-    pub fn list_containers_segment(
+    #[tracing::function("Storage.Blob.Service.listContainers")]
+    pub fn list_containers(
         &self,
-        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat, String>> {
+        options: Option<BlobServiceClientListContainersOptions<'_>>,
+    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -384,11 +286,11 @@ impl BlobServiceClient {
         query_builder.build();
         let version = self.version.clone();
         Ok(Pager::new(
-            move |marker: PagerState<String>, pager_options| {
+            move |marker: PagerState, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", &marker);
+                    query_builder.set_pair("marker", marker.as_ref());
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
@@ -415,7 +317,7 @@ impl BlobServiceClient {
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_marker,
+                            continuation: PagerContinuation::Token(next_marker),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
@@ -467,14 +369,5 @@ impl BlobServiceClient {
             )
             .await?;
         Ok(rsp.into())
-    }
-}
-
-impl Default for BlobServiceClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
     }
 }
