@@ -54,13 +54,12 @@ where
         .await;
     let initial_response = match initial_response {
         Ok(response) => response,
-        Err(err) => {
-            if let Some(StatusCode::RequestedRangeNotSatisfiable) = err.http_status() {
+        Err(err) => match (err.http_status(), range.start) {
+            (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
                 client.transfer_range(None).await?
-            } else {
-                Err(err)?
             }
-        }
+            _ => Err(err)?,
+        },
     };
 
     let mut ranges: VecDeque<_> = match initial_response
