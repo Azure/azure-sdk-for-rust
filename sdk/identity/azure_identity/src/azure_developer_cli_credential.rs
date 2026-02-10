@@ -54,7 +54,7 @@ impl OutputProcessor for AzdTokenResponse {
     fn get_error_message(stderr: &str) -> Option<String> {
         // Try to parse azd's JSON error output and extract the message
         if let Ok(error_output) = from_json::<_, AzdErrorOutput>(stderr) {
-            let message = error_output.data.message.trim();
+            let message = &error_output.data.message;
             if !message.is_empty() {
                 return Some(message.to_string());
             }
@@ -231,7 +231,7 @@ mod tests {
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. ERROR: not logged in, run `azd auth login` to login\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed. \nERROR: not logged in, run `azd auth login` to login\n\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
@@ -260,22 +260,23 @@ mod tests {
 
     #[tokio::test]
     async fn empty_message_fallback() {
-        let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"   "}}"#;
+        let stderr =
+            r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":""}}"#;
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. {\"type\":\"consoleMessage\",\"timestamp\":\"2038-01-18T00:00:00Z\",\"data\":{\"message\":\"   \"}}\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed. {\"type\":\"consoleMessage\",\"timestamp\":\"2038-01-18T00:00:00Z\",\"data\":{\"message\":\"\"}}\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
 
     #[tokio::test]
-    async fn whitespace_trimming() {
+    async fn message_with_whitespace() {
         let stderr = r#"{"type":"consoleMessage","timestamp":"2038-01-18T00:00:00Z","data":{"message":"  \n  ERROR: some error  \n  "}}"#;
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. ERROR: some error\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed.   \n  ERROR: some error  \n  \nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
