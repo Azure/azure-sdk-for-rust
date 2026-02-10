@@ -6,11 +6,7 @@
 use super::{
     models_serde, CertificatePolicyAction, CurveName, DeletionRecoveryLevel, KeyType, KeyUsageType,
 };
-use azure_core::{
-    base64::option::{deserialize, deserialize_url_safe, serialize, serialize_url_safe},
-    fmt::SafeDebug,
-    time::OffsetDateTime,
-};
+use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -41,8 +37,8 @@ pub struct BackupCertificateResult {
     /// The backup blob containing the backed up certificate.
     #[serde(
         default,
-        deserialize_with = "deserialize_url_safe",
-        serialize_with = "serialize_url_safe",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub value: Option<Vec<u8>>,
@@ -59,8 +55,8 @@ pub struct Certificate {
     /// CER contents of x509 certificate.
     #[serde(
         default,
-        deserialize_with = "deserialize",
-        serialize_with = "serialize",
+        deserialize_with = "base64::option::deserialize",
+        serialize_with = "base64::option::serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub cer: Option<Vec<u8>>,
@@ -97,9 +93,9 @@ pub struct Certificate {
     /// Thumbprint of the certificate.
     #[serde(
         default,
-        deserialize_with = "deserialize_url_safe",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "x5t",
-        serialize_with = "serialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub x509_thumbprint: Option<Vec<u8>>,
@@ -168,8 +164,8 @@ pub struct CertificateOperation {
     /// The certificate signing request (CSR) that is being used in the certificate operation.
     #[serde(
         default,
-        deserialize_with = "deserialize",
-        serialize_with = "serialize",
+        deserialize_with = "base64::option::deserialize",
+        serialize_with = "base64::option::serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub csr: Option<Vec<u8>>,
@@ -259,9 +255,9 @@ pub struct CertificateProperties {
     /// Thumbprint of the certificate.
     #[serde(
         default,
-        deserialize_with = "deserialize_url_safe",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "x5t",
-        serialize_with = "serialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub x509_thumbprint: Option<Vec<u8>>,
@@ -328,8 +324,8 @@ pub struct DeletedCertificate {
     /// CER contents of x509 certificate.
     #[serde(
         default,
-        deserialize_with = "deserialize",
-        serialize_with = "serialize",
+        deserialize_with = "base64::option::deserialize",
+        serialize_with = "base64::option::serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub cer: Option<Vec<u8>>,
@@ -388,9 +384,9 @@ pub struct DeletedCertificate {
     /// Thumbprint of the certificate.
     #[serde(
         default,
-        deserialize_with = "deserialize_url_safe",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "x5t",
-        serialize_with = "serialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub x509_thumbprint: Option<Vec<u8>>,
@@ -437,9 +433,9 @@ pub struct DeletedCertificateProperties {
     /// Thumbprint of the certificate.
     #[serde(
         default,
-        deserialize_with = "deserialize_url_safe",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "x5t",
-        serialize_with = "serialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub x509_thumbprint: Option<Vec<u8>>,
@@ -718,9 +714,9 @@ pub struct RestoreCertificateParameters {
     /// The backup blob associated with a certificate bundle.
     #[serde(
         default,
-        deserialize_with = "deserialize_url_safe",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "value",
-        serialize_with = "serialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub certificate_backup: Option<Vec<u8>>,

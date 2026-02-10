@@ -23,7 +23,7 @@ use super::{
     SignedIdentifiers, SkuName,
 };
 use azure_core::{
-    base64::decode,
+    base64,
     http::{
         headers::{HeaderName, Headers},
         AsyncResponse, NoFormat, Response, XmlFormat,
@@ -143,7 +143,7 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -171,7 +171,9 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -234,7 +236,7 @@ impl AppendBlobClientAppendBlockResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -262,7 +264,9 @@ impl AppendBlobClientAppendBlockResultHeaders
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -321,7 +325,7 @@ impl AppendBlobClientCreateResultHeaders for Response<AppendBlobClientCreateResu
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -707,7 +711,7 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// Indicates the range of bytes returned in the event that the client requested a subset of the blob by setting the 'Range'
@@ -737,7 +741,9 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
     /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
     /// header, with the latter calculated from the requested range
     fn blob_content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &BLOB_CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &BLOB_CONTENT_MD5, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// If this blob has been sealed
@@ -757,7 +763,9 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// Conclusion time of the last attempted Copy Blob operation where this blob was the destination blob. This value can specify
@@ -1063,7 +1071,7 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -1871,7 +1879,7 @@ impl BlockBlobClientCommitBlockListResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -1888,7 +1896,9 @@ impl BlockBlobClientCommitBlockListResultHeaders
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -1953,12 +1963,14 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -2017,12 +2029,14 @@ impl BlockBlobClientStageBlockResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -2083,7 +2097,7 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -2162,7 +2176,7 @@ impl BlockBlobClientUploadInternalResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -2284,7 +2298,7 @@ impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPages
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -2306,7 +2320,9 @@ impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPages
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 }
 
@@ -2346,7 +2362,7 @@ impl PageBlobClientCreateResultHeaders for Response<PageBlobClientCreateResult, 
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -2522,7 +2538,7 @@ impl PageBlobClientUploadPagesFromUrlResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -2544,7 +2560,9 @@ impl PageBlobClientUploadPagesFromUrlResultHeaders
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -2606,7 +2624,7 @@ impl PageBlobClientUploadPagesResultHeaders
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
@@ -2628,7 +2646,9 @@ impl PageBlobClientUploadPagesResultHeaders
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
-        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| decode(h.as_str()))
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
+        })
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted

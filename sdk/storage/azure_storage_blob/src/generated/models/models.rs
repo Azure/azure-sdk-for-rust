@@ -13,11 +13,7 @@ use super::{
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     RehydratePriority,
 };
-use azure_core::{
-    base64::option::{deserialize, serialize},
-    fmt::SafeDebug,
-    time::OffsetDateTime,
-};
+use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -186,7 +182,7 @@ pub struct BlobItem {
 #[derive(Clone, Default, SafeDebug)]
 #[non_exhaustive]
 pub struct BlobMetadata {
-    /// contains unnamed additional properties
+    /// Contains unnamed additional properties.
     pub additional_properties: Option<HashMap<String, String>>,
 
     /// Whether the blob metadata is encrypted.
@@ -269,9 +265,9 @@ pub struct BlobProperties {
     /// The content MD5 of the blob.
     #[serde(
         default,
-        deserialize_with = "deserialize",
+        deserialize_with = "base64::option::deserialize",
         rename = "Content-MD5",
-        serialize_with = "serialize",
+        serialize_with = "base64::option::serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub content_md5: Option<Vec<u8>>,
@@ -523,9 +519,9 @@ pub struct Block {
     /// The base64 encoded block ID.
     #[serde(
         default,
-        deserialize_with = "deserialize",
+        deserialize_with = "base64::option::deserialize",
         rename = "Name",
-        serialize_with = "serialize",
+        serialize_with = "base64::option::serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub name: Option<Vec<u8>>,
@@ -949,7 +945,7 @@ pub struct Metrics {
 #[derive(Clone, Default, SafeDebug)]
 #[non_exhaustive]
 pub struct ObjectReplicationMetadata {
-    /// contains unnamed additional properties
+    /// Contains unnamed additional properties.
     pub additional_properties: Option<HashMap<String, String>>,
 }
 

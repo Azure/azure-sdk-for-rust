@@ -5,7 +5,6 @@
 
 /// The geo replication status.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum GeoReplicationStatusType {
     /// The geo replication is bootstrap.
     Bootstrap,
@@ -22,7 +21,6 @@ pub enum GeoReplicationStatusType {
 
 /// Include this parameter to specify that the queue's metadata be returned as part of the response body.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ListQueuesIncludeType {
     /// Include metadata
     Metadata,
