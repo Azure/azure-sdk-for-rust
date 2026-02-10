@@ -78,17 +78,164 @@
 //! if no conditions are specified, the rule matches all requests.
 //!
 
-mod fault_http_client;
-mod fault_injection_client_builder;
-mod fault_injection_condition;
-mod fault_injection_result;
-mod fault_injection_rule;
+mod client_builder;
+mod condition;
+mod http_client;
+mod result;
+mod rule;
 
-pub use fault_injection_client_builder::FaultInjectionClientBuilder;
-pub use fault_injection_condition::{
-    FaultInjectionCondition, FaultInjectionConditionBuilder, FaultOperationType,
-};
-pub use fault_injection_result::{
-    FaultInjectionErrorType, FaultInjectionResult, FaultInjectionResultBuilder,
-};
-pub use fault_injection_rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
+use std::fmt;
+use std::str::FromStr;
+
+use crate::operation_context::OperationType;
+use crate::resource_context::ResourceType;
+
+pub use client_builder::FaultInjectionClientBuilder;
+pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
+pub use result::{FaultInjectionResult, FaultInjectionResultBuilder};
+pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
+
+/// Represents different server error types that can be injected for fault testing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FaultInjectionErrorType {
+    /// 500 from server.
+    InternalServerError,
+    /// 429 from server.
+    TooManyRequests,
+    /// 404-1002 from server.
+    ReadSessionNotAvailable,
+    /// 408 from server.
+    Timeout,
+    /// Simulate service unavailable (503).
+    ServiceUnavailable,
+    /// 410-1002 from server.
+    PartitionIsGone,
+    /// 403-3 Forbidden from server.
+    WriteForbidden,
+    /// 403-1008 Forbidden from server.
+    DatabaseAccountNotFound,
+}
+
+/// The type of operation to which the fault injection applies.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FaultOperationType {
+    /// Read items.
+    ReadItem,
+    /// Query items.
+    QueryItem,
+    /// Create item.
+    CreateItem,
+    /// Upsert item.
+    UpsertItem,
+    /// Replace item.
+    ReplaceItem,
+    /// Delete item.
+    DeleteItem,
+    /// Patch item.
+    PatchItem,
+    /// Batch item.
+    BatchItem,
+    /// Read change feed items.
+    ChangeFeedItem,
+    /// Read container request.
+    MetadataReadContainer,
+    /// Read database account request.
+    MetadataReadDatabaseAccount,
+    /// Query query plan request.
+    MetadataQueryPlan,
+    /// Partition key ranges request.
+    MetadataPartitionKeyRanges,
+}
+
+impl FaultOperationType {
+    /// Returns the string representation of this operation type.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            FaultOperationType::ReadItem => "ReadItem",
+            FaultOperationType::QueryItem => "QueryItem",
+            FaultOperationType::CreateItem => "CreateItem",
+            FaultOperationType::UpsertItem => "UpsertItem",
+            FaultOperationType::ReplaceItem => "ReplaceItem",
+            FaultOperationType::DeleteItem => "DeleteItem",
+            FaultOperationType::PatchItem => "PatchItem",
+            FaultOperationType::BatchItem => "BatchItem",
+            FaultOperationType::ChangeFeedItem => "ChangeFeedItem",
+            FaultOperationType::MetadataReadContainer => "MetadataReadContainer",
+            FaultOperationType::MetadataReadDatabaseAccount => "MetadataReadDatabaseAccount",
+            FaultOperationType::MetadataQueryPlan => "MetadataQueryPlan",
+            FaultOperationType::MetadataPartitionKeyRanges => "MetadataPartitionKeyRanges",
+        }
+    }
+
+    /// Converts an operation type and resource type pair into a fault injection operation type.
+    ///
+    /// Returns `None` if the combination does not map to a known fault operation type.
+    pub fn from_operation_and_resource(
+        operation_type: &OperationType,
+        resource_type: &ResourceType,
+    ) -> Option<Self> {
+        match (operation_type, resource_type) {
+            (OperationType::Read, ResourceType::Documents) => Some(FaultOperationType::ReadItem),
+            (OperationType::Query, ResourceType::Documents) => Some(FaultOperationType::QueryItem),
+            (OperationType::Create, ResourceType::Documents) => {
+                Some(FaultOperationType::CreateItem)
+            }
+            (OperationType::Upsert, ResourceType::Documents) => {
+                Some(FaultOperationType::UpsertItem)
+            }
+            (OperationType::Replace, ResourceType::Documents) => {
+                Some(FaultOperationType::ReplaceItem)
+            }
+            (OperationType::Delete, ResourceType::Documents) => {
+                Some(FaultOperationType::DeleteItem)
+            }
+            (OperationType::Patch, ResourceType::Documents) => Some(FaultOperationType::PatchItem),
+            (OperationType::Batch, ResourceType::Documents) => Some(FaultOperationType::BatchItem),
+            (OperationType::ReadFeed, ResourceType::Documents) => {
+                Some(FaultOperationType::ChangeFeedItem)
+            }
+            (OperationType::Read, ResourceType::Containers) => {
+                Some(FaultOperationType::MetadataReadContainer)
+            }
+            (OperationType::Read, ResourceType::DatabaseAccount) => {
+                Some(FaultOperationType::MetadataReadDatabaseAccount)
+            }
+            (OperationType::QueryPlan, ResourceType::Documents) => {
+                Some(FaultOperationType::MetadataQueryPlan)
+            }
+            (OperationType::ReadFeed, ResourceType::PartitionKeyRanges) => {
+                Some(FaultOperationType::MetadataPartitionKeyRanges)
+            }
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for FaultOperationType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for FaultOperationType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "ReadItem" => Ok(FaultOperationType::ReadItem),
+            "QueryItem" => Ok(FaultOperationType::QueryItem),
+            "CreateItem" => Ok(FaultOperationType::CreateItem),
+            "UpsertItem" => Ok(FaultOperationType::UpsertItem),
+            "ReplaceItem" => Ok(FaultOperationType::ReplaceItem),
+            "DeleteItem" => Ok(FaultOperationType::DeleteItem),
+            "PatchItem" => Ok(FaultOperationType::PatchItem),
+            "BatchItem" => Ok(FaultOperationType::BatchItem),
+            "ChangeFeedItem" => Ok(FaultOperationType::ChangeFeedItem),
+            "MetadataReadContainer" => Ok(FaultOperationType::MetadataReadContainer),
+            "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
+            "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
+            "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
+            _ => Err(format!("unknown FaultOperationType: {}", s)),
+        }
+    }
+}

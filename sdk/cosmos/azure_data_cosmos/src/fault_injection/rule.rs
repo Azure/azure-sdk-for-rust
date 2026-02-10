@@ -6,8 +6,8 @@
 use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
-use super::fault_injection_condition::FaultInjectionCondition;
-use super::fault_injection_result::FaultInjectionResult;
+use super::condition::FaultInjectionCondition;
+use super::result::FaultInjectionResult;
 
 /// A fault injection rule that defines when and how to inject faults.
 #[derive(Debug)]

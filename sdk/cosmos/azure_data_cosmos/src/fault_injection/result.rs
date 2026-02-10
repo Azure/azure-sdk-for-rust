@@ -5,26 +5,7 @@
 
 use std::time::Duration;
 
-/// Represents different server error types that can be injected for fault testing.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FaultInjectionErrorType {
-    /// 500 from server.
-    InternalServerError,
-    /// 429 from server.
-    TooManyRequests,
-    /// 404-1002 from server.
-    ReadSessionNotAvailable,
-    /// 408 from server.
-    Timeout,
-    /// Simulate service unavailable (503).
-    ServiceUnavailable,
-    /// 410-1002 from server.
-    PartitionIsGone,
-    /// 403-3 Forbidden from server.
-    WriteForbidden,
-    /// 403-1008 Forbidden from server.
-    DatabaseAccountNotFound,
-}
+use super::FaultInjectionErrorType;
 
 /// Represents a server error to be injected.
 #[derive(Clone, Debug)]
@@ -108,7 +89,8 @@ impl Default for FaultInjectionResultBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{FaultInjectionErrorType, FaultInjectionResultBuilder};
+    use super::FaultInjectionResultBuilder;
+    use crate::fault_injection::FaultInjectionErrorType;
     use std::time::Duration;
 
     #[test]

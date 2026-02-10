@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::fault_injection_condition::FaultOperationType;
-use super::fault_injection_result::{FaultInjectionErrorType, FaultInjectionResult};
-use super::fault_injection_rule::FaultInjectionRule;
+use super::result::FaultInjectionResult;
+use super::rule::FaultInjectionRule;
+use super::FaultInjectionErrorType;
+use super::FaultOperationType;
 use crate::constants::{self, SubStatusCode};
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;

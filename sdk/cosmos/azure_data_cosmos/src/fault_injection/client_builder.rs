@@ -9,8 +9,8 @@ use azure_core::http::Transport;
 
 use crate::options::CosmosClientOptions;
 
-use super::fault_http_client::FaultClient;
-use super::fault_injection_rule::FaultInjectionRule;
+use super::http_client::FaultClient;
+use super::rule::FaultInjectionRule;
 
 /// Builder for creating a fault injection client.
 pub struct FaultInjectionClientBuilder {
