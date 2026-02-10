@@ -28,7 +28,7 @@
 //! };
 //!
 //! let batch = TransactionalBatch::new("category1")
-//!     .create_item(product1)?;
+//!     .create_item(product1, None)?;
 //!
 //! let response = container_client.execute_transactional_batch(batch, None).await?;
 //! # Ok(())
@@ -39,6 +39,36 @@ use crate::{models::PatchDocument, PartitionKey};
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+
+/// Options for conditional batch operations using ETags.
+///
+/// ETags can be used for optimistic concurrency control:
+/// - `if_match`: Only perform the operation if the item's current ETag matches this value.
+/// - `if_none_match`: Only perform the operation if the item's current ETag does not match this value.
+///   Use `"*"` to only create if the item doesn't exist.
+#[derive(Clone, Debug, Default)]
+pub struct BatchOperationOptions {
+    /// Only perform the operation if the item's ETag matches this value.
+    pub if_match: Option<String>,
+    /// Only perform the operation if the item's ETag does not match this value.
+    /// Use `"*"` to only succeed if the item doesn't exist.
+    pub if_none_match: Option<String>,
+}
+
+/// Options for batch patch operations.
+///
+/// Extends [`BatchOperationOptions`] with a filter predicate for conditional patching.
+#[derive(Clone, Debug, Default)]
+pub struct BatchPatchOperationOptions {
+    /// Only perform the operation if the item's ETag matches this value.
+    pub if_match: Option<String>,
+    /// Only perform the operation if the item's ETag does not match this value.
+    pub if_none_match: Option<String>,
+    /// A SQL-like filter predicate that must be satisfied for the patch operation to be applied.
+    ///
+    /// For example: `"from c where c.status = 'active'"`
+    pub filter_predicate: Option<String>,
+}
 
 /// Represents a transactional batch of operations to be executed atomically.
 ///
@@ -85,6 +115,7 @@ impl TransactionalBatch {
     ///
     /// # Arguments
     /// * `item` - The item to create. Must implement [`Serialize`].
+    /// * `options` - Optional conditional options for the operation.
     ///
     /// # Examples
     ///
@@ -105,17 +136,22 @@ impl TransactionalBatch {
     /// };
     ///
     /// let batch = TransactionalBatch::new("partition1")
-    ///     .create_item(product)?;
+    ///     .create_item(product, None)?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item<T: Serialize>(mut self, item: T) -> Result<Self, serde_json::Error> {
+    pub fn create_item<T: Serialize>(
+        mut self,
+        item: T,
+        options: Option<BatchOperationOptions>,
+    ) -> Result<Self, serde_json::Error> {
+        let options = options.unwrap_or_default();
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Create {
             resource_body,
             id: None,
-            if_match: None,
-            if_none_match: None,
+            if_match: options.if_match,
+            if_none_match: options.if_none_match,
         });
         Ok(self)
     }
@@ -124,13 +160,19 @@ impl TransactionalBatch {
     ///
     /// # Arguments
     /// * `item` - The item to upsert. Must implement [`Serialize`].
-    pub fn upsert_item<T: Serialize>(mut self, item: T) -> Result<Self, serde_json::Error> {
+    /// * `options` - Optional conditional options for the operation.
+    pub fn upsert_item<T: Serialize>(
+        mut self,
+        item: T,
+        options: Option<BatchOperationOptions>,
+    ) -> Result<Self, serde_json::Error> {
+        let options = options.unwrap_or_default();
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Upsert {
             resource_body,
             id: None,
-            if_match: None,
-            if_none_match: None,
+            if_match: options.if_match,
+            if_none_match: options.if_none_match,
         });
         Ok(self)
     }
@@ -140,17 +182,20 @@ impl TransactionalBatch {
     /// # Arguments
     /// * `item_id` - The id of the item to replace.
     /// * `item` - The new item data. Must implement [`Serialize`].
+    /// * `options` - Optional conditional options for the operation (e.g., `if_match` for optimistic concurrency).
     pub fn replace_item<T: Serialize>(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
         item: T,
+        options: Option<BatchOperationOptions>,
     ) -> Result<Self, serde_json::Error> {
+        let options = options.unwrap_or_default();
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Replace {
             id: item_id.into(),
             resource_body,
-            if_match: None,
-            if_none_match: None,
+            if_match: options.if_match,
+            if_none_match: options.if_none_match,
         });
         Ok(self)
     }
@@ -159,11 +204,17 @@ impl TransactionalBatch {
     ///
     /// # Arguments
     /// * `item_id` - The id of the item to read.
-    pub fn read_item(mut self, item_id: impl Into<Cow<'static, str>>) -> Self {
+    /// * `options` - Optional conditional options for the operation.
+    pub fn read_item(
+        mut self,
+        item_id: impl Into<Cow<'static, str>>,
+        options: Option<BatchOperationOptions>,
+    ) -> Self {
+        let options = options.unwrap_or_default();
         self.operations.push(TransactionalBatchOperation::Read {
             id: item_id.into(),
-            if_match: None,
-            if_none_match: None,
+            if_match: options.if_match,
+            if_none_match: options.if_none_match,
         });
         self
     }
@@ -172,11 +223,17 @@ impl TransactionalBatch {
     ///
     /// # Arguments
     /// * `item_id` - The id of the item to delete.
-    pub fn delete_item(mut self, item_id: impl Into<Cow<'static, str>>) -> Self {
+    /// * `options` - Optional conditional options for the operation (e.g., `if_match` to only delete if ETag matches).
+    pub fn delete_item(
+        mut self,
+        item_id: impl Into<Cow<'static, str>>,
+        options: Option<BatchOperationOptions>,
+    ) -> Self {
+        let options = options.unwrap_or_default();
         self.operations.push(TransactionalBatchOperation::Delete {
             id: item_id.into(),
-            if_match: None,
-            if_none_match: None,
+            if_match: options.if_match,
+            if_none_match: options.if_none_match,
         });
         self
     }
@@ -186,16 +243,20 @@ impl TransactionalBatch {
     /// # Arguments
     /// * `item_id` - The id of the item to patch.
     /// * `patch` - The patch document to apply.
+    /// * `options` - Optional conditional options for the operation (e.g., `if_match` for optimistic concurrency, `filter_predicate` for conditional patching).
     pub fn patch_item(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
         patch: PatchDocument,
+        options: Option<BatchPatchOperationOptions>,
     ) -> Self {
+        let options = options.unwrap_or_default();
         self.operations.push(TransactionalBatchOperation::Patch {
             id: item_id.into(),
             resource_body: patch,
-            if_match: None,
-            if_none_match: None,
+            if_match: options.if_match,
+            if_none_match: options.if_none_match,
+            filter_predicate: options.filter_predicate,
         });
         self
     }
@@ -299,6 +360,9 @@ pub(crate) enum TransactionalBatchOperation {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(rename = "ifNoneMatch")]
         if_none_match: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "filterPredicate")]
+        filter_predicate: Option<String>,
     },
 }
 
@@ -406,7 +470,7 @@ mod tests {
             value: 42,
         };
 
-        let batch = TransactionalBatch::new("test_partition").create_item(item)?;
+        let batch = TransactionalBatch::new("test_partition").create_item(item, None)?;
 
         assert_eq!(batch.operations().len(), 1);
         Ok(())
@@ -424,10 +488,10 @@ mod tests {
         };
 
         let batch = TransactionalBatch::new("test_partition")
-            .create_item(item1)?
-            .upsert_item(item2)?
-            .read_item("item3")
-            .delete_item("item4");
+            .create_item(item1, None)?
+            .upsert_item(item2, None)?
+            .read_item("item3", None)
+            .delete_item("item4", None);
 
         assert_eq!(batch.operations().len(), 4);
         Ok(())
@@ -441,9 +505,9 @@ mod tests {
         };
 
         let batch = TransactionalBatch::new("test_partition")
-            .create_item(item)?
-            .read_item("item2")
-            .delete_item("item3");
+            .create_item(item, None)?
+            .read_item("item2", None)
+            .delete_item("item3", None);
 
         let operations = batch.operations();
         let serialized = serde_json::to_string(operations)?;
@@ -464,9 +528,9 @@ mod tests {
         };
 
         let batch = TransactionalBatch::new("test_partition")
-            .create_item(&item)?
-            .read_item("item2")
-            .replace_item("item3", &item)?;
+            .create_item(&item, None)?
+            .read_item("item2", None)
+            .replace_item("item3", &item, None)?;
 
         let operations = batch.operations();
         let serialized = serde_json::to_string_pretty(operations)?;
@@ -478,6 +542,117 @@ mod tests {
         assert!(serialized.contains("\"resourceBody\""));
         assert!(serialized.contains("\"id\": \"item2\""));
         assert!(serialized.contains("\"id\": \"item3\""));
+
+        Ok(())
+    }
+
+    #[test]
+    fn operations_with_if_match_option() -> Result<(), Box<dyn std::error::Error>> {
+        let item = TestItem {
+            id: "item1".to_string(),
+            value: 42,
+        };
+
+        let options = BatchOperationOptions {
+            if_match: Some("etag-value-123".to_string()),
+            if_none_match: None,
+        };
+
+        let batch = TransactionalBatch::new("test_partition").replace_item(
+            "item1",
+            &item,
+            Some(options),
+        )?;
+
+        let operations = batch.operations();
+        let serialized = serde_json::to_string_pretty(operations)?;
+
+        assert!(serialized.contains("\"ifMatch\": \"etag-value-123\""));
+        assert!(!serialized.contains("\"ifNoneMatch\""));
+
+        Ok(())
+    }
+
+    #[test]
+    fn operations_with_if_none_match_option() -> Result<(), Box<dyn std::error::Error>> {
+        let item = TestItem {
+            id: "item1".to_string(),
+            value: 42,
+        };
+
+        let options = BatchOperationOptions {
+            if_match: None,
+            if_none_match: Some("*".to_string()),
+        };
+
+        let batch = TransactionalBatch::new("test_partition").create_item(&item, Some(options))?;
+
+        let operations = batch.operations();
+        let serialized = serde_json::to_string_pretty(operations)?;
+
+        assert!(serialized.contains("\"ifNoneMatch\": \"*\""));
+        assert!(!serialized.contains("\"ifMatch\""));
+
+        Ok(())
+    }
+
+    #[test]
+    fn all_operations_with_options() -> Result<(), Box<dyn std::error::Error>> {
+        let item = TestItem {
+            id: "item1".to_string(),
+            value: 42,
+        };
+
+        let etag = "some-etag".to_string();
+        let options = || BatchOperationOptions {
+            if_match: Some(etag.clone()),
+            if_none_match: None,
+        };
+        let patch_options = || BatchPatchOperationOptions {
+            if_match: Some(etag.clone()),
+            if_none_match: None,
+            filter_predicate: None,
+        };
+
+        let patch = PatchDocument::default();
+
+        let batch = TransactionalBatch::new("test_partition")
+            .create_item(&item, Some(options()))?
+            .upsert_item(&item, Some(options()))?
+            .replace_item("id1", &item, Some(options()))?
+            .read_item("id2", Some(options()))
+            .delete_item("id3", Some(options()))
+            .patch_item("id4", patch, Some(patch_options()));
+
+        assert_eq!(batch.operations().len(), 6);
+
+        let serialized = serde_json::to_string(batch.operations())?;
+        // All operations should have ifMatch set
+        assert_eq!(serialized.matches("\"ifMatch\"").count(), 6);
+
+        Ok(())
+    }
+
+    #[test]
+    fn patch_with_filter_predicate() -> Result<(), Box<dyn std::error::Error>> {
+        let patch = PatchDocument::default();
+
+        let options = BatchPatchOperationOptions {
+            if_match: Some("etag-123".to_string()),
+            if_none_match: None,
+            filter_predicate: Some("from c where c.status = 'active'".to_string()),
+        };
+
+        let batch =
+            TransactionalBatch::new("test_partition").patch_item("item1", patch, Some(options));
+
+        let operations = batch.operations();
+        let serialized = serde_json::to_string_pretty(operations)?;
+
+        assert!(serialized.contains("\"operationType\": \"Patch\""));
+        assert!(serialized.contains("\"ifMatch\": \"etag-123\""));
+        assert!(serialized.contains("\"filterPredicate\": \"from c where c.status = 'active'\""));
+        assert!(!serialized.contains("\"ifNoneMatch\""));
 
         Ok(())
     }

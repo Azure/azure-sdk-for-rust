@@ -27,7 +27,8 @@ pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
 pub use transactional_batch::{
-    TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
+    BatchOperationOptions, BatchPatchOperationOptions, TransactionalBatch,
+    TransactionalBatchOperationResult, TransactionalBatchResponse,
 };
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
