@@ -254,7 +254,7 @@ impl BlobServiceClient {
     #[tracing::function("Storage.Blob.Service.listContainers")]
     pub fn list_containers(
         &self,
-        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
+        options: Option<BlobServiceClientListContainersOptions<'_>>,
     ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();

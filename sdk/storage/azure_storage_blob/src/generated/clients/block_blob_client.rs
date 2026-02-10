@@ -825,7 +825,7 @@ impl BlockBlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", encode(transactional_content_md5));
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
         if let Some(if_match) = options.if_match.as_ref() {
@@ -856,14 +856,17 @@ impl BlockBlobClient {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
         if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
+            request.insert_header("x-ms-blob-content-md5", base64::encode(blob_content_md5));
         }
         if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
         request.insert_header("x-ms-blob-type", "BlockBlob");
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
+            request.insert_header(
+                "x-ms-content-crc64",
+                base64::encode(transactional_content_crc64),
+            );
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
