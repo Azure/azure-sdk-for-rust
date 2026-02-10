@@ -25,10 +25,6 @@ use crate::constants;
 /// container_client.query_items::<serde_json::Value> (
 ///     "SELECT * FROM c",
 ///     String::from("An owned partition key"),
-///     None).unwrap();  
-/// container_client.query_items::<serde_json::Value> (
-///     "SELECT * FROM c",
-///     (), // Using () to signal Cross-Partition query
 ///     None).unwrap();
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
