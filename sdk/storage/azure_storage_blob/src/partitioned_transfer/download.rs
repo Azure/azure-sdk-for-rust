@@ -49,7 +49,7 @@ where
 
     let initial_response = client
         .transfer_range(Some(
-            range.start..min(range.end, range.start + partition_size),
+            range.start..min(range.end, range.start.saturating_add(partition_size)),
         ))
         .await;
     let initial_response = match initial_response {
