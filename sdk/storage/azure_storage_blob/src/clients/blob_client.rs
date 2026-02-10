@@ -338,9 +338,9 @@ impl<'a> BlobClientDownloadBehavior<'a> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
-    async fn transfer_range(&self, range: Range<u64>) -> Result<AsyncRawResponse> {
+    async fn transfer_range(&self, range: Option<Range<u64>>) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
-        opt.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
+        opt.range = range.map(|r| format!("bytes={}-{}", r.start, r.end - 1));
         self.client
             .download(Some(opt))
             .await
