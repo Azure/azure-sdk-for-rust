@@ -16,7 +16,7 @@ use super::fault_injection_rule::FaultInjectionRule;
 pub struct FaultInjectionClientBuilder {
     /// The fault injection rules to apply.
     /// First valid rule will be applied.
-    rules: Vec<FaultInjectionRule>,
+    rules: Vec<Arc<FaultInjectionRule>>,
 }
 
 impl FaultInjectionClientBuilder {
@@ -29,12 +29,12 @@ impl FaultInjectionClientBuilder {
     /// Called after building the fault conditions.
     ///
     /// This wraps the existing transport (or creates a default one) with the fault injection client.
-    pub fn inject(&self, mut options: CosmosClientOptions) -> CosmosClientOptions {
+    pub fn inject(self, mut options: CosmosClientOptions) -> CosmosClientOptions {
         // Create a default http client
         let inner_client: Arc<dyn azure_core::http::HttpClient> =
             azure_core::http::new_http_client();
 
-        let fault_client = FaultClient::new(inner_client, self.rules.clone());
+        let fault_client = FaultClient::new(inner_client, self.rules);
         options.client_options.transport = Some(Transport::new(Arc::new(fault_client)));
         options.fault_injection_enabled = true;
 
@@ -42,7 +42,11 @@ impl FaultInjectionClientBuilder {
     }
 
     /// Adds a fault injection rule to the builder.
-    pub fn with_rule(&mut self, rule: FaultInjectionRule) -> &mut Self {
+    ///
+    /// The rule is wrapped in an [`Arc`] so it can be shared with the caller,
+    /// allowing runtime changes such as [`FaultInjectionRule::enable`] and
+    /// [`FaultInjectionRule::disable`].
+    pub fn with_rule(mut self, rule: Arc<FaultInjectionRule>) -> Self {
         self.rules.push(rule);
         self
     }

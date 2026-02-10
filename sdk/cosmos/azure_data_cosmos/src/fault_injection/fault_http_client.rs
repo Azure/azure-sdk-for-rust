@@ -29,7 +29,7 @@ pub struct FaultClient {
 #[derive(Debug)]
 struct RuleState {
     /// The fault injection rule.
-    rule: FaultInjectionRule,
+    rule: Arc<FaultInjectionRule>,
     /// Number of times this rule has been applied.
     hit_count: AtomicU32,
     /// The time when this rule was first activated (after start_delay).
@@ -38,7 +38,7 @@ struct RuleState {
 
 impl FaultClient {
     /// Creates a new instance of the FaultClient.
-    pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<FaultInjectionRule>) -> Self {
+    pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
         let rule_states = rules
             .into_iter()
             .map(|rule| RuleState {
@@ -60,8 +60,13 @@ impl FaultClient {
         let elapsed = self.created_at.elapsed();
         let rule = &rule_state.rule;
 
+        // Check if the rule is enabled
+        if !rule.is_enabled() {
+            return false;
+        }
+
         // Check if we've passed the start delay
-        if elapsed < rule.start_delay {
+        if elapsed < rule.start_delay() {
             return false;
         }
 
@@ -72,21 +77,14 @@ impl FaultClient {
 
         // Check if the rule has exceeded its duration
         if let Some(activated_at) = rule_state.activated_at {
-            if activated_at.elapsed() > rule.duration {
+            if activated_at.elapsed() > rule.duration() {
                 return false;
             }
         }
 
         // Check if we've exceeded the hit limit on the rule
-        if let Some(hit_limit) = rule.hit_limit {
+        if let Some(hit_limit) = rule.hit_limit() {
             if rule_state.hit_count.load(Ordering::SeqCst) >= hit_limit {
-                return false;
-            }
-        }
-
-        // Check if we've exceeded the times limit on the result
-        if let Some(times) = rule.result.times {
-            if rule_state.hit_count.load(Ordering::SeqCst) >= times {
                 return false;
             }
         }
@@ -96,18 +94,18 @@ impl FaultClient {
 
     /// Checks if the request matches the rule's condition.
     fn matches_condition(&self, request: &Request, rule: &FaultInjectionRule) -> bool {
-        let condition = &rule.condition;
+        let condition = rule.condition();
         let mut matches = true;
 
         // Check operation type if specified
-        if let Some(ref expected_op) = condition.operation_type {
+        if let Some(expected_op) = condition.operation_type() {
             let request_op = request
                 .headers()
                 .get_optional_str(&constants::FAULT_INJECTION_OPERATION)
-                .and_then(FaultOperationType::parse);
+                .and_then(|s| s.parse::<FaultOperationType>().ok());
 
             match request_op {
-                Some(op) if op == *expected_op => {
+                Some(op) if op == expected_op => {
                     // Operation type matches, continue checking other conditions
                 }
                 _ => {
@@ -118,15 +116,14 @@ impl FaultClient {
         }
 
         // Check region if specified
-        if let Some(ref region) = condition.region {
+        if let Some(region) = condition.region() {
             if !request.url().as_str().contains(region.as_str()) {
                 matches = false;
             }
         }
 
         // Check container ID if specified
-        // in the future
-        if let Some(ref container_id) = condition.container_id {
+        if let Some(container_id) = condition.container_id() {
             if !request.url().as_str().contains(container_id) {
                 matches = false;
             }
@@ -138,26 +135,26 @@ impl FaultClient {
     /// Applies the fault injection result and returns an error or modifies the response.
     async fn apply_fault(
         &self,
-        server_error: FaultInjectionResult,
+        server_error: &FaultInjectionResult,
     ) -> Option<azure_core::Result<AsyncRawResponse>> {
         // Check probability
-        if server_error.probability < 1.0 {
+        if server_error.probability() < 1.0 {
             // Use a simple time-based pseudo-random check
             let nanos = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
                 .subsec_nanos();
             let random = (nanos % 1000) as f32 / 1000.0;
-            if !server_error.probability.is_finite()
-                || server_error.probability <= 0.0
-                || random >= server_error.probability
+            if !server_error.probability().is_finite()
+                || server_error.probability() <= 0.0
+                || random >= server_error.probability()
             {
                 return None; // Don't inject fault this time
             }
         }
 
         // Generate the appropriate error based on error type
-        let error_type = match server_error.error_type {
+        let error_type = match server_error.error_type() {
             Some(et) => et,
             None => return None, // No error type set, pass through
         };
@@ -246,8 +243,8 @@ impl HttpClient for FaultClient {
                 let rule_state = &mut rules[index];
                 // Increment hit count
                 rule_state.hit_count.fetch_add(1, Ordering::SeqCst);
-                // Clone and return the result (dereference the Box)
-                Some((*rule_state.rule.result).clone())
+                // Clone and return the result
+                Some(rule_state.rule.result().clone())
             } else {
                 None
             }
@@ -255,7 +252,7 @@ impl HttpClient for FaultClient {
 
         // Apply the fault outside the lock
         let fault_response = if let Some(ref result) = fault_result {
-            self.apply_fault(result.clone()).await
+            self.apply_fault(result).await
         } else {
             None
         };
@@ -275,8 +272,8 @@ impl HttpClient for FaultClient {
 
         // Apply delay after the request is sent
         if let Some(result) = fault_result {
-            if result.delay > Duration::ZERO {
-                let delay = azure_core::time::Duration::try_from(result.delay)
+            if result.delay() > Duration::ZERO {
+                let delay = azure_core::time::Duration::try_from(result.delay())
                     .unwrap_or(azure_core::time::Duration::ZERO);
                 azure_core::async_runtime::get_async_runtime()
                     .sleep(delay)
@@ -360,7 +357,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request without operation type header shouldn't match
         let request = create_test_request();
@@ -393,7 +390,7 @@ mod tests {
             .with_hit_limit(2)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // First two requests should hit the fault
@@ -420,7 +417,7 @@ mod tests {
             .with_start_delay(Duration::from_secs(60)) // Long delay
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // Request should pass through because start delay hasn't elapsed
@@ -438,7 +435,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("error-rule", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -463,7 +460,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -487,7 +484,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // Delay-only should pass through to actual request after delay
@@ -520,7 +517,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "westus", should pass through
         let request = create_test_request();
@@ -544,7 +541,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "my-container", should pass through
         let request = create_test_request();
@@ -555,17 +552,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn execute_request_with_times_limit_on_result() {
+    async fn execute_request_with_hit_limit_on_rule() {
         let mock_client = Arc::new(MockHttpClient::new());
 
-        // Create a rule where the error is injected only 2 times via with_times on result
+        // Create a rule where the error is injected only 2 times via hit_limit on rule
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
-            .with_times(2)
             .build();
-        let rule = FaultInjectionRuleBuilder::new("times-limited-rule", error).build();
+        let rule = FaultInjectionRuleBuilder::new("hit-limited-rule", error)
+            .with_hit_limit(2)
+            .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![rule]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // First request should hit the fault
@@ -626,7 +624,7 @@ mod tests {
                 .build();
             let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
 
-            let fault_client = FaultClient::new(mock_client, vec![rule]);
+            let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
             let request = create_test_request();
 
             let result = fault_client.execute_request(&request).await;

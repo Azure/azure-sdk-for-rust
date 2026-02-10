@@ -30,22 +30,33 @@ pub enum FaultInjectionErrorType {
 #[derive(Clone, Debug)]
 pub struct FaultInjectionResult {
     /// The type of server error to inject.
-    pub(crate) error_type: Option<FaultInjectionErrorType>,
-    /// Number of times to inject the error.
-    /// Default is that it will be injected forever.
-    pub(crate) times: Option<u32>,
+    error_type: Option<FaultInjectionErrorType>,
     /// Delay before injecting the error.
-    /// default is no delay.
-    pub(crate) delay: Duration,
+    delay: Duration,
     /// Probability of injecting the error (0.0 to 1.0).
-    /// Default is 1.0 (always inject).
-    pub(crate) probability: f32,
+    probability: f32,
+}
+
+impl FaultInjectionResult {
+    /// Returns the error type to inject, if set.
+    pub fn error_type(&self) -> Option<FaultInjectionErrorType> {
+        self.error_type
+    }
+
+    /// Returns the delay applied after the fault response.
+    pub fn delay(&self) -> Duration {
+        self.delay
+    }
+
+    /// Returns the probability of injecting the fault (0.0 to 1.0).
+    pub fn probability(&self) -> f32 {
+        self.probability
+    }
 }
 
 /// Builder for creating a FaultInjectionResult.
 pub struct FaultInjectionResultBuilder {
     error_type: Option<FaultInjectionErrorType>,
-    times: Option<u32>,
     delay: Duration,
     probability: f32,
 }
@@ -55,7 +66,6 @@ impl FaultInjectionResultBuilder {
     pub fn new() -> Self {
         Self {
             error_type: None,
-            times: None,
             delay: Duration::ZERO,
             probability: 1.0,
         }
@@ -64,12 +74,6 @@ impl FaultInjectionResultBuilder {
     /// Sets the error type to inject.
     pub fn with_error(mut self, error_type: FaultInjectionErrorType) -> Self {
         self.error_type = Some(error_type);
-        self
-    }
-
-    /// Sets the number of times to inject the error.
-    pub fn with_times(mut self, times: u32) -> Self {
-        self.times = Some(times);
         self
     }
 
@@ -90,7 +94,6 @@ impl FaultInjectionResultBuilder {
     pub fn build(self) -> FaultInjectionResult {
         FaultInjectionResult {
             error_type: self.error_type,
-            times: self.times,
             delay: self.delay,
             probability: self.probability,
         }
@@ -114,10 +117,12 @@ mod tests {
             .with_error(FaultInjectionErrorType::Timeout)
             .build();
 
-        assert_eq!(error.error_type.unwrap(), FaultInjectionErrorType::Timeout);
-        assert!(error.times.is_none());
-        assert_eq!(error.delay, Duration::ZERO);
-        assert!((error.probability - 1.0).abs() < f32::EPSILON);
+        assert_eq!(
+            error.error_type().unwrap(),
+            FaultInjectionErrorType::Timeout
+        );
+        assert_eq!(error.delay(), Duration::ZERO);
+        assert!((error.probability() - 1.0).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -127,7 +132,7 @@ mod tests {
             .with_probability(1.5)
             .build();
 
-        assert!((error.probability - 1.0).abs() < f32::EPSILON);
+        assert!((error.probability() - 1.0).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -137,24 +142,6 @@ mod tests {
             .with_probability(-0.5)
             .build();
 
-        assert!(error.probability.abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn builder_chained() {
-        let error = FaultInjectionResultBuilder::new()
-            .with_error(FaultInjectionErrorType::PartitionIsGone)
-            .with_times(3)
-            .with_delay(Duration::from_millis(100))
-            .with_probability(0.8)
-            .build();
-
-        assert_eq!(
-            error.error_type.unwrap(),
-            FaultInjectionErrorType::PartitionIsGone
-        );
-        assert_eq!(error.times, Some(3));
-        assert_eq!(error.delay, Duration::from_millis(100));
-        assert!((error.probability - 0.8).abs() < f32::EPSILON);
+        assert!(error.probability().abs() < f32::EPSILON);
     }
 }

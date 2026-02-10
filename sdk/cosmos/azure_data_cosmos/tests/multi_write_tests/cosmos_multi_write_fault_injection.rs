@@ -16,6 +16,7 @@ use framework::{
     get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::{borrow::Cow, error::Error};
 use uuid::Uuid;
 
@@ -33,132 +34,132 @@ struct TestItem {
     bool_value: bool,
 }
 
-/// Test that verifies fault injection with various server error types.
-/// Each test case creates a fault injection rule that returns the specified error
-/// and verifies that the read operation fails with the expected HTTP status code.
-///
-/// This test uses two clients:
-/// - A normal client for creating items
-/// - A fault injection client for reading items (which will fail with the injected error)
-#[tokio::test]
-pub async fn item_read_with_fault_injection_all_fail() -> Result<(), Box<dyn Error>> {
-    let test_cases = vec![
-        (
-            "503 Service Unavailable",
-            FaultInjectionErrorType::ServiceUnavailable,
-            StatusCode::ServiceUnavailable,
-        ),
-        (
-            "500 Internal Server Error",
-            FaultInjectionErrorType::InternalServerError,
-            StatusCode::InternalServerError,
-        ),
-        (
-            "429 Too Many Requests",
-            FaultInjectionErrorType::TooManyRequests,
-            StatusCode::TooManyRequests,
-        ),
-        (
-            "408 Request Timeout",
-            FaultInjectionErrorType::Timeout,
-            StatusCode::RequestTimeout,
-        ),
-        (
-            "410 Partition Is Gone",
-            FaultInjectionErrorType::PartitionIsGone,
-            StatusCode::Gone,
-        ),
-    ];
+/// Shared implementation for fault injection read failure tests.
+/// Creates a fault injection rule that returns the specified error and verifies
+/// that the read operation fails with the expected HTTP status code.
+async fn verify_read_fails_with_injected_error(
+    error_type: FaultInjectionErrorType,
+    expected_status: StatusCode,
+) -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(error_type)
+        .build();
 
-    for (name, error_type, expected_status) in test_cases {
-        println!("Testing fault injection: {}", name);
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
 
-        // Create a fault injection rule that always returns the specified error
-        let server_error = FaultInjectionResultBuilder::new()
-            .with_error(error_type)
-            .build();
+    let rule = FaultInjectionRuleBuilder::new(&format!("{:?}-always", error_type), server_error)
+        .with_condition(condition)
+        .build();
 
-        let condition = FaultInjectionConditionBuilder::new()
-            .with_operation_type(FaultOperationType::ReadItem)
-            .build();
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
-        let rule = FaultInjectionRuleBuilder::new(&format!("{:?}-always", name), server_error)
-            .with_condition(condition)
-            .build();
-
-        let mut fault_builder = FaultInjectionClientBuilder::new();
-        fault_builder.with_rule(rule);
-
-        // Inject the fault into client options for the fault client
-        let fault_options = fault_builder.inject(CosmosClientOptions::default());
-
-        TestClient::run_with_unique_db(
-            async |run_context, db_client| {
-                let container_id = format!("Container-{}", Uuid::new_v4());
-                let container_client = run_context
-                    .create_container_with_throughput(
-                        db_client,
-                        ContainerProperties {
-                            id: container_id.clone().into(),
-                            partition_key: "/partition_key".into(),
-                            ..Default::default()
-                        },
-                        ThroughputProperties::manual(400),
-                    )
-                    .await?;
-
-                let unique_id = Uuid::new_v4().to_string();
-
-                // Create an item using the normal client (this should succeed)
-                let item = TestItem {
-                    id: format!("Item1-{}", unique_id).into(),
-                    partition_key: Some(format!("Partition1-{}", unique_id).into()),
-                    value: 42,
-                    nested: NestedItem {
-                        nested_value: "Nested".into(),
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
                     },
-                    bool_value: true,
-                };
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
 
-                let pk = format!("Partition1-{}", unique_id);
-                let item_id = format!("Item1-{}", unique_id);
+            let unique_id = Uuid::new_v4().to_string();
 
-                container_client.create_item(&pk, &item, None).await?;
+            let item = TestItem {
+                id: format!("Item1-{}", unique_id).into(),
+                partition_key: Some(format!("Partition1-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
 
-                // Get the fault client's container client
-                let fault_client = run_context
-                    .fault_client()
-                    .expect("fault client should be available");
-                let fault_db_client = fault_client.database_client(&db_client.id());
-                let fault_container_client = fault_db_client.container_client(&container_id);
+            let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
 
-                // Try to read the item using the fault client - this should fail with the injected error
-                let result = run_context
-                    .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
-                    .await;
+            container_client.create_item(&pk, &item, None).await?;
 
-                // Verify we got the expected error
-                let err = result.expect_err(&format!(
-                    "expected the read to fail with {:?}",
-                    expected_status
-                ));
-                assert_eq!(
-                    Some(expected_status),
-                    err.http_status(),
-                    "Test case '{}': expected {:?}, got {:?}",
-                    name,
-                    expected_status,
-                    err.http_status()
-                );
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
 
-                Ok(())
-            },
-            Some(TestOptions::new().with_fault_client_options(fault_options)),
-        )
-        .await?;
-    }
+            let result = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .await;
 
-    Ok(())
+            let err = result.expect_err(&format!(
+                "expected the read to fail with {:?}",
+                expected_status
+            ));
+            assert_eq!(
+                Some(expected_status),
+                err.http_status(),
+                "expected {:?}, got {:?}",
+                expected_status,
+                err.http_status()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn item_read_fault_injection_service_unavailable() -> Result<(), Box<dyn Error>> {
+    verify_read_fails_with_injected_error(
+        FaultInjectionErrorType::ServiceUnavailable,
+        StatusCode::ServiceUnavailable,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn item_read_fault_injection_internal_server_error() -> Result<(), Box<dyn Error>> {
+    verify_read_fails_with_injected_error(
+        FaultInjectionErrorType::InternalServerError,
+        StatusCode::InternalServerError,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn item_read_fault_injection_too_many_requests() -> Result<(), Box<dyn Error>> {
+    verify_read_fails_with_injected_error(
+        FaultInjectionErrorType::TooManyRequests,
+        StatusCode::TooManyRequests,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn item_read_fault_injection_timeout() -> Result<(), Box<dyn Error>> {
+    verify_read_fails_with_injected_error(
+        FaultInjectionErrorType::Timeout,
+        StatusCode::RequestTimeout,
+    )
+    .await
+}
+
+#[tokio::test]
+pub async fn item_read_fault_injection_partition_is_gone() -> Result<(), Box<dyn Error>> {
+    verify_read_fails_with_injected_error(
+        FaultInjectionErrorType::PartitionIsGone,
+        StatusCode::Gone,
+    )
+    .await
 }
 
 /// Test that verifies fault injection only affects the specified operation type.
@@ -182,8 +183,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
         .with_condition(condition)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
     // Inject the fault into client options for the fault client
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
@@ -266,7 +266,6 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
     // Create a fault injection rule that returns 503 for reads targeting the primary region
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
-        .with_times(1)
         .build();
 
     let condition = FaultInjectionConditionBuilder::new()
@@ -276,10 +275,10 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
 
     let rule = FaultInjectionRuleBuilder::new("primary-region-503", server_error)
         .with_condition(condition)
+        .with_hit_limit(1)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let client_options = CosmosClientOptions {
         application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
         ..Default::default()
@@ -354,7 +353,6 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
 pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
-        .with_times(1)
         .build();
 
     let condition = FaultInjectionConditionBuilder::new()
@@ -364,10 +362,10 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
 
     let rule = FaultInjectionRuleBuilder::new("write-region-503", server_error)
         .with_condition(condition)
+        .with_hit_limit(1)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
     let client_options = CosmosClientOptions {
         application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
@@ -411,14 +409,11 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             // Try to create using fault client - should  succeed via retry
             let result = fault_container_client.create_item(&pk, &item, None).await;
 
-            let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
-            println!("Write succeeded via failover, final URL: {}", request_url);
+            assert!(
+                result.is_ok(),
+                "Write should succeed via retry, but got error: {:?}",
+                result.err()
+            );
 
             Ok(())
         },
@@ -434,7 +429,6 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
     // Create a fault injection rule that returns 404:1002 for reads targeting the satellite region
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
-        .with_times(1)
         .build();
 
     let condition = FaultInjectionConditionBuilder::new()
@@ -444,10 +438,10 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
 
     let rule = FaultInjectionRuleBuilder::new("satellite-region-404-1002", server_error)
         .with_condition(condition)
+        .with_hit_limit(1)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let client_options = CosmosClientOptions {
         application_preferred_regions: vec![SATELLITE_REGION, HUB_REGION],
         ..Default::default()

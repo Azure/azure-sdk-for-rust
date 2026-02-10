@@ -22,6 +22,7 @@ use framework::{
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
+use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -68,8 +69,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
         .with_condition(condition)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -136,8 +136,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
         .with_condition(condition)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -207,8 +206,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
         .with_hit_limit(2)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
     let client_options = CosmosClientOptions {
         application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
@@ -290,8 +288,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
         .with_condition(condition)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -380,8 +377,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
         .with_condition(condition)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -485,8 +481,9 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
         .with_condition(condition2)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule1).with_rule(rule2);
+    let fault_builder = FaultInjectionClientBuilder::new()
+        .with_rule(Arc::new(rule1))
+        .with_rule(Arc::new(rule2));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -565,8 +562,9 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_delay() -> Result<
         .with_condition(condition2)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule1).with_rule(rule2);
+    let fault_builder = FaultInjectionClientBuilder::new()
+        .with_rule(Arc::new(rule1))
+        .with_rule(Arc::new(rule2));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -643,8 +641,9 @@ pub async fn fault_injection_first_rule_expired_due_to_duration() -> Result<(), 
         .with_condition(condition2)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule1).with_rule(rule2);
+    let fault_builder = FaultInjectionClientBuilder::new()
+        .with_rule(Arc::new(rule1))
+        .with_rule(Arc::new(rule2));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -713,8 +712,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
         .with_hit_limit(3)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -761,9 +759,9 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
                 );
             }
 
-            // 4th request should succeed (hit_limit exhausted)
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
+            // After hit_limit is exhausted by retries, the next read should succeed
+            let result = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await;
             assert!(
                 result.is_ok(),
@@ -846,8 +844,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
         .with_condition(condition)
         .build();
 
-    let mut fault_builder = FaultInjectionClientBuilder::new();
-    fault_builder.with_rule(rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
     let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
@@ -884,9 +881,9 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
                 create_result.err()
             );
 
-            // Read item should succeed
-            let read_result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
+            // Read item should succeed (use run_context.read_item for replication retry)
+            let read_result = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await;
             assert!(
                 read_result.is_ok(),
@@ -905,6 +902,97 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
                 "upsert item should succeed: {:?}",
                 upsert_result.err()
             );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test that disabling a rule at runtime prevents fault injection,
+/// and re-enabling it resumes injection.
+#[tokio::test]
+pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("enable-disable-test", server_error)
+            .with_condition(condition)
+            .build(),
+    );
+
+    assert_eq!(rule.id(), "enable-disable-test");
+    assert!(rule.is_enabled());
+
+    let rule_handle = Arc::clone(&rule);
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
+    let fault_options = fault_builder.inject(CosmosClientOptions::default());
+
+    TestClient::run_with_unique_db(
+        async move |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // Rule is enabled — read should fail
+            let result = fault_container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+            assert!(result.is_err(), "read should fail while rule is enabled");
+
+            // Disable the rule at runtime
+            rule_handle.disable();
+            assert!(!rule_handle.is_enabled());
+
+            // Read should now succeed
+            let result = fault_container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+            assert!(
+                result.is_ok(),
+                "read should succeed after disabling rule: {:?}",
+                result.err()
+            );
+
+            // Re-enable the rule
+            rule_handle.enable();
+            assert!(rule_handle.is_enabled());
+
+            // Read should fail again
+            let result = fault_container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+            assert!(result.is_err(), "read should fail after re-enabling rule");
 
             Ok(())
         },

@@ -164,47 +164,15 @@ impl CosmosRequest {
 
     #[cfg(feature = "fault_injection")]
     pub fn add_fault_injection_headers(&mut self) {
-        let fault_op = match (&self.operation_type, &self.resource_type) {
-            // Document operations
-            (OperationType::Read, ResourceType::Documents) => Some(FaultOperationType::ReadItem),
-            (OperationType::Query, ResourceType::Documents) => Some(FaultOperationType::QueryItem),
-            (OperationType::Create, ResourceType::Documents) => {
-                Some(FaultOperationType::CreateItem)
-            }
-            (OperationType::Upsert, ResourceType::Documents) => {
-                Some(FaultOperationType::UpsertItem)
-            }
-            (OperationType::Replace, ResourceType::Documents) => {
-                Some(FaultOperationType::ReplaceItem)
-            }
-            (OperationType::Delete, ResourceType::Documents) => {
-                Some(FaultOperationType::DeleteItem)
-            }
-            (OperationType::Patch, ResourceType::Documents) => Some(FaultOperationType::PatchItem),
-            (OperationType::Batch, ResourceType::Documents) => Some(FaultOperationType::BatchItem),
-            (OperationType::ReadFeed, ResourceType::Documents) => {
-                Some(FaultOperationType::ChangeFeedItem)
-            }
-            // Metadata operations
-            (OperationType::Read, ResourceType::Containers) => {
-                Some(FaultOperationType::MetadataReadContainer)
-            }
-            (OperationType::Read, ResourceType::DatabaseAccount) => {
-                Some(FaultOperationType::MetadataReadDatabaseAccount)
-            }
-            (OperationType::QueryPlan, ResourceType::Documents) => {
-                Some(FaultOperationType::MetadataQueryPlan)
-            }
-            (OperationType::ReadFeed, ResourceType::PartitionKeyRanges) => {
-                Some(FaultOperationType::MetadataPartitionKeyRanges)
-            }
-            _ => None,
-        };
+        let fault_op = FaultOperationType::from_operation_and_resource(
+            &self.operation_type,
+            &self.resource_type,
+        );
 
         if let Some(op) = fault_op {
             self.headers.insert(
                 constants::FAULT_INJECTION_OPERATION,
-                HeaderValue::from_static(op.into()),
+                HeaderValue::from_static(op.as_str()),
             );
         }
     }
