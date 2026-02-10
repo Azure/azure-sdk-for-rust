@@ -22,7 +22,7 @@ use crate::constants;
 ///     "SELECT * FROM c",
 ///     "a single string partition key",
 ///     None).unwrap();
-/// container_client.query_items::<serde_json::Value> (
+/// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     String::from("An owned partition key"),
 ///     None).unwrap();
