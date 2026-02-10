@@ -89,7 +89,7 @@ impl PerfTest for ListBlobTest {
 
         // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
         let container_client = self.client.get().unwrap();
-        let _result = container_client.create_container(None).await?;
+        let _result = container_client.create(None).await?;
 
         // Create the blobs for the test.
         for i in 0..self.count {

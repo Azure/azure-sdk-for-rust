@@ -30,7 +30,7 @@ async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>>
     assert_eq!(0, content_length.unwrap());
     assert_eq!(BlobType::AppendBlob, blob_type.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -71,7 +71,7 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     block_1.extend(&block_2);
     assert_eq!(block_1, response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -103,7 +103,7 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
         response_body.collect().await?.to_vec(),
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -142,6 +142,6 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(0, content_length.unwrap());
     assert_eq!(b"".to_vec(), response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }

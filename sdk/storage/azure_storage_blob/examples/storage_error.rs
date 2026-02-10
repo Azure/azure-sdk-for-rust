@@ -26,10 +26,7 @@
 
 use azure_core::error::ErrorKind;
 use azure_identity::AzureCliCredential;
-use azure_storage_blob::{
-    models::{StorageError, StorageErrorCode},
-    BlobClient,
-};
+use azure_storage_blob::{models::StorageErrorCode, BlobClient, StorageError};
 use std::env;
 
 #[tokio::main]

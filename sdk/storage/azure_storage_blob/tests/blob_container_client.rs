@@ -10,7 +10,7 @@ use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
     SignedIdentifiers,
 };
@@ -29,9 +29,9 @@ async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
 
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -52,7 +52,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
     assert!(!container_client.exists().await?);
 
     // Container Exists Scenario
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
     let container_properties = container_client.get_properties(None).await?;
     let lease_state = container_properties.lease_state()?;
     let has_immutability_policy = container_properties.has_immutability_policy()?;
@@ -62,7 +62,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
     assert!(!has_immutability_policy.unwrap());
     assert!(container_client.exists().await?);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -76,7 +76,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     // Set Metadata With Values
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
     container_client
-        .set_metadata(update_metadata.clone(), None)
+        .set_metadata(&update_metadata, None)
         .await?;
 
     // Assert
@@ -85,14 +85,14 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(update_metadata, response_metadata);
 
     // Set Metadata No Values (Clear Metadata)
-    container_client.set_metadata(HashMap::new(), None).await?;
+    container_client.set_metadata(&HashMap::new(), None).await?;
 
     // Assert
     let response = container_client.get_properties(None).await?;
     let response_metadata = response.metadata()?;
     assert_eq!(HashMap::new(), response_metadata);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -104,7 +104,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     let blob_names = ["testblob1".to_string(), "testblob2".to_string()];
 
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
     create_test_blob(
         &container_client.blob_client(&blob_names[0].clone()),
         None,
@@ -133,7 +133,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         assert!(etag.is_some());
     }
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -150,7 +150,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         "testblob4".to_string(),
     ];
 
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
     create_test_blob(
         &container_client.blob_client(&blob_names[0].clone()),
         None,
@@ -177,7 +177,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Continuation Token with Token Provided
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
         maxresults: Some(2),
         ..Default::default()
     };
@@ -195,7 +195,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
         marker: continuation_token,
         ..Default::default()
     };
@@ -251,7 +251,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         }
     }
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -263,7 +263,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     let container_name = get_container_name(recording);
     let container_client = blob_service_client.blob_container_client(&container_name.clone());
     let other_container_client = blob_service_client.blob_container_client(&container_name);
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
 
     // Acquire Lease
     let acquire_response = container_client.acquire_lease(15, None).await?;
@@ -279,7 +279,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
         ..Default::default()
     };
     container_client
-        .set_metadata(update_metadata, Some(set_metadata_options))
+        .set_metadata(&update_metadata, Some(set_metadata_options))
         .await?;
 
     // Change Lease
@@ -320,7 +320,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
         .release_lease(lease_id.unwrap(), None)
         .await?;
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -410,7 +410,7 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
         "Failed to find \"{blob2_name}\" in filtered blob results."
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -425,7 +425,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
 
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
 
     // Set Access Policy w/ Multiple Policy Defined
     let expiry = recording.var(

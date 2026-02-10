@@ -125,7 +125,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     );
     assert!(block_list.uncommitted_blocks.is_none());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -212,7 +212,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         )
         .await?;
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -340,7 +340,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         response_body.collect().await?.as_ref(),
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
