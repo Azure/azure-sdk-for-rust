@@ -57,6 +57,12 @@ jobs:
         run: |
           ./eng/common/mcp/azure-sdk-mcp.ps1 -InstallDirectory $HOME/bin
 
+      - name: Start Cosmos DB Emulator
+        shell: pwsh
+        run: |
+          ./eng/scripts/Start-CosmosEmulator.ps1 -MaxRetries 60
+          echo "AZURE_COSMOS_CONNECTION_STRING=emulator" >> $env:GITHUB_ENV
+
       - name: Verify workspace setup
         run: |
           # Test that we can run basic cargo commands
