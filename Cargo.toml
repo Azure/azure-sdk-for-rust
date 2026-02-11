@@ -104,7 +104,7 @@ fe2o3-amqp-ext = { version = "0.14" }
 fe2o3-amqp-management = { version = "0.14" }
 fe2o3-amqp-cbs = { version = "0.14" }
 fe2o3-amqp-types = { version = "0.14" }
-flate2 = "1.1.0"
+flate2 = "1.1.9"
 futures = "0.3"
 getrandom = { version = "0.3" }
 gloo-timers = { version = "0.3" }
