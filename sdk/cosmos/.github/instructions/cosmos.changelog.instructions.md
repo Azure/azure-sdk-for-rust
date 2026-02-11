@@ -1,7 +1,7 @@
 ---
 applyTo: "sdk/cosmos/**/CHANGELOG.md"
 ---
-- Follow the [Azure SDK changelog instructions for Rust](https://github.com/Azure/azure-sdk-for-java/blob/main/.github/changelog.instructions.md) as the primary reference for changelogs unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.instructions.md` files.
+- Follow the [Azure SDK changelog instructions for Rust](https://github.com/Azure/azure-sdk-for-rust/blob/main/.github/instructions/changelog.instructions.md) as the primary reference for changelogs unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.instructions.md` files.
 
 - Goal: every customer-visible change gets a changelog entry so users can quickly understand the risk/benefit of upgrading.
 

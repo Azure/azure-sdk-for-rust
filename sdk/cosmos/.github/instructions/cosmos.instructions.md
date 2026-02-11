@@ -105,7 +105,7 @@ sdk/cosmos/azure_data_cosmos/
 │   ├── clients/           # Client types (CosmosClient, Database, Container)
 │   ├── models/            # Data models (separate from behavior)
 │   ├── operations/        # Operation implementations
-│   ├── options/           # Request option builders
+│   ├── options/           # Request/Operation option builders
 │   ├── query/             # Query builder and execution
 │   └── responses/         # Response types with metadata
 ```
@@ -285,7 +285,7 @@ pub struct ItemResponse {
 
 ### Options Module Pattern
 
-Configuration types follow Azure SDK conventions in dedicated `options/` module:
+Configuration types for individual operations/requests follow Azure SDK conventions in dedicated `options/` module:
 
 **Structure**:
 ```text
