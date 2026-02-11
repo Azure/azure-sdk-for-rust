@@ -5,15 +5,15 @@
 use azure_core::time::Duration;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::time::Instant;
 
+use crate::background_task_manager::BackgroundTaskManager;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::resource_context::ResourceType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
-use azure_core::async_runtime::get_async_runtime;
 use tracing::info;
 use url::Url;
 
@@ -60,6 +60,9 @@ pub struct GlobalPartitionEndpointManager {
 
     /// Flag to determine if partition level circuit breaker is enabled.
     partition_level_circuit_breaker_enabled: AtomicBool,
+
+    /// Manages background tasks and signals them to stop when dropped.
+    background_task_manager: BackgroundTaskManager,
 }
 
 impl std::fmt::Debug for GlobalPartitionEndpointManager {
@@ -94,6 +97,7 @@ impl std::fmt::Debug for GlobalPartitionEndpointManager {
                 "partition_level_circuit_breaker_enabled",
                 &self.partition_level_circuit_breaker_enabled,
             )
+            .field("background_task_manager", &self.background_task_manager)
             .finish()
     }
 }
@@ -137,6 +141,7 @@ impl GlobalPartitionEndpointManager {
             partition_level_circuit_breaker_enabled: AtomicBool::new(
                 partition_level_circuit_breaker_enabled,
             ),
+            background_task_manager: BackgroundTaskManager::new(),
         });
 
         instance.initialize_and_start_circuit_breaker_failback_background_refresh();
@@ -188,33 +193,77 @@ impl GlobalPartitionEndpointManager {
             return;
         }
 
-        let self_clone = Arc::clone(self);
-        // Use the runtime-agnostic spawn from azure_core
-        // Explicitly drop the JoinHandle since this is a fire-and-forget background task
-        drop(get_async_runtime().spawn(Box::pin(async move {
-            self_clone.initiate_circuit_breaker_failback_loop().await;
-        })));
+        let weak_self = Arc::downgrade(self);
+        let shutdown_token = self.background_task_manager.cancellation_token();
+        // Spawn via BackgroundTaskManager so the task is tracked and will be
+        // signaled to stop when the manager (and thus the client) is dropped.
+        // We capture a Weak<Self> (not Arc<Self>) to avoid a reference cycle
+        // that would prevent the GlobalPartitionEndpointManager from ever
+        // being dropped.
+        self.background_task_manager.spawn(Box::pin(async move {
+            Self::initiate_circuit_breaker_failback_loop(weak_self, shutdown_token).await;
+        }));
     }
 
-    /// Runs an infinite loop that periodically attempts to fail back partitions to their
+    /// Runs a loop that periodically attempts to fail back partitions to their
     /// original (previously failed) endpoints.
     ///
     /// On each iteration the loop sleeps for [`background_connection_init_interval_secs`]
     /// seconds and then calls [`initiate_failback_to_unhealthy_endpoints`]. Any errors
     /// during the failback attempt are logged but do not terminate the loop.
+    ///
+    /// The loop exits when either:
+    /// - `shutdown_token` is set to `true` (the owning [`BackgroundTaskManager`] was dropped), or
+    /// - `weak_self.upgrade()` returns `None` (all strong `Arc` references are gone).
     #[allow(dead_code)]
-    async fn initiate_circuit_breaker_failback_loop(self: Arc<Self>) {
-        let interval = Duration::seconds(self.background_connection_init_interval_secs);
+    async fn initiate_circuit_breaker_failback_loop(
+        weak_self: Weak<Self>,
+        shutdown_token: Arc<AtomicBool>,
+    ) {
+        // Briefly upgrade to read the interval, then release the strong ref
+        // so it does not keep Self alive across the sleep.
+        let interval = match weak_self.upgrade() {
+            Some(strong) => Duration::seconds(strong.background_connection_init_interval_secs),
+            None => return,
+        };
 
         loop {
+            // Check for shutdown before sleeping so we exit promptly when the
+            // client is dropped.
+            if shutdown_token.load(Ordering::SeqCst) {
+                info!("GlobalPartitionEndpointManager: background failback loop exiting because the client has been dropped.");
+                return;
+            }
+
             // Use the runtime-agnostic sleep from azure_core
-            get_async_runtime().sleep(interval).await;
+            azure_core::async_runtime::get_async_runtime()
+                .sleep(interval)
+                .await;
+
+            // Check again after waking up — the client may have been dropped
+            // while we were asleep.
+            if shutdown_token.load(Ordering::SeqCst) {
+                info!("GlobalPartitionEndpointManager: background failback loop exiting because the client has been dropped.");
+                return;
+            }
+
+            // Upgrade the Weak ref for this iteration only. If it fails, the
+            // manager has been dropped and we should exit.
+            let strong = match weak_self.upgrade() {
+                Some(s) => s,
+                None => {
+                    info!("GlobalPartitionEndpointManager: background failback loop exiting because the client has been dropped.");
+                    return;
+                }
+            };
 
             info!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() un-deterministically marking the failed partitions back to healthy.");
 
-            if let Err(e) = self.initiate_failback_to_unhealthy_endpoints().await {
+            if let Err(e) = strong.initiate_failback_to_unhealthy_endpoints().await {
                 tracing::error!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - failed to mark the failed partitions back to healthy. Exception: {}", e);
             }
+            // `strong` is dropped here, releasing the temporary strong ref
+            // before the next sleep.
         }
     }
 

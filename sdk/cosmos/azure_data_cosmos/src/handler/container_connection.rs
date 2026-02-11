@@ -182,6 +182,7 @@ mod tests {
                 endpoint_manager,
                 partition_manager.clone(),
                 CosmosClientOptions::default(),
+                false,
             )),
             partition_manager,
         )
