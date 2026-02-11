@@ -7,20 +7,19 @@ use super::{
     AccountKind, AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockResult,
     AppendBlobClientCreateResult, AppendBlobClientSealResult, ArchiveStatus,
     BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-    BlobClientCreateSnapshotResult, BlobClientDownloadInternalResult,
-    BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
-    BlobClientRenewLeaseResult, BlobContainerClientAcquireLeaseResult,
-    BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseResult,
-    BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
-    BlobServiceClientGetAccountInfoResult, BlobType, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalResult, BlockList,
-    CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
-    PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
-    PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
-    PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifiers, SkuName,
+    BlobClientCreateSnapshotResult, BlobClientDownloadResult, BlobClientGetAccountInfoResult,
+    BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+    BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
+    BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+    BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+    BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+    BlockBlobClientUploadResult, BlockList, CopyStatus, ImmutabilityPolicyMode, LeaseDuration,
+    LeaseState, LeaseStatus, PageBlobClientClearPagesResult, PageBlobClientCreateResult,
+    PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
+    PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
+    PublicAccessType, RehydratePriority, SignedIdentifiers, SkuName,
 };
 use azure_core::{
     base64,
@@ -616,15 +615,15 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
     }
 }
 
-/// Provides access to typed response headers for `BlobClient::download_internal()`
+/// Provides access to typed response headers for `BlobClient::download()`
 ///
 /// # Examples
 ///
 /// ```no_run
 /// use azure_core::{Result, http::AsyncResponse};
-/// use azure_storage_blob::models::{BlobClientDownloadInternalResult, BlobClientDownloadInternalResultHeaders};
+/// use azure_storage_blob::models::{BlobClientDownloadResult, BlobClientDownloadResultHeaders};
 /// async fn example() -> Result<()> {
-///     let response: AsyncResponse<BlobClientDownloadInternalResult> = unimplemented!();
+///     let response: AsyncResponse<BlobClientDownloadResult> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(cache_control) = response.cache_control()? {
 ///         println!("cache-control: {:?}", cache_control);
@@ -638,7 +637,7 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
 ///     Ok(())
 /// }
 /// ```
-pub trait BlobClientDownloadInternalResultHeaders: private::Sealed {
+pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn cache_control(&self) -> Result<Option<String>>;
     fn content_disposition(&self) -> Result<Option<String>>;
     fn content_encoding(&self) -> Result<Option<String>>;
@@ -679,7 +678,7 @@ pub trait BlobClientDownloadInternalResultHeaders: private::Sealed {
     fn version_id(&self) -> Result<Option<String>>;
 }
 
-impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloadInternalResult> {
+impl BlobClientDownloadResultHeaders for AsyncResponse<BlobClientDownloadResult> {
     /// This header is returned if it was previously specified for the blob.
     fn cache_control(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CACHE_CONTROL)
@@ -2138,15 +2137,15 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
     }
 }
 
-/// Provides access to typed response headers for `BlockBlobClient::upload_internal()`
+/// Provides access to typed response headers for `BlockBlobClient::upload()`
 ///
 /// # Examples
 ///
 /// ```no_run
 /// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{BlockBlobClientUploadInternalResult, BlockBlobClientUploadInternalResultHeaders};
+/// use azure_storage_blob::models::{BlockBlobClientUploadResult, BlockBlobClientUploadResultHeaders};
 /// async fn example() -> Result<()> {
-///     let response: Response<BlockBlobClientUploadInternalResult, NoFormat> = unimplemented!();
+///     let response: Response<BlockBlobClientUploadResult, NoFormat> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(content_md5) = response.content_md5()? {
 ///         println!("content-md5: {:?}", content_md5);
@@ -2160,7 +2159,7 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
 ///     Ok(())
 /// }
 /// ```
-pub trait BlockBlobClientUploadInternalResultHeaders: private::Sealed {
+pub trait BlockBlobClientUploadResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn etag(&self) -> Result<Option<String>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2170,9 +2169,7 @@ pub trait BlockBlobClientUploadInternalResultHeaders: private::Sealed {
     fn version_id(&self) -> Result<Option<String>>;
 }
 
-impl BlockBlobClientUploadInternalResultHeaders
-    for Response<BlockBlobClientUploadInternalResult, NoFormat>
-{
+impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult, NoFormat> {
     /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
@@ -2770,15 +2767,15 @@ mod private {
         AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockResult,
         AppendBlobClientCreateResult, AppendBlobClientSealResult, BlobClientAcquireLeaseResult,
         BlobClientBreakLeaseResult, BlobClientChangeLeaseResult, BlobClientCreateSnapshotResult,
-        BlobClientDownloadInternalResult, BlobClientGetAccountInfoResult,
-        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
         BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-        BlockBlobClientUploadInternalResult, BlockList, PageBlobClientClearPagesResult,
+        BlockBlobClientUploadResult, BlockList, PageBlobClientClearPagesResult,
         PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
         PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
@@ -2787,7 +2784,7 @@ mod private {
 
     pub trait Sealed {}
 
-    impl Sealed for AsyncResponse<BlobClientDownloadInternalResult> {}
+    impl Sealed for AsyncResponse<BlobClientDownloadResult> {}
     impl Sealed for Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientAppendBlockResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientCreateResult, NoFormat> {}
@@ -2812,7 +2809,7 @@ mod private {
     impl Sealed for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> {}
-    impl Sealed for Response<BlockBlobClientUploadInternalResult, NoFormat> {}
+    impl Sealed for Response<BlockBlobClientUploadResult, NoFormat> {}
     impl Sealed for Response<BlockList, XmlFormat> {}
     impl Sealed for Response<PageBlobClientClearPagesResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientCreateResult, NoFormat> {}

@@ -146,7 +146,7 @@ impl BlockBlobClient {
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlockBlob.managedUpload")]
-    pub async fn managed_upload(
+    pub(crate) async fn managed_upload(
         &self,
         content: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientManagedUploadOptions<'_>>,
@@ -281,7 +281,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
         let content_len = content.len() as u64;
         self.client
-            .upload_internal(
+            .upload(
                 content.into(),
                 content_len,
                 Some(self.oneshot_options.clone()),
