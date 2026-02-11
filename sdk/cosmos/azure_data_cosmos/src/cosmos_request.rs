@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::FaultOperationType;
 use crate::operation_context::OperationType;
 use crate::regions::RegionName;
 use crate::request_context::RequestContext;
@@ -158,6 +160,21 @@ impl CosmosRequest {
         }
 
         req
+    }
+
+    #[cfg(feature = "fault_injection")]
+    pub fn add_fault_injection_headers(&mut self) {
+        let fault_op = FaultOperationType::from_operation_and_resource(
+            &self.operation_type,
+            &self.resource_type,
+        );
+
+        if let Some(op) = fault_op {
+            self.headers.insert(
+                constants::FAULT_INJECTION_OPERATION,
+                HeaderValue::from_static(op.as_str()),
+            );
+        }
     }
 }
 
