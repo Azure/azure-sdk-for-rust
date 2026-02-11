@@ -205,6 +205,13 @@ impl LocationCache {
         }
 
         self.locations_info.preferred_locations = effective_preferred_locations;
+
+        // Clear existing endpoint lists before repopulating to prevent
+        // duplicate accumulation across repeated update() calls (e.g.
+        // periodic account-property refreshes).
+        self.locations_info.write_endpoints.clear();
+        self.locations_info.read_endpoints.clear();
+
         // Separate write locations into appropriate hashmap and list
         if !write_locations.is_empty() {
             let (account_write_endpoints_by_location, account_write_locations) =
@@ -439,9 +446,29 @@ impl LocationCache {
     /// Refreshes the ordered endpoint lists based on availability and preferences.
     ///
     /// # Summary
-    /// Removes stale unavailability for entries older than 5 minutes.
-    /// Called after marking endpoints unavailable or updating account regions.
+    /// Rebuilds the read and write endpoint lists by querying preferred locations against
+    /// available endpoints from the account. Orders endpoints by preference with available
+    /// endpoints first and unavailable endpoints last. Also removes stale unavailability
+    /// entries older than 5 minutes. Called after marking endpoints unavailable or updating
+    /// account regions.
     fn refresh_endpoints(&mut self) {
+        // Rebuild the preferred-and-availability-ordered endpoint lists so
+        // that unavailable endpoints are pushed to the back.  Without this,
+        // mark_endpoint_unavailable has no effect on routing order.
+        self.locations_info.write_endpoints = self.get_preferred_available_endpoints(
+            &self.locations_info.account_write_endpoints_by_location,
+            RequestOperation::Write,
+            &self.default_endpoint,
+            None,
+        );
+
+        self.locations_info.read_endpoints = self.get_preferred_available_endpoints(
+            &self.locations_info.account_read_endpoints_by_location,
+            RequestOperation::Read,
+            &self.default_endpoint,
+            None,
+        );
+
         self.refresh_stale_endpoints();
     }
 
@@ -1158,6 +1185,261 @@ mod tests {
         assert_eq!(
             endpoint,
             Url::parse("https://location2.documents.example.com").unwrap()
+        );
+    }
+
+    #[test]
+    fn repeated_update_does_not_duplicate_write_endpoints() {
+        // Bug 1: Calling update() multiple times should NOT accumulate
+        // duplicate entries in write_endpoints.
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
+
+        let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
+
+        // First update — 2 write endpoints expected
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(cache.locations_info.write_endpoints.len(), 2);
+
+        // Second update (simulates periodic account-property refresh)
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(
+            cache.locations_info.write_endpoints.len(),
+            2,
+            "write_endpoints should not grow after a second update()"
+        );
+
+        // Third update — still 2
+        cache.update(write_locations, read_locations).unwrap();
+        assert_eq!(
+            cache.locations_info.write_endpoints.len(),
+            2,
+            "write_endpoints should not grow after a third update()"
+        );
+    }
+
+    #[test]
+    fn repeated_update_does_not_duplicate_read_endpoints() {
+        // Bug 1: Calling update() multiple times should NOT accumulate
+        // duplicate entries in read_endpoints.
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
+
+        let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
+
+        // First update — 4 read endpoints expected
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(cache.locations_info.read_endpoints.len(), 4);
+
+        // Second update
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(
+            cache.locations_info.read_endpoints.len(),
+            4,
+            "read_endpoints should not grow after a second update()"
+        );
+
+        // Third update — still 4
+        cache.update(write_locations, read_locations).unwrap();
+        assert_eq!(
+            cache.locations_info.read_endpoints.len(),
+            4,
+            "read_endpoints should not grow after a third update()"
+        );
+    }
+
+    #[test]
+    fn single_write_region_stays_single_after_repeated_updates() {
+        // Bug 3: A single-master account (1 write region) must keep
+        // can_use_multiple_write_locations() == false even after many update() calls.
+        let default_endpoint: Url = "https://default.documents.example.com".parse().unwrap();
+
+        let single_write = vec![AccountRegion {
+            database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Location 1"),
+        }];
+
+        let read_locations = vec![
+            AccountRegion {
+                database_account_endpoint: "https://location1.documents.example.com"
+                    .parse()
+                    .unwrap(),
+                name: RegionName::from("Location 1"),
+            },
+            AccountRegion {
+                database_account_endpoint: "https://location2.documents.example.com"
+                    .parse()
+                    .unwrap(),
+                name: RegionName::from("Location 2"),
+            },
+        ];
+
+        let preferred = vec![
+            RegionName::from("Location 1"),
+            RegionName::from("Location 2"),
+        ];
+
+        let mut cache = LocationCache::new(default_endpoint, preferred, vec![]);
+
+        for i in 0..10 {
+            cache
+                .update(single_write.clone(), read_locations.clone())
+                .unwrap();
+            assert_eq!(
+                cache.locations_info.write_endpoints.len(),
+                1,
+                "write_endpoints should stay at 1 after update #{}",
+                i + 1
+            );
+            assert!(
+                !cache.can_use_multiple_write_locations(),
+                "single-master must report can_use_multiple_write_locations() == false after update #{}", i + 1
+            );
+        }
+    }
+
+    #[test]
+    fn mark_write_endpoint_unavailable_reorders_after_refresh() {
+        // Bug 2: mark_endpoint_unavailable must cause refresh_endpoints to
+        // push the unavailable endpoint to the back of write_endpoints.
+        let mut cache = create_test_location_cache();
+
+        let endpoint1: Url = "https://location1.documents.example.com".parse().unwrap();
+        let endpoint2: Url = "https://location2.documents.example.com".parse().unwrap();
+
+        // Before marking: endpoint1 is first
+        assert_eq!(cache.locations_info.write_endpoints[0], endpoint1);
+
+        // Mark endpoint1 unavailable for writes
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Write);
+
+        // After marking: endpoint2 should be first, endpoint1 last
+        assert_eq!(
+            cache.locations_info.write_endpoints.first(),
+            Some(&endpoint2),
+            "available endpoint should be first after marking endpoint1 unavailable"
+        );
+        assert_eq!(
+            cache.locations_info.write_endpoints.last(),
+            Some(&endpoint1),
+            "unavailable endpoint should be last after marking endpoint1 unavailable"
+        );
+    }
+
+    #[test]
+    fn mark_read_endpoint_unavailable_reorders_after_refresh() {
+        // Bug 2: mark_endpoint_unavailable must cause refresh_endpoints to
+        // push the unavailable endpoint to the back of read_endpoints.
+        let mut cache = create_test_location_cache();
+
+        let endpoint1: Url = "https://location1.documents.example.com".parse().unwrap();
+
+        // Before marking: endpoint1 is first
+        assert_eq!(cache.locations_info.read_endpoints[0], endpoint1);
+
+        // Mark endpoint1 unavailable for reads
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
+
+        // After marking: endpoint1 should be last in read_endpoints
+        assert_ne!(
+            cache.locations_info.read_endpoints.first(),
+            Some(&endpoint1),
+            "unavailable endpoint should not be first after marking"
+        );
+        assert_eq!(
+            cache.locations_info.read_endpoints.last(),
+            Some(&endpoint1),
+            "unavailable endpoint should be last after marking"
+        );
+    }
+
+    #[test]
+    fn mark_unavailable_then_update_preserves_correct_count() {
+        // Combined scenario: mark an endpoint unavailable, then call update()
+        // again (simulating a refresh cycle). Endpoints should not duplicate
+        // and the unavailable endpoint should still be ordered last.
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
+
+        let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+
+        let endpoint1: Url = "https://location1.documents.example.com".parse().unwrap();
+        let endpoint2: Url = "https://location2.documents.example.com".parse().unwrap();
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Write);
+
+        // Endpoint count should still be 2, with unavailable endpoint last
+        assert_eq!(cache.locations_info.write_endpoints.len(), 2);
+        assert_eq!(
+            cache.locations_info.write_endpoints.first(),
+            Some(&endpoint2),
+            "available endpoint should be first after marking endpoint1 unavailable"
+        );
+        assert_eq!(
+            cache.locations_info.write_endpoints.last(),
+            Some(&endpoint1),
+            "unavailable endpoint should be last after marking endpoint1 unavailable"
+        );
+
+        // Now simulate an account-property refresh
+        cache.update(write_locations, read_locations).unwrap();
+
+        // Endpoint count should still be 2 (no duplicates)
+        assert_eq!(
+            cache.locations_info.write_endpoints.len(),
+            2,
+            "write_endpoints should not accumulate after update following mark_unavailable"
+        );
+
+        // The unavailable endpoint should still be ordered last after the update()
+        // because refresh_endpoints() rebuilds lists with availability ordering.
+        assert_eq!(
+            cache.locations_info.write_endpoints.first(),
+            Some(&endpoint2),
+            "available endpoint should still be first after update()"
+        );
+        assert_eq!(
+            cache.locations_info.write_endpoints.last(),
+            Some(&endpoint1),
+            "previously-unavailable endpoint should still be last after update()"
+        );
+
+        // Also verify via get_applicable_endpoints (the public routing API)
+        let applicable = cache.get_applicable_endpoints(OperationType::Create, None);
+        assert_eq!(
+            applicable.first(),
+            Some(&endpoint2),
+            "get_applicable_endpoints should route to available endpoint first"
+        );
+        assert_eq!(
+            applicable.last(),
+            Some(&endpoint1),
+            "get_applicable_endpoints should place unavailable endpoint last"
         );
     }
 
