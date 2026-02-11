@@ -40,26 +40,26 @@ impl BatchCommand {
                 "create" => {
                     let json_str = op["json"].as_str().ok_or("Missing 'json' field")?;
                     let value: Value = serde_json::from_str(json_str)?;
-                    batch = batch.create_item(value)?;
+                    batch = batch.create_item(value, None)?;
                 }
                 "upsert" => {
                     let json_str = op["json"].as_str().ok_or("Missing 'json' field")?;
                     let value: Value = serde_json::from_str(json_str)?;
-                    batch = batch.upsert_item(value)?;
+                    batch = batch.upsert_item(value, None)?;
                 }
                 "replace" => {
                     let id = op["id"].as_str().ok_or("Missing 'id' field")?.to_string();
                     let json_str = op["json"].as_str().ok_or("Missing 'json' field")?;
                     let value: Value = serde_json::from_str(json_str)?;
-                    batch = batch.replace_item(id, value)?;
+                    batch = batch.replace_item(id, value, None)?;
                 }
                 "read" => {
                     let id = op["id"].as_str().ok_or("Missing 'id' field")?.to_string();
-                    batch = batch.read_item(id);
+                    batch = batch.read_item(id, None);
                 }
                 "delete" => {
                     let id = op["id"].as_str().ok_or("Missing 'id' field")?.to_string();
-                    batch = batch.delete_item(id);
+                    batch = batch.delete_item(id, None);
                 }
                 "patch" => {
                     let id = op["id"].as_str().ok_or("Missing 'id' field")?.to_string();
@@ -95,7 +95,7 @@ impl BatchCommand {
                         }
                     }
 
-                    batch = batch.patch_item(id, patch_doc);
+                    batch = batch.patch_item(id, patch_doc, None);
                 }
                 _ => return Err(format!("Unknown operation type: {}", op_type).into()),
             }

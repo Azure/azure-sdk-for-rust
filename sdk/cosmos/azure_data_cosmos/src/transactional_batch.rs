@@ -464,195 +464,85 @@ mod tests {
     }
 
     #[test]
-    fn add_create_operation() -> Result<(), Box<dyn std::error::Error>> {
+    fn serialize_all_operations() -> Result<(), Box<dyn std::error::Error>> {
         let item = TestItem {
             id: "item1".to_string(),
             value: 42,
         };
 
-        let batch = TransactionalBatch::new("test_partition").create_item(item, None)?;
-
-        assert_eq!(batch.operations().len(), 1);
-        Ok(())
-    }
-
-    #[test]
-    fn add_multiple_operations() -> Result<(), Box<dyn std::error::Error>> {
-        let item1 = TestItem {
-            id: "item1".to_string(),
-            value: 42,
-        };
-        let item2 = TestItem {
-            id: "item2".to_string(),
-            value: 24,
-        };
-
-        let batch = TransactionalBatch::new("test_partition")
-            .create_item(item1, None)?
-            .upsert_item(item2, None)?
-            .read_item("item3", None)
-            .delete_item("item4", None);
-
-        assert_eq!(batch.operations().len(), 4);
-        Ok(())
-    }
-
-    #[test]
-    fn serialize_batch_operations() -> Result<(), Box<dyn std::error::Error>> {
-        let item = TestItem {
-            id: "item1".to_string(),
-            value: 42,
-        };
-
-        let batch = TransactionalBatch::new("test_partition")
-            .create_item(item, None)?
-            .read_item("item2", None)
-            .delete_item("item3", None);
-
-        let operations = batch.operations();
-        let serialized = serde_json::to_string(operations)?;
-
-        // Verify serialization produces valid JSON array
-        assert!(serialized.starts_with('['));
-        assert!(serialized.ends_with(']'));
-        assert!(serialized.contains("\"operationType\""));
-
-        Ok(())
-    }
-
-    #[test]
-    fn serialize_batch_operations_format() -> Result<(), Box<dyn std::error::Error>> {
-        let item = TestItem {
-            id: "item1".to_string(),
-            value: 42,
-        };
-
-        let batch = TransactionalBatch::new("test_partition")
-            .create_item(&item, None)?
-            .read_item("item2", None)
-            .replace_item("item3", &item, None)?;
-
-        let operations = batch.operations();
-        let serialized = serde_json::to_string_pretty(operations)?;
-
-        // Verify the structure matches Cosmos DB expectations
-        assert!(serialized.contains("\"operationType\": \"Create\""));
-        assert!(serialized.contains("\"operationType\": \"Read\""));
-        assert!(serialized.contains("\"operationType\": \"Replace\""));
-        assert!(serialized.contains("\"resourceBody\""));
-        assert!(serialized.contains("\"id\": \"item2\""));
-        assert!(serialized.contains("\"id\": \"item3\""));
-
-        Ok(())
-    }
-
-    #[test]
-    fn operations_with_if_match_option() -> Result<(), Box<dyn std::error::Error>> {
-        let item = TestItem {
-            id: "item1".to_string(),
-            value: 42,
-        };
-
-        let options = BatchOperationOptions {
-            if_match: Some("etag-value-123".to_string()),
+        let etag_options = BatchOperationOptions {
+            if_match: Some("some-etag".to_string()),
             if_none_match: None,
         };
-
-        let batch = TransactionalBatch::new("test_partition").replace_item(
-            "item1",
-            &item,
-            Some(options),
-        )?;
-
-        let operations = batch.operations();
-        let serialized = serde_json::to_string_pretty(operations)?;
-
-        assert!(serialized.contains("\"ifMatch\": \"etag-value-123\""));
-        assert!(!serialized.contains("\"ifNoneMatch\""));
-
-        Ok(())
-    }
-
-    #[test]
-    fn operations_with_if_none_match_option() -> Result<(), Box<dyn std::error::Error>> {
-        let item = TestItem {
-            id: "item1".to_string(),
-            value: 42,
-        };
-
-        let options = BatchOperationOptions {
+        let if_none_match_options = BatchOperationOptions {
             if_match: None,
             if_none_match: Some("*".to_string()),
         };
-
-        let batch = TransactionalBatch::new("test_partition").create_item(&item, Some(options))?;
-
-        let operations = batch.operations();
-        let serialized = serde_json::to_string_pretty(operations)?;
-
-        assert!(serialized.contains("\"ifNoneMatch\": \"*\""));
-        assert!(!serialized.contains("\"ifMatch\""));
-
-        Ok(())
-    }
-
-    #[test]
-    fn all_operations_with_options() -> Result<(), Box<dyn std::error::Error>> {
-        let item = TestItem {
-            id: "item1".to_string(),
-            value: 42,
-        };
-
-        let etag = "some-etag".to_string();
-        let options = || BatchOperationOptions {
-            if_match: Some(etag.clone()),
-            if_none_match: None,
-        };
-        let patch_options = || BatchPatchOperationOptions {
-            if_match: Some(etag.clone()),
-            if_none_match: None,
-            filter_predicate: None,
-        };
-
-        let patch = PatchDocument::default();
-
-        let batch = TransactionalBatch::new("test_partition")
-            .create_item(&item, Some(options()))?
-            .upsert_item(&item, Some(options()))?
-            .replace_item("id1", &item, Some(options()))?
-            .read_item("id2", Some(options()))
-            .delete_item("id3", Some(options()))
-            .patch_item("id4", patch, Some(patch_options()));
-
-        assert_eq!(batch.operations().len(), 6);
-
-        let serialized = serde_json::to_string(batch.operations())?;
-        // All operations should have ifMatch set
-        assert_eq!(serialized.matches("\"ifMatch\"").count(), 6);
-
-        Ok(())
-    }
-
-    #[test]
-    fn patch_with_filter_predicate() -> Result<(), Box<dyn std::error::Error>> {
-        let patch = PatchDocument::default();
-
-        let options = BatchPatchOperationOptions {
-            if_match: Some("etag-123".to_string()),
+        let patch_options = BatchPatchOperationOptions {
+            if_match: Some("patch-etag".to_string()),
             if_none_match: None,
             filter_predicate: Some("from c where c.status = 'active'".to_string()),
         };
 
-        let batch =
-            TransactionalBatch::new("test_partition").patch_item("item1", patch, Some(options));
+        let patch = PatchDocument::default();
 
-        let operations = batch.operations();
-        let serialized = serde_json::to_string_pretty(operations)?;
+        let batch = TransactionalBatch::new("test_partition")
+            .create_item(&item, Some(if_none_match_options))?
+            .upsert_item(&item, None)?
+            .replace_item("id1", &item, Some(etag_options))?
+            .read_item("id2", None)
+            .delete_item("id3", None)
+            .patch_item("id4", patch, Some(patch_options));
 
-        assert!(serialized.contains("\"operationType\": \"Patch\""));
-        assert!(serialized.contains("\"ifMatch\": \"etag-123\""));
-        assert!(serialized.contains("\"filterPredicate\": \"from c where c.status = 'active'\""));
-        assert!(!serialized.contains("\"ifNoneMatch\""));
+        assert_eq!(batch.operations().len(), 6);
+
+        let serialized = serde_json::to_string_pretty(batch.operations())?;
+
+        let expected = r#"[
+  {
+    "operationType": "Create",
+    "resourceBody": {
+      "id": "item1",
+      "value": 42
+    },
+    "ifNoneMatch": "*"
+  },
+  {
+    "operationType": "Upsert",
+    "resourceBody": {
+      "id": "item1",
+      "value": 42
+    }
+  },
+  {
+    "operationType": "Replace",
+    "id": "id1",
+    "resourceBody": {
+      "id": "item1",
+      "value": 42
+    },
+    "ifMatch": "some-etag"
+  },
+  {
+    "operationType": "Read",
+    "id": "id2"
+  },
+  {
+    "operationType": "Delete",
+    "id": "id3"
+  },
+  {
+    "operationType": "Patch",
+    "id": "id4",
+    "resourceBody": {
+      "operations": []
+    },
+    "ifMatch": "patch-etag",
+    "filterPredicate": "from c where c.status = 'active'"
+  }
+]"#;
+
+        assert_eq!(serialized, expected);
 
         Ok(())
     }

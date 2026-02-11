@@ -766,7 +766,7 @@ impl ContainerClient {
     /// };
     ///
     /// let batch = TransactionalBatch::new("category1")
-    ///     .create_item(product1)?;
+    ///     .create_item(product1, None)?;
     ///
     /// let response = container_client.execute_transactional_batch(batch, None).await?;
     /// # Ok(())
