@@ -16,10 +16,10 @@ use azure_storage_blob::{
         BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, StorageError,
+        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
         StorageErrorCode,
     },
-    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, get_container_name, ClientOptionsExt,
@@ -55,7 +55,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert_eq!(StatusCode::NotFound, error.unwrap());
     assert!(!blob_client.exists().await?);
 
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
     assert!(!blob_client.exists().await?);
     create_test_blob(&blob_client, None, None).await?;
 
@@ -74,7 +74,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert!(creation_time.is_some());
     assert!(blob_client.exists().await?);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -105,7 +105,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert_eq!("spanish".to_string(), content_language.unwrap());
     assert_eq!("inline".to_string(), content_disposition.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -180,7 +180,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         response_body.collect().await?.as_ref()
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -204,7 +204,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let error = response.unwrap_err().http_status();
     assert_eq!(StatusCode::NotFound, error.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -232,7 +232,7 @@ async fn test_undelete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let content_length = response.content_length()?;
     assert_eq!(17, content_length.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -265,7 +265,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         response_body.collect().await?.to_vec(),
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -301,16 +301,14 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     // Set Metadata With Values
     let update_metadata = HashMap::from([("updated".to_string(), "values".to_string())]);
-    blob_client
-        .set_metadata(update_metadata.clone(), None)
-        .await?;
+    blob_client.set_metadata(&update_metadata, None).await?;
     // Assert
     let response = blob_client.get_properties(None).await?;
     let response_metadata = response.metadata()?;
     assert_eq!(update_metadata, response_metadata);
 
     // Set Metadata No Values (Clear Metadata)
-    blob_client.set_metadata(HashMap::new(), None).await?;
+    blob_client.set_metadata(&HashMap::new(), None).await?;
     // Assert
     let response = blob_client.get_properties(None).await?;
     let response_metadata = response.metadata()?;
@@ -340,7 +338,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let access_tier = response.access_tier()?;
     assert_eq!(AccessTier::Cold.to_string(), access_tier.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -397,7 +395,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
         .await?;
     other_blob_client.acquire_lease(15, None).await?;
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -430,7 +428,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     blob_client
-        .set_metadata(update_metadata.clone(), Some(set_metadata_options))
+        .set_metadata(&update_metadata, Some(set_metadata_options))
         .await?;
 
     let set_tier_options = BlobClientSetTierOptions {
@@ -487,7 +485,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(data.to_vec(), response_body.collect().await?.to_vec());
 
     blob_client.break_lease(None).await?;
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -531,7 +529,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let map: HashMap<String, String> = response_tags.into();
     assert_eq!(HashMap::new(), map);
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -590,7 +588,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         Some(recording.credential()),
         Some(container_client_options.clone()),
     )?;
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
 
     // Test Data for Parameterization
     let test_cases = [
@@ -705,7 +703,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         );
     }
 
-    container_client.delete_container(None).await?;
+    // container_client.delete(None).await?;
 
     Ok(())
 }
@@ -717,7 +715,7 @@ async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
     create_test_blob(&blob_client, None, None).await?;
 
     // Set Legal Hold
@@ -752,7 +750,7 @@ async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>
     let container_client =
         get_container_client(recording, false, StorageAccount::Versioned, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
-    container_client.create_container(None).await?;
+    container_client.create(None).await?;
     create_test_blob(&blob_client, None, None).await?;
 
     // Set Immutability Policy (No Mode Specified, Default to Unlocked)
@@ -853,7 +851,7 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
         "Expected request_id to be populated."
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -949,7 +947,7 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
         Some("The specified blob does not exist.")
     );
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
