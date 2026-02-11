@@ -1,8 +1,6 @@
 # Release History
 
-## 0.32.0 (Unreleased)
-
-### Features Added
+## 0.32.0 (2026-02-11)
 
 ### Breaking Changes
 
@@ -10,9 +8,7 @@
 
 ### Bugs Fixed
 
-- Removed redundant content from `Azure[Developer]CliCredential` error messages
-
-### Other Changes
+- Removed redundant content and extraneous JSON from `Azure[Developer]CliCredential` error messages
 
 ## 0.31.0 (2026-01-21)
 
