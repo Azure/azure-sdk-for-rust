@@ -6,28 +6,14 @@ use azure_core::{
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{
-    models::{
-        method_options::BlockBlobClientManagedUploadOptions, BlobClientDownloadResultHeaders,
-        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
-        BlockListType, BlockLookupList,
-    },
-    BlobContainerClientOptions,
+use azure_storage_blob::models::{
+    BlobClientDownloadResultHeaders, BlockBlobClientStageBlockFromUrlOptions,
+    BlockBlobClientUploadBlobFromUrlOptions, BlockListType, BlockLookupList,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, predicates, ClientOptionsExt,
-    StorageAccount, TestPolicy, KB, MB,
+    create_test_blob, get_blob_name, get_container_client, StorageAccount,
 };
-use bytes::{BufMut, BytesMut};
-use std::{
-    error::Error,
-    io::Write,
-    num::NonZero,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
-};
+use std::error::Error;
 
 #[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -344,166 +330,166 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-// TODO successfully record block ID generation to remove live-only marker
-#[recorded::test(live)]
-async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let stage_block_count = Arc::new(AtomicUsize::new(0));
-    let count_policy = Arc::new(TestPolicy::count_requests(
-        stage_block_count.clone(),
-        Some(Arc::new(predicates::is_stage_block_request)),
-    ));
+// TODO: managed_upload tests commented out - not ready for release
+// #[recorded::test(live)]
+// async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     let stage_block_count = Arc::new(AtomicUsize::new(0));
+//     let count_policy = Arc::new(TestPolicy::count_requests(
+//         stage_block_count.clone(),
+//         Some(Arc::new(predicates::is_stage_block_request)),
+//     ));
 
-    let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    let block_blob_client = blob_client.block_blob_client();
+//     let recording = ctx.recording();
+//     let container_client = get_container_client(
+//         recording,
+//         true,
+//         StorageAccount::Standard,
+//         Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+//     )
+//     .await?;
+//     let blob_client = container_client.blob_client(&get_blob_name(recording));
+//     let block_blob_client = blob_client.block_blob_client();
 
-    let data: [u8; 1024] = recording.random();
-    let bytes: Bytes = data.to_vec().into();
+//     let data: [u8; 1024] = recording.random();
+//     let bytes: Bytes = data.to_vec().into();
 
-    for (parallel, partition_size, expected_stage_block_calls) in [
-        (1, 2048, 0), // put blob expected
-        (2, 1024, 0), // put blob expected
-        (2, 512, 2),
-        (1, 256, 4),
-        (8, 31, 34),
-    ] {
-        stage_block_count.store(0, Ordering::Relaxed);
-        let options = BlockBlobClientManagedUploadOptions {
-            parallel: Some(NonZero::new(parallel).unwrap()),
-            partition_size: Some(NonZero::new(partition_size).unwrap()),
-            ..Default::default()
-        };
-        {
-            let _scope = count_policy.check_request_scope();
-            block_blob_client
-                .managed_upload(bytes.clone().into(), Some(options))
-                .await?;
-        }
-        assert_eq!(
-            blob_client
-                .download(None)
-                .await?
-                .into_body()
-                .collect()
-                .await?[..],
-            data,
-            "Failed parallel={},partition_size={}",
-            parallel,
-            partition_size
-        );
-        assert_eq!(
-            stage_block_count.load(Ordering::Relaxed),
-            expected_stage_block_calls,
-            "Failed parallel={},partition_size={}",
-            parallel,
-            partition_size
-        );
-    }
+//     for (parallel, partition_size, expected_stage_block_calls) in [
+//         (1, 2048, 0), // put blob expected
+//         (2, 1024, 0), // put blob expected
+//         (2, 512, 2),
+//         (1, 256, 4),
+//         (8, 31, 34),
+//     ] {
+//         stage_block_count.store(0, Ordering::Relaxed);
+//         let options = BlockBlobClientManagedUploadOptions {
+//             parallel: Some(NonZero::new(parallel).unwrap()),
+//             partition_size: Some(NonZero::new(partition_size).unwrap()),
+//             ..Default::default()
+//         };
+//         {
+//             let _scope = count_policy.check_request_scope();
+//             block_blob_client
+//                 .managed_upload(bytes.clone().into(), Some(options))
+//                 .await?;
+//         }
+//         assert_eq!(
+//             blob_client
+//                 .download(None)
+//                 .await?
+//                 .into_body()
+//                 .collect()
+//                 .await?[..],
+//             data,
+//             "Failed parallel={},partition_size={}",
+//             parallel,
+//             partition_size
+//         );
+//         assert_eq!(
+//             stage_block_count.load(Ordering::Relaxed),
+//             expected_stage_block_calls,
+//             "Failed parallel={},partition_size={}",
+//             parallel,
+//             partition_size
+//         );
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-#[recorded::test]
-async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let request_count = Arc::new(AtomicUsize::new(0));
-    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+// #[recorded::test]
+// async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     let request_count = Arc::new(AtomicUsize::new(0));
+//     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
-    let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    let block_blob_client = blob_client.block_blob_client();
+//     let recording = ctx.recording();
+//     let container_client = get_container_client(
+//         recording,
+//         true,
+//         StorageAccount::Standard,
+//         Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+//     )
+//     .await?;
+//     let blob_client = container_client.blob_client(&get_blob_name(recording));
+//     let block_blob_client = blob_client.block_blob_client();
 
-    let data = [];
-    let bytes: Bytes = data.to_vec().into();
+//     let data = [];
+//     let bytes: Bytes = data.to_vec().into();
 
-    request_count.store(0, Ordering::Relaxed);
-    let options = BlockBlobClientManagedUploadOptions {
-        ..Default::default()
-    };
-    {
-        let _scope = count_policy.check_request_scope();
-        block_blob_client
-            .managed_upload(bytes.clone().into(), Some(options))
-            .await?;
-    }
-    assert_eq!(
-        blob_client
-            .download(None)
-            .await?
-            .into_body()
-            .collect()
-            .await?[..],
-        data
-    );
-    assert_eq!(request_count.load(Ordering::Relaxed), 1);
+//     request_count.store(0, Ordering::Relaxed);
+//     let options = BlockBlobClientManagedUploadOptions {
+//         ..Default::default()
+//     };
+//     {
+//         let _scope = count_policy.check_request_scope();
+//         block_blob_client
+//             .managed_upload(bytes.clone().into(), Some(options))
+//             .await?;
+//     }
+//     assert_eq!(
+//         blob_client
+//             .download(None)
+//             .await?
+//             .into_body()
+//             .collect()
+//             .await?[..],
+//         data
+//     );
+//     assert_eq!(request_count.load(Ordering::Relaxed), 1);
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-#[recorded::test(live)]
-async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let stage_block_count = Arc::new(AtomicUsize::new(0));
-    let count_policy = Arc::new(TestPolicy::count_requests(
-        stage_block_count.clone(),
-        Some(Arc::new(predicates::is_stage_block_request)),
-    ));
+// #[recorded::test(live)]
+// async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     let stage_block_count = Arc::new(AtomicUsize::new(0));
+//     let count_policy = Arc::new(TestPolicy::count_requests(
+//         stage_block_count.clone(),
+//         Some(Arc::new(predicates::is_stage_block_request)),
+//     ));
 
-    let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    let block_blob_client = blob_client.block_blob_client();
+//     let recording = ctx.recording();
+//     let container_client = get_container_client(
+//         recording,
+//         true,
+//         StorageAccount::Standard,
+//         Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+//     )
+//     .await?;
+//     let blob_client = container_client.blob_client(&get_blob_name(recording));
+//     let block_blob_client = blob_client.block_blob_client();
 
-    let data_len = 50 * MB;
-    let expected_stage_block_count = data_len.div_ceil(4 * MB);
-    let mut bytes = BytesMut::with_capacity(data_len).writer();
-    {
-        let mut buf = [0u8; 4 * KB];
-        for _ in (0..data_len).step_by(buf.len()) {
-            buf = recording.random();
-            bytes.write_all(&buf)?;
-        }
-    }
-    let bytes = bytes.into_inner().freeze();
+//     let data_len = 50 * MB;
+//     let expected_stage_block_count = data_len.div_ceil(4 * MB);
+//     let mut bytes = BytesMut::with_capacity(data_len).writer();
+//     {
+//         let mut buf = [0u8; 4 * KB];
+//         for _ in (0..data_len).step_by(buf.len()) {
+//             buf = recording.random();
+//             bytes.write_all(&buf)?;
+//         }
+//     }
+//     let bytes = bytes.into_inner().freeze();
 
-    stage_block_count.store(0, Ordering::Relaxed);
-    {
-        let _scope = count_policy.check_request_scope();
-        block_blob_client
-            .managed_upload(bytes.clone().into(), None)
-            .await?;
-    }
-    assert_eq!(
-        blob_client
-            .download(None)
-            .await?
-            .into_body()
-            .collect()
-            .await?[..],
-        bytes[..]
-    );
-    assert_eq!(
-        stage_block_count.load(Ordering::Relaxed),
-        expected_stage_block_count
-    );
+//     stage_block_count.store(0, Ordering::Relaxed);
+//     {
+//         let _scope = count_policy.check_request_scope();
+//         block_blob_client
+//             .managed_upload(bytes.clone().into(), None)
+//             .await?;
+//     }
+//     assert_eq!(
+//         blob_client
+//             .download(None)
+//             .await?
+//             .into_body()
+//             .collect()
+//             .await?[..],
+//         bytes[..]
+//     );
+//     assert_eq!(
+//         stage_block_count.load(Ordering::Relaxed),
+//         expected_stage_block_count
+//     );
 
-    Ok(())
-}
+//     Ok(())
+// }

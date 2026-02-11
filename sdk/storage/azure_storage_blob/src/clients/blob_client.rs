@@ -8,8 +8,7 @@ use crate::{
     logging::apply_storage_logging_defaults,
     models::{
         method_options::BlobClientManagedDownloadOptions, BlobClientDownloadOptions,
-        BlobClientDownloadResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
-        StorageErrorCode,
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -23,8 +22,8 @@ use azure_core::{
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::PinnedStream,
-        AsyncRawResponse, AsyncResponse, ClientOptions, NoFormat, Pipeline, RequestContent,
-        Response, StatusCode, Url, UrlExt,
+        AsyncRawResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
+        Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -140,7 +139,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    pub async fn managed_download(
+    pub(crate) async fn managed_download(
         &self,
         options: Option<BlobClientManagedDownloadOptions<'_>>,
     ) -> Result<PinnedStream> {
@@ -259,17 +258,6 @@ impl BlobClient {
     }
 
     // TODO: Partitioned upload will obsolete this wrapper.
-    /// Downloads a blob from the service, including its metadata and properties.
-    ///
-    /// * `options` - Optional configuration for the request.
-    pub async fn download(
-        &self,
-        options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
-        self.download_internal(options).await
-    }
-
-    // TODO: Partitioned upload will obsolete this wrapper.
     /// Creates a new blob from a data source.
     ///
     /// # Arguments
@@ -293,7 +281,7 @@ impl BlobClient {
         }
 
         self.block_blob_client()
-            .upload_internal(data, content_length, Some(options))
+            .upload(data, content_length, Some(options))
             .await
     }
 

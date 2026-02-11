@@ -9,13 +9,3 @@ mod extensions;
 pub mod method_options;
 
 pub use crate::generated::models::*;
-
-// TODO: This will all go away as a result of having our handwritten replacements.
-pub use crate::generated::models::{
-    BlobClientDownloadInternalOptions as BlobClientDownloadOptions,
-    BlobClientDownloadInternalResult as BlobClientDownloadResult,
-    BlobClientDownloadInternalResultHeaders as BlobClientDownloadResultHeaders,
-    BlockBlobClientUploadInternalOptions as BlockBlobClientUploadOptions,
-    BlockBlobClientUploadInternalResult as BlockBlobClientUploadResult,
-    BlockBlobClientUploadInternalResultHeaders as BlockBlobClientUploadResultHeaders,
-};

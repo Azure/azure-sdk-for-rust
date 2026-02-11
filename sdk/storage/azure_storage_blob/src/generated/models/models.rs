@@ -75,9 +75,9 @@ pub struct BlobClientChangeLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobClientCreateSnapshotResult;
 
-/// Contains results for `BlobClient::download_internal()`
+/// Contains results for `BlobClient::download()`
 #[derive(SafeDebug)]
-pub struct BlobClientDownloadInternalResult;
+pub struct BlobClientDownloadResult;
 
 /// Contains results for `BlobClient::get_account_info()`
 #[derive(SafeDebug)]
@@ -547,9 +547,9 @@ pub struct BlockBlobClientStageBlockResult;
 #[derive(SafeDebug)]
 pub struct BlockBlobClientUploadBlobFromUrlResult;
 
-/// Contains results for `BlockBlobClient::upload_internal()`
+/// Contains results for `BlockBlobClient::upload()`
 #[derive(SafeDebug)]
-pub struct BlockBlobClientUploadInternalResult;
+pub struct BlockBlobClientUploadResult;
 
 /// Contains the committed and uncommitted blocks in a block blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
