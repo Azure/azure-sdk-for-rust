@@ -9,7 +9,7 @@ This file contains coding guidelines and architectural patterns specific to the 
 ## Core Principles
 
 ### Design guidelines
-- Follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html) as the primary reference for API design, error handling, async patterns, and module organization unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.inctsructions.md` files.
+- Follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html) as the primary reference for API design, error handling, async patterns, and module organization unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.instructions.md` files.
 
 ### Data-Oriented Programming (DOP)
 
@@ -367,7 +367,7 @@ let driver = Driver::builder()
   - Partition key handling
   - Continuation token pagination
 - Tests should use standard trait implementations (e.g., `.parse::<T>()` instead of calling `T::from_str()` directly)
-- Use `assert!` and `assert!` for boolean assertions instead of `assert_eq!(value, true/false)`
+- Use `assert!` for boolean assertions instead of `assert_eq!(value, true/false)`
 
 ## Code Quality and Validation
 
