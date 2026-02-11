@@ -11,6 +11,7 @@
 
 ### Breaking Changes
 
+- Changed `QueueClient::set_access_policy()` return type from `Response<QueueClientSetAccessPolicyResult, NoFormat>` to `Response<(), NoFormat>`.
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Removed the `queue_name()` accessor on `QueueClient`.
 - Removed the `endpoint` struct field on all clients, as this value is now returned directly from the underlying generated client.

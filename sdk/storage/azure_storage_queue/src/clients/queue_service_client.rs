@@ -4,7 +4,10 @@
 use crate::{
     clients::QueueClient,
     generated::{
-        clients::{QueueServiceClient as GeneratedQueueServiceClient, QueueServiceClientOptions},
+        clients::{
+            QueueClient as GeneratedQueueClient, QueueServiceClient as GeneratedQueueServiceClient,
+            QueueServiceClientOptions,
+        },
         models::*,
     },
 };
@@ -21,8 +24,6 @@ use std::sync::Arc;
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueServiceClient {
     pub(super) client: GeneratedQueueServiceClient,
-    pub(super) credential: Option<Arc<dyn TokenCredential>>,
-    pub(super) options: Option<QueueServiceClientOptions>,
 }
 
 impl GeneratedQueueServiceClient {
@@ -90,11 +91,7 @@ impl QueueServiceClient {
         let url = Url::parse(endpoint)?;
         let client =
             GeneratedQueueServiceClient::from_url(url, credential.clone(), options.clone())?;
-        Ok(Self {
-            client,
-            credential,
-            options,
-        })
+        Ok(Self { client })
     }
 
     /// Returns the endpoint URL of the Azure storage account this client is associated with.
@@ -107,18 +104,25 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `queue_name` - The name of the queue.
-    pub fn queue_client(&self, queue_name: String) -> Result<QueueClient> {
-        use crate::clients::QueueClientOptions;
-        let queue_options = self.options.as_ref().map(|opts| QueueClientOptions {
-            client_options: opts.client_options.clone(),
-            ..Default::default()
-        });
-        QueueClient::new(
-            self.endpoint().as_str(),
-            &queue_name,
-            self.credential.clone(),
-            queue_options,
-        )
+    pub fn queue_client(&self, queue_name: &str) -> Result<QueueClient> {
+        let mut queue_url = self.endpoint().clone();
+        queue_url
+            .path_segments_mut()
+            .map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?
+            .push(queue_name);
+        Ok(QueueClient {
+            client: GeneratedQueueClient {
+                endpoint: queue_url,
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+        })
     }
 
     /// Creates a new queue under the given account.
@@ -132,9 +136,7 @@ impl QueueServiceClient {
         queue_name: &str,
         options: Option<QueueClientCreateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.queue_client(queue_name.to_string())?
-            .create(options)
-            .await
+        self.queue_client(queue_name)?.create(options).await
     }
 
     /// Permanently deletes the specified queue.
@@ -148,9 +150,7 @@ impl QueueServiceClient {
         queue_name: &str,
         options: Option<QueueClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.queue_client(queue_name.to_string())?
-            .delete(options)
-            .await
+        self.queue_client(queue_name)?.delete(options).await
     }
 
     /// Retrieves the properties for the entire queue service.

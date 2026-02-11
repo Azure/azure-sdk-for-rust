@@ -90,7 +90,7 @@ impl QueueClient {
         Ok(Self { client })
     }
 
-    /// Creates a new QueueClient using Entra ID authentication.
+    /// Creates a new QueueClient for a queue within an Azure Storage account.
     ///
     /// # Arguments
     ///
