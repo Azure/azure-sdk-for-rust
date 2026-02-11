@@ -11,24 +11,14 @@ use super::FaultInjectionErrorType;
 #[derive(Clone, Debug)]
 pub struct FaultInjectionResult {
     /// The type of server error to inject.
-    error_type: Option<FaultInjectionErrorType>,
+    pub error_type: Option<FaultInjectionErrorType>,
     /// Delay before injecting the error.
-    delay: Duration,
+    pub delay: Duration,
     /// Probability of injecting the error (0.0 to 1.0).
     probability: f32,
 }
 
 impl FaultInjectionResult {
-    /// Returns the error type to inject, if set.
-    pub fn error_type(&self) -> Option<FaultInjectionErrorType> {
-        self.error_type
-    }
-
-    /// Returns the delay applied after the fault response.
-    pub fn delay(&self) -> Duration {
-        self.delay
-    }
-
     /// Returns the probability of injecting the fault (0.0 to 1.0).
     pub fn probability(&self) -> f32 {
         self.probability
@@ -99,11 +89,8 @@ mod tests {
             .with_error(FaultInjectionErrorType::Timeout)
             .build();
 
-        assert_eq!(
-            error.error_type().unwrap(),
-            FaultInjectionErrorType::Timeout
-        );
-        assert_eq!(error.delay(), Duration::ZERO);
+        assert_eq!(error.error_type.unwrap(), FaultInjectionErrorType::Timeout);
+        assert_eq!(error.delay, Duration::ZERO);
         assert!((error.probability() - 1.0).abs() < f32::EPSILON);
     }
 

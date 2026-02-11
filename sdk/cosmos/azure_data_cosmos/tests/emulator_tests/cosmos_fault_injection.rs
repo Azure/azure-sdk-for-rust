@@ -926,7 +926,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             .build(),
     );
 
-    assert_eq!(rule.id(), "enable-disable-test");
+    assert_eq!(rule.id, "enable-disable-test");
     assert!(rule.is_enabled());
 
     let rule_handle = Arc::clone(&rule);

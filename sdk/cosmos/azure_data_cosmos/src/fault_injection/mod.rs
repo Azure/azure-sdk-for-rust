@@ -218,8 +218,11 @@ impl fmt::Display for FaultOperationType {
 }
 
 impl FromStr for FaultOperationType {
-    type Err = String;
+    type Err = ();
 
+    /// Parses a string into a `FaultOperationType`.
+    ///
+    /// Returns `Err(())` if the string is not a recognized operation type.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "ReadItem" => Ok(FaultOperationType::ReadItem),
@@ -235,7 +238,7 @@ impl FromStr for FaultOperationType {
             "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
             "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
             "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
-            _ => Err(format!("unknown FaultOperationType: {}", s)),
+            _ => Err(()),
         }
     }
 }
