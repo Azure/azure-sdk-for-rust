@@ -27,10 +27,10 @@ pub use partition_key::*;
 pub use query::Query;
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
+mod background_task_manager;
 mod cosmos_request;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
-mod background_task_manager;
 mod handler;
 mod hash;
 mod murmur_hash;

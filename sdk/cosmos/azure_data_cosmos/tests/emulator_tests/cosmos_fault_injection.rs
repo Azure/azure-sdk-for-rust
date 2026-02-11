@@ -1677,9 +1677,8 @@ pub async fn ppcb_disabled_service_unavailable_no_circuit_breaker() -> Result<()
             let result = fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
-            let err = result.expect_err(
-                "read should fail with circuit breaker disabled and persistent 503",
-            );
+            let err = result
+                .expect_err("read should fail with circuit breaker disabled and persistent 503");
             assert_eq!(
                 Some(StatusCode::ServiceUnavailable),
                 err.http_status(),
