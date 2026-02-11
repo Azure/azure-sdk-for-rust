@@ -1,0 +1,25 @@
+[package]
+name = "azure_data_cosmos_perf"
+version = "0.1.0"
+description = "Performance and scale testing tool for the Azure Cosmos DB Rust SDK"
+publish = false
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+azure_core.workspace = true
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
+azure_identity = { path = "../../../sdk/identity/azure_identity" }
+async-trait.workspace = true
+clap = { version = "4.5.45", features = ["derive", "env"] }
+futures.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "signal"] }
+
+[lints]
+workspace = true

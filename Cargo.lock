@@ -358,6 +358,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_data_cosmos_perf"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core",
+ "azure_data_cosmos",
+ "azure_identity",
+ "clap",
+ "futures",
+ "rand 0.9.2",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "azure_identity"
 version = "0.32.0"
 dependencies = [
