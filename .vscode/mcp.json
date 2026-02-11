@@ -7,6 +7,6 @@
         "${workspaceFolder}/eng/common/mcp/azure-sdk-mcp.ps1",
         "-Run"
       ]
-    },
+    }
   }
 }
