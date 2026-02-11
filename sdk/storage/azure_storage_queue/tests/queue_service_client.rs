@@ -189,7 +189,7 @@ pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServ
     };
     let queue_client = QueueServiceClient::new(
         &endpoint,
-        recording.credential(),
+        Some(recording.credential()),
         Option::Some(queue_client_options),
     )?;
 
@@ -211,7 +211,7 @@ pub async fn get_queue_service_client_secondary(
     };
     let queue_client = QueueServiceClient::new(
         &endpoint,
-        recording.credential(),
+        Some(recording.credential()),
         Option::Some(queue_client_options),
     )?;
 
