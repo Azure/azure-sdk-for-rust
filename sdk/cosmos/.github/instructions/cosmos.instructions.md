@@ -361,6 +361,7 @@ let driver = Driver::builder()
   - Request building logic
   - Response parsing
   - Error handling paths
+  - AVOID writing tests for trivial or obvious functionality, like derived trait behavior, constructor behavior that just assigns fields, or simple getters/setters.
 - Integration tests should cover:
   - CRUD operations
   - Query scenarios
