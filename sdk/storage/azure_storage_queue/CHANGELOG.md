@@ -6,7 +6,6 @@
 
 - Added support for client construction directly from URLs:
   - `QueueClient::from_url()`
-  - `QueueServiceClient::from_url()`
 - Added support for SAS (shared access signature) URLs via the new `from_url()` methods.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
 

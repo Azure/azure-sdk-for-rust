@@ -75,30 +75,6 @@ impl GeneratedQueueServiceClient {
 }
 
 impl QueueServiceClient {
-    /// Creates a new QueueServiceClient from a service URL.
-    ///
-    /// # Arguments
-    ///
-    /// * `service_url` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication. If None, the URL must contain authentication information (e.g., SAS token).
-    /// * `options` - Optional configuration for the client.
-    pub fn from_url(
-        service_url: Url,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<QueueServiceClientOptions>,
-    ) -> Result<Self> {
-        let client = GeneratedQueueServiceClient::from_url(
-            service_url,
-            credential.clone(),
-            options.clone(),
-        )?;
-        Ok(Self {
-            client,
-            credential,
-            options,
-        })
-    }
-
     /// Creates a new QueueServiceClient using Entra ID authentication.
     ///
     /// # Arguments
@@ -112,7 +88,13 @@ impl QueueServiceClient {
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
         let url = Url::parse(endpoint)?;
-        Self::from_url(url, credential, options)
+        let client =
+            GeneratedQueueServiceClient::from_url(url, credential.clone(), options.clone())?;
+        Ok(Self {
+            client,
+            credential,
+            options,
+        })
     }
 
     /// Returns the endpoint URL of the Azure storage account this client is associated with.
