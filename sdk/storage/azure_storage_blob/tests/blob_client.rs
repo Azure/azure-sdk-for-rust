@@ -939,7 +939,7 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
     Ok(())
 }
 
-// TODO: managed_download tests commented out - not ready for release
+// TODO: managed_download tests
 // #[recorded::test]
 // async fn test_managed_download_beneath_partition_size(
 //     ctx: TestContext,
@@ -1092,7 +1092,7 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
 //     Ok(())
 // }
 
-// TODO edge case where a range was requested on a 0-length blob
+// TODO empty download case
 // #[recorded::test]
 // async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 //     const DATA_LEN: usize = 1024;

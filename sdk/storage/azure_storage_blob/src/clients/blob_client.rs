@@ -209,7 +209,6 @@ impl BlobClient {
         }
     }
 
-    // TODO: Can we just rename endpoint() on generated to this? Applies widely.
     /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.endpoint
@@ -257,7 +256,6 @@ impl BlobClient {
         })
     }
 
-    // TODO: Partitioned upload will obsolete this wrapper.
     /// Creates a new blob from a data source.
     ///
     /// # Arguments

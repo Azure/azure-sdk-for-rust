@@ -330,7 +330,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-// TODO: managed_upload tests commented out - not ready for release
+// TODO: managed_upload tests
 // #[recorded::test(live)]
 // async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 //     let stage_block_count = Arc::new(AtomicUsize::new(0));
