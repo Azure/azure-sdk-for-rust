@@ -77,7 +77,7 @@ If you need a non-fallible parse internally, create a **private** helper method 
   - Use `tokio` as the async runtime for `sdk/cosmos/azure_data_cosmos_native`
 - Streaming  (use of `futures::Stream`)
   - There is no need to consider streaming for payloads of individual requests/responses because the Cosmos DB service enforces rather strict limits on request and response payload size (max. 4 MB - only via config overrides extendable to 16 MB per response payload)
-  - There is a need for pagination for example for query or change feed results (could retrun multiple pages - each page created by one or multipel responses) - so `futures::Stream` might be used there to achieve pagination - but for transport, assuming buffered transport is sufficient.
+  - There is a need for pagination for example for query or change feed results (could return multiple pages - each page created by one or multiple responses) - so `futures::Stream` might be used there to achieve pagination - but for transport, assuming buffered transport is sufficient.
 
 #### Resource Management
 
