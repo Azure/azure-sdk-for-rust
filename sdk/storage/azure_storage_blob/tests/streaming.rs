@@ -26,7 +26,7 @@ async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(len, CONTENT_LENGTH);
 
     // Cleanup
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
 
     Ok(())
 }

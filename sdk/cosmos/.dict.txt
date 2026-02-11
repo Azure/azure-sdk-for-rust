@@ -52,3 +52,4 @@ cmake
 
 # Common Rust syntax
 rfind
+subsec

@@ -1,16 +1,10 @@
 # Release History
 
-## 0.11.0 (Unreleased)
-
-### Features Added
+## 0.11.0 (2026-02-11)
 
 ### Breaking Changes
 
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.10.0 (2026-01-20)
 

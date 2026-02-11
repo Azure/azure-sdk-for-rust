@@ -28,6 +28,8 @@ pub use query::Query;
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
 mod cosmos_request;
+#[cfg(feature = "fault_injection")]
+pub mod fault_injection;
 mod handler;
 mod hash;
 mod murmur_hash;

@@ -5,7 +5,6 @@
 
 /// The media type (MIME type).
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ContentType {
     /// The PEM file format.
     Pem,
@@ -21,7 +20,6 @@ pub enum ContentType {
 /// the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
 /// of the retention interval.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum DeletionRecoveryLevel {
     /// Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
     /// purge when 7 <= SoftDeleteRetentionInDays < 90).This level guarantees the recoverability of the deleted entity during

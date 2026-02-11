@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 #![allow(dead_code)]
 
@@ -264,6 +264,7 @@ mod tests {
             endpoint_manager.clone(),
             partition_manager.clone(),
             CosmosClientOptions::default(),
+            false,
         ));
 
         let container_cache =

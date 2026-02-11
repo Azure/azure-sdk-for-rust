@@ -180,6 +180,7 @@ mod tests {
             endpoint_manager,
             partition_manager,
             CosmosClientOptions::default(),
+            false,
         ))
     }
 

@@ -36,6 +36,7 @@ pub struct GatewayPipeline {
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,
     options: CosmosClientOptions,
+    pub fault_injection_enabled: bool,
 }
 
 impl GatewayPipeline {
@@ -45,6 +46,7 @@ impl GatewayPipeline {
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
         options: CosmosClientOptions,
+        fault_injection_enabled: bool,
     ) -> Self {
         let retry_handler =
             BackOffRetryHandler::new(global_endpoint_manager, global_partition_endpoint_manager);
@@ -53,6 +55,7 @@ impl GatewayPipeline {
             pipeline,
             retry_handler,
             options,
+            fault_injection_enabled,
         }
     }
 
@@ -91,6 +94,13 @@ impl GatewayPipeline {
                     .await
             }
         };
+
+        #[cfg(feature = "fault_injection")]
+        // added flag because possible that fault injection feature flag is enabled
+        // but the transport isn't injected with the fault injection client
+        if self.fault_injection_enabled {
+            cosmos_request.add_fault_injection_headers();
+        }
 
         // Delegate to the retry handler, providing the sender callback
         let raw_response: RawResponse =
