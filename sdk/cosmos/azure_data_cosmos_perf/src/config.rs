@@ -49,7 +49,7 @@ pub struct Config {
     #[arg(long, default_value_t = false)]
     pub no_upserts: bool,
 
-    /// Number of concurrent operations.
+    /// Number of concurrent operations (minimum: 1).
     #[arg(long, default_value_t = 50)]
     pub concurrency: usize,
 
@@ -57,7 +57,7 @@ pub struct Config {
     #[arg(long)]
     pub duration: Option<u64>,
 
-    /// Number of items to seed into the container.
+    /// Number of items to seed into the container (minimum: 1).
     #[arg(long, default_value_t = 1000)]
     pub seed_count: usize,
 

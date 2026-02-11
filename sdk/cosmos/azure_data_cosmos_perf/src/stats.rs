@@ -4,8 +4,13 @@
 //! Latency tracking and periodic summary reporting.
 
 use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Duration;
+
+use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
 /// Collects per-operation latency measurements and error counts.
 #[derive(Debug)]
@@ -162,6 +167,104 @@ fn format_duration(d: Duration) -> String {
     } else {
         format!("{:.2}s", d.as_secs_f64())
     }
+}
+
+/// Process-level CPU and memory metrics.
+pub struct ProcessMetrics {
+    /// CPU usage as a percentage (may exceed 100% on multi-core).
+    pub cpu_percent: f32,
+    /// Resident memory in bytes.
+    pub memory_bytes: u64,
+}
+
+/// Captures process-level CPU and memory metrics for the current process.
+///
+/// The `System` instance must be kept alive between calls for CPU usage
+/// to be computed correctly (it's based on the delta between refreshes).
+pub fn refresh_process_metrics(sys: &mut System) -> Option<ProcessMetrics> {
+    let pid = sysinfo::get_current_pid().ok()?;
+    let refresh = ProcessRefreshKind::nothing().with_cpu().with_memory();
+    sys.refresh_processes_specifics(ProcessesToUpdate::Some(&[pid]), true, refresh);
+    let proc = sys.process(pid)?;
+    Some(ProcessMetrics {
+        cpu_percent: proc.cpu_usage(),
+        memory_bytes: proc.memory(),
+    })
+}
+
+fn format_bytes(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+    if bytes >= GB {
+        format!("{:.1} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.1} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.1} KB", bytes as f64 / KB as f64)
+    } else {
+        format!("{} B", bytes)
+    }
+}
+
+/// Prints process-level CPU and memory metrics.
+pub fn print_process_metrics(metrics: &ProcessMetrics) {
+    println!(
+        "  Process: CPU {:.1}%, Memory {}",
+        metrics.cpu_percent,
+        format_bytes(metrics.memory_bytes),
+    );
+}
+
+/// Generates an auto-named CSV report file path with a timestamp.
+pub fn create_report_file() -> std::io::Result<PathBuf> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let path = PathBuf::from(format!("perf-report-{now}.csv"));
+    let mut file = File::create(&path)?;
+    writeln!(
+        file,
+        "timestamp,operation,count,errors,min_ms,max_ms,mean_ms,p50_ms,p90_ms,p99_ms,cpu_percent,memory_bytes"
+    )?;
+    Ok(path)
+}
+
+/// Appends a report interval's data as CSV rows to the given file.
+pub fn append_csv(
+    path: &Path,
+    summaries: &[Summary],
+    metrics: Option<&ProcessMetrics>,
+) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().append(true).open(path)?;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let (cpu, mem) = metrics
+        .map(|m| (m.cpu_percent, m.memory_bytes))
+        .unwrap_or((0.0, 0));
+
+    for s in summaries {
+        writeln!(
+            file,
+            "{},{},{},{},{:.3},{:.3},{:.3},{:.3},{:.3},{:.3},{:.1},{}",
+            now,
+            s.name,
+            s.count,
+            s.errors,
+            s.min.as_secs_f64() * 1000.0,
+            s.max.as_secs_f64() * 1000.0,
+            s.mean.as_secs_f64() * 1000.0,
+            s.p50.as_secs_f64() * 1000.0,
+            s.p90.as_secs_f64() * 1000.0,
+            s.p99.as_secs_f64() * 1000.0,
+            cpu,
+            mem,
+        )?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

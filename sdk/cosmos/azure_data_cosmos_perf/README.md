@@ -105,12 +105,18 @@ The tool prints periodic latency summaries like:
 
 ```text
 --- Interval Report ---
+  Process: CPU 45.2%, Memory 128.3 MB
   Operation         Count   Errors        Min        Max       Mean        P50        P90        P99
   -------------------------------------------------------------------------------------------------------
   QueryItems          312        0      3.2ms     45.1ms     12.4ms      9.8ms     28.3ms     41.2ms
   ReadItem            298        2      1.8ms     38.7ms      8.2ms      6.1ms     19.5ms     35.4ms
   UpsertItem          325        0      4.5ms     52.3ms     15.1ms     11.2ms     32.1ms     48.7ms
 ```
+
+A CSV file (`perf-report-<timestamp>.csv`) is automatically created in the current
+directory with timestamped rows for each reporting interval. The CSV includes all
+latency percentiles plus process CPU and memory, making it easy to import into
+Excel or other analysis tools.
 
 ## Extending with New Operations
 

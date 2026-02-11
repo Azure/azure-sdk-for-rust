@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
 use rand::Rng;
+use sysinfo::System;
 
 use crate::operations::Operation;
 use crate::stats::{self, Stats};
@@ -49,10 +50,16 @@ pub async fn run(
         });
     }
 
+    // Create CSV report file
+    let csv_path = stats::create_report_file().expect("failed to create CSV report file");
+    println!("Report file: {}", csv_path.display());
+
     // Start periodic reporter
     let report_stats = stats.clone();
     let report_cancel = cancelled.clone();
+    let report_csv_path = csv_path.clone();
     let reporter = tokio::spawn(async move {
+        let mut sys = System::new();
         let mut interval = tokio::time::interval(report_interval);
         interval.tick().await; // skip first immediate tick
         loop {
@@ -61,8 +68,15 @@ pub async fn run(
                 break;
             }
             println!("\n--- Interval Report ---");
+            let metrics = stats::refresh_process_metrics(&mut sys);
+            if let Some(ref m) = metrics {
+                stats::print_process_metrics(m);
+            }
             let summaries = report_stats.drain_summaries();
             stats::print_report(&summaries);
+            if let Err(e) = stats::append_csv(&report_csv_path, &summaries, metrics.as_ref()) {
+                eprintln!("Warning: failed to write CSV: {e}");
+            }
         }
     });
 
@@ -117,8 +131,17 @@ pub async fn run(
         "\n=== Final Report (total: {:.1}s) ===",
         total_elapsed.as_secs_f64()
     );
+    let mut sys = System::new();
+    let metrics = stats::refresh_process_metrics(&mut sys);
+    if let Some(ref m) = metrics {
+        stats::print_process_metrics(m);
+    }
     let summaries = stats.drain_summaries();
     stats::print_report(&summaries);
+    if let Err(e) = stats::append_csv(&csv_path, &summaries, metrics.as_ref()) {
+        eprintln!("Warning: failed to write final CSV: {e}");
+    }
+    println!("Report saved to: {}", csv_path.display());
 
     reporter.abort();
 }

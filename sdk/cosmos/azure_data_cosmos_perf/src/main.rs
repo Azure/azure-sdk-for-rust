@@ -28,6 +28,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Error: all operations are disabled. Enable at least one.");
         std::process::exit(1);
     }
+    if config.concurrency == 0 {
+        eprintln!("Error: --concurrency must be at least 1.");
+        std::process::exit(1);
+    }
+    if config.concurrency > u32::MAX as usize {
+        eprintln!("Error: --concurrency cannot exceed {}.", u32::MAX);
+        std::process::exit(1);
+    }
+    if config.seed_count == 0 {
+        eprintln!("Error: --seed-count must be at least 1.");
+        std::process::exit(1);
+    }
 
     // Build client options
     let options = CosmosClientOptions {
