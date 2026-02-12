@@ -143,6 +143,11 @@ pub fn get_global_endpoint() -> String {
 
     let account_endpoint = account_host.trim_end_matches('/');
 
+    // The emulator host is just "localhost" without a scheme, so return it directly.
+    if account_endpoint == EMULATOR_HOST {
+        return EMULATOR_HOST.to_string();
+    }
+
     // Parse the URL to extract the host and insert the hub region
     // Expected format: https://accountname.documents.azure.com:443
     // Target format: accountname.documents.azure.com (host only, no scheme/port)
