@@ -12,6 +12,8 @@
 
 ### Other Changes
 
+- Updated dependencies.
+
 ## 0.4.0 (2026-02-10)
 
 ### Other Changes
