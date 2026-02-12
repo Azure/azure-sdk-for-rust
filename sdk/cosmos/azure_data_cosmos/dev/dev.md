@@ -12,7 +12,7 @@
 `cargo +nightly test --lib --bins --tests --examples --package azure_data_cosmos --all-features --no-fail-fast -- --format json -Z unstable-options --nocapture`
 
 
-### Common Issuess
+### Common Issues
 Using Windows, you might run into OpenSSL errors like the ones outlined below:
 
 ![common_issue.png](./common_issue.png)
