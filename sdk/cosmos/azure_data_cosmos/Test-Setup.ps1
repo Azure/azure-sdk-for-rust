@@ -14,6 +14,12 @@ if ($env:AZURE_COSMOS_CONNECTION_STRING) {
     return
 }
 
+# Append COSMOS_RUSTFLAGS (from test-resources.bicep) to RUSTFLAGS if present
+if ($env:COSMOS_RUSTFLAGS) {
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) $($env:COSMOS_RUSTFLAGS)"
+    Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
+}
+
 $IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
 if($IsAzDo) {
     $AzDoEmulatorPath = Join-Path $env:AGENT_HOMEDIRECTORY "..\..\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
@@ -50,7 +56,7 @@ if ($IsWindows) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
-    $env:RUSTFLAGS = '--cfg=test_category="emulator"'
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 } elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
     Write-Host "Docker detected. Using Cosmos DB Emulator in Docker."
@@ -96,7 +102,7 @@ if ($IsWindows) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
-    $env:RUSTFLAGS = '--cfg=test_category="emulator"'
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 
     Write-Host "Cosmos DB Emulator is running in Docker."
