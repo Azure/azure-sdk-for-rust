@@ -28,7 +28,7 @@
 //! };
 //!
 //! let batch = TransactionalBatch::new("category1")
-//!     .create_item(product1, None)?;
+//!     .create_item(product1)?;
 //!
 //! let response = container_client.execute_transactional_batch(batch, None).await?;
 //! # Ok(())
@@ -40,19 +40,46 @@ use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
-/// Options for conditional batch operations using ETags.
+/// Options for batch upsert operations.
 ///
-/// ETags can be used for optimistic concurrency control:
-/// - `if_match`: Only perform the operation if the item's current ETag matches this value.
-/// - `if_none_match`: Only perform the operation if the item's current ETag does not match this value.
-///   Use `"*"` to only create if the item doesn't exist.
+/// Upsert supports both conditional options for optimistic concurrency control.
 #[derive(Clone, Debug, Default)]
-pub struct BatchOperationOptions {
+pub struct BatchUpsertOptions {
     /// Only perform the operation if the item's ETag matches this value.
     pub if_match: Option<String>,
     /// Only perform the operation if the item's ETag does not match this value.
-    /// Use `"*"` to only succeed if the item doesn't exist.
     pub if_none_match: Option<String>,
+}
+
+/// Options for batch replace operations.
+///
+/// Replace only supports `if_match` for optimistic concurrency control,
+/// since the item must exist to be replaced.
+#[derive(Clone, Debug, Default)]
+pub struct BatchReplaceOptions {
+    /// Only replace if the item's current ETag matches this value.
+    pub if_match: Option<String>,
+}
+
+/// Options for batch read operations.
+///
+/// Read supports both conditional options, commonly used for cache validation.
+#[derive(Clone, Debug, Default)]
+pub struct BatchReadOptions {
+    /// Only return the item if its ETag matches this value.
+    pub if_match: Option<String>,
+    /// Only return the item if its ETag does not match (useful for caching).
+    pub if_none_match: Option<String>,
+}
+
+/// Options for batch delete operations.
+///
+/// Delete only supports `if_match` for optimistic concurrency control,
+/// since the item must exist to be deleted.
+#[derive(Clone, Debug, Default)]
+pub struct BatchDeleteOptions {
+    /// Only delete if the item's current ETag matches this value.
+    pub if_match: Option<String>,
 }
 
 /// Represents a transactional batch of operations to be executed atomically.
@@ -100,7 +127,6 @@ impl TransactionalBatch {
     ///
     /// # Arguments
     /// * `item` - The item to create. Must implement [`Serialize`].
-    /// * `options` - Optional conditional options for the operation.
     ///
     /// # Examples
     ///
@@ -121,22 +147,15 @@ impl TransactionalBatch {
     /// };
     ///
     /// let batch = TransactionalBatch::new("partition1")
-    ///     .create_item(product, None)?;
+    ///     .create_item(product)?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item<T: Serialize>(
-        mut self,
-        item: T,
-        options: Option<BatchOperationOptions>,
-    ) -> Result<Self, serde_json::Error> {
-        let options = options.unwrap_or_default();
+    pub fn create_item<T: Serialize>(mut self, item: T) -> Result<Self, serde_json::Error> {
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Create {
             resource_body,
             id: None,
-            if_match: options.if_match,
-            if_none_match: options.if_none_match,
         });
         Ok(self)
     }
@@ -149,15 +168,14 @@ impl TransactionalBatch {
     pub fn upsert_item<T: Serialize>(
         mut self,
         item: T,
-        options: Option<BatchOperationOptions>,
+        options: Option<BatchUpsertOptions>,
     ) -> Result<Self, serde_json::Error> {
-        let options = options.unwrap_or_default();
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Upsert {
             resource_body,
             id: None,
-            if_match: options.if_match,
-            if_none_match: options.if_none_match,
+            if_match: options.as_ref().and_then(|o| o.if_match.clone()),
+            if_none_match: options.as_ref().and_then(|o| o.if_none_match.clone()),
         });
         Ok(self)
     }
@@ -172,15 +190,13 @@ impl TransactionalBatch {
         mut self,
         item_id: impl Into<Cow<'static, str>>,
         item: T,
-        options: Option<BatchOperationOptions>,
+        options: Option<BatchReplaceOptions>,
     ) -> Result<Self, serde_json::Error> {
-        let options = options.unwrap_or_default();
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Replace {
             id: item_id.into(),
             resource_body,
-            if_match: options.if_match,
-            if_none_match: options.if_none_match,
+            if_match: options.and_then(|o| o.if_match),
         });
         Ok(self)
     }
@@ -193,13 +209,12 @@ impl TransactionalBatch {
     pub fn read_item(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
-        options: Option<BatchOperationOptions>,
+        options: Option<BatchReadOptions>,
     ) -> Self {
-        let options = options.unwrap_or_default();
         self.operations.push(TransactionalBatchOperation::Read {
             id: item_id.into(),
-            if_match: options.if_match,
-            if_none_match: options.if_none_match,
+            if_match: options.as_ref().and_then(|o| o.if_match.clone()),
+            if_none_match: options.as_ref().and_then(|o| o.if_none_match.clone()),
         });
         self
     }
@@ -212,13 +227,11 @@ impl TransactionalBatch {
     pub fn delete_item(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
-        options: Option<BatchOperationOptions>,
+        options: Option<BatchDeleteOptions>,
     ) -> Self {
-        let options = options.unwrap_or_default();
         self.operations.push(TransactionalBatchOperation::Delete {
             id: item_id.into(),
-            if_match: options.if_match,
-            if_none_match: options.if_none_match,
+            if_match: options.and_then(|o| o.if_match),
         });
         self
     }
@@ -258,10 +271,6 @@ pub(crate) enum TransactionalBatchOperation {
         #[serde(skip_serializing_if = "Option::is_none")]
         id: Option<Cow<'static, str>>,
         resource_body: serde_json::Value,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        if_match: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        if_none_match: Option<String>,
     },
     /// Upsert an item (create or replace).
     Upsert {
@@ -279,8 +288,6 @@ pub(crate) enum TransactionalBatchOperation {
         resource_body: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
         if_match: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        if_none_match: Option<String>,
     },
     /// Read an item.
     Read {
@@ -295,8 +302,6 @@ pub(crate) enum TransactionalBatchOperation {
         id: Cow<'static, str>,
         #[serde(skip_serializing_if = "Option::is_none")]
         if_match: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        if_none_match: Option<String>,
     },
 }
 
@@ -400,19 +405,14 @@ mod tests {
             value: 42,
         };
 
-        let etag_options = BatchOperationOptions {
+        let replace_options = BatchReplaceOptions {
             if_match: Some("some-etag".to_string()),
-            if_none_match: None,
-        };
-        let if_none_match_options = BatchOperationOptions {
-            if_match: None,
-            if_none_match: Some("*".to_string()),
         };
 
         let batch = TransactionalBatch::new("test_partition")
-            .create_item(&item, Some(if_none_match_options))?
+            .create_item(&item)?
             .upsert_item(&item, None)?
-            .replace_item("id1", &item, Some(etag_options))?
+            .replace_item("id1", &item, Some(replace_options))?
             .read_item("id2", None)
             .delete_item("id3", None);
 
@@ -426,8 +426,7 @@ mod tests {
     "resourceBody": {
       "id": "item1",
       "value": 42
-    },
-    "ifNoneMatch": "*"
+    }
   },
   {
     "operationType": "Upsert",

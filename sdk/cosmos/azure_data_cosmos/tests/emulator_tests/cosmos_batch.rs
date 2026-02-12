@@ -8,7 +8,7 @@ use super::framework;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
-use azure_data_cosmos::options::ItemOptions;
+use azure_data_cosmos::options::BatchOptions;
 use azure_data_cosmos::TransactionalBatch;
 use framework::TestClient;
 use framework::TestRunContext;
@@ -66,11 +66,11 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
 
             // Create a batch with create and read operations
             let batch = TransactionalBatch::new(&partition_key)
-                .create_item(&item1, None)?
-                .create_item(&item2, None)?
+                .create_item(&item1)?
+                .create_item(&item2)?
                 .read_item("item1", None);
 
-            let options = ItemOptions {
+            let options = BatchOptions {
                 enable_content_response_on_write: true,
                 ..Default::default()
             };
@@ -151,7 +151,7 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
 
             let batch = TransactionalBatch::new(&partition_key)
                 .replace_item("item1", &updated_item1, None)?
-                .create_item(&item3, None)?
+                .create_item(&item3)?
                 .delete_item("item2", None);
 
             let response = container_client
@@ -211,7 +211,7 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
             };
 
             let batch = TransactionalBatch::new(&partition_key)
-                .create_item(&item2, None)?
+                .create_item(&item2)?
                 .delete_item("nonexistent_item", None); // This will fail with 404
 
             let response = container_client
@@ -254,7 +254,7 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
                     value: i,
                     name: format!("Item #{}", i),
                 };
-                batch = batch.create_item(&item, None)?;
+                batch = batch.create_item(&item)?;
             }
 
             let response = container_client
@@ -299,7 +299,7 @@ pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn
                     "partition_key": partition_key.clone(),
                     "large_data": large_string.clone(),
                 });
-                batch = batch.create_item(&item, None)?;
+                batch = batch.create_item(&item)?;
             }
 
             let response = container_client

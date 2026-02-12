@@ -43,7 +43,7 @@ impl BatchCommand {
                 "create" => {
                     let json_str = op["json"].as_str().ok_or("Missing 'json' field")?;
                     let value: Value = serde_json::from_str(json_str)?;
-                    batch = batch.create_item(value, None)?;
+                    batch = batch.create_item(value)?;
                 }
                 "upsert" => {
                     let json_str = op["json"].as_str().ok_or("Missing 'json' field")?;

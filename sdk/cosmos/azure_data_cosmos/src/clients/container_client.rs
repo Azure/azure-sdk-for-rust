@@ -4,7 +4,7 @@
 use crate::{
     clients::OffersClient,
     models::{ContainerProperties, CosmosResponse, PatchDocument, ThroughputProperties},
-    options::{QueryOptions, ReadContainerOptions},
+    options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::{TransactionalBatch, TransactionalBatchResponse},
@@ -766,7 +766,7 @@ impl ContainerClient {
     /// };
     ///
     /// let batch = TransactionalBatch::new("category1")
-    ///     .create_item(product1, None)?;
+    ///     .create_item(product1)?;
     ///
     /// let response = container_client.execute_transactional_batch(batch, None).await?;
     /// # Ok(())
@@ -782,9 +782,9 @@ impl ContainerClient {
     pub async fn execute_transactional_batch(
         &self,
         batch: TransactionalBatch,
-        options: Option<ItemOptions<'_>>,
+        options: Option<BatchOptions<'_>>,
     ) -> azure_core::Result<CosmosResponse<TransactionalBatchResponse>> {
-        let options = options.clone().unwrap_or_default();
+        let options = options.unwrap_or_default();
         let partition_key = batch.partition_key().clone();
 
         let cosmos_request = CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
