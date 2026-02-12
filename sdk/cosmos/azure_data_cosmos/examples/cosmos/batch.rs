@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_data_cosmos::{models::PatchDocument, CosmosClient, TransactionalBatch};
+use azure_data_cosmos::{CosmosClient, TransactionalBatch};
 use clap::Args;
 use serde_json::Value;
 use std::error::Error;
@@ -63,42 +63,6 @@ impl BatchCommand {
                 "delete" => {
                     let id = op["id"].as_str().ok_or("Missing 'id' field")?.to_string();
                     batch = batch.delete_item(id, None);
-                }
-                "patch" => {
-                    let id = op["id"].as_str().ok_or("Missing 'id' field")?.to_string();
-                    let patch_ops = op["patch"].as_array().ok_or("Missing 'patch' field")?;
-
-                    let mut patch_doc = PatchDocument::default();
-                    for patch_op in patch_ops {
-                        let patch_type = patch_op["op"].as_str().ok_or("Missing 'op' field")?;
-                        let path = patch_op["path"]
-                            .as_str()
-                            .ok_or("Missing 'path' field")?
-                            .to_string();
-
-                        match patch_type {
-                            "add" | "set" | "replace" => {
-                                let value = &patch_op["value"];
-                                if patch_type == "add" {
-                                    patch_doc = patch_doc.with_add(path, value)?;
-                                } else if patch_type == "set" {
-                                    patch_doc = patch_doc.with_set(path, value)?;
-                                } else {
-                                    patch_doc = patch_doc.with_replace(path, value)?;
-                                }
-                            }
-                            "remove" => {
-                                patch_doc = patch_doc.with_remove(path)?;
-                            }
-                            _ => {
-                                return Err(
-                                    format!("Unknown patch operation: {}", patch_type).into()
-                                )
-                            }
-                        }
-                    }
-
-                    batch = batch.patch_item(id, patch_doc, None);
                 }
                 _ => return Err(format!("Unknown operation type: {}", op_type).into()),
             }

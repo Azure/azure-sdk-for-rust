@@ -35,7 +35,7 @@
 //! # }
 //! ```
 
-use crate::{models::PatchDocument, PartitionKey};
+use crate::PartitionKey;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -53,21 +53,6 @@ pub struct BatchOperationOptions {
     /// Only perform the operation if the item's ETag does not match this value.
     /// Use `"*"` to only succeed if the item doesn't exist.
     pub if_none_match: Option<String>,
-}
-
-/// Options for batch patch operations.
-///
-/// Extends [`BatchOperationOptions`] with a filter predicate for conditional patching.
-#[derive(Clone, Debug, Default)]
-pub struct BatchPatchOperationOptions {
-    /// Only perform the operation if the item's ETag matches this value.
-    pub if_match: Option<String>,
-    /// Only perform the operation if the item's ETag does not match this value.
-    pub if_none_match: Option<String>,
-    /// A SQL-like filter predicate that must be satisfied for the patch operation to be applied.
-    ///
-    /// For example: `"from c where c.status = 'active'"`
-    pub filter_predicate: Option<String>,
 }
 
 /// Represents a transactional batch of operations to be executed atomically.
@@ -237,29 +222,6 @@ impl TransactionalBatch {
         });
         self
     }
-
-    /// Adds a patch operation to the batch.
-    ///
-    /// # Arguments
-    /// * `item_id` - The id of the item to patch.
-    /// * `patch` - The patch document to apply.
-    /// * `options` - Optional conditional options for the operation (e.g., `if_match` for optimistic concurrency, `filter_predicate` for conditional patching).
-    pub fn patch_item(
-        mut self,
-        item_id: impl Into<Cow<'static, str>>,
-        patch: PatchDocument,
-        options: Option<BatchPatchOperationOptions>,
-    ) -> Self {
-        let options = options.unwrap_or_default();
-        self.operations.push(TransactionalBatchOperation::Patch {
-            id: item_id.into(),
-            resource_body: patch,
-            if_match: options.if_match,
-            if_none_match: options.if_none_match,
-            filter_predicate: options.filter_predicate,
-        });
-        self
-    }
 }
 
 /// Represents a single operation within a transactional batch.
@@ -335,17 +297,6 @@ pub(crate) enum TransactionalBatchOperation {
         if_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         if_none_match: Option<String>,
-    },
-    /// Patch an item.
-    Patch {
-        id: Cow<'static, str>,
-        resource_body: PatchDocument,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        if_match: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        if_none_match: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        filter_predicate: Option<String>,
     },
 }
 
@@ -457,23 +408,15 @@ mod tests {
             if_match: None,
             if_none_match: Some("*".to_string()),
         };
-        let patch_options = BatchPatchOperationOptions {
-            if_match: Some("patch-etag".to_string()),
-            if_none_match: None,
-            filter_predicate: Some("from c where c.status = 'active'".to_string()),
-        };
-
-        let patch = PatchDocument::default();
 
         let batch = TransactionalBatch::new("test_partition")
             .create_item(&item, Some(if_none_match_options))?
             .upsert_item(&item, None)?
             .replace_item("id1", &item, Some(etag_options))?
             .read_item("id2", None)
-            .delete_item("id3", None)
-            .patch_item("id4", patch, Some(patch_options));
+            .delete_item("id3", None);
 
-        assert_eq!(batch.operations().len(), 6);
+        assert_eq!(batch.operations().len(), 5);
 
         let serialized = serde_json::to_string_pretty(batch.operations())?;
 
@@ -509,15 +452,6 @@ mod tests {
   {
     "operationType": "Delete",
     "id": "id3"
-  },
-  {
-    "operationType": "Patch",
-    "id": "id4",
-    "resourceBody": {
-      "operations": []
-    },
-    "ifMatch": "patch-etag",
-    "filterPredicate": "from c where c.status = 'active'"
   }
 ]"#;
 

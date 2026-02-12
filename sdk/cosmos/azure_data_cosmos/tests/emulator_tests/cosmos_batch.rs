@@ -7,7 +7,7 @@ use super::framework;
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, PatchDocument};
+use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::TransactionalBatch;
 use framework::TestClient;
@@ -174,69 +174,6 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
                 status_codes
             );
             assert_eq!(status_codes.len(), 3);
-
-            Ok(())
-        },
-        None,
-    )
-    .await
-}
-
-#[tokio::test]
-pub async fn batch_with_patch() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
-        async |run_context, _db_client| {
-            let container_client = create_container(run_context).await?;
-            let partition_key = format!("pk-{}", Uuid::new_v4());
-
-            // Create an item first
-            let item1 = BatchTestItem {
-                id: "item1".to_string(),
-                partition_key: partition_key.clone(),
-                value: 100,
-                name: "First Item".to_string(),
-            };
-
-            container_client
-                .create_item(&partition_key, &item1, None)
-                .await?;
-
-            // Execute a batch with patch operation
-            let patch = PatchDocument::default()
-                .with_set("/value", 999)?
-                .with_set("/name", "Patched Item")?;
-
-            let item2 = BatchTestItem {
-                id: "item2".to_string(),
-                partition_key: partition_key.clone(),
-                value: 200,
-                name: "Second Item".to_string(),
-            };
-
-            let batch = TransactionalBatch::new(&partition_key)
-                .patch_item("item1", patch, None)
-                .create_item(&item2, None)?;
-
-            let response = container_client
-                .execute_transactional_batch(batch, None)
-                .await?;
-
-            assert_eq!(response.status(), StatusCode::Ok);
-
-            let batch_response = response.into_model()?;
-
-            // Verify all operations succeeded: patch (200), create (201)
-            let status_codes: Vec<u16> = batch_response
-                .results
-                .iter()
-                .map(|r| r.status_code)
-                .collect();
-            assert!(
-                status_codes.iter().all(|&c| c >= 200 && c < 300),
-                "Expected all success status codes, got: {:?}",
-                status_codes
-            );
-            assert_eq!(status_codes.len(), 2);
 
             Ok(())
         },
