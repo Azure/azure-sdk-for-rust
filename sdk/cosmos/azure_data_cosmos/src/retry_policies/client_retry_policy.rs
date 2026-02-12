@@ -1205,8 +1205,12 @@ mod tests {
             StatusCode::BadRequest,
             StatusCode::Unauthorized,
             StatusCode::NotFound,
+            StatusCode::MethodNotAllowed,
             StatusCode::Conflict,
+            StatusCode::PreconditionFailed,
             StatusCode::PayloadTooLarge,
+            StatusCode::Locked,
+            constants::RETRY_WITH,
         ] {
             let mut policy = create_test_policy_with_preferred_locations();
             policy.operation_type = Some(OperationType::Read);

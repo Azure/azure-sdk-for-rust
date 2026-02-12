@@ -5,7 +5,7 @@ pub mod client_retry_policy;
 pub mod metadata_request_retry_policy;
 pub mod resource_throttle_retry_policy;
 
-use crate::constants::{SubStatusCode, SUB_STATUS};
+use crate::constants::{SubStatusCode, RETRY_WITH, SUB_STATUS};
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
@@ -140,10 +140,13 @@ fn is_non_retryable_status_code(status_code: StatusCode) -> bool {
         StatusCode::BadRequest
             | StatusCode::Unauthorized
             | StatusCode::NotFound
+            | StatusCode::MethodNotAllowed
             | StatusCode::Conflict
             | StatusCode::PreconditionFailed
             | StatusCode::PayloadTooLarge
+            | StatusCode::Locked
             | StatusCode::TooManyRequests
+            | RETRY_WITH
     )
 }
 
