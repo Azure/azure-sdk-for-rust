@@ -1419,9 +1419,9 @@ mod tests {
     fn test_can_circuit_breaker_trigger_reads_above_threshold() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
-        // Increment read counter above threshold (> 2)
+        // Default read threshold is 10; store 11 so that 11 > 10 triggers the breaker
         info.consecutive_read_request_failure_count
-            .store(3, Ordering::SeqCst);
+            .store(11, Ordering::SeqCst);
 
         assert!(info.can_circuit_breaker_trigger_partition_failover(true));
     }
@@ -2011,7 +2011,8 @@ mod tests {
         let request = create_read_request();
         manager.try_mark_endpoint_unavailable_for_partition_key_range(&request);
 
-        // Bump failure counts above threshold so circuit breaker applies
+        // Bump failure counts above threshold so circuit breaker applies.
+        // Default read threshold is 10; store 11 so that 11 > 10 is true.
         {
             let guard = manager
                 .partition_key_range_to_location_for_read_and_write
@@ -2020,7 +2021,7 @@ mod tests {
             let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
             let info = guard.get(&pk).unwrap();
             info.consecutive_read_request_failure_count
-                .store(10, Ordering::SeqCst);
+                .store(11, Ordering::SeqCst);
         }
 
         // Now try to add override — should route to the new location
@@ -2127,9 +2128,9 @@ mod tests {
 
         let request = create_read_request();
 
-        // Increment failures above read threshold (default 2)
-        // We need > 2 so at least 3 calls
-        for _ in 0..3 {
+        // Default read threshold is 10; we need > 10 increments so the
+        // counter exceeds the threshold (strict greater-than comparison).
+        for _ in 0..11 {
             manager.increment_request_failure_counter_and_check_if_partition_can_failover(&request);
         }
 
@@ -2392,7 +2393,8 @@ mod tests {
         let request = create_read_request();
         assert!(manager.try_mark_endpoint_unavailable_for_partition_key_range(&request));
 
-        // Step 2: Bump failure count above threshold
+        // Step 2: Bump failure count above threshold.
+        // Default read threshold is 10; store 11 so that 11 > 10 triggers override.
         {
             let guard = manager
                 .partition_key_range_to_location_for_read_and_write
@@ -2401,7 +2403,7 @@ mod tests {
             let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
             let info = guard.get(&pk).unwrap();
             info.consecutive_read_request_failure_count
-                .store(10, Ordering::SeqCst);
+                .store(11, Ordering::SeqCst);
         }
 
         // Step 3: New request should be routed to East US
