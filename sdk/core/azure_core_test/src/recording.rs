@@ -31,7 +31,8 @@ use azure_core::{
 };
 use rand::{
     distr::{Alphanumeric, Distribution, SampleString, StandardUniform},
-    Rng, SeedableRng,
+    rngs::SysRng,
+    RngExt, SeedableRng,
 };
 use rand_chacha::ChaCha20Rng;
 use std::{
@@ -300,7 +301,7 @@ impl Recording {
         let value = Alphanumeric.sample_string(&mut *rng, len);
         match prefix {
             Some(prefix) => prefix.to_string() + &value,
-            None => value,
+            None => value.to_string(),
         }
     }
     /// Removes the list of sanitizers from the recording.
@@ -459,7 +460,7 @@ impl Recording {
     fn rng(&self) -> &Mutex<ChaCha20Rng> {
         // Use ChaCha20 for a deterministic, portable CSPRNG.
         self.rand.get_or_init(|| match self.test_mode {
-            TestMode::Live => ChaCha20Rng::from_os_rng().into(),
+            TestMode::Live => ChaCha20Rng::try_from_rng(&mut SysRng).unwrap().into(),
             TestMode::Playback => {
                 let variables = self
                     .variables
@@ -478,7 +479,7 @@ impl Recording {
                 ChaCha20Rng::from_seed(*seed).into()
             }
             TestMode::Record => {
-                let rng = ChaCha20Rng::from_os_rng();
+                let rng = ChaCha20Rng::try_from_rng(&mut SysRng).unwrap();
                 let seed = rng.get_seed();
                 let seed = base64::encode(seed);
 

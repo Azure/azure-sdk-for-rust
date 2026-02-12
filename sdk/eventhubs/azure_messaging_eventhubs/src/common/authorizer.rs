@@ -10,7 +10,7 @@ use azure_core::{
     time::{Duration, OffsetDateTime},
 };
 use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
