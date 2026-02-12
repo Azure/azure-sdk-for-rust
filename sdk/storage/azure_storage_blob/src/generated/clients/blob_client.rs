@@ -16,7 +16,7 @@ use crate::generated::models::{
     BlobClientSetTagsOptions, BlobClientSetTierOptions, BlobClientUndeleteOptions, BlobTags,
 };
 use azure_core::{
-    base64::encode,
+    base64,
     error::CheckSuccessOptions,
     http::{
         AsyncResponse, Method, NoFormat, Pipeline, PipelineSendOptions, PipelineStreamOptions,
@@ -1395,7 +1395,7 @@ impl BlobClient {
             request.insert_header("x-ms-blob-content-language", blob_content_language);
         }
         if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
+            request.insert_header("x-ms-blob-content-md5", base64::encode(blob_content_md5));
         }
         if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
@@ -1449,7 +1449,7 @@ impl BlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", encode(transactional_content_md5));
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
@@ -1471,7 +1471,10 @@ impl BlobClient {
             );
         }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
+            request.insert_header(
+                "x-ms-content-crc64",
+                base64::encode(transactional_content_crc64),
+            );
         }
         if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);

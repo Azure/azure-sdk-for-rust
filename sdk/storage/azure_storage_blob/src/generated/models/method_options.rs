@@ -1078,9 +1078,9 @@ pub struct BlobContainerClientGetPropertiesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobContainerClient::list_blob_flat_segment()`
+/// Options to be passed to `BlobContainerClient::list_blobs()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
+pub struct BlobContainerClientListBlobsOptions<'a> {
     /// Include this parameter to specify one or more datasets to include in the response.
     pub include: Option<Vec<ListBlobsIncludeItem>>,
 
@@ -1108,10 +1108,10 @@ pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
-    /// Transforms this [`BlobContainerClientListBlobFlatSegmentOptions`] into a new `BlobContainerClientListBlobFlatSegmentOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListBlobFlatSegmentOptions<'static> {
-        BlobContainerClientListBlobFlatSegmentOptions {
+impl BlobContainerClientListBlobsOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobsOptions`] into a new `BlobContainerClientListBlobsOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
+        BlobContainerClientListBlobsOptions {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
@@ -1249,9 +1249,9 @@ pub struct BlobServiceClientGetStatisticsOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobServiceClient::list_containers_segment()`
+/// Options to be passed to `BlobServiceClient::list_containers()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientListContainersSegmentOptions<'a> {
+pub struct BlobServiceClientListContainersOptions<'a> {
     /// Include this parameter to specify that the container's metadata be returned as part of the response body.
     pub include: Option<Vec<ListContainersIncludeType>>,
 
@@ -1275,10 +1275,10 @@ pub struct BlobServiceClientListContainersSegmentOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-impl BlobServiceClientListContainersSegmentOptions<'_> {
-    /// Transforms this [`BlobServiceClientListContainersSegmentOptions`] into a new `BlobServiceClientListContainersSegmentOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobServiceClientListContainersSegmentOptions<'static> {
-        BlobServiceClientListContainersSegmentOptions {
+impl BlobServiceClientListContainersOptions<'_> {
+    /// Transforms this [`BlobServiceClientListContainersOptions`] into a new `BlobServiceClientListContainersOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobServiceClientListContainersOptions<'static> {
+        BlobServiceClientListContainersOptions {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,

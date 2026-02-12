@@ -7,9 +7,10 @@ mod enums;
 mod enums_impl;
 mod enums_serde;
 mod method_options;
+#[allow(clippy::module_inception)]
+mod models;
 mod models_impl;
 mod models_serde;
-mod pub_models;
 pub use enums::*;
 pub use method_options::*;
-pub use pub_models::*;
+pub use models::*;
