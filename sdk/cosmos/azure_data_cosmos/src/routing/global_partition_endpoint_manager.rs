@@ -546,15 +546,16 @@ impl GlobalPartitionEndpointManager {
                 partition_key_range.id
             );
 
-            request.request_context.route_to_location_endpoint(
-                partition_key_range_failover
-                    .current
-                    .clone()
-                    .parse()
-                    .unwrap(),
-            );
+            if let Ok(endpoint) = partition_key_range_failover.current.parse() {
+                request.request_context.route_to_location_endpoint(endpoint);
 
-            return true;
+                return true;
+            } else {
+                info!(
+                    "Skipping partition level override due to invalid URI in failover info: {}",
+                    partition_key_range_failover.current
+                );
+            }
         }
 
         false
@@ -908,7 +909,7 @@ impl PartitionKeyRangeFailoverInfo {
             consecutive_read_request_failure_count: AtomicI32::new(0),
             consecutive_write_request_failure_count: AtomicI32::new(0),
             read_request_failure_counter_threshold:
-                Self::circuit_breaker_consecutive_failure_count_for_reads(2),
+                Self::circuit_breaker_consecutive_failure_count_for_reads(10),
             write_request_failure_counter_threshold:
                 Self::circuit_breaker_consecutive_failure_count_for_writes(5),
             timeout_counter_reset_window: Duration::seconds(

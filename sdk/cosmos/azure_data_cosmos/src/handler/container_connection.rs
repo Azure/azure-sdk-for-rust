@@ -71,7 +71,7 @@ impl ContainerConnection {
             if let Some(container_prop) = container_properties {
                 let pk_def = container_prop.partition_key;
                 if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
-                    let pk_range = self
+                    if let Some(resolved) = self
                         .pk_range_cache
                         .resolve_partition_key_range_by_id(
                             &pk_range.collection_rid,
@@ -79,10 +79,10 @@ impl ContainerConnection {
                             false,
                         )
                         .await
-                        .unwrap();
-
-                    cosmos_request.request_context.resolved_partition_key_range =
-                        Some(pk_range.clone());
+                    {
+                        cosmos_request.request_context.resolved_partition_key_range =
+                            Some(resolved.clone());
+                    }
                 } else if let Some(partition_key) = cosmos_request.partition_key.as_ref() {
                     let routing_map = self
                         .pk_range_cache
@@ -90,28 +90,34 @@ impl ContainerConnection {
                         .await?;
 
                     if let Some(routing_map) = routing_map {
-                        let pk_version = pk_def.version.unwrap_or_default() as u8;
+                        // Use a safe default version (2) when the service omits the version field,
+                        // since get_hashed_partition_key_string only supports version 1 or 2.
+                        let pk_version = pk_def.version.unwrap_or(2) as u8;
                         let epk =
                             partition_key.get_hashed_partition_key_string(pk_def.kind, pk_version);
-                        let pk_range = routing_map.get_range_by_effective_partition_key(&epk)?;
-                        cosmos_request.request_context.resolved_partition_key_range =
-                            Some(pk_range.clone());
 
-                        if cosmos_request
-                            .request_context
-                            .resolved_partition_key_range
-                            .is_none()
-                        {
-                            let refreshed_routing_map = self
-                                .pk_range_cache
-                                .try_lookup(&container_prop.id, Some(routing_map))
-                                .await?;
-
-                            if let Some(refreshed_routing_map) = refreshed_routing_map {
-                                let pk_range = refreshed_routing_map
-                                    .get_range_by_effective_partition_key(&epk)?;
+                        // First attempt to resolve the partition key range from the
+                        // current routing map. If it succeeds, clone immediately so
+                        // we release the borrow on routing_map before possibly moving
+                        // it into try_lookup for a refresh.
+                        match routing_map.get_range_by_effective_partition_key(&epk) {
+                            Ok(pk_range) => {
                                 cosmos_request.request_context.resolved_partition_key_range =
                                     Some(pk_range.clone());
+                            }
+                            Err(_) => {
+                                // Refresh the routing map and retry.
+                                let refreshed_routing_map = self
+                                    .pk_range_cache
+                                    .try_lookup(&container_prop.id, Some(routing_map))
+                                    .await?;
+
+                                if let Some(refreshed_routing_map) = refreshed_routing_map {
+                                    let pk_range = refreshed_routing_map
+                                        .get_range_by_effective_partition_key(&epk)?;
+                                    cosmos_request.request_context.resolved_partition_key_range =
+                                        Some(pk_range.clone());
+                                }
                             }
                         }
                     }
