@@ -5,7 +5,6 @@
 
 /// The type of the action.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum CertificatePolicyAction {
     /// A certificate policy that will auto-renew a certificate.
     AutoRenew,
@@ -16,7 +15,6 @@ pub enum CertificatePolicyAction {
 
 /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum CurveName {
     /// The NIST P-256 elliptic curve, AKA SECG curve SECP256R1.
     P256,
@@ -38,7 +36,6 @@ pub enum CurveName {
 /// the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
 /// of the retention interval.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum DeletionRecoveryLevel {
     /// Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
     /// purge when 7 <= SoftDeleteRetentionInDays < 90).This level guarantees the recoverability of the deleted entity during
@@ -83,7 +80,6 @@ pub enum DeletionRecoveryLevel {
 
 /// The type of key pair to be used for the certificate.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum KeyType {
     /// Elliptic Curve.
     Ec,
@@ -109,7 +105,6 @@ pub enum KeyType {
 
 /// Supported usages of a certificate key.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum KeyUsageType {
     /// Indicates that the certificate key can be used to sign a certificate revocation list.
     CRlSign,

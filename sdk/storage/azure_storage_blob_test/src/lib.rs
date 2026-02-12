@@ -137,7 +137,7 @@ pub async fn get_container_client(
         Some(container_client_options),
     )?;
     if create {
-        container_client.create_container(None).await?;
+        container_client.create(None).await?;
     }
     Ok(container_client)
 }

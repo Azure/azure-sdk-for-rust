@@ -1,16 +1,38 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.9.0 (2026-02-11)
 
 ### Features Added
 
 - Added support for `stage_block_from_url` to `BlockBlobClient`.
+- Added navigation method `BlobServiceClient::blob_client()`.
 
 ### Breaking Changes
 
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Renamed `BlobItemInternal` to `BlobItem`.
 - Renamed `BlobPropertiesInternal` to `BlobProperties`.
+- Renamed `BlobContainerClient::create_container()` to `create()`.
+- Renamed `BlobContainerClient::delete_container()` to `delete()`.
+- Renamed `PageBlobClient::upload_page()` to `upload_pages()`.
+- Renamed `PageBlobClient::clear_page()` to `clear_pages()`.
+- Renamed `BlobContainerClientListBlobFlatSegmentOptions` to `BlobContainerClientListBlobsOptions`.
+- Renamed `BlobServiceClientListContainersSegmentOptions` to `BlobServiceClientListContainersOptions`.
+- Renamed `BlobContainerClientCreateContainerOptions` to `BlobContainerClientCreateOptions`.
+- Renamed `BlobContainerClientDeleteContainerOptions` to `BlobContainerClientDeleteOptions`.
+- Removed `BlobServiceClient::from_url()`.
+- Changed `BlobClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
+- Changed `BlobContainerClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
 
 ## 0.8.0 (2026-01-21)
 

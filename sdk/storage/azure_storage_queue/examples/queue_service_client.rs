@@ -104,7 +104,7 @@ async fn get_statistics(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let secondary_endpoint = get_secondary_endpoint();
     let secondary_queue_client =
-        QueueServiceClient::new(&secondary_endpoint, credential.clone(), None)?;
+        QueueServiceClient::new(&secondary_endpoint, Some(credential.clone()), None)?;
     let result = secondary_queue_client.get_statistics(None).await;
     log_operation_result(&result, "get_statistics");
 
@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let endpoint = get_endpoint();
 
     let queue_name = get_random_queue_name();
-    let queue_client = QueueServiceClient::new(&endpoint, credential.clone(), None)?;
+    let queue_client = QueueServiceClient::new(&endpoint, Some(credential.clone()), None)?;
 
     // Create and manage queue
     let result = queue_client.create_queue(&queue_name, None).await;

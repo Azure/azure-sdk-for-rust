@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    exclude-paths:
+      - "eng/common"
+
+  - package-ecosystem: cargo
+    directory: "/"
+    # Check for updates every week on Monday at 4:00 AM Pacific time
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: "US/Pacific"
