@@ -3,21 +3,24 @@
 
 //! Upsert operation.
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
 use rand::Rng;
 
 use super::{Operation, PerfItem};
+use crate::seed::SeededItem;
 
 /// Upserts an item into a random seeded partition.
 pub struct UpsertItemOperation {
-    seed_count: usize,
+    items: Arc<Vec<SeededItem>>,
 }
 
 impl UpsertItemOperation {
-    /// Creates a new upsert operation targeting partitions in the seeded range.
-    pub fn new(seed_count: usize) -> Self {
-        Self { seed_count }
+    /// Creates a new upsert operation targeting the given seeded items.
+    pub fn new(items: Arc<Vec<SeededItem>>) -> Self {
+        Self { items }
     }
 }
 
@@ -28,23 +31,20 @@ impl Operation for UpsertItemOperation {
     }
 
     async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()> {
-        let (pk, id, value) = {
-            let mut rng = rand::rng();
-            let idx = rng.random_range(0..self.seed_count);
-            let pk = format!("pk-{idx}");
-            let id = format!("perf-item-{idx}");
-            let value = rng.random_range(0..u64::MAX);
-            (pk, id, value)
-        };
+        let idx = rand::rng().random_range(0..self.items.len());
+        let seeded = &self.items[idx];
+        let value = rand::rng().random_range(0..u64::MAX);
 
         let item = PerfItem {
-            id,
-            partition_key: pk.clone(),
+            id: seeded.id.clone(),
+            partition_key: seeded.partition_key.clone(),
             value,
             payload: "perf-test-payload".to_string(),
         };
 
-        container.upsert_item(&pk, &item, None).await?;
+        container
+            .upsert_item(&item.partition_key, &item, None)
+            .await?;
         Ok(())
     }
 }

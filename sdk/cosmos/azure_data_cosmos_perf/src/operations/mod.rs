@@ -21,6 +21,7 @@ use crate::config::Config;
 pub use crate::operations::query_items::QueryItemsOperation;
 pub use crate::operations::read_item::ReadItemOperation;
 pub use crate::operations::upsert_item::UpsertItemOperation;
+use crate::seed::SeededItem;
 
 /// A single executable perf test operation.
 ///
@@ -45,17 +46,20 @@ pub struct PerfItem {
 }
 
 /// Creates the list of enabled operations based on CLI configuration.
-pub fn create_operations(config: &Config, seed_count: usize) -> Vec<Arc<dyn Operation>> {
+pub fn create_operations(
+    config: &Config,
+    seeded_items: Arc<Vec<SeededItem>>,
+) -> Vec<Arc<dyn Operation>> {
     let mut ops: Vec<Arc<dyn Operation>> = Vec::new();
 
     if !config.no_reads {
-        ops.push(Arc::new(ReadItemOperation::new(seed_count)));
+        ops.push(Arc::new(ReadItemOperation::new(seeded_items.clone())));
     }
     if !config.no_queries {
-        ops.push(Arc::new(QueryItemsOperation::new(seed_count)));
+        ops.push(Arc::new(QueryItemsOperation::new(seeded_items.clone())));
     }
     if !config.no_upserts {
-        ops.push(Arc::new(UpsertItemOperation::new(seed_count)));
+        ops.push(Arc::new(UpsertItemOperation::new(seeded_items)));
     }
 
     ops

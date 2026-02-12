@@ -4,9 +4,6 @@
 //! Latency tracking and periodic summary reporting.
 
 use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
-use std::io::Write;
-use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -214,57 +211,6 @@ pub fn print_process_metrics(metrics: &ProcessMetrics) {
         metrics.cpu_percent,
         format_bytes(metrics.memory_bytes),
     );
-}
-
-/// Generates an auto-named CSV report file path with a timestamp.
-pub fn create_report_file() -> std::io::Result<PathBuf> {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    let path = PathBuf::from(format!("perf-report-{now}.csv"));
-    let mut file = File::create(&path)?;
-    writeln!(
-        file,
-        "timestamp,operation,count,errors,min_ms,max_ms,mean_ms,p50_ms,p90_ms,p99_ms,cpu_percent,memory_bytes"
-    )?;
-    Ok(path)
-}
-
-/// Appends a report interval's data as CSV rows to the given file.
-pub fn append_csv(
-    path: &Path,
-    summaries: &[Summary],
-    metrics: Option<&ProcessMetrics>,
-) -> std::io::Result<()> {
-    let mut file = OpenOptions::new().append(true).open(path)?;
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    let (cpu, mem) = metrics
-        .map(|m| (m.cpu_percent, m.memory_bytes))
-        .unwrap_or((0.0, 0));
-
-    for s in summaries {
-        writeln!(
-            file,
-            "{},{},{},{},{:.3},{:.3},{:.3},{:.3},{:.3},{:.3},{:.1},{}",
-            now,
-            s.name,
-            s.count,
-            s.errors,
-            s.min.as_secs_f64() * 1000.0,
-            s.max.as_secs_f64() * 1000.0,
-            s.mean.as_secs_f64() * 1000.0,
-            s.p50.as_secs_f64() * 1000.0,
-            s.p90.as_secs_f64() * 1000.0,
-            s.p99.as_secs_f64() * 1000.0,
-            cpu,
-            mem,
-        )?;
-    }
-    Ok(())
 }
 
 #[cfg(test)]

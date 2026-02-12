@@ -5,14 +5,14 @@ mod config;
 mod operations;
 mod runner;
 mod seed;
+mod setup;
 mod stats;
 
 use std::sync::Arc;
 use std::time::Duration;
 
 use azure_core::credentials::Secret;
-use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::{CosmosClient, CosmosClientOptions, CreateContainerOptions};
+use azure_data_cosmos::{CosmosClient, CosmosClientOptions};
 use clap::Parser;
 
 use crate::config::{AuthMethod, Config};
@@ -77,35 +77,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_client = client.database_client(&config.database);
     let container_client = db_client.container_client(&config.container);
 
-    // Create the container if it doesn't exist
-    match container_client.read(None).await {
-        Ok(_) => {
-            println!("Container '{}' already exists.", config.container);
-        }
-        Err(_) => {
-            println!(
-                "Container '{}' not found, creating with {} RU/s...",
-                config.container, config.throughput
-            );
-            let props = ContainerProperties {
-                id: config.container.clone().into(),
-                partition_key: "/partition_key".into(),
-                ..Default::default()
-            };
-            let create_opts = CreateContainerOptions {
-                throughput: Some(ThroughputProperties::manual(config.throughput)),
-                ..Default::default()
-            };
-            db_client.create_container(props, Some(create_opts)).await?;
-            println!("Container '{}' created.", config.container);
-        }
-    }
+    // Ensure the container exists (with retry logic for multi-region setups)
+    setup::ensure_container(&db_client, &config.container, config.throughput).await?;
 
     // Seed the container
-    seed::seed_container(&container_client, config.seed_count, config.concurrency).await?;
+    let seeded_items =
+        seed::seed_container(&container_client, config.seed_count, config.concurrency).await?;
+    let seeded_items = Arc::new(seeded_items);
 
     // Create enabled operations
-    let ops = create_operations(&config, config.seed_count);
+    let ops = create_operations(&config, seeded_items);
     println!(
         "\nStarting perf test: {} operation(s), concurrency={}",
         ops.len(),
@@ -123,6 +104,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     println!();
 
+    // Ensure the results container exists for storing metrics
+    setup::ensure_container(&db_client, &config.results_container, config.throughput).await?;
+    let results_container = db_client.container_client(&config.results_container);
+    println!(
+        "Perf results will be stored in container '{}'.",
+        config.results_container
+    );
+
     // Run the perf test
     let stats = Arc::new(Stats::new());
     runner::run(
@@ -132,6 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.concurrency,
         duration,
         Duration::from_secs(config.report_interval),
+        results_container,
     )
     .await;
 

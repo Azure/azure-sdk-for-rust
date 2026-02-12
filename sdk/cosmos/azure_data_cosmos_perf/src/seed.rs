@@ -4,38 +4,54 @@
 //! Container seeding with test data.
 
 use azure_data_cosmos::clients::ContainerClient;
+use uuid::Uuid;
 
 use crate::operations::PerfItem;
 
-/// Seeds the container with `count` items using predictable IDs and partition keys.
+/// A reference to a seeded item's ID and partition key.
+#[derive(Debug, Clone)]
+pub struct SeededItem {
+    pub id: String,
+    pub partition_key: String,
+}
+
+/// Seeds the container with `count` items using UUID-based IDs and partition keys.
 ///
-/// Items are upserted so this is safe to call repeatedly. The item IDs follow
-/// the pattern `perf-item-{i}` with partition keys `pk-{i}`.
+/// Returns a list of seeded item references so operations can target them.
 pub async fn seed_container(
     container: &ContainerClient,
     count: usize,
     concurrency: usize,
-) -> azure_core::Result<()> {
+) -> azure_core::Result<Vec<SeededItem>> {
     println!("Seeding {count} items (concurrency: {concurrency})...");
 
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(concurrency));
     let errors = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
     let completed = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
 
+    let mut items = Vec::with_capacity(count);
+    for _ in 0..count {
+        let id = Uuid::new_v4().to_string();
+        let partition_key = Uuid::new_v4().to_string();
+        items.push(SeededItem { id, partition_key });
+    }
+
     let mut handles = Vec::with_capacity(count);
 
-    for i in 0..count {
+    for (i, seeded) in items.iter().enumerate() {
         let container = container.clone();
         let sem = semaphore.clone();
         let errors = errors.clone();
         let completed = completed.clone();
+        let id = seeded.id.clone();
+        let pk = seeded.partition_key.clone();
 
         handles.push(tokio::spawn(async move {
             let _permit = sem.acquire().await.unwrap();
 
             let item = PerfItem {
-                id: format!("perf-item-{i}"),
-                partition_key: format!("pk-{i}"),
+                id,
+                partition_key: pk.clone(),
                 value: i as u64,
                 payload: "perf-test-seed-payload".to_string(),
             };
@@ -65,5 +81,5 @@ pub async fn seed_container(
     }
 
     println!("Seeding complete.");
-    Ok(())
+    Ok(items)
 }

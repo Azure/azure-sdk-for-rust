@@ -68,6 +68,14 @@ pub struct Config {
     /// Throughput (RU/s) to provision when creating the container.
     #[arg(long, default_value_t = 100000)]
     pub throughput: usize,
+
+    /// Container name for storing perf results as JSON documents.
+    ///
+    /// Each reporting interval's metrics are upserted into this container
+    /// for long-term monitoring and Kusto/dashboard integration.
+    /// The container is auto-created if it does not exist.
+    #[arg(long)]
+    pub results_container: String,
 }
 
 /// Authentication method for connecting to Cosmos DB.

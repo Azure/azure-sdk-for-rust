@@ -3,21 +3,24 @@
 
 //! Point read operation.
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
 use rand::Rng;
 
 use super::Operation;
+use crate::seed::SeededItem;
 
 /// Reads a random seeded item by ID and partition key.
 pub struct ReadItemOperation {
-    seed_count: usize,
+    items: Arc<Vec<SeededItem>>,
 }
 
 impl ReadItemOperation {
-    /// Creates a new read operation targeting items in the seeded range.
-    pub fn new(seed_count: usize) -> Self {
-        Self { seed_count }
+    /// Creates a new read operation targeting the given seeded items.
+    pub fn new(items: Arc<Vec<SeededItem>>) -> Self {
+        Self { items }
     }
 }
 
@@ -28,12 +31,11 @@ impl Operation for ReadItemOperation {
     }
 
     async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()> {
-        let idx = rand::rng().random_range(0..self.seed_count);
-        let id = format!("perf-item-{idx}");
-        let pk = format!("pk-{idx}");
+        let idx = rand::rng().random_range(0..self.items.len());
+        let item = &self.items[idx];
 
         container
-            .read_item::<serde_json::Value>(&pk, &id, None)
+            .read_item::<serde_json::Value>(&item.partition_key, &item.id, None)
             .await?;
         Ok(())
     }
