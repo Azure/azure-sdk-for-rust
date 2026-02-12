@@ -11,7 +11,7 @@ use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use azure_core::error::ErrorKind;
-use azure_core::http::RawResponse;
+use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 
 /// Result of a retry policy decision
@@ -125,6 +125,22 @@ impl RetryPolicy {
             RetryPolicy::Metadata(p) => p.should_retry(response).await,
         }
     }
+}
+
+/// Returns `true` if the given status code is non-retryable.
+///
+/// These status codes indicate client-side errors that will not succeed on retry,
+/// regardless of which endpoint handles the request.
+fn is_non_retryable_status_code(status_code: StatusCode) -> bool {
+    matches!(
+        status_code,
+        StatusCode::BadRequest
+            | StatusCode::Unauthorized
+            | StatusCode::NotFound
+            | StatusCode::Conflict
+            | StatusCode::PreconditionFailed
+            | StatusCode::PayloadTooLarge
+    )
 }
 
 /// Extracts the Cosmos DB sub-status code from an error.

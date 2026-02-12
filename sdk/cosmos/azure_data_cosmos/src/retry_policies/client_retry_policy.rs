@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{
-    get_substatus_code_from_error, get_substatus_code_from_response,
+    get_substatus_code_from_error, get_substatus_code_from_response, is_non_retryable_status_code,
     resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
 };
 use crate::constants::{self, SubStatusCode};
@@ -20,9 +20,6 @@ const RETRY_INTERVAL_MS: i64 = 1000;
 
 /// An integer indicating the maximum retry count on endpoint failures.
 const MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE: i32 = 120;
-
-/// An integer indicating the maximum retry count on service available errors.
-const MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE: i32 = 1;
 
 /// Context information for routing retry attempts to specific endpoints.
 #[derive(Clone, Debug)]
@@ -358,29 +355,31 @@ impl ClientRetryPolicy {
     ///
     /// # Summary
     /// Handles 503 (ServiceUnavailable), 500 (InternalServerError for reads), and 410 with
-    /// LeaseNotFound errors by attempting retry on alternative preferred locations. Limited
-    /// to one retry attempt for service unavailable scenarios. Requires multiple preferred
-    /// locations to be available and multi-write support for write operations. Configures
-    /// retry context to route to the next preferred location.
+    /// LeaseNotFound errors by attempting retry on all applicable endpoints (all regions minus
+    /// excluded regions, in preference of preferred regions). Requires multi-write support for
+    /// write operations. Configures retry context to route to the next preferred location.
     ///
     /// # Returns
     /// A `RetryResult`:
     /// - `Retry { after: Duration::ZERO }` if retry conditions are met
-    /// - `DoNotRetry` if max retries exceeded, insufficient locations, or write without multi-write support
+    /// - `DoNotRetry` if all endpoints tried or write without multi-write support
     fn should_retry_on_unavailable_endpoint_status_codes(&mut self) -> RetryResult {
         self.service_unavailable_retry_count += 1;
 
-        if self.service_unavailable_retry_count > MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE {
+        if !self.can_use_multiple_write_locations
+            && !self
+                .operation_type
+                .as_ref()
+                .is_some_and(|op| op.is_read_only())
+        {
             return RetryResult::DoNotRetry;
         }
 
-        // automatic failover support needed to be plugged in.
-        if !self.can_use_multiple_write_locations && !self.operation_type.unwrap().is_read_only() {
-            return RetryResult::DoNotRetry;
-        }
+        let endpoints = self
+            .global_endpoint_manager
+            .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
 
-        let available_preferred_locations = self.global_endpoint_manager.preferred_location_count();
-        if available_preferred_locations <= 1 {
+        if self.service_unavailable_retry_count > endpoints.len() as i32 {
             return RetryResult::DoNotRetry;
         }
 
@@ -402,8 +401,11 @@ impl ClientRetryPolicy {
     /// the appropriate retry strategy. Handles specific scenarios: 403.3 (WriteForbidden)
     /// triggers endpoint failover with cache refresh, 404.1022 (READ_SESSION_NOT_AVAILABLE)
     /// retries on different endpoints, 503 (ServiceUnavailable) attempts preferred location
-    /// failover, and 500/410 with LeaseNotFound retry on alternative endpoints for reads.
-    /// Returns None for status codes that should be handled by the throttling policy.
+    /// failover, and 500/408/410 with LeaseNotFound retry on alternative endpoints for reads.
+    ///
+    /// For read operations, any status code not in the non-retryable whitelist (400, 401,
+    /// 404, 409, 412, 413) is retried on an alternative endpoint. For write operations,
+    /// unhandled status codes are delegated to the throttling policy.
     ///
     /// # Arguments
     /// * `status_code` - The HTTP status code from the response
@@ -441,11 +443,20 @@ impl ClientRetryPolicy {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
 
-        // Internal server error (500) or Gone - Lease not found (410)
-        if (status_code == StatusCode::InternalServerError
-            && self.operation_type.unwrap().is_read_only())
-            || (status_code == StatusCode::Gone
-                && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND))
+        // Gone - Lease not found (410.1022) applies to both reads and writes
+        if status_code == StatusCode::Gone
+            && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND)
+        {
+            return Some(self.should_retry_on_unavailable_endpoint_status_codes());
+        }
+
+        // For read operations, retry on any status code that is not explicitly non-retryable.
+        // This ensures transient server errors are retried on alternative endpoints.
+        if self
+            .operation_type
+            .as_ref()
+            .is_some_and(|op| op.is_read_only())
+            && !is_non_retryable_status_code(status_code)
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
@@ -686,7 +697,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_should_not_retry_service_unavailable_without_preferred_locations() {
+    async fn test_should_retry_service_unavailable_without_preferred_locations() {
+        // Even with no preferred locations, applicable_endpoints returns the default endpoint
         let mut policy = create_test_policy_no_locations();
         policy.operation_type = Some(OperationType::Read);
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
@@ -694,9 +706,19 @@ mod tests {
         let result = policy.should_retry_error(&error).await;
 
         match result {
-            RetryResult::DoNotRetry => {}
-            _ => panic!("Expected DoNotRetry for ServiceUnavailable without preferred locations"),
+            RetryResult::Retry { after } => {
+                assert_eq!(after, Duration::ZERO);
+                assert_eq!(policy.service_unavailable_retry_count, 1);
+            }
+            _ => panic!("Expected retry for ServiceUnavailable (default endpoint available)"),
         }
+
+        // Second attempt should stop — only the default endpoint was available
+        let result = policy.should_retry_error(&error).await;
+        assert!(
+            !result.is_retry(),
+            "Expected DoNotRetry after exhausting the single default endpoint"
+        );
     }
 
     #[tokio::test]
@@ -747,6 +769,27 @@ mod tests {
                 assert_eq!(policy.service_unavailable_retry_count, 1);
             }
             _ => panic!("Expected retry for Gone with LeaseNotFound"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_gone_with_lease_not_found_for_write() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Create);
+        policy.can_use_multiple_write_locations = true;
+        let error = create_error_with_substatus(
+            StatusCode::Gone,
+            SubStatusCode::LEASE_NOT_FOUND.value() as u32,
+        );
+
+        let result = policy.should_retry_error(&error).await;
+
+        match result {
+            RetryResult::Retry { after } => {
+                assert_eq!(after, Duration::ZERO);
+                assert_eq!(policy.service_unavailable_retry_count, 1);
+            }
+            _ => panic!("Expected retry for Gone with LeaseNotFound on write"),
         }
     }
 
@@ -814,11 +857,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_should_not_retry_session_not_available_after_second_attempt() {
+    async fn test_should_not_retry_session_not_available_after_all_endpoints_tried() {
         let mut policy = create_test_policy();
         policy.enable_endpoint_discovery = true;
         policy.can_use_multiple_write_locations = false;
-        policy.session_token_retry_count = 1;
+        policy.operation_type = Some(OperationType::Read);
+        // create_test_policy has 2 preferred locations, so set count to 2
+        // to simulate all endpoints already tried
+        policy.session_token_retry_count = 2;
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
@@ -828,17 +874,19 @@ mod tests {
         let result = policy.should_retry_error(&error).await;
         match result {
             RetryResult::DoNotRetry => {
-                assert_eq!(policy.session_token_retry_count, 2);
+                assert_eq!(policy.session_token_retry_count, 3);
             }
-            _ => panic!("Expected DoNotRetry after second session token retry"),
+            _ => panic!("Expected DoNotRetry after all endpoints tried"),
         }
     }
 
     #[tokio::test]
-    async fn test_should_not_retry_service_unavailable_after_max_retries() {
+    async fn test_should_not_retry_service_unavailable_after_all_endpoints_tried() {
         let mut policy = create_test_policy_with_preferred_locations();
         policy.operation_type = Some(OperationType::Read);
-        policy.service_unavailable_retry_count = MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE;
+        // applicable_endpoints returns 1 (default endpoint) in test setup,
+        // so set count to 1 to simulate exhaustion
+        policy.service_unavailable_retry_count = 1;
 
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
 
@@ -846,12 +894,9 @@ mod tests {
 
         match result {
             RetryResult::DoNotRetry => {
-                assert_eq!(
-                    policy.service_unavailable_retry_count,
-                    MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE + 1
-                );
+                assert_eq!(policy.service_unavailable_retry_count, 2);
             }
-            _ => panic!("Expected DoNotRetry after max service unavailable retries"),
+            _ => panic!("Expected DoNotRetry after all endpoints tried"),
         }
     }
 
@@ -1137,6 +1182,72 @@ mod tests {
     fn test_constants_values() {
         assert_eq!(RETRY_INTERVAL_MS, 1000);
         assert_eq!(MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE, 120);
-        assert_eq!(MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE, 1);
+    }
+
+    #[tokio::test]
+    async fn read_retries_on_unknown_server_error() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Read);
+
+        // A non-specific server error (e.g., 502 BadGateway) should be retried for reads
+        let error = create_error_with_status(StatusCode::BadGateway);
+        let result = policy.should_retry_error(&error).await;
+
+        assert!(
+            result.is_retry(),
+            "Expected retry for BadGateway on read request"
+        );
+    }
+
+    #[tokio::test]
+    async fn read_does_not_retry_non_retryable_status_codes() {
+        for status in [
+            StatusCode::BadRequest,
+            StatusCode::Unauthorized,
+            StatusCode::NotFound,
+            StatusCode::Conflict,
+            StatusCode::PayloadTooLarge,
+        ] {
+            let mut policy = create_test_policy_with_preferred_locations();
+            policy.operation_type = Some(OperationType::Read);
+
+            let error = create_error_with_status(status);
+            let result = policy.should_retry_error(&error).await;
+
+            assert!(
+                !result.is_retry(),
+                "Expected DoNotRetry for {status:?} on read request"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn write_does_not_retry_unknown_server_error() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Create);
+
+        // A non-specific server error should NOT be retried for writes
+        let error = create_error_with_status(StatusCode::BadGateway);
+        let result = policy.should_retry_error(&error).await;
+
+        assert!(
+            !result.is_retry(),
+            "Expected DoNotRetry for BadGateway on write request"
+        );
+    }
+
+    #[tokio::test]
+    async fn read_retries_on_forbidden_without_write_forbidden_substatus() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Read);
+
+        // Forbidden without WRITE_FORBIDDEN substatus should be retried for reads
+        let error = create_error_with_status(StatusCode::Forbidden);
+        let result = policy.should_retry_error(&error).await;
+
+        assert!(
+            result.is_retry(),
+            "Expected retry for Forbidden (no substatus) on read request"
+        );
     }
 }

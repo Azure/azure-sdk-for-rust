@@ -1,14 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{get_substatus_code_from_error, get_substatus_code_from_response, RetryResult};
+use super::{
+    get_substatus_code_from_error, get_substatus_code_from_response, is_non_retryable_status_code,
+    RetryResult,
+};
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
+use crate::operation_context::OperationType;
+use crate::regions::RegionName;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
-use std::cmp::max;
 use std::sync::Arc;
 use tracing::trace;
 
@@ -21,15 +25,18 @@ pub struct MetadataRequestRetryPolicy {
     /// Defines the throttling retry policy that is used as the underlying retry policy.
     throttling_retry_policy: ResourceThrottleRetryPolicy,
 
-    /// An integer defining the maximum retry count on unavailable endpoint.
-    max_unavailable_endpoint_retry_count: i32,
-
     /// An instance containing the location endpoint where the partition key
     /// range http request will be sent over.
     retry_context: Option<MetadataRetryContext>,
 
     /// An integer capturing the current retry count on unavailable endpoint.
     unavailable_endpoint_retry_count: i32,
+
+    /// The operation type of the current request.
+    operation_type: Option<OperationType>,
+
+    /// Regions excluded from routing for the current request.
+    excluded_regions: Option<Vec<RegionName>>,
 }
 
 /// A helper struct containing the required attributes for metadata retry context.
@@ -59,13 +66,13 @@ impl MetadataRequestRetryPolicy {
     /// - Underlying throttling retry policy for 429 responses
     /// - Initial retry count set to zero
     pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>) -> Self {
-        let max_retry_count = max(global_endpoint_manager.preferred_location_count() as i32, 1);
         Self {
             global_endpoint_manager,
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
-            max_unavailable_endpoint_retry_count: max_retry_count,
             retry_context: None,
             unavailable_endpoint_retry_count: 0,
+            operation_type: None,
+            excluded_regions: None,
         }
     }
 
@@ -77,6 +84,9 @@ impl MetadataRequestRetryPolicy {
     /// * `request` - The request being sent to the service
     pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
         let _stat = self.global_endpoint_manager.refresh_location(false).await;
+
+        self.operation_type = Some(request.operation_type);
+        self.excluded_regions = request.excluded_regions.clone();
 
         // Clear the previous location-based routing directive
         request.request_context.clear_route_to_location();
@@ -189,14 +199,14 @@ impl MetadataRequestRetryPolicy {
     /// Core retry decision logic based on status code and sub-status code.
     ///
     /// # Summary
-    /// Determines if a metadata request should be retried based on the combination of HTTP status code
-    /// and Cosmos DB sub-status code. Retries are triggered for transient failures: 503 service unavailable,
-    /// 500 internal server error, 410 with lease not found, or 403 with database account not found.
-    /// If retry is allowed, increments the location index to route the next attempt to a different endpoint.
+    /// Determines if a metadata request should be retried based on the HTTP status code.
+    /// Any status code not in the non-retryable whitelist (400, 401, 404, 409, 412, 413)
+    /// is retried on an alternative endpoint. If retry is allowed, increments the location
+    /// index to route the next attempt to a different endpoint.
     ///
     /// # Arguments
     /// * `status_code` - The HTTP status code from the response
-    /// * `sub_status_code` - The Cosmos DB specific sub-status code
+    /// * `_sub_status_code` - The Cosmos DB specific sub-status code (reserved for future use)
     ///
     /// # Returns
     /// A `RetryResult`:
@@ -205,15 +215,9 @@ impl MetadataRequestRetryPolicy {
     fn should_retry_with_status_code(
         &mut self,
         status_code: StatusCode,
-        sub_status_code: Option<SubStatusCode>,
+        _sub_status_code: Option<SubStatusCode>,
     ) -> RetryResult {
-        // Check for retryable status codes
-        if (status_code == StatusCode::ServiceUnavailable
-            || status_code == StatusCode::InternalServerError
-            || (status_code == StatusCode::Gone
-                && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND))
-            || (status_code == StatusCode::Forbidden
-                && sub_status_code == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)))
+        if !is_non_retryable_status_code(status_code)
             && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
         {
             return RetryResult::Retry {
@@ -226,17 +230,25 @@ impl MetadataRequestRetryPolicy {
 
     /// Increments the location index when an unavailable endpoint exception occurs, for any future read requests.
     ///
+    /// # Summary
+    /// Uses the applicable endpoints from the global endpoint manager to determine the maximum
+    /// number of retry attempts. Each retry routes the request to the next available endpoint.
+    ///
     /// # Returns
     ///
     /// A boolean flag indicating if the operation was successful.
     fn increment_retry_index_on_unavailable_endpoint_for_metadata_read(&mut self) -> bool {
         self.unavailable_endpoint_retry_count += 1;
 
-        if self.unavailable_endpoint_retry_count > self.max_unavailable_endpoint_retry_count {
+        let endpoints = self
+            .global_endpoint_manager
+            .applicable_endpoints(OperationType::Read, self.excluded_regions.as_ref());
+
+        if self.unavailable_endpoint_retry_count > endpoints.len() as i32 {
             trace!(
-                "MetadataRequestThrottleRetryPolicy: Retry count: {} has exceeded the maximum permitted retry count on unavailable endpoint: {}.",
+                "MetadataRequestThrottleRetryPolicy: Retry count: {} has exceeded the number of applicable endpoints: {}.",
                 self.unavailable_endpoint_retry_count,
-                self.max_unavailable_endpoint_retry_count
+                endpoints.len()
             );
             return false;
         }
@@ -374,8 +386,8 @@ mod tests {
     #[test]
     fn test_new_policy_initialization() {
         let policy = create_test_policy_with_preferred_locations();
-        assert_eq!(policy.max_unavailable_endpoint_retry_count, 3);
         assert_eq!(policy.unavailable_endpoint_retry_count, 0);
+        assert!(policy.excluded_regions.is_none());
     }
 
     #[test]
@@ -428,7 +440,7 @@ mod tests {
         let mut policy = create_test_policy();
         let response = create_raw_response(StatusCode::Ok);
 
-        let result = policy.should_retry_response(&response).await;
+        let result = policy.should_retry(&Ok(response)).await;
         assert!(!result.is_retry());
     }
 
@@ -437,7 +449,7 @@ mod tests {
         let mut policy = create_test_policy();
         let response = create_raw_response(StatusCode::Created);
 
-        let result = policy.should_retry_response(&response).await;
+        let result = policy.should_retry(&Ok(response)).await;
         assert!(!result.is_retry());
     }
 
@@ -456,9 +468,11 @@ mod tests {
     async fn test_increment_retry_exceeds_max_count() {
         let mut policy = create_test_policy_no_locations();
 
-        // Exhaust retry attempts
-        policy.unavailable_endpoint_retry_count = policy.max_unavailable_endpoint_retry_count + 1;
+        // With no preferred locations, applicable_endpoints returns 1 (default endpoint).
+        // Exhaust that single retry attempt.
+        assert!(policy.increment_retry_index_on_unavailable_endpoint_for_metadata_read());
 
+        // Second attempt should fail — only the default endpoint was available
         let result = policy.increment_retry_index_on_unavailable_endpoint_for_metadata_read();
         assert!(!result);
     }
@@ -512,7 +526,6 @@ mod tests {
         let response = create_raw_response(StatusCode::BadRequest);
 
         let result = policy.should_retry_response(&response).await;
-        // Bad request is not retryable by metadata policy (throttling policy may handle it)
         assert!(!result.is_retry());
     }
 
@@ -522,8 +535,52 @@ mod tests {
         let response = create_raw_response(StatusCode::NotFound);
 
         let result = policy.should_retry_response(&response).await;
-        // Not found is not retryable by metadata policy
         assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_not_retry_unauthorized() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::Unauthorized);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_not_retry_conflict() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::Conflict);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_not_retry_precondition_failed() {
+        let mut policy = create_test_policy();
+        let response = create_raw_response(StatusCode::PreconditionFailed);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(!result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_forbidden_on_another_endpoint() {
+        let mut policy = create_test_policy_no_locations();
+        let response = create_raw_response(StatusCode::Forbidden);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(result.is_retry());
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_gone_on_another_endpoint() {
+        let mut policy = create_test_policy_no_locations();
+        let response = create_raw_response(StatusCode::Gone);
+
+        let result = policy.should_retry_response(&response).await;
+        assert!(result.is_retry());
     }
 
     #[tokio::test]
@@ -591,6 +648,50 @@ mod tests {
         assert_eq!(
             ctx.retry_request_on_preferred_locations,
             cloned.retry_request_on_preferred_locations
+        );
+    }
+
+    #[tokio::test]
+    async fn test_before_send_request_captures_excluded_regions() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        let resource_link = ResourceLink::root(ResourceType::Databases);
+        let mut request = CosmosRequest::builder(OperationType::Read, resource_link)
+            .partition_key(PartitionKey::from("test"))
+            .excluded_regions(Some(vec![regions::EAST_ASIA]))
+            .build()
+            .unwrap();
+        request.request_context.location_endpoint_to_route =
+            Some("https://test.documents.azure.com".parse().unwrap());
+
+        policy.before_send_request(&mut request).await;
+
+        assert!(policy.excluded_regions.is_some());
+        assert_eq!(policy.excluded_regions.as_ref().unwrap().len(), 1);
+        assert_eq!(
+            policy.excluded_regions.as_ref().unwrap()[0],
+            regions::EAST_ASIA
+        );
+    }
+
+    #[tokio::test]
+    async fn test_excluded_regions_reduce_retry_attempts() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        // 3 preferred locations: EAST_ASIA, WEST_US, NORTH_CENTRAL_US
+        // Exclude 2 of them so only 1 endpoint remains
+        policy.operation_type = Some(OperationType::Read);
+        policy.excluded_regions = Some(vec![regions::EAST_ASIA, regions::WEST_US]);
+
+        let error = create_error_with_status(StatusCode::ServiceUnavailable);
+
+        // First retry should succeed — one endpoint is still available
+        let result = policy.should_retry_error(&error).await;
+        assert!(result.is_retry());
+
+        // Second retry should fail — only one non-excluded endpoint was available
+        let result = policy.should_retry_error(&error).await;
+        assert!(
+            !result.is_retry(),
+            "Expected DoNotRetry after exhausting non-excluded endpoints"
         );
     }
 }
