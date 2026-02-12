@@ -289,79 +289,62 @@ impl TransactionalBatch {
 /// ```
 #[derive(Clone, SafeDebug, Serialize, Deserialize)]
 #[safe(true)]
-#[serde(tag = "operationType")]
+#[serde(tag = "operationType", rename_all = "camelCase")]
 pub(crate) enum TransactionalBatchOperation {
     /// Create a new item.
     Create {
         #[serde(skip_serializing_if = "Option::is_none")]
         id: Option<Cow<'static, str>>,
-        #[serde(rename = "resourceBody")]
         resource_body: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifMatch")]
         if_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifNoneMatch")]
         if_none_match: Option<String>,
     },
     /// Upsert an item (create or replace).
     Upsert {
         #[serde(skip_serializing_if = "Option::is_none")]
         id: Option<Cow<'static, str>>,
-        #[serde(rename = "resourceBody")]
         resource_body: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifMatch")]
         if_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifNoneMatch")]
         if_none_match: Option<String>,
     },
     /// Replace an existing item.
     Replace {
         id: Cow<'static, str>,
-        #[serde(rename = "resourceBody")]
         resource_body: serde_json::Value,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifMatch")]
         if_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifNoneMatch")]
         if_none_match: Option<String>,
     },
     /// Read an item.
     Read {
         id: Cow<'static, str>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifMatch")]
         if_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifNoneMatch")]
         if_none_match: Option<String>,
     },
     /// Delete an item.
     Delete {
         id: Cow<'static, str>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifMatch")]
         if_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifNoneMatch")]
         if_none_match: Option<String>,
     },
     /// Patch an item.
     Patch {
         id: Cow<'static, str>,
-        #[serde(rename = "resourceBody")]
         resource_body: PatchDocument,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifMatch")]
         if_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "ifNoneMatch")]
         if_none_match: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "filterPredicate")]
         filter_predicate: Option<String>,
     },
 }
@@ -391,13 +374,12 @@ impl<'de> Deserialize<'de> for TransactionalBatchResponse {
 /// Result of a single operation within a transactional batch.
 #[derive(Clone, SafeDebug, Deserialize)]
 #[safe(true)]
+#[serde(rename_all = "camelCase")]
 pub struct TransactionalBatchOperationResult {
     /// HTTP status code for this operation.
-    #[serde(rename = "statusCode")]
     pub status_code: u16,
 
     /// The resource body returned by the operation, if any.
-    #[serde(rename = "resourceBody")]
     #[serde(default)]
     pub resource_body: Option<serde_json::Value>,
 
@@ -407,17 +389,14 @@ pub struct TransactionalBatchOperationResult {
     pub etag: Option<String>,
 
     /// Request charge for this operation.
-    #[serde(rename = "requestCharge")]
     #[serde(default)]
     pub request_charge: Option<f64>,
 
     /// Retry after duration in milliseconds, if applicable.
-    #[serde(rename = "retryAfterMilliseconds")]
     #[serde(default)]
     pub retry_after_milliseconds: Option<u64>,
 
     /// Substatus code for this operation, if applicable.
-    #[serde(rename = "subStatusCode")]
     #[serde(default)]
     pub substatus_code: Option<u32>,
 }

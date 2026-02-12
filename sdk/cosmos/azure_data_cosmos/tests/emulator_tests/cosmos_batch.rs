@@ -82,23 +82,16 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
             assert_eq!(response.status(), StatusCode::Ok);
 
             let batch_response = response.into_model()?;
-            assert_eq!(batch_response.results.len(), 3);
 
-            // Verify all operations succeeded
-            for result in &batch_response.results {
-                assert!(
-                    result.is_success(),
-                    "Operation failed with status code: {}",
-                    result.status_code
-                );
-            }
+            // Verify status codes: two creates (201) and one read (200)
+            let status_codes: Vec<u16> = batch_response
+                .results
+                .iter()
+                .map(|r| r.status_code)
+                .collect();
+            assert_eq!(status_codes, vec![201, 201, 200]);
 
-            // The first two operations are creates (status 201)
-            assert_eq!(batch_response.results[0].status_code, 201);
-            assert_eq!(batch_response.results[1].status_code, 201);
-
-            // The third operation is a read (status 200)
-            assert_eq!(batch_response.results[2].status_code, 200);
+            // Verify the read operation returned the correct item
             let read_item: BatchTestItem = batch_response.results[2]
                 .deserialize_body()?
                 .expect("Read operation should return an item");
@@ -168,16 +161,19 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
             assert_eq!(response.status(), StatusCode::Ok);
 
             let batch_response = response.into_model()?;
-            assert_eq!(batch_response.results.len(), 3);
 
-            // Verify all operations succeeded
-            for result in &batch_response.results {
-                assert!(
-                    result.is_success(),
-                    "Operation failed with status code: {}",
-                    result.status_code
-                );
-            }
+            // Verify all operations succeeded: replace (200), create (201), delete (204)
+            let status_codes: Vec<u16> = batch_response
+                .results
+                .iter()
+                .map(|r| r.status_code)
+                .collect();
+            assert!(
+                status_codes.iter().all(|&c| c >= 200 && c < 300),
+                "Expected all success status codes, got: {:?}",
+                status_codes
+            );
+            assert_eq!(status_codes.len(), 3);
 
             Ok(())
         },
@@ -228,16 +224,19 @@ pub async fn batch_with_patch() -> Result<(), Box<dyn Error>> {
             assert_eq!(response.status(), StatusCode::Ok);
 
             let batch_response = response.into_model()?;
-            assert_eq!(batch_response.results.len(), 2);
 
-            // Verify all operations succeeded
-            for result in &batch_response.results {
-                assert!(
-                    result.is_success(),
-                    "Operation failed with status code: {}",
-                    result.status_code
-                );
-            }
+            // Verify all operations succeeded: patch (200), create (201)
+            let status_codes: Vec<u16> = batch_response
+                .results
+                .iter()
+                .map(|r| r.status_code)
+                .collect();
+            assert!(
+                status_codes.iter().all(|&c| c >= 200 && c < 300),
+                "Expected all success status codes, got: {:?}",
+                status_codes
+            );
+            assert_eq!(status_codes.len(), 2);
 
             Ok(())
         },
@@ -285,20 +284,15 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
             // When one operation in a batch fails, the response is still successful (207 Multi-Status)
             // but individual operation results contain their status codes
             let batch_response = response.into_model()?;
-            assert_eq!(batch_response.results.len(), 2);
 
-            // First operation (create item2) should have 424 Failed Dependency
-            // because a subsequent operation failed
-            assert_eq!(
-                batch_response.results[0].status_code, 424,
-                "First operation should have 424 (Failed Dependency) status"
-            );
-
-            // Second operation (delete nonexistent) should have 404 Not Found
-            assert_eq!(
-                batch_response.results[1].status_code, 404,
-                "Second operation should have 404 (Not Found) status"
-            );
+            // First operation (create item2) gets 424 Failed Dependency because a subsequent operation failed
+            // Second operation (delete nonexistent) gets 404 Not Found
+            let status_codes: Vec<u16> = batch_response
+                .results
+                .iter()
+                .map(|r| r.status_code)
+                .collect();
+            assert_eq!(status_codes, vec![424, 404]);
 
             Ok(())
         },
