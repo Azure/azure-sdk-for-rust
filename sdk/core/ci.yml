@@ -9,6 +9,7 @@ trigger:
   paths:
     include:
     - sdk/core/
+    - Cargo.lock
 
 parameters:
 - name: release_typespec

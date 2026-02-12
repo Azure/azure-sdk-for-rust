@@ -4,20 +4,75 @@
 use crate::{
     clients::QueueClient,
     generated::{
-        clients::{QueueServiceClient as GeneratedQueueClient, QueueServiceClientOptions},
+        clients::{
+            QueueClient as GeneratedQueueClient, QueueServiceClient as GeneratedQueueServiceClient,
+            QueueServiceClientOptions,
+        },
         models::*,
     },
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{NoFormat, Pager, RequestContent, Response, Url, XmlFormat},
-    Result,
+    http::{
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        NoFormat, Pager, Pipeline, RequestContent, Response, Url, XmlFormat,
+    },
+    tracing, Result,
 };
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueServiceClient {
-    pub(super) client: GeneratedQueueClient,
+    pub(super) client: GeneratedQueueServiceClient,
+}
+
+impl GeneratedQueueServiceClient {
+    /// Creates a new GeneratedQueueServiceClient from a service URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `service_url` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication. If None, the URL must contain authentication information (e.g., SAS token).
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Queues.Service")]
+    pub fn from_url(
+        service_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<QueueServiceClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+
+        let per_retry_policies = if let Some(token_credential) = credential.clone() {
+            if !service_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{service_url} must use https"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
+
+        Ok(Self {
+            endpoint: service_url,
+            version: options.version,
+            pipeline,
+        })
+    }
 }
 
 impl QueueServiceClient {
@@ -26,16 +81,16 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token for authentication
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication. If None, the URL must contain authentication information (e.g., SAS token).
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-
-        let client = GeneratedQueueClient::new(endpoint, credential.clone(), Some(options))?;
+        let url = Url::parse(endpoint)?;
+        let client =
+            GeneratedQueueServiceClient::from_url(url, credential.clone(), options.clone())?;
         Ok(Self { client })
     }
 
@@ -49,10 +104,25 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `queue_name` - The name of the queue.
-    pub fn queue_client(&self, queue_name: String) -> QueueClient {
-        QueueClient {
-            client: self.client.get_queue_client(queue_name),
-        }
+    pub fn queue_client(&self, queue_name: &str) -> Result<QueueClient> {
+        let mut queue_url = self.endpoint().clone();
+        queue_url
+            .path_segments_mut()
+            .map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?
+            .push(queue_name);
+        Ok(QueueClient {
+            client: GeneratedQueueClient {
+                endpoint: queue_url,
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+        })
     }
 
     /// Creates a new queue under the given account.
@@ -66,10 +136,7 @@ impl QueueServiceClient {
         queue_name: &str,
         options: Option<QueueClientCreateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client
-            .get_queue_client(queue_name.to_string())
-            .create(options)
-            .await
+        self.queue_client(queue_name)?.create(options).await
     }
 
     /// Permanently deletes the specified queue.
@@ -83,10 +150,7 @@ impl QueueServiceClient {
         queue_name: &str,
         options: Option<QueueClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client
-            .get_queue_client(queue_name.to_string())
-            .delete(options)
-            .await
+        self.queue_client(queue_name)?.delete(options).await
     }
 
     /// Retrieves the properties for the entire queue service.
@@ -126,7 +190,7 @@ impl QueueServiceClient {
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
-    ) -> Result<Pager<ListQueuesResponse, XmlFormat, String>> {
+    ) -> Result<Pager<ListQueuesResponse, XmlFormat>> {
         self.client.list_queues(options)
     }
 
