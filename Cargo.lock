@@ -297,7 +297,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
- "uuid",
  "zip",
 ]
 
@@ -333,7 +332,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
- "uuid",
 ]
 
 [[package]]
@@ -350,7 +348,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -416,7 +413,6 @@ dependencies = [
  "futures",
  "opentelemetry",
  "opentelemetry-appender-tracing",
- "opentelemetry-http",
  "opentelemetry-stdout",
  "opentelemetry_sdk",
  "serde",
@@ -425,7 +421,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -449,8 +444,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "url",
- "uuid",
 ]
 
 [[package]]
@@ -490,7 +483,6 @@ dependencies = [
  "include-file",
  "rand 0.10.0",
  "rand_chacha 0.10.0",
- "reqwest",
  "rustc_version",
  "serde",
  "serde_json",
@@ -550,8 +542,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "url",
- "uuid",
 ]
 
 [[package]]
@@ -3568,7 +3558,6 @@ checksum = "ee48d38b119b0cd71fe4141b30f5ba9c7c5d9f4e7a3a8b4a674e4b6ef789976f"
 dependencies = [
  "getrandom 0.3.4",
  "js-sys",
- "serde_core",
  "uuid-rng-internal",
  "wasm-bindgen",
 ]

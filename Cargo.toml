@@ -111,6 +111,11 @@ gloo-timers = { version = "0.3" }
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }
 openssl = { version = "0.10.75" }
+opentelemetry = { version = "0.31", features = ["trace"] }
+opentelemetry-appender-tracing = { version = "0.31" }
+opentelemetry-http = "0.31"
+opentelemetry-stdout = { version = "0.31" }
+opentelemetry_sdk = "0.31"
 pin-project = "1.1"
 proc-macro2 = "1.0.106"
 quick-xml = { version = "0.39.0", features = ["serialize", "serde-types"] }

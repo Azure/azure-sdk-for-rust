@@ -21,11 +21,10 @@ use azure_core::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         Body, ClientOptions, NoFormat, Pipeline, RequestContent, Url,
     },
-    tracing, Bytes, Result,
+    tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
-use uuid::Uuid;
 
 /// Options used when creating a [`BlockBlobClient`].
 #[derive(Clone, SafeDebug)]

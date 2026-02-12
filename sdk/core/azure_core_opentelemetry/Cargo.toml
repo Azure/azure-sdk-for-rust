@@ -18,9 +18,9 @@ default = ["azure_core/default"]
 
 [dependencies]
 azure_core.workspace = true
-opentelemetry = { version = "0.31", features = ["trace"] }
-opentelemetry-http = "0.31"
-opentelemetry_sdk = "0.31"
+opentelemetry.workspace = true
+opentelemetry-http.workspace = true
+opentelemetry_sdk.workspace = true
 reqwest.workspace = true
 tracing.workspace = true
 
@@ -28,7 +28,7 @@ tracing.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_core_test_macros.workspace = true
 azure_identity.workspace = true
-opentelemetry_sdk = { version = "0.31", features = ["testing"] }
+opentelemetry_sdk = { workspace = true, features = ["testing"] }
 tokio.workspace = true
 tracing-subscriber.workspace = true
 url.workspace = true
