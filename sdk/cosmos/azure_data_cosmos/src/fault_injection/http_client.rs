@@ -6,6 +6,7 @@ use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
 use crate::constants::{self, SubStatusCode};
+use crate::retry_policies::{CONNECTION_ERROR_MESSAGE, RESPONSE_TIMEOUT_MESSAGE};
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::{
@@ -149,6 +150,25 @@ impl FaultClient {
             None => return None, // No error type set, pass through
         };
 
+        // Connection-level faults produce ErrorKind::Io instead of HttpResponse
+        match error_type {
+            FaultInjectionErrorType::ConnectionError => {
+                let error = azure_core::Error::with_message(
+                    ErrorKind::Io,
+                    format!("{CONNECTION_ERROR_MESSAGE} - Injected fault"),
+                );
+                return Some(Err(error));
+            }
+            FaultInjectionErrorType::ResponseTimeout => {
+                let error = azure_core::Error::with_message(
+                    ErrorKind::Io,
+                    format!("{RESPONSE_TIMEOUT_MESSAGE} - Injected fault"),
+                );
+                return Some(Err(error));
+            }
+            _ => {}
+        }
+
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
@@ -190,6 +210,10 @@ impl FaultClient {
                 Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
                 "Database Account Not Found - Injected fault",
             ),
+            // ConnectionError and ResponseTimeout are handled above with early return
+            FaultInjectionErrorType::ConnectionError | FaultInjectionErrorType::ResponseTimeout => {
+                unreachable!()
+            }
         };
 
         let raw_response = sub_status.map(|ss| {

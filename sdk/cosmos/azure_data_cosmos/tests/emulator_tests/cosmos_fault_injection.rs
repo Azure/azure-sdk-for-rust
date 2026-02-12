@@ -998,3 +998,264 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     )
     .await
 }
+
+/// Test that ConnectionError faults on reads are retried and succeed after hit_limit.
+#[tokio::test]
+pub async fn fault_injection_connection_error_read_retries() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("connection-error-read", server_error)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_options = fault_builder.inject(CosmosClientOptions::default());
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // The read should succeed after retrying past the hit_limit of 2 injected
+            // connection errors.
+            let result = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .await;
+            assert!(
+                result.is_ok(),
+                "read should succeed after connection error retries: {:?}",
+                result.err()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test that ConnectionError faults on writes are retried and succeed after hit_limit.
+#[tokio::test]
+pub async fn fault_injection_connection_error_write_retries() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::UpsertItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("connection-error-write", server_error)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_options = fault_builder.inject(CosmosClientOptions::default());
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // The upsert should succeed after retrying past the hit_limit of 2 injected
+            // connection errors (writes are retried for connection errors).
+            let mut updated_item = item.clone();
+            updated_item.value = 999;
+            let result = fault_container_client
+                .upsert_item(&pk, &updated_item, None)
+                .await;
+            assert!(
+                result.is_ok(),
+                "write should succeed after connection error retries: {:?}",
+                result.err()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test that ResponseTimeout faults on reads are retried and succeed after hit_limit.
+#[tokio::test]
+pub async fn fault_injection_response_timeout_read_retries() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ResponseTimeout)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("timeout-read", server_error)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_options = fault_builder.inject(CosmosClientOptions::default());
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // The read should succeed after retrying past the hit_limit of 2 injected
+            // response timeouts.
+            let result = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .await;
+            assert!(
+                result.is_ok(),
+                "read should succeed after response timeout retries: {:?}",
+                result.err()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test that ResponseTimeout faults on writes are NOT retried (writes fail immediately).
+#[tokio::test]
+pub async fn fault_injection_response_timeout_write_fails() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ResponseTimeout)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::UpsertItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("timeout-write", server_error)
+        .with_condition(condition)
+        .with_hit_limit(100) // High limit — write should fail on first attempt, not exhaust limit
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_options = fault_builder.inject(CosmosClientOptions::default());
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // The upsert should fail immediately because response timeouts on writes
+            // are not retried (the write may have been applied on the server).
+            let mut updated_item = item.clone();
+            updated_item.value = 999;
+            let result = fault_container_client
+                .upsert_item(&pk, &updated_item, None)
+                .await;
+            assert!(
+                result.is_err(),
+                "write should fail on response timeout (no retry)"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}

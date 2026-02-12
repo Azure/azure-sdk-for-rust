@@ -177,3 +177,42 @@ fn get_substatus_code_from_response(response: &RawResponse) -> Option<SubStatusC
         .ok()
         .map(SubStatusCode::from)
 }
+
+/// Message substring used to identify injected connection errors in fault injection tests.
+pub(crate) const CONNECTION_ERROR_MESSAGE: &str = "connection refused";
+
+/// Message substring used to identify injected response timeout errors in fault injection tests.
+pub(crate) const RESPONSE_TIMEOUT_MESSAGE: &str = "response timeout";
+
+/// Returns `true` if the error represents a connection failure.
+///
+/// A connection failure means the client could not establish a TCP connection to the server
+/// (e.g., connection refused, DNS resolution failure, network unreachable). This is detected
+/// by checking the error kind is `Io` and the error message or source chain contains
+/// connection-related keywords.
+pub(crate) fn is_connection_error(err: &azure_core::Error) -> bool {
+    if !matches!(err.kind(), ErrorKind::Io) {
+        return false;
+    }
+
+    let msg = err.to_string().to_lowercase();
+    msg.contains(CONNECTION_ERROR_MESSAGE)
+        || msg.contains("connection reset")
+        || msg.contains("dns error")
+        || msg.contains("error trying to connect")
+}
+
+/// Returns `true` if the error represents a response timeout.
+///
+/// A response timeout means the request was sent but no response was received in time
+/// (e.g., server stopped responding, network partition after connection). This is detected
+/// by checking the error kind is `Io` and the error message or source chain contains
+/// timeout-related keywords.
+pub(crate) fn is_response_timeout(err: &azure_core::Error) -> bool {
+    if !matches!(err.kind(), ErrorKind::Io) {
+        return false;
+    }
+
+    let msg = err.to_string().to_lowercase();
+    msg.contains(RESPONSE_TIMEOUT_MESSAGE) || msg.contains("operation timed out")
+}

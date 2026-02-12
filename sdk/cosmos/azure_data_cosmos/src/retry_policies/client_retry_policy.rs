@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use super::{
-    get_substatus_code_from_error, get_substatus_code_from_response,
-    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
+    get_substatus_code_from_error, get_substatus_code_from_response, is_connection_error,
+    is_response_timeout, resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
 };
 use crate::constants::{self, SubStatusCode};
 use crate::cosmos_request::CosmosRequest;
@@ -468,6 +468,25 @@ impl ClientRetryPolicy {
     /// # Returns
     /// A `RetryResult` indicating whether to retry and with what delay
     async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
+        // Connection failure: could not establish TCP connection.
+        // Retry both reads and writes, mark endpoint unavailable for both.
+        if is_connection_error(err) {
+            let is_read = self.operation_type.unwrap().is_read_only();
+            return self
+                .should_retry_on_endpoint_failure(is_read, true, true, false, false)
+                .await;
+        }
+
+        // Response timeout: request was sent but no response received.
+        // Only retry read operations; write operations should fail immediately
+        // because the write may have been applied on the server.
+        if is_response_timeout(err) {
+            if self.operation_type.unwrap().is_read_only() {
+                return self.should_retry_on_unavailable_endpoint_status_codes();
+            }
+            return RetryResult::DoNotRetry;
+        }
+
         let status_code = err.http_status().unwrap_or(StatusCode::UnknownValue(0));
         let sub_status_code = get_substatus_code_from_error(err);
 
@@ -1138,5 +1157,111 @@ mod tests {
         assert_eq!(RETRY_INTERVAL_MS, 1000);
         assert_eq!(MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE, 120);
         assert_eq!(MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE, 1);
+    }
+
+    fn create_io_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_read() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("connection refused - Injected fault");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "connection error should retry read requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_write() {
+        let mut policy = create_test_policy();
+        let mut request = create_write_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("connection refused - Injected fault");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "connection error should retry write requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn response_timeout_retries_read() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("response timeout - Injected fault");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "response timeout should retry read requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn response_timeout_does_not_retry_write() {
+        let mut policy = create_test_policy();
+        let mut request = create_write_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("response timeout - Injected fault");
+        let result = policy.should_retry(&Err(err)).await;
+        assert_eq!(
+            result,
+            RetryResult::DoNotRetry,
+            "response timeout should NOT retry write requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn connection_error_marks_endpoint_unavailable() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("connection refused - Injected fault");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(result.is_retry());
+        assert_eq!(
+            policy.failover_retry_count, 1,
+            "failover_retry_count should increment on connection error"
+        );
+    }
+
+    #[tokio::test]
+    async fn response_timeout_read_uses_service_unavailable_counter() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("response timeout - Injected fault");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(result.is_retry());
+        assert_eq!(
+            policy.service_unavailable_retry_count, 1,
+            "service_unavailable_retry_count should increment on response timeout for reads"
+        );
+    }
+
+    #[tokio::test]
+    async fn unrelated_io_error_not_retried() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("some unrelated IO error");
+        let result = policy.should_retry(&Err(err)).await;
+        assert_eq!(
+            result,
+            RetryResult::DoNotRetry,
+            "unrelated IO errors should not be retried"
+        );
     }
 }
