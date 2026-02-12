@@ -406,6 +406,7 @@ impl SubStatusCode {
         Self::CONFIGURATION_PROPERTY_NOT_FOUND;
     #[allow(dead_code)]
     pub(crate) const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = Self::COMPLETING_SPLIT;
+    #[allow(dead_code)]
     pub(crate) const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode =
         Self::COMPLETING_PARTITION_MIGRATION;
 }

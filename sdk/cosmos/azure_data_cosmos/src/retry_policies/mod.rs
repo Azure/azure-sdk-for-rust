@@ -130,7 +130,10 @@ impl RetryPolicy {
 /// Returns `true` if the given status code is non-retryable.
 ///
 /// These status codes indicate client-side errors that will not succeed on retry,
-/// regardless of which endpoint handles the request.
+/// regardless of which endpoint handles the request. Note that `TooManyRequests` (429)
+/// is included here because it should not be retried by the client/metadata retry
+/// policies; instead, it is handled by the dedicated `ResourceThrottleRetryPolicy`
+/// which implements proper exponential backoff with `x-ms-retry-after-ms` headers.
 fn is_non_retryable_status_code(status_code: StatusCode) -> bool {
     matches!(
         status_code,
@@ -140,6 +143,7 @@ fn is_non_retryable_status_code(status_code: StatusCode) -> bool {
             | StatusCode::Conflict
             | StatusCode::PreconditionFailed
             | StatusCode::PayloadTooLarge
+            | StatusCode::TooManyRequests
     )
 }
 
