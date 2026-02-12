@@ -289,7 +289,7 @@ impl TransactionalBatch {
 /// ```
 #[derive(Clone, SafeDebug, Serialize, Deserialize)]
 #[safe(true)]
-#[serde(tag = "operationType", rename_all = "camelCase")]
+#[serde(tag = "operationType", rename_all_fields = "camelCase")]
 pub(crate) enum TransactionalBatchOperation {
     /// Create a new item.
     Create {
