@@ -19,13 +19,13 @@ use url::Url;
 const RETRY_INTERVAL_MS: i64 = 1000;
 
 /// An integer indicating the maximum retry count on endpoint failures.
-const MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE: i32 = 120;
+const MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE: usize = 120;
 
 /// Context information for routing retry attempts to specific endpoints.
 #[derive(Clone, Debug)]
 struct RetryContext {
     /// Index of the location to route the retry request to
-    retry_location_index: i32,
+    retry_location_index: usize,
 
     /// Whether to retry on preferred locations only (true) or all available locations (false)
     retry_request_on_preferred_locations: bool,
@@ -44,13 +44,13 @@ pub struct ClientRetryPolicy {
     enable_endpoint_discovery: bool,
 
     /// Counter tracking the number of endpoint failover retry attempts
-    failover_retry_count: i32,
+    failover_retry_count: usize,
 
     /// Counter tracking the number of session token unavailability retry attempts
-    session_token_retry_count: i32,
+    session_token_retry_count: usize,
 
     /// Counter tracking the number of service unavailable (503) retry attempts
-    service_unavailable_retry_count: i32,
+    service_unavailable_retry_count: usize,
 
     /// Whether the current request is a read operation (true) or write operation (false)
     operation_type: Option<OperationType>,
@@ -235,7 +235,7 @@ impl ClientRetryPolicy {
             let endpoints = self
                 .global_endpoint_manager
                 .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
-            if self.session_token_retry_count > endpoints.len() as i32 {
+            if self.session_token_retry_count > endpoints.len() {
                 // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
                 RetryResult::DoNotRetry
             } else {
@@ -379,7 +379,7 @@ impl ClientRetryPolicy {
             .global_endpoint_manager
             .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
 
-        if self.service_unavailable_retry_count > endpoints.len() as i32 {
+        if self.service_unavailable_retry_count > endpoints.len() {
             return RetryResult::DoNotRetry;
         }
 

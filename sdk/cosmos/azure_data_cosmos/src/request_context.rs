@@ -40,7 +40,7 @@ pub struct RequestContext {
     pub is_partition_failover_retry: bool,
     pub failed_endpoints: HashMap<Url, bool>,
     pub use_preferred_locations: Option<bool>,
-    pub location_index_to_route: Option<i32>,
+    pub location_index_to_route: Option<usize>,
     pub location_endpoint_to_route: Option<Url>,
 }
 
@@ -59,7 +59,11 @@ impl RequestContext {
 
     /// Routes the request to a region by its index within the preferred
     /// locations list. Clears any explicit endpoint routing state.
-    pub fn route_to_location_index(&mut self, location_index: i32, use_preferred_locations: bool) {
+    pub fn route_to_location_index(
+        &mut self,
+        location_index: usize,
+        use_preferred_locations: bool,
+    ) {
         self.location_index_to_route = Some(location_index);
         self.use_preferred_locations = Some(use_preferred_locations);
         self.location_endpoint_to_route = None;

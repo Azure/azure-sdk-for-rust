@@ -30,10 +30,7 @@ pub struct MetadataRequestRetryPolicy {
     retry_context: Option<MetadataRetryContext>,
 
     /// An integer capturing the current retry count on unavailable endpoint.
-    unavailable_endpoint_retry_count: i32,
-
-    /// The operation type of the current request.
-    operation_type: Option<OperationType>,
+    unavailable_endpoint_retry_count: usize,
 
     /// Regions excluded from routing for the current request.
     excluded_regions: Option<Vec<RegionName>>,
@@ -43,7 +40,7 @@ pub struct MetadataRequestRetryPolicy {
 #[derive(Clone, Debug)]
 struct MetadataRetryContext {
     /// An integer defining the current retry location index.
-    retry_location_index: i32,
+    retry_location_index: usize,
 
     /// A boolean flag indicating if the request should retry on preferred locations.
     retry_request_on_preferred_locations: bool,
@@ -71,7 +68,6 @@ impl MetadataRequestRetryPolicy {
             throttling_retry_policy: ResourceThrottleRetryPolicy::new(5, 200, 10),
             retry_context: None,
             unavailable_endpoint_retry_count: 0,
-            operation_type: None,
             excluded_regions: None,
         }
     }
@@ -85,7 +81,6 @@ impl MetadataRequestRetryPolicy {
     pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
         let _stat = self.global_endpoint_manager.refresh_location(false).await;
 
-        self.operation_type = Some(request.operation_type);
         self.excluded_regions = request.excluded_regions.clone();
 
         // Clear the previous location-based routing directive
@@ -206,7 +201,7 @@ impl MetadataRequestRetryPolicy {
     ///
     /// # Arguments
     /// * `status_code` - The HTTP status code from the response
-    /// * `_sub_status_code` - The Cosmos DB specific sub-status code (reserved for future use)
+    /// * `sub_status_code` - The Cosmos DB specific sub-status code (reserved for future use)
     ///
     /// # Returns
     /// A `RetryResult`:
@@ -215,8 +210,10 @@ impl MetadataRequestRetryPolicy {
     fn should_retry_with_status_code(
         &mut self,
         status_code: StatusCode,
-        _sub_status_code: Option<SubStatusCode>,
+        sub_status_code: Option<SubStatusCode>,
     ) -> RetryResult {
+        // sub_status_code reserved for future use
+        let _ = sub_status_code;
         if !is_non_retryable_status_code(status_code)
             && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
         {
@@ -244,7 +241,7 @@ impl MetadataRequestRetryPolicy {
             .global_endpoint_manager
             .applicable_endpoints(OperationType::Read, self.excluded_regions.as_ref());
 
-        if self.unavailable_endpoint_retry_count > endpoints.len() as i32 {
+        if self.unavailable_endpoint_retry_count > endpoints.len() {
             trace!(
                 "MetadataRequestThrottleRetryPolicy: Retry count: {} has exceeded the number of applicable endpoints: {}.",
                 self.unavailable_endpoint_retry_count,
@@ -678,7 +675,6 @@ mod tests {
         let mut policy = create_test_policy_with_preferred_locations();
         // 3 preferred locations: EAST_ASIA, WEST_US, NORTH_CENTRAL_US
         // Exclude 2 of them so only 1 endpoint remains
-        policy.operation_type = Some(OperationType::Read);
         policy.excluded_regions = Some(vec![regions::EAST_ASIA, regions::WEST_US]);
 
         let error = create_error_with_status(StatusCode::ServiceUnavailable);

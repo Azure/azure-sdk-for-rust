@@ -324,7 +324,7 @@ impl LocationCache {
     /// The resolved endpoint URL as a String
     pub fn resolve_service_endpoint(&self, request: &CosmosRequest) -> Url {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
-        let location_index = request.request_context.location_index_to_route.unwrap_or(0) as usize;
+        let location_index = request.request_context.location_index_to_route.unwrap_or(0);
         let mut location_endpoint_to_route = None;
         if !request
             .request_context

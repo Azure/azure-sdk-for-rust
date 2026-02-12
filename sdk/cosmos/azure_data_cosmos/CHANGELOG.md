@@ -3,6 +3,7 @@
 ## 0.31.0 (Unreleased)
 
 ### Features Added
+
 - Added `excluded_regions` to `CosmosClientOptions` and `ItemOptions` for additional regional routing options. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
 - Added `effective_preferred_regions` to the client, ensuring multi-region accounts use all regions without supplying `application_preferred_regions` to their client. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
 
@@ -19,6 +20,8 @@
 
 ### Other Changes
 
+- Retry policies now retry reads on all non-whitelisted status codes and retry service unavailable errors across all applicable endpoints. ([#3728](https://github.com/Azure/azure-sdk-for-rust/pull/3728))
+
 ## 0.30.0 (2026-01-21)
 
 ### Features Added
@@ -33,6 +36,7 @@
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ### Other Changes
+
 - Added `ALLOWED_COSMOS_HEADERS` for use in default logging policy. ([#3554](https://github.com/Azure/azure-sdk-for-rust/pull/3554))
 
 ## 0.29.0 (2025-11-10)
