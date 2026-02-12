@@ -28,17 +28,15 @@ serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 time = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
-uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
 azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
-opentelemetry = { version = "0.31", features = ["trace"] }
-opentelemetry-appender-tracing = { version = "0.31" }
-opentelemetry-http = "0.31"
-opentelemetry-stdout = { version = "0.31" }
-opentelemetry_sdk = "0.31"
+opentelemetry.workspace = true
+opentelemetry-appender-tracing.workspace = true
+opentelemetry-stdout.workspace = true
+opentelemetry_sdk.workspace = true
 tokio.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 

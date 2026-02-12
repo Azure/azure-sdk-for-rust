@@ -28,8 +28,6 @@ rand_chacha.workspace = true
 serde = { workspace = true, features = ["derive"] }
 time.workspace = true
 tracing.workspace = true
-url.workspace = true
-uuid.workspace = true
 
 [features]
 default = ["azure_core_amqp/default"]
