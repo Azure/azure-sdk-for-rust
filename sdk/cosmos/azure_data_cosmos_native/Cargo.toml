@@ -39,7 +39,7 @@ reqwest_native_tls = ["azure_core/reqwest_native_tls"]
 tracing = ["dep:tracing-subscriber"]
 
 [build-dependencies]
-cbindgen = "0.29.0"
+cbindgen = "0.29.2"
 
 [lints]
 workspace = true
