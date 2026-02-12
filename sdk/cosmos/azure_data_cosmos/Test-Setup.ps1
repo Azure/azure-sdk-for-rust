@@ -8,16 +8,16 @@
 # Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
 $global:LASTEXITCODE = 0
 
-# Skip emulator setup if AZURE_COSMOS_CONNECTION_STRING is already set
-if ($env:AZURE_COSMOS_CONNECTION_STRING) {
-    Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
-    return
-}
-
 # Append COSMOS_RUSTFLAGS (from test-resources.bicep) to RUSTFLAGS if present
 if ($env:COSMOS_RUSTFLAGS) {
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) $($env:COSMOS_RUSTFLAGS)"
     Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
+}
+
+# Skip emulator setup if AZURE_COSMOS_CONNECTION_STRING is already set
+if ($env:AZURE_COSMOS_CONNECTION_STRING) {
+    Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
+    return
 }
 
 $IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
