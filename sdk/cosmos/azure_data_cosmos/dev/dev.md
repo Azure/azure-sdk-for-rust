@@ -15,11 +15,11 @@
 ### Common Issuess
 Using Windows, you might run into OpenSSL errors like the ones outlined below:
 
-![img.png](common_issue.png)
+![common_issue.png](./common_issue.png)
 
 Ensure you have a proper installation of OpenSSL and that the relevant environment variables are populated like below:
 
-![img_1.png](common_issue_1.png)
+![common_issue_1.png](./common_issue_1.png)
 
 ### Useful commands to run before submitting a PR
 * `cargo fmt --all`: This will format the code according to Rust's standard formatting guidelines.

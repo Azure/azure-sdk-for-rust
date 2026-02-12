@@ -707,7 +707,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
     let rule = FaultInjectionRuleBuilder::new("hit-limit-test", server_error)
         .with_condition(condition)
-        .with_hit_limit(3)
+        .with_hit_limit(4)
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
@@ -741,8 +741,8 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
             let fault_db_client = fault_client.database_client(&db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
-            // First 3 requests should fail
-            for i in 1..=3 {
+            // First 2 requests should fail with one in region retry
+            for i in 1..=2 {
                 let result = fault_container_client
                     .read_item::<TestItem>(&pk, &item_id, None)
                     .await;

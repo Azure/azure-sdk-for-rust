@@ -379,7 +379,7 @@ impl ClientRetryPolicy {
             .global_endpoint_manager
             .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
 
-        if self.service_unavailable_retry_count >= endpoints.len() {
+        if self.service_unavailable_retry_count > endpoints.len() {
             return RetryResult::DoNotRetry;
         }
 
