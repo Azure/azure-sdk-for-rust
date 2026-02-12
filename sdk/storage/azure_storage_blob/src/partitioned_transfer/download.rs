@@ -18,7 +18,7 @@ use super::*;
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 pub(crate) trait PartitionedDownloadBehavior {
-    async fn transfer_range(&self, range: Option<Range<u64>>) -> AzureResult<AsyncRawResponse>;
+    async fn transfer_range(&self, range: Option<Range<usize>>) -> AzureResult<AsyncRawResponse>;
 }
 
 /// Returns a stream that runs up to parallel-many ranged downloads at a time.
@@ -31,7 +31,7 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// stream will still count when determining current running operations. This is so the stream can
 /// promise its buffered bytes do not exceed parallel * partition_size.
 pub(crate) async fn download<Behavior>(
-    range: Option<Range<u64>>,
+    download_range: Option<Range<usize>>,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
@@ -40,21 +40,25 @@ where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
     let parallel = parallel.get();
-    let partition_size = partition_size.get() as u64;
-    let range = range.unwrap_or(0..u64::MAX);
-    if range.is_empty() {
+    let partition_size = partition_size.get();
+    let download_range = download_range.unwrap_or(0..usize::MAX);
+    if download_range.is_empty() {
         let raw_stream: PinnedStream = Box::pin(BytesStream::new_empty());
         return Ok(raw_stream);
     }
 
-    let initial_response = client
+    let initial_response = match client
         .transfer_range(Some(
-            range.start..min(range.end, range.start.saturating_add(partition_size)),
+            download_range.start
+                ..min(
+                    download_range.end,
+                    download_range.start.saturating_add(partition_size),
+                ),
         ))
-        .await;
-    let initial_response = match initial_response {
+        .await
+    {
         Ok(response) => response,
-        Err(err) => match (err.http_status(), range.start) {
+        Err(err) => match (err.http_status(), download_range.start) {
             (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
                 client.transfer_range(None).await?
             }
@@ -64,17 +68,20 @@ where
 
     let mut ranges: VecDeque<_> = match initial_response
         .headers()
-        .get_as::<ContentRange, _>(&"content-range".into())
+        .get_optional_as::<ContentRange, _>(&"content-range".into())?
     {
-        Ok(content_range) => {
-            let remainder_start = content_range.end() + 1;
-            let remainder_end = min(range.end, content_range.total_length());
-            (remainder_start..remainder_end)
-                .step_by(partition_size as usize)
-                .map(move |i| i..min(i + partition_size, remainder_end))
-                .collect()
-        }
-        Err(_) => VecDeque::new(),
+        Some(content_range) => match (content_range.range, content_range.total_len) {
+            (Some(range), Some(total_len)) => {
+                let remainder_start = range.1;
+                let remainder_end = min(download_range.end, total_len);
+                (remainder_start..remainder_end)
+                    .step_by(partition_size)
+                    .map(move |i| i..min(i + partition_size, remainder_end))
+                    .collect()
+            }
+            _ => VecDeque::new(),
+        },
+        None => VecDeque::new(),
     };
 
     // the first operation has a different type from the others.
@@ -103,7 +110,7 @@ where
 
 async fn download_range_to_bytes(
     client: Arc<impl PartitionedDownloadBehavior>,
-    range: Range<u64>,
+    range: Range<usize>,
 ) -> AzureResult<Bytes> {
     let response = client.transfer_range(Some(range)).await?;
     response.into_body().collect().await
@@ -135,7 +142,7 @@ mod tests {
 
     #[derive(Debug)]
     enum MockPartitionedDownloadBehaviorInvocation {
-        TransferRange(Option<Range<u64>>),
+        TransferRange(Option<Range<usize>>),
     }
 
     struct MockPartitionedDownloadBehavior {
@@ -158,7 +165,7 @@ mod tests {
     impl PartitionedDownloadBehavior for MockPartitionedDownloadBehavior {
         async fn transfer_range(
             &self,
-            requested_range: Option<Range<u64>>,
+            requested_range: Option<Range<usize>>,
         ) -> AzureResult<AsyncRawResponse> {
             {
                 self.invocations.lock().await.push(
@@ -176,7 +183,7 @@ mod tests {
             let mut headers = Headers::new();
             match (requested_range, self.data.len()) {
                 (Some(range), data_len) => {
-                    if range.start >= data_len as u64 {
+                    if range.start >= data_len {
                         return Err(ErrorKind::HttpResponse {
                             status: StatusCode::RequestedRangeNotSatisfiable,
                             error_code: Some("InvalidRange".into()),
@@ -184,11 +191,14 @@ mod tests {
                         }
                         .into_error());
                     }
-                    let range = range.start..min(range.end, data_len as u64);
+                    let range = range.start..min(range.end, data_len);
                     headers.insert(
                         "content-range",
-                        ContentRange::new(range.start, range.end - 1, self.data.len() as u64)
-                            .to_string(),
+                        ContentRange {
+                            range: Some((range.start, range.end - 1)),
+                            total_len: Some(self.data.len()),
+                        }
+                        .to_string(),
                     );
                     let range = range.start as usize..range.end as usize;
                     Ok(AsyncRawResponse::new(
@@ -197,15 +207,29 @@ mod tests {
                         Box::pin(BytesStream::from(self.data.slice(range))),
                     ))
                 }
-                (None, 0) => Ok(AsyncRawResponse::new(
-                    StatusCode::Ok,
-                    headers,
-                    Box::pin(BytesStream::new_empty()),
-                )),
+                (None, 0) => {
+                    headers.insert(
+                        "content-range",
+                        ContentRange {
+                            range: None,
+                            total_len: None,
+                        }
+                        .to_string(),
+                    );
+                    Ok(AsyncRawResponse::new(
+                        StatusCode::Ok,
+                        headers,
+                        Box::pin(BytesStream::new_empty()),
+                    ))
+                }
                 (None, data_len) => {
                     headers.insert(
                         "content-range",
-                        ContentRange::new(0, data_len as u64 - 1, data_len as u64).to_string(),
+                        ContentRange {
+                            range: Some((0, data_len - 1)),
+                            total_len: Some(data_len),
+                        }
+                        .to_string(),
                     );
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
@@ -224,7 +248,7 @@ mod tests {
 
         let data = get_random_data(DATA_LEN);
 
-        // trait not implemented for usize??
+        // trait not implemented for usize
         let part_len = (rand::random::<u64>() as usize % 100) + 100;
         let extra = (rand::random::<u64>() as usize % 100) + 100;
         let offset = (rand::random::<u64>() as usize % 100) + 100;
@@ -246,7 +270,7 @@ mod tests {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
             let downloaded_data = download(
-                download_range.map(|r| r.0 as u64..r.1 as u64),
+                download_range.map(|r| r.0..r.1),
                 PARALLEL.try_into().unwrap(),
                 partition_size.try_into().unwrap(),
                 mock.clone(),
@@ -309,7 +333,7 @@ mod tests {
                     let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
                     let downloaded_data = download(
-                        download_range.map(|r| r.0 as u64..r.1 as u64),
+                        download_range.map(|r| r.0..r.1),
                         parallel.try_into().unwrap(),
                         partition_len.try_into().unwrap(),
                         mock.clone(),

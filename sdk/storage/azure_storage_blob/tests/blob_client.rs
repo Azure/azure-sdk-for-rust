@@ -1010,7 +1010,7 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         assert_eq!(
             &downloaded_data,
             match download_range {
-                Some(r) => &data[r.0 as usize..min(r.1 as usize, DATA_LEN)],
+                Some(r) => &data[r.0..min(r.1, DATA_LEN)],
                 None => &data,
             }
         );

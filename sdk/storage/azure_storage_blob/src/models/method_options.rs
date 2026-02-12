@@ -55,7 +55,7 @@ pub struct BlobClientManagedDownloadOptions<'a> {
 
     /// Optional. Range of the blob to download.
     /// None will result in the entire blob being downloaded.
-    pub range: Option<Range<u64>>,
+    pub range: Option<Range<usize>>,
 
     /// Optional. When this header is set to true and specified together with the Range header, the service returns the CRC64
     /// hash for the range, as long as the range is less than or equal to 4 MB in size.

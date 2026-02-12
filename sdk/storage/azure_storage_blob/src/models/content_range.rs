@@ -6,40 +6,21 @@ use std::fmt;
 use std::str::FromStr;
 
 const PREFIX: &str = "bytes ";
+const WILDCARD: &str = "*";
+
+type Result<T> = azure_core::Result<T>;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) struct ContentRange {
-    start: u64,
-    end: u64,
-    total_length: u64,
-}
-
-impl ContentRange {
-    pub fn new(start: u64, end: u64, total_length: u64) -> ContentRange {
-        ContentRange {
-            start,
-            end,
-            total_length,
-        }
-    }
-
-    pub fn start(&self) -> u64 {
-        self.start
-    }
-
-    /// Index of the final byte of the range (inclusive).
-    pub fn end(&self) -> u64 {
-        self.end
-    }
-
-    pub fn total_length(&self) -> u64 {
-        self.total_length
-    }
+    /// Inclusive start and exclusive end of the range.
+    pub range: Option<(usize, usize)>,
+    /// Total length of the remote resource.
+    pub total_len: Option<usize>,
 }
 
 impl FromStr for ContentRange {
     type Err = Error;
-    fn from_str(s: &str) -> azure_core::Result<ContentRange> {
+    fn from_str(s: &str) -> Result<ContentRange> {
         let remaining = s.strip_prefix(PREFIX).ok_or_else(|| {
             Error::with_message_fn(ErrorKind::Other, || {
                 format!(
@@ -48,75 +29,77 @@ impl FromStr for ContentRange {
             })
         })?;
 
-        let mut split_at_dash = remaining.split('-');
-        let start = split_at_dash
-            .next()
-            .ok_or_else(|| {
-                Error::with_message_fn(ErrorKind::Other, || {
-                    format!(
-                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
-                        "-", s
-                    )
-                })
-            })?
-            .parse()
-            .with_kind(ErrorKind::DataConversion)?;
+        let mut split_at_slash = remaining.split('/');
 
-        let mut split_at_slash = split_at_dash
-            .next()
-            .ok_or_else(|| {
-                Error::with_message_fn(ErrorKind::Other, || {
-                    format!(
-                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
-                        "-", s
-                    )
-                })
-            })?
-            .split('/');
+        let range = parse_range(split_at_slash.next().ok_or_else(|| {
+            Error::with_message(ErrorKind::Other, "Unexpected end of Content-Range.")
+        })?)?;
 
-        let end = split_at_slash
-            .next()
-            .ok_or_else(|| {
-                Error::with_message_fn(ErrorKind::Other, || {
-                    format!(
-                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
-                        "/", s
-                    )
-                })
-            })?
-            .parse()
-            .with_kind(ErrorKind::DataConversion)?;
+        let total_len = parse_total_length(split_at_slash.next().ok_or_else(|| {
+            Error::with_message_fn(ErrorKind::Other, || {
+                format!(
+                    "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
+                    "/", s
+                )
+            })
+        })?)?;
 
-        let total_length = split_at_slash
-            .next()
-            .ok_or_else(|| {
-                Error::with_message_fn(ErrorKind::Other, || {
-                    format!(
-                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
-                        "/", s
-                    )
-                })
-            })?
-            .parse()
-            .with_kind(ErrorKind::DataConversion)?;
-
-        Ok(ContentRange {
-            start,
-            end,
-            total_length,
-        })
+        Ok(ContentRange { range, total_len })
     }
+}
+
+/// Parses the range portion of the Content-Range header: `<unit> <range>/<size>`.
+/// The range portion can be of the format `<start>-<end>` or a wildcard `*`.
+/// `start` and `end` are both serialized as inclusive values, but we return a
+/// half-open range (inclusive start, exclusive end).
+fn parse_range(s: &str) -> Result<Option<(usize, usize)>> {
+    let s = s.trim();
+    if s == WILDCARD {
+        return Ok(None);
+    }
+
+    let mut split_at_dash = s.split('-');
+    let start = split_at_dash
+        .next()
+        .ok_or_else(|| Error::with_message(ErrorKind::Other, "Unexpected end of Content-Range."))?
+        .parse::<usize>()
+        .with_kind(ErrorKind::DataConversion)?;
+    let end = split_at_dash
+        .next()
+        .ok_or_else(|| {
+            Error::with_message_fn(ErrorKind::Other, || {
+                format!(
+                    "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
+                    "-", s
+                )
+            })
+        })?
+        .parse::<usize>()
+        .with_kind(ErrorKind::DataConversion)?;
+
+    Ok(Some((start, end + 1)))
+}
+
+fn parse_total_length(s: &str) -> Result<Option<usize>> {
+    let s = s.trim();
+    if s == WILDCARD {
+        return Ok(None);
+    }
+    Ok(Some(s.parse().with_kind(ErrorKind::DataConversion)?))
 }
 
 impl fmt::Display for ContentRange {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}{}-{}/{}",
+            "{}{}/{}",
             PREFIX,
-            self.start(),
-            self.end(),
-            self.total_length()
+            self.range
+                .map(|range| format!("{}-{}", range.0, range.1 - 1))
+                .unwrap_or(WILDCARD.into()),
+            self.total_len
+                .map(|len| len.to_string())
+                .unwrap_or(WILDCARD.into()),
         )
     }
 }
@@ -131,9 +114,9 @@ mod tests {
             .parse::<ContentRange>()
             .unwrap();
 
-        assert_eq!(range.start(), 172032);
-        assert_eq!(range.end(), 172489);
-        assert_eq!(range.total_length(), 172490);
+        assert_eq!(range.range.unwrap().0, 172032);
+        assert_eq!(range.range.unwrap().1, 172490);
+        assert_eq!(range.total_len.unwrap(), 172490);
     }
 
     #[test]
@@ -154,13 +137,12 @@ mod tests {
     #[test]
     fn display() {
         let range = ContentRange {
-            start: 100,
-            end: 501,
-            total_length: 5000,
+            range: Some((100, 500)),
+            total_len: Some(5000),
         };
 
         let txt = format!("{range}");
 
-        assert_eq!(txt, "bytes 100-501/5000");
+        assert_eq!(txt, "bytes 100-499/5000");
     }
 }
