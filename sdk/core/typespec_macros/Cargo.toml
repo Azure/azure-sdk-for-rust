@@ -8,7 +8,7 @@ homepage = "https://typespec.io"
 repository.workspace = true
 license.workspace = true
 categories = ["compilers", "development-tools"]
-keywords = ["codegen", "openapi", "derive", "api", "proc-macro"]
+keywords = ["typespec"]
 
 [lib]
 proc-macro = true

@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_identity"
-keywords = ["sdk", "cloud", "authentication", "credentials", "token"]
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 edition.workspace = true
 

@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos"
-keywords = ["sdk", "cloud", "rest", "database", "nosql"]
+keywords = ["sdk", "azure", "rest", "cloud", "cosmos"]
 categories = ["api-bindings"]
 
 [dependencies]

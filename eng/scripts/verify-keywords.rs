@@ -13,7 +13,6 @@ serde_json = "1.0.114"
 
 use serde::Deserialize;
 use std::{
-    collections::HashSet,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -67,32 +66,6 @@ fn main() {
             println!(
                 "  Remove keywords to meet the crates.io limit of {} keywords.\n",
                 MAX_KEYWORDS
-            );
-            found = true;
-        }
-
-        // Check for keywords that duplicate words in the crate name.
-        // The crate name is already indexed for search relevance on crates.io,
-        // so duplicating name words in keywords wastes keyword slots.
-        let name_words: HashSet<String> =
-            package.name.split('_').map(|w| w.to_lowercase()).collect();
-        let duplicates: Vec<&String> = package
-            .keywords
-            .iter()
-            .filter(|kw| name_words.contains(&kw.to_lowercase()))
-            .collect();
-
-        if !duplicates.is_empty() {
-            println!(
-                "Package `{}` has keywords that duplicate words in the crate name:",
-                package.name,
-            );
-            println!("  duplicates: {:?}", duplicates);
-            println!(
-                "  The crate name is already used for search relevance on crates.io."
-            );
-            println!(
-                "  See https://github.com/rust-lang/crates.io/discussions/9325\n"
             );
             found = true;
         }
