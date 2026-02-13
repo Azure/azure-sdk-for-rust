@@ -64,7 +64,7 @@ Follow these steps strictly:
    - Clippy lints pass for affected crates
    - Documentation builds successfully where applicable
    - Unit and emulator tests relevant to the touched modules and crates
-     - Run emulator tests with: `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p <crate> --tests`
+
 4. Report results:
    - Summarize failures concisely
    - Include exact file paths and commands to reproduce
