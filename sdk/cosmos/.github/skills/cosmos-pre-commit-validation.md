@@ -1,7 +1,7 @@
 ---
 name: cosmos-pre-commit-validation
 description: >
-  Run pre-commit checks for specific set of crates. Use this when validating changes under sdk/cosmos before committing or during code review.
+  Run pre-commit checks for a specific set of crates. Use this when validating changes under sdk/cosmos before committing or during code review.
 disable-model-invocation: true
 arguments:
   scope:
@@ -9,7 +9,7 @@ arguments:
     required: false
     default: all
     description: >
-      Crate to run Cosmos SDK pre-commit checks against. `All` means all crates under sdk/cosmos.
+      Crate to run Cosmos SDK pre-commit checks against. `all` means all crates under sdk/cosmos.
   changed-only:
     type: boolean
     required: false
