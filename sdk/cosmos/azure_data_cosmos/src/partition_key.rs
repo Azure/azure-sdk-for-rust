@@ -98,7 +98,7 @@ impl PartitionKey {
     /// * `version` - The hash version (1 or 2)
     ///
     /// # Returns
-    /// An [`EffectivePartitionKey`] representing the hashed partition key
+    /// An `EffectivePartitionKey` representing the hashed partition key
     pub fn get_hashed_partition_key_string(
         &self,
         kind: PartitionKeyKind,
