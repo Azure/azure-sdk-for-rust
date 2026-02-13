@@ -13,6 +13,7 @@ serde_json = "1.0.114"
 
 use serde::Deserialize;
 use std::{
+    collections::HashSet,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -69,6 +70,32 @@ fn main() {
             );
             found = true;
         }
+
+        // Check for keywords that duplicate words in the crate name.
+        // The crate name is already indexed for search relevance on crates.io,
+        // so duplicating name words in keywords wastes keyword slots.
+        let name_words: HashSet<String> =
+            package.name.split('_').map(|w| w.to_lowercase()).collect();
+        let duplicates: Vec<&String> = package
+            .keywords
+            .iter()
+            .filter(|kw| name_words.contains(&kw.to_lowercase()))
+            .collect();
+
+        if !duplicates.is_empty() {
+            println!(
+                "Package `{}` has keywords that duplicate words in the crate name:",
+                package.name,
+            );
+            println!("  duplicates: {:?}", duplicates);
+            println!(
+                "  The crate name is already used for search relevance on crates.io."
+            );
+            println!(
+                "  See https://github.com/rust-lang/crates.io/discussions/9325\n"
+            );
+            found = true;
+        }
     }
 
     if found {
@@ -88,6 +115,11 @@ fn package_manifest_path(manifest_path: &str) -> PathBuf {
         .output()
         .expect("executing cargo locate-project");
 
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        panic!("cargo locate-project failed: {stderr}");
+    }
+
     let path: PathBuf = String::from_utf8(output.stdout)
         .expect("valid path")
         .trim_end()
@@ -105,6 +137,11 @@ fn workspace_manifest_path() -> PathBuf {
         .args(["locate-project", "--message-format", "plain", "--workspace"])
         .output()
         .expect("executing cargo locate-project");
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        panic!("cargo locate-project --workspace failed: {stderr}");
+    }
 
     let path: PathBuf = String::from_utf8(output.stdout)
         .expect("valid path")

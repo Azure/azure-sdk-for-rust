@@ -60,13 +60,14 @@ Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features" -GroupOutp
 
 # Verify package dependencies and keywords
 $verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
-$verifyKeywordsScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-keywords.rs' -Resolve
+$verifyKeywordsScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-keywords.rs'))
 
 if (!$SkipPackageAnalysis) {
   if (!(Test-Path $PackageInfoDirectory)) {
     Write-Host "Analyzing workspace`n"
-    Invoke-LoggedCommand "&$verifyDependenciesScript $RepoRoot/Cargo.toml" -GroupOutput
-    Invoke-LoggedCommand "&$verifyKeywordsScript $RepoRoot/Cargo.toml" -GroupOutput
+    $manifestPath = ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+    Invoke-LoggedCommand "&$verifyDependenciesScript $manifestPath" -GroupOutput
+    Invoke-LoggedCommand "&$verifyKeywordsScript $manifestPath" -GroupOutput
     return
   }
 
@@ -80,8 +81,9 @@ if (!$SkipPackageAnalysis) {
 
   foreach ($package in $packagesToTest) {
     Write-Host "Analyzing package '$($package.Name)' in directory '$($package.DirectoryPath)'`n"
-    Invoke-LoggedCommand "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml" -GroupOutput
-    Invoke-LoggedCommand "&$verifyKeywordsScript $($package.DirectoryPath)/Cargo.toml" -GroupOutput
+    $packageManifestPath = ([System.IO.Path]::Combine($package.DirectoryPath, 'Cargo.toml'))
+    Invoke-LoggedCommand "&$verifyDependenciesScript $packageManifestPath" -GroupOutput
+    Invoke-LoggedCommand "&$verifyKeywordsScript $packageManifestPath" -GroupOutput
 
     if ($Toolchain -eq 'nightly') {
       Invoke-LoggedCommand "cargo +nightly docs-rs --package $($package.Name)" -GroupOutput
