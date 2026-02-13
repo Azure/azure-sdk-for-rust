@@ -41,7 +41,8 @@
 //!     FaultInjectionErrorType, FaultInjectionResultBuilder,
 //!     FaultInjectionRuleBuilder, FaultOperationType,
 //! };
-//! use azure_data_cosmos::CosmosClientOptions;
+//! use azure_data_cosmos::CosmosClientBuilder;
+//! use azure_core::credentials::Secret;
 //! use std::sync::Arc;
 //! use std::time::{Duration, Instant};
 //!
@@ -65,10 +66,19 @@
 //!     .with_end_time(Instant::now() + Duration::from_secs(30))
 //!     .build());
 //!
-//! // 4. Inject into client options
-//! let options = FaultInjectionClientBuilder::new()
+//! // 4. Build the fault injection transport
+//! let transport = FaultInjectionClientBuilder::new()
 //!     .with_rule(rule)
-//!     .inject(CosmosClientOptions::default());
+//!     .build();
+//!
+//! // 5. Create the client with fault injection enabled
+//! let client = CosmosClientBuilder::new()
+//!     .endpoint("https://myaccount.documents.azure.com/")
+//!     .key(Secret::new("my_account_key"))
+//!     .fault_injection(true)
+//!     .transport(transport)
+//!     .build()
+//!     .unwrap();
 //! ```
 //!
 //! # Rule Evaluation
