@@ -17,8 +17,26 @@ use crate::routing::partition_key_range::PartitionKeyRange;
 use tracing::info;
 use url::Url;
 
+/// Default duration (in seconds) a partition must remain marked unavailable before
+/// the background failback loop considers it eligible for health re-evaluation.
+const DEFAULT_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_SECS: i64 = 5;
+
+/// Default interval (in seconds) at which the background failback loop runs to check
+/// whether previously failed partitions can be restored to healthy status.
+const DEFAULT_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_SECS: i64 = 300;
+
+/// Default threshold of consecutive read failures before the circuit breaker trips.
+const DEFAULT_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS: i32 = 10;
+
+/// Default threshold of consecutive write failures before the circuit breaker trips.
+const DEFAULT_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES: i32 = 5;
+
+/// Default window (in minutes) after which the circuit breaker resets its failure
+/// counters if no new failure has been recorded.
+const DEFAULT_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_MINS: i64 = 5;
+
 /// Represents the health status of a transport address.
-/// The numeric values indicate priority for replica selection (lower = healthier).
+/// The numeric values indicate priority for partition selection (lower = healthier).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(i32)]
 pub enum PartitionHealthStatus {
@@ -33,6 +51,7 @@ pub enum PartitionHealthStatus {
 /// The client retry policy will mark a partition as down. The PartitionKeyRangeToLocationForReadAndWrite
 /// will add an override to the next read region. When the request is retried it will
 /// override the default location with the new region from the PartitionKeyRangeToLocationForReadAndWrite.
+#[derive(Debug)]
 pub struct GlobalPartitionEndpointManager {
     /// An instance of GlobalEndpointManager.
     global_endpoint_manager: Arc<GlobalEndpointManager>,
@@ -65,43 +84,6 @@ pub struct GlobalPartitionEndpointManager {
     background_task_manager: BackgroundTaskManager,
 }
 
-impl std::fmt::Debug for GlobalPartitionEndpointManager {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GlobalPartitionEndpointManager")
-            .field("global_endpoint_manager", &self.global_endpoint_manager)
-            .field(
-                "partition_unavailability_duration_secs",
-                &self.partition_unavailability_duration_secs,
-            )
-            .field(
-                "background_connection_init_interval_secs",
-                &self.background_connection_init_interval_secs,
-            )
-            .field(
-                "partition_key_range_to_location_for_write",
-                &self.partition_key_range_to_location_for_write,
-            )
-            .field(
-                "partition_key_range_to_location_for_read_and_write",
-                &self.partition_key_range_to_location_for_read_and_write,
-            )
-            .field(
-                "background_connection_init_active",
-                &self.background_connection_init_active,
-            )
-            .field(
-                "partition_level_automatic_failover_enabled",
-                &self.partition_level_automatic_failover_enabled,
-            )
-            .field(
-                "partition_level_circuit_breaker_enabled",
-                &self.partition_level_circuit_breaker_enabled,
-            )
-            .field("background_task_manager", &self.background_task_manager)
-            .finish()
-    }
-}
-
 impl GlobalPartitionEndpointManager {
     /// Creates a new instance of [`GlobalPartitionEndpointManager`].
     ///
@@ -127,9 +109,13 @@ impl GlobalPartitionEndpointManager {
         let instance = Arc::new(Self {
             global_endpoint_manager,
             partition_unavailability_duration_secs:
-                Self::allowed_partition_unavailability_duration_secs(5),
+                Self::allowed_partition_unavailability_duration_secs(
+                    DEFAULT_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_SECS,
+                ),
             background_connection_init_interval_secs:
-                Self::stale_partition_unavailability_refresh_interval_secs(300),
+                Self::stale_partition_unavailability_refresh_interval_secs(
+                    DEFAULT_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_SECS,
+                ),
             partition_key_range_to_location_for_write: Arc::new(RwLock::new(HashMap::new())),
             partition_key_range_to_location_for_read_and_write: Arc::new(RwLock::new(
                 HashMap::new(),
@@ -194,14 +180,13 @@ impl GlobalPartitionEndpointManager {
         }
 
         let weak_self = Arc::downgrade(self);
-        let shutdown_token = self.background_task_manager.cancellation_token();
         // Spawn via BackgroundTaskManager so the task is tracked and will be
-        // signaled to stop when the manager (and thus the client) is dropped.
+        // canceled when the manager (and thus the client) is dropped.
         // We capture a Weak<Self> (not Arc<Self>) to avoid a reference cycle
         // that would prevent the GlobalPartitionEndpointManager from ever
         // being dropped.
         self.background_task_manager.spawn(Box::pin(async move {
-            Self::initiate_circuit_breaker_failback_loop(weak_self, shutdown_token).await;
+            Self::initiate_circuit_breaker_failback_loop(weak_self).await;
         }));
     }
 
@@ -212,14 +197,11 @@ impl GlobalPartitionEndpointManager {
     /// seconds and then calls [`initiate_failback_to_unhealthy_endpoints`]. Any errors
     /// during the failback attempt are logged but do not terminate the loop.
     ///
-    /// The loop exits when either:
-    /// - `shutdown_token` is set to `true` (the owning [`BackgroundTaskManager`] was dropped), or
-    /// - `weak_self.upgrade()` returns `None` (all strong `Arc` references are gone).
-    #[allow(dead_code)]
-    async fn initiate_circuit_breaker_failback_loop(
-        weak_self: Weak<Self>,
-        shutdown_token: Arc<AtomicBool>,
-    ) {
+    /// The loop exits when `weak_self.upgrade()` returns `None` (all strong
+    /// `Arc` references are gone), which happens when the owning client is
+    /// dropped. Dropping the client drops the [`BackgroundTaskManager`], which
+    /// drops the stored future, cancelling this task.
+    async fn initiate_circuit_breaker_failback_loop(weak_self: Weak<Self>) {
         // Briefly upgrade to read the interval, then release the strong ref
         // so it does not keep Self alive across the sleep.
         let interval = match weak_self.upgrade() {
@@ -228,24 +210,10 @@ impl GlobalPartitionEndpointManager {
         };
 
         loop {
-            // Check for shutdown before sleeping so we exit promptly when the
-            // client is dropped.
-            if shutdown_token.load(Ordering::SeqCst) {
-                info!("GlobalPartitionEndpointManager: background failback loop exiting because the client has been dropped.");
-                return;
-            }
-
             // Use the runtime-agnostic sleep from azure_core
             azure_core::async_runtime::get_async_runtime()
                 .sleep(interval)
                 .await;
-
-            // Check again after waking up — the client may have been dropped
-            // while we were asleep.
-            if shutdown_token.load(Ordering::SeqCst) {
-                info!("GlobalPartitionEndpointManager: background failback loop exiting because the client has been dropped.");
-                return;
-            }
 
             // Upgrade the Weak ref for this iteration only. If it fails, the
             // manager has been dropped and we should exit.
@@ -909,11 +877,17 @@ impl PartitionKeyRangeFailoverInfo {
             consecutive_read_request_failure_count: AtomicI32::new(0),
             consecutive_write_request_failure_count: AtomicI32::new(0),
             read_request_failure_counter_threshold:
-                Self::circuit_breaker_consecutive_failure_count_for_reads(10),
+                Self::circuit_breaker_consecutive_failure_count_for_reads(
+                    DEFAULT_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS,
+                ),
             write_request_failure_counter_threshold:
-                Self::circuit_breaker_consecutive_failure_count_for_writes(5),
+                Self::circuit_breaker_consecutive_failure_count_for_writes(
+                    DEFAULT_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES,
+                ),
             timeout_counter_reset_window: Duration::seconds(
-                Self::circuit_breaker_timeout_counter_reset_window_mins(5) * 60,
+                Self::circuit_breaker_timeout_counter_reset_window_mins(
+                    DEFAULT_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_MINS,
+                ) * 60,
             ),
             first_request_failure_time: Instant::now(),
             last_request_failure_time: RwLock::new(Instant::now()),

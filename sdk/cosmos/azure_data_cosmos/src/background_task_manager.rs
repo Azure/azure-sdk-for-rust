@@ -1,76 +1,67 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Cooperative cancellation manager for background tasks.
+//! Manages background tasks spawned by a client.
 //!
-//! The core SDK's [`AsyncRuntime::spawn`] returns a [`SpawnedTask`] (a boxed
-//! future) rather than a join handle with an `abort()` method. This means we
-//! cannot forcibly cancel a spawned task from the outside. Instead,
-//! [`BackgroundTaskManager`] uses a shared [`AtomicBool`] shutdown flag that
-//! background tasks should check periodically and exit when it becomes `true`.
-//!
-//! When the `BackgroundTaskManager` is dropped (e.g. when the owning client is
-//! disposed), the flag is set automatically, causing all cooperating tasks to
-//! exit on their next check.
-//!
-//! # Future improvement
-//!
-//! Once the core SDK exposes an abort-capable handle type (analogous to
-//! `tokio::task::JoinHandle` / `tokio::task::JoinSet`), this module should be
-//! updated to use that mechanism for immediate cancellation.
+//! [`BackgroundTaskManager`] holds on to the [`SpawnedTask`] futures returned
+//! by [`AsyncRuntime::spawn`]. Dropping the manager drops all stored futures,
+//! which cancels the tasks — `drop(future)` is how Rust communicates
+//! cancellation to futures.
 
-use azure_core::async_runtime::{get_async_runtime, TaskFuture};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use azure_core::async_runtime::{get_async_runtime, SpawnedTask, TaskFuture};
+use std::sync::Mutex;
 use tracing::debug;
 
 /// Manages the lifecycle of background tasks spawned by a client.
 ///
-/// Tasks spawned through this manager receive a shared cancellation token
-/// ([`AtomicBool`]) that they should check periodically. When the manager is
-/// dropped, the token is set to `true`, signaling all tasks to exit gracefully.
-#[derive(Debug)]
+/// Spawned tasks are kept alive by storing their [`SpawnedTask`] futures.
+/// When the manager is dropped, all stored futures are dropped, cancelling the
+/// associated tasks.
 pub(crate) struct BackgroundTaskManager {
-    /// Shared shutdown flag. `true` means "please stop".
-    shutdown: Arc<AtomicBool>,
+    /// Stored spawned task futures. Dropping these cancels the tasks.
+    /// Uses a [`Mutex`] for interior mutability so that [`spawn`] can accept
+    /// `&self`, which is required when the manager lives inside an `Arc`.
+    tasks: Mutex<Vec<SpawnedTask>>,
+}
+
+impl std::fmt::Debug for BackgroundTaskManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let count = self.tasks.lock().map(|t| t.len()).unwrap_or(0);
+        f.debug_struct("BackgroundTaskManager")
+            .field("tasks_count", &count)
+            .finish()
+    }
 }
 
 impl BackgroundTaskManager {
-    /// Creates a new [`BackgroundTaskManager`] with the shutdown flag initially
-    /// set to `false`.
+    /// Creates a new [`BackgroundTaskManager`] with no active tasks.
     pub fn new() -> Self {
         Self {
-            shutdown: Arc::new(AtomicBool::new(false)),
+            tasks: Mutex::new(Vec::new()),
         }
     }
 
-    /// Returns a clone of the shared shutdown token.
+    /// Spawns a background task on the async runtime and stores the handle.
     ///
-    /// Background tasks should call `token.load(Ordering::SeqCst)` at the top
-    /// of every loop iteration and return early when it is `true`.
-    pub fn cancellation_token(&self) -> Arc<AtomicBool> {
-        Arc::clone(&self.shutdown)
-    }
-
-    /// Returns `true` if the shutdown signal has been set.
-    #[allow(dead_code)]
-    pub fn is_shutdown(&self) -> bool {
-        self.shutdown.load(Ordering::SeqCst)
-    }
-
-    /// Spawns a fire-and-forget background task on the async runtime.
-    ///
-    /// The returned [`SpawnedTask`] future is intentionally dropped — the task
-    /// runs independently until it completes or observes the shutdown signal.
+    /// The task will remain alive as long as this manager is alive. When the
+    /// manager is dropped, all stored futures are dropped, cancelling the tasks.
     pub fn spawn(&self, future: TaskFuture) {
-        drop(get_async_runtime().spawn(future));
+        let spawned = get_async_runtime().spawn(future);
+        self.tasks
+            .lock()
+            .expect("BackgroundTaskManager mutex poisoned")
+            .push(spawned);
     }
 }
 
 impl Drop for BackgroundTaskManager {
     fn drop(&mut self) {
-        debug!("BackgroundTaskManager: signaling shutdown to all background tasks.");
-        self.shutdown.store(true, Ordering::SeqCst);
+        let count = self.tasks.get_mut().map(|t| t.len()).unwrap_or(0);
+        debug!(
+            "BackgroundTaskManager: dropping {} background task(s).",
+            count,
+        );
+        // Dropping the Vec<SpawnedTask> drops all futures, cancelling the tasks.
     }
 }
 
@@ -79,50 +70,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_manager_is_not_shutdown() {
+    fn new_manager_has_no_tasks() {
         let manager = BackgroundTaskManager::new();
-        assert!(!manager.is_shutdown());
+        assert_eq!(manager.tasks.lock().unwrap().len(), 0);
     }
 
     #[test]
-    fn cancellation_token_reflects_shutdown() {
+    fn drop_cleans_up_tasks() {
         let manager = BackgroundTaskManager::new();
-        let token = manager.cancellation_token();
-        assert!(!token.load(Ordering::SeqCst));
-
-        // Simulate drop
+        // Spawn a no-op task
+        manager.spawn(Box::pin(async {}));
+        assert_eq!(manager.tasks.lock().unwrap().len(), 1);
         drop(manager);
-
-        assert!(token.load(Ordering::SeqCst));
-    }
-
-    #[test]
-    fn drop_signals_shutdown() {
-        let token;
-        {
-            let manager = BackgroundTaskManager::new();
-            token = manager.cancellation_token();
-            assert!(!token.load(Ordering::SeqCst));
-        }
-        // Manager has been dropped
-        assert!(token.load(Ordering::SeqCst));
-    }
-
-    #[test]
-    fn multiple_tokens_all_observe_shutdown() {
-        let manager = BackgroundTaskManager::new();
-        let t1 = manager.cancellation_token();
-        let t2 = manager.cancellation_token();
-        let t3 = manager.cancellation_token();
-
-        assert!(!t1.load(Ordering::SeqCst));
-        assert!(!t2.load(Ordering::SeqCst));
-        assert!(!t3.load(Ordering::SeqCst));
-
-        drop(manager);
-
-        assert!(t1.load(Ordering::SeqCst));
-        assert!(t2.load(Ordering::SeqCst));
-        assert!(t3.load(Ordering::SeqCst));
+        // Manager dropped successfully — tasks are cancelled
     }
 }

@@ -1,9 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::hash::PartitionKeyKind;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
+
+/// Represents the partition key kind.
+#[derive(PartialEq, Eq, Clone, Default, SafeDebug, Deserialize, Serialize)]
+pub enum PartitionKeyKind {
+    /// Standard single-path hashing.
+    #[default]
+    Hash,
+    /// Multi-path (hierarchical) partition keys.
+    MultiHash,
+    /// A partition key kind not recognized by this SDK version.
+    #[serde(other)]
+    Other,
+}
 
 /// Represents the partition key definition for a container.
 #[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -69,8 +81,7 @@ impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
 
 #[cfg(test)]
 mod tests {
-    use crate::hash::PartitionKeyKind;
-    use crate::models::PartitionKeyDefinition;
+    use crate::models::{PartitionKeyDefinition, PartitionKeyKind};
 
     #[test]
     pub fn from_single() {

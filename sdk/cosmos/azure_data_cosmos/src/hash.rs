@@ -1,14 +1,33 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+use crate::models::PartitionKeyKind;
 use crate::murmur_hash::{murmurhash3_128, murmurhash3_32};
-use azure_core::fmt::SafeDebug;
-use serde::{Deserialize, Serialize};
 use std::fmt::Write;
 
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
 const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
 const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
+
+/// A strongly-typed wrapper around the hex-encoded effective partition key string.
+///
+/// Use [`AsRef<str>`] to obtain the underlying string when passing to APIs
+/// that accept `&str`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EffectivePartitionKey(String);
+
+impl EffectivePartitionKey {
+    /// Returns the underlying string representation.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl AsRef<str> for EffectivePartitionKey {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
 
 /// Contains all allowed markers for component marker types.
 mod component {
@@ -29,14 +48,6 @@ pub enum InnerPartitionKeyValue {
     String(String),
     Infinity,
     Undefined,
-}
-
-#[derive(PartialEq, Eq, Clone, Default, SafeDebug, Deserialize, Serialize)]
-pub enum PartitionKeyKind {
-    #[default]
-    Hash,
-    MultiHash,
-    Other,
 }
 
 impl InnerPartitionKeyValue {
@@ -167,8 +178,9 @@ impl InnerPartitionKeyValue {
     fn truncate_for_v1_hashing(&self) -> InnerPartitionKeyValue {
         match self {
             InnerPartitionKeyValue::String(s) => {
-                if s.len() > 100 {
-                    InnerPartitionKeyValue::String(s[..100].to_string())
+                let char_count = s.chars().count();
+                if char_count > 100 {
+                    InnerPartitionKeyValue::String(s.chars().take(100).collect())
                 } else {
                     InnerPartitionKeyValue::String(s.clone())
                 }
@@ -178,42 +190,47 @@ impl InnerPartitionKeyValue {
     }
 }
 
-/// Returns a hex string representation of a partition key value.
+/// Returns an [`EffectivePartitionKey`] representing the hashed partition key.
 pub fn get_hashed_partition_key_string(
-    pk_value: &[InnerPartitionKeyValue],
+    pk_value: &[&InnerPartitionKeyValue],
     kind: PartitionKeyKind,
     version: u8,
-) -> String {
+) -> EffectivePartitionKey {
     if pk_value.is_empty() {
-        return MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string();
+        return EffectivePartitionKey(MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string());
     }
-    if pk_value == [InnerPartitionKeyValue::Infinity] {
-        return MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string();
+    if pk_value.len() == 1 && *pk_value[0] == InnerPartitionKeyValue::Infinity {
+        return EffectivePartitionKey(MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string());
     }
 
-    match kind {
+    let raw = match kind {
         PartitionKeyKind::Hash => match version {
             1 => get_effective_partition_key_for_hash_partitioning_v1(pk_value),
             2 => get_effective_partition_key_for_hash_partitioning_v2(pk_value),
             _ => {
-                panic!("Hash partitioning only supports version 1 or 2");
+                tracing::warn!(
+                    "Hash partitioning version {} is not supported, falling back to binary encoding.",
+                    version
+                );
+                to_hex_encoded_binary_string(pk_value)
             }
         },
-        // hpk only supports V2
+        // MultiHash is not yet implemented; use the non-hashed binary encoding
+        // as a deterministic fallback instead of panicking.
         PartitionKeyKind::MultiHash => {
-            panic!("MultiHash currently not supported. Pending additional testing.");
-            // if version != 2 {
-            //     panic!("MultiHash partitioning only supports version 2");
-            // }
-            // get_effective_partition_key_for_multi_hash_partitioning_v2(pk_value)
+            tracing::warn!(
+                "MultiHash partitioning is not yet supported, falling back to binary encoding."
+            );
+            to_hex_encoded_binary_string(pk_value)
         }
         _ => to_hex_encoded_binary_string(pk_value),
-    }
+    };
+    EffectivePartitionKey(raw)
 }
 
 /// V2: encode components with `_write_for_hashing_v2`, hash the concatenated bytes,
 fn get_effective_partition_key_for_hash_partitioning_v2(
-    pk_value: &[InnerPartitionKeyValue],
+    pk_value: &[&InnerPartitionKeyValue],
 ) -> String {
     let mut ms: Vec<u8> = Vec::new();
     for comp in pk_value {
@@ -231,7 +248,7 @@ fn get_effective_partition_key_for_hash_partitioning_v2(
 /// convert hash (u32) to f64 (possible precision loss is intentional to mirror other sdks), then binary-encode
 /// [hash_value_as_number] + truncated original components using V1 binary rules.
 fn get_effective_partition_key_for_hash_partitioning_v1(
-    pk_value: &[InnerPartitionKeyValue],
+    pk_value: &[&InnerPartitionKeyValue],
 ) -> String {
     // Truncate string components for hashing path first
     let mut truncated: Vec<InnerPartitionKeyValue> = Vec::with_capacity(pk_value.len());
@@ -275,7 +292,7 @@ fn encode_double_as_uint64(value: f64) -> u64 {
 
 /// Encode multiple components into a binary buffer and return lowercase hex string.
 /// This corresponds to `_to_hex_encoded_binary_string` + `_write_for_binary_encoding`.
-fn to_hex_encoded_binary_string(components: &[InnerPartitionKeyValue]) -> String {
+fn to_hex_encoded_binary_string(components: &[&InnerPartitionKeyValue]) -> String {
     let mut buffer: Vec<u8> = Vec::new();
     for comp in components {
         comp.write_for_binary_encoding(&mut buffer);
@@ -306,27 +323,25 @@ mod tests {
     #[test]
     fn test_empty_pk() {
         let result = get_hashed_partition_key_string(&[], PartitionKeyKind::Hash, 0);
-        assert_eq!(result, MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY);
+        assert_eq!(result.as_str(), MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY);
     }
 
     #[test]
     fn test_infinity_pk() {
-        let result = get_hashed_partition_key_string(
-            &[InnerPartitionKeyValue::Infinity],
-            PartitionKeyKind::Hash,
-            0,
-        );
-        assert_eq!(result, MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY);
+        let inf = InnerPartitionKeyValue::Infinity;
+        let result = get_hashed_partition_key_string(&[&inf], PartitionKeyKind::Hash, 0);
+        assert_eq!(result.as_str(), MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY);
     }
 
     #[test]
     fn test_single_string_hash_v2() {
         let comp = InnerPartitionKeyValue::String("customer42".to_string());
-        let result = get_hashed_partition_key_string(&[comp], PartitionKeyKind::Hash, 2);
+        let result = get_hashed_partition_key_string(&[&comp], PartitionKeyKind::Hash, 2);
         // result should be a hex string of length 32 (16 bytes * 2 chars)
-        assert_eq!(result.len(), 32);
+        assert_eq!(result.as_str().len(), 32);
         assert_eq!(
-            result, "19819C94CE42A1654CCC8110539D9589",
+            result.as_str(),
+            "19819C94CE42A1654CCC8110539D9589",
             "Mismatch for component hash"
         )
     }
@@ -413,9 +428,9 @@ mod tests {
             ),
         ];
 
-        for (component, expected) in cases {
+        for (component, expected) in &cases {
             let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 2);
-            assert_eq!(actual, expected, "Mismatch for component hash");
+            assert_eq!(actual.as_str(), *expected, "Mismatch for component hash");
         }
     }
 
@@ -429,8 +444,9 @@ mod tests {
         ];
         let expected = "3032DECBE2AB1768D8E0AEDEA35881DF";
 
-        let actual = get_hashed_partition_key_string(&component, PartitionKeyKind::Hash, 2);
-        assert_eq!(actual, expected, "Mismatch for component hash");
+        let refs: Vec<&InnerPartitionKeyValue> = component.iter().collect();
+        let actual = get_hashed_partition_key_string(&refs, PartitionKeyKind::Hash, 2);
+        assert_eq!(actual.as_str(), expected, "Mismatch for component hash");
     }
 
     #[test]
@@ -457,20 +473,18 @@ mod tests {
             (InnerPartitionKeyValue::Number(f64::MAX), "05C1CBE367C53005FFEFFFFFFFFFFFFFFE"),
         ];
 
-        for (component, expected) in cases {
-            let actual = get_hashed_partition_key_string(
-                std::slice::from_ref(&component),
-                PartitionKeyKind::Hash,
-                1,
-            );
+        for (component, expected) in &cases {
+            let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 1);
             assert_eq!(
-                actual, expected,
+                actual.as_str(),
+                *expected,
                 "Mismatch for V1 component hash (enable test after implementation)"
             );
             // unspecified version defaults to V1
             let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 1);
             assert_eq!(
-                actual, expected,
+                actual.as_str(),
+                *expected,
                 "Mismatch for V1 component hash (enable test after implementation)"
             );
         }

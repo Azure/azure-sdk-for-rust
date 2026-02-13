@@ -100,7 +100,7 @@ impl ContainerConnection {
                         // current routing map. If it succeeds, clone immediately so
                         // we release the borrow on routing_map before possibly moving
                         // it into try_lookup for a refresh.
-                        match routing_map.get_range_by_effective_partition_key(&epk) {
+                        match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
                             Ok(pk_range) => {
                                 cosmos_request.request_context.resolved_partition_key_range =
                                     Some(pk_range.clone());
@@ -114,7 +114,7 @@ impl ContainerConnection {
 
                                 if let Some(refreshed_routing_map) = refreshed_routing_map {
                                     let pk_range = refreshed_routing_map
-                                        .get_range_by_effective_partition_key(&epk)?;
+                                        .get_range_by_effective_partition_key(epk.as_str())?;
                                     cosmos_request.request_context.resolved_partition_key_range =
                                         Some(pk_range.clone());
                                 }

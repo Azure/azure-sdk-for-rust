@@ -49,10 +49,7 @@ impl LinkSegment {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)] // For the variants. Can be removed when we have them all implemented.
 pub enum ResourceType {
-    Attachment,
-    Conflict,
     Databases,
     DatabaseAccount,
     Containers,
@@ -60,10 +57,7 @@ pub enum ResourceType {
     StoredProcedures,
     Users,
     Permissions,
-    PartitionKey,
     PartitionKeyRanges,
-    PartitionedSystemDocument,
-    RetriableWriteCachedResponse,
     UserDefinedFunctions,
     Triggers,
     Offers,
@@ -72,8 +66,6 @@ pub enum ResourceType {
 impl ResourceType {
     pub fn path_segment(self) -> &'static str {
         match self {
-            ResourceType::Attachment => "attachments",
-            ResourceType::Conflict => "conflict",
             ResourceType::Databases => "dbs",
             ResourceType::DatabaseAccount => "",
             ResourceType::Containers => "colls",
@@ -81,11 +73,8 @@ impl ResourceType {
             ResourceType::StoredProcedures => "sprocs",
             ResourceType::Users => "users",
             ResourceType::Permissions => "permissions",
-            ResourceType::PartitionKey => "partitionkey",
             ResourceType::PartitionKeyRanges => "pkranges",
             ResourceType::UserDefinedFunctions => "udfs",
-            ResourceType::PartitionedSystemDocument => "pksysdocs",
-            ResourceType::RetriableWriteCachedResponse => "rwcache",
             ResourceType::Triggers => "triggers",
             ResourceType::Offers => "offers",
         }
@@ -103,15 +92,7 @@ impl ResourceType {
 
     /// Returns `true` if the resource type is partitioned.
     pub fn is_partitioned(&self) -> bool {
-        matches!(
-            self,
-            ResourceType::Documents
-                | ResourceType::Attachment
-                | ResourceType::Conflict
-                | ResourceType::PartitionKey
-                | ResourceType::PartitionedSystemDocument
-                | ResourceType::RetriableWriteCachedResponse
-        )
+        matches!(self, ResourceType::Documents)
     }
 }
 

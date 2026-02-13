@@ -6,7 +6,8 @@ use std::borrow::Cow;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::constants;
-use crate::hash::{get_hashed_partition_key_string, InnerPartitionKeyValue, PartitionKeyKind};
+use crate::hash::{get_hashed_partition_key_string, EffectivePartitionKey, InnerPartitionKeyValue};
+use crate::models::PartitionKeyKind;
 
 /// Specifies a partition key value, usually used when querying a specific partition.
 ///
@@ -97,10 +98,13 @@ impl PartitionKey {
     /// * `version` - The hash version (1 or 2)
     ///
     /// # Returns
-    /// A hex-encoded string representing the hashed partition key
-    pub fn get_hashed_partition_key_string(&self, kind: PartitionKeyKind, version: u8) -> String {
-        let inner_values: Vec<InnerPartitionKeyValue> =
-            self.0.iter().map(|v| v.0.clone()).collect();
+    /// An [`EffectivePartitionKey`] representing the hashed partition key
+    pub fn get_hashed_partition_key_string(
+        &self,
+        kind: PartitionKeyKind,
+        version: u8,
+    ) -> EffectivePartitionKey {
+        let inner_values: Vec<&InnerPartitionKeyValue> = self.0.iter().map(|v| &v.0).collect();
         get_hashed_partition_key_string(&inner_values, kind, version)
     }
 }
