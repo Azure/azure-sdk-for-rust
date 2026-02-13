@@ -56,8 +56,8 @@ Follow these steps strictly:
    - Otherwise default to `sdk/cosmos`
 
 2. Determine file scope:
-   - If `changed-only` is true, restrict checks to `git diff --name-only`
-   - Otherwise, scan the entire path
+   - If `changed-only` is true, restrict checks to files under the target path (for example, using `git diff --name-only -- <target path>` or by filtering `git diff --name-only` results to that path)
+   - Otherwise, scan the entire target path
 
 3. Validate using Key Workflows in AGENTS.md
    - Formatting checks
