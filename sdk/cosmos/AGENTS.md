@@ -435,6 +435,7 @@ Before considering any task complete, run the following checks **in order** on a
    - This catches broken intra-doc links (e.g., referencing non-existent methods in `[`backtick links`]`)
    - All documentation warnings must be resolved before completing the task
 5. **Test check** (if tests exist): `cargo test -p <crate-name> --all-features`
+   - For emulator tests: `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p <crate-name> --tests`
 
 **Common documentation link errors to avoid**:
 - When documenting factory methods or APIs, ensure the linked method names match the actual implementation
