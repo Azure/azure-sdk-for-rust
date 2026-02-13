@@ -49,7 +49,7 @@ pub trait RetryHandler: ConditionalSend + ConditionalSync {
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
+        Sender: Fn(&mut CosmosRequest) -> Fut + ConditionalSend + ConditionalSync,
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend;
 }
 
@@ -118,7 +118,7 @@ impl RetryHandler for BackOffRetryHandler {
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
+        Sender: Fn(&mut CosmosRequest) -> Fut + ConditionalSend + ConditionalSync,
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
     {
         // Get the appropriate retry policy based on the request
