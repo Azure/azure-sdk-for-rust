@@ -53,8 +53,13 @@ pub struct BlobClientManagedDownloadOptions<'a> {
     /// A default value will be chosen if none is provided.
     pub partition_size: Option<NonZero<usize>>,
 
-    /// Optional. Range of the blob to download.
-    /// None will result in the entire blob being downloaded.
+    /// Optional range of the blob to download.
+    ///
+    /// The range is specified in byte offsets and uses standard Rust range semantics:
+    /// `start` is the first byte offset to include, and `end` is a byte offset that is
+    /// *not* included in the download (i.e. `start..end` is end-exclusive).
+    ///
+    /// When set to `None`, the entire blob will be downloaded.
     pub range: Option<Range<usize>>,
 
     /// Optional. When this header is set to true and specified together with the Range header, the service returns the CRC64
