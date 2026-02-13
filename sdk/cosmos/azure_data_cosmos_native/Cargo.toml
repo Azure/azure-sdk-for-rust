@@ -28,7 +28,6 @@ tracing-subscriber = { workspace = true, optional = true, features = [
 [target.'cfg(target_family = "wasm")'.dependencies]
 # Configure dependencies in the tree to work in wasm environments
 tokio = { workspace = true, optional = true, features = ["rt", "macros"] }
-#uuid = { workspace = true, features = ["v4", "js"] }
 getrandom = { workspace = true, features = ["wasm_js"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]

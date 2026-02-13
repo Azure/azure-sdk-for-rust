@@ -495,7 +495,7 @@ pub struct TestRunContext {
 
 impl TestRunContext {
     pub fn new(client: CosmosClient, fault_client: Option<CosmosClient>) -> Self {
-        let run_id = uuid::Uuid::new_v4().simple().to_string();
+        let run_id = Uuid::new_v4().simple().to_string();
         Self {
             run_id,
             client,

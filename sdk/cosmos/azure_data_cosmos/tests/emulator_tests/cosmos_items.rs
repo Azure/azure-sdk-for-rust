@@ -14,7 +14,6 @@ use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {
