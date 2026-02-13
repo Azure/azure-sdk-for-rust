@@ -2,12 +2,14 @@
 // Licensed under the MIT License.
 
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::http::headers::{Header, HeaderName};
 use std::fmt;
 use std::ops::{Range, RangeFrom};
 use std::str::FromStr;
 
 const PREFIX: &str = "bytes ";
 const WILDCARD: &str = "*";
+const CONTENT_RANGE_ID: HeaderName = HeaderName::from_static("content_range");
 
 type Result<T> = azure_core::Result<T>;
 
@@ -38,6 +40,24 @@ pub(crate) struct ContentRange {
     pub range: Option<(usize, usize)>,
     /// Total length of the remote resource.
     pub total_len: Option<usize>,
+}
+
+impl Header for ContentRange {
+    fn name(&self) -> azure_core::http::headers::HeaderName {
+        CONTENT_RANGE_ID
+    }
+
+    fn value(&self) -> azure_core::http::headers::HeaderValue {
+        let range_str = match self.range {
+            Some(range) => format!("{}-{}", range.0, range.1),
+            None => WILDCARD.to_string(),
+        };
+        let len_str = match self.total_len {
+            Some(len) => len.to_string(),
+            None => WILDCARD.to_string(),
+        };
+        format!("{}{}/{}", PREFIX, range_str, len_str).into()
+    }
 }
 
 impl FromStr for ContentRange {
