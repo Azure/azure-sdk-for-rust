@@ -6,7 +6,8 @@ use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPo
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
-use crate::{conditional_send::ConditionalSend, cosmos_request::CosmosRequest};
+use crate::conditional_send::{ConditionalSend, ConditionalSync};
+use crate::cosmos_request::CosmosRequest;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
 use std::sync::Arc;
@@ -20,7 +21,7 @@ use tracing::debug;
 #[allow(dead_code)]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-pub trait RetryHandler: Send + Sync {
+pub trait RetryHandler: ConditionalSend + ConditionalSync {
     /// Sends an HTTP request with automatic retry logic
     ///
     /// This method wraps the provided sender callback with retry logic, automatically
