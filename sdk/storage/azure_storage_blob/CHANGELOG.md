@@ -1,6 +1,18 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.9.0 (2026-02-11)
 
 ### Features Added
 

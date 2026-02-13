@@ -832,7 +832,7 @@ pub struct GeoReplication {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-pub struct ListBlobsFlatSegmentResponse {
+pub struct ListBlobsResponse {
     /// The container name.
     #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,

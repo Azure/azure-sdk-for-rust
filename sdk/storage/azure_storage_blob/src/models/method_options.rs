@@ -88,7 +88,7 @@ pub struct BlobClientManagedDownloadOptions<'a> {
 
 /// Options to be passed to `BlockBlobClient::managed_upload()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlockBlobClientManagedUploadOptions<'a> {
+pub(crate) struct BlockBlobClientManagedUploadOptions<'a> {
     /// Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read
     /// request.
     pub blob_cache_control: Option<String>,
