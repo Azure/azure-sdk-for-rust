@@ -9,7 +9,7 @@ homepage = "https://typespec.io"
 repository.workspace = true
 license.workspace = true
 categories = ["compilers", "development-tools"]
-keywords = ["typespec"]
+keywords = []
 
 [dependencies]
 base64.workspace = true
