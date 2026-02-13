@@ -26,6 +26,7 @@ argument-hints:
   scope:
     - azure_data_cosmos
     - azure_data_cosmos_native
+    - sdk/cosmos/tests
 
   changed-only:
     - true
@@ -50,7 +51,9 @@ Use this skill when:
 Follow these steps strictly:
 
 1. Determine the target path:
-   - If the `scope` argument is specified and is not equal (case-insensitive) to `all` or `*`, set the target path to `sdk/cosmos/<scope>` (for example, if `scope` is `helloworld`, use `sdk/cosmos/helloworld` as the target path).
+   - If the `scope` argument is specified and is not equal (case-insensitive) to `all` or `*`:
+     - If `scope` starts with `sdk/cosmos/`, use it as-is (it's already a full repo-relative path)
+     - Otherwise, set the target path to `sdk/cosmos/<scope>` (it's a crate name)
    - Otherwise, set the target path to `sdk/cosmos`.
 
 2. Determine file scope:
