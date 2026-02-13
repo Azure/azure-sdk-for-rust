@@ -49,6 +49,8 @@ pub struct CosmosClientOptions {
     pub(crate) consistency_level: Option<ConsistencyLevel>,
     pub(crate) request_timeout: Option<Duration>,
     pub(crate) enable_partition_level_circuit_breaker: bool,
+    /// When set to true, disables partition-level failover.
+    pub(crate) disable_partition_level_failover: bool,
     /// The desired throughput bucket for the client
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.

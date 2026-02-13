@@ -268,6 +268,19 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Disables partition-level failover.
+    ///
+    /// By default, the SDK will attempt to fail over to other partitions when
+    /// a partition becomes unavailable. Setting this to true disables that behavior.
+    ///
+    /// # Arguments
+    ///
+    /// * `disabled` - If true, partition-level failover is disabled.
+    pub fn disable_partition_level_failover(mut self, disabled: bool) -> Self {
+        self.options.disable_partition_level_failover = disabled;
+        self
+    }
+
     /// Sets the instrumentation options for distributed tracing.
     ///
     /// # Arguments
