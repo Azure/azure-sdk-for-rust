@@ -119,8 +119,9 @@ fn get_shared_database_id() -> &'static str {
 pub fn get_effective_hub_endpoint() -> String {
     let host = get_global_endpoint();
 
-    if host == EMULATOR_HOST.to_string() {
-        return host;
+    if host == EMULATOR_HOST {
+        // The SDK resolves "localhost" to "127.0.0.1" in request URLs.
+        return "127.0.0.1".to_string();
     }
 
     // Insert the hub region after the account name, before .documents.azure.com
