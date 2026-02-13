@@ -26,7 +26,6 @@ argument-hints:
   scope:
     - azure_data_cosmos
     - azure_data_cosmos_native
-    - sdk/cosmos/tests
 
   changed-only:
     - true
@@ -51,14 +50,13 @@ Use this skill when:
 Follow these steps strictly:
 
 1. Determine the target path:
-   - If the `scope` argument is specified and is not equal (case-insensitive) to `all` or `*`:
-     - If `scope` starts with `sdk/cosmos/`, use it as-is (it's already a full repo-relative path)
-     - Otherwise, set the target path to `sdk/cosmos/<scope>` (it's a crate name)
+   - If the `scope` argument is specified and is not equal (case-insensitive) to `all` or `*`, set the target path to `sdk/cosmos/<scope>` (for example, if `scope` is `azure_data_cosmos`, use `sdk/cosmos/azure_data_cosmos` as the target path).
    - Otherwise, set the target path to `sdk/cosmos`.
 
 2. Determine file scope:
-   - If `changed-only` is true, restrict checks to files under the target path (for example, using `git diff --name-only -- <target path>` or by filtering `git diff --name-only` results to that path)
-   - Otherwise, scan the entire target path
+   - Always include `sdk/cosmos/tests` in the validation scope (if it exists)
+   - If `changed-only` is true, restrict checks to files under the target path and `sdk/cosmos/tests` (for example, using `git diff --name-only -- <target path> sdk/cosmos/tests` or by filtering `git diff --name-only` results to those paths)
+   - Otherwise, scan the entire target path and `sdk/cosmos/tests`
 
 3. Validate using Key Workflows in AGENTS.md
    - Formatting checks
