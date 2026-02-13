@@ -59,6 +59,7 @@ pub fn unwrap_required_ptr<'a, T>(
 /// * `Ok(Some(T))` if the pointer is non-null and conversion succeeded.
 /// * `Ok(None)` if the pointer is null.
 /// * `Err(E)` if the pointer is non-null but conversion failed.
+#[allow(dead_code)]
 fn convert_optional_ptr<'a, C, T>(
     ptr: *const C,
 ) -> Result<Option<T>, <T as std::convert::TryFrom<&'a C>>::Error>

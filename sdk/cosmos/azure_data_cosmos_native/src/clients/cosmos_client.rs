@@ -5,14 +5,16 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 
 use azure_core::credentials::Secret;
-use azure_data_cosmos::{clients::DatabaseClient, query::Query, CosmosClient, QueryOptions};
+use azure_data_cosmos::{
+    clients::DatabaseClient, query::Query, CosmosClient, CosmosClientBuilder, QueryOptions,
+};
 use futures::TryStreamExt;
 
+use crate::context::CallContext;
 use crate::error::{self, CosmosErrorCode, Error};
 use crate::options::{ClientOptions, CreateDatabaseOptions};
 use crate::string::parse_cstr;
 use crate::unwrap_required_ptr;
-use crate::{context::CallContext, convert_optional_ptr};
 
 /// Creates a new CosmosClient and returns a pointer to it via the out parameter.
 ///
@@ -42,10 +44,20 @@ pub extern "C" fn cosmos_client_create_with_key(
     context!(ctx).run_sync_with_output(out_client, || {
         let endpoint = parse_cstr(endpoint, error::messages::INVALID_ENDPOINT)?;
         let key = parse_cstr(key, error::messages::INVALID_KEY)?.to_string();
-        let options = convert_optional_ptr(options)?;
 
-        let client =
-            azure_data_cosmos::CosmosClient::with_key(endpoint, Secret::new(key), options)?;
+        let mut builder = CosmosClientBuilder::new()
+            .endpoint(endpoint)
+            .key(Secret::new(key));
+
+        // Apply transport from C options if provided
+        if !options.is_null() {
+            let c_options = unsafe { &*options };
+            if let Some(transport) = c_options.transport()? {
+                builder = builder.transport(transport);
+            }
+        }
+
+        let client = builder.build()?;
 
         Ok(Box::new(client))
     })
@@ -82,12 +94,19 @@ pub extern "C" fn cosmos_client_create_with_connection_string(
             connection_string,
             error::messages::INVALID_CONNECTION_STRING,
         )?;
-        let options = convert_optional_ptr(options)?;
 
-        let client = azure_data_cosmos::CosmosClient::with_connection_string(
-            Secret::new(connection_string_str.to_string()),
-            options,
-        )?;
+        let mut builder = CosmosClientBuilder::new()
+            .connection_string(Secret::new(connection_string_str.to_string()))?;
+
+        // Apply transport from C options if provided
+        if !options.is_null() {
+            let c_options = unsafe { &*options };
+            if let Some(transport) = c_options.transport()? {
+                builder = builder.transport(transport);
+            }
+        }
+
+        let client = builder.build()?;
 
         Ok(Box::new(client))
     })
