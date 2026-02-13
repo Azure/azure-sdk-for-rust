@@ -267,7 +267,6 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-http",
  "opentelemetry_sdk",
- "reqwest",
  "tokio",
  "tracing",
  "tracing-subscriber",

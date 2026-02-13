@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
+
 ### Bugs Fixed
 
 ### Other Changes
