@@ -96,7 +96,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // With probability 0.0, all reads should succeed
@@ -162,7 +162,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // With probability 1.0, all reads should fail
@@ -206,11 +206,6 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
-
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
@@ -236,7 +231,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // First request - should succeed after retries
@@ -265,11 +260,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             Ok(())
         },
-        Some(
-            TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
-                .with_fault_cosmos_options(client_options),
-        ),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -317,7 +308,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Read should succeed
@@ -405,7 +396,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Read should succeed since container name doesn't match "FaultyContainer"
@@ -435,7 +426,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
             // Now try to read using the fault client - should fail because container name contains "FaultyContainer"
             let faulty_fault_container_client =
-                fault_db_client.container_client(&faulty_container_id);
+                fault_db_client.container_client(faulty_container_id);
             let faulty_result = faulty_fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
@@ -509,7 +500,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             let result = fault_container_client
@@ -587,7 +578,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             let result = fault_container_client
@@ -665,7 +656,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Small delay to ensure duration has passed
@@ -733,7 +724,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // First 3 requests should fail
@@ -799,7 +790,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Read should succeed with no fault rules
@@ -856,7 +847,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Create item should succeed
@@ -951,7 +942,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Rule is enabled — read should fail

@@ -62,7 +62,7 @@ pub struct TestOptions {
     pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
     /// Optional CosmosClient options for the fault injection client (e.g., preferred regions).
     /// Used in combination with `fault_injection_builder`.
-    pub fault_cosmos_options: Option<CosmosClientOptions>,
+    pub fault_client_options: Option<CosmosClientOptions>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
 }
@@ -89,8 +89,8 @@ impl TestOptions {
 
     /// Sets custom CosmosClient options for the fault injection client.
     /// Use this to configure preferred regions or other client settings for the fault client.
-    pub fn with_fault_cosmos_options(mut self, options: CosmosClientOptions) -> Self {
-        self.fault_cosmos_options = Some(options);
+    pub fn with_fault_client_options(mut self, options: CosmosClientOptions) -> Self {
+        self.fault_client_options = Some(options);
         self
     }
 
@@ -191,27 +191,34 @@ fn is_azure_pipelines() -> bool {
 }
 
 impl TestClient {
+    pub fn from_env_with_fault_options(
+        fault_client_options: Option<CosmosClientOptions>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::from_env_inner(None, None, fault_client_options)
+    }
+
+    pub fn from_env(
+        options: Option<CosmosClientOptions>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::from_env_inner(options, None, None)
+    }
+
+    pub fn from_env_with_fault_builder(
+        fault_builder: FaultInjectionClientBuilder,
+        cosmos_options: Option<CosmosClientOptions>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::from_env_inner(cosmos_options, Some(fault_builder), None)
+    }
+
     /// Creates a new [`TestClient`] from local environment variables.
     ///
     /// If the environment variables are not set, this client will contain no underlying [`CosmosClient`].
     /// Calling `run` on such a client will skip running the closure (thus skipping the test), except when
     /// running on Azure Pipelines, when it will panic instead.
-    pub fn from_env(
-        options: Option<CosmosClientOptions>,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(options, None)
-    }
-
-    pub fn from_env_with_fault_injection(
-        fault_builder: FaultInjectionClientBuilder,
-        cosmos_options: Option<CosmosClientOptions>,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(cosmos_options, Some(fault_builder))
-    }
-
     fn from_env_inner(
         options: Option<CosmosClientOptions>,
         fault_builder: Option<FaultInjectionClientBuilder>,
+        fault_client_options: Option<CosmosClientOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -222,15 +229,28 @@ impl TestClient {
 
         match env_var.as_ref() {
             "emulator" => {
+                if fault_client_options.is_some() {
+                    eprintln!(
+                        "warning: fault_client_options are ignored for emulator connections; \
+                         the emulator always uses its own transport with invalid-cert acceptance"
+                    );
+                }
                 // Ignore that the test mode says playback, if the user explicitly asked for emulator, we use it.
                 Self::from_connection_string(
                     EMULATOR_CONNECTION_STRING,
                     options,
                     true,
                     fault_builder,
+                    None,
                 )
             }
-            _ => Self::from_connection_string(&env_var, options, false, fault_builder),
+            _ => Self::from_connection_string(
+                &env_var,
+                options,
+                false,
+                fault_builder,
+                fault_client_options,
+            ),
         }
     }
 
@@ -238,7 +258,8 @@ impl TestClient {
         connection_string: &str,
         options: Option<CosmosClientOptions>,
         mut allow_invalid_certificates: bool,
-        #[allow(unused_variables)] fault_builder: Option<FaultInjectionClientBuilder>,
+        fault_builder: Option<FaultInjectionClientBuilder>,
+        fault_client_options: Option<CosmosClientOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -251,7 +272,21 @@ impl TestClient {
             }
         }
 
-        let mut options = options.unwrap_or_default();
+        if fault_builder.is_some() && fault_client_options.is_some() {
+            return Err(
+                "cannot use fault_injection_builder and fault_client_options together; \
+                 use fault_injection_builder for emulator tests (wraps transport with \
+                 invalid-cert acceptance) or fault_client_options for standalone options"
+                    .into(),
+            );
+        }
+
+        let mut options = if let Some(opts) = fault_client_options {
+            opts
+        } else {
+            options.unwrap_or_default()
+        };
+
         if allow_invalid_certificates {
             let client = ClientBuilder::new()
                 .danger_accept_invalid_certs(true)
@@ -266,6 +301,8 @@ impl TestClient {
             } else {
                 options.client_options.transport = Some(Transport::new(Arc::new(client)));
             }
+        } else if let Some(builder) = fault_builder {
+            options = builder.inject(options);
         }
 
         let cosmos_client = azure_data_cosmos::CosmosClient::with_key(
@@ -331,11 +368,15 @@ impl TestClient {
 
         let test_client = Self::from_env(options.client_options.clone())?;
 
-        // Create fault injection client if builder was provided
+        // Create fault injection client if builder or options were provided
+        // builder should be passed in for emulator tests to ensure the FaultClient
+        // wraps the HTTP client with invalid cert acceptance,
+        // which is required for emulator connectivity
         let fault_client = if let Some(builder) = options.fault_injection_builder {
-            Some(Self::from_env_with_fault_injection(
-                builder,
-                options.fault_cosmos_options,
+            Some(Self::from_env_with_fault_builder(builder, None)?)
+        } else if options.fault_client_options.is_some() {
+            Some(Self::from_env_with_fault_options(
+                options.fault_client_options,
             )?)
         } else {
             None
@@ -442,7 +483,8 @@ impl TestClient {
 ///
 /// The normal client is always available via `client()` and `shared_db_client()`.
 /// The fault injection client is available via `fault_client()` and `fault_db_client()`
-/// only if `TestOptions::with_fault_injection_builder()` was called.
+/// if `TestOptions::with_fault_injection_builder()` was called
+/// or if `TestOptions::with_fault_client_options()` was called.
 pub struct TestRunContext {
     run_id: String,
     /// The normal (non-fault) Cosmos client.
@@ -475,7 +517,8 @@ impl TestRunContext {
 
     /// Gets the fault injection [`CosmosClient`], if configured.
     ///
-    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_builder()` was called,
+    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_builder()` or
+    /// if `TestOptions::with_fault_client_options()` was called,
     /// otherwise returns `None`.
     pub fn fault_client(&self) -> Option<&CosmosClient> {
         self.fault_client.as_ref()
@@ -488,7 +531,8 @@ impl TestRunContext {
 
     /// Gets the shared database client using the fault injection client.
     ///
-    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_builder()` was called,
+    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_builder()` or
+    /// if `TestOptions::with_fault_client_options()` was called,
     /// otherwise returns `None`.
     pub fn fault_db_client(&self) -> Option<DatabaseClient> {
         self.fault_client()
@@ -755,7 +799,7 @@ impl TestRunContext {
         })?;
 
         let options = CosmosClientOptions {
-            application_preferred_regions: vec![region.into()],
+            application_preferred_regions: vec![region],
             ..Default::default()
         };
 
