@@ -25,15 +25,23 @@ impl FaultInjectionClientBuilder {
         Self { rules: Vec::new() }
     }
 
-    /// Injects the fault injection client into the CosmosClientOptions.
-    /// Called after building the fault conditions.
+    /// Injects the fault injection client into the CosmosClientOptions using the default HTTP client.
     ///
-    /// This wraps the existing transport (or creates a default one) with the fault injection client.
-    pub fn inject(self, mut options: CosmosClientOptions) -> CosmosClientOptions {
-        // Create a default http client
-        let inner_client: Arc<dyn azure_core::http::HttpClient> =
-            azure_core::http::new_http_client();
+    /// This wraps a default HTTP client with the fault injection client and sets it as the transport.
+    pub fn inject(self, options: CosmosClientOptions) -> CosmosClientOptions {
+        self.inject_with_http_client(azure_core::http::new_http_client(), options)
+    }
 
+    /// Injects the fault injection client into the CosmosClientOptions using a custom HTTP client.
+    ///
+    /// This wraps the provided `inner_client` with the fault injection client and sets it as the
+    /// transport. Use this when the inner HTTP client needs custom configuration (e.g., accepting
+    /// invalid certificates for emulator tests).
+    pub fn inject_with_http_client(
+        self,
+        inner_client: Arc<dyn azure_core::http::HttpClient>,
+        mut options: CosmosClientOptions,
+    ) -> CosmosClientOptions {
         let fault_client = FaultClient::new(inner_client, self.rules);
         options.client_options.transport = Some(Transport::new(Arc::new(fault_client)));
         options.fault_injection_enabled = true;
