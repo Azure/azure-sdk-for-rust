@@ -182,6 +182,7 @@ mod tests {
         let partition_manager =
             GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
         (
+            #[allow(clippy::arc_with_non_send_sync)]
             Arc::new(GatewayPipeline::new(
                 endpoint,
                 pipeline_core,
@@ -265,6 +266,7 @@ mod tests {
         let partition_manager =
             GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
 
+        #[allow(clippy::arc_with_non_send_sync)]
         let gateway_pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline,

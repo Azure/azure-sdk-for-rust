@@ -106,6 +106,8 @@ impl GlobalPartitionEndpointManager {
         partition_level_failover_enabled: bool,
         partition_level_circuit_breaker_enabled: bool,
     ) -> Arc<Self> {
+        #[allow(clippy::arc_with_non_send_sync)]
+        // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let instance = Arc::new(Self {
             global_endpoint_manager,
             partition_unavailability_duration_secs:

@@ -181,6 +181,8 @@ impl CosmosClient {
             options.enable_partition_level_circuit_breaker,
         );
 
+        #[allow(clippy::arc_with_non_send_sync)]
+        // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
