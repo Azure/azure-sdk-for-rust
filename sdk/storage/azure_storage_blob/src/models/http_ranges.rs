@@ -3,6 +3,7 @@
 
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use std::fmt;
+use std::ops::{Range, RangeFrom};
 use std::str::FromStr;
 
 const PREFIX: &str = "bytes ";
@@ -10,6 +11,27 @@ const WILDCARD: &str = "*";
 
 type Result<T> = azure_core::Result<T>;
 
+/// Trait to convert a value into an HTTP Range header.
+/// Implemented on `Range<>` and `RangeFrom<>`.
+/// Note that `Range<>` uses an exclusive end value while
+/// HTTP uses an inclusive end value.
+pub(crate) trait IntoRangeHeader {
+    fn as_range_header(&self) -> String;
+}
+
+impl IntoRangeHeader for Range<usize> {
+    fn as_range_header(&self) -> String {
+        format!("bytes={}-{}", self.start, self.end - 1)
+    }
+}
+
+impl IntoRangeHeader for RangeFrom<usize> {
+    fn as_range_header(&self) -> String {
+        format!("bytes={}-", self.start)
+    }
+}
+
+/// Represents the `Content-Range` HTTP response header.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) struct ContentRange {
     /// Inclusive start and exclusive end of the range.

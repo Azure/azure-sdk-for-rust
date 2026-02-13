@@ -7,9 +7,9 @@ use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     logging::apply_storage_logging_defaults,
     models::{
-        method_options::BlobClientManagedDownloadOptions, BlobClientDownloadOptions,
-        BlobClientDownloadResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
-        StorageErrorCode,
+        http_ranges::IntoRangeHeader, method_options::BlobClientManagedDownloadOptions,
+        BlobClientDownloadOptions, BlobClientDownloadResult, BlockBlobClientUploadOptions,
+        BlockBlobClientUploadResult, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -340,7 +340,7 @@ impl<'a> BlobClientDownloadBehavior<'a> {
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
     async fn transfer_range(&self, range: Option<Range<usize>>) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
-        opt.range = range.map(|r| format!("bytes={}-{}", r.start, r.end - 1));
+        opt.range = range.map(|r| r.as_range_header());
         self.client
             .download(Some(opt))
             .await

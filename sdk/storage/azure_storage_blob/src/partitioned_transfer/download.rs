@@ -11,7 +11,7 @@ use azure_core::{
 use bytes::Bytes;
 use futures::{stream::FuturesOrdered, StreamExt};
 
-use crate::{conditional_send::ConditionalSend, models::content_range::ContentRange};
+use crate::{conditional_send::ConditionalSend, models::http_ranges::ContentRange};
 
 use super::*;
 
