@@ -41,12 +41,17 @@ pub struct FaultInjectionClientBuilder {
     /// The fault injection rules to apply.
     /// First valid rule will be applied.
     rules: Vec<Arc<FaultInjectionRule>>,
+    /// Optional custom inner HTTP client (for testing with custom transports).
+    inner_client: Option<Arc<dyn azure_core::http::HttpClient>>,
 }
 
 impl FaultInjectionClientBuilder {
     /// Creates a new FaultInjectionClientBuilder.
     pub fn new() -> Self {
-        Self { rules: Vec::new() }
+        Self {
+            rules: Vec::new(),
+            inner_client: None,
+        }
     }
 
     /// Adds a fault injection rule to the builder.
@@ -59,14 +64,26 @@ impl FaultInjectionClientBuilder {
         self
     }
 
+    /// Sets a custom inner HTTP client to wrap with fault injection.
+    ///
+    /// This is useful when you need fault injection combined with other transport
+    /// customizations, such as accepting invalid certificates for emulator testing.
+    ///
+    /// If not set, a default HTTP client will be created.
+    pub fn with_inner_client(mut self, client: Arc<dyn azure_core::http::HttpClient>) -> Self {
+        self.inner_client = Some(client);
+        self
+    }
+
     /// Builds the fault injection transport.
     ///
-    /// Returns a [`Transport`] that wraps a default HTTP client with fault injection capabilities.
+    /// Returns a [`Transport`] that wraps the inner HTTP client with fault injection capabilities.
     /// Use this transport with [`CosmosClientBuilder::transport()`](crate::CosmosClientBuilder::transport())
     /// and enable fault injection with [`CosmosClientBuilder::fault_injection(true)`](crate::CosmosClientBuilder::fault_injection()).
     pub fn build(self) -> Transport {
-        let inner_client: Arc<dyn azure_core::http::HttpClient> =
-            azure_core::http::new_http_client();
+        let inner_client = self
+            .inner_client
+            .unwrap_or_else(|| azure_core::http::new_http_client());
 
         let fault_client = FaultClient::new(inner_client, self.rules);
         Transport::new(Arc::new(fault_client))

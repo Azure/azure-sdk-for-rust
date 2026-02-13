@@ -276,12 +276,43 @@ impl TestClient {
             .endpoint(&connection_string.account_endpoint)
             .key(connection_string.account_key.clone());
 
-        if allow_invalid_certificates {
+        let has_fault_injection = fault_builder.is_some();
+
+        // Build the transport, potentially with fault injection
+        let transport = if allow_invalid_certificates {
             let client = ClientBuilder::new()
                 .danger_accept_invalid_certs(true)
                 .pool_max_idle_per_host(0)
                 .build()?;
-            builder = builder.transport(Transport::new(Arc::new(client)));
+
+            if let Some(fault_builder) = fault_builder {
+                // Wrap the invalid-cert-accepting client with the fault client
+                let inner_client: Arc<dyn HttpClient> = Arc::new(client);
+                Some(fault_builder.with_inner_client(inner_client).build())
+            } else {
+                Some(Transport::new(Arc::new(client)))
+            }
+        } else if let Some(fault_builder) = fault_builder {
+            // Use default client wrapped with fault injection
+            Some(fault_builder.build())
+        } else {
+            None
+        };
+
+        if let Some(transport) = transport {
+            builder = builder.transport(transport);
+        }
+
+        // Apply fault injection settings if provided
+        if has_fault_injection {
+            builder = builder.fault_injection(true);
+        }
+
+        // Apply fault client options (e.g., preferred regions)
+        if let Some(opts) = fault_client_options {
+            if !opts.application_preferred_regions.is_empty() {
+                builder = builder.preferred_regions(opts.application_preferred_regions);
+            }
         }
 
         let cosmos_client = builder.build()?;
@@ -773,16 +804,11 @@ impl TestRunContext {
             )
         })?;
 
-        let options = CosmosClientOptions {
-            application_preferred_regions: vec![region],
-            ..Default::default()
-        };
-
-        CosmosClient::with_key(
-            &parsed.account_endpoint,
-            parsed.account_key.clone(),
-            Some(options),
-        )
+        CosmosClient::builder()
+            .endpoint(&parsed.account_endpoint)
+            .key(parsed.account_key.clone())
+            .preferred_regions(vec![region])
+            .build()
     }
 
     /// Cleans up test resources.
