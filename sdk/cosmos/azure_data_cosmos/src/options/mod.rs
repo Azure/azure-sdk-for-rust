@@ -5,9 +5,9 @@ use crate::constants;
 use crate::models::ThroughputProperties;
 use crate::regions::RegionName;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
+use azure_core::http::{headers, ClientMethodOptions, Etag};
 use azure_core::time::Duration;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Display;
@@ -30,38 +30,35 @@ impl Display for SessionToken {
 }
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
+///
+/// This struct is used internally by [`CosmosClientBuilder`](crate::CosmosClientBuilder).
+/// Use the builder pattern via [`CosmosClient::builder()`](crate::CosmosClient::builder())
+/// to configure client options.
 #[derive(Clone, Default, Debug)]
 pub struct CosmosClientOptions {
-    pub client_options: ClientOptions,
-    pub application_name: Option<String>,
-    pub application_region: Option<RegionName>,
-    // when the cosmos client options is changed to builder pattern, this shouldn't be exposed directly to customers
-    // right now it is exposed behind a feature flag
+    pub(crate) application_name: Option<String>,
+    pub(crate) application_region: Option<RegionName>,
     #[cfg(feature = "fault_injection")]
-    pub fault_injection_enabled: bool,
-    pub application_preferred_regions: Vec<RegionName>,
-    pub excluded_regions: Vec<RegionName>,
-    pub account_initialization_custom_endpoints: Option<HashSet<String>>,
+    pub(crate) fault_injection_enabled: bool,
+    pub(crate) application_preferred_regions: Vec<RegionName>,
+    pub(crate) excluded_regions: Vec<RegionName>,
     /// Used to specify the consistency level for the operation.
     ///
     /// The default value is the consistency level set on the Cosmos DB account.
     /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-    pub consistency_level: Option<ConsistencyLevel>,
-    pub request_timeout: Option<Duration>,
-    pub enable_remote_region_preferred_for_session_retry: bool,
-    pub enable_partition_level_circuit_breaker: bool,
-    pub disable_partition_level_failover: bool,
-    pub enable_upgrade_consistency_to_local_quorum: bool,
+    pub(crate) consistency_level: Option<ConsistencyLevel>,
+    pub(crate) request_timeout: Option<Duration>,
+    pub(crate) enable_partition_level_circuit_breaker: bool,
     /// The desired throughput bucket for the client
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<usize>,
-    pub session_retry_options: SessionRetryOptions,
+    pub(crate) throughput_bucket: Option<usize>,
+    pub(crate) session_retry_options: SessionRetryOptions,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
     ///
     /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
-    pub priority: Option<PriorityLevel>,
+    pub(crate) priority: Option<PriorityLevel>,
     /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
@@ -70,7 +67,7 @@ pub struct CosmosClientOptions {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     ///
     /// Custom headers will not override headers that are already set by the SDK.
-    pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl AsHeaders for CosmosClientOptions {

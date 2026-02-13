@@ -82,11 +82,10 @@ fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
     if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
         {
-            Ok(CosmosClient::with_key(
-                &args.endpoint,
-                key.clone().into(),
-                None,
-            )?)
+            Ok(CosmosClient::builder()
+                .endpoint(&args.endpoint)
+                .key(key.clone().into())
+                .build()?)
         }
         #[cfg(not(feature = "key_auth"))]
         {
@@ -95,6 +94,9 @@ fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
         }
     } else {
         let cred = DeveloperToolsCredential::new(None).unwrap();
-        Ok(CosmosClient::new(&args.endpoint, cred, None)?)
+        Ok(CosmosClient::builder()
+            .endpoint(&args.endpoint)
+            .credential(cred)
+            .build()?)
     }
 }

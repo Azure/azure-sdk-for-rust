@@ -19,12 +19,17 @@ pub mod models;
 
 #[doc(inline)]
 pub use clients::CosmosClient;
+#[doc(inline)]
+pub use clients::CosmosClientBuilder;
 
 pub use connection_string::*;
 pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
+
+// Re-export tracing types for convenience
+pub use azure_core::http::InstrumentationOptions;
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
 mod cosmos_request;

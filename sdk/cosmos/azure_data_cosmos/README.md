@@ -62,7 +62,10 @@ use azure_data_cosmos::CosmosClient;
 
 async fn example() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let cosmos_client = CosmosClient::new("myAccountEndpointURL", credential.clone(), None)?;
+    let cosmos_client = CosmosClient::builder()
+        .endpoint("https://myaccount.documents.azure.com/")
+        .credential(credential)
+        .build()?;
     Ok(())
 }
 ```

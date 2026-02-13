@@ -199,7 +199,7 @@ impl TestClient {
 
     fn from_connection_string(
         connection_string: &str,
-        options: Option<CosmosClientOptions>,
+        _options: Option<CosmosClientOptions>,
         mut allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
@@ -213,20 +213,19 @@ impl TestClient {
             }
         }
 
-        let mut options = options.unwrap_or_default();
+        let mut builder = azure_data_cosmos::CosmosClient::builder()
+            .endpoint(&connection_string.account_endpoint)
+            .key(connection_string.account_key.clone());
+
         if allow_invalid_certificates {
             let client = ClientBuilder::new()
                 .danger_accept_invalid_certs(true)
                 .pool_max_idle_per_host(0)
                 .build()?;
-            options.client_options.transport = Some(Transport::new(Arc::new(client)));
+            builder = builder.transport(Transport::new(Arc::new(client)));
         }
 
-        let cosmos_client = azure_data_cosmos::CosmosClient::with_key(
-            &connection_string.account_endpoint,
-            connection_string.account_key.clone(),
-            Some(options),
-        )?;
+        let cosmos_client = builder.build()?;
 
         Ok(TestClient {
             cosmos_client: Some(cosmos_client),
