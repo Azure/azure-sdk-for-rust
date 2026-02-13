@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::borrow::Cow;
 
 use azure_core::{error::ErrorKind, fmt::SafeDebug, Error};

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use async_lock::RwLock;
 use std::collections::HashMap;
 use std::hash::Hash;
