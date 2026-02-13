@@ -8,7 +8,7 @@ homepage = "https://typespec.io"
 repository.workspace = true
 license.workspace = true
 categories = ["compilers", "development-tools"]
-keywords = ["typespec"]
+keywords = ["codegen", "openapi", "rest", "api", "http"]
 
 [dependencies]
 async-trait.workspace = true

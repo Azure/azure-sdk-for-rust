@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_queue"
-keywords = ["sdk", "azure", "storage", "queue", "queues"]
+keywords = ["sdk", "cloud", "queues", "messaging", "tasks"]
 categories = ["api-bindings"]
 
 [features]
