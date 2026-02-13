@@ -99,18 +99,14 @@ enum CosmosTestMode {
     Allowed,
 }
 
+const DEFAULT_EMULATOR_DATABASE_NAME: &str = "emulator-test-db";
+
 fn get_shared_database_id() -> &'static str {
     static SHARED_DATABASE_ID: OnceLock<String> = OnceLock::new();
 
     let id = SHARED_DATABASE_ID.get_or_init(|| {
-        std::env::var(DATABASE_NAME_ENV_VAR).unwrap_or_else(|_| {
-            panic!(
-                "{} is not set. Create a Cosmos DB database for tests, then set {} to its name (e.g. export {}=my-test-db).",
-                DATABASE_NAME_ENV_VAR,
-                DATABASE_NAME_ENV_VAR,
-                DATABASE_NAME_ENV_VAR
-            )
-        })
+        std::env::var(DATABASE_NAME_ENV_VAR)
+            .unwrap_or_else(|_| DEFAULT_EMULATOR_DATABASE_NAME.to_string())
     });
 
     id.as_str()
@@ -376,7 +372,19 @@ impl TestClient {
         F: AsyncFnMut(&TestRunContext, &DatabaseClient) -> Result<(), Box<dyn std::error::Error>>,
     {
         Self::run_with_options(
-            async |run_context| test(run_context, &run_context.shared_db_client()).await,
+            async |run_context| {
+                // Ensure the shared database exists (create if needed, ignore conflict).
+                let db_id = get_shared_database_id();
+                // Emulator is always strong consistency, so we can skip the read check in that case
+                match run_context.client().create_database(db_id, None).await {
+                    Ok(_) => {}
+                    Err(e) if e.http_status() == Some(StatusCode::Conflict) => {}
+                    Err(e) => return Err(e.into()),
+                }
+                let db_client = run_context.shared_db_client();
+                db_client.read(None).await?;
+                test(run_context, &db_client).await
+            },
             options.unwrap_or_default(),
         )
         .await
