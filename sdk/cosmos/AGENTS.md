@@ -9,6 +9,7 @@ This file contains coding guidelines and architectural patterns specific to the 
 ## Core Principles
 
 ### Design guidelines
+
 - Follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html) as the primary reference for API design, error handling, async patterns, and module organization unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.instructions.md` files.
 
 ### Data-Oriented Programming (DOP)
@@ -35,6 +36,7 @@ Always implement standard Rust traits instead of creating custom public methods 
 **Rationale**: Standard traits enable generic programming, work with Rust's type system, and follow Rust idioms.
 
 **Example**:
+
 ```rust
 // ❌ BAD: Custom public method duplicates trait functionality
 impl MyType {
@@ -117,6 +119,7 @@ sdk/cosmos/azure_data_cosmos/
 The Cosmos DB implementation is split across three crates with distinct purposes and support models:
 
 #### **azure_data_cosmos_driver** (Core Implementation Layer)
+
 - **Purpose**: Core Cosmos DB protocol implementation, transport, routing, and retry handling
 - **API**: Public API available for advanced scenarios and cross-language SDK implementation
 - **Support**: Community/GitHub support only (no 24x7 Microsoft Support)
@@ -124,6 +127,7 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 - **Consumers**: `azure_data_cosmos` (Rust SDK), `azure_data_cosmos_native` (C API), potentially other language SDKs
 
 #### **azure_data_cosmos** (Primary Rust SDK)
+
 - **Purpose**: Idiomatic Rust API for Cosmos DB with type-safe serialization
 - **API**: Full public SDK following Azure SDK Design Guidelines
 - **Support**: Full 24x7 Microsoft Support
@@ -131,6 +135,7 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 - **Dependency**: Uses `azure_data_cosmos_driver` internally
 
 #### **azure_data_cosmos_native** (C API Wrapper)
+
 - **Purpose**: C-compatible FFI for cross-language reuse (Java, .NET, Python SDKs)
 - **API**: C ABI with cdylib/staticlib output
 - **Support**: Community/GitHub support (no 24x7 Microsoft Support)
@@ -155,11 +160,13 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 **Critical Architectural Rule**: `azure_data_cosmos_driver` is completely ignorant of document/item schemas and serialization formats.
 
 **Rationale**:
+
 - Cosmos DB is a **schemaless database** - item structure is application-defined
 - Driver must support multiple language SDKs (Rust, Java, .NET, Python) each with native serialization patterns
 - Serialization is a **core capability** that must be handled natively in the consuming SDK
 
 **Driver Data Plane Contract**:
+
 ```rust
 // Driver APIs work with raw bytes (buffered, ≤16MB payload limit)
 pub async fn create_item(
@@ -181,6 +188,7 @@ pub struct ItemResponse {
 ```
 
 **SDK Layer Responsibility** (`azure_data_cosmos`):
+
 ```rust
 // SDK provides type-safe serialization on top of driver
 pub async fn create_item<T: Serialize>(
@@ -201,6 +209,7 @@ where
 **Content Encoding**: UTF-8 JSON vs Cosmos binary encoding is detected automatically based on the first byte value (transparent to API).
 
 **Implications**:
+
 - Driver `models/` contains **zero** item/document types
 - Driver APIs accept `&[u8]` for request bodies
 - Driver APIs return `Vec<u8>` for response bodies (buffered; Cosmos enforces 4MB default, 16MB absolute max)
@@ -215,12 +224,14 @@ where
 **Critical Requirement**: All types in `models/` **must be serializable** and used for wire format. Configuration types that control SDK behavior belong in `options/`.
 
 **Include in `models/` module**:
+
 - ✅ **Management/metadata resource representations**: Account properties, offers, database properties, container properties, partition key ranges (NOT data plane documents/items)
 - ✅ **Supporting structures**: Types that are properties of models (IndexingPolicy, PartitionKeyDefinition, VectorEmbeddingPolicy, consistency levels, indexing modes, connection modes)
 - ✅ **Operation-specific envelopes**: Structures created for operation support (TransactionalBatch, PatchDocument, BulkOperations)
 - ✅ **Header/wire values**: Types serialized into request headers or body (ETag, SessionToken, PartitionKey, TriggerReference, ThroughputControlGroupName)
 
 **Exclude from `models/` (use dedicated modules)**:
+
 - ❌ **Configuration/options types** → `options/` module (e.g., Region for excluded regions, TriggerOptions for which triggers to use, ThroughputControlGroupOptions)
 - ❌ Client types → `clients/` module
 - ❌ Error types → `error.rs` or crate root
@@ -230,6 +241,7 @@ where
 - ❌ Builders → `builders/` submodule or inline in `models/builders/`
 
 **Model Characteristics**:
+
 ```rust
 /// Models should be serializable and debuggable
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -254,6 +266,7 @@ impl ContainerProperties {
 Cosmos DB provides rich diagnostic information beyond standard Azure SDK telemetry. This operational metadata lives in a dedicated `diagnostics/` module:
 
 **Structure**:
+
 ```text
 src/diagnostics/
   ├── mod.rs              # Public exports
@@ -263,10 +276,12 @@ src/diagnostics/
 ```
 
 **Rationale**: Diagnostics types are NOT service resources - they are SDK operational metadata. Keeping them separate from `models/` maintains clean separation between:
+
 - **Models**: What Cosmos DB service defines (resources, policies, envelopes)
 - **Diagnostics**: What the SDK tracks about operations (timings, retries, endpoints contacted)
 
 **Example**:
+
 ```rust
 /// Context containing diagnostic information about a Cosmos DB operation
 pub struct DiagnosticsContext {
@@ -288,6 +303,7 @@ pub struct ItemResponse {
 Configuration types for individual operations/requests follow Azure SDK conventions in dedicated `options/` module:
 
 **Structure**:
+
 ```text
 src/options/
   ├── mod.rs          # Public exports
@@ -297,11 +313,13 @@ src/options/
 ```
 
 **Naming Convention**:
+
 - Client-level: `DriverOptions`, `CosmosClientOptions`
 - Operation-level: `{Operation}{Action}Options` (e.g., `ExecuteQueryOptions`, `CreateContainerOptions`)
 - Domain-specific: Descriptive names (`ConnectionPoolOptions`, `RetryOptions`)
 
 **Hierarchy (Environment → Client → Operation)**:
+
 ```rust
 // Client options nest azure_core types
 pub struct DriverOptions {
@@ -385,6 +403,7 @@ cargo fmt -p <crate-name> -- --check
 ```
 
 **This is the most common CI failure** - always run `cargo fmt` after making ANY code changes, including:
+
 - Adding new code
 - Modifying existing code
 - Moving code between files
@@ -411,6 +430,7 @@ cargo clippy --workspace --all-features --all-targets --keep-going --no-deps
 - ✅ Use idiomatic patterns (e.g., `if let`, pattern matching)
 
 **When to suppress warnings**: Only use `#[allow(clippy::...)]` when:
+
 - The warning is a false positive
 - Following the suggestion would make code less clear
 - The pattern is required for FFI or external constraints
@@ -422,6 +442,21 @@ Always add a comment explaining **why** the warning is allowed.
 - Always run `cargo fmt` on generated or modified Rust code before considering the task complete.
 - When editing existing files, ensure the changes conform to `rustfmt` standards.
 - **The CI pipeline will reject any code that is not properly formatted.**
+
+### Spell Checking
+
+Run cspell to check for spelling errors in changed files (requires Node.js):
+
+```bash
+# Check spelling in files changed compared to upstream/main
+pwsh eng/common/scripts/check-spelling-in-changed-files.ps1 -TargetCommittish "upstream/main"
+```
+
+To fix spelling errors, either correct typos in source code or add legitimate terms to dictionary files:
+
+- **Crate names**: `eng/dict/crates.txt`
+- **Service-specific terms**: `sdk/<service>/.dict.txt` (e.g., `sdk/cosmos/.dict.txt`)
+- **Global dictionary**: `.vscode/cspell.json`
 
 ### Pre-Completion Validation Checklist
 
@@ -438,6 +473,7 @@ Before considering any task complete, run the following checks **in order** on a
    - For emulator tests: `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p <crate-name> --tests`
 
 **Common documentation link errors to avoid**:
+
 - When documenting factory methods or APIs, ensure the linked method names match the actual implementation
 - Use the exact method name (e.g., `method_by_name` not just `method`) in doc links like `[`StructName::method_by_name`]`
 
@@ -451,11 +487,13 @@ Before considering any task complete, run the following checks **in order** on a
 ```
 
 This header must be:
+
 - The first two lines of every `.rs` file
 - Followed by a blank line before any other content (imports, module docs, etc.)
 - Exactly as shown above (no variations in formatting or text)
 
 **Example**:
+
 ```rust
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
