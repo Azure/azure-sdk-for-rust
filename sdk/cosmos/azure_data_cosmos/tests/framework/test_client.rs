@@ -4,12 +4,11 @@
 // cspell:ignore: TEAMPROJECTID
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
+#![cfg(feature = "fault_injection")]
 
-#[cfg(feature = "fault_injection")]
 use azure_core::http::HttpClient;
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
-#[cfg(feature = "fault_injection")]
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
 use azure_data_cosmos::models::{CosmosResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemOptions;
@@ -60,11 +59,9 @@ pub struct TestOptions {
     /// If provided, a separate client will be created with fault injection capabilities.
     /// The builder is applied after transport setup (e.g., invalid certificate acceptance)
     /// so that the FaultClient wraps the correct inner HTTP client.
-    #[cfg(feature = "fault_injection")]
     pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
     /// Optional CosmosClient options for the fault injection client (e.g., preferred regions).
     /// Used in combination with `fault_injection_builder`.
-    #[cfg(feature = "fault_injection")]
     pub fault_cosmos_options: Option<CosmosClientOptions>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
@@ -85,7 +82,6 @@ impl TestOptions {
     /// Sets the fault injection builder for the fault injection client.
     /// The builder will be applied after transport setup so the FaultClient
     /// properly wraps the configured HTTP client (e.g., one that accepts invalid certificates).
-    #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection_builder(mut self, builder: FaultInjectionClientBuilder) -> Self {
         self.fault_injection_builder = Some(builder);
         self
@@ -93,7 +89,6 @@ impl TestOptions {
 
     /// Sets custom CosmosClient options for the fault injection client.
     /// Use this to configure preferred regions or other client settings for the fault client.
-    #[cfg(feature = "fault_injection")]
     pub fn with_fault_cosmos_options(mut self, options: CosmosClientOptions) -> Self {
         self.fault_cosmos_options = Some(options);
         self
@@ -207,7 +202,6 @@ impl TestClient {
         Self::from_env_inner(options, None)
     }
 
-    #[cfg(feature = "fault_injection")]
     pub fn from_env_with_fault_injection(
         fault_builder: FaultInjectionClientBuilder,
         cosmos_options: Option<CosmosClientOptions>,
@@ -264,7 +258,6 @@ impl TestClient {
                 .pool_max_idle_per_host(0)
                 .build()?;
 
-            #[cfg(feature = "fault_injection")]
             if let Some(builder) = fault_builder {
                 // Wrap the invalid-certs client with the FaultClient so fault injection
                 // intercepts requests before they reach the real transport.
@@ -272,16 +265,6 @@ impl TestClient {
                 options = builder.inject_with_http_client(http_client, options);
             } else {
                 options.client_options.transport = Some(Transport::new(Arc::new(client)));
-            }
-
-            #[cfg(not(feature = "fault_injection"))]
-            {
-                options.client_options.transport = Some(Transport::new(Arc::new(client)));
-            }
-        } else {
-            #[cfg(feature = "fault_injection")]
-            if let Some(builder) = fault_builder {
-                options = builder.inject(options);
             }
         }
 
@@ -349,7 +332,6 @@ impl TestClient {
         let test_client = Self::from_env(options.client_options.clone())?;
 
         // Create fault injection client if builder was provided
-        #[cfg(feature = "fault_injection")]
         let fault_client = if let Some(builder) = options.fault_injection_builder {
             Some(Self::from_env_with_fault_injection(
                 builder,
@@ -358,8 +340,6 @@ impl TestClient {
         } else {
             None
         };
-        #[cfg(not(feature = "fault_injection"))]
-        let fault_client: Option<TestClient> = None;
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(account) = test_client.cosmos_client.clone() {
