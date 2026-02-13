@@ -5,8 +5,12 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
+#[cfg(feature = "fault_injection")]
+use azure_core::http::HttpClient;
 use azure_core::http::{StatusCode, Transport};
 use azure_data_cosmos::clients::ContainerClient;
+#[cfg(feature = "fault_injection")]
+use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
 use azure_data_cosmos::models::{CosmosResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
@@ -48,13 +52,20 @@ pub const EMULATOR_HOST: &str = "localhost";
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 
 /// Options for configuring test execution.
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct TestOptions {
     /// CosmosClient options to use for the normal (non-fault) client.
     pub client_options: Option<CosmosClientOptions>,
-    /// CosmosClient options to use for the fault injection client.
-    /// If provided, a separate client will be created with these options.
-    pub fault_client_options: Option<CosmosClientOptions>,
+    /// Fault injection builder for the fault injection client.
+    /// If provided, a separate client will be created with fault injection capabilities.
+    /// The builder is applied after transport setup (e.g., invalid certificate acceptance)
+    /// so that the FaultClient wraps the correct inner HTTP client.
+    #[cfg(feature = "fault_injection")]
+    pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
+    /// Optional CosmosClient options for the fault injection client (e.g., preferred regions).
+    /// Used in combination with `fault_injection_builder`.
+    #[cfg(feature = "fault_injection")]
+    pub fault_cosmos_options: Option<CosmosClientOptions>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
 }
@@ -71,10 +82,20 @@ impl TestOptions {
         self
     }
 
-    /// Sets the client options for the fault injection client.
-    /// When set, a separate client will be created with fault injection capabilities.
-    pub fn with_fault_client_options(mut self, options: CosmosClientOptions) -> Self {
-        self.fault_client_options = Some(options);
+    /// Sets the fault injection builder for the fault injection client.
+    /// The builder will be applied after transport setup so the FaultClient
+    /// properly wraps the configured HTTP client (e.g., one that accepts invalid certificates).
+    #[cfg(feature = "fault_injection")]
+    pub fn with_fault_injection_builder(mut self, builder: FaultInjectionClientBuilder) -> Self {
+        self.fault_injection_builder = Some(builder);
+        self
+    }
+
+    /// Sets custom CosmosClient options for the fault injection client.
+    /// Use this to configure preferred regions or other client settings for the fault client.
+    #[cfg(feature = "fault_injection")]
+    pub fn with_fault_cosmos_options(mut self, options: CosmosClientOptions) -> Self {
+        self.fault_cosmos_options = Some(options);
         self
     }
 
@@ -183,6 +204,21 @@ impl TestClient {
     pub fn from_env(
         options: Option<CosmosClientOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::from_env_inner(options, None)
+    }
+
+    #[cfg(feature = "fault_injection")]
+    pub fn from_env_with_fault_injection(
+        fault_builder: FaultInjectionClientBuilder,
+        cosmos_options: Option<CosmosClientOptions>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::from_env_inner(cosmos_options, Some(fault_builder))
+    }
+
+    fn from_env_inner(
+        options: Option<CosmosClientOptions>,
+        fault_builder: Option<FaultInjectionClientBuilder>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
             return Ok(Self {
@@ -193,9 +229,14 @@ impl TestClient {
         match env_var.as_ref() {
             "emulator" => {
                 // Ignore that the test mode says playback, if the user explicitly asked for emulator, we use it.
-                Self::from_connection_string(EMULATOR_CONNECTION_STRING, options, true)
+                Self::from_connection_string(
+                    EMULATOR_CONNECTION_STRING,
+                    options,
+                    true,
+                    fault_builder,
+                )
             }
-            _ => Self::from_connection_string(&env_var, options, false),
+            _ => Self::from_connection_string(&env_var, options, false, fault_builder),
         }
     }
 
@@ -203,6 +244,7 @@ impl TestClient {
         connection_string: &str,
         options: Option<CosmosClientOptions>,
         mut allow_invalid_certificates: bool,
+        #[allow(unused_variables)] fault_builder: Option<FaultInjectionClientBuilder>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -221,7 +263,26 @@ impl TestClient {
                 .danger_accept_invalid_certs(true)
                 .pool_max_idle_per_host(0)
                 .build()?;
-            options.client_options.transport = Some(Transport::new(Arc::new(client)));
+
+            #[cfg(feature = "fault_injection")]
+            if let Some(builder) = fault_builder {
+                // Wrap the invalid-certs client with the FaultClient so fault injection
+                // intercepts requests before they reach the real transport.
+                let http_client: Arc<dyn HttpClient> = Arc::new(client);
+                options = builder.inject_with_http_client(http_client, options);
+            } else {
+                options.client_options.transport = Some(Transport::new(Arc::new(client)));
+            }
+
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                options.client_options.transport = Some(Transport::new(Arc::new(client)));
+            }
+        } else {
+            #[cfg(feature = "fault_injection")]
+            if let Some(builder) = fault_builder {
+                options = builder.inject(options);
+            }
         }
 
         let cosmos_client = azure_data_cosmos::CosmosClient::with_key(
@@ -287,12 +348,18 @@ impl TestClient {
 
         let test_client = Self::from_env(options.client_options.clone())?;
 
-        // Create fault injection client if options were provided
-        let fault_client = if options.fault_client_options.is_some() {
-            Some(Self::from_env(options.fault_client_options)?)
+        // Create fault injection client if builder was provided
+        #[cfg(feature = "fault_injection")]
+        let fault_client = if let Some(builder) = options.fault_injection_builder {
+            Some(Self::from_env_with_fault_injection(
+                builder,
+                options.fault_cosmos_options,
+            )?)
         } else {
             None
         };
+        #[cfg(not(feature = "fault_injection"))]
+        let fault_client: Option<TestClient> = None;
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(account) = test_client.cosmos_client.clone() {
@@ -395,7 +462,7 @@ impl TestClient {
 ///
 /// The normal client is always available via `client()` and `shared_db_client()`.
 /// The fault injection client is available via `fault_client()` and `fault_db_client()`
-/// only if `TestOptions::with_fault_client_options()` was called.
+/// only if `TestOptions::with_fault_injection_builder()` was called.
 pub struct TestRunContext {
     run_id: String,
     /// The normal (non-fault) Cosmos client.
@@ -428,7 +495,7 @@ impl TestRunContext {
 
     /// Gets the fault injection [`CosmosClient`], if configured.
     ///
-    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_client_options()` was called,
+    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_builder()` was called,
     /// otherwise returns `None`.
     pub fn fault_client(&self) -> Option<&CosmosClient> {
         self.fault_client.as_ref()
@@ -441,7 +508,7 @@ impl TestRunContext {
 
     /// Gets the shared database client using the fault injection client.
     ///
-    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_client_options()` was called,
+    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_builder()` was called,
     /// otherwise returns `None`.
     pub fn fault_db_client(&self) -> Option<DatabaseClient> {
         self.fault_client()

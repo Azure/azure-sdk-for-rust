@@ -70,7 +70,6 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -115,7 +114,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -137,7 +136,6 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -184,7 +182,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -212,7 +210,6 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
         application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
         ..Default::default()
     };
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -268,7 +265,11 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_cosmos_options(client_options),
+        ),
     )
     .await
 }
@@ -289,7 +290,6 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -355,7 +355,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -378,7 +378,6 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -451,7 +450,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -484,7 +483,6 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
     let fault_builder = FaultInjectionClientBuilder::new()
         .with_rule(Arc::new(rule1))
         .with_rule(Arc::new(rule2));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -528,7 +526,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -563,7 +561,6 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
     let fault_builder = FaultInjectionClientBuilder::new()
         .with_rule(Arc::new(rule1))
         .with_rule(Arc::new(rule2));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -607,7 +604,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -642,7 +639,6 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
     let fault_builder = FaultInjectionClientBuilder::new()
         .with_rule(Arc::new(rule1))
         .with_rule(Arc::new(rule2));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -689,7 +685,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -711,7 +707,6 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -769,7 +764,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -778,7 +773,6 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 #[tokio::test]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
     let fault_builder = FaultInjectionClientBuilder::new();
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -821,7 +815,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -843,7 +837,6 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -903,7 +896,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -932,7 +925,6 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     let rule_handle = Arc::clone(&rule);
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async move |run_context, db_client| {
@@ -994,7 +986,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
