@@ -13,11 +13,10 @@ use azure_data_cosmos::regions::RegionName;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
-    CosmosClientOptions, CreateContainerOptions,
+    CosmosClientOptions,
 };
-use framework::{TestClient, HUB_REGION, SATELLITE_REGION};
+use framework::{TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION};
 use tracing_subscriber::layer::SubscriberExt;
-
 /// A simple layer that captures log messages into a shared buffer
 struct CaptureLayer {
     buffer: Arc<Mutex<Vec<String>>>,
@@ -78,6 +77,7 @@ fn options_with_preferred_locations(locations: Vec<RegionName>) -> TestOptions {
 
 async fn create_container_and_write_item(
     db_client: &DatabaseClient,
+    run_context: &TestRunContext,
     container_id: &str,
     _expected_region: &str,
 ) -> Result<(), Box<dyn Error>> {
@@ -89,33 +89,9 @@ async fn create_container_and_write_item(
 
     let throughput = ThroughputProperties::manual(400);
 
-    let created_properties = db_client
-        .create_container(
-            properties,
-            Some(CreateContainerOptions {
-                throughput: Some(throughput),
-                ..Default::default()
-            }),
-        )
-        .await?
-        .into_model()?;
-
-    // Keep reading container until it is fully created
-    loop {
-        match db_client
-            .container_client(&created_properties.id)
-            .read(None)
-            .await
-        {
-            Ok(_) => break,
-            Err(e) => {
-                println!("waiting for container to be created: {}", e);
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            }
-        }
-    }
-
-    let container_client = db_client.container_client(&created_properties.id);
+    let container_client = run_context
+        .create_container_with_throughput(&db_client, properties, throughput)
+        .await?;
 
     // This upsert operation should be logged by the retry_handler
     container_client
@@ -152,8 +128,14 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
 
     // write to hub region
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            create_container_and_write_item(db_client, CONTAINER_ID, HUB_REGION.as_str()).await
+        async |run_context, _db_client| {
+            create_container_and_write_item(
+                _db_client,
+                run_context,
+                CONTAINER_ID,
+                HUB_REGION.as_str(),
+            )
+            .await
         },
         Some(options_with_preferred_locations(vec![
             HUB_REGION.into(),
@@ -191,9 +173,14 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
 
     // write to satellite region
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            create_container_and_write_item(db_client, CONTAINER_ID, SATELLITE_REGION.as_str())
-                .await
+        async |run_context, _db_client| {
+            create_container_and_write_item(
+                _db_client,
+                run_context,
+                CONTAINER_ID,
+                SATELLITE_REGION.as_str(),
+            )
+            .await
         },
         Some(options_with_preferred_locations(vec![
             SATELLITE_REGION.into(),

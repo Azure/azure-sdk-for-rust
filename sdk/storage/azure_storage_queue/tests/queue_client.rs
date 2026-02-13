@@ -435,14 +435,13 @@ pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result
         client_options: options.clone(),
         ..Default::default()
     };
-    let queue_client = QueueClient::new(
+
+    QueueClient::new(
         &endpoint,
         queue_name,
-        recording.credential(),
+        Some(recording.credential()),
         Option::Some(queue_client_options),
-    )?;
-
-    Ok(queue_client)
+    )
 }
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.

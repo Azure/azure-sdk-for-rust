@@ -359,7 +359,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.32.0"
+version = "0.33.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -385,7 +385,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -408,7 +408,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -458,7 +458,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -480,7 +480,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -504,7 +504,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -532,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -575,7 +575,7 @@ version = "0.1.0"
 
 [[package]]
 name = "azure_storage_queue"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "async-trait",
  "azure_core",

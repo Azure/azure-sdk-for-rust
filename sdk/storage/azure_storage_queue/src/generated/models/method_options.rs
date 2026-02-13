@@ -15,6 +15,9 @@ use std::collections::HashMap;
 pub struct QueueClientClearOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
 }
 
 /// Options to be passed to `QueueClient::create()`
@@ -33,9 +36,6 @@ pub struct QueueClientCreateOptions<'a> {
 /// Options to be passed to `QueueClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientDeleteOptions<'a> {
-    /// The metadata headers.
-    pub metadata: Option<HashMap<String, String>>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -48,6 +48,9 @@ pub struct QueueClientDeleteOptions<'a> {
 pub struct QueueClientDeleteMessageOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
 }
 
 /// Options to be passed to `QueueClient::get_access_policy()`
@@ -81,6 +84,9 @@ pub struct QueueClientPeekMessagesOptions<'a> {
     /// visible messages are returned. By default, a single message is retrieved from
     /// the queue with this operation.
     pub number_of_messages: Option<i32>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
 }
 
 /// Options to be passed to `QueueClient::receive_messages()`
@@ -118,6 +124,9 @@ pub struct QueueClientSendMessageOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+
     /// Specifies the new visibility timeout value, in seconds, relative to server time. The default value is 30 seconds. A specified
     /// value must be larger than or equal to 1 second, and cannot be larger than 7 days, or larger than 2 hours on REST protocol
     /// versions prior to version 2011-08-18. The visibility timeout of a message can be set to a value later than the expiry
@@ -153,6 +162,9 @@ pub struct QueueClientUpdateOptions<'a> {
 
     /// A Message object which can be stored in a Queue
     pub queue_message: Option<RequestContent<QueueMessage, XmlFormat>>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
 }
 
 /// Options to be passed to `QueueServiceClient::get_properties()`
@@ -168,6 +180,16 @@ pub struct QueueServiceClientGetPropertiesOptions<'a> {
 /// Options to be passed to `QueueServiceClient::get_statistics()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientGetStatisticsOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `QueueServiceClient::get_user_delegation_key()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct QueueServiceClientGetUserDelegationKeyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
