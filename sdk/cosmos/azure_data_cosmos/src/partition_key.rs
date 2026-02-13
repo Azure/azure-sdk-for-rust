@@ -24,6 +24,10 @@ use crate::constants;
 ///     None).unwrap();
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
+///     String::from("An owned partition key"),
+///     None).unwrap();
+/// container_client.query_items::<serde_json::Value>(
+///     "SELECT * FROM c",
 ///     42, // A numeric partition key
 ///     None).unwrap();
 /// ```
@@ -332,6 +336,7 @@ impl_from_tuple!(0 A 1 B 2 C);
 mod tests {
     use crate::{constants, PartitionKey, PartitionKeyValue};
     use azure_core::http::headers::AsHeaders;
+    use std::borrow::Cow;
 
     fn key_to_string(v: impl Into<PartitionKey>) -> String {
         let key = v.into();
@@ -483,5 +488,19 @@ mod tests {
         let (name, value) = headers_iter.next().unwrap();
         assert_eq!(constants::QUERY_ENABLE_CROSS_PARTITION, name);
         assert_eq!("True", value.as_str());
+    }
+    #[test]
+    pub fn string_ownership() {
+        // Validates that owned Strings and Cow types are correctly converted.
+        // Existing tests cover &str, but explicitly testing String allocation is required.
+
+        let owned = String::from("owned-id");
+        assert_eq!(key_to_string(owned), r#"["owned-id"]"#);
+
+        let cow_borrowed: Cow<'static, str> = Cow::Borrowed("cow-borrowed");
+        assert_eq!(key_to_string(cow_borrowed), r#"["cow-borrowed"]"#);
+
+        let cow_owned: Cow<'static, str> = Cow::Owned(String::from("cow-owned"));
+        assert_eq!(key_to_string(cow_owned), r#"["cow-owned"]"#);
     }
 }
