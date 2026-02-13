@@ -270,9 +270,6 @@ impl CosmosClientBuilder {
 
     /// Disables partition-level failover.
     ///
-    /// By default, the SDK will attempt to fail over to other partitions when
-    /// a partition becomes unavailable. Setting this to true disables that behavior.
-    ///
     /// # Arguments
     ///
     /// * `disabled` - If true, partition-level failover is disabled.
