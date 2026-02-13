@@ -8,7 +8,8 @@ use crate::{
     logging::apply_storage_logging_defaults,
     models::{
         method_options::BlobClientManagedDownloadOptions, BlobClientDownloadOptions,
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, StorageErrorCode,
+        BlobClientDownloadResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
+        StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -21,7 +22,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        response::PinnedStream,
+        response::{AsyncResponse, PinnedStream},
         AsyncRawResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
         Url, UrlExt,
     },
@@ -256,6 +257,17 @@ impl BlobClient {
         })
     }
 
+    // TODO: Partitioned upload will obsolete this wrapper.
+    /// Downloads a blob from the service, including its metadata and properties.
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn download(
+        &self,
+        options: Option<BlobClientDownloadOptions<'_>>,
+    ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
+        self.download_internal(options).await
+    }
+
     /// Creates a new blob from a data source.
     ///
     /// # Arguments
@@ -279,7 +291,7 @@ impl BlobClient {
         }
 
         self.block_blob_client()
-            .upload(data, content_length, Some(options))
+            .upload_internal(data, content_length, Some(options))
             .await
     }
 
@@ -327,7 +339,7 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         let mut opt = self.options.clone();
         opt.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
         self.client
-            .download(Some(opt))
+            .download_internal(Some(opt))
             .await
             .map(AsyncRawResponse::from)
     }
