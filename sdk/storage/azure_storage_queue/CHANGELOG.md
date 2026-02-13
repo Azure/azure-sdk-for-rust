@@ -29,10 +29,6 @@
 - Changed `QueueServiceClient::queue_client()` to return `Result<QueueClient>` instead of `QueueClient`.
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
-### Bugs Fixed
-
-### Other Changes
-
 ## 0.2.0 (2025-11-11)
 
 ### Breaking Changes

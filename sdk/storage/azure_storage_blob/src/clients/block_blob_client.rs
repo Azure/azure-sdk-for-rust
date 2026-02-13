@@ -281,7 +281,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
         let content_len = content.len() as u64;
         self.client
-            .upload(
+            .upload_internal(
                 content.into(),
                 content_len,
                 Some(self.oneshot_options.clone()),
