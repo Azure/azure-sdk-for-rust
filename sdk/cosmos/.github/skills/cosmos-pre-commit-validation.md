@@ -52,8 +52,8 @@ Use this skill when:
 Follow these steps strictly:
 
 1. Determine the target path:
-   - If the `scope` argument is defined is specified and not equal to `all` (case-insensitive) or `*` use `sdk/cosmos/` plus the `scope` argument as target path (so, if `scope` arguemnt is `helloworld` use `sdk/cosmos/helloworld` as target path)
-   - Otherwise default to `sdk/cosmos`
+   - If the `scope` argument is specified and is not equal (case-insensitive) to `all` or `*`, set the target path to `sdk/cosmos/<scope>` (for example, if `scope` is `helloworld`, use `sdk/cosmos/helloworld` as the target path).
+   - Otherwise, set the target path to `sdk/cosmos`.
 
 2. Determine file scope:
    - If `changed-only` is true, restrict checks to files under the target path (for example, using `git diff --name-only -- <target path>` or by filtering `git diff --name-only` results to that path)
