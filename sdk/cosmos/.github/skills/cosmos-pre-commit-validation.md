@@ -58,11 +58,12 @@ Follow these steps strictly:
    - If `changed-only` is true, restrict checks to files under the target path and `sdk/cosmos/tests` (for example, using `git diff --name-only -- <target path> sdk/cosmos/tests` or by filtering `git diff --name-only` results to those paths)
    - Otherwise, scan the entire target path and `sdk/cosmos/tests`
 
-3. Validate using Key Workflows in AGENTS.md
+3. Validate using the Pre-Completion Validation Checklist in `sdk/cosmos/AGENTS.md`:
    - Formatting checks
-   - Linting
-   - Unit tests relevant to the touched modules
-   - Emulator tests relevant to touched crates
+   - Build succeeds for affected crates
+   - Clippy lints pass for affected crates
+   - Documentation builds successfully where applicable
+   - Unit and emulator tests relevant to the touched modules and crates
 
 4. Report results:
    - Summarize failures concisely
