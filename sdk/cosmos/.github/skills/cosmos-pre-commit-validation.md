@@ -21,7 +21,7 @@ arguments:
     required: false
     default: true
     description: >
-      If true, auto-fix any error found.
+      If true, auto-fix any errors found.
 argument-hints:
   scope:
     - azure_data_cosmos
