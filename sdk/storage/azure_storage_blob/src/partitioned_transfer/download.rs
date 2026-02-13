@@ -31,7 +31,7 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// stream will still count when determining current running operations. This is so the stream can
 /// promise its buffered bytes do not exceed parallel * partition_size.
 pub(crate) async fn download<Behavior>(
-    download_range: Option<Range<usize>>,
+    range: Option<Range<usize>>,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
@@ -41,24 +41,28 @@ where
 {
     let parallel = parallel.get();
     let partition_size = partition_size.get();
-    let download_range = download_range.unwrap_or(0..usize::MAX);
-    if download_range.is_empty() {
+
+    // Outer bound estimate of the resource range that will be downloaded. The actual download
+    // range will never exceed these bounds, but it may be smaller, based on the actual size
+    // of the remote resource.
+    let max_download_range = range.unwrap_or(0..usize::MAX);
+    if max_download_range.is_empty() {
         let raw_stream: PinnedStream = Box::pin(BytesStream::new_empty());
         return Ok(raw_stream);
     }
 
     let initial_response = match client
         .transfer_range(Some(
-            download_range.start
+            max_download_range.start
                 ..min(
-                    download_range.end,
-                    download_range.start.saturating_add(partition_size),
+                    max_download_range.end,
+                    max_download_range.start.saturating_add(partition_size),
                 ),
         ))
         .await
     {
         Ok(response) => response,
-        Err(err) => match (err.http_status(), download_range.start) {
+        Err(err) => match (err.http_status(), max_download_range.start) {
             (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
                 client.transfer_range(None).await?
             }
@@ -71,12 +75,12 @@ where
         .get_optional_as::<ContentRange, _>(&"content-range".into())?
     {
         Some(content_range) => match (content_range.range, content_range.total_len) {
-            (Some(range), Some(total_len)) => {
-                let remainder_start = range.1;
-                let remainder_end = min(download_range.end, total_len);
+            (Some(received_range), Some(resource_len)) => {
+                let remainder_start = received_range.1;
+                let remainder_end = min(max_download_range.end, resource_len);
                 (remainder_start..remainder_end)
                     .step_by(partition_size)
-                    .map(move |i| i..min(i + partition_size, remainder_end))
+                    .map(|i| i..min(i.saturating_add(partition_size), remainder_end))
                     .collect()
             }
             _ => VecDeque::new(),
