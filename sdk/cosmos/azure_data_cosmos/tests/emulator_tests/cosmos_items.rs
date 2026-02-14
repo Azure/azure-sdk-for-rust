@@ -6,6 +6,7 @@
 use super::framework;
 
 use azure_core::http::{Etag, StatusCode};
+use azure_core::Uuid;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
@@ -14,7 +15,6 @@ use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {

@@ -10,6 +10,7 @@
 use super::framework;
 
 use azure_core::http::StatusCode;
+use azure_core::Uuid;
 use azure_data_cosmos::fault_injection::{
     FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
@@ -24,7 +25,6 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct NestedItem {
