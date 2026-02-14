@@ -21,7 +21,6 @@ azure_core.workspace = true
 opentelemetry.workspace = true
 opentelemetry-http.workspace = true
 opentelemetry_sdk.workspace = true
-reqwest.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
