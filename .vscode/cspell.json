@@ -82,6 +82,7 @@
     "pwsh",
     "reqwest",
     "resourcemanager",
+    "rngs",
     "rsplit",
     "rustfmt",
     "runtimes",
