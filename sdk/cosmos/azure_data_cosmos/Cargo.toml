@@ -15,7 +15,7 @@ categories = ["api-bindings"]
 
 [dependencies]
 async-trait.workspace = true
-azure_core.workspace = true
+azure_core = { workspace = true, features = ["reqwest"] }
 futures.workspace = true
 serde_json.workspace = true
 serde.workspace = true
@@ -23,6 +23,8 @@ tracing.workspace = true
 url.workspace = true
 async-lock.workspace = true
 pin-project.workspace = true
+
+reqwest.workspace = true
 
 [dev-dependencies]
 uuid.workspace = true

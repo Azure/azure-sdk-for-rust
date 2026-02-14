@@ -13,6 +13,7 @@ use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetry
 use azure_core::error::ErrorKind;
 use azure_core::http::RawResponse;
 use azure_core::time::Duration;
+use std::error::Error as StdError;
 
 /// Result of a retry policy decision
 ///
@@ -178,41 +179,163 @@ fn get_substatus_code_from_response(response: &RawResponse) -> Option<SubStatusC
         .map(SubStatusCode::from)
 }
 
-/// Message substring used to identify injected connection errors in fault injection tests.
-pub(crate) const CONNECTION_ERROR_MESSAGE: &str = "connection refused";
-
-/// Message substring used to identify injected response timeout errors in fault injection tests.
-pub(crate) const RESPONSE_TIMEOUT_MESSAGE: &str = "response timeout";
-
-/// Returns `true` if the error represents a connection failure.
+/// Whether the HTTP request was actually sent to the server.
 ///
-/// A connection failure means the client could not establish a TCP connection to the server
-/// (e.g., connection refused, DNS resolution failure, network unreachable). This is detected
-/// by checking the error kind is `Io` and the error message or source chain contains
-/// connection-related keywords.
-pub(crate) fn is_connection_error(err: &azure_core::Error) -> bool {
-    if !matches!(err.kind(), ErrorKind::Io) {
-        return false;
-    }
-
-    let msg = err.to_string().to_lowercase();
-    msg.contains(CONNECTION_ERROR_MESSAGE)
-        || msg.contains("connection reset")
-        || msg.contains("dns error")
-        || msg.contains("error trying to connect")
+/// This determines retry safety:
+/// - [`NotSent`](RequestSentStatus::NotSent): safe to retry both reads and writes.
+/// - [`Sent`](RequestSentStatus::Sent) or [`Unknown`](RequestSentStatus::Unknown):
+///   only safe to retry reads because writes may have been applied.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RequestSentStatus {
+    /// The request was definitely not sent (e.g., connection refused, DNS failure).
+    NotSent,
+    /// The request was definitely sent (e.g., got an HTTP response, decode error).
+    Sent,
+    /// Cannot determine whether the request was sent (e.g., timeout, body error).
+    Unknown,
 }
 
-/// Returns `true` if the error represents a response timeout.
+/// Extension trait for determining request sent status from errors.
 ///
-/// A response timeout means the request was sent but no response was received in time
-/// (e.g., server stopped responding, network partition after connection). This is detected
-/// by checking the error kind is `Io` and the error message or source chain contains
-/// timeout-related keywords.
-pub(crate) fn is_response_timeout(err: &azure_core::Error) -> bool {
-    if !matches!(err.kind(), ErrorKind::Io) {
-        return false;
+/// Walks the error source chain looking for typed transport errors
+/// ([`reqwest::Error`] or [`std::io::Error`]) and falls back
+/// to [`ErrorKind`]-based heuristics.
+pub(crate) trait RequestSentExt {
+    /// Returns the [`RequestSentStatus`] based on error analysis.
+    fn request_sent_status(&self) -> RequestSentStatus;
+}
+
+impl RequestSentExt for azure_core::Error {
+    fn request_sent_status(&self) -> RequestSentStatus {
+        // Walk the source chain for typed transport errors.
+        let mut source: Option<&(dyn StdError + 'static)> = self.source();
+        while let Some(s) = source {
+            #[cfg(not(target_arch = "wasm32"))]
+            if let Some(reqwest_err) = s.downcast_ref::<reqwest::Error>() {
+                return reqwest_request_sent_status(reqwest_err);
+            }
+            source = s.source();
+        }
+
+        // WASM: reqwest errors don't support downcast, so fall back to string analysis.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let status = wasm_request_sent_status(self);
+            if status != RequestSentStatus::Unknown {
+                return status;
+            }
+        }
+
+        // Fallback: use ErrorKind heuristics when no typed inner error is found.
+        match self.kind() {
+            ErrorKind::Credential | ErrorKind::DataConversion => RequestSentStatus::NotSent,
+            ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
+            _ => RequestSentStatus::Unknown,
+        }
+    }
+}
+
+/// Determines [`RequestSentStatus`] from a [`reqwest::Error`].
+///
+/// Maps reqwest error inspection methods in priority order:
+/// - `is_timeout()`: `Unknown` — could be connect timeout (not sent) or read timeout (sent)
+/// - `is_connect()` / `is_request()`: `NotSent` — pre-send failures
+/// - `is_decode()` / `is_redirect()` / `is_status()`: `Sent` — response was received
+/// - `is_body()` / other: `Unknown`
+///
+/// Note: `is_connect()` is checked first because connect timeouts set both
+/// `is_connect()` and `is_timeout()` — the connection was never established so
+/// the request was definitely not sent. After connect errors are handled,
+/// remaining `is_timeout()` errors are response/read timeouts where sent status
+/// is uncertain. `is_request()` is checked last among the "not sent" group
+/// since reqwest also sets `is_request()` on timeout errors (`Kind::Request`
+/// wrapping `TimedOut`), but those are already handled by the timeout check.
+#[cfg(not(target_arch = "wasm32"))]
+fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
+    // Connect errors (including connect timeouts) — request was never sent.
+    if error.is_connect() {
+        return RequestSentStatus::NotSent;
     }
 
-    let msg = err.to_string().to_lowercase();
-    msg.contains(RESPONSE_TIMEOUT_MESSAGE) || msg.contains("operation timed out")
+    if error.is_timeout() {
+        return RequestSentStatus::Unknown;
+    }
+
+    if error.is_decode() || error.is_redirect() || error.is_status() {
+        return RequestSentStatus::Sent;
+    }
+
+    RequestSentStatus::Unknown
+}
+
+/// WASM fallback: reqwest doesn't expose error type inspection methods on WASM,
+/// so we fall back to string analysis which is less reliable.
+#[cfg(target_arch = "wasm32")]
+fn wasm_request_sent_status(error: &azure_core::Error) -> RequestSentStatus {
+    let msg = error.to_string().to_lowercase();
+
+    // Connection-related errors (before sending)
+    if msg.contains("dns") || msg.contains("connection refused") || msg.contains("connect") {
+        return RequestSentStatus::NotSent;
+    }
+
+    // Response-related errors (after sending)
+    if msg.contains("status") || msg.contains("redirect") || msg.contains("decode") {
+        return RequestSentStatus::Sent;
+    }
+
+    RequestSentStatus::Unknown
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn wrap_reqwest_error(err: reqwest::Error) -> azure_core::Error {
+        azure_core::Error::with_error(ErrorKind::Io, err, "failed to execute `reqwest` request")
+    }
+
+    #[tokio::test]
+    async fn reqwest_connect_error_is_not_sent() {
+        let client = reqwest::Client::new();
+        let reqwest_err = client.get("http://127.0.0.1:1").send().await.unwrap_err();
+        assert!(reqwest_err.is_connect(), "expected connect error");
+
+        let err = wrap_reqwest_error(reqwest_err);
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
+
+    #[test]
+    fn plain_io_message_is_unknown() {
+        let err = azure_core::Error::with_message(
+            ErrorKind::Io,
+            "response timeout - Injected fault".to_string(),
+        );
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+    }
+
+    #[test]
+    fn credential_error_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Credential, "auth failed".to_string());
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
+
+    #[test]
+    fn data_conversion_error_is_not_sent() {
+        let err =
+            azure_core::Error::with_message(ErrorKind::DataConversion, "bad data".to_string());
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
+
+    #[test]
+    fn unrelated_io_error_is_unknown() {
+        let err = azure_core::Error::with_message(ErrorKind::Io, "some error".to_string());
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+    }
+
+    #[test]
+    fn other_error_kind_is_unknown() {
+        let err = azure_core::Error::with_message(ErrorKind::Other, "something".to_string());
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+    }
 }

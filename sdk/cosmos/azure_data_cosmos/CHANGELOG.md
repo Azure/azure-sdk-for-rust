@@ -19,6 +19,8 @@
 
 ### Other Changes
 
+- Added default HTTP client timeouts and added retries for connection errors.
+
 ## 0.30.0 (2026-01-21)
 
 ### Features Added

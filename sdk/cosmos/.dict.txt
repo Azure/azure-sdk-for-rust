@@ -43,6 +43,9 @@ makefiles
 ctest
 cmake
 
+# TCP/networking terms
+keepalive
+
 # Common Rust syntax
 rfind
 subsec

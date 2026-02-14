@@ -6,12 +6,12 @@ use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
 use crate::constants::{self, SubStatusCode};
-use crate::retry_policies::{CONNECTION_ERROR_MESSAGE, RESPONSE_TIMEOUT_MESSAGE};
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::{
     headers::Headers, AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode,
 };
+use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -23,6 +23,9 @@ pub struct FaultClient {
     inner: Arc<dyn HttpClient>,
     /// The fault injection rules to apply.
     rules: Arc<Mutex<Vec<RuleState>>>,
+    /// Address of a local TCP listener that accepts connections but never responds.
+    /// Used to generate real `reqwest::Error` with `is_timeout() == true`.
+    timeout_listener_addr: SocketAddr,
 }
 
 /// Tracks the state of a fault injection rule.
@@ -36,6 +39,10 @@ struct RuleState {
 
 impl FaultClient {
     /// Creates a new instance of the FaultClient.
+    ///
+    /// Spawns a background TCP listener on a random local port that accepts
+    /// connections but never sends data. This is used to produce real
+    /// `reqwest::Error` timeout errors for fault injection.
     pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
         let rule_states = rules
             .into_iter()
@@ -45,9 +52,34 @@ impl FaultClient {
             })
             .collect();
 
+        // Bind a TCP listener that accepts connections but never responds.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0")
+            .expect("failed to bind fault injection timeout listener");
+        let addr = listener
+            .local_addr()
+            .expect("failed to get timeout listener address");
+
+        // Spawn a background thread that accepts connections and holds them open.
+        // The thread runs as a daemon — it will be cleaned up when the process exits.
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                match stream {
+                    Ok(_stream) => {
+                        // Hold the connection open: park the stream in a thread that
+                        // sleeps forever so the TCP connection stays established.
+                        std::thread::spawn(move || {
+                            std::thread::sleep(Duration::from_secs(u64::MAX));
+                        });
+                    }
+                    Err(_) => continue,
+                }
+            }
+        });
+
         Self {
             inner,
             rules: Arc::new(Mutex::new(rule_states)),
+            timeout_listener_addr: addr,
         }
     }
 
@@ -150,21 +182,13 @@ impl FaultClient {
             None => return None, // No error type set, pass through
         };
 
-        // Connection-level faults produce ErrorKind::Io instead of HttpResponse
+        // Connection-level faults produce real reqwest errors via actual failing requests.
         match error_type {
             FaultInjectionErrorType::ConnectionError => {
-                let error = azure_core::Error::with_message(
-                    ErrorKind::Io,
-                    format!("{CONNECTION_ERROR_MESSAGE} - Injected fault"),
-                );
-                return Some(Err(error));
+                return Some(Err(self.generate_connection_error().await));
             }
             FaultInjectionErrorType::ResponseTimeout => {
-                let error = azure_core::Error::with_message(
-                    ErrorKind::Io,
-                    format!("{RESPONSE_TIMEOUT_MESSAGE} - Injected fault"),
-                );
-                return Some(Err(error));
+                return Some(Err(self.generate_timeout_error().await));
             }
             _ => {}
         }
@@ -232,6 +256,57 @@ impl FaultClient {
         );
 
         Some(Err(error))
+    }
+
+    /// Generates a real `reqwest::Error` with `is_connect() == true` by attempting
+    /// a connection to a port that is guaranteed to refuse connections.
+    async fn generate_connection_error(&self) -> azure_core::Error {
+        let client = reqwest::Client::builder()
+            .connect_timeout(Duration::from_millis(100))
+            .build()
+            .expect("failed to build reqwest client for fault injection");
+
+        let err = client
+            .get("http://127.0.0.1:1")
+            .send()
+            .await
+            .expect_err("request to 127.0.0.1:1 should fail with connection error");
+
+        azure_core::Error::with_error(ErrorKind::Io, err, "Injected fault: connection error")
+    }
+
+    /// Generates a real `reqwest::Error` with `is_timeout() == true` by connecting
+    /// to a local TCP listener that accepts but never responds.
+    async fn generate_timeout_error(&self) -> azure_core::Error {
+        let addr = self.timeout_listener_addr;
+
+        // Ensure the listener is ready and a TCP connection can be established
+        // before we issue the timed request. This prevents the timeout from firing
+        // during the connect phase (which would produce is_request(), not is_timeout()).
+        loop {
+            match std::net::TcpStream::connect_timeout(&addr, Duration::from_millis(500)) {
+                Ok(_) => break,
+                Err(_) => std::thread::sleep(Duration::from_millis(10)),
+            }
+        }
+
+        // Use a short total timeout with a generous connect_timeout.
+        // The TCP handshake succeeds quickly (listener is warmed up), then the
+        // total timeout fires while waiting for the HTTP response → is_timeout().
+        let client = reqwest::Client::builder()
+            .connect_timeout(Duration::from_secs(5))
+            .timeout(Duration::from_millis(500))
+            .build()
+            .expect("failed to build reqwest client for fault injection");
+
+        let url = format!("http://{addr}");
+        let err = client
+            .get(&url)
+            .send()
+            .await
+            .expect_err("request to timeout listener should fail with timeout");
+
+        azure_core::Error::with_error(ErrorKind::Io, err, "Injected fault: response timeout")
     }
 }
 
@@ -676,5 +751,87 @@ mod tests {
                 panic!("{:?} should produce an HttpResponse error kind", error_type);
             }
         }
+    }
+
+    #[tokio::test]
+    async fn connection_error_produces_reqwest_connect_error() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ConnectionError)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let result = fault_client.execute_request(&request).await;
+        assert!(result.is_err(), "should produce an error");
+
+        let err = result.unwrap_err();
+        // Walk the source chain to find reqwest::Error
+        let mut source: Option<&(dyn std::error::Error + 'static)> =
+            std::error::Error::source(&err);
+        let mut found_reqwest = false;
+        while let Some(s) = source {
+            if let Some(reqwest_err) = s.downcast_ref::<reqwest::Error>() {
+                assert!(
+                    reqwest_err.is_connect(),
+                    "expected is_connect() == true, got: {reqwest_err}"
+                );
+                found_reqwest = true;
+                break;
+            }
+            source = std::error::Error::source(s);
+        }
+        assert!(
+            found_reqwest,
+            "should contain a reqwest::Error in source chain"
+        );
+        assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_produces_reqwest_timeout_error() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeout)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let result = fault_client.execute_request(&request).await;
+        assert!(result.is_err(), "should produce an error");
+
+        let err = result.unwrap_err();
+        // Walk the source chain to find reqwest::Error
+        let mut source: Option<&(dyn std::error::Error + 'static)> =
+            std::error::Error::source(&err);
+        let mut found_reqwest = false;
+        while let Some(s) = source {
+            if let Some(reqwest_err) = s.downcast_ref::<reqwest::Error>() {
+                // The error should be a timeout or a request-phase error wrapping a timeout.
+                // Both are classified as RequestSentStatus::Unknown by the retry policy.
+                assert!(
+                    reqwest_err.is_timeout() || reqwest_err.is_request(),
+                    "expected is_timeout() or is_request(), got: {reqwest_err}"
+                );
+                assert!(
+                    !reqwest_err.is_connect(),
+                    "timeout error should NOT be a connect error"
+                );
+                found_reqwest = true;
+                break;
+            }
+            source = std::error::Error::source(s);
+        }
+        assert!(
+            found_reqwest,
+            "should contain a reqwest::Error in source chain"
+        );
+        assert_eq!(mock_client.call_count(), 0);
     }
 }

@@ -203,6 +203,31 @@ pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
+// Default HTTP client timeouts.
+// See `next_generation_sdks_design_principles.md` for design rationale.
+
+/// Default TCP connection timeout (500ms).
+/// 500 ms it times out locally.
+///
+/// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
+pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
+    std::time::Duration::from_secs(1);
+
+/// Default overall request timeout (65s).
+///
+pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
+
+/// Default connection pool idle timeout (90s).
+///
+/// Balances avoiding stale connections with minimizing unnecessary reconnects.
+pub(crate) const DEFAULT_POOL_IDLE_TIMEOUT: std::time::Duration =
+    std::time::Duration::from_secs(90);
+
+/// Default TCP keepalive interval (30s).
+///
+/// Detects dead connections early. Standard interval for cloud services.
+pub(crate) const DEFAULT_TCP_KEEPALIVE: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
 /// Sub-status codes provide additional context for HTTP error responses from Cosmos DB.
