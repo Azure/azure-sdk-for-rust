@@ -19,7 +19,7 @@
 
 ### Other Changes
 
-- Added default HTTP client timeouts and added retries for connection errors.
+- Added default HTTP client timeouts and added retries for connection errors. ([#3752](https://github.com/Azure/azure-sdk-for-rust/pull/3752))
 
 ## 0.30.0 (2026-01-21)
 

@@ -183,17 +183,14 @@ impl FaultClient {
         };
 
         // Connection-level faults produce real reqwest errors via actual failing requests.
-        match error_type {
+        // HTTP-level faults produce synthetic error responses.
+        let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 return Some(Err(self.generate_connection_error().await));
             }
             FaultInjectionErrorType::ResponseTimeout => {
                 return Some(Err(self.generate_timeout_error().await));
             }
-            _ => {}
-        }
-
-        let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
                 None,
@@ -234,10 +231,6 @@ impl FaultClient {
                 Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
                 "Database Account Not Found - Injected fault",
             ),
-            // ConnectionError and ResponseTimeout are handled above with early return
-            FaultInjectionErrorType::ConnectionError | FaultInjectionErrorType::ResponseTimeout => {
-                unreachable!()
-            }
         };
 
         let raw_response = sub_status.map(|ss| {

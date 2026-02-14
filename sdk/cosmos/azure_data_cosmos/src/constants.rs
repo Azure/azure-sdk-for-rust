@@ -217,17 +217,6 @@ pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
 ///
 pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
 
-/// Default connection pool idle timeout (90s).
-///
-/// Balances avoiding stale connections with minimizing unnecessary reconnects.
-pub(crate) const DEFAULT_POOL_IDLE_TIMEOUT: std::time::Duration =
-    std::time::Duration::from_secs(90);
-
-/// Default TCP keepalive interval (30s).
-///
-/// Detects dead connections early. Standard interval for cloud services.
-pub(crate) const DEFAULT_TCP_KEEPALIVE: std::time::Duration = std::time::Duration::from_secs(30);
-
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
 /// Sub-status codes provide additional context for HTTP error responses from Cosmos DB.

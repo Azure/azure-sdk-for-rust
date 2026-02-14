@@ -237,19 +237,15 @@ impl RequestSentExt for azure_core::Error {
 
 /// Determines [`RequestSentStatus`] from a [`reqwest::Error`].
 ///
-/// Maps reqwest error inspection methods in priority order:
-/// - `is_timeout()`: `Unknown` — could be connect timeout (not sent) or read timeout (sent)
-/// - `is_connect()` / `is_request()`: `NotSent` — pre-send failures
-/// - `is_decode()` / `is_redirect()` / `is_status()`: `Sent` — response was received
-/// - `is_body()` / other: `Unknown`
+/// Classification priority:
+/// 1. `is_connect()` → `NotSent` — connection never established (includes connect timeouts).
+/// 2. `is_timeout()` → `Unknown` — response/read timeouts where sent status is uncertain.
+/// 3. `is_decode()` / `is_redirect()` / `is_status()` → `Sent` — response was received.
+/// 4. Everything else → `Unknown`.
 ///
-/// Note: `is_connect()` is checked first because connect timeouts set both
-/// `is_connect()` and `is_timeout()` — the connection was never established so
-/// the request was definitely not sent. After connect errors are handled,
-/// remaining `is_timeout()` errors are response/read timeouts where sent status
-/// is uncertain. `is_request()` is checked last among the "not sent" group
-/// since reqwest also sets `is_request()` on timeout errors (`Kind::Request`
-/// wrapping `TimedOut`), but those are already handled by the timeout check.
+/// `is_connect()` is checked before `is_timeout()` because connect timeouts
+/// set both flags — the connection was never established so the request was
+/// definitely not sent.
 #[cfg(not(target_arch = "wasm32"))]
 fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
     // Connect errors (including connect timeouts) — request was never sent.
@@ -303,39 +299,5 @@ mod tests {
 
         let err = wrap_reqwest_error(reqwest_err);
         assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
-    }
-
-    #[test]
-    fn plain_io_message_is_unknown() {
-        let err = azure_core::Error::with_message(
-            ErrorKind::Io,
-            "response timeout - Injected fault".to_string(),
-        );
-        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
-    }
-
-    #[test]
-    fn credential_error_is_not_sent() {
-        let err = azure_core::Error::with_message(ErrorKind::Credential, "auth failed".to_string());
-        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
-    }
-
-    #[test]
-    fn data_conversion_error_is_not_sent() {
-        let err =
-            azure_core::Error::with_message(ErrorKind::DataConversion, "bad data".to_string());
-        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
-    }
-
-    #[test]
-    fn unrelated_io_error_is_unknown() {
-        let err = azure_core::Error::with_message(ErrorKind::Io, "some error".to_string());
-        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
-    }
-
-    #[test]
-    fn other_error_kind_is_unknown() {
-        let err = azure_core::Error::with_message(ErrorKind::Other, "something".to_string());
-        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
     }
 }

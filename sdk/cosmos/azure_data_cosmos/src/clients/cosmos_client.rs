@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::constants::{
-    COSMOS_ALLOWED_HEADERS, DEFAULT_CONNECTION_TIMEOUT, DEFAULT_POOL_IDLE_TIMEOUT,
-    DEFAULT_REQUEST_TIMEOUT, DEFAULT_TCP_KEEPALIVE,
-};
+use crate::constants::COSMOS_ALLOWED_HEADERS;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::constants::{DEFAULT_CONNECTION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -48,13 +47,12 @@ impl CosmosClient {
             additional_allowed_query_params: vec![],
         };
 
+        #[cfg(not(target_arch = "wasm32"))]
         if client_options.transport.is_none() {
             // There is also a read timeout but this is addressed by the total timeout
             let http_client = reqwest::ClientBuilder::new()
                 .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
                 .timeout(DEFAULT_REQUEST_TIMEOUT)
-                .pool_idle_timeout(DEFAULT_POOL_IDLE_TIMEOUT) // currently have this to show that its an option but its same as reqwest default
-                .tcp_keepalive(DEFAULT_TCP_KEEPALIVE) // default no tcp keep alive
                 .build()
                 .map_err(|e| {
                     azure_core::Error::new(
