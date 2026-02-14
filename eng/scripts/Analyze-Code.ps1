@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
-. (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
 Write-Host @"
@@ -59,8 +59,8 @@ if ($Deny) {
 Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features" -GroupOutput
 
 # Verify package dependencies and keywords
-$verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
-$verifyKeywordsScript = Join-Path $RepoRoot 'eng', 'scripts', 'verify-keywords.rs' -Resolve
+$verifyDependenciesScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-dependencies.rs'))
+$verifyKeywordsScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-keywords.rs'))
 
 if (!$SkipPackageAnalysis) {
   if (!(Test-Path $PackageInfoDirectory)) {
