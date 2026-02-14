@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 use azure_core::{json, time::OffsetDateTime, xml};
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use models::ListBlobsFlatSegmentResponse;
+use std::hint::black_box;
 
 use crate::models::{
     AccessTier, BlobItemInternal, BlobName, BlobPropertiesInternal, BlobType, LeaseState,
