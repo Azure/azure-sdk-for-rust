@@ -210,11 +210,13 @@ pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 /// 500 ms it times out locally.
 ///
 /// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(1);
 
 /// Default overall request timeout (65s).
 ///
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
 
 /// A newtype wrapper for Cosmos DB sub-status codes.
