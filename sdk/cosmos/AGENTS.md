@@ -470,7 +470,9 @@ Before considering any task complete, run the following checks **in order** on a
    - This catches broken intra-doc links (e.g., referencing non-existent methods in `[`backtick links`]`)
    - All documentation warnings must be resolved before completing the task
 5. **Test check** (if tests exist): `cargo test -p <crate-name> --all-features`
-   - For emulator tests: `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p <crate-name> --tests`
+   - For emulator tests: `RUSTFLAGS='--cfg test_category="emulator"' cargo check -p azure_data_cosmos --features fault_injection,key_auth --tests`
+   - For multi-write tests: `RUSTFLAGS='--cfg test_category="multi_write"' cargo check -p azure_data_cosmos --features fault_injection,key_auth --tests`
+   - These cfg-gated tests are invisible to normal `cargo test` — always compile-check them to catch regressions before CI.
 
 **Common documentation link errors to avoid**:
 

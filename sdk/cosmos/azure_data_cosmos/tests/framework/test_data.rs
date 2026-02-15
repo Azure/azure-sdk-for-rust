@@ -36,21 +36,23 @@ pub async fn create_container_with_items(
     items: Vec<MockItem>,
     throughput: Option<ThroughputProperties>,
 ) -> azure_core::Result<ContainerClient> {
-    let properties = ContainerProperties {
-        id: "TestContainer".into(),
-        partition_key: "/partitionKey".into(),
-        ..Default::default()
-    };
+    let properties = ContainerProperties::default()
+        .with_id("TestContainer")
+        .with_partition_key("/partitionKey");
 
     // Retry on 429 errors
     loop {
         match db
             .create_container(
                 properties.clone(),
-                Some(CreateContainerOptions {
-                    throughput: throughput.clone(),
-                    ..Default::default()
-                }),
+                {
+                    let opts = CreateContainerOptions::default();
+                    Some(if let Some(t) = throughput.clone() {
+                        opts.with_throughput(t)
+                    } else {
+                        opts
+                    })
+                },
             )
             .await
         {

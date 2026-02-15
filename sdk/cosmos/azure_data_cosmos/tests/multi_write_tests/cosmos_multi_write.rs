@@ -5,7 +5,6 @@
 use super::framework;
 
 use framework::TestOptions;
-use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
@@ -68,10 +67,8 @@ fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
 
 // Helper to avoid duplicating the same preferred-locations setup.
 fn options_with_preferred_locations(locations: Vec<RegionName>) -> TestOptions {
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: locations,
-        ..Default::default()
-    };
+    let client_options = CosmosClientOptions::default()
+        .with_application_preferred_regions(locations);
     TestOptions::new().with_client_options(client_options)
 }
 
@@ -81,11 +78,9 @@ async fn create_container_and_write_item(
     container_id: &str,
     _expected_region: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let properties = ContainerProperties {
-        id: Cow::Owned(String::from(container_id)),
-        partition_key: "/id".into(),
-        ..Default::default()
-    };
+    let properties = ContainerProperties::default()
+        .with_id(container_id.to_string())
+        .with_partition_key("/id");
 
     let throughput = ThroughputProperties::manual(400);
 
