@@ -12,6 +12,7 @@ use std::fmt;
 /// Region names are stored in canonical form (lowercase, no whitespace) to ensure
 /// efficient comparison. This ensures that "West US", "westus", and "WEST US" are
 /// all considered equal and stored identically.
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RegionName(Cow<'static, str>);
 

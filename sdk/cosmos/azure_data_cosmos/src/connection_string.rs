@@ -6,10 +6,23 @@ use std::str::FromStr;
 use azure_core::{credentials::Secret, fmt::SafeDebug, Error};
 
 /// Represents a Cosmos DB connection string.
+#[non_exhaustive]
 #[derive(Clone, PartialEq, Eq, SafeDebug)]
 pub struct ConnectionString {
-    pub account_endpoint: String,
-    pub account_key: Secret,
+    pub(crate) account_endpoint: String,
+    pub(crate) account_key: Secret,
+}
+
+impl ConnectionString {
+    /// Gets the account endpoint.
+    pub fn account_endpoint(&self) -> &str {
+        &self.account_endpoint
+    }
+
+    /// Gets the account key.
+    pub fn account_key(&self) -> &Secret {
+        &self.account_key
+    }
 }
 
 impl TryFrom<&Secret> for ConnectionString {
@@ -87,10 +100,10 @@ mod tests {
 
         assert_eq!(
             "https://accountname.documents.azure.com:443/",
-            connection_str.account_endpoint
+            connection_str.account_endpoint()
         );
 
-        assert_eq!("key", connection_str.account_key.secret());
+        assert_eq!("key", connection_str.account_key().secret());
     }
 
     #[test]
@@ -103,10 +116,10 @@ mod tests {
         // should pass, we don't expect connection string keys to be case sensitive
         assert_eq!(
             "https://accountname.documents.azure.com:443/",
-            connection_str.account_endpoint
+            connection_str.account_endpoint()
         );
 
-        assert_eq!("key", connection_str.account_key.secret());
+        assert_eq!("key", connection_str.account_key().secret());
     }
 
     #[test]

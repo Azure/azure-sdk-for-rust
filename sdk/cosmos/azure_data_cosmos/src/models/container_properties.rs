@@ -29,50 +29,43 @@ where
 ///
 /// # Constructing
 ///
-/// When constructing this type, you should **always** use [Struct Update] syntax using `..Default::default()`, for example:
+/// Use [`Default::default()`] and the `with_*` builder methods to construct this type:
 ///
 /// ```rust
 /// # use azure_data_cosmos::models::ContainerProperties;
-/// let properties = ContainerProperties {
-///     id: "NewContainer".into(),
-///     partition_key: "/partitionKey".into(),
-///     ..Default::default()
-/// };
+/// let properties = ContainerProperties::default()
+///     .with_id("NewContainer")
+///     .with_partition_key("/partitionKey");
 /// ```
 ///
-/// Using this syntax has two purposes:
-///
-/// 1. It allows you to construct the type even though [`SystemProperties`] is not constructable (these properties should always be empty when you send a request).
-/// 2. It protects you if we add additional properties to this struct.
-///
-/// Also, note that the `id` and `partition_key` values are **required** by the server. You will get an error from the server if you omit them.
-///
-/// [Struct Update]: https://doc.rust-lang.org/stable/book/ch05-01-defining-structs.html?highlight=Struct#creating-instances-from-other-instances-with-struct-update-syntax
+/// Note that the `id` and `partition_key` values are **required** by the server.
+/// You will get an error from the server if you omit them.
+#[non_exhaustive]
 #[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
     /// The ID of the container.
-    pub id: Cow<'static, str>,
+    id: Cow<'static, str>,
 
     /// The definition of the partition key for the container.
-    pub partition_key: PartitionKeyDefinition,
+    partition_key: PartitionKeyDefinition,
 
     /// The indexing policy for the container.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub indexing_policy: Option<IndexingPolicy>,
+    indexing_policy: Option<IndexingPolicy>,
 
     /// The unique key policy for the container.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub unique_key_policy: Option<UniqueKeyPolicy>,
+    unique_key_policy: Option<UniqueKeyPolicy>,
 
     /// The conflict resolution policy for the container.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub conflict_resolution_policy: Option<ConflictResolutionPolicy>,
+    conflict_resolution_policy: Option<ConflictResolutionPolicy>,
 
     /// The vector embedding policy for the container.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
+    vector_embedding_policy: Option<VectorEmbeddingPolicy>,
 
     /// The time-to-live for items in the container.
     ///
@@ -81,7 +74,7 @@ pub struct ContainerProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
     #[serde(serialize_with = "serialize_ttl")]
-    pub default_ttl: Option<Duration>,
+    default_ttl: Option<Duration>,
 
     /// The time-to-live for the analytical store in the container.
     ///
@@ -90,43 +83,214 @@ pub struct ContainerProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
     #[serde(serialize_with = "serialize_ttl")]
-    pub analytical_storage_ttl: Option<Duration>,
+    analytical_storage_ttl: Option<Duration>,
 
     /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
-    pub system_properties: SystemProperties,
+    pub(crate) system_properties: SystemProperties,
+}
+
+impl ContainerProperties {
+    /// Gets the ID of the container.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Sets the ID of the container.
+    pub fn with_id(mut self, id: impl Into<Cow<'static, str>>) -> Self {
+        self.id = id.into();
+        self
+    }
+
+    /// Gets the partition key definition for the container.
+    pub fn partition_key(&self) -> &PartitionKeyDefinition {
+        &self.partition_key
+    }
+
+    /// Sets the partition key definition.
+    pub fn with_partition_key(mut self, partition_key: impl Into<PartitionKeyDefinition>) -> Self {
+        self.partition_key = partition_key.into();
+        self
+    }
+
+    /// Gets the indexing policy for the container.
+    pub fn indexing_policy(&self) -> Option<&IndexingPolicy> {
+        self.indexing_policy.as_ref()
+    }
+
+    /// Sets the indexing policy.
+    pub fn with_indexing_policy(
+        mut self,
+        indexing_policy: impl Into<Option<IndexingPolicy>>,
+    ) -> Self {
+        self.indexing_policy = indexing_policy.into();
+        self
+    }
+
+    /// Gets the unique key policy for the container.
+    pub fn unique_key_policy(&self) -> Option<&UniqueKeyPolicy> {
+        self.unique_key_policy.as_ref()
+    }
+
+    /// Sets the unique key policy.
+    pub fn with_unique_key_policy(
+        mut self,
+        unique_key_policy: impl Into<Option<UniqueKeyPolicy>>,
+    ) -> Self {
+        self.unique_key_policy = unique_key_policy.into();
+        self
+    }
+
+    /// Gets the conflict resolution policy for the container.
+    pub fn conflict_resolution_policy(&self) -> Option<&ConflictResolutionPolicy> {
+        self.conflict_resolution_policy.as_ref()
+    }
+
+    /// Sets the conflict resolution policy.
+    pub fn with_conflict_resolution_policy(
+        mut self,
+        conflict_resolution_policy: impl Into<Option<ConflictResolutionPolicy>>,
+    ) -> Self {
+        self.conflict_resolution_policy = conflict_resolution_policy.into();
+        self
+    }
+
+    /// Gets the vector embedding policy for the container.
+    pub fn vector_embedding_policy(&self) -> Option<&VectorEmbeddingPolicy> {
+        self.vector_embedding_policy.as_ref()
+    }
+
+    /// Sets the vector embedding policy.
+    pub fn with_vector_embedding_policy(
+        mut self,
+        vector_embedding_policy: impl Into<Option<VectorEmbeddingPolicy>>,
+    ) -> Self {
+        self.vector_embedding_policy = vector_embedding_policy.into();
+        self
+    }
+
+    /// Gets the default time-to-live for items in the container.
+    pub fn default_ttl(&self) -> Option<Duration> {
+        self.default_ttl
+    }
+
+    /// Sets the default time-to-live.
+    pub fn with_default_ttl(mut self, default_ttl: impl Into<Option<Duration>>) -> Self {
+        self.default_ttl = default_ttl.into();
+        self
+    }
+
+    /// Gets the analytical store time-to-live.
+    pub fn analytical_storage_ttl(&self) -> Option<Duration> {
+        self.analytical_storage_ttl
+    }
+
+    /// Sets the analytical store time-to-live.
+    pub fn with_analytical_storage_ttl(
+        mut self,
+        analytical_storage_ttl: impl Into<Option<Duration>>,
+    ) -> Self {
+        self.analytical_storage_ttl = analytical_storage_ttl.into();
+        self
+    }
+
+    /// Gets the system properties for the container.
+    pub fn system_properties(&self) -> &SystemProperties {
+        &self.system_properties
+    }
 }
 
 /// Represents the vector embedding policy for a container.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbeddingPolicy {
     /// The [`VectorEmbedding`]s that describe the vector embeddings of items in the container.
     #[serde(rename = "vectorEmbeddings")]
-    pub embeddings: Vec<VectorEmbedding>,
+    embeddings: Vec<VectorEmbedding>,
 }
 
-/// Represents the vector embedding policy for a container.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+impl VectorEmbeddingPolicy {
+    /// Gets the vector embeddings.
+    pub fn embeddings(&self) -> &[VectorEmbedding] {
+        &self.embeddings
+    }
+
+    /// Sets the vector embeddings.
+    pub fn with_embeddings(mut self, embeddings: Vec<VectorEmbedding>) -> Self {
+        self.embeddings = embeddings;
+        self
+    }
+}
+
+/// Represents a single vector embedding definition for a container.
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbedding {
     /// The path to the property containing the vector.
-    pub path: String,
+    path: String,
 
     /// The data type of the elements stored in the vector.
-    pub data_type: VectorDataType,
+    data_type: VectorDataType,
 
     /// The number of dimensions in the vector.
-    pub dimensions: u32,
+    dimensions: u32,
 
     /// The [`VectorDistanceFunction`] used to calculate the distance between vectors.
-    pub distance_function: VectorDistanceFunction,
+    distance_function: VectorDistanceFunction,
+}
+
+impl VectorEmbedding {
+    /// Gets the path to the property containing the vector.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Sets the path.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Gets the data type of the vector elements.
+    pub fn data_type(&self) -> &VectorDataType {
+        &self.data_type
+    }
+
+    /// Sets the data type.
+    pub fn with_data_type(mut self, data_type: VectorDataType) -> Self {
+        self.data_type = data_type;
+        self
+    }
+
+    /// Gets the number of dimensions in the vector.
+    pub fn dimensions(&self) -> u32 {
+        self.dimensions
+    }
+
+    /// Sets the number of dimensions.
+    pub fn with_dimensions(mut self, dimensions: u32) -> Self {
+        self.dimensions = dimensions;
+        self
+    }
+
+    /// Gets the distance function used for this vector.
+    pub fn distance_function(&self) -> &VectorDistanceFunction {
+        &self.distance_function
+    }
+
+    /// Sets the distance function.
+    pub fn with_distance_function(mut self, distance_function: VectorDistanceFunction) -> Self {
+        self.distance_function = distance_function;
+        self
+    }
 }
 
 /// Defines the data types of the elements of a vector.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDataType {
@@ -134,6 +298,7 @@ pub enum VectorDataType {
     Float16,
 
     /// Represents the `float32` data type.
+    #[default]
     Float32,
 
     /// Represents the `uint8` data type.
@@ -144,7 +309,7 @@ pub enum VectorDataType {
 }
 
 /// Defines the distance functions that can be used to calculate the distance between vectors.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDistanceFunction {
@@ -152,6 +317,7 @@ pub enum VectorDistanceFunction {
     Euclidean,
 
     /// Represents the `cosine` distance function.
+    #[default]
     Cosine,
 
     /// Represents the `dotproduct` distance function.
@@ -162,51 +328,116 @@ pub enum VectorDistanceFunction {
 /// Represents a unique key policy for a container.
 ///
 /// For more information see <https://learn.microsoft.com/azure/cosmos-db/unique-keys>
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKeyPolicy {
     /// The keys defined in this policy.
-    pub unique_keys: Vec<UniqueKey>,
+    unique_keys: Vec<UniqueKey>,
+}
+
+impl UniqueKeyPolicy {
+    /// Gets the unique keys defined in this policy.
+    pub fn unique_keys(&self) -> &[UniqueKey] {
+        &self.unique_keys
+    }
+
+    /// Sets the unique keys.
+    pub fn with_unique_keys(mut self, unique_keys: Vec<UniqueKey>) -> Self {
+        self.unique_keys = unique_keys;
+        self
+    }
 }
 
 /// Represents a single unique key for a container.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKey {
     /// The set of paths which must be unique for each item.
-    pub paths: Vec<String>,
+    paths: Vec<String>,
 }
 
-/// Represents a conflict resolution policy for a container
+impl UniqueKey {
+    /// Gets the set of paths which must be unique for each item.
+    pub fn paths(&self) -> &[String] {
+        &self.paths
+    }
+
+    /// Sets the paths.
+    pub fn with_paths(mut self, paths: Vec<String>) -> Self {
+        self.paths = paths;
+        self
+    }
+}
+
+/// Represents a conflict resolution policy for a container.
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies>
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ConflictResolutionPolicy {
     /// The conflict resolution mode.
-    pub mode: ConflictResolutionMode,
+    mode: ConflictResolutionMode,
 
     /// The path within the item to use to perform [`LastWriterWins`](ConflictResolutionMode::LastWriterWins) conflict resolution.
     #[serde(rename = "conflictResolutionPath")]
-    pub resolution_path: String,
+    resolution_path: String,
 
     /// The stored procedure path to use to perform [`Custom`](ConflictResolutionMode::Custom) conflict resolution.
     #[serde(rename = "conflictResolutionProcedure")]
-    pub resolution_procedure: String,
+    resolution_procedure: String,
 }
 
-/// Defines conflict resolution types available in Azure Cosmos DB
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+impl ConflictResolutionPolicy {
+    /// Gets the conflict resolution mode.
+    pub fn mode(&self) -> &ConflictResolutionMode {
+        &self.mode
+    }
+
+    /// Sets the conflict resolution mode.
+    pub fn with_mode(mut self, mode: ConflictResolutionMode) -> Self {
+        self.mode = mode;
+        self
+    }
+
+    /// Gets the resolution path.
+    pub fn resolution_path(&self) -> &str {
+        &self.resolution_path
+    }
+
+    /// Sets the resolution path.
+    pub fn with_resolution_path(mut self, resolution_path: impl Into<String>) -> Self {
+        self.resolution_path = resolution_path.into();
+        self
+    }
+
+    /// Gets the resolution procedure.
+    pub fn resolution_procedure(&self) -> &str {
+        &self.resolution_procedure
+    }
+
+    /// Sets the resolution procedure.
+    pub fn with_resolution_procedure(mut self, resolution_procedure: impl Into<String>) -> Self {
+        self.resolution_procedure = resolution_procedure.into();
+        self
+    }
+}
+
+/// Defines conflict resolution types available in Azure Cosmos DB.
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "PascalCase")]
 pub enum ConflictResolutionMode {
-    /// Conflict resolution will be performed by using the highest value of the property specified by [`ConflictResolutionPolicy::resolution_path`].
+    /// Conflict resolution will be performed by using the highest value of the property specified by [`ConflictResolutionPolicy::resolution_path()`].
+    #[default]
     LastWriterWins,
 
-    /// Conflict resolution will be performed by executing the stored procedure specified by [`ConflictResolutionPolicy::resolution_procedure`].
+    /// Conflict resolution will be performed by executing the stored procedure specified by [`ConflictResolutionPolicy::resolution_procedure()`].
     Custom,
 }
 
@@ -268,11 +499,9 @@ mod tests {
         // If it does, users who are using `..Default::default()` syntax will start sending an unexpected payload to the server.
         // In rare cases, it's reasonable to update this test, if the new generated JSON is considered _equivalent_ to the original by the server.
         // But in general, a failure in this test means that the same user code will send an unexpected value in a new version of the SDK.
-        let properties = ContainerProperties {
-            id: "MyContainer".into(),
-            partition_key: "/partitionKey".into(),
-            ..Default::default()
-        };
+        let properties = ContainerProperties::default()
+            .with_id("MyContainer")
+            .with_partition_key("/partitionKey");
         let json = serde_json::to_string(&properties).unwrap();
 
         assert_eq!(

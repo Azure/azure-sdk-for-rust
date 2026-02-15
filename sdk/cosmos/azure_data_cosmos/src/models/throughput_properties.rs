@@ -13,6 +13,7 @@ use crate::{constants, models::SystemProperties};
 
 const OFFER_VERSION_2: &str = "V2";
 
+#[non_exhaustive]
 #[derive(Clone, Default, SafeDebug, Deserialize, Serialize)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]

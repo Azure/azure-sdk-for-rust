@@ -40,10 +40,7 @@ impl PatchCommand {
             .iter()
             .map(|op| serde_json::from_str(op).expect("Invalid JSON patch operation"))
             .collect();
-        let patch = PatchDocument {
-            condition: None,
-            operations,
-        };
+        let patch = PatchDocument::default().with_operations(operations);
 
         let response = container_client
             .patch_item(pk, &self.item_id, patch, None)

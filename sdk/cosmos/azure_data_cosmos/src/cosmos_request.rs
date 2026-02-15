@@ -446,13 +446,11 @@ mod tests {
             HeaderValue::from_static("custom_value-2"),
         );
 
-        let client_options = CosmosClientOptions {
-            consistency_level: Some(ConsistencyLevel::Strong),
-            throughput_bucket: Some(5),
-            priority: Some(PriorityLevel::High),
-            custom_headers: client_custom_headers,
-            ..Default::default()
-        };
+        let client_options = CosmosClientOptions::default()
+            .with_consistency_level(ConsistencyLevel::Strong)
+            .with_throughput_bucket(5)
+            .with_priority(PriorityLevel::High)
+            .with_custom_headers(client_custom_headers);
         req_with_client_headers.client_headers(&client_options);
 
         let raw = req_with_client_headers.into_raw_request();

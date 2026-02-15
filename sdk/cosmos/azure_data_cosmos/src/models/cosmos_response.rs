@@ -16,6 +16,7 @@ use serde::de::DeserializeOwned;
 ///
 /// This wraps the underlying Azure Core typed response and provides convenient access
 /// to headers, status code, the original request, and Cosmos-specific response metadata.
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosResponse<T> {
     /// The underlying typed HTTP response.

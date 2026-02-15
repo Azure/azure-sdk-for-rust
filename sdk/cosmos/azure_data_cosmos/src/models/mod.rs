@@ -50,27 +50,49 @@ pub struct SystemProperties {
     #[serde(default)]
     #[serde(skip_serializing)]
     #[serde(rename = "_etag")]
-    pub etag: Option<Etag>,
+    etag: Option<Etag>,
 
     /// The self-link associated with the resource.
     #[serde(default)]
     #[serde(skip_serializing)]
     #[serde(rename = "_self")]
-    pub self_link: Option<String>,
+    self_link: Option<String>,
 
     /// The system-generated unique identifier associated with the resource.
     #[serde(default)]
     // Some APIs do expect the "_rid" to be provided (Replace Offer, for example), so we do want to serialize it if it's provided.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "_rid")]
-    pub resource_id: Option<String>,
+    pub(crate) resource_id: Option<String>,
 
     /// A [`OffsetDateTime`] representing the last modified time of the resource.
     #[serde(default)]
     #[serde(rename = "_ts")]
     #[serde(skip_serializing)]
     #[serde(deserialize_with = "deserialize_cosmos_timestamp")]
-    pub last_modified: Option<OffsetDateTime>,
+    last_modified: Option<OffsetDateTime>,
+}
+
+impl SystemProperties {
+    /// Gets the entity tag associated with the resource.
+    pub fn etag(&self) -> Option<&Etag> {
+        self.etag.as_ref()
+    }
+
+    /// Gets the self-link associated with the resource.
+    pub fn self_link(&self) -> Option<&str> {
+        self.self_link.as_deref()
+    }
+
+    /// Gets the system-generated unique identifier associated with the resource.
+    pub fn resource_id(&self) -> Option<&str> {
+        self.resource_id.as_deref()
+    }
+
+    /// Gets the last modified time of the resource.
+    pub fn last_modified(&self) -> Option<&OffsetDateTime> {
+        self.last_modified.as_ref()
+    }
 }
 
 /// Properties of a Cosmos DB database.
@@ -81,11 +103,29 @@ pub struct SystemProperties {
 #[safe(true)]
 pub struct DatabaseProperties {
     /// The ID of the database.
-    pub id: String,
+    id: String,
 
     /// A [`SystemProperties`] object containing common system properties for the database.
     #[serde(flatten)]
-    pub system_properties: SystemProperties,
+    pub(crate) system_properties: SystemProperties,
+}
+
+impl DatabaseProperties {
+    /// Gets the ID of the database.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Sets the ID of the database.
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.id = id.into();
+        self
+    }
+
+    /// Gets the common system properties for the database.
+    pub fn system_properties(&self) -> &SystemProperties {
+        &self.system_properties
+    }
 }
 
 #[cfg(test)]

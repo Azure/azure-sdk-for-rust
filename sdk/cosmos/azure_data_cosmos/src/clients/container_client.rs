@@ -115,15 +115,13 @@ impl ContainerClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let new_properties = ContainerProperties {
-    ///     id: "MyContainer".into(),
-    ///     partition_key: "/id".into(),
-    ///     indexing_policy: Some(IndexingPolicy {
-    ///         included_paths: vec!["/index_me".into()],
-    ///         ..Default::default()
-    ///     }),
-    ///     ..Default::default()
-    /// };
+    /// let new_properties = ContainerProperties::default()
+    ///     .with_id("MyContainer")
+    ///     .with_partition_key("/id")
+    ///     .with_indexing_policy(
+    ///         IndexingPolicy::default()
+    ///             .with_included_paths(vec!["/index_me".into()]),
+    ///     );
     /// let response = container_client.replace(new_properties, None)
     ///     .await?
     ///     .into_model()?;
@@ -268,10 +266,8 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default()
+    ///     .with_enable_content_response_on_write(true);
     /// let created_item = container_client
     ///     .create_item("category1", p, Some(options))
     ///     .await?
@@ -354,10 +350,8 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default()
+    ///     .with_enable_content_response_on_write(true);
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
@@ -444,10 +438,8 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default()
+    ///     .with_enable_content_response_on_write(true);
     /// let updated_product = container_client
     ///     .upsert_item("category1", p, Some(options))
     ///     .await?
@@ -612,10 +604,8 @@ impl ContainerClient {
     ///     category_id: String,
     ///     product_name: String,
     /// }
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default()
+    ///     .with_enable_content_response_on_write(true);
     /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
     /// let patched_item = client
     ///     .patch_item("partition1", "item1", patch, Some(options))

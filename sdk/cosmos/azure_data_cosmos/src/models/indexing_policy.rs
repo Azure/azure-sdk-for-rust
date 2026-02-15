@@ -7,43 +7,123 @@ use serde::{Deserialize, Serialize};
 /// Represents the indexing policy for a container.
 ///
 /// For more information see <https://learn.microsoft.com/azure/cosmos-db/index-policy>
+#[non_exhaustive]
 #[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {
     /// Indicates that the indexing policy is automatic.
     #[serde(default)]
-    pub automatic: bool,
+    automatic: bool,
 
     /// The indexing mode in use.
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub indexing_mode: Option<IndexingMode>,
+    indexing_mode: Option<IndexingMode>,
 
     /// The paths to be indexed.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub included_paths: Vec<PropertyPath>,
+    included_paths: Vec<PropertyPath>,
 
     /// The paths to be excluded.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub excluded_paths: Vec<PropertyPath>,
+    excluded_paths: Vec<PropertyPath>,
 
     /// A list of spatial indexes in the container.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub spatial_indexes: Vec<SpatialIndex>,
+    spatial_indexes: Vec<SpatialIndex>,
 
-    /// A list of composite indexes in the container
+    /// A list of composite indexes in the container.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub composite_indexes: Vec<CompositeIndex>,
+    composite_indexes: Vec<CompositeIndex>,
 
-    /// A list of vector indexes in the container
+    /// A list of vector indexes in the container.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub vector_indexes: Vec<VectorIndex>,
+    vector_indexes: Vec<VectorIndex>,
+}
+
+impl IndexingPolicy {
+    /// Gets whether the indexing policy is automatic.
+    pub fn automatic(&self) -> bool {
+        self.automatic
+    }
+
+    /// Sets whether the indexing policy is automatic.
+    pub fn with_automatic(mut self, automatic: bool) -> Self {
+        self.automatic = automatic;
+        self
+    }
+
+    /// Gets the indexing mode in use.
+    pub fn indexing_mode(&self) -> Option<&IndexingMode> {
+        self.indexing_mode.as_ref()
+    }
+
+    /// Sets the indexing mode.
+    pub fn with_indexing_mode(mut self, indexing_mode: impl Into<Option<IndexingMode>>) -> Self {
+        self.indexing_mode = indexing_mode.into();
+        self
+    }
+
+    /// Gets the paths to be indexed.
+    pub fn included_paths(&self) -> &[PropertyPath] {
+        &self.included_paths
+    }
+
+    /// Sets the paths to be indexed.
+    pub fn with_included_paths(mut self, included_paths: Vec<PropertyPath>) -> Self {
+        self.included_paths = included_paths;
+        self
+    }
+
+    /// Gets the paths to be excluded.
+    pub fn excluded_paths(&self) -> &[PropertyPath] {
+        &self.excluded_paths
+    }
+
+    /// Sets the paths to be excluded.
+    pub fn with_excluded_paths(mut self, excluded_paths: Vec<PropertyPath>) -> Self {
+        self.excluded_paths = excluded_paths;
+        self
+    }
+
+    /// Gets the spatial indexes in the container.
+    pub fn spatial_indexes(&self) -> &[SpatialIndex] {
+        &self.spatial_indexes
+    }
+
+    /// Sets the spatial indexes.
+    pub fn with_spatial_indexes(mut self, spatial_indexes: Vec<SpatialIndex>) -> Self {
+        self.spatial_indexes = spatial_indexes;
+        self
+    }
+
+    /// Gets the composite indexes in the container.
+    pub fn composite_indexes(&self) -> &[CompositeIndex] {
+        &self.composite_indexes
+    }
+
+    /// Sets the composite indexes.
+    pub fn with_composite_indexes(mut self, composite_indexes: Vec<CompositeIndex>) -> Self {
+        self.composite_indexes = composite_indexes;
+        self
+    }
+
+    /// Gets the vector indexes in the container.
+    pub fn vector_indexes(&self) -> &[VectorIndex] {
+        &self.vector_indexes
+    }
+
+    /// Sets the vector indexes.
+    pub fn with_vector_indexes(mut self, vector_indexes: Vec<VectorIndex>) -> Self {
+        self.vector_indexes = vector_indexes;
+        self
+    }
 }
 
 /// Defines the indexing modes supported by Azure Cosmos DB.
@@ -56,12 +136,26 @@ pub enum IndexingMode {
 }
 
 /// Represents a JSON path.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct PropertyPath {
     // The path to the property referenced in this index.
-    pub path: String,
+    path: String,
+}
+
+impl PropertyPath {
+    /// Gets the path to the property.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Sets the path.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
 }
 
 impl<T: Into<String>> From<T> for PropertyPath {
@@ -71,15 +165,40 @@ impl<T: Into<String>> From<T> for PropertyPath {
 }
 
 /// Represents a spatial index
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct SpatialIndex {
     /// The path to the property referenced in this index.
-    pub path: String,
+    path: String,
 
-    /// The spatial types used in this index
-    pub types: Vec<SpatialType>,
+    /// The spatial types used in this index.
+    types: Vec<SpatialType>,
+}
+
+impl SpatialIndex {
+    /// Gets the path to the property referenced in this index.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Sets the path.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Gets the spatial types used in this index.
+    pub fn types(&self) -> &[SpatialType] {
+        &self.types
+    }
+
+    /// Sets the spatial types.
+    pub fn with_types(mut self, types: Vec<SpatialType>) -> Self {
+        self.types = types;
+        self
+    }
 }
 
 /// Defines the types of spatial data that can be indexed.
@@ -94,34 +213,74 @@ pub enum SpatialType {
 }
 
 /// Represents a composite index
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(transparent)]
 pub struct CompositeIndex {
-    /// The properties in this composite index
-    pub properties: Vec<CompositeIndexProperty>,
+    /// The properties in this composite index.
+    properties: Vec<CompositeIndexProperty>,
+}
+
+impl CompositeIndex {
+    /// Gets the properties in this composite index.
+    pub fn properties(&self) -> &[CompositeIndexProperty] {
+        &self.properties
+    }
+
+    /// Sets the properties.
+    pub fn with_properties(mut self, properties: Vec<CompositeIndexProperty>) -> Self {
+        self.properties = properties;
+        self
+    }
 }
 
 /// Describes a single property in a composite index.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct CompositeIndexProperty {
     /// The path to the property referenced in this index.
-    pub path: String,
+    path: String,
 
     /// The order of the composite index.
     ///
     /// For example, if you want to run the query "SELECT * FROM c ORDER BY c.age asc, c.height desc",
     /// then you'd specify the order for "/asc" to be *ascending* and the order for "/height" to be *descending*.
-    pub order: CompositeIndexOrder,
+    order: CompositeIndexOrder,
+}
+
+impl CompositeIndexProperty {
+    /// Gets the path to the property referenced in this index.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Sets the path.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Gets the order of the composite index.
+    pub fn order(&self) -> &CompositeIndexOrder {
+        &self.order
+    }
+
+    /// Sets the order.
+    pub fn with_order(mut self, order: CompositeIndexOrder) -> Self {
+        self.order = order;
+        self
+    }
 }
 
 /// Ordering values available for composite indexes.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum CompositeIndexOrder {
+    #[default]
     Ascending,
     Descending,
 }
@@ -129,24 +288,50 @@ pub enum CompositeIndexOrder {
 /// Represents a vector index
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy#vector-indexes>
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[non_exhaustive]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorIndex {
     /// The path to the property referenced in this index.
-    pub path: String,
+    path: String,
 
     /// The type of the vector index.
     #[serde(rename = "type")] // "type" is a reserved word in Rust.
-    pub index_type: VectorIndexType,
+    index_type: VectorIndexType,
+}
+
+impl VectorIndex {
+    /// Gets the path to the property referenced in this index.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Sets the path.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Gets the type of the vector index.
+    pub fn index_type(&self) -> &VectorIndexType {
+        &self.index_type
+    }
+
+    /// Sets the index type.
+    pub fn with_index_type(mut self, index_type: VectorIndexType) -> Self {
+        self.index_type = index_type;
+        self
+    }
 }
 
 /// Types of vector indexes supported by Cosmos DB
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorIndexType {
     /// Represents the `flat` vector index type.
+    #[default]
     Flat,
 
     /// Represents the `quantizedFlat` vector index type.
@@ -234,127 +419,92 @@ mod tests {
         let policy: IndexingPolicy = serde_json::from_str(policy).unwrap();
 
         assert_eq!(
-            IndexingPolicy {
-                automatic: false,
-                indexing_mode: Some(IndexingMode::Consistent),
-                included_paths: vec![PropertyPath {
-                    path: "/*".to_string(),
-                }],
-                excluded_paths: vec![
-                    PropertyPath {
-                        path: "/path/to/single/excluded/property/?".to_string()
-                    },
-                    PropertyPath {
-                        path: "/path/to/root/of/multiple/excluded/properties/*".to_string()
-                    },
-                ],
-                spatial_indexes: vec![SpatialIndex {
-                    path: "/path/to/geojson/property/?".to_string(),
-                    types: vec![
+            IndexingPolicy::default()
+                .with_indexing_mode(IndexingMode::Consistent)
+                .with_included_paths(vec![PropertyPath::from("/*")])
+                .with_excluded_paths(vec![
+                    PropertyPath::from("/path/to/single/excluded/property/?"),
+                    PropertyPath::from("/path/to/root/of/multiple/excluded/properties/*"),
+                ])
+                .with_spatial_indexes(vec![SpatialIndex::default()
+                    .with_path("/path/to/geojson/property/?")
+                    .with_types(vec![
                         SpatialType::Point,
                         SpatialType::Polygon,
                         SpatialType::MultiPolygon,
                         SpatialType::LineString,
-                    ]
-                }],
-                composite_indexes: vec![
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                        ]
-                    },
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name2".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age2".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                        ]
-                    },
-                ],
-                vector_indexes: vec![
-                    VectorIndex {
-                        path: "/vector1".to_string(),
-                        index_type: VectorIndexType::QuantizedFlat,
-                    },
-                    VectorIndex {
-                        path: "/vector2".to_string(),
-                        index_type: VectorIndexType::DiskANN,
-                    }
-                ]
-            },
+                    ])])
+                .with_composite_indexes(vec![
+                    CompositeIndex::default().with_properties(vec![
+                        CompositeIndexProperty::default()
+                            .with_path("/name")
+                            .with_order(CompositeIndexOrder::Ascending),
+                        CompositeIndexProperty::default()
+                            .with_path("/age")
+                            .with_order(CompositeIndexOrder::Descending),
+                    ]),
+                    CompositeIndex::default().with_properties(vec![
+                        CompositeIndexProperty::default()
+                            .with_path("/name2")
+                            .with_order(CompositeIndexOrder::Descending),
+                        CompositeIndexProperty::default()
+                            .with_path("/age2")
+                            .with_order(CompositeIndexOrder::Ascending),
+                    ]),
+                ])
+                .with_vector_indexes(vec![
+                    VectorIndex::default()
+                        .with_path("/vector1")
+                        .with_index_type(VectorIndexType::QuantizedFlat),
+                    VectorIndex::default()
+                        .with_path("/vector2")
+                        .with_index_type(VectorIndexType::DiskANN),
+                ]),
             policy
         );
     }
 
     #[test]
     pub fn serialize_indexing_policy() {
-        let policy = IndexingPolicy {
-            automatic: true,
-            indexing_mode: None,
-            included_paths: vec![PropertyPath {
-                path: "/*".to_string(),
-            }],
-            excluded_paths: vec![
-                PropertyPath {
-                    path: "/path/to/single/excluded/property/?".to_string(),
-                },
-                PropertyPath {
-                    path: "/path/to/root/of/multiple/excluded/properties/*".to_string(),
-                },
-            ],
-            spatial_indexes: vec![
-                SpatialIndex {
-                    path: "/path/to/geojson/property/?".to_string(),
-                    types: vec![
+        let policy = IndexingPolicy::default()
+            .with_automatic(true)
+            .with_included_paths(vec![PropertyPath::from("/*")])
+            .with_excluded_paths(vec![
+                PropertyPath::from("/path/to/single/excluded/property/?"),
+                PropertyPath::from("/path/to/root/of/multiple/excluded/properties/*"),
+            ])
+            .with_spatial_indexes(vec![
+                SpatialIndex::default()
+                    .with_path("/path/to/geojson/property/?")
+                    .with_types(vec![
                         SpatialType::Point,
                         SpatialType::Polygon,
                         SpatialType::MultiPolygon,
                         SpatialType::LineString,
-                    ],
-                },
-                SpatialIndex {
-                    path: "/path/to/geojson/property2/?".to_string(),
-                    types: vec![],
-                },
-            ],
-            composite_indexes: vec![
-                CompositeIndex {
-                    properties: vec![
-                        CompositeIndexProperty {
-                            path: "/name".to_string(),
-                            order: CompositeIndexOrder::Ascending,
-                        },
-                        CompositeIndexProperty {
-                            path: "/age".to_string(),
-                            order: CompositeIndexOrder::Descending,
-                        },
-                    ],
-                },
-                CompositeIndex { properties: vec![] },
-            ],
-            vector_indexes: vec![
-                VectorIndex {
-                    path: "/vector1".to_string(),
-                    index_type: VectorIndexType::QuantizedFlat,
-                },
-                VectorIndex {
-                    path: "/vector2".to_string(),
-                    index_type: VectorIndexType::DiskANN,
-                },
-            ],
-        };
+                    ]),
+                SpatialIndex::default()
+                    .with_path("/path/to/geojson/property2/?")
+                    .with_types(vec![]),
+            ])
+            .with_composite_indexes(vec![
+                CompositeIndex::default().with_properties(vec![
+                    CompositeIndexProperty::default()
+                        .with_path("/name")
+                        .with_order(CompositeIndexOrder::Ascending),
+                    CompositeIndexProperty::default()
+                        .with_path("/age")
+                        .with_order(CompositeIndexOrder::Descending),
+                ]),
+                CompositeIndex::default().with_properties(vec![]),
+            ])
+            .with_vector_indexes(vec![
+                VectorIndex::default()
+                    .with_path("/vector1")
+                    .with_index_type(VectorIndexType::QuantizedFlat),
+                VectorIndex::default()
+                    .with_path("/vector2")
+                    .with_index_type(VectorIndexType::DiskANN),
+            ]);
         let json = serde_json::to_string(&policy).unwrap();
 
         assert_eq!(

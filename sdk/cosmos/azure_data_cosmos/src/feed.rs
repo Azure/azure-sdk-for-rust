@@ -22,6 +22,7 @@ use crate::{conditional_send::ConditionalSend, constants, models::CosmosResponse
 /// Cosmos DB queries can be executed using non-HTTP transports, depending on the circumstances.
 /// They may also produce results that don't directly correlate to specific HTTP responses (as in the case of cross-partition queries).
 /// Because of this, Cosmos DB query responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::http::Response).
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct FeedPage<T> {
     /// The items in the response.
@@ -115,6 +116,7 @@ impl<T: DeserializeOwned> FeedPage<T> {
 /// Represents a stream of pages from a Cosmos DB feed.
 ///
 /// See [`FeedPage`] for more details on Cosmos DB feeds.
+#[non_exhaustive]
 #[pin_project::pin_project]
 pub struct FeedItemIterator<T: ConditionalSend> {
     #[pin]
@@ -175,6 +177,7 @@ impl<T: ConditionalSend> Stream for FeedItemIterator<T> {
     }
 }
 
+#[non_exhaustive]
 pub struct FeedPageIterator<T: ConditionalSend>(
     #[cfg(not(target_arch = "wasm32"))] BoxStream<'static, azure_core::Result<FeedPage<T>>>,
     #[cfg(target_arch = "wasm32")]

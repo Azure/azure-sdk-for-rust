@@ -5,26 +5,27 @@ use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
 /// Represents the partition key definition for a container.
+#[non_exhaustive]
 #[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
     /// The list of partition keys paths.
-    pub paths: Vec<String>,
+    paths: Vec<String>,
 
     /// The partition key kind.
-    pub kind: PartitionKeyKind,
+    kind: PartitionKeyKind,
 
     /// The version of the partition key hash in use.
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<i32>,
+    version: Option<i32>,
 }
 
 impl PartitionKeyDefinition {
     /// Creates a new [`PartitionKeyDefinition`] from the provided list of partition key paths.
     ///
-    /// The [`PartitionKeyDefinition::kind`] will be set automatically, depending on how many paths are provided.
+    /// The kind will be set automatically, depending on how many paths are provided.
     pub fn new(paths: impl Into<Vec<String>>) -> Self {
         let paths = paths.into();
         let kind = if paths.len() > 1 {
@@ -37,6 +38,39 @@ impl PartitionKeyDefinition {
             kind,
             version: Some(2),
         }
+    }
+
+    /// Gets the list of partition key paths.
+    pub fn paths(&self) -> &[String] {
+        &self.paths
+    }
+
+    /// Sets the partition key paths.
+    pub fn with_paths(mut self, paths: Vec<String>) -> Self {
+        self.paths = paths;
+        self
+    }
+
+    /// Gets the partition key kind.
+    pub fn kind(&self) -> &PartitionKeyKind {
+        &self.kind
+    }
+
+    /// Sets the partition key kind.
+    pub fn with_kind(mut self, kind: PartitionKeyKind) -> Self {
+        self.kind = kind;
+        self
+    }
+
+    /// Gets the partition key hash version.
+    pub fn version(&self) -> Option<i32> {
+        self.version
+    }
+
+    /// Sets the partition key hash version.
+    pub fn with_version(mut self, version: Option<i32>) -> Self {
+        self.version = version;
+        self
     }
 }
 
