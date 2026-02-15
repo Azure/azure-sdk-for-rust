@@ -67,8 +67,8 @@ fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
 
 // Helper to avoid duplicating the same preferred-locations setup.
 fn options_with_preferred_locations(locations: Vec<RegionName>) -> TestOptions {
-    let client_options = CosmosClientOptions::default()
-        .with_application_preferred_regions(locations);
+    let client_options =
+        CosmosClientOptions::default().with_application_preferred_regions(locations);
     TestOptions::new().with_client_options(client_options)
 }
 
@@ -78,9 +78,7 @@ async fn create_container_and_write_item(
     container_id: &str,
     _expected_region: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let properties = ContainerProperties::default()
-        .with_id(container_id.to_string())
-        .with_partition_key("/id");
+    let properties = ContainerProperties::new(container_id.to_string(), "/id");
 
     let throughput = ThroughputProperties::manual(400);
 

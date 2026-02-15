@@ -131,9 +131,7 @@ pub extern "C" fn cosmos_database_create_container(
             parse_cstr(container_id, error::messages::INVALID_CONTAINER_ID)?.to_string();
         let partition_key_path =
             parse_cstr(partition_key_path, error::messages::INVALID_PARTITION_KEY)?.to_string();
-        let properties = ContainerProperties::default()
-            .with_id(container_id.clone())
-            .with_partition_key(partition_key_path.clone());
+        let properties = ContainerProperties::new(container_id.clone(), partition_key_path.clone());
 
         database.create_container(properties, None).await?;
 

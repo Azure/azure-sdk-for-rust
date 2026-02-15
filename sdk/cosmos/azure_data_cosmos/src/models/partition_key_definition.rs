@@ -5,8 +5,19 @@ use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
 /// Represents the partition key definition for a container.
+///
+/// # Required fields
+///
+/// * `paths` — The list of partition key paths.
+///
+/// Use [`PartitionKeyDefinition::new()`] or one of the `From` impls to construct an instance:
+///
+/// ```rust
+/// # use azure_data_cosmos::models::PartitionKeyDefinition;
+/// let pk: PartitionKeyDefinition = "/partitionKey".into();
+/// ```
 #[non_exhaustive]
-#[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
@@ -14,6 +25,7 @@ pub struct PartitionKeyDefinition {
     paths: Vec<String>,
 
     /// The partition key kind.
+    #[serde(default)]
     kind: PartitionKeyKind,
 
     /// The version of the partition key hash in use.
@@ -43,12 +55,6 @@ impl PartitionKeyDefinition {
     /// Gets the list of partition key paths.
     pub fn paths(&self) -> &[String] {
         &self.paths
-    }
-
-    /// Sets the partition key paths.
-    pub fn with_paths(mut self, paths: Vec<String>) -> Self {
-        self.paths = paths;
-        self
     }
 
     /// Gets the partition key kind.

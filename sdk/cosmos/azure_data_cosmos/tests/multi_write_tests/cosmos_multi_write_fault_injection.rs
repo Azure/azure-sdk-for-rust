@@ -62,9 +62,7 @@ async fn verify_read_fails_with_injected_error(
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::default()
-                        .with_id(container_id.clone())
-                        .with_partition_key("/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key"),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -193,9 +191,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::default()
-                        .with_id(container_id.clone())
-                        .with_partition_key("/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key"),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -285,9 +281,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::default()
-                        .with_id(container_id.clone())
-                        .with_partition_key("/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key"),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -369,9 +363,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::default()
-                        .with_id(container_id.clone())
-                        .with_partition_key("/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key"),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -453,9 +445,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::default()
-                        .with_id(container_id.clone())
-                        .with_partition_key("/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key"),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -486,8 +476,8 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, None)
                 .await;
-            let options = ItemOptions::default()
-                .with_excluded_regions(vec![SATELLITE_REGION.into()]);
+            let options =
+                ItemOptions::default().with_excluded_regions(vec![SATELLITE_REGION.into()]);
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;

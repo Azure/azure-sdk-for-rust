@@ -25,8 +25,7 @@ pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
         let properties = cosmos_client
             .create_database(
                 &test_db_id,
-                Some(CreateDatabaseOptions::default()
-                    .with_throughput(throughput)),
+                Some(CreateDatabaseOptions::default().with_throughput(throughput)),
             )
             .await?
             .into_model()?;
@@ -62,9 +61,7 @@ pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
 pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let properties = ContainerProperties::default()
-                .with_id("TheContainer")
-                .with_partition_key("/id");
+            let properties = ContainerProperties::new("TheContainer", "/id");
 
             let throughput = ThroughputProperties::manual(400);
 
@@ -72,8 +69,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
                 .create_container(
                     db_client,
                     properties.clone(),
-                    Some(CreateContainerOptions::default()
-                        .with_throughput(throughput)),
+                    Some(CreateContainerOptions::default().with_throughput(throughput)),
                 )
                 .await?;
 
@@ -104,9 +100,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let properties = ContainerProperties::default()
-                .with_id("TheContainer")
-                .with_partition_key("/id");
+            let properties = ContainerProperties::new("TheContainer", "/id");
 
             let throughput = ThroughputProperties::autoscale(5000, Some(42));
 
@@ -114,8 +108,7 @@ pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>>
                 .create_container(
                     db_client,
                     properties.clone(),
-                    Some(CreateContainerOptions::default()
-                        .with_throughput(throughput)),
+                    Some(CreateContainerOptions::default().with_throughput(throughput)),
                 )
                 .await?;
 

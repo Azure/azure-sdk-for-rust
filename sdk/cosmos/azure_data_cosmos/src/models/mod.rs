@@ -97,9 +97,20 @@ impl SystemProperties {
 
 /// Properties of a Cosmos DB database.
 ///
+/// # Required fields
+///
+/// * `id` — The unique identifier for the database.
+///
+/// Use [`DatabaseProperties::new()`] to construct an instance:
+///
+/// ```rust
+/// # use azure_data_cosmos::models::DatabaseProperties;
+/// let properties = DatabaseProperties::new("MyDatabase");
+/// ```
+///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[non_exhaustive]
-#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 pub struct DatabaseProperties {
     /// The ID of the database.
@@ -107,19 +118,22 @@ pub struct DatabaseProperties {
 
     /// A [`SystemProperties`] object containing common system properties for the database.
     #[serde(flatten)]
+    #[serde(default)]
     pub(crate) system_properties: SystemProperties,
 }
 
 impl DatabaseProperties {
+    /// Creates a new [`DatabaseProperties`] with the required `id` field.
+    pub fn new(id: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            system_properties: SystemProperties::default(),
+        }
+    }
+
     /// Gets the ID of the database.
     pub fn id(&self) -> &str {
         &self.id
-    }
-
-    /// Sets the ID of the database.
-    pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.id = id.into();
-        self
     }
 
     /// Gets the common system properties for the database.

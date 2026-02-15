@@ -27,21 +27,19 @@ where
 
 /// Properties of a Cosmos DB container.
 ///
-/// # Constructing
+/// # Required fields
 ///
-/// Use [`Default::default()`] and the `with_*` builder methods to construct this type:
+/// * `id` — The unique identifier for the container.
+/// * `partition_key` — The partition key definition.
+///
+/// Use [`ContainerProperties::new()`] to construct an instance:
 ///
 /// ```rust
 /// # use azure_data_cosmos::models::ContainerProperties;
-/// let properties = ContainerProperties::default()
-///     .with_id("NewContainer")
-///     .with_partition_key("/partitionKey");
+/// let properties = ContainerProperties::new("NewContainer", "/partitionKey");
 /// ```
-///
-/// Note that the `id` and `partition_key` values are **required** by the server.
-/// You will get an error from the server if you omit them.
 #[non_exhaustive]
-#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
@@ -52,18 +50,22 @@ pub struct ContainerProperties {
     partition_key: PartitionKeyDefinition,
 
     /// The indexing policy for the container.
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     indexing_policy: Option<IndexingPolicy>,
 
     /// The unique key policy for the container.
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     unique_key_policy: Option<UniqueKeyPolicy>,
 
     /// The conflict resolution policy for the container.
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     conflict_resolution_policy: Option<ConflictResolutionPolicy>,
 
     /// The vector embedding policy for the container.
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     vector_embedding_policy: Option<VectorEmbeddingPolicy>,
 
@@ -87,30 +89,46 @@ pub struct ContainerProperties {
 
     /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
+    #[serde(default)]
     pub(crate) system_properties: SystemProperties,
 }
 
 impl ContainerProperties {
+    /// Creates a new [`ContainerProperties`] with the required `id` and `partition_key` fields.
+    ///
+    /// Optional fields can be set via `with_*` builder methods:
+    ///
+    /// ```rust
+    /// # use azure_data_cosmos::models::ContainerProperties;
+    /// # use std::time::Duration;
+    /// let properties = ContainerProperties::new("MyContainer", "/partitionKey")
+    ///     .with_default_ttl(Duration::from_secs(3600));
+    /// ```
+    pub fn new(
+        id: impl Into<Cow<'static, str>>,
+        partition_key: impl Into<PartitionKeyDefinition>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            partition_key: partition_key.into(),
+            indexing_policy: None,
+            unique_key_policy: None,
+            conflict_resolution_policy: None,
+            vector_embedding_policy: None,
+            default_ttl: None,
+            analytical_storage_ttl: None,
+            system_properties: SystemProperties::default(),
+        }
+    }
+
     /// Gets the ID of the container.
     pub fn id(&self) -> &str {
         &self.id
     }
 
-    /// Sets the ID of the container.
-    pub fn with_id(mut self, id: impl Into<Cow<'static, str>>) -> Self {
-        self.id = id.into();
-        self
-    }
-
     /// Gets the partition key definition for the container.
     pub fn partition_key(&self) -> &PartitionKeyDefinition {
         &self.partition_key
-    }
-
-    /// Sets the partition key definition.
-    pub fn with_partition_key(mut self, partition_key: impl Into<PartitionKeyDefinition>) -> Self {
-        self.partition_key = partition_key.into();
-        self
     }
 
     /// Gets the indexing policy for the container.
@@ -225,8 +243,20 @@ impl VectorEmbeddingPolicy {
 }
 
 /// Represents a single vector embedding definition for a container.
+///
+/// # Required fields
+///
+/// * `path` — The path to the property containing the vector.
+/// * `dimensions` — The number of dimensions in the vector.
+///
+/// Use [`VectorEmbedding::new()`] to construct an instance:
+///
+/// ```rust
+/// # use azure_data_cosmos::models::VectorEmbedding;
+/// let embedding = VectorEmbedding::new("/vector", 1536);
+/// ```
 #[non_exhaustive]
-#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbedding {
@@ -234,25 +264,34 @@ pub struct VectorEmbedding {
     path: String,
 
     /// The data type of the elements stored in the vector.
+    #[serde(default)]
     data_type: VectorDataType,
 
     /// The number of dimensions in the vector.
     dimensions: u32,
 
     /// The [`VectorDistanceFunction`] used to calculate the distance between vectors.
+    #[serde(default)]
     distance_function: VectorDistanceFunction,
 }
 
 impl VectorEmbedding {
+    /// Creates a new [`VectorEmbedding`] with the required `path` and `dimensions` fields.
+    ///
+    /// The `data_type` defaults to [`VectorDataType::Float32`] and the `distance_function` defaults
+    /// to [`VectorDistanceFunction::Cosine`]. Use the `with_*` builder methods to override them.
+    pub fn new(path: impl Into<String>, dimensions: u32) -> Self {
+        Self {
+            path: path.into(),
+            data_type: VectorDataType::default(),
+            dimensions,
+            distance_function: VectorDistanceFunction::default(),
+        }
+    }
+
     /// Gets the path to the property containing the vector.
     pub fn path(&self) -> &str {
         &self.path
-    }
-
-    /// Sets the path.
-    pub fn with_path(mut self, path: impl Into<String>) -> Self {
-        self.path = path.into();
-        self
     }
 
     /// Gets the data type of the vector elements.
@@ -269,12 +308,6 @@ impl VectorEmbedding {
     /// Gets the number of dimensions in the vector.
     pub fn dimensions(&self) -> u32 {
         self.dimensions
-    }
-
-    /// Sets the number of dimensions.
-    pub fn with_dimensions(mut self, dimensions: u32) -> Self {
-        self.dimensions = dimensions;
-        self
     }
 
     /// Gets the distance function used for this vector.
@@ -351,8 +384,19 @@ impl UniqueKeyPolicy {
 }
 
 /// Represents a single unique key for a container.
+///
+/// # Required fields
+///
+/// * `paths` — The set of paths which must be unique for each item.
+///
+/// Use [`UniqueKey::new()`] to construct an instance:
+///
+/// ```rust
+/// # use azure_data_cosmos::models::UniqueKey;
+/// let key = UniqueKey::new(vec!["/email".to_string()]);
+/// ```
 #[non_exhaustive]
-#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKey {
@@ -361,15 +405,14 @@ pub struct UniqueKey {
 }
 
 impl UniqueKey {
+    /// Creates a new [`UniqueKey`] with the required `paths` field.
+    pub fn new(paths: Vec<String>) -> Self {
+        Self { paths }
+    }
+
     /// Gets the set of paths which must be unique for each item.
     pub fn paths(&self) -> &[String] {
         &self.paths
-    }
-
-    /// Sets the paths.
-    pub fn with_paths(mut self, paths: Vec<String>) -> Self {
-        self.paths = paths;
-        self
     }
 }
 
@@ -499,9 +542,7 @@ mod tests {
         // If it does, users who are using `..Default::default()` syntax will start sending an unexpected payload to the server.
         // In rare cases, it's reasonable to update this test, if the new generated JSON is considered _equivalent_ to the original by the server.
         // But in general, a failure in this test means that the same user code will send an unexpected value in a new version of the SDK.
-        let properties = ContainerProperties::default()
-            .with_id("MyContainer")
-            .with_partition_key("/partitionKey");
+        let properties = ContainerProperties::new("MyContainer", "/partitionKey");
         let json = serde_json::to_string(&properties).unwrap();
 
         assert_eq!(

@@ -70,8 +70,7 @@ pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
         let properties = cosmos_client
             .create_database(
                 &test_db_id,
-                Some(CreateDatabaseOptions::default()
-                    .with_throughput(throughput)),
+                Some(CreateDatabaseOptions::default().with_throughput(throughput)),
             )
             .await?
             .into_model()?;

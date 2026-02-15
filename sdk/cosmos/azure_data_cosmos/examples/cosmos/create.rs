@@ -140,9 +140,10 @@ impl CreateCommand {
                             panic!("only up to 3 partition key paths are supported");
                         }
 
-                        ContainerProperties::default()
-                            .with_id(id.expect("the ID is required when not using '--json'"))
-                            .with_partition_key(PartitionKeyDefinition::new(partition_key))
+                        ContainerProperties::new(
+                            id.expect("the ID is required when not using '--json'"),
+                            PartitionKeyDefinition::new(partition_key),
+                        )
                     }
                 };
                 let container = client

@@ -23,16 +23,13 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             // Create the container
-            let properties = ContainerProperties::default()
-                .with_id("TheContainer")
-                .with_partition_key("/id")
-                .with_indexing_policy(
-                    IndexingPolicy::default()
-                        .with_included_paths(vec!["/*".into()])
-                        .with_excluded_paths(vec![r#"/"_etag"/?"#.into()])
-                        .with_automatic(true)
-                        .with_indexing_mode(IndexingMode::Consistent),
-                );
+            let properties = ContainerProperties::new("TheContainer", "/id").with_indexing_policy(
+                IndexingPolicy::default()
+                    .with_included_paths(vec!["/*".into()])
+                    .with_excluded_paths(vec![r#"/"_etag"/?"#.into()])
+                    .with_automatic(true)
+                    .with_indexing_mode(IndexingMode::Consistent),
+            );
 
             let throughput = ThroughputProperties::manual(400);
 
@@ -40,8 +37,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 .create_container(
                     db_client,
                     properties.clone(),
-                    Some(CreateContainerOptions::default()
-                        .with_throughput(throughput)),
+                    Some(CreateContainerOptions::default().with_throughput(throughput)),
                 )
                 .await?;
 
@@ -86,16 +82,17 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             assert_eq!(vec![properties.id().to_string()], ids);
 
             let container_client = db_client.container_client(properties.id());
-            let updated_properties = ContainerProperties::default()
-                .with_id(properties.id().to_string())
-                .with_partition_key(properties.partition_key().clone())
-                .with_indexing_policy(
-                    IndexingPolicy::default()
-                        .with_included_paths(vec![])
-                        .with_excluded_paths(vec![])
-                        .with_automatic(false)
-                        .with_indexing_mode(IndexingMode::None),
-                );
+            let updated_properties = ContainerProperties::new(
+                properties.id().to_string(),
+                properties.partition_key().clone(),
+            )
+            .with_indexing_policy(
+                IndexingPolicy::default()
+                    .with_included_paths(vec![])
+                    .with_excluded_paths(vec![])
+                    .with_automatic(false)
+                    .with_indexing_mode(IndexingMode::None),
+            );
             let update_response = container_client
                 .replace(updated_properties, None)
                 .await?
@@ -148,16 +145,15 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             // Create the container
-            let properties = ContainerProperties::default()
-                .with_id("TheContainer")
-                .with_partition_key(("/parent", "/child", "/grandchild"))
-                .with_indexing_policy(
-                    IndexingPolicy::default()
-                        .with_included_paths(vec!["/*".into()])
-                        .with_excluded_paths(vec![r#"/"_etag"/?"#.into()])
-                        .with_automatic(true)
-                        .with_indexing_mode(IndexingMode::Consistent),
-                );
+            let properties =
+                ContainerProperties::new("TheContainer", ("/parent", "/child", "/grandchild"))
+                    .with_indexing_policy(
+                        IndexingPolicy::default()
+                            .with_included_paths(vec!["/*".into()])
+                            .with_excluded_paths(vec![r#"/"_etag"/?"#.into()])
+                            .with_automatic(true)
+                            .with_indexing_mode(IndexingMode::Consistent),
+                    );
 
             let container_client = run_context
                 .create_container(db_client, properties.clone(), None)
