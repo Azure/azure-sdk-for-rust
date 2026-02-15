@@ -19,6 +19,7 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 /// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
+#[non_exhaustive]
 pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,

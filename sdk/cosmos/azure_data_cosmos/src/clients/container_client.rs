@@ -24,6 +24,7 @@ use serde::{de::DeserializeOwned, Serialize};
 /// A client for working with a specific container in a Cosmos DB account.
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
+#[non_exhaustive]
 #[derive(Clone)]
 pub struct ContainerClient {
     link: ResourceLink,

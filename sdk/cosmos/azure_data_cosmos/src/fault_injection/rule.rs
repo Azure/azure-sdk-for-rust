@@ -10,20 +10,21 @@ use super::condition::FaultInjectionCondition;
 use super::result::FaultInjectionResult;
 
 /// A fault injection rule that defines when and how to inject faults.
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct FaultInjectionRule {
     /// The condition under which to inject the fault.
-    pub condition: FaultInjectionCondition,
+    pub(crate) condition: FaultInjectionCondition,
     /// The result to inject when the condition is met.
-    pub result: FaultInjectionResult,
+    pub(crate) result: FaultInjectionResult,
     /// The absolute time at which the rule becomes active.
-    pub start_time: Instant,
+    pub(crate) start_time: Instant,
     /// The absolute time at which the rule expires, if set.
-    pub end_time: Option<Instant>,
+    pub(crate) end_time: Option<Instant>,
     /// The total hit limit of the rule.
-    pub hit_limit: Option<u32>,
+    pub(crate) hit_limit: Option<u32>,
     /// Unique identifier for the fault injection scenario.
-    pub id: String,
+    pub(crate) id: String,
     /// Whether the rule is currently enabled.
     enabled: AtomicBool,
 }
@@ -43,6 +44,36 @@ impl Clone for FaultInjectionRule {
 }
 
 impl FaultInjectionRule {
+    /// Returns the condition under which to inject the fault.
+    pub fn condition(&self) -> &FaultInjectionCondition {
+        &self.condition
+    }
+
+    /// Returns the result to inject when the condition is met.
+    pub fn result(&self) -> &FaultInjectionResult {
+        &self.result
+    }
+
+    /// Returns the absolute time at which the rule becomes active.
+    pub fn start_time(&self) -> Instant {
+        self.start_time
+    }
+
+    /// Returns the absolute time at which the rule expires, if set.
+    pub fn end_time(&self) -> Option<Instant> {
+        self.end_time
+    }
+
+    /// Returns the total hit limit of the rule.
+    pub fn hit_limit(&self) -> Option<u32> {
+        self.hit_limit
+    }
+
+    /// Returns the unique identifier for the fault injection scenario.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
     /// Returns whether the rule is currently enabled.
     pub fn is_enabled(&self) -> bool {
         self.enabled.load(std::sync::atomic::Ordering::SeqCst)
@@ -62,6 +93,7 @@ impl FaultInjectionRule {
 }
 
 /// Builder for creating a fault injection rule.
+#[non_exhaustive]
 pub struct FaultInjectionRuleBuilder {
     /// The condition under which to inject the fault.
     condition: FaultInjectionCondition,

@@ -96,15 +96,26 @@ Every truly public struct must be annotated with `#[non_exhaustive]`. This preve
 
 #### b) No `pub` fields — use the most restrictive visibility
 
-Fields on truly public structs must **never** be `pub`. Choose the visibility based on whether a getter or setter exists:
+Fields on truly public structs must **never** be `pub`. Choose the visibility by checking both (1) whether a public accessor exists **and** (2) whether crate-internal code in other modules accesses the field directly:
 
 | Scenario | Field visibility |
 |---|---|
-| Field has a public getter and/or `with_*` setter | **Private** (no modifier). All access goes through the accessor methods. |
+| Field has a public getter and/or `with_*` setter **and** no crate-internal code outside the defining module accesses the field directly | **Private** (no modifier). All access — including crate-internal — goes through the accessor methods. |
+| Field has a public getter and/or `with_*` setter **but** crate-internal code in other modules also accesses the field directly (e.g., for mutation, move/consume, or nested field traversal) | **`pub(crate)`**. The getter serves external consumers; `pub(crate)` permits efficient internal access without forcing all crate-internal code through the public API. |
 | Field has no public accessor but is read/written inside the crate | **`pub(crate)`** (or `pub(super)` if only the parent module needs access) |
 | Field has no accessor and is only used in the declaring module | **Private** (no modifier) |
 
-**Rationale**: Tokio and other major Rust crates universally keep fields private on public structs. Making a field `pub` is a semver commitment — removing it later is a breaking change. Private fields with accessors give full control over the API surface. Using `pub(crate)` on a field that already has a public getter/setter is redundant — the accessor should be the single path for access, even within the crate.
+**Rationale**: Tokio and other major Rust crates universally keep fields private on public structs. Making a field `pub` is a semver commitment — removing it later is a breaking change. Private fields with accessors give full control over the API surface. When a field has a public getter but crate-internal code in other modules also needs direct access — for mutation, move/consume, or nested field traversal — use `pub(crate)`. The public getter exists for external consumers; `pub(crate)` avoids forcing crate-internal code through the public API when direct access is more ergonomic or necessary (e.g., `options.method_options.context` or `options.fault_injection_enabled = true`). Only make a field fully private when **all** access — including crate-internal — goes through the accessor methods.
+
+**How to determine the correct visibility**: Before deciding between private and `pub(crate)`, search the crate for direct field access outside the defining module (e.g., `grep` for `.field_name` in other `.rs` files). If any crate-internal code accesses the field directly — not through a getter or setter — the field must be `pub(crate)`. If all access goes through the accessor methods, the field should be private (no modifier).
+
+**Examples**:
+
+- `ItemOptions::session_token` — has a getter `session_token()` and a setter `with_session_token()`. All crate-internal code accesses it through the getter or through `AsHeaders` in the same module. No direct field access from other modules. → **Private** (no modifier).
+
+- `ItemOptions::method_options` — has a getter `method_options()`. But `container_client.rs` accesses `options.method_options.context` directly for nested field traversal. → **`pub(crate)`**.
+
+- `CosmosClientOptions::fault_injection_enabled` — has a getter `fault_injection_enabled()`. But `client_builder.rs` writes `options.fault_injection_enabled = true` directly. → **`pub(crate)`**.
 
 #### c) Getter methods for readable fields
 
@@ -139,9 +150,16 @@ let options = ItemOptions::default()
     .with_priority(PriorityLevel::High);
 ```
 
-#### f) No exemptions
+#### f) Exemptions
 
-These rules apply to **all** truly public structs, including:
+**Newtype structs** are exempt from rules (a), (b), (c), (d), and (e) above. Since a newtype wraps a single value, the full named-field struct rules (private fields, getters, `with_*` setters, `Default`, `#[non_exhaustive]`) do not apply. Instead, newtypes should:
+
+- Keep the inner field **private**.
+- Provide construction via `new()`, `From` impls, or associated constants.
+- Provide access to the inner value via a getter (e.g., `value()`) or `Into`/`AsRef` impls.
+- **Omit** `#[non_exhaustive]`.
+
+All other truly public structs — including options structs, serde model structs, and builder structs — get the full set of rules with no further exemptions:
 
 - **Options structs** (e.g., `ItemOptions`, `QueryOptions`, `CosmosClientOptions`)
 - **Serde model structs** (e.g., `ContainerProperties`, `DatabaseProperties`)
@@ -155,8 +173,10 @@ Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `
 1. Adjust visibility modifiers on structs and fields according to Steps 3–5.
 2. Add `#[non_exhaustive]` to truly public structs that lack it.
 3. Remove `#[non_exhaustive]` from non-public structs that have it unnecessarily.
-4. Make `pub` fields private on truly public structs. For each field that was previously `pub`:
-   - If a getter and/or `with_*` setter is being generated (or already exists), make the field **private** (no modifier).
+4. Make `pub` fields private or `pub(crate)` on truly public structs. For each field that was previously `pub`:
+   - Search the crate for direct field access outside the defining module.
+   - If a getter and/or `with_*` setter exists (or is being generated) **and** no crate-internal code outside the defining module accesses the field directly, make the field **private** (no modifier).
+   - If a getter and/or `with_*` setter exists **but** crate-internal code in other modules also accesses the field directly (mutation, move/consume, nested traversal), make the field **`pub(crate)`**.
    - If no accessor is generated and the field is used elsewhere in the crate, use the most restrictive visibility that compiles (`pub(crate)` or `pub(super)`).
    - Generate getter methods and `with_*` setter methods for each field that external consumers need to read or write.
 5. Add `#[derive(Default)]` to truly public structs that lack it (where all field types also implement `Default`).

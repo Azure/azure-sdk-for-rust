@@ -21,6 +21,7 @@ use azure_core::credentials::Secret;
 use azure_core::http::{LoggingOptions, RetryOptions};
 
 /// Client for Azure Cosmos DB.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     databases_link: ResourceLink,

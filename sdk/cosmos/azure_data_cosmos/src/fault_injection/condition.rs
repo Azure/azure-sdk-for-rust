@@ -7,17 +7,36 @@ use super::FaultOperationType;
 use crate::regions::RegionName;
 
 /// Defines the condition under which a fault injection rule should be applied.
+#[non_exhaustive]
 #[derive(Clone, Default, Debug)]
 pub struct FaultInjectionCondition {
     /// The type of operation to which the fault injection applies.
-    pub operation_type: Option<FaultOperationType>,
+    pub(crate) operation_type: Option<FaultOperationType>,
     /// The region to which the fault injection applies.
-    pub region: Option<RegionName>,
+    pub(crate) region: Option<RegionName>,
     /// The container ID to which the fault injection applies.
-    pub container_id: Option<String>,
+    pub(crate) container_id: Option<String>,
+}
+
+impl FaultInjectionCondition {
+    /// Returns the operation type to which the fault injection applies.
+    pub fn operation_type(&self) -> Option<FaultOperationType> {
+        self.operation_type
+    }
+
+    /// Returns the region to which the fault injection applies.
+    pub fn region(&self) -> Option<&RegionName> {
+        self.region.as_ref()
+    }
+
+    /// Returns the container ID to which the fault injection applies.
+    pub fn container_id(&self) -> Option<&str> {
+        self.container_id.as_deref()
+    }
 }
 
 /// Builder for creating a FaultInjectionCondition.
+#[non_exhaustive]
 pub struct FaultInjectionConditionBuilder {
     operation_type: Option<FaultOperationType>,
     region: Option<RegionName>,

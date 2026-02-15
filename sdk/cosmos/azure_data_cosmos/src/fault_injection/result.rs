@@ -8,24 +8,46 @@ use std::time::Duration;
 use super::FaultInjectionErrorType;
 
 /// Represents a server error to be injected.
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct FaultInjectionResult {
     /// The type of server error to inject.
-    pub error_type: Option<FaultInjectionErrorType>,
+    pub(crate) error_type: Option<FaultInjectionErrorType>,
     /// Delay before injecting the error.
-    pub delay: Duration,
+    pub(crate) delay: Duration,
     /// Probability of injecting the error (0.0 to 1.0).
     probability: f32,
 }
 
 impl FaultInjectionResult {
+    /// Returns the type of server error to inject.
+    pub fn error_type(&self) -> Option<FaultInjectionErrorType> {
+        self.error_type
+    }
+
+    /// Returns the delay before injecting the error.
+    pub fn delay(&self) -> Duration {
+        self.delay
+    }
+
     /// Returns the probability of injecting the fault (0.0 to 1.0).
     pub fn probability(&self) -> f32 {
         self.probability
     }
 }
 
+impl Default for FaultInjectionResult {
+    fn default() -> Self {
+        Self {
+            error_type: None,
+            delay: Duration::ZERO,
+            probability: 1.0,
+        }
+    }
+}
+
 /// Builder for creating a FaultInjectionResult.
+#[non_exhaustive]
 pub struct FaultInjectionResultBuilder {
     error_type: Option<FaultInjectionErrorType>,
     delay: Duration,
