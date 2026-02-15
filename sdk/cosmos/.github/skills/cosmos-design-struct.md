@@ -19,12 +19,24 @@ arguments:
     description: >
       If true, automatically fix violations (adjust visibility, add #[non_exhaustive], generate getters/setters,
       add Default derive). If false, only report violations with proposed changes.
+  changed-only:
+    type: boolean
+    required: false
+    default: true
+    description: >
+      If true, only scan `.rs` files that differ between the current local branch and `main`
+      (i.e., `git diff --name-only main -- <target path>`). This limits work when the skill
+      is triggered automatically. If false, scan all `.rs` files under the target path.
 argument-hints:
   scope:
     - azure_data_cosmos
     - azure_data_cosmos_native
 
   auto-fix:
+    - true
+    - false
+
+  changed-only:
     - true
     - false
 ---
@@ -50,12 +62,17 @@ Follow these steps strictly:
 - Otherwise, set the target path to `sdk/cosmos`.
 - Always include per-crate `tests/` directories in the validation scope (e.g., `sdk/cosmos/azure_data_cosmos/tests/`).
 
-### Step 2 — Scan all struct declarations
+### Step 2 — Determine file scope
 
-- Find all `struct` declarations in `.rs` files under the target path(s).
-- **Skip** files in `generated/` subdirectories — these are produced by external tools and must never be modified.
+- If `changed-only` is `true` (the default), restrict scanning to `.rs` files that differ between the current local branch and `main`. Use `git diff --name-only main -- <target path>` (and include per-crate `tests/` directories) to obtain the list. Only `.rs` files in the result set are scanned; all other files are skipped.
+- If `changed-only` is `false`, scan **all** `.rs` files under the target path(s).
+- In both modes, **skip** files in `generated/` subdirectories — these are produced by external tools and must never be modified.
 
-### Step 3 — Classify each struct
+### Step 3 — Scan struct declarations
+
+- Find all `struct` declarations in the `.rs` files identified in Step 2.
+
+### Step 4 — Classify each struct
 
 Classify every struct into exactly one of these categories:
 
@@ -70,7 +87,7 @@ Classify every struct into exactly one of these categories:
    - Use the most restrictive visibility that still compiles (no modifier for module-private, `pub(super)` for parent module access, `pub(crate)` for crate-wide access).
    - **Omit** `#[non_exhaustive]`.
 
-### Step 4 — Apply visibility rules
+### Step 5 — Apply visibility rules
 
 For **all** structs regardless of category:
 
@@ -86,7 +103,7 @@ Additional rules:
 - If a struct is marked `pub` but lives inside a non-public module (e.g., `pub struct Foo` inside `pub(crate) mod internal`), change the struct to use the **effective** visibility: `pub(crate) struct Foo`. This makes the actual visibility obvious at the struct declaration site without requiring the reader to trace module ancestry.
 - Fields on effectively-scoped or internal structs **can** use `pub` — the struct-level visibility already constrains access. This is an intentional choice to reduce repetitive `pub(crate)` or `pub(super)` annotations on fields while still making the effective visibility clear and easy to review from the struct declaration alone.
 
-### Step 5 — Apply truly-public struct rules
+### Step 6 — Apply truly-public struct rules
 
 These rules apply **only** to structs classified as **truly public** in Step 3:
 
@@ -166,11 +183,11 @@ All other truly public structs — including options structs, serde model struct
 
 Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `pub(crate)` is needed for serde compatibility.
 
-### Step 6 — Auto-fix or report
+### Step 7 — Auto-fix or report
 
 #### If `auto-fix` is `true`
 
-1. Adjust visibility modifiers on structs and fields according to Steps 3–5.
+1. Adjust visibility modifiers on structs and fields according to Steps 4–6.
 2. Add `#[non_exhaustive]` to truly public structs that lack it.
 3. Remove `#[non_exhaustive]` from non-public structs that have it unnecessarily.
 4. Make `pub` fields private or `pub(crate)` on truly public structs. For each field that was previously `pub`:
@@ -200,7 +217,7 @@ Emit a structured report listing every violation:
 - **Proposed**: <proposed fix>
 ```
 
-### Step 7 — Produce summary
+### Step 8 — Produce summary
 
 Regardless of the `auto-fix` setting, always produce a final summary:
 
