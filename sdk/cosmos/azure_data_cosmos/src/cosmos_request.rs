@@ -4,6 +4,7 @@
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::FaultOperationType;
 use crate::operation_context::OperationType;
+use crate::pipeline::components::RoutingState;
 use crate::regions::RegionName;
 use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
@@ -17,7 +18,7 @@ use serde::Serialize;
 /// may be signed with a resource token (e.g. restricted delegation scenarios).
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum AuthorizationTokenType {
+pub(crate) enum AuthorizationTokenType {
     /// Use the account's primary (or secondary) key material.
     Primary,
     /// Use a resource token scoped to a particular resource (fine‑grained auth).
@@ -26,7 +27,7 @@ pub enum AuthorizationTokenType {
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PartitionKeyRangeIdentity {
+pub(crate) struct PartitionKeyRangeIdentity {
     pub collection_rid: String,
     pub partition_key_range_id: String,
 }
@@ -39,7 +40,7 @@ pub struct PartitionKeyRangeIdentity {
 /// influence retry or gateway behaviors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(dead_code)]
-pub struct CosmosRequest {
+pub(crate) struct CosmosRequest {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
     pub resource_link: ResourceLink,
@@ -62,6 +63,7 @@ pub struct CosmosRequest {
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
     pub excluded_regions: Option<Vec<RegionName>>,
+    pub routing: RoutingState,
 }
 
 impl CosmosRequest {
@@ -90,6 +92,7 @@ impl CosmosRequest {
             continuation: None,
             entity_id: None,
             excluded_regions: None,
+            routing: RoutingState::default(),
         }
     }
 
@@ -182,7 +185,7 @@ impl CosmosRequest {
 /// the original `new` constructor for backward compatibility.
 #[derive(Clone)]
 #[allow(dead_code)]
-pub struct CosmosRequestBuilder {
+pub(crate) struct CosmosRequestBuilder {
     operation_type: OperationType,
     resource_link: ResourceLink,
     partition_key: PartitionKey,

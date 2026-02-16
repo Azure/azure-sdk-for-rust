@@ -15,13 +15,9 @@ pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::async_runtime::get_async_runtime;
 use azure_core::error::{CheckSuccessOptions, ErrorKind};
 use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
-use components::{OperationInfo, RetryState, RoutingState, ThrottleState};
-use retry_decisions::{
-    apply_data_plane_decision, apply_metadata_decision, apply_routing_for_next_region,
-    apply_routing_for_write_endpoint, apply_service_unavailable_decision, apply_session_decision,
-    apply_throttle_decision, decide_data_plane_retry, decide_metadata_retry, decide_throttle_retry,
-    mark_endpoint_failed, RetryDecision,
-};
+use azure_core::time::Duration;
+use components::{CosmosStatus, OperationInfo, RetryState, ThrottleState};
+use retry_decisions::RetryDecision;
 use std::sync::Arc;
 use tracing::debug;
 use url::Url;
@@ -114,21 +110,34 @@ impl GatewayPipeline {
         }
 
         // ── Initialize mutable state components ─────────────────────────
-        let mut routing = RoutingState::default();
         let mut retry = RetryState::default();
         let mut throttle = ThrottleState::default();
 
+        // Safety bound: prevents infinite loops if decision logic has a bug
+        const MAX_TOTAL_RETRIES: i32 = 150;
+        let mut total_retries: i32 = 0;
+
         // ── Orchestration loop ──────────────────────────────────────────
         loop {
+            if total_retries >= MAX_TOTAL_RETRIES {
+                return Err(azure_core::Error::with_message(
+                    ErrorKind::Other,
+                    format!(
+                        "Exceeded maximum total retry count ({MAX_TOTAL_RETRIES}); aborting request"
+                    ),
+                ));
+            }
+            total_retries += 1;
+
             // Refresh location cache (non-blocking, best-effort)
             _ = self.global_endpoint_manager.refresh_location(false).await;
 
             // Resolve endpoint from current routing state
             let endpoint = self
                 .global_endpoint_manager
-                .resolve_endpoint_from_components(&routing, &op);
+                .resolve_endpoint_from_components(&cosmos_request.routing, &op);
 
-            routing.resolved_endpoint = Some(endpoint.clone());
+            cosmos_request.routing.resolved_endpoint = Some(endpoint.clone());
 
             // Stamp the resolved endpoint on the request for wire conversion
             cosmos_request
@@ -156,6 +165,9 @@ impl GatewayPipeline {
                     skip_checks: false,
                     check_success: success_options,
                 };
+
+                // TODO @fabianm - Refactor this when moving to Driver - there is no need to
+                // pass resource link via context to AuthorizationPolicy when we use our own pipeline
                 let ctx_owned = ctx.with_value(resource_link).into_owned();
                 pipeline
                     .send(&ctx_owned, &mut raw_req, Some(pipeline_send_options))
@@ -163,24 +175,14 @@ impl GatewayPipeline {
             };
 
             // ── Evaluate response ───────────────────────────────────────
-            let (status, sub_status) = extract_status_info(&result);
+            let cosmos_status = extract_status_info(&result);
+            let retry_after = extract_retry_after(&result);
 
-            let decision = if let Some(status) = status {
-                // First check data-plane / metadata retry
-                let dp_decision = if op.is_metadata {
-                    decide_metadata_retry(status, sub_status, &retry, &op)
+            let decision = if let Some(ref cs) = cosmos_status {
+                if op.is_metadata() {
+                    RetryDecision::for_metadata(cs, &retry, &op, &throttle, retry_after)
                 } else {
-                    decide_data_plane_retry(status, sub_status, &retry, &op)
-                };
-
-                // If data-plane returns Done and this is a 429, check throttle
-                if dp_decision == RetryDecision::Done
-                    && status == azure_core::http::StatusCode::TooManyRequests
-                {
-                    let retry_after_ms = extract_retry_after_ms(&result);
-                    decide_throttle_retry(&throttle, retry_after_ms)
-                } else {
-                    dp_decision
+                    RetryDecision::for_data_plane(cs, &retry, &op, &throttle, retry_after)
                 }
             } else {
                 // Transport error (no HTTP status): no retry
@@ -194,19 +196,18 @@ impl GatewayPipeline {
                 RetryDecision::Abort => return finalize(result, cosmos_request),
 
                 RetryDecision::RetryNextRegion { delay } => {
-                    // Determine which counter to bump based on the status
-                    if let Some(s) = status {
-                        if s == azure_core::http::StatusCode::ServiceUnavailable
-                            || (s == azure_core::http::StatusCode::InternalServerError
-                                && op.is_read_only)
-                            || (s == azure_core::http::StatusCode::Gone
-                                && sub_status == Some(SubStatusCode::LEASE_NOT_FOUND))
-                        {
-                            retry = apply_service_unavailable_decision(retry);
-                        } else if op.is_metadata {
-                            retry = apply_metadata_decision(retry);
+                    // Determine which counter to bump and the new location index
+                    let use_preferred;
+                    if let Some(ref cs) = cosmos_status {
+                        if cs.is_service_unavailable_class(op.is_read_only()) {
+                            retry = retry.apply_service_unavailable();
+                            use_preferred = true;
+                        } else if op.is_metadata() {
+                            retry = retry.apply_metadata();
+                            use_preferred = true;
                         } else {
-                            retry = apply_data_plane_decision(retry, &decision);
+                            retry = retry.apply_data_plane(&decision);
+                            use_preferred = !cs.is_write_forbidden();
                             // Mark endpoint unavailable & force-refresh for endpoint failover
                             mark_unavailable_and_refresh(
                                 &self.global_endpoint_manager,
@@ -217,29 +218,45 @@ impl GatewayPipeline {
                             .await;
                         }
                     } else {
-                        retry = apply_data_plane_decision(retry, &decision);
+                        retry = retry.apply_data_plane(&decision);
+                        use_preferred = true;
                     }
 
-                    routing = mark_endpoint_failed(routing, &endpoint);
-                    routing = apply_routing_for_next_region(
-                        routing,
-                        &retry,
-                        status != Some(azure_core::http::StatusCode::Forbidden),
-                    );
+                    cosmos_request.routing = cosmos_request.routing.mark_endpoint_failed(&endpoint);
+
+                    // Compute the new location index based on the relevant counter
+                    let new_index = if use_preferred {
+                        // For service-unavailable-class or metadata: use svc unavailable count
+                        // For data-plane failover with preferred: use failover count
+                        if cosmos_status
+                            .as_ref()
+                            .is_some_and(|cs| cs.is_service_unavailable_class(op.is_read_only()))
+                            || op.is_metadata()
+                        {
+                            retry.service_unavailable_count
+                        } else {
+                            retry.failover_count
+                        }
+                    } else {
+                        retry.failover_count
+                    };
+                    cosmos_request.routing = cosmos_request
+                        .routing
+                        .apply_for_next_region(new_index, use_preferred);
 
                     get_async_runtime().sleep(*delay).await;
                 }
 
                 RetryDecision::RetryOnWriteEndpoint { delay } => {
-                    retry = apply_session_decision(retry);
-                    routing = mark_endpoint_failed(routing, &endpoint);
-                    routing = apply_routing_for_write_endpoint(routing);
+                    retry = retry.apply_session();
+                    cosmos_request.routing = cosmos_request.routing.mark_endpoint_failed(&endpoint);
+                    cosmos_request.routing = cosmos_request.routing.apply_for_write_endpoint();
 
                     get_async_runtime().sleep(*delay).await;
                 }
 
                 RetryDecision::RetrySameEndpoint { delay } => {
-                    throttle = apply_throttle_decision(throttle, &decision);
+                    throttle = throttle.apply(&decision);
 
                     get_async_runtime().sleep(*delay).await;
                 }
@@ -247,9 +264,10 @@ impl GatewayPipeline {
 
             // Update routing state on the request_context for the next attempt
             cosmos_request.request_context.clear_route_to_location();
-            cosmos_request
-                .request_context
-                .route_to_location_index(routing.location_index, routing.use_preferred_locations);
+            cosmos_request.request_context.route_to_location_index(
+                cosmos_request.routing.location_index,
+                cosmos_request.routing.use_preferred_locations,
+            );
         }
     }
 }
@@ -262,7 +280,7 @@ async fn mark_unavailable_and_refresh(
     op: &OperationInfo,
     force_refresh: bool,
 ) {
-    if op.is_read_only {
+    if op.is_read_only() {
         gem.mark_endpoint_unavailable_for_read(endpoint);
     } else {
         gem.mark_endpoint_unavailable_for_write(endpoint);
@@ -270,10 +288,9 @@ async fn mark_unavailable_and_refresh(
     _ = gem.refresh_location(force_refresh).await;
 }
 
-/// Extracts HTTP status and Cosmos sub-status from a result.
-fn extract_status_info(
-    result: &azure_core::Result<RawResponse>,
-) -> (Option<azure_core::http::StatusCode>, Option<SubStatusCode>) {
+/// Extracts HTTP status and Cosmos sub-status from a result, returning a
+/// [`CosmosStatus`] if an HTTP response is available.
+fn extract_status_info(result: &azure_core::Result<RawResponse>) -> Option<CosmosStatus> {
     match result {
         Ok(resp) => {
             let sub = resp
@@ -281,7 +298,7 @@ fn extract_status_info(
                 .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
                 .ok()
                 .map(SubStatusCode::from);
-            (Some(resp.status()), sub)
+            Some(CosmosStatus::new(resp.status(), sub))
         }
         Err(err) => {
             if let ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
@@ -291,16 +308,16 @@ fn extract_status_info(
                         .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
                         .ok()
                         .map(SubStatusCode::from);
-                    return (Some(resp.status()), sub);
+                    return Some(CosmosStatus::new(resp.status(), sub));
                 }
             }
-            (None, None)
+            None
         }
     }
 }
 
-/// Extracts the Retry-After header value in milliseconds from a response.
-fn extract_retry_after_ms(result: &azure_core::Result<RawResponse>) -> Option<i64> {
+/// Extracts the Retry-After header value as a [`Duration`] from a response.
+fn extract_retry_after(result: &azure_core::Result<RawResponse>) -> Option<Duration> {
     let resp = match result {
         Ok(resp) => resp,
         Err(err) => {
@@ -315,6 +332,8 @@ fn extract_retry_after_ms(result: &azure_core::Result<RawResponse>) -> Option<i6
     resp.headers()
         .get_as::<i64, std::num::ParseIntError>(&constants::RETRY_AFTER_MS)
         .ok()
+        .filter(|&ms| ms > 0)
+        .map(Duration::milliseconds)
 }
 
 /// Converts the HTTP result into a typed `CosmosResponse`, propagating errors.

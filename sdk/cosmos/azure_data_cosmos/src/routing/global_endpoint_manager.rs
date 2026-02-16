@@ -135,7 +135,7 @@ impl GlobalEndpointManager {
 
         let mut location_endpoint_to_route = None;
         if !use_preferred
-            || (!op.is_read_only
+            || (!op.is_read_only()
                 && !cache.can_support_multiple_write_locations(op.resource_type, op.operation_type))
         {
             let location_info = &cache.locations_info;

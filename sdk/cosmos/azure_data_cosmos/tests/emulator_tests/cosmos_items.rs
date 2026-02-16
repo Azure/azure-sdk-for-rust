@@ -57,13 +57,7 @@ fn assert_response<T>(
     }
 
     assert_eq!(
-        response
-            .request()
-            .clone()
-            .into_raw_request()
-            .url()
-            .host_str()
-            .unwrap(),
+        response.request_url().host_str().unwrap(),
         expected_endpoint,
         "unexpected endpoint"
     );
