@@ -271,7 +271,11 @@ fn wasm_request_sent_status(error: &azure_core::Error) -> RequestSentStatus {
     let msg = error.to_string().to_lowercase();
 
     // Connection-related errors (before sending)
-    if msg.contains("dns") || msg.contains("connection refused") || msg.contains("connect") {
+    if msg.contains("dns")
+        || msg.contains("connection refused")
+        || msg.contains("connection error")
+        || msg.contains("connection timed out")
+    {
         return RequestSentStatus::NotSent;
     }
 

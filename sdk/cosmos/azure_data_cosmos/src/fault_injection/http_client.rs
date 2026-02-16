@@ -62,14 +62,13 @@ impl FaultClient {
         // Spawn a background thread that accepts connections and holds them open.
         // The thread runs as a daemon — it will be cleaned up when the process exits.
         std::thread::spawn(move || {
+            // Keep all accepted connections alive by retaining their TcpStream handles.
+            // This avoids spawning a thread per connection while still causing real timeouts.
+            let mut _connections: Vec<std::net::TcpStream> = Vec::new();
             for stream in listener.incoming() {
                 match stream {
-                    Ok(_stream) => {
-                        // Hold the connection open: park the stream in a thread that
-                        // sleeps forever so the TCP connection stays established.
-                        std::thread::spawn(move || {
-                            std::thread::sleep(Duration::from_secs(u64::MAX));
-                        });
+                    Ok(stream) => {
+                        _connections.push(stream);
                     }
                     Err(_) => continue,
                 }
@@ -275,7 +274,7 @@ impl FaultClient {
 
         // Ensure the listener is ready and a TCP connection can be established
         // before we issue the timed request. This prevents the timeout from firing
-        // during the connect phase (which would produce is_request(), not is_timeout()).
+        // during the connect phase (which would produce is_connect(), not is_timeout()).
         loop {
             match std::net::TcpStream::connect_timeout(&addr, Duration::from_millis(500)) {
                 Ok(_) => break,
