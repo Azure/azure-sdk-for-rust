@@ -6,6 +6,7 @@ use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
 use crate::constants::{self, SubStatusCode};
+use crate::pipeline::components::CosmosStatus;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::{
@@ -149,58 +150,63 @@ impl FaultClient {
             None => return None, // No error type set, pass through
         };
 
-        let (status_code, sub_status, message) = match error_type {
+        let (cosmos_status, message) = match error_type {
             FaultInjectionErrorType::InternalServerError => (
-                StatusCode::InternalServerError,
-                None,
+                CosmosStatus::new(StatusCode::InternalServerError, None),
                 "Internal Server Error - Injected fault",
             ),
             FaultInjectionErrorType::TooManyRequests => (
-                StatusCode::TooManyRequests,
-                None,
+                CosmosStatus::new(StatusCode::TooManyRequests, None),
                 "Too Many Requests - Injected fault",
             ),
             FaultInjectionErrorType::ReadSessionNotAvailable => (
-                StatusCode::NotFound,
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                CosmosStatus::new(
+                    StatusCode::NotFound,
+                    Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                ),
                 "Read Session Not Available - Injected fault",
             ),
             FaultInjectionErrorType::Timeout => (
-                StatusCode::RequestTimeout,
-                None,
+                CosmosStatus::new(StatusCode::RequestTimeout, None),
                 "Request Timeout - Injected fault",
             ),
             FaultInjectionErrorType::ServiceUnavailable => (
-                StatusCode::ServiceUnavailable,
-                None,
+                CosmosStatus::new(StatusCode::ServiceUnavailable, None),
                 "Service Unavailable - Injected fault",
             ),
             FaultInjectionErrorType::PartitionIsGone => (
-                StatusCode::Gone,
-                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+                CosmosStatus::new(
+                    StatusCode::Gone,
+                    Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+                ),
                 "Partition Is Gone - Injected fault",
             ),
             FaultInjectionErrorType::WriteForbidden => (
-                StatusCode::Forbidden,
-                Some(SubStatusCode::WRITE_FORBIDDEN),
+                CosmosStatus::new(StatusCode::Forbidden, Some(SubStatusCode::WRITE_FORBIDDEN)),
                 "Write Forbidden - Injected fault",
             ),
             FaultInjectionErrorType::DatabaseAccountNotFound => (
-                StatusCode::Forbidden,
-                Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
+                CosmosStatus::new(
+                    StatusCode::Forbidden,
+                    Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
+                ),
                 "Database Account Not Found - Injected fault",
             ),
         };
 
-        let raw_response = sub_status.map(|ss| {
+        let raw_response = cosmos_status.sub_status.map(|ss| {
             let mut headers = Headers::new();
             headers.insert(constants::SUB_STATUS, ss.to_string());
-            Box::new(RawResponse::from_bytes(status_code, headers, vec![]))
+            Box::new(RawResponse::from_bytes(
+                cosmos_status.status,
+                headers,
+                vec![],
+            ))
         });
 
         let error = azure_core::Error::with_message(
             ErrorKind::HttpResponse {
-                status: status_code,
+                status: cosmos_status.status,
                 error_code: Some("Injected Fault".to_string()),
                 raw_response,
             },
