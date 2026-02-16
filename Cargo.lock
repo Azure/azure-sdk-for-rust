@@ -267,6 +267,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-http",
  "opentelemetry_sdk",
+ "reqwest",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -359,7 +360,7 @@ dependencies = [
  "azure_identity",
  "clap",
  "futures",
- "rand 0.9.2",
+ "rand 0.10.0",
  "reqwest",
  "serde",
  "serde_json",
@@ -396,7 +397,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -419,7 +420,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -3883,12 +3884,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
-name = "winapi-x86_64-pc-windows-gnu"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
-
-[[package]]
 name = "windows"
 version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3918,7 +3913,7 @@ checksum = "9107ddc059d5b6fbfbffdfa7a7fe3e22a226def0b2608f72e9d552763d3e1ad7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.115",
 ]
 
 [[package]]
@@ -3929,7 +3924,7 @@ checksum = "29bee4b38ea3cde66011baa44dba677c432a78593e202392d1e9070cf2a7fca7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.115",
 ]
 
 [[package]]

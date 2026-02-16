@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
-use rand::Rng;
+use rand::RngExt;
 
 use super::{Operation, PerfItem};
 use crate::seed::SeededItem;

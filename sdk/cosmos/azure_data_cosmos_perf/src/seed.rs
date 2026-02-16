@@ -72,7 +72,7 @@ pub async fn seed_container(
             }
 
             let done = completed.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-            if done % 200 == 0 || done as usize == count {
+            if done.is_multiple_of(200) || done as usize == count {
                 println!("  Seeded {done}/{count} items");
             }
             None

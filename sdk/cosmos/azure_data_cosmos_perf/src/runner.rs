@@ -30,7 +30,7 @@ fn error_source_chain(_error: &dyn std::error::Error) -> Option<String> {
 }
 
 use azure_data_cosmos::clients::ContainerClient;
-use rand::Rng;
+use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
 use uuid::Uuid;
