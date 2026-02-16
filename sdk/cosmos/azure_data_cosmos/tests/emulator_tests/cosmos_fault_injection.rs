@@ -9,7 +9,6 @@
 
 use super::framework;
 
-use azure_core::Uuid;
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
     FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,

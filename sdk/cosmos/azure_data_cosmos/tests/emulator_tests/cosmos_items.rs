@@ -5,7 +5,6 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
-use azure_core::Uuid;
 use azure_core::{
     http::{Etag, StatusCode},
     Uuid,
