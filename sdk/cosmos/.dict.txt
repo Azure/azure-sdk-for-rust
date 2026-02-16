@@ -43,5 +43,14 @@ makefiles
 ctest
 cmake
 
+# Words used within the Cosmos perf tool (azure_data_cosmos_perf)
+Kusto
+mycontainer
+mydb
+perfcontainer
+perfdb
+perfresults
+sysinfo
+
 # Common Rust syntax
 rfind

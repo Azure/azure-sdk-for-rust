@@ -14,11 +14,11 @@ pub struct Config {
     pub endpoint: String,
 
     /// Database name.
-    #[arg(long)]
+    #[arg(long, default_value = "perfdb")]
     pub database: String,
 
     /// Container name.
-    #[arg(long)]
+    #[arg(long, default_value = "perfcontainer")]
     pub container: String,
 
     /// Authentication method.
@@ -74,8 +74,16 @@ pub struct Config {
     /// Each reporting interval's metrics are upserted into this container
     /// for long-term monitoring and Kusto/dashboard integration.
     /// The container is auto-created if it does not exist.
-    #[arg(long)]
+    #[arg(long, default_value = "perfresults")]
     pub results_container: String,
+
+    /// Unique identifier for this workload instance.
+    ///
+    /// Stamped on every result and error document so runs from different
+    /// VMs or configurations can be distinguished when sharing the same
+    /// results container. Defaults to a random UUID.
+    #[arg(long, default_value_t = uuid::Uuid::new_v4().to_string())]
+    pub workload_id: String,
 }
 
 /// Authentication method for connecting to Cosmos DB.

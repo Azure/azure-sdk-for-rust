@@ -7,8 +7,8 @@ statistics at configurable intervals.
 ## Prerequisites
 
 - Rust toolchain (MSRV 1.85)
-- An Azure Cosmos DB account with an existing **database**
-  - The container will be created automatically if it doesn't exist (with `/partition_key` as the partition key path)
+- An Azure Cosmos DB account
+  - The database, container, and results container will be created automatically if they don't exist (with `/partition_key` as the partition key path)
 - For key auth: a Cosmos DB account key
 - For AAD auth: Azure CLI logged in (`az login`)
 
@@ -27,8 +27,6 @@ cargo build -p azure_data_cosmos_perf
 ```bash
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://<account>.documents.azure.com:443/ \
-  --database mydb \
-  --container mycontainer \
   --auth key \
   --key "<your-account-key>"
 ```
@@ -39,8 +37,6 @@ Or use the `AZURE_COSMOS_KEY` environment variable:
 export AZURE_COSMOS_KEY="<your-account-key>"
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://<account>.documents.azure.com:443/ \
-  --database mydb \
-  --container mycontainer \
   --auth key
 ```
 
@@ -50,8 +46,6 @@ cargo run -p azure_data_cosmos_perf -- \
 az login
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://<account>.documents.azure.com:443/ \
-  --database mydb \
-  --container mycontainer \
   --auth aad
 ```
 
@@ -60,8 +54,8 @@ cargo run -p azure_data_cosmos_perf -- \
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--endpoint` | *required* | Cosmos DB account endpoint URL |
-| `--database` | *required* | Database name |
-| `--container` | *required* | Container name (partition key path must be `/partition_key`) |
+| `--database` | `perfdb` | Database name |
+| `--container` | `perfcontainer` | Container name (partition key path must be `/partition_key`) |
 | `--auth` | *required* | Authentication method: `key` or `aad` |
 | `--key` | — | Account key (or set `AZURE_COSMOS_KEY` env var) |
 | `--preferred-regions` | — | Comma-separated preferred regions (e.g., `"West US,East US"`) |
@@ -71,6 +65,8 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--seed-count` | `1000` | Number of items to pre-seed |
 | `--throughput` | `100000` | Throughput (RU/s) when creating the container |
 | `--report-interval` | `300` | Stats reporting interval in seconds |
+| `--results-container` | `perfresults` | Container for storing perf results and error documents |
+| `--workload-id` | random UUID | Unique identifier for this workload instance (for multi-VM correlation) |
 | `--no-reads` | `false` | Disable point read operations |
 | `--no-queries` | `false` | Disable query operations |
 | `--no-upserts` | `false` | Disable upsert operations |
@@ -82,18 +78,17 @@ Run reads only with 100 concurrent operations for 60 seconds:
 ```bash
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://myaccount.documents.azure.com:443/ \
-  --database perfdb --container perfcont \
   --auth key --key "$AZURE_COSMOS_KEY" \
   --no-queries --no-upserts \
   --concurrency 100 --duration 60 --report-interval 10
 ```
 
-Run all operations with preferred regions:
+Run all operations with preferred regions and custom database:
 
 ```bash
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://myaccount.documents.azure.com:443/ \
-  --database perfdb --container perfcont \
+  --database mydb --container mycontainer \
   --auth aad \
   --preferred-regions "West US,East US" \
   --concurrency 200 --seed-count 5000
@@ -113,10 +108,21 @@ The tool prints periodic latency summaries like:
   UpsertItem          325        0      4.5ms     52.3ms     15.1ms     11.2ms     32.1ms     48.7ms
 ```
 
-A CSV file (`perf-report-<timestamp>.csv`) is automatically created in the current
-directory with timestamped rows for each reporting interval. The CSV includes all
-latency percentiles plus process CPU and memory, making it easy to import into
-Excel or other analysis tools.
+### Results Container
+
+Periodic summary documents and individual error documents are written to the
+results container (`--results-container`, default `perfresults`).
+
+- **Summary documents**: Upserted at each reporting interval with latency
+  percentiles, process metrics, and workload ID per operation.
+- **Error documents**: Written for each individual operation failure with the
+  operation name, error message, source error chain, workload ID, and timestamp.
+  Errors during the perf run never stop the workload — they are captured and
+  reported but execution continues.
+
+If the tool cannot write a result or error document (e.g., the results container
+is temporarily unavailable), a warning is printed to stderr and the workload
+continues unaffected.
 
 ## Extending with New Operations
 

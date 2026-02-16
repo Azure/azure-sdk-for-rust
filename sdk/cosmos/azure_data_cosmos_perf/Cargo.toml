@@ -10,7 +10,8 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-azure_core.workspace = true
+azure_core = { workspace = true, features = ["reqwest"] }
+reqwest = { workspace = true, features = ["http2"] }
 azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
 azure_identity = { path = "../../../sdk/identity/azure_identity" }
 async-trait.workspace = true

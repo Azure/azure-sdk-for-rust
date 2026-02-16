@@ -17,6 +17,7 @@ use clap::Parser;
 
 use crate::config::{AuthMethod, Config};
 use crate::operations::create_operations;
+use crate::runner::RunConfig;
 use crate::stats::Stats;
 
 #[tokio::main]
@@ -77,6 +78,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_client = client.database_client(&config.database);
     let container_client = db_client.container_client(&config.container);
 
+    // Ensure the database exists (with retry logic for multi-region setups)
+    setup::ensure_database(&client, &config.database).await?;
+
     // Ensure the container exists (with retry logic for multi-region setups)
     setup::ensure_container(&db_client, &config.container, config.throughput).await?;
 
@@ -105,24 +109,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Ensure the results container exists for storing metrics
-    setup::ensure_container(&db_client, &config.results_container, config.throughput).await?;
+    setup::ensure_container(&db_client, &config.results_container, 400).await?;
     let results_container = db_client.container_client(&config.results_container);
     println!(
-        "Perf results will be stored in container '{}'.",
-        config.results_container
+        "Perf results will be stored in container '{}'. Workload ID: {}",
+        config.results_container, config.workload_id,
     );
 
     // Run the perf test
     let stats = Arc::new(Stats::new());
-    runner::run(
-        container_client,
-        ops,
+    runner::run(RunConfig {
+        container: container_client,
+        operations: ops,
         stats,
-        config.concurrency,
+        concurrency: config.concurrency,
         duration,
-        Duration::from_secs(config.report_interval),
+        report_interval: Duration::from_secs(config.report_interval),
         results_container,
-    )
+        workload_id: config.workload_id,
+    })
     .await;
 
     Ok(())
