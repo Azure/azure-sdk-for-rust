@@ -118,7 +118,7 @@ opentelemetry-stdout = { version = "0.31" }
 opentelemetry_sdk = "0.31"
 pin-project = "1.1"
 proc-macro2 = "1.0.106"
-quick-xml = { version = "0.39.0", features = ["serialize", "serde-types"] }
+quick-xml = { version = "0.39.1", features = ["serialize", "serde-types"] }
 quote = "1.0.44"
 rand = { version = "0.10.0", features = ["sys_rng"] }
 rand_chacha = "0.10"
