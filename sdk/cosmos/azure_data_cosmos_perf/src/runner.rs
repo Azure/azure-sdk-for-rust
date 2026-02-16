@@ -152,21 +152,11 @@ pub async fn run(config: RunConfig) {
         }
     });
 
-    // Spawn worker tasks
-    let semaphore = Arc::new(tokio::sync::Semaphore::new(concurrency));
+    // Spawn fixed worker pool — each worker loops until cancelled
     let start = Instant::now();
+    let mut workers = Vec::with_capacity(concurrency);
 
-    // Main loop: keep spawning operations until cancelled
-    loop {
-        if cancelled.load(Ordering::SeqCst) {
-            break;
-        }
-
-        let permit = match semaphore.clone().acquire_owned().await {
-            Ok(p) => p,
-            Err(_) => break,
-        };
-
+    for _ in 0..concurrency {
         let ops = operations.clone();
         let container = container.clone();
         let stats = stats.clone();
@@ -174,31 +164,29 @@ pub async fn run(config: RunConfig) {
         let err_container = results_container.clone();
         let err_workload_id = workload_id.clone();
 
-        tokio::spawn(async move {
-            let _permit = permit;
+        workers.push(tokio::spawn(async move {
+            while !cancelled.load(Ordering::Relaxed) {
+                let op_idx = rand::rng().random_range(0..ops.len());
+                let op = &ops[op_idx];
 
-            if cancelled.load(Ordering::Relaxed) {
-                return;
-            }
-
-            let op_idx = rand::rng().random_range(0..ops.len());
-            let op = &ops[op_idx];
-
-            let op_start = Instant::now();
-            match op.execute(&container).await {
-                Ok(()) => {
-                    stats.record_latency(op.name(), op_start.elapsed());
-                }
-                Err(e) => {
-                    stats.record_error(op.name());
-                    upsert_error(&err_container, op.name(), &e, &err_workload_id).await;
+                let op_start = Instant::now();
+                match op.execute(&container).await {
+                    Ok(()) => {
+                        stats.record_latency(op.name(), op_start.elapsed());
+                    }
+                    Err(e) => {
+                        stats.record_error(op.name());
+                        upsert_error(&err_container, op.name(), &e, &err_workload_id).await;
+                    }
                 }
             }
-        });
+        }));
     }
 
-    // Wait for in-flight operations by acquiring all permits
-    let _ = semaphore.acquire_many(concurrency as u32).await;
+    // Wait for all workers to finish
+    for w in workers {
+        let _ = w.await;
+    }
 
     // Print final report
     let total_elapsed = start.elapsed();
