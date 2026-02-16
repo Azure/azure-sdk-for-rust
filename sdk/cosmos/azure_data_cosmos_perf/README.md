@@ -10,7 +10,7 @@ statistics at configurable intervals.
 - An Azure Cosmos DB account
   - The database, container, and results container will be created automatically if they don't exist (with `/partition_key` as the partition key path)
 - For key auth: a Cosmos DB account key
-- For AAD auth: Azure CLI logged in (`az login`)
+- For AAD auth: a managed identity available in the hosting environment (e.g., Azure VM, App Service)
 
 ## Building
 
@@ -42,8 +42,11 @@ cargo run -p azure_data_cosmos_perf -- \
 
 ### AAD (Entra ID) Authentication
 
+Uses `ManagedIdentityCredential`, which requires the tool to run in an Azure
+environment with a managed identity assigned (e.g., Azure VM, App Service, or
+Container Instance).
+
 ```bash
-az login
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://<account>.documents.azure.com:443/ \
   --auth aad

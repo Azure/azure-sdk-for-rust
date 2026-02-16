@@ -9,7 +9,7 @@
 
 - Initial implementation of the Cosmos DB performance testing CLI tool.
 - Point read, single-partition query, and upsert operations with concurrent execution.
-- Key-based and AAD (Entra ID) authentication via `DeveloperToolsCredential`.
+- Key-based and AAD (Entra ID) authentication via `ManagedIdentityCredential`.
 - Configurable concurrency, run duration, seed count, and reporting interval.
 - Automatic container creation if it does not exist, with configurable throughput.
 - Preferred and excluded region configuration.

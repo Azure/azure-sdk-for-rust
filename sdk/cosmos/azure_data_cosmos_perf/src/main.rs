@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )?
         }
         AuthMethod::Aad => {
-            let credential = azure_identity::DeveloperToolsCredential::new(None)?;
+            let credential = azure_identity::ManagedIdentityCredential::new(None)?;
             CosmosClient::new(&config.endpoint, credential, Some(options))?
         }
     };
