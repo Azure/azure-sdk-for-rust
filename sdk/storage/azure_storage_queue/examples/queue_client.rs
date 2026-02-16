@@ -180,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let endpoint = get_endpoint();
 
     let queue_name = get_random_queue_name();
-    let queue_client = QueueClient::new(&endpoint, &queue_name, credential.clone(), None)?;
+    let queue_client = QueueClient::new(&endpoint, &queue_name, Some(credential.clone()), None)?;
 
     // Create and manage queue
     let result = queue_client.create(None).await;
@@ -219,8 +219,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = queue_client.delete(None).await;
     log_operation_result(&result, "delete");
 
-    let non_existing_queue_client =
-        QueueClient::new(&endpoint, "non-existent-queue", credential.clone(), None)?;
+    let non_existing_queue_client = QueueClient::new(
+        &endpoint,
+        "non-existent-queue",
+        Some(credential.clone()),
+        None,
+    )?;
     let result = non_existing_queue_client.exists().await;
     log_operation_result(&result, "check_non_existent");
 
@@ -242,7 +246,7 @@ fn get_endpoint() -> String {
 }
 
 fn get_random_queue_name() -> String {
-    use rand::Rng;
+    use rand::RngExt;
     let mut rng = rand::rng();
     let random_suffix: u32 = rng.random_range(1000..9999);
     format!("sdk-test-queue-{}", random_suffix)

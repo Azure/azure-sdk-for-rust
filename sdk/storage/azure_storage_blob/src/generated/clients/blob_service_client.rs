@@ -6,14 +6,14 @@
 use crate::generated::models::{
     BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
     BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
-    BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersSegmentOptions,
+    BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersOptions,
     BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
     ListContainersSegmentResponse, StorageServiceStats,
 };
 use azure_core::{
     error::CheckSuccessOptions,
     http::{
-        pager::{PagerResult, PagerState},
+        pager::{PagerContinuation, PagerResult, PagerState},
         Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
         RequestContent, Response, Url, UrlExt, XmlFormat,
     },
@@ -251,11 +251,11 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Service.listContainersSegment")]
-    pub fn list_containers_segment(
+    #[tracing::function("Storage.Blob.Service.listContainers")]
+    pub fn list_containers(
         &self,
-        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat, String>> {
+        options: Option<BlobServiceClientListContainersOptions<'_>>,
+    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -286,11 +286,11 @@ impl BlobServiceClient {
         query_builder.build();
         let version = self.version.clone();
         Ok(Pager::new(
-            move |marker: PagerState<String>, pager_options| {
+            move |marker: PagerState, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", &marker);
+                    query_builder.set_pair("marker", marker.as_ref());
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
@@ -317,7 +317,7 @@ impl BlobServiceClient {
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_marker,
+                            continuation: PagerContinuation::Token(next_marker),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })

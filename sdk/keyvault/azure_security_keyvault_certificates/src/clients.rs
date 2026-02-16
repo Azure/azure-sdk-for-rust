@@ -17,7 +17,8 @@ use azure_core::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         poller::{
-            get_retry_after, Poller, PollerResult, PollerState, PollerStatus, StatusMonitor as _,
+            get_retry_after, Poller, PollerContinuation, PollerResult, PollerState, PollerStatus,
+            StatusMonitor as _,
         },
         Body, ClientOptions, Method, Pipeline, RawResponse, Request, RequestContent, Url,
     },
@@ -166,9 +167,13 @@ impl CertificateClient {
         let parameters: Body = parameters.into();
 
         Ok(Poller::new(
-            move |poller_state: PollerState<Url>, poller_options| {
+            move |poller_state: PollerState, poller_options| {
                 let (mut request, next_link) = match poller_state {
-                    PollerState::More(next_link) => {
+                    PollerState::More(continuation) => {
+                        let next_link = match continuation {
+                            PollerContinuation::Links { next_link, .. } => next_link,
+                            _ => unreachable!(),
+                        };
                         // Make sure the `api-version` is set appropriately.
                         let qp = next_link
                             .query_pairs()
@@ -218,7 +223,10 @@ impl CertificateClient {
                         PollerStatus::InProgress => PollerResult::InProgress {
                             response: rsp,
                             retry_after,
-                            continuation_token: next_link,
+                            continuation: PollerContinuation::Links {
+                                next_link,
+                                final_link: None,
+                            },
                         },
                         PollerStatus::Succeeded => {
                             PollerResult::Succeeded {

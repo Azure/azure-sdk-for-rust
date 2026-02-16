@@ -12,7 +12,7 @@ use crate::generated::models::{
     PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
 };
 use azure_core::{
-    base64::encode,
+    base64,
     error::CheckSuccessOptions,
     http::{
         Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent, Response, Url,
@@ -250,7 +250,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-blob-content-length", size.to_string());
         if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
+            request.insert_header("x-ms-blob-content-md5", base64::encode(blob_content_md5));
         }
         if let Some(blob_content_type) = options.blob_content_type.as_ref() {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
@@ -694,7 +694,7 @@ impl PageBlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", encode(transactional_content_md5));
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
         if let Some(if_match) = options.if_match.as_ref() {
@@ -711,7 +711,10 @@ impl PageBlobClient {
         }
         request.insert_header("range", range);
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
+            request.insert_header(
+                "x-ms-content-crc64",
+                base64::encode(transactional_content_crc64),
+            );
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
@@ -912,10 +915,16 @@ impl PageBlobClient {
         request.insert_header("x-ms-page-write", "update");
         request.insert_header("x-ms-range", range);
         if let Some(source_content_crc64) = options.source_content_crc64 {
-            request.insert_header("x-ms-source-content-crc64", encode(source_content_crc64));
+            request.insert_header(
+                "x-ms-source-content-crc64",
+                base64::encode(source_content_crc64),
+            );
         }
         if let Some(source_content_md5) = options.source_content_md5 {
-            request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
+            request.insert_header(
+                "x-ms-source-content-md5",
+                base64::encode(source_content_md5),
+            );
         }
         if let Some(source_encryption_algorithm) = options.source_encryption_algorithm.as_ref() {
             request.insert_header(

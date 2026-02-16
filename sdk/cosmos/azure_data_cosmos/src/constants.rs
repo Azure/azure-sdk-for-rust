@@ -192,6 +192,9 @@ cosmos_headers! {
     THINCLIENT_PROXY_RESOURCE_TYPE => "x-ms-thinclient-proxy-resource-type",
     // Client ID
     CLIENT_ID => "x-ms-client-id",
+    // these are not actually sent but are used internally for fault injection
+    FAULT_INJECTION_OPERATION => "x-ms-fault-injection-operation",
+    FAULT_INJECTION_CONTAINER_ID => "x-ms-fault-injection-container-id",
 }
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
@@ -242,7 +245,6 @@ impl SubStatusCode {
     // 410: StatusCodeType_Gone: sub-status
     #[allow(dead_code)]
     pub(crate) const NAME_CACHE_IS_STALE: SubStatusCode = SubStatusCode(1000);
-    #[allow(dead_code)]
     pub(crate) const PARTITION_KEY_RANGE_GONE: SubStatusCode = SubStatusCode(1002);
     #[allow(dead_code)]
     pub(crate) const COMPLETING_SPLIT: SubStatusCode = SubStatusCode(1007);

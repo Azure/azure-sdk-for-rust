@@ -11,16 +11,15 @@ use crate::generated::models::{
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-    SignedIdentifiers,
+    BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsResponse, SignedIdentifiers,
 };
 use azure_core::{
     error::CheckSuccessOptions,
     http::{
-        pager::{PagerResult, PagerState},
+        pager::{PagerContinuation, PagerResult, PagerState},
         Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
         RequestContent, Response, Url, UrlExt, XmlFormat,
     },
@@ -692,11 +691,11 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.listBlobFlatSegment")]
-    pub fn list_blob_flat_segment(
+    #[tracing::function("Storage.Blob.Container.listBlobs")]
+    pub fn list_blobs(
         &self,
-        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat, String>> {
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
+    ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -732,11 +731,11 @@ impl BlobContainerClient {
         query_builder.build();
         let version = self.version.clone();
         Ok(Pager::new(
-            move |marker: PagerState<String>, pager_options| {
+            move |marker: PagerState, pager_options| {
                 let mut url = first_url.clone();
                 if let PagerState::More(marker) = marker {
                     let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", &marker);
+                    query_builder.set_pair("marker", marker.as_ref());
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
@@ -758,12 +757,12 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: ListBlobsFlatSegmentResponse = xml::from_xml(&body)?;
+                    let res: ListBlobsResponse = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            continuation: next_marker,
+                            continuation: PagerContinuation::Token(next_marker),
                         },
                         _ => PagerResult::Done { response: rsp },
                     })

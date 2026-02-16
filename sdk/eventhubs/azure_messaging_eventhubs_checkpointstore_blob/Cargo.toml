@@ -5,7 +5,7 @@
 
 [package]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.5.0"
+version = "0.6.0"
 description = "Azure Event Hubs checkpoint store implementation using Azure Blob Storage"
 readme = "README.md"
 license.workspace = true
@@ -28,15 +28,14 @@ serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 time = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
-uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
 azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 opentelemetry.workspace = true
-opentelemetry-appender-tracing = { version = "0.30" }
-opentelemetry-stdout = { version = "0.30" }
+opentelemetry-appender-tracing.workspace = true
+opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true
 tokio.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }

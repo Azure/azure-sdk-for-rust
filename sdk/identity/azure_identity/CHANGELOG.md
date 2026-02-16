@@ -1,6 +1,6 @@
 # Release History
 
-## 0.32.0 (Unreleased)
+## 0.33.0 (Unreleased)
 
 ### Features Added
 
@@ -8,9 +8,17 @@
 
 ### Bugs Fixed
 
-- Removed redundant content from `Azure[Developer]CliCredential` error messages
-
 ### Other Changes
+
+## 0.32.0 (2026-02-11)
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+
+### Bugs Fixed
+
+- Removed redundant content and extraneous JSON from `Azure[Developer]CliCredential` error messages
 
 ## 0.31.0 (2026-01-21)
 

@@ -54,3 +54,4 @@ sysinfo
 
 # Common Rust syntax
 rfind
+subsec
