@@ -152,7 +152,7 @@ url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
 wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
-zip = { version = "7.4.0", default-features = false, features = ["deflate"] }
+zip = { version = "8.0.0", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"
