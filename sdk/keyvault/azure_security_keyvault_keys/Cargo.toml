@@ -34,7 +34,6 @@ criterion.workspace = true
 include-file.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
-reqwest.workspace = true
 sha2.workspace = true
 tokio.workspace = true
 tracing.workspace = true

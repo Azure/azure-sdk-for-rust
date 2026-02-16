@@ -21,11 +21,10 @@ use azure_core::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         Body, ClientOptions, NoFormat, Pipeline, RequestContent, Url,
     },
-    tracing, Bytes, Result,
+    tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
-use uuid::Uuid;
 
 /// Options used when creating a [`BlockBlobClient`].
 #[derive(Clone, SafeDebug)]
@@ -281,7 +280,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
         let content_len = content.len() as u64;
         self.client
-            .upload(
+            .upload_internal(
                 content.into(),
                 content_len,
                 Some(self.oneshot_options.clone()),

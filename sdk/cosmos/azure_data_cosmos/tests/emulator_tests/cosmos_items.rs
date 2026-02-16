@@ -5,7 +5,10 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
-use azure_core::http::{Etag, StatusCode};
+use azure_core::{
+    http::{Etag, StatusCode},
+    Uuid,
+};
 use azure_core::Uuid;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
