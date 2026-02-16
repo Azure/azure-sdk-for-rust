@@ -54,9 +54,9 @@ Follow these steps strictly:
    - Otherwise, set the target path to `sdk/cosmos`.
 
 2. Determine file scope:
-   - Always include `sdk/cosmos/tests` in the validation scope (if it exists)
-   - If `changed-only` is true, restrict checks to files under the target path and `sdk/cosmos/tests` (for example, using `git diff --name-only -- <target path> sdk/cosmos/tests` or by filtering `git diff --name-only` results to those paths)
-   - Otherwise, scan the entire target path and `sdk/cosmos/tests`
+   - If `changed-only` is `true` (the default), restrict scanning to `.rs` files that differ between the current local branch and `main`. Use `git diff --name-only main -- <target path>` (and include per-crate `tests/` directories) to obtain the list. Only `.rs` files in the result set are scanned; all other files are skipped.
+   - If `changed-only` is `false`, scan **all** `.rs` files under the target path(s).
+   - In both modes, **skip** files in `generated/` subdirectories — these are produced by external tools and must never be modified.
 
 3. Validate using the Pre-Completion Validation Checklist in `sdk/cosmos/AGENTS.md`:
    - Formatting checks
