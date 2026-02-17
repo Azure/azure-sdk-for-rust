@@ -585,7 +585,7 @@ impl TestRunContext {
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions<'_>>,
+        options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<T>>
     where
         T: serde::de::DeserializeOwned,
@@ -674,7 +674,7 @@ impl TestRunContext {
         &self,
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
-        options: Option<azure_data_cosmos::CreateContainerOptions<'_>>,
+        options: Option<azure_data_cosmos::CreateContainerOptions>,
     ) -> azure_core::Result<ContainerClient> {
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
