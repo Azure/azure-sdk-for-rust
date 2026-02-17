@@ -72,13 +72,6 @@ pub struct CosmosClientOptions {
     pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
-impl CosmosClientOptions {
-    /// Returns the application preferred regions.
-    pub fn application_preferred_regions(&self) -> &[RegionName] {
-        &self.application_preferred_regions
-    }
-}
-
 impl AsHeaders for CosmosClientOptions {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
