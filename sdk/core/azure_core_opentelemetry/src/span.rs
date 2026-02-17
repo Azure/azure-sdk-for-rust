@@ -110,7 +110,7 @@ impl Span for OpenTelemetrySpan {
         // Request's header map.
         for (key, value) in header_map.headers {
             request.insert_header(
-                HeaderName::from(key.as_str().to_owned()),
+                key,
                 // The value is guaranteed to be a valid UTF-8 string by the OpenTelemetry SDK,
                 // so we can safely unwrap it.
                 value,
