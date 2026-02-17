@@ -231,7 +231,7 @@ mod tests {
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. \nERROR: not logged in, run `azd auth login` to login\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed.\nERROR: not logged in, run `azd auth login` to login\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
@@ -242,7 +242,7 @@ mod tests {
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. \nERROR: fetching token: some error occurred\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed.\nERROR: fetching token: some error occurred\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
@@ -276,7 +276,7 @@ mod tests {
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. \nERROR: some error\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed.\nERROR: some error\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }

@@ -178,7 +178,9 @@ fn authentication_error(credential_name: &str, err: Error) -> Error {
         stringify!(WorkloadIdentityCredential) => "#workload",
         _ => "",
     };
-    let mut message = format!("{credential_name} authentication failed. {err}");
+    let err_str = err.to_string();
+    let separator = if err_str.starts_with('\n') { "" } else { " " };
+    let mut message = format!("{credential_name} authentication failed.{separator}{err_str}");
     if !link_fragment.is_empty() {
         message.push_str(TSG_LINK_ERROR_TEXT);
         message.push_str(link_fragment);
