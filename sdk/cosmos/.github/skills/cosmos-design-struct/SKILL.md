@@ -76,7 +76,7 @@ Follow these steps strictly:
 
 Classify every struct into exactly one of these categories:
 
-1. **Truly public** — The struct is `pub` and **all** ancestor modules up to the crate root are also `pub` (the struct is reachable from outside the crate). These structs get the full set of rules: `#[non_exhaustive]`, private fields, getters, `with_*` setters, and either `Default` or `new()` depending on whether the struct has required fields.
+1. **Truly public** — The struct is `pub` and **all** ancestor modules up to the crate root are also `pub` (the struct is reachable from outside the crate). These structs get the full set of rules: `#[non_exhaustive]`, private fields, getters, builder type with `with_*` setters, and a `build()` method that takes required fields as parameters.
 
 2. **Effectively scoped** — The struct has a `pub` visibility modifier but lives inside a module that restricts visibility (e.g., `pub(crate) mod`, `pub(super) mod`). The struct is **not** reachable from outside the crate. These structs should:
    - Have the **effective visibility** annotated explicitly on the struct (e.g., `pub(crate) struct Foo` not `pub struct Foo` inside a `pub(crate) mod`).
@@ -167,7 +167,7 @@ This applies to **all** truly public structs, including all-optional ones (optio
 
 **Serde compatibility:** Removing struct-level `Default` does not break `Deserialize`. Instead, annotate each optional field with `#[serde(default)]` so serde uses the field type's own `Default` (e.g., `Option::None`, `Vec::new()`, `false`). Required fields must always be present in the JSON (the server always returns them).
 
-**The builder type** (Step 6h) derives `Default` — that is how `builder()` creates one. This is fine because the builder is a transient construction aid, not the target type.
+**The builder type** (Step 6h) must **not** derive or implement `Default` either — that would allow `TypeBuilder::default()` to bypass the `Type::builder()` factory method. The `builder()` factory constructs the builder via struct literal syntax (possible because it lives in the same module). The builder's private fields prevent external struct literal construction.
 
 **All-optional structs** (options structs, `IndexingPolicy`, etc.) — use the builder:
 
@@ -238,7 +238,14 @@ A **required field** is one that must be set for the struct to be semantically v
 /// Use [`ContainerProperties::builder()`] to construct an instance.
 impl ContainerProperties {
     pub fn builder() -> ContainerPropertiesBuilder {
-        ContainerPropertiesBuilder::default()
+        ContainerPropertiesBuilder {
+            indexing_policy: None,
+            unique_key_policy: None,
+            conflict_resolution_policy: None,
+            vector_embedding_policy: None,
+            default_ttl: None,
+            analytical_storage_ttl: None,
+        }
     }
 
     // Getters for ALL fields (required + optional):
@@ -249,7 +256,6 @@ impl ContainerProperties {
 }
 
 /// Builder for [`ContainerProperties`].
-#[derive(Default)]
 pub struct ContainerPropertiesBuilder {
     indexing_policy: Option<IndexingPolicy>,
     unique_key_policy: Option<UniqueKeyPolicy>,
@@ -294,44 +300,17 @@ impl ContainerPropertiesBuilder {
 }
 ```
 
-**Example — all-optional struct:**
+**Example — all-optional struct (usage from an external crate):**
 
 ```rust
-impl ItemOptions {
-    pub fn builder() -> ItemOptionsBuilder {
-        ItemOptionsBuilder::default()
-    }
+// All fields are optional, so build() takes no parameters.
+let options = ItemOptions::builder()
+    .with_session_token("token-abc")
+    .with_consistency_level(ConsistencyLevel::Session)
+    .build();
 
-    // Getters:
-    pub fn session_token(&self) -> Option<&str> { self.session_token.as_deref() }
-    pub fn consistency_level(&self) -> Option<ConsistencyLevel> { self.consistency_level }
-}
-
-#[derive(Default)]
-pub struct ItemOptionsBuilder {
-    session_token: Option<String>,
-    consistency_level: Option<ConsistencyLevel>,
-}
-
-impl ItemOptionsBuilder {
-    pub fn with_session_token(mut self, value: impl Into<String>) -> Self {
-        self.session_token = Some(value.into());
-        self
-    }
-
-    pub fn with_consistency_level(mut self, value: ConsistencyLevel) -> Self {
-        self.consistency_level = Some(value);
-        self
-    }
-
-    /// Build an [`ItemOptions`]. All fields are optional, so no parameters are needed.
-    pub fn build(self) -> ItemOptions {
-        ItemOptions {
-            session_token: self.session_token,
-            consistency_level: self.consistency_level,
-        }
-    }
-}
+// Or with no options set at all:
+let defaults = ItemOptions::builder().build();
 ```
 
 **Serde compatibility note:** Removing struct-level `Default` does **not** break serde deserialization as long as:
@@ -348,7 +327,7 @@ impl ItemOptionsBuilder {
 - Provide access to the inner value via a getter (e.g., `value()`) or `Into`/`AsRef` impls.
 - **Omit** `#[non_exhaustive]`.
 
-**Builder types** (`*Builder` structs) are exempt from `#[non_exhaustive]`, getters, and the `Default` prohibition. Builder fields are always private (making `#[non_exhaustive]` unnecessary — private fields already prevent struct literal construction). Builders derive `Default` — that is how `builder()` creates one.
+**Builder types** (`*Builder` structs) are exempt from `#[non_exhaustive]` and getters. Builder fields are always private (making `#[non_exhaustive]` unnecessary — private fields already prevent external struct literal construction). Builders must **not** derive or implement `Default` — that would allow `TypeBuilder::default()` to bypass `Type::builder()`. The `builder()` factory method uses struct literal syntax internally (same module) to construct the builder.
 
 All other truly public structs — including options structs, serde model structs, and configuration structs — must use a separate builder type for construction per Steps 6d–6f and 6h. There are no further exemptions.
 
@@ -360,13 +339,13 @@ Every truly public struct must provide a **separate builder type** for construct
 
 **Factory method on the target type:**
 
-- `pub fn builder() -> <Type>Builder` — returns a new builder instance (via `<Type>Builder::default()`).
+- `pub fn builder() -> <Type>Builder` — returns a new builder instance via struct literal syntax (possible because `builder()` is defined in the same module as the builder). This is the **only** way to obtain a builder.
 
 **Builder type rules:**
 
 1. Named `<Type>Builder` (e.g., `ContainerProperties` → `ContainerPropertiesBuilder`, `ItemOptions` → `ItemOptionsBuilder`).
-2. All fields are **private**. Private fields already prevent struct literal construction, making `#[non_exhaustive]` unnecessary on the builder.
-3. Derives `Default` — that is how `builder()` creates one. All builder fields start as `None`/empty.
+2. All fields are **private**. Private fields prevent external struct literal construction, making `#[non_exhaustive]` unnecessary on the builder.
+3. Does **not** derive or implement `Default` — `TypeBuilder::default()` would be an uncontrolled construction path bypassing `Type::builder()`. The `builder()` factory method constructs the builder via struct literal syntax internally.
 4. Provides `pub fn with_<field>(mut self, value: ...) -> Self` setters for each **optional** field.
 5. Provides a terminal `pub fn build(self, ...) -> <Type>` method:
    - For all-optional structs: `build(self)` takes **no** arguments.
@@ -407,7 +386,7 @@ let db = DatabaseProperties::builder()
    - Generate getter methods for each field that external consumers need to read.
 5. For each truly public struct, generate a builder type (per Steps 6d–6h):
    a. Generate a `pub fn builder()` factory method on the target struct returning `<Type>Builder`.
-   b. Generate a `<Type>Builder` struct with private fields and `Default` derive.
+   b. Generate a `<Type>Builder` struct with private fields (no `Default` derive).
    c. Generate `with_*` setters on the builder for each optional field.
    d. Generate a `build(self, ...)` method on the builder — with required fields as parameters (if any), returning the target type.
    e. Remove `pub fn new(...)` from the target struct (if it exists).
@@ -485,7 +464,7 @@ Breaking changes include:
 - Builder types follow the [Azure SDK Rust builder guidelines](https://azure.github.io/azure-sdk/rust_introduction.html): builders must be their own type, required params go on `build()`, and all builder fields use `with_*` setters.
 - All truly public structs use a separate builder type for construction. The `Type::builder().with_*().build(...)` pattern applies uniformly — the only difference between all-optional and required-field structs is whether `build()` takes arguments.
 - No truly public struct derives `Default` — it would be an uncontrolled public construction path bypassing the builder. Field-level `#[serde(default)]` replaces struct-level `Default` for deserialization.
-- Builder fields are always private, making `#[non_exhaustive]` unnecessary on builders.
+- Builder fields are always private, making `#[non_exhaustive]` unnecessary on builders. Builders must not derive `Default` — `Type::builder()` is the sole entry point.
 - Reference `sdk/cosmos/AGENTS.md` for canonical model, options, and builder patterns.
 - Breaking changes in public surface area require explicit acknowledgment from the developer before merging.
 - When generating **new** structs, apply these rules from the start — it is far easier to design with private fields, getters, and builders than to retrofit them later.
