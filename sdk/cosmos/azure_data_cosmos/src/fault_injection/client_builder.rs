@@ -79,7 +79,7 @@ impl FaultInjectionClientBuilder {
     ///
     /// Returns a [`Transport`] that wraps the inner HTTP client with fault injection capabilities.
     /// Use this transport with [`CosmosClientBuilder::transport()`](crate::CosmosClientBuilder::transport())
-    /// and enable fault injection with [`CosmosClientBuilder::fault_injection(true)`](crate::CosmosClientBuilder::fault_injection()).
+    /// and enable fault injection with [`CosmosClientBuilder::with_fault_injection(true)`](crate::CosmosClientBuilder::with_fault_injection()).
     pub fn build(self) -> Transport {
         let inner_client = self
             .inner_client

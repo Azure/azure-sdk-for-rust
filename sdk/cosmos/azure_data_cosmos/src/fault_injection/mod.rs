@@ -75,7 +75,7 @@
 //! let client = CosmosClientBuilder::new()
 //!     .endpoint("https://myaccount.documents.azure.com/")
 //!     .key(Secret::new("my_account_key"))
-//!     .fault_injection(true)
+//!     .with_fault_injection(true)
 //!     .transport(transport)
 //!     .build()
 //!     .unwrap();
