@@ -199,7 +199,7 @@ mod tests {
                     headers.add(ContentRange {
                         range: Some((range.start, range.end - 1)),
                         total_len: Some(self.data.len()),
-                    });
+                    })?;
                     let range = range.start..range.end;
                     Ok(AsyncRawResponse::new(
                         StatusCode::PartialContent,
@@ -211,7 +211,7 @@ mod tests {
                     headers.add(ContentRange {
                         range: None,
                         total_len: None,
-                    });
+                    })?;
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
@@ -222,7 +222,7 @@ mod tests {
                     headers.add(ContentRange {
                         range: Some((0, data_len - 1)),
                         total_len: Some(data_len),
-                    });
+                    })?;
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
