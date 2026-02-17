@@ -134,7 +134,7 @@ serde_json = "1.0.149"
 serde_test = "1"
 serial_test = "3.3"
 sha2 = { version = "0.10" }
-syn = { version = "2.0.115", features = ["full"] }
+syn = { version = "2.0.116", features = ["full"] }
 tar = { version = "0.4.44", default-features = false }
 thiserror = "2.0"
 time = { version = "0.3.47", features = [
