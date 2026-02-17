@@ -563,7 +563,6 @@ mod tests {
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(10),
             custom_headers,
-            ..Default::default()
         };
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =

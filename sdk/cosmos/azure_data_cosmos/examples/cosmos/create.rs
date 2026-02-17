@@ -112,7 +112,6 @@ impl CreateCommand {
                     throughput_options.try_into()?;
                 let options = throughput_properties.map(|p| CreateDatabaseOptions {
                     throughput: Some(p),
-                    ..Default::default()
                 });
 
                 let db = client.create_database(&id, options).await?.into_model()?;
@@ -132,7 +131,6 @@ impl CreateCommand {
                     throughput_options.try_into()?;
                 let options = throughput_properties.map(|p| CreateContainerOptions {
                     throughput: Some(p),
-                    ..Default::default()
                 });
 
                 let properties = match json {
