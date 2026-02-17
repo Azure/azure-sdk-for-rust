@@ -154,7 +154,10 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `regions` - The regions to prefer, in order of preference.
-    pub fn application_preferred_regions(mut self, regions: impl Into<Vec<RegionName>>) -> Self {
+    pub fn with_application_preferred_regions(
+        mut self,
+        regions: impl Into<Vec<RegionName>>,
+    ) -> Self {
         self.options.application_preferred_regions = regions.into();
         self
     }
@@ -167,7 +170,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `regions` - The regions to exclude.
-    pub fn excluded_regions(mut self, regions: impl Into<Vec<RegionName>>) -> Self {
+    pub fn with_excluded_regions(mut self, regions: impl Into<Vec<RegionName>>) -> Self {
         self.options.excluded_regions = regions.into();
         self
     }
@@ -180,7 +183,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `level` - The consistency level to use.
-    pub fn consistency_level(mut self, level: crate::options::ConsistencyLevel) -> Self {
+    pub fn with_consistency_level(mut self, level: crate::options::ConsistencyLevel) -> Self {
         self.options.consistency_level = Some(level);
         self
     }
@@ -193,7 +196,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `priority` - The priority level to use.
-    pub fn priority(mut self, priority: crate::options::PriorityLevel) -> Self {
+    pub fn with_priority(mut self, priority: crate::options::PriorityLevel) -> Self {
         self.options.priority = Some(priority);
         self
     }
@@ -205,7 +208,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `bucket` - The throughput bucket identifier.
-    pub fn throughput_bucket(mut self, bucket: usize) -> Self {
+    pub fn with_throughput_bucket(mut self, bucket: usize) -> Self {
         self.options.throughput_bucket = Some(bucket);
         self
     }
@@ -215,7 +218,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `name` - The application name to include in telemetry.
-    pub fn application_name(mut self, name: impl Into<String>) -> Self {
+    pub fn with_application_name(mut self, name: impl Into<String>) -> Self {
         self.options.application_name = Some(name.into());
         self
     }
@@ -225,7 +228,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `region` - The region where the application is running.
-    pub fn application_region(mut self, region: RegionName) -> Self {
+    pub fn with_application_region(mut self, region: RegionName) -> Self {
         self.options.application_region = Some(region);
         self
     }
@@ -235,7 +238,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `timeout` - The timeout duration for requests.
-    pub fn request_timeout(mut self, timeout: azure_core::time::Duration) -> Self {
+    pub fn with_request_timeout(mut self, timeout: azure_core::time::Duration) -> Self {
         self.options.request_timeout = Some(timeout);
         self
     }
@@ -244,7 +247,7 @@ impl CosmosClientBuilder {
     ///
     /// This is only available when the `fault_injection` feature is enabled.
     #[cfg(feature = "fault_injection")]
-    pub fn fault_injection(mut self, enabled: bool) -> Self {
+    pub fn with_fault_injection(mut self, enabled: bool) -> Self {
         self.options.fault_injection_enabled = enabled;
         self
     }
@@ -254,7 +257,10 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `options` - The session retry configuration.
-    pub fn session_retry_options(mut self, options: crate::options::SessionRetryOptions) -> Self {
+    pub fn with_session_retry_options(
+        mut self,
+        options: crate::options::SessionRetryOptions,
+    ) -> Self {
         self.options.session_retry_options = options;
         self
     }
@@ -263,7 +269,7 @@ impl CosmosClientBuilder {
     ///
     /// When enabled, the client will track failures at the partition level and
     /// temporarily avoid partitions that are experiencing issues.
-    pub fn partition_level_circuit_breaker(mut self, enabled: bool) -> Self {
+    pub fn with_partition_level_circuit_breaker(mut self, enabled: bool) -> Self {
         self.options.enable_partition_level_circuit_breaker = enabled;
         self
     }
@@ -273,7 +279,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `disabled` - If true, partition-level failover is disabled.
-    pub fn disable_partition_level_failover(mut self, disabled: bool) -> Self {
+    pub fn with_disable_partition_level_failover(mut self, disabled: bool) -> Self {
         self.options.disable_partition_level_failover = disabled;
         self
     }
@@ -299,11 +305,11 @@ impl CosmosClientBuilder {
     /// let client = CosmosClientBuilder::new()
     ///     .endpoint("https://myaccount.documents.azure.com/")
     ///     .key(Secret::from("my_account_key"))
-    ///     .instrumentation(options)
+    ///     .with_instrumentation(options)
     ///     .build()
     ///     .unwrap();
     /// ```
-    pub fn instrumentation(mut self, options: InstrumentationOptions) -> Self {
+    pub fn with_instrumentation(mut self, options: InstrumentationOptions) -> Self {
         self.instrumentation = options;
         self
     }

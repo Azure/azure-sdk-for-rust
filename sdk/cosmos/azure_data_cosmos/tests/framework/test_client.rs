@@ -277,7 +277,7 @@ impl TestClient {
 
         // Apply preferred regions for the client
         if !preferred_regions.is_empty() {
-            builder = builder.application_preferred_regions(preferred_regions);
+            builder = builder.with_application_preferred_regions(preferred_regions);
         }
 
         let has_fault_injection = fault_builder.is_some();
@@ -309,12 +309,12 @@ impl TestClient {
 
         // Apply fault injection settings if provided
         if has_fault_injection {
-            builder = builder.fault_injection(true);
+            builder = builder.with_fault_injection(true);
         }
 
         // Apply fault client preferred regions
         if !fault_client_preferred_regions.is_empty() {
-            builder = builder.application_preferred_regions(fault_client_preferred_regions);
+            builder = builder.with_application_preferred_regions(fault_client_preferred_regions);
         }
 
         let cosmos_client = builder.build()?;
@@ -812,7 +812,7 @@ impl TestRunContext {
         CosmosClient::builder()
             .endpoint(&parsed.account_endpoint)
             .key(parsed.account_key.clone())
-            .application_preferred_regions(vec![region])
+            .with_application_preferred_regions(vec![region])
             .build()
     }
 
