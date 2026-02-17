@@ -12,7 +12,7 @@ repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust/sdk/core/azure_core_amqp"
 documentation = "https://docs.rs/azure_core_amqp"
 
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["api-bindings"]
 
 edition.workspace = true

@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
-. (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
 Write-Host @"
@@ -58,13 +58,17 @@ if ($Deny) {
 
 Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features" -GroupOutput
 
-# Verify package dependencies
-$verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
+# Verify package dependencies and keywords
+$verifyDependenciesScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-dependencies.rs'))
+$verifyKeywordsScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-keywords.rs'))
 
 if (!$SkipPackageAnalysis) {
   if (!(Test-Path $PackageInfoDirectory)) {
     Write-Host "Analyzing workspace`n"
-    return Invoke-LoggedCommand "&$verifyDependenciesScript $RepoRoot/Cargo.toml" -GroupOutput
+    $manifestPath = ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+    Invoke-LoggedCommand "&$verifyDependenciesScript $manifestPath" -GroupOutput
+    Invoke-LoggedCommand "&$verifyKeywordsScript $manifestPath" -GroupOutput
+    return
   }
 
   if ($Toolchain -eq 'nightly') {
@@ -77,7 +81,9 @@ if (!$SkipPackageAnalysis) {
 
   foreach ($package in $packagesToTest) {
     Write-Host "Analyzing package '$($package.Name)' in directory '$($package.DirectoryPath)'`n"
-    Invoke-LoggedCommand "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml" -GroupOutput
+    $packageManifestPath = ([System.IO.Path]::Combine($package.DirectoryPath, 'Cargo.toml'))
+    Invoke-LoggedCommand "&$verifyDependenciesScript $packageManifestPath" -GroupOutput
+    Invoke-LoggedCommand "&$verifyKeywordsScript $packageManifestPath" -GroupOutput
 
     if ($Toolchain -eq 'nightly') {
       Invoke-LoggedCommand "cargo +nightly docs-rs --package $($package.Name)" -GroupOutput
