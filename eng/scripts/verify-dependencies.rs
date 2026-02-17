@@ -4,10 +4,10 @@
 edition = "2021"
 
 [dependencies]
-cargo-util-schemas = "0.1.0"
+cargo-util-schemas = "0.11.0"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
-toml = "0.8.10"
+toml = "1.0.1"
 ---
 
 use cargo_util_schemas::manifest::{InheritableDependency, TomlDependency, TomlManifest};
@@ -23,17 +23,6 @@ static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core", "ureq"),
     ("azure_core_test", "dotenvy"),
     ("azure_canary", "serde"),
-    ("azure_core_opentelemetry", "opentelemetry"),
-    ("azure_core_opentelemetry", "opentelemetry_sdk"),
-    ("azure_core_opentelemetry", "tracing-opentelemetry"),
-    (
-        "azure_messaging_eventhubs_checkpointstore_blob",
-        "opentelemetry-stdout",
-    ),
-    (
-        "azure_messaging_eventhubs_checkpointstore_blob",
-        "opentelemetry-appender-tracing",
-    ),
     ("azure_data_cosmos_native", "cbindgen"),
 ];
 
@@ -120,10 +109,10 @@ fn main() {
                 InheritableDependency::Inherit(_) => None,
             })
             .filter(|v| {
-                package_manifest
-                    .package
-                    .as_ref()
-                    .is_some_and(|package| !EXEMPTIONS.contains(&(package.name.as_str(), &v.name)))
+                package_manifest.package.as_ref().is_some_and(|package| {
+                    !EXEMPTIONS
+                        .contains(&(package.name.as_ref().expect("REASON").as_str(), &v.name))
+                })
             })
             .collect();
 

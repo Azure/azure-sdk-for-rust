@@ -21,11 +21,10 @@ use azure_core::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         Body, ClientOptions, NoFormat, Pipeline, RequestContent, Url,
     },
-    tracing, Bytes, Result,
+    tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
-use uuid::Uuid;
 
 /// Options used when creating a [`BlockBlobClient`].
 #[derive(Clone, SafeDebug)]
@@ -146,7 +145,7 @@ impl BlockBlobClient {
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlockBlob.managedUpload")]
-    pub async fn managed_upload(
+    pub(crate) async fn managed_upload(
         &self,
         content: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientManagedUploadOptions<'_>>,

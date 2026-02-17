@@ -1,6 +1,16 @@
 # Release History
 
-## 0.32.0 (Unreleased)
+## 0.33.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.32.0 (2026-02-10)
 
 ### Features Added
 
@@ -18,10 +28,6 @@
 - Renamed `PageIterator::continuation_token` to `continuation`.
 - Renamed `PageIterator::into_continuation_token` to `into_continuation`.
 - `Pager` callbacks must now return `Result`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.31.0 (2026-01-16)
 

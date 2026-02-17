@@ -10,7 +10,7 @@ pub mod method_options;
 
 pub use crate::generated::models::*;
 
-// TODO: This will all go away as a result of having our handwritten replacements.
+// TODO: Need mechanism to have these models not have "Internal" suffix
 pub use crate::generated::models::{
     BlobClientDownloadInternalOptions as BlobClientDownloadOptions,
     BlobClientDownloadInternalResult as BlobClientDownloadResult,

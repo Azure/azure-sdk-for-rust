@@ -5,7 +5,7 @@
 
 mod common;
 
-use azure_core::time::Duration;
+use azure_core::{time::Duration, Uuid};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_servicebus::{
     CreateReceiverOptions, Message, ReceiveMessageOptions, ReceiveMode, ServiceBusClient,
@@ -13,7 +13,6 @@ use azure_messaging_servicebus::{
 use common::{get_queue_name, get_servicebus_namespace, get_subscription_name, get_topic_name};
 use std::{env, error::Error};
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 #[recorded::test(live)]
 async fn test_multiple_senders_receivers(ctx: TestContext) -> Result<(), Box<dyn Error>> {

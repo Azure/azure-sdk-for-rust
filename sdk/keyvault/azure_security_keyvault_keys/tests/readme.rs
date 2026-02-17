@@ -72,7 +72,7 @@ mod rand {
     #![allow(static_mut_refs)]
     use rand::{
         distr::{Distribution, StandardUniform},
-        Rng, SeedableRng,
+        RngExt, SeedableRng,
     };
     use rand_chacha::ChaCha20Rng;
     use std::sync::OnceLock;

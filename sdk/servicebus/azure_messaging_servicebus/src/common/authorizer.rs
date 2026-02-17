@@ -13,7 +13,7 @@ use azure_core::{
 use azure_core_amqp::{
     error::Result, AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpSessionApis as _,
 };
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},

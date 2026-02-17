@@ -22,9 +22,9 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        response::PinnedStream,
-        AsyncRawResponse, AsyncResponse, ClientOptions, NoFormat, Pipeline, RequestContent,
-        Response, StatusCode, Url, UrlExt,
+        response::{AsyncResponse, PinnedStream},
+        AsyncRawResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
+        Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -211,7 +211,6 @@ impl BlobClient {
         }
     }
 
-    // TODO: Can we just rename endpoint() on generated to this? Applies widely.
     /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.endpoint
@@ -270,7 +269,6 @@ impl BlobClient {
         self.download_internal(options).await
     }
 
-    // TODO: Partitioned upload will obsolete this wrapper.
     /// Creates a new blob from a data source.
     ///
     /// # Arguments
@@ -342,7 +340,7 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         let mut opt = self.options.clone();
         opt.range = range.map(|r| r.as_range_header());
         self.client
-            .download(Some(opt))
+            .download_internal(Some(opt))
             .await
             .map(AsyncRawResponse::from)
     }
