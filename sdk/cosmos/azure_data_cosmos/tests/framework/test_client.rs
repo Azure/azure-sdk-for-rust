@@ -310,8 +310,9 @@ impl TestClient {
 
         // Apply fault client options (e.g., preferred regions)
         if let Some(opts) = fault_client_options {
-            if !opts.application_preferred_regions.is_empty() {
-                builder = builder.preferred_regions(opts.application_preferred_regions);
+            if !opts.application_preferred_regions().is_empty() {
+                builder = builder
+                    .application_preferred_regions(opts.application_preferred_regions().to_vec());
             }
         }
 
@@ -807,7 +808,7 @@ impl TestRunContext {
         CosmosClient::builder()
             .endpoint(&parsed.account_endpoint)
             .key(parsed.account_key.clone())
-            .preferred_regions(vec![region])
+            .application_preferred_regions(vec![region])
             .build()
     }
 

@@ -154,7 +154,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `regions` - The regions to prefer, in order of preference.
-    pub fn preferred_regions(mut self, regions: impl Into<Vec<RegionName>>) -> Self {
+    pub fn application_preferred_regions(mut self, regions: impl Into<Vec<RegionName>>) -> Self {
         self.options.application_preferred_regions = regions.into();
         self
     }
