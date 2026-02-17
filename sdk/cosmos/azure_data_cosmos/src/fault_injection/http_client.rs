@@ -89,7 +89,7 @@ impl FaultClient {
         let mut matches = true;
 
         // Check operation type if specified
-        if let Some(expected_op) = condition.operation_type {
+        if let Some(expected_op) = condition.operation_type() {
             let request_op = request
                 .headers()
                 .get_optional_str(&constants::FAULT_INJECTION_OPERATION)
@@ -107,14 +107,14 @@ impl FaultClient {
         }
 
         // Check region if specified
-        if let Some(region) = &condition.region {
+        if let Some(region) = condition.region() {
             if !request.url().as_str().contains(region.as_str()) {
                 matches = false;
             }
         }
 
         // Check container ID if specified
-        if let Some(container_id) = &condition.container_id {
+        if let Some(container_id) = condition.container_id() {
             if !request.url().as_str().contains(container_id) {
                 matches = false;
             }

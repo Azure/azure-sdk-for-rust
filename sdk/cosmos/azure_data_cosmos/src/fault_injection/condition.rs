@@ -11,11 +11,11 @@ use crate::regions::RegionName;
 #[derive(Clone, Default, Debug)]
 pub struct FaultInjectionCondition {
     /// The type of operation to which the fault injection applies.
-    pub(crate) operation_type: Option<FaultOperationType>,
+    operation_type: Option<FaultOperationType>,
     /// The region to which the fault injection applies.
-    pub(crate) region: Option<RegionName>,
+    region: Option<RegionName>,
     /// The container ID to which the fault injection applies.
-    pub(crate) container_id: Option<String>,
+    container_id: Option<String>,
 }
 
 impl FaultInjectionCondition {
