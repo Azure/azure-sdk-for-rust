@@ -61,7 +61,10 @@ Follow these steps strictly:
 3. Validate using the Pre-Completion Validation Checklist in `sdk/cosmos/AGENTS.md`:
    - Formatting checks
    - Build succeeds for affected crates
-   - Clippy lints pass for affected crates
+   - Clippy lints pass for affected crates, with warnings treated as errors (`-D warnings`) to match CI behavior.
+     Run clippy with `RUSTFLAGS=-D warnings` set:
+     - Bash: `RUSTFLAGS='-D warnings' cargo clippy -p <crate> --all-features --all-targets`
+     - PowerShell: `$env:RUSTFLAGS='-D warnings'; cargo clippy -p <crate> --all-features --all-targets; $env:RUSTFLAGS=$null`
    - **Re-run formatting** after any auto-fix: if `auto-fix` is true and clippy or other tools modified files,
      re-run `cargo fmt` to ensure the auto-fixed code is properly formatted (e.g., `cargo clippy --fix` can
      leave trailing blank lines when removing unused imports).

@@ -7,7 +7,6 @@ mod signature_target;
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::models::CosmosResponse;
-use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::CosmosClientOptions;
 pub(crate) use authorization_policy::AuthorizationPolicy;
@@ -35,6 +34,7 @@ pub(crate) struct GatewayPipeline {
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,
     options: CosmosClientOptions,
+    #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
     pub fault_injection_enabled: bool,
 }
 
@@ -54,15 +54,6 @@ impl GatewayPipeline {
             options,
             fault_injection_enabled,
         }
-    }
-
-    /// Creates a [`Url`] out of the provided [`ResourceLink`]
-    ///
-    /// This is a little backwards, ideally we'd accept [`ResourceLink`] in the [`GatewayPipeline::send`] method,
-    /// but we need callers to be able to build an [`azure_core::Request`] so they need to be able to get the full URL.
-    /// This allows the clients to hold a single thing representing the "connection" to a Cosmos DB account though.
-    pub fn url(&self, link: &ResourceLink) -> Url {
-        link.url(&self.endpoint)
     }
 
     pub async fn send<T>(
