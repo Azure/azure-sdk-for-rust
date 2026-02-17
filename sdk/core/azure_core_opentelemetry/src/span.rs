@@ -36,7 +36,7 @@ impl Injector for HeaderMap {
     fn set(&mut self, key: &str, value: String) {
         // Convert the key and value to HeaderName and HeaderValue. Note that we need to
         // allocate new strings for the key because it's passed in as a string slice reference.
-        self.0.push((key.to_string().into(), value.into()));
+        self.0.push((key.to_owned().into(), value.into()));
     }
 }
 
