@@ -50,12 +50,12 @@ impl<T> CosmosResponse<T> {
         self.response.headers().get_optional_str(name)
     }
 
-    /// Returns the final request used to fulfill the operation.
+    /// Returns the final request URL used to fulfill the operation.
     /// This api is subject to change without a major version bump.
     ///
     #[cfg(feature = "fault_injection")]
-    pub(crate) fn request(&self) -> &CosmosRequest {
-        &self.request
+    pub fn request_url(&self) -> url::Url {
+        self.request.clone().into_raw_request().url().clone()
     }
 
     /// Consumes the response and returns the response body.

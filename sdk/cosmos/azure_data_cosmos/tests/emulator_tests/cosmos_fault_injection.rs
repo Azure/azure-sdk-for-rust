@@ -232,13 +232,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
             assert_eq!(
-                response
-                    .request()
-                    .clone()
-                    .into_raw_request()
-                    .url()
-                    .host_str()
-                    .unwrap(),
+                response.request_url().host_str().unwrap(),
                 get_effective_hub_endpoint()
             );
 
