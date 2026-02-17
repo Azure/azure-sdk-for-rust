@@ -62,7 +62,15 @@ Follow these steps strictly:
    - Formatting checks
    - Build succeeds for affected crates
    - Clippy lints pass for affected crates
+   - **Re-run formatting** after any auto-fix: if `auto-fix` is true and clippy or other tools modified files,
+     re-run `cargo fmt` to ensure the auto-fixed code is properly formatted (e.g., `cargo clippy --fix` can
+     leave trailing blank lines when removing unused imports).
    - Documentation builds successfully where applicable
+   - **Spell check (cspell)**: CI runs cspell on all changed files using the config at `.vscode/cspell.json`
+     with the Cosmos-specific dictionary at `sdk/cosmos/.dict.txt`. Run locally with:
+     `npx cspell lint --config .vscode/cspell.json --no-must-find-files <target path>/**`
+     If `auto-fix` is true and unknown words are legitimate (e.g., API type names, technical terms),
+     add them to `sdk/cosmos/.dict.txt`.
    - Unit and emulator tests relevant to the touched modules and crates
    - **CI-gated test compilation**: Some test files are conditionally compiled via `cfg` flags that CI sets but local builds omit.
      These tests will silently pass `cargo test` locally even if they contain build errors.

@@ -2,8 +2,8 @@
 name: cosmos-design-struct
 description: >
   Enforce consistent struct design conventions across sdk/cosmos crates. Validates visibility modifiers,
-  field privacy, #[non_exhaustive] usage, builder pattern (with_* setters), required-field constructors (new()),
-  and Default correctness on public structs. Can auto-fix violations or report them as errors.
+  field privacy, #[non_exhaustive] usage, builder pattern (builder()/build() with with_* setters),
+  and construction correctness on public structs. Can auto-fix violations or report them as errors.
 disable-model-invocation: false
 arguments:
   scope:
@@ -17,8 +17,8 @@ arguments:
     required: false
     default: false
     description: >
-      If true, automatically fix violations (adjust visibility, add #[non_exhaustive], generate getters/setters,
-      add Default derive). If false, only report violations with proposed changes.
+      If true, automatically fix violations (adjust visibility, add #[non_exhaustive], generate builders/getters,
+      remove Default). If false, only report violations with proposed changes.
   changed-only:
     type: boolean
     required: false
@@ -143,9 +143,10 @@ Every field that external consumers need to **read** must have a getter method:
 
 #### d) `with_*` setter methods (builder pattern)
 
-Every **optional** field that external consumers need to **set** must have a consuming setter:
+`with_*` setters live **only** on the builder type (see Step 6h), never on the target struct itself. External and internal consumers set optional fields via the builder:
 
 ```rust
+// On the builder type, NOT on the target struct:
 pub fn with_session_token(mut self, value: impl Into<String>) -> Self {
     self.session_token = Some(value.into());
     self
@@ -153,38 +154,49 @@ pub fn with_session_token(mut self, value: impl Into<String>) -> Self {
 ```
 
 - Prefix: `with_<field_name>`
-- Takes `mut self`, returns `Self`
+- Takes `mut self`, returns `Self` (where `Self` is the **builder** type)
 - Use `impl Into<T>` for string-like and convertible parameters where appropriate
-- For structs with required fields (Step 6f), do **not** generate `with_*` setters for required fields — they are set exclusively via `new()`
+- Do **not** generate `with_*` setters for required fields — they are set exclusively via the builder's `build()` method (see Step 6f)
+- Do **not** place `with_*` setters on the target struct — all construction goes through the builder
 
-#### e) `Default` implementation — conditional on required fields
+#### e) No `Default` on truly public structs
 
-`Default` is required **only** when every field of the struct is optional (i.e., every field has a semantically valid zero/empty/`None` value). If the struct has any **required** fields (see Step 6f), it must **not** derive or implement `Default` — a value produced by `Default::default()` would be semantically invalid, violating Rust's convention that `Default` always produces a usable value.
+Truly public structs must **not** derive or implement `Default`. `Default` on a public struct is public API — it provides an uncontrolled construction path that bypasses the builder (Step 6h). All construction must go through `Type::builder()...build()`.
 
-**All-optional structs** (options structs, `IndexingPolicy`, etc.) — derive `Default` and use builder pattern:
+This applies to **all** truly public structs, including all-optional ones (options structs, `IndexingPolicy`, etc.). Even if every field has a valid zero value, `Default` would allow callers to bypass the builder.
+
+**Serde compatibility:** Removing struct-level `Default` does not break `Deserialize`. Instead, annotate each optional field with `#[serde(default)]` so serde uses the field type's own `Default` (e.g., `Option::None`, `Vec::new()`, `false`). Required fields must always be present in the JSON (the server always returns them).
+
+**The builder type** (Step 6h) derives `Default` — that is how `builder()` creates one. This is fine because the builder is a transient construction aid, not the target type.
+
+**All-optional structs** (options structs, `IndexingPolicy`, etc.) — use the builder:
 
 ```rust
-let options = ItemOptions::default()
+let options = ItemOptions::builder()
     .with_session_token(token)
-    .with_priority(PriorityLevel::High);
+    .with_priority(PriorityLevel::High)
+    .build();
 
-let policy = IndexingPolicy::default()
+let policy = IndexingPolicy::builder()
     .with_automatic(true)
-    .with_indexing_mode(IndexingMode::Consistent);
+    .with_indexing_mode(IndexingMode::Consistent)
+    .build();
 ```
 
-**Structs with required fields** (`ContainerProperties`, `DatabaseProperties`, etc.) — use `new()` constructor plus `with_*` chaining for optional fields only:
+**Structs with required fields** (`ContainerProperties`, `DatabaseProperties`, etc.) — use the builder with required params on `build()`:
 
 ```rust
-let props = ContainerProperties::new("myContainer", "/partitionKey")
-    .with_default_ttl(Duration::from_secs(3600));
+let props = ContainerProperties::builder()
+    .with_default_ttl(Duration::from_secs(3600))
+    .build("myContainer", "/partitionKey");
 
-let db = DatabaseProperties::new("myDatabase");
+let db = DatabaseProperties::builder()
+    .build("myDatabase");
 ```
 
-#### f) Required-field constructors
+#### f) Required fields and the builder's `build()` method
 
-A **required field** is one that must be set for the struct to be semantically valid. A struct must **not** rely on `Default` + `with_*` chaining for required fields — that pattern allows constructing invalid instances.
+A **required field** is one that must be set for the struct to be semantically valid. Required fields are set exclusively via the builder's `build()` method — they must **not** appear as `with_*` setters on the builder.
 
 **Determining which fields are required:**
 
@@ -201,17 +213,19 @@ A **required field** is one that must be set for the struct to be semantically v
 - The field has a semantically valid default (e.g., `bool` defaulting to `false`, an enum with a `#[default]` variant)
 - The struct is an options/configuration struct where all fields are optional overrides
 
-**Rules for structs with one or more required fields:**
+**Rules for all truly public structs** (regardless of whether they have required fields):
 
-1. **Provide `pub fn new(...)`** taking all required fields as parameters. Initialize every optional field explicitly (e.g., `None`, `Vec::new()`, `false`). Do **not** use `..Default::default()` — the struct must not implement `Default`.
-2. **Do not derive or implement `Default`** — the zero value is not valid. For serde deserialization of optional fields, annotate each optional field with `#[serde(default)]` rather than relying on a struct-level `Default`.
-3. **Do not provide `with_*` setters for required fields** — required fields can only be set via the constructor. This prevents partially-constructed instances where a required field is still at its meaningless default.
-4. **Still provide `with_*` setters for all optional fields** — the builder pattern continues to work for everything except the required fields.
-5. **Still provide getter methods for all fields** (required and optional) — external consumers need to read them.
+1. **Provide `pub fn builder()`** returning a `<Type>Builder` (see Step 6h).
+2. **Do not derive or implement `Default`** on the target struct — `Default` is public API that provides an uncontrolled construction path bypassing the builder. For serde deserialization of optional fields, annotate each optional field with `#[serde(default)]` rather than relying on a struct-level `Default`.
+3. **Do not place `with_*` setters on the target struct** — they belong on the builder only.
+4. **Still provide getter methods for all fields** (required and optional) on the target struct — external consumers need to read them.
 
-**Use `impl Into<T>` on constructor parameters** for ergonomic conversion (e.g., `impl Into<Cow<'static, str>>` for string fields, `impl Into<PartitionKeyDefinition>` for partition keys).
+**Additional rules for structs with required fields:**
 
-**Example:**
+5. **Do not provide `with_*` setters for required fields on the builder** — required fields can only be set via `build()`. This prevents partially-constructed instances where a required field is still at its meaningless default.
+6. **Define required fields as parameters on `build()`** — use `impl Into<T>` for ergonomic conversion (e.g., `impl Into<Cow<'static, str>>` for string fields, `impl Into<PartitionKeyDefinition>` for partition keys).
+
+**Example — struct with required fields:**
 
 ```rust
 /// Properties of a Cosmos DB container.
@@ -221,59 +235,162 @@ A **required field** is one that must be set for the struct to be semantically v
 /// * `id` — The unique identifier for the container.
 /// * `partition_key` — The partition key definition.
 ///
-/// Use [`ContainerProperties::new()`] to construct an instance.
+/// Use [`ContainerProperties::builder()`] to construct an instance.
 impl ContainerProperties {
-    pub fn new(
-        id: impl Into<Cow<'static, str>>,
-        partition_key: impl Into<PartitionKeyDefinition>,
-    ) -> Self {
-        Self {
-            id: id.into(),
-            partition_key: partition_key.into(),
-            indexing_policy: None,
-            unique_key_policy: None,
-            conflict_resolution_policy: None,
-            vector_embedding_policy: None,
-            default_ttl: None,
-            analytical_storage_ttl: None,
-            system_properties: SystemProperties::default(),
-        }
+    pub fn builder() -> ContainerPropertiesBuilder {
+        ContainerPropertiesBuilder::default()
     }
 
     // Getters for ALL fields (required + optional):
     pub fn id(&self) -> &str { &self.id }
     pub fn partition_key(&self) -> &PartitionKeyDefinition { &self.partition_key }
+    pub fn indexing_policy(&self) -> Option<&IndexingPolicy> { self.indexing_policy.as_ref() }
+    // ... no with_*() setters on the target struct
+}
 
+/// Builder for [`ContainerProperties`].
+#[derive(Default)]
+pub struct ContainerPropertiesBuilder {
+    indexing_policy: Option<IndexingPolicy>,
+    unique_key_policy: Option<UniqueKeyPolicy>,
+    conflict_resolution_policy: Option<ConflictResolutionPolicy>,
+    vector_embedding_policy: Option<VectorEmbeddingPolicy>,
+    default_ttl: Option<Duration>,
+    analytical_storage_ttl: Option<Duration>,
+}
+
+impl ContainerPropertiesBuilder {
     // with_* setters ONLY for optional fields:
     pub fn with_indexing_policy(mut self, value: IndexingPolicy) -> Self {
         self.indexing_policy = Some(value);
         self
     }
+
+    pub fn with_default_ttl(mut self, value: Duration) -> Self {
+        self.default_ttl = Some(value);
+        self
+    }
+
     // ... no with_id(), no with_partition_key()
+
+    /// Build a [`ContainerProperties`] with the required fields.
+    pub fn build(
+        self,
+        id: impl Into<Cow<'static, str>>,
+        partition_key: impl Into<PartitionKeyDefinition>,
+    ) -> ContainerProperties {
+        ContainerProperties {
+            id: id.into(),
+            partition_key: partition_key.into(),
+            indexing_policy: self.indexing_policy,
+            unique_key_policy: self.unique_key_policy,
+            conflict_resolution_policy: self.conflict_resolution_policy,
+            vector_embedding_policy: self.vector_embedding_policy,
+            default_ttl: self.default_ttl,
+            analytical_storage_ttl: self.analytical_storage_ttl,
+            system_properties: SystemProperties::default(),
+        }
+    }
 }
 ```
 
-**Serde compatibility note:** Removing `Default` from a struct does **not** break serde deserialization as long as:
+**Example — all-optional struct:**
+
+```rust
+impl ItemOptions {
+    pub fn builder() -> ItemOptionsBuilder {
+        ItemOptionsBuilder::default()
+    }
+
+    // Getters:
+    pub fn session_token(&self) -> Option<&str> { self.session_token.as_deref() }
+    pub fn consistency_level(&self) -> Option<ConsistencyLevel> { self.consistency_level }
+}
+
+#[derive(Default)]
+pub struct ItemOptionsBuilder {
+    session_token: Option<String>,
+    consistency_level: Option<ConsistencyLevel>,
+}
+
+impl ItemOptionsBuilder {
+    pub fn with_session_token(mut self, value: impl Into<String>) -> Self {
+        self.session_token = Some(value.into());
+        self
+    }
+
+    pub fn with_consistency_level(mut self, value: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(value);
+        self
+    }
+
+    /// Build an [`ItemOptions`]. All fields are optional, so no parameters are needed.
+    pub fn build(self) -> ItemOptions {
+        ItemOptions {
+            session_token: self.session_token,
+            consistency_level: self.consistency_level,
+        }
+    }
+}
+```
+
+**Serde compatibility note:** Removing struct-level `Default` does **not** break serde deserialization as long as:
 
 - Required fields are always present in the JSON (they are — the server always returns them)
 - Optional fields use `#[serde(default)]` and `#[serde(skip_serializing_if = "Option::is_none")]` (or equivalent for `Vec`, `bool`, etc.)
 
-**Canonical exemplar:** `PartitionKeyDefinition::new(paths)` in `partition_key_definition.rs` follows this pattern (though it currently still derives `Default`, which should be removed per this rule).
-
 #### g) Exemptions
 
-**Newtype structs** are exempt from rules (a), (b), (c), (d), and (e) above. Since a newtype wraps a single value, the full named-field struct rules (private fields, getters, `with_*` setters, `Default`, `#[non_exhaustive]`) do not apply. Instead, newtypes should:
+**Newtype structs** are exempt from rules (a), (b), (c), (d), (e), (f), and (h) above. Since a newtype wraps a single value, the full named-field struct rules (private fields, getters, builders, `#[non_exhaustive]`) do not apply. Instead, newtypes should:
 
 - Keep the inner field **private**.
 - Provide construction via `new()`, `From` impls, or associated constants.
 - Provide access to the inner value via a getter (e.g., `value()`) or `Into`/`AsRef` impls.
 - **Omit** `#[non_exhaustive]`.
 
-**Options structs** (e.g., `ItemOptions`, `QueryOptions`, `CosmosClientOptions`) are exempt from Step 6f — all their fields are optional by design, so they use `Default` + `with_*` with no `new()` constructor.
+**Builder types** (`*Builder` structs) are exempt from `#[non_exhaustive]`, getters, and the `Default` prohibition. Builder fields are always private (making `#[non_exhaustive]` unnecessary — private fields already prevent struct literal construction). Builders derive `Default` — that is how `builder()` creates one.
 
-All other truly public structs — including serde model structs and builder structs — get the full set of rules with no further exemptions. Model structs with required fields (e.g., `ContainerProperties`, `DatabaseProperties`) must follow Step 6f.
+All other truly public structs — including options structs, serde model structs, and configuration structs — must use a separate builder type for construction per Steps 6d–6f and 6h. There are no further exemptions.
 
 Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `pub(crate)` is needed for serde compatibility.
+
+#### h) Builder type requirements
+
+Every truly public struct must provide a **separate builder type** for construction, following the [Azure SDK Rust builder guidelines](https://azure.github.io/azure-sdk/rust_introduction.html).
+
+**Factory method on the target type:**
+
+- `pub fn builder() -> <Type>Builder` — returns a new builder instance (via `<Type>Builder::default()`).
+
+**Builder type rules:**
+
+1. Named `<Type>Builder` (e.g., `ContainerProperties` → `ContainerPropertiesBuilder`, `ItemOptions` → `ItemOptionsBuilder`).
+2. All fields are **private**. Private fields already prevent struct literal construction, making `#[non_exhaustive]` unnecessary on the builder.
+3. Derives `Default` — that is how `builder()` creates one. All builder fields start as `None`/empty.
+4. Provides `pub fn with_<field>(mut self, value: ...) -> Self` setters for each **optional** field.
+5. Provides a terminal `pub fn build(self, ...) -> <Type>` method:
+   - For all-optional structs: `build(self)` takes **no** arguments.
+   - For structs with required fields: `build(self, required_args)` takes all required fields as parameters. Use `impl Into<T>` for ergonomic conversion.
+   - Returns the constructed target type (or `azure_core::Result<Type>` if construction can fail).
+6. Does **not** provide `with_*` setters for required fields — they are set exclusively via `build()`.
+
+**Construction patterns:**
+
+```rust
+// All-optional struct:
+let options = ItemOptions::builder()
+    .with_session_token(token)
+    .build();
+
+// Struct with required fields:
+let props = ContainerProperties::builder()
+    .with_default_ttl(Duration::from_secs(3600))
+    .build("myContainer", "/partitionKey");
+
+// Struct with required fields, no optional overrides:
+let db = DatabaseProperties::builder()
+    .build("myDatabase");
+```
 
 ### Step 7 — Auto-fix or report
 
@@ -284,18 +401,23 @@ Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `
 3. Remove `#[non_exhaustive]` from non-public structs that have it unnecessarily.
 4. Make `pub` fields private or `pub(crate)` on truly public structs. For each field that was previously `pub`:
    - Search the crate for direct field access outside the defining module.
-   - If a getter and/or `with_*` setter exists (or is being generated) **and** no crate-internal code outside the defining module accesses the field directly, make the field **private** (no modifier).
-   - If a getter and/or `with_*` setter exists **but** crate-internal code in other modules also accesses the field directly (mutation, move/consume, nested traversal), make the field **`pub(crate)`**.
+   - If a getter exists (or is being generated) **and** no crate-internal code outside the defining module accesses the field directly, make the field **private** (no modifier).
+   - If a getter exists **but** crate-internal code in other modules also accesses the field directly (mutation, move/consume, nested traversal), make the field **`pub(crate)`**.
    - If no accessor is generated and the field is used elsewhere in the crate, use the most restrictive visibility that compiles (`pub(crate)` or `pub(super)`).
-   - Generate getter methods and `with_*` setter methods for each field that external consumers need to read or write.
-5. For each truly public struct, determine required vs optional fields (per Step 6f):
-   - If the struct has **any** required fields:
-     a. Generate a `pub fn new(...)` constructor taking all required fields as parameters.
-     b. Remove `#[derive(Default)]` (or manual `impl Default`) from the struct.
-     c. Remove `with_*` setters for required fields — keep `with_*` only for optional fields.
-     d. Add `#[serde(default)]` on each optional field if the struct derives `Deserialize` and the struct-level `Default` was removed.
-     e. Update all call sites in the crate and tests: replace `Type::default().with_required_field(v)` with `Type::new(v, ...)`, chaining `.with_*()` only for optional fields.
-   - If the struct has **no** required fields: add `#[derive(Default)]` if missing.
+   - Generate getter methods for each field that external consumers need to read.
+5. For each truly public struct, generate a builder type (per Steps 6d–6h):
+   a. Generate a `pub fn builder()` factory method on the target struct returning `<Type>Builder`.
+   b. Generate a `<Type>Builder` struct with private fields and `Default` derive.
+   c. Generate `with_*` setters on the builder for each optional field.
+   d. Generate a `build(self, ...)` method on the builder — with required fields as parameters (if any), returning the target type.
+   e. Remove `pub fn new(...)` from the target struct (if it exists).
+   f. Remove `pub fn with_*(...)` from the target struct (if they exist).
+   g. Remove `#[derive(Default)]` (or manual `impl Default`) from the target struct.
+   h. Add `#[serde(default)]` on each optional field if the struct derives `Deserialize`.
+   i. Update all call sites in the crate and tests:
+      - `Type::default().with_opt(x)` → `Type::builder().with_opt(x).build()`
+      - `Type::new(v).with_opt(x)` → `Type::builder().with_opt(x).build(v)`
+      - `Type::default()` → `Type::builder().build()`
 6. Run `cargo fmt -p <crate>` after changes.
 7. Run `cargo clippy -p <crate> --all-features --all-targets` and fix any resulting warnings.
 8. Run `cargo build -p <crate>` to confirm changes compile.
@@ -327,8 +449,11 @@ List all changes (applied or proposed) that affect truly public structs, grouped
 - Added `#[non_exhaustive]`
 - Fields changed from `pub` to private
 - New getter methods added
-- New `with_*` setter methods added
-- `Default` derive added
+- New builder type generated (`<Type>Builder`)
+- New `builder()` factory method added
+- `Default` derive removed from target struct
+- `with_*` setters moved from target struct to builder
+- `new()` constructor removed (replaced by `builder().build()`)
 - Visibility modifier changed on struct
 
 #### Breaking change warnings
@@ -345,9 +470,10 @@ Breaking changes include:
 
 - A `pub` field becoming private (consumers using direct field access will break)
 - Adding `#[non_exhaustive]` (consumers using struct literal construction will break)
-- Removing `Default` from a struct (consumers calling `Type::default()` will break — must switch to `Type::new(...)`)
-- Removing `with_*` setters for required fields (consumers chaining `.with_required_field(v)` must switch to `Type::new(v, ...)`)
-- Adding `new()` is an additive, non-breaking change
+- Removing `Default` from a struct (consumers calling `Type::default()` will break — must switch to `Type::builder().build()`)
+- Removing `new()` (consumers calling `Type::new(v)` will break — must switch to `Type::builder().build(v)`)
+- Removing `with_*` setters from the target struct (consumers chaining `Type::new(v).with_opt(x)` must switch to `Type::builder().with_opt(x).build(v)`)
+- Adding `builder()` and the builder type is an additive, non-breaking change
 
 ## Notes
 
@@ -355,10 +481,13 @@ Breaking changes include:
 - `#[non_exhaustive]` is **only** for truly public structs. Effectively-scoped and internal structs must omit it — it adds no value when external code cannot reach the struct.
 - Fields on effectively-scoped structs can remain `pub` without additional restriction — the struct-level visibility already limits access, and repeating `pub(crate)` on every field is unnecessary noise.
 - Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `pub(crate)` is needed for serde compatibility.
-- Builder-pattern setters use the `with_*` prefix per Azure SDK Cosmos conventions (not bare field names).
+- Builder-pattern setters use the `with_*` prefix per [Azure SDK Rust guidelines](https://azure.github.io/azure-sdk/rust_introduction.html) (not bare field names).
+- Builder types follow the [Azure SDK Rust builder guidelines](https://azure.github.io/azure-sdk/rust_introduction.html): builders must be their own type, required params go on `build()`, and all builder fields use `with_*` setters.
+- All truly public structs use a separate builder type for construction. The `Type::builder().with_*().build(...)` pattern applies uniformly — the only difference between all-optional and required-field structs is whether `build()` takes arguments.
+- No truly public struct derives `Default` — it would be an uncontrolled public construction path bypassing the builder. Field-level `#[serde(default)]` replaces struct-level `Default` for deserialization.
+- Builder fields are always private, making `#[non_exhaustive]` unnecessary on builders.
 - Reference `sdk/cosmos/AGENTS.md` for canonical model, options, and builder patterns.
 - Breaking changes in public surface area require explicit acknowledgment from the developer before merging.
-- When generating **new** structs, apply these rules from the start — it is far easier to design with private fields and accessors than to retrofit them later.
-- `PartitionKeyDefinition::new(paths)` in `partition_key_definition.rs` is the canonical exemplar of the required-field constructor pattern. (Note: it currently still derives `Default`, which should be removed per Step 6f.)
+- When generating **new** structs, apply these rules from the start — it is far easier to design with private fields, getters, and builders than to retrofit them later.
 - For **new** structs, explicitly ask the developer which fields are required if not obvious from the context.
 - For **existing** structs, infer required fields from: (1) doc comments mentioning "required", (2) server rejection of default values, (3) every call site always setting the field, (4) non-`Option` type with no semantically valid zero value.
