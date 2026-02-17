@@ -5,7 +5,7 @@ use crate::constants;
 use crate::models::ThroughputProperties;
 use crate::regions::RegionName;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use azure_core::http::{headers, ClientMethodOptions, Etag};
+use azure_core::http::{headers, Etag};
 use azure_core::time::Duration;
 use std::collections::HashMap;
 use std::convert::Infallible;
@@ -129,35 +129,27 @@ pub struct SessionRetryOptions {
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
 #[derive(Clone, Default)]
-pub struct CreateContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
+pub struct CreateContainerOptions {
     pub throughput: Option<ThroughputProperties>,
 }
 
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
 #[derive(Clone, Default)]
-pub struct ReplaceContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ReplaceContainerOptions;
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
-pub struct CreateDatabaseOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
+pub struct CreateDatabaseOptions {
     pub throughput: Option<ThroughputProperties>,
 }
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
-pub struct DeleteContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct DeleteContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
 #[derive(Clone, Default)]
-pub struct DeleteDatabaseOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct DeleteDatabaseOptions;
 
 /// Specifies consistency levels that can be used when working with Cosmos APIs.
 ///
@@ -225,8 +217,7 @@ impl Display for IndexingDirective {
 
 /// Options to be passed to APIs that manipulate items.
 #[derive(Clone, Default)]
-pub struct ItemOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
+pub struct ItemOptions {
     /// Triggers executed before the operation.
     ///
     /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
@@ -281,7 +272,7 @@ pub struct ItemOptions<'a> {
     pub excluded_regions: Option<Vec<RegionName>>,
 }
 
-impl AsHeaders for ItemOptions<'_> {
+impl AsHeaders for ItemOptions {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
@@ -350,21 +341,15 @@ impl AsHeaders for ItemOptions<'_> {
 
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
 #[derive(Clone, Default)]
-pub struct QueryContainersOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct QueryContainersOptions;
 
 /// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases())
 #[derive(Clone, Default)]
-pub struct QueryDatabasesOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct QueryDatabasesOptions;
 
 /// Options to be passed to [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
 #[derive(Clone, Default)]
-pub struct QueryOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-
+pub struct QueryOptions {
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
@@ -396,22 +381,7 @@ pub struct QueryOptions<'a> {
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
-impl QueryOptions<'_> {
-    pub fn into_owned(self) -> QueryOptions<'static> {
-        QueryOptions {
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-            session_token: self.session_token,
-            consistency_level: self.consistency_level,
-            throughput_bucket: self.throughput_bucket,
-            priority: self.priority,
-            custom_headers: self.custom_headers,
-        }
-    }
-}
-
-impl AsHeaders for QueryOptions<'_> {
+impl AsHeaders for QueryOptions {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
@@ -451,21 +421,15 @@ impl AsHeaders for QueryOptions<'_> {
 
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
-pub struct ReadContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ReadContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Default)]
-pub struct ReadDatabaseOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ReadDatabaseOptions;
 
 /// Options to be passed to operations related to Throughput offers.
 #[derive(Clone, Default)]
-pub struct ThroughputOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ThroughputOptions;
 
 #[cfg(test)]
 mod tests {

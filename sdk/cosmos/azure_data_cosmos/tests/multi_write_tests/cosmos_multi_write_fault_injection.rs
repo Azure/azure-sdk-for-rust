@@ -337,10 +337,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_options(CosmosClientOptions {
-                    application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-                    ..Default::default()
-                }),
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
         ),
     )
     .await
@@ -425,10 +422,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_options(CosmosClientOptions {
-                    application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-                    ..Default::default()
-                }),
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
         ),
     )
     .await
@@ -526,7 +520,11 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]),
+        ),
     )
     .await
 }

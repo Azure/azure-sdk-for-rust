@@ -8,7 +8,7 @@ use crate::{
     resource_context::ResourceLink,
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
-use azure_core::http::Url;
+use azure_core::http::{Context, Url};
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -120,14 +120,12 @@ impl CosmosClient {
     pub fn query_databases(
         &self,
         query: impl Into<Query>,
-        options: Option<QueryDatabasesOptions<'_>>,
+        _options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
-        let options = options.unwrap_or_default();
-
         crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),
             self.databases_link.clone(),
-            options.method_options.context.into_owned(),
+            Context::default(),
             query.into(),
             azure_core::http::headers::Headers::new(),
         )
@@ -145,7 +143,7 @@ impl CosmosClient {
     pub async fn create_database(
         &self,
         id: &str,
-        options: Option<CreateDatabaseOptions<'_>>,
+        options: Option<CreateDatabaseOptions>,
     ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
 
@@ -160,8 +158,6 @@ impl CosmosClient {
                 .json(&RequestBody { id })
                 .build()?;
 
-        self.pipeline
-            .send(cosmos_request, options.method_options.context)
-            .await
+        self.pipeline.send(cosmos_request, Context::default()).await
     }
 }
