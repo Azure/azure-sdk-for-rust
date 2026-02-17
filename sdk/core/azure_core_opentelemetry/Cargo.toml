@@ -19,7 +19,6 @@ default = ["azure_core/default"]
 [dependencies]
 azure_core.workspace = true
 opentelemetry.workspace = true
-opentelemetry-http.workspace = true
 opentelemetry_sdk.workspace = true
 tracing.workspace = true
 

@@ -30,16 +30,13 @@ impl From<OpenTelemetrySpanKind> for opentelemetry::trace::SpanKind {
     }
 }
 
-struct HeaderMap {
-    headers: Vec<(HeaderName, HeaderValue)>,
-}
+struct HeaderMap(Vec<(HeaderName, HeaderValue)>);
 
 impl Injector for HeaderMap {
     fn set(&mut self, key: &str, value: String) {
-        // Convert the key and value to HeaderName and HeaderValue
-        let header_name = HeaderName::from(key);
-        let header_value = HeaderValue::from(value);
-        self.headers.push((header_name, header_value));
+        // Convert the key and value to HeaderName and HeaderValue. Note that we need to
+        // allocate new strings for the key because it's passed in as a string slice reference.
+        self.0.push((key.to_string().into(), value.into()));
     }
 }
 
@@ -96,19 +93,16 @@ impl Span for OpenTelemetrySpan {
     fn propagate_headers(&self, request: &mut azure_core::http::Request) {
         // A TraceContextPropagator is used to inject trace context information into HTTP headers.
         let trace_propagator = TraceContextPropagator::new();
-        // We need to map between a reqwest header map (which is what the OpenTelemetry SDK requires)
+        // We need to map between a header map (which is what the OpenTelemetry SDK requires)
         // and the Azure Core request headers.
         //
         // We start with an empty header map and inject the OpenTelemetry headers into it.
-        let mut header_map = HeaderMap {
-            headers: Vec::new(),
-        };
-
+        let mut header_map = HeaderMap(Vec::new());
         trace_propagator.inject_context(&self.context, &mut header_map);
 
         // We then insert each of the headers from the OpenTelemetry header map into the
         // Request's header map.
-        for (key, value) in header_map.headers {
+        for (key, value) in header_map.0 {
             request.insert_header(
                 key,
                 // The value is guaranteed to be a valid UTF-8 string by the OpenTelemetry SDK,
