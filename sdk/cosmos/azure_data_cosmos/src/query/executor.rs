@@ -37,7 +37,7 @@ pub struct QueryExecutor<T: DeserializeOwned + ConditionalSend> {
 }
 
 impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
-    pub fn new(
+    pub(crate) fn new(
         http_pipeline: Arc<GatewayPipeline>,
         items_link: ResourceLink,
         context: Context<'static>,

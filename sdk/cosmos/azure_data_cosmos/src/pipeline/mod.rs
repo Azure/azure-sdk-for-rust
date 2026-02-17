@@ -10,7 +10,7 @@ use crate::models::CosmosResponse;
 use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::CosmosClientOptions;
-pub use authorization_policy::AuthorizationPolicy;
+pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
 use std::sync::Arc;
@@ -30,7 +30,7 @@ const SUCCESS_CODES: [u16; 101] = {
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
-pub struct GatewayPipeline {
+pub(crate) struct GatewayPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,

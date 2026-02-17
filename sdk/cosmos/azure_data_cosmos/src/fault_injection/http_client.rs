@@ -16,6 +16,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct FaultClient {
     /// The inner HTTP client to which requests are delegated.

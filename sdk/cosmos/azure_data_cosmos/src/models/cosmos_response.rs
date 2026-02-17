@@ -28,7 +28,7 @@ pub struct CosmosResponse<T> {
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
-    pub fn new(response: Response<T>, request: CosmosRequest) -> Self {
+    pub(crate) fn new(response: Response<T>, request: CosmosRequest) -> Self {
         Self { response, request }
     }
 
@@ -54,7 +54,7 @@ impl<T> CosmosResponse<T> {
     /// This api is subject to change without a major version bump.
     ///
     #[cfg(feature = "fault_injection")]
-    pub fn request(&self) -> &CosmosRequest {
+    pub(crate) fn request(&self) -> &CosmosRequest {
         &self.request
     }
 
