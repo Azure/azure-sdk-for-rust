@@ -3,19 +3,65 @@
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 /// Represents the partition key kind.
-#[derive(PartialEq, Eq, Clone, Default, SafeDebug, Deserialize, Serialize)]
-pub enum PartitionKeyKind {
+///
+/// This is a string new type that allows for forward-compatible deserialization of
+/// partition key kinds. Known values are defined as constants on this type.
+#[derive(Clone, SafeDebug, Deserialize, Serialize)]
+#[safe(true)]
+pub struct PartitionKeyKind(String);
+
+impl PartitionKeyKind {
     /// Standard single-path hashing.
-    #[default]
-    Hash,
+    pub const HASH: &str = "Hash";
+
     /// Multi-path (hierarchical) partition keys.
-    MultiHash,
-    /// A partition key kind not recognized by this SDK version.
-    #[serde(other)]
-    Other,
+    pub const MULTI_HASH: &str = "MultiHash";
+
+    /// Creates a new [`PartitionKeyKind`] from the given string value.
+    pub fn new(value: impl Into<String>) -> Self {
+        PartitionKeyKind(value.into())
+    }
+
+    /// Returns the string representation of the partition key kind.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }
+
+impl Default for PartitionKeyKind {
+    fn default() -> Self {
+        PartitionKeyKind(Self::HASH.to_string())
+    }
+}
+
+impl fmt::Display for PartitionKeyKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl From<&str> for PartitionKeyKind {
+    fn from(value: &str) -> Self {
+        PartitionKeyKind(value.to_string())
+    }
+}
+
+impl From<String> for PartitionKeyKind {
+    fn from(value: String) -> Self {
+        PartitionKeyKind(value)
+    }
+}
+
+impl PartialEq for PartitionKeyKind {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq_ignore_ascii_case(&other.0)
+    }
+}
+
+impl Eq for PartitionKeyKind {}
 
 /// Represents the partition key definition for a container.
 #[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -41,9 +87,9 @@ impl PartitionKeyDefinition {
     pub fn new(paths: impl Into<Vec<String>>) -> Self {
         let paths = paths.into();
         let kind = if paths.len() > 1 {
-            PartitionKeyKind::MultiHash
+            PartitionKeyKind::new(PartitionKeyKind::MULTI_HASH)
         } else {
-            PartitionKeyKind::Hash
+            PartitionKeyKind::new(PartitionKeyKind::HASH)
         };
         PartitionKeyDefinition {
             paths,
@@ -88,7 +134,7 @@ mod tests {
         assert_eq!(
             PartitionKeyDefinition {
                 paths: vec!["/a".to_string()],
-                kind: PartitionKeyKind::Hash,
+                kind: PartitionKeyKind::new(PartitionKeyKind::HASH),
                 version: Some(2),
             },
             "/a".into()
@@ -96,7 +142,7 @@ mod tests {
         assert_eq!(
             PartitionKeyDefinition {
                 paths: vec!["/a".to_string()],
-                kind: PartitionKeyKind::Hash,
+                kind: PartitionKeyKind::new(PartitionKeyKind::HASH),
                 version: Some(2),
             },
             "/a".to_string().into()
@@ -108,7 +154,7 @@ mod tests {
         assert_eq!(
             PartitionKeyDefinition {
                 paths: vec!["/a".to_string(), "/b".to_string()],
-                kind: PartitionKeyKind::MultiHash,
+                kind: PartitionKeyKind::new(PartitionKeyKind::MULTI_HASH),
                 version: Some(2),
             },
             ("/a", "/b").into()
@@ -120,7 +166,7 @@ mod tests {
         assert_eq!(
             PartitionKeyDefinition {
                 paths: vec!["/a".to_string(), "/b".to_string(), "/c".to_string()],
-                kind: PartitionKeyKind::MultiHash,
+                kind: PartitionKeyKind::new(PartitionKeyKind::MULTI_HASH),
                 version: Some(2),
             },
             ("/a", "/b", "/c").into()

@@ -95,7 +95,10 @@ impl CosmosClient {
                 options.enable_partition_level_circuit_breaker,
             );
 
-        #[allow(clippy::arc_with_non_send_sync)]
+        #[allow(
+            clippy::arc_with_non_send_sync,
+            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
+        )]
         // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
@@ -183,7 +186,10 @@ impl CosmosClient {
             options.enable_partition_level_circuit_breaker,
         );
 
-        #[allow(clippy::arc_with_non_send_sync)]
+        #[allow(
+            clippy::arc_with_non_send_sync,
+            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
+        )]
         // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,

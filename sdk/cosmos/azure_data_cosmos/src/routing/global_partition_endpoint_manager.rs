@@ -499,6 +499,7 @@ impl GlobalPartitionEndpointManager {
                 return false;
             }
 
+            // TODO - Move this to new type and capture in DiagnosticsContext when porting to driver
             let triggered_by = if self
                 .partition_level_automatic_failover_enabled
                 .load(Ordering::SeqCst)

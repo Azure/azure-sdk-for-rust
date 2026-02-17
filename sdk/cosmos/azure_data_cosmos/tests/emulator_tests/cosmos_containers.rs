@@ -58,7 +58,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 created_properties.partition_key.paths
             );
             assert_eq!(
-                PartitionKeyKind::Hash,
+                PartitionKeyKind::new(PartitionKeyKind::HASH),
                 created_properties.partition_key.kind
             );
             let indexing_policy = created_properties
@@ -184,7 +184,7 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
                 created_properties.partition_key.paths
             );
             assert_eq!(
-                PartitionKeyKind::MultiHash,
+                PartitionKeyKind::new(PartitionKeyKind::MULTI_HASH),
                 created_properties.partition_key.kind
             );
 
