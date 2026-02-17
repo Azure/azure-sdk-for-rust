@@ -9,7 +9,7 @@ use std::str::FromStr;
 
 const PREFIX: &str = "bytes ";
 const WILDCARD: &str = "*";
-const CONTENT_RANGE_ID: HeaderName = HeaderName::from_static("content_range");
+const CONTENT_RANGE_ID: HeaderName = HeaderName::from_static("content-range");
 
 type Result<T> = azure_core::Result<T>;
 

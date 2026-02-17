@@ -335,11 +335,23 @@ mod tests {
                     .await?;
 
                     assert_eq!(
+                        downloaded_data.len(),
+                        download_range.map_or(DATA_LEN, |range| range.1 - range.0),
+                        "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
+                        partition_len,
+                        download_range,
+                        expected_parts
+                    );
+                    assert_eq!(
                         &downloaded_data[..],
                         match download_range {
                             Some(r) => &data[r.0..r.1],
                             None => &data[..],
-                        }
+                        },
+                        "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
+                        partition_len,
+                        download_range,
+                        expected_parts
                     );
                     assert_eq!(
                         mock.invocations.lock().await.len(),
