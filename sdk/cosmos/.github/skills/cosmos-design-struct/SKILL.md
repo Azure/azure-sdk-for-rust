@@ -119,13 +119,14 @@ Fields on truly public structs must **never** be `pub`. Choose the visibility by
 | Scenario | Field visibility |
 |---|---|
 | Field has a public getter and/or `with_*` setter **and** no crate-internal code outside the defining module accesses the field directly | **Private** (no modifier). All access — including crate-internal — goes through the accessor methods. |
-| Field has a public getter and/or `with_*` setter **but** crate-internal code in other modules also accesses the field directly (e.g., for mutation, move/consume, or nested field traversal) | **`pub(crate)`**. The getter serves external consumers; `pub(crate)` permits efficient internal access without forcing all crate-internal code through the public API. |
+| Field has a public getter and crate-internal code outside the defining module only **reads** the field | **Private** (no modifier). Rewrite those read sites to call the getter rather than exposing the field. |
+| Field has a public getter and crate-internal code outside the defining module requires **non-getter semantics** (e.g., mutation, move/consume of field state, taking mutable references, or writing nested internals) | **`pub(crate)`**. This is an explicit exception and should be justified by usage. |
 | Field has no public accessor but is read/written inside the crate | **`pub(crate)`** (or `pub(super)` if only the parent module needs access) |
 | Field has no accessor and is only used in the declaring module | **Private** (no modifier) |
 
 **Rationale**: Making a field `pub` is a semver commitment — removing it later is a breaking change. Private fields with accessors keep the API surface controllable.
 
-**How to determine the correct visibility**: Before deciding between private and `pub(crate)`, search the crate for direct field access outside the defining module (e.g., `grep` for `.field_name` in other `.rs` files). If any crate-internal code accesses the field directly — not through a getter or setter — the field must be `pub(crate)`. If all access goes through accessors, the field should be private (no modifier).
+**How to determine the correct visibility**: Before deciding between private and `pub(crate)`, search the crate for direct field access outside the defining module (e.g., `grep` for `.field_name` in other `.rs` files). If usage is read-only and a getter exists (or can be generated), rewrite call sites to use the getter and keep the field private. Use `pub(crate)` only when non-getter semantics are required (mutation/move/borrowing patterns that a getter cannot represent cleanly).
 
 #### c) Getter methods for readable fields
 
@@ -196,8 +197,8 @@ These conventions apply only when a builder exists; they are not a requirement t
 3. Remove `#[non_exhaustive]` from non-public structs that have it unnecessarily.
 4. Make `pub` fields private or `pub(crate)` on truly public structs. For each field that was previously `pub`:
    - Search the crate for direct field access outside the defining module.
-   - If a getter exists (or is being generated) **and** no crate-internal code outside the defining module accesses the field directly, make the field **private** (no modifier).
-   - If a getter exists **but** crate-internal code in other modules also accesses the field directly (mutation, move/consume, nested traversal), make the field **`pub(crate)`**.
+  - If a getter exists (or is being generated) and usage outside the defining module is read-only, rewrite those sites to getter calls and make the field **private** (no modifier).
+  - If a getter exists but crate-internal code in other modules requires non-getter semantics (mutation, move/consume, mutable borrowing, nested traversal that cannot be represented by current accessors), keep field **`pub(crate)`**.
    - If no accessor is generated and the field is used elsewhere in the crate, use the most restrictive visibility that compiles (`pub(crate)` or `pub(super)`).
    - Generate getter methods for each field that external consumers need to read.
 5. Ensure each truly public struct has a consistent allowed construction API (Step 6d), preferring minimal churn:

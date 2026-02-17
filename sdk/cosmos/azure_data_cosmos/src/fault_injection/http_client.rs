@@ -145,7 +145,7 @@ impl FaultClient {
         }
 
         // Generate the appropriate error based on error type
-        let error_type = match server_error.error_type {
+        let error_type = match server_error.error_type() {
             Some(et) => et,
             None => return None, // No error type set, pass through
         };
@@ -263,8 +263,8 @@ impl HttpClient for FaultClient {
 
         // Apply delay after the request is sent
         if let Some(result) = fault_result {
-            if result.delay > Duration::ZERO {
-                let delay = azure_core::time::Duration::try_from(result.delay)
+            if result.delay() > Duration::ZERO {
+                let delay = azure_core::time::Duration::try_from(result.delay())
                     .unwrap_or(azure_core::time::Duration::ZERO);
                 azure_core::async_runtime::get_async_runtime()
                     .sleep(delay)
