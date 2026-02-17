@@ -200,7 +200,7 @@ mod tests {
                         range: Some((range.start, range.end - 1)),
                         total_len: Some(self.data.len()),
                     });
-                    let range = range.start as usize..range.end as usize;
+                    let range = range.start..range.end;
                     Ok(AsyncRawResponse::new(
                         StatusCode::PartialContent,
                         headers,
