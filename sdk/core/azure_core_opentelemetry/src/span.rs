@@ -37,7 +37,7 @@ struct HeaderMap {
 impl Injector for HeaderMap {
     fn set(&mut self, key: &str, value: String) {
         // Convert the key and value to HeaderName and HeaderValue
-        let header_name = HeaderName::from(key.to_string());
+        let header_name = HeaderName::from(key);
         let header_value = HeaderValue::from(value);
         self.headers.push((header_name, header_value));
     }
