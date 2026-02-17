@@ -196,11 +196,11 @@ impl DatabaseClient {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
-            .system_properties
-            .resource_id
+            .system_properties()
+            .resource_id()
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id.to_owned());
         offers_client.read(options.method_options.context).await
     }
 
@@ -220,11 +220,11 @@ impl DatabaseClient {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
-            .system_properties
-            .resource_id
+            .system_properties()
+            .resource_id()
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id.to_owned());
         offers_client
             .replace(options.method_options.context, throughput)
             .await

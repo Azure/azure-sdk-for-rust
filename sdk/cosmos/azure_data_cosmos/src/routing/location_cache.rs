@@ -167,8 +167,8 @@ impl LocationCache {
     /// # Arguments
     /// * `account_properties` - Account metadata including regional endpoint information
     pub fn on_database_account_read(&mut self, account_properties: AccountProperties) {
-        let write_regions = account_properties.writable_locations;
-        let read_regions = account_properties.readable_locations;
+        let write_regions = account_properties.writable_locations().to_vec();
+        let read_regions = account_properties.readable_locations().to_vec();
         let _ = &self.update(write_regions, read_regions);
     }
 
@@ -199,8 +199,8 @@ impl LocationCache {
 
         // Extend with read locations not already in preferred locations - O(n)
         for location in &read_locations {
-            if !existing.contains(&location.name) {
-                effective_preferred_locations.push(location.name.clone());
+            if !existing.contains(location.name()) {
+                effective_preferred_locations.push(location.name().clone());
             }
         }
 
@@ -341,7 +341,7 @@ impl LocationCache {
                 let idx = (location_index) % location_info.account_write_locations.len();
                 location_endpoint_to_route = Some(
                     location_info.account_write_locations[idx]
-                        .database_account_endpoint
+                        .database_account_endpoint()
                         .clone(),
                 );
             }
@@ -495,17 +495,17 @@ impl LocationCache {
 
         for location in locations {
             endpoints_by_location.insert(
-                location.name.clone(),
-                location.database_account_endpoint.clone(),
+                location.name().clone(),
+                location.database_account_endpoint().clone(),
             );
             if is_write {
                 self.locations_info
                     .write_endpoints
-                    .push(location.database_account_endpoint.clone());
+                    .push(location.database_account_endpoint().clone());
             } else {
                 self.locations_info
                     .read_endpoints
-                    .push(location.database_account_endpoint.clone());
+                    .push(location.database_account_endpoint().clone());
             }
             parsed_locations.push(location);
         }
@@ -609,22 +609,22 @@ mod tests {
         // Setting up test database account data
         let default_endpoint = "https://default.documents.example.com".parse().unwrap();
 
-        let location_1 = AccountRegion {
-            database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 1"),
-        };
-        let location_2 = AccountRegion {
-            database_account_endpoint: "https://location2.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 2"),
-        };
-        let location_3 = AccountRegion {
-            database_account_endpoint: "https://location3.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 3"),
-        };
-        let location_4 = AccountRegion {
-            database_account_endpoint: "https://location4.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 4"),
-        };
+        let location_1 = AccountRegion::new(
+            RegionName::from("Location 1"),
+            "https://location1.documents.example.com".parse().unwrap(),
+        );
+        let location_2 = AccountRegion::new(
+            RegionName::from("Location 2"),
+            "https://location2.documents.example.com".parse().unwrap(),
+        );
+        let location_3 = AccountRegion::new(
+            RegionName::from("Location 3"),
+            "https://location3.documents.example.com".parse().unwrap(),
+        );
+        let location_4 = AccountRegion::new(
+            RegionName::from("Location 4"),
+            "https://location4.documents.example.com".parse().unwrap(),
+        );
         let write_locations = Vec::from([location_1.clone(), location_2.clone()]);
 
         let read_locations = Vec::from([location_1, location_2, location_3, location_4]);
@@ -707,8 +707,7 @@ mod tests {
             .locations_info
             .account_write_locations
             .iter()
-            .cloned()
-            .map(|account_region| account_region.name)
+            .map(|account_region| account_region.name().clone())
             .collect();
         let expected_account_write_locations: HashSet<RegionName> = ["Location 1", "Location 2"]
             .iter()
@@ -724,8 +723,7 @@ mod tests {
             .locations_info
             .account_read_locations
             .iter()
-            .cloned()
-            .map(|account_region| account_region.name)
+            .map(|account_region| account_region.name().clone())
             .collect();
         let expected_account_read_locations: HashSet<RegionName> =
             ["Location 1", "Location 2", "Location 3", "Location 4"]
@@ -1272,24 +1270,20 @@ mod tests {
         // can_use_multiple_write_locations() == false even after many update() calls.
         let default_endpoint: Url = "https://default.documents.example.com".parse().unwrap();
 
-        let single_write = vec![AccountRegion {
-            database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 1"),
-        }];
+        let single_write = vec![AccountRegion::new(
+            RegionName::from("Location 1"),
+            "https://location1.documents.example.com".parse().unwrap(),
+        )];
 
         let read_locations = vec![
-            AccountRegion {
-                database_account_endpoint: "https://location1.documents.example.com"
-                    .parse()
-                    .unwrap(),
-                name: RegionName::from("Location 1"),
-            },
-            AccountRegion {
-                database_account_endpoint: "https://location2.documents.example.com"
-                    .parse()
-                    .unwrap(),
-                name: RegionName::from("Location 2"),
-            },
+            AccountRegion::new(
+                RegionName::from("Location 1"),
+                "https://location1.documents.example.com".parse().unwrap(),
+            ),
+            AccountRegion::new(
+                RegionName::from("Location 2"),
+                "https://location2.documents.example.com".parse().unwrap(),
+            ),
         ];
 
         let preferred = vec![

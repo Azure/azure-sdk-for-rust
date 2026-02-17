@@ -90,7 +90,7 @@ pub struct ContainerProperties {
     /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
     #[serde(default)]
-    pub(crate) system_properties: SystemProperties,
+    system_properties: SystemProperties,
 }
 
 impl ContainerProperties {

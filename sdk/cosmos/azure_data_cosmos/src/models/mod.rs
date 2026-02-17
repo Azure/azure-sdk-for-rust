@@ -63,7 +63,7 @@ pub struct SystemProperties {
     // Some APIs do expect the "_rid" to be provided (Replace Offer, for example), so we do want to serialize it if it's provided.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "_rid")]
-    pub(crate) resource_id: Option<String>,
+    resource_id: Option<String>,
 
     /// A [`OffsetDateTime`] representing the last modified time of the resource.
     #[serde(default)]
@@ -119,7 +119,7 @@ pub struct DatabaseProperties {
     /// A [`SystemProperties`] object containing common system properties for the database.
     #[serde(flatten)]
     #[serde(default)]
-    pub(crate) system_properties: SystemProperties,
+    system_properties: SystemProperties,
 }
 
 impl DatabaseProperties {

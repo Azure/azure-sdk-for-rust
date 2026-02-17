@@ -17,13 +17,21 @@ use url::Url;
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountRegion {
-    pub(crate) name: RegionName,
+    name: RegionName,
 
     #[serde(with = "crate::serde::url")]
-    pub(crate) database_account_endpoint: Url,
+    database_account_endpoint: Url,
 }
 
 impl AccountRegion {
+    /// Creates a new account region with name and endpoint.
+    pub fn new(name: RegionName, database_account_endpoint: Url) -> Self {
+        Self {
+            name,
+            database_account_endpoint,
+        }
+    }
+
     /// Gets the region name.
     pub fn name(&self) -> &RegionName {
         &self.name
@@ -131,10 +139,10 @@ pub struct AccountProperties {
     dbs: String,
 
     /// Regions currently accepting writes for the account (multi-master may yield >1).
-    pub(crate) writable_locations: Vec<AccountRegion>,
+    writable_locations: Vec<AccountRegion>,
 
     /// Regions from which the account can be read (includes writable regions plus any read regions).
-    pub(crate) readable_locations: Vec<AccountRegion>,
+    readable_locations: Vec<AccountRegion>,
 
     /// True when multi-master writes are enabled (more than one writable region allowed).
     enable_multiple_write_locations: bool,
