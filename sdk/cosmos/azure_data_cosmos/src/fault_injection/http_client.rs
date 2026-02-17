@@ -62,19 +62,19 @@ impl FaultClient {
         }
 
         // Check if the rule has started
-        if now < rule.start_time {
+        if now < rule.start_time() {
             return false;
         }
 
         // Check if the rule has expired
-        if let Some(end_time) = rule.end_time {
+        if let Some(end_time) = rule.end_time() {
             if now >= end_time {
                 return false;
             }
         }
 
         // Check if we've exceeded the hit limit on the rule
-        if let Some(hit_limit) = rule.hit_limit {
+        if let Some(hit_limit) = rule.hit_limit() {
             if rule_state.hit_count.load(Ordering::SeqCst) >= hit_limit {
                 return false;
             }
@@ -85,7 +85,7 @@ impl FaultClient {
 
     /// Checks if the request matches the rule's condition.
     fn matches_condition(&self, request: &Request, rule: &FaultInjectionRule) -> bool {
-        let condition = &rule.condition;
+        let condition = rule.condition();
         let mut matches = true;
 
         // Check operation type if specified
@@ -235,7 +235,7 @@ impl HttpClient for FaultClient {
                 // Increment hit count
                 rule_state.hit_count.fetch_add(1, Ordering::SeqCst);
                 // Clone and return the result
-                Some(rule_state.rule.result.clone())
+                Some(rule_state.rule.result().clone())
             } else {
                 None
             }

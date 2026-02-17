@@ -95,8 +95,8 @@ mod tests {
     fn builder_default() {
         let builder = FaultInjectionConditionBuilder::default();
         let condition = builder.build();
-        assert!(condition.operation_type.is_none());
-        assert!(condition.region.is_none());
-        assert!(condition.container_id.is_none());
+        assert!(condition.operation_type().is_none());
+        assert!(condition.region().is_none());
+        assert!(condition.container_id().is_none());
     }
 }

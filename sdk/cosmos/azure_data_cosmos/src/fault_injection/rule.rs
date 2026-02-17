@@ -14,17 +14,17 @@ use super::result::FaultInjectionResult;
 #[derive(Debug)]
 pub struct FaultInjectionRule {
     /// The condition under which to inject the fault.
-    pub(crate) condition: FaultInjectionCondition,
+    condition: FaultInjectionCondition,
     /// The result to inject when the condition is met.
-    pub(crate) result: FaultInjectionResult,
+    result: FaultInjectionResult,
     /// The absolute time at which the rule becomes active.
-    pub(crate) start_time: Instant,
+    start_time: Instant,
     /// The absolute time at which the rule expires, if set.
-    pub(crate) end_time: Option<Instant>,
+    end_time: Option<Instant>,
     /// The total hit limit of the rule.
-    pub(crate) hit_limit: Option<u32>,
+    hit_limit: Option<u32>,
     /// Unique identifier for the fault injection scenario.
-    pub(crate) id: String,
+    id: String,
     /// Whether the rule is currently enabled.
     enabled: AtomicBool,
 }
@@ -185,12 +185,12 @@ mod tests {
         let before = Instant::now();
         let rule = FaultInjectionRuleBuilder::new("test-rule", create_test_error()).build();
 
-        assert_eq!(rule.id, "test-rule");
-        assert!(rule.start_time >= before);
-        assert!(rule.start_time <= Instant::now());
-        assert!(rule.end_time.is_none());
-        assert!(rule.hit_limit.is_none());
-        assert!(rule.condition.operation_type.is_none());
+        assert_eq!(rule.id(), "test-rule");
+        assert!(rule.start_time() >= before);
+        assert!(rule.start_time() <= Instant::now());
+        assert!(rule.end_time().is_none());
+        assert!(rule.hit_limit().is_none());
+        assert!(rule.condition().operation_type().is_none());
         assert!(rule.is_enabled());
     }
 }
