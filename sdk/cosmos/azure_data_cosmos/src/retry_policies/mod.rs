@@ -198,8 +198,12 @@ pub(crate) enum RequestSentStatus {
 /// Extension trait for determining request sent status from errors.
 ///
 /// Walks the error source chain looking for typed transport errors
-/// ([`reqwest::Error`] or [`std::io::Error`]) and falls back
+/// ([`hyper_util::client::legacy::Error`] for connect detection,
+/// [`reqwest::Error`] for timeout/decode/redirect/status) and falls back
 /// to [`ErrorKind`]-based heuristics.
+///
+/// Using `hyper_util` directly makes connect detection work for any HTTP
+/// client built on `hyper_util` (reqwest, future transports, etc.).
 pub(crate) trait RequestSentExt {
     /// Returns the [`RequestSentStatus`] based on error analysis.
     fn request_sent_status(&self) -> RequestSentStatus;
@@ -211,8 +215,19 @@ impl RequestSentExt for azure_core::Error {
         let mut source: Option<&(dyn StdError + 'static)> = self.source();
         while let Some(s) = source {
             #[cfg(not(target_arch = "wasm32"))]
-            if let Some(reqwest_err) = s.downcast_ref::<reqwest::Error>() {
-                return reqwest_request_sent_status(reqwest_err);
+            {
+                // Check hyper_util first: works for any hyper_util-based transport
+                // (reqwest, future HTTP clients, etc.).
+                if let Some(hyper_err) = s.downcast_ref::<hyper_util::client::legacy::Error>() {
+                    if hyper_err.is_connect() {
+                        return RequestSentStatus::NotSent;
+                    }
+                }
+
+                // Then check reqwest for remaining classifications (timeout, decode, etc.).
+                if let Some(reqwest_err) = s.downcast_ref::<reqwest::Error>() {
+                    return reqwest_request_sent_status(reqwest_err);
+                }
             }
             source = s.source();
         }
@@ -235,17 +250,14 @@ impl RequestSentExt for azure_core::Error {
     }
 }
 
-/// Determines [`RequestSentStatus`] from a [`reqwest::Error`].
+/// Determines [`RequestSentStatus`] from a [`reqwest::Error`] for non-connect errors.
 ///
-/// Classification priority:
-/// 1. `is_connect()` → `NotSent` — connection never established (includes connect timeouts).
+/// Connect errors are already handled by `hyper_util::client::legacy::Error::is_connect()`
+/// earlier in the source chain walk. This function classifies remaining reqwest errors:
+/// 1. `is_connect()` → `NotSent` — fallback if hyper_util downcast was missed.
 /// 2. `is_timeout()` → `Unknown` — response/read timeouts where sent status is uncertain.
 /// 3. `is_decode()` / `is_redirect()` / `is_status()` → `Sent` — response was received.
 /// 4. Everything else → `Unknown`.
-///
-/// `is_connect()` is checked before `is_timeout()` because connect timeouts
-/// set both flags — the connection was never established so the request was
-/// definitely not sent.
 #[cfg(not(target_arch = "wasm32"))]
 fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
     // Connect errors (including connect timeouts) — request was never sent.
