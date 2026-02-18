@@ -45,5 +45,9 @@ client_certificate = ["openssl"]
 [lints]
 workspace = true
 
+[[example]]
+name = "specific_credential"
+crate-type = ["lib"]
+
 [package.metadata.docs.rs]
 all-features = true

@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Demonstrates how to define a custom [`TokenCredential`] that selects a
+//! specific credential based on an environment variable.
+
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
@@ -10,22 +13,6 @@ use azure_core::{
 use azure_identity::AzureCliCredential;
 use azure_identity::{ManagedIdentityCredential, WorkloadIdentityCredential};
 use std::sync::Arc;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = SpecificAzureCredential::new()?;
-
-    // Get a token for Azure Resource Management.
-    // Azure SDK clients call `get_token` automatically, so you don't
-    // normally need to call it directly. This is just to demonstrate
-    // how to acquire a token using a specific credential.
-    let access_token = credential
-        .get_token(&["https://management.azure.com/.default"], None)
-        .await?;
-    println!("token expires on {}", access_token.expires_on);
-
-    Ok(())
-}
 
 // Define the variable name and possible values you want to detect from the environment.
 const AZURE_CREDENTIAL_KIND: &str = "AZURE_CREDENTIAL_KIND";
@@ -70,7 +57,7 @@ impl TokenCredential for SpecificAzureCredentialKind {
 /// Define a credential that uses an environment variable named `AZURE_CREDENTIAL_KIND`
 /// that creates the appropriate [`TokenCredential`].
 #[derive(Debug)]
-struct SpecificAzureCredential {
+pub struct SpecificAzureCredential {
     source: SpecificAzureCredentialKind,
 }
 
