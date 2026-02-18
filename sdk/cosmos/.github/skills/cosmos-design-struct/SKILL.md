@@ -207,14 +207,14 @@ These conventions apply only when a builder exists; they are not a requirement t
   - If invariants/validation are required, make the field non-public and provide/update constructor or `with_*` APIs as needed.
   - When non-public fields need ownership extraction without cloning, prefer `From`/`Into` trait-based conversion; add targeted `into_*` methods only when a trait-based API is not a good fit.
   - Generate getter methods for fields that external consumers need to read and that are non-public.
-5. Ensure each truly public struct has a consistent allowed construction API (Step 6d), preferring minimal churn:
-  a. Keep existing style if already valid (`new` + `with_*`, optional `Default` only when no required fields, or `builder()`/`build()`).
-    b. If no ergonomic construction API exists, add the simplest valid option:
+5. Ensure each truly public struct has a consistent allowed construction API (Step 6d), prioritizing rule compliance even if changes are semver-breaking:
+  a. Enforce required-field rules strictly (`new(required...)` or `build(required...)`) and remove/avoid `Default` when logically required fields exist.
+  b. If no ergonomic construction API exists, add the simplest valid option:
         - all-optional/simple types: prefer `Default` + `with_*` on the target type.
     - types with required fields: prefer `new(required...)` + optional `with_*` and remove/avoid `Default`.
         - use a separate builder only when complexity justifies it.
-    c. Add getter methods for externally readable fields if missing.
-    d. Update call sites only when required by other applied fixes; do not force style migrations solely to introduce builders.
+  c. Add getter methods for externally readable fields if missing and if the fields are non-public.
+  d. Update call sites as needed to keep the crate compiling after applied fixes.
 6. Run `cargo fmt -p <crate>` after changes.
 7. Run `cargo clippy -p <crate> --all-features --all-targets` and fix any resulting warnings.
 8. Run `cargo build -p <crate>` to confirm changes compile.
@@ -281,7 +281,7 @@ Breaking changes include:
 - If a builder type is used, follow [Azure SDK Rust builder guidelines](https://azure.github.io/azure-sdk/rust_introduction.html): keep builder fields private, keep optional setters as `with_*`, and place required params on `build()`.
 - For ownership extraction from non-public fields, prefer standard `From`/`Into` traits first. Use targeted `into_*` methods as an exception when extracting a specific owned field without cloning is clearer than trait conversion.
 - Reference `sdk/cosmos/AGENTS.md` for canonical model, options, and builder patterns.
-- Breaking changes in public surface area require explicit acknowledgment from the developer before merging.
+- Do not skip required fixes to avoid semver-breaking outcomes; apply the rules and report all breaking changes clearly in the summary.
 - When generating **new** structs, apply these rules from the start — decide field visibility from invariants and API ergonomics up front, then keep construction APIs consistent (`Default`/`new` + `with_*`, or optional builder).
 - For **new** structs, explicitly ask the developer which fields are required if not obvious from the context.
 - For **existing** structs, infer required fields from: (1) doc comments mentioning "required", (2) server rejection of default values, (3) every call site always setting the field, (4) non-`Option` type with no semantically valid zero value.
