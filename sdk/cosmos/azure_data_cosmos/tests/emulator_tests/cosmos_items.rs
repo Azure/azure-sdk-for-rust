@@ -5,7 +5,10 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
-use azure_core::http::{Etag, StatusCode};
+use azure_core::{
+    http::{Etag, StatusCode},
+    Uuid,
+};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
 use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
@@ -14,7 +17,6 @@ use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {
@@ -57,13 +59,7 @@ fn assert_response<T>(
     }
 
     assert_eq!(
-        response
-            .request()
-            .clone()
-            .into_raw_request()
-            .url()
-            .host_str()
-            .unwrap(),
+        response.request_url().host_str().unwrap(),
         expected_endpoint,
         "unexpected endpoint"
     );
@@ -79,11 +75,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     run_context
         .create_container(
             &db_client,
-            ContainerProperties {
-                id: container_id.clone().into(),
-                partition_key: "/partition_key".into(),
-                ..Default::default()
-            },
+            ContainerProperties::new(container_id.clone(), "/partition_key".into()),
             None,
         )
         .await?;
@@ -160,10 +152,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions {
-                        enable_content_response_on_write: true,
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
                 )
                 .await?;
             assert_response(
@@ -351,10 +340,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions {
-                        enable_content_response_on_write: true,
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
                 )
                 .await?;
             assert_response(
@@ -433,10 +419,7 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     patch,
-                    Some(ItemOptions {
-                        enable_content_response_on_write: true,
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
                 )
                 .await?;
             assert_response(
@@ -618,10 +601,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag(etag)),
                 )
                 .await?;
             assert_response(
@@ -640,10 +620,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
                 )
                 .await;
 
@@ -704,10 +681,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag(etag)),
                 )
                 .await?;
             assert_response(
@@ -725,10 +699,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
                 )
                 .await;
 
@@ -787,10 +758,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag(etag)),
                 )
                 .await?;
             assert_response(
@@ -814,10 +782,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
                 )
                 .await;
 
@@ -881,10 +846,7 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     patch,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag(etag)),
                 )
                 .await?;
             assert_response(
@@ -918,10 +880,7 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     patch,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
                 )
                 .await;
 

@@ -89,7 +89,7 @@ impl BlobCheckpointStore {
                         .upload(blob_content, true, 0, Some(options))
                         .await;
                     match upload_result {
-                        Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
+                        Ok(r) => Ok((r.last_modified()?, r.etag()?)),
                         Err(e) => Err(e),
                     }
                 }
@@ -137,7 +137,7 @@ impl BlobCheckpointStore {
             .upload(blob_content, true, 0, Some(options))
             .await;
         match upload_result {
-            Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
+            Ok(r) => Ok((r.last_modified()?, r.etag()?)),
             Err(e) => Err(e),
         }
     }

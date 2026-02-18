@@ -73,6 +73,8 @@ typedef struct cosmos_client cosmos_client;
  */
 typedef struct cosmos_database_client cosmos_database_client;
 
+typedef struct cosmos_InnerPartitionKeyValue cosmos_InnerPartitionKeyValue;
+
 /**
  * Provides a RuntimeContext (see [`crate::runtime`]) implementation using the Tokio runtime.
  */

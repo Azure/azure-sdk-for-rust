@@ -3,7 +3,7 @@
 
 [package]
 name = "azure_messaging_eventhubs"
-version = "0.11.0"
+version = "0.12.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
 authors.workspace = true
@@ -11,7 +11,7 @@ license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventhubs"
-keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
+keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
 
 edition.workspace = true
@@ -20,7 +20,7 @@ edition.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "0.32.0", default-features = false }
+azure_core = { path = "../../core/azure_core", version = "0.33.0", default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
 rand.workspace = true

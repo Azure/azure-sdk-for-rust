@@ -5,9 +5,10 @@ use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
 /// Represents the partition key definition for a container.
-#[derive(Clone, SafeDebug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct PartitionKeyDefinition {
     /// The list of partition keys paths.
     pub paths: Vec<String>,

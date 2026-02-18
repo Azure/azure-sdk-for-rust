@@ -351,7 +351,7 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Test: Conditional Operation with Version
     let etag = props.etag()?.unwrap();
     let get_options = BlobClientGetPropertiesOptions {
-        if_match: Some(etag.clone()),
+        if_match: Some(etag.into()),
         version_id: Some(lease_version_1.clone()),
         ..Default::default()
     };
@@ -781,7 +781,7 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
     let props = blob_client.get_properties(None).await?;
     let etag = props.etag()?.unwrap();
     let conditional_options = BlobClientCreateSnapshotOptions {
-        if_match: Some(etag.clone()),
+        if_match: Some(etag.into()),
         ..Default::default()
     };
     let conditional_snapshot = blob_client

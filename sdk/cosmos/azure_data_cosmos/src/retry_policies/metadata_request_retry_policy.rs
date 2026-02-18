@@ -18,7 +18,7 @@ use tracing::trace;
 
 /// Retry policy for handling metadata request failures.
 #[derive(Debug)]
-pub struct MetadataRequestRetryPolicy {
+pub(crate) struct MetadataRequestRetryPolicy {
     /// An instance of GlobalEndpointManager.
     global_endpoint_manager: Arc<GlobalEndpointManager>,
 

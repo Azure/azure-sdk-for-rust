@@ -12,7 +12,7 @@ use url::Url;
 /// In a fuller implementation this would include identifiers and possibly
 /// the min/max effective partition key values that define the range.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct PartitionKeyRange;
+pub(crate) struct PartitionKeyRange;
 
 /// Carries per-request routing, partition resolution, retry and regional state.
 ///
@@ -22,7 +22,7 @@ pub struct PartitionKeyRange;
 /// various internal flags influencing retries and cache refresh behavior.
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct RequestContext {
+pub(crate) struct RequestContext {
     pub force_refresh_address_cache: bool,
     pub original_request_consistency_level: Option<String>, // Use enum if available
     pub quorum_selected_lsn: i64,

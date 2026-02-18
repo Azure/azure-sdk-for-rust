@@ -31,6 +31,7 @@ impl Display for SessionToken {
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 #[derive(Clone, Default, Debug)]
+#[non_exhaustive]
 pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
     pub application_name: Option<String>,
@@ -73,6 +74,58 @@ pub struct CosmosClientOptions {
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
+impl CosmosClientOptions {
+    pub fn with_application_name(mut self, application_name: impl Into<String>) -> Self {
+        self.application_name = Some(application_name.into());
+        self
+    }
+
+    pub fn with_application_region(mut self, application_region: impl Into<RegionName>) -> Self {
+        self.application_region = Some(application_region.into());
+        self
+    }
+
+    pub fn with_preferred_regions(mut self, regions: Vec<RegionName>) -> Self {
+        self.application_preferred_regions = regions;
+        self
+    }
+
+    pub fn with_excluded_regions(mut self, regions: Vec<RegionName>) -> Self {
+        self.excluded_regions = regions;
+        self
+    }
+
+    pub fn with_custom_endpoints(mut self, endpoints: HashSet<String>) -> Self {
+        self.account_initialization_custom_endpoints = Some(endpoints);
+        self
+    }
+
+    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    pub fn with_request_timeout(mut self, request_timeout: Duration) -> Self {
+        self.request_timeout = Some(request_timeout);
+        self
+    }
+
+    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
+        self.throughput_bucket = Some(throughput_bucket);
+        self
+    }
+
+    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
+}
+
 impl AsHeaders for CosmosClientOptions {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
@@ -109,6 +162,7 @@ impl AsHeaders for CosmosClientOptions {
 
 /// SessionRetryOptions is used to configure retry behavior for session consistency scenarios.
 #[derive(Clone, Debug, Default)]
+#[non_exhaustive]
 pub struct SessionRetryOptions {
     /// Minimum retry time for 404/1002 retries within each region for read and write operations.
     /// The minimum value is 100ms. Default is 500ms.
@@ -123,32 +177,51 @@ pub struct SessionRetryOptions {
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct CreateContainerOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
     pub throughput: Option<ThroughputProperties>,
 }
 
+impl<'a> CreateContainerOptions<'a> {
+    pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
+        self.throughput = Some(throughput);
+        self
+    }
+}
+
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ReplaceContainerOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct CreateDatabaseOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
     pub throughput: Option<ThroughputProperties>,
 }
 
+impl<'a> CreateDatabaseOptions<'a> {
+    pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
+        self.throughput = Some(throughput);
+        self
+    }
+}
+
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct DeleteContainerOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 /// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct DeleteDatabaseOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -219,6 +292,7 @@ impl Display for IndexingDirective {
 
 /// Options to be passed to APIs that manipulate items.
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ItemOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
     /// Triggers executed before the operation.
@@ -249,7 +323,7 @@ pub struct ItemOptions<'a> {
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
-    pub enable_content_response_on_write: bool,
+    pub content_response_on_write_enabled: bool,
     /// The desired throughput bucket for this request
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
@@ -273,6 +347,66 @@ pub struct ItemOptions<'a> {
     /// If None is provided, client-level excluded regions will be used.
     /// If an empty vector is provided, no regions will be excluded for this request.
     pub excluded_regions: Option<Vec<RegionName>>,
+}
+
+impl<'a> ItemOptions<'a> {
+    pub fn with_pre_triggers(mut self, pre_triggers: Vec<String>) -> Self {
+        self.pre_triggers = Some(pre_triggers);
+        self
+    }
+
+    pub fn with_post_triggers(mut self, post_triggers: Vec<String>) -> Self {
+        self.post_triggers = Some(post_triggers);
+        self
+    }
+
+    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
+        self.session_token = Some(session_token);
+        self
+    }
+
+    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    pub fn with_indexing_directive(mut self, indexing_directive: IndexingDirective) -> Self {
+        self.indexing_directive = Some(indexing_directive);
+        self
+    }
+
+    pub fn with_if_match_etag(mut self, if_match_etag: Etag) -> Self {
+        self.if_match_etag = Some(if_match_etag);
+        self
+    }
+
+    pub fn with_content_response_on_write_enabled(
+        mut self,
+        content_response_on_write_enabled: bool,
+    ) -> Self {
+        self.content_response_on_write_enabled = content_response_on_write_enabled;
+        self
+    }
+
+    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
+        self.throughput_bucket = Some(throughput_bucket);
+        self
+    }
+
+    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
+
+    pub fn with_excluded_regions(mut self, excluded_regions: Vec<RegionName>) -> Self {
+        self.excluded_regions = Some(excluded_regions);
+        self
+    }
 }
 
 impl AsHeaders for ItemOptions<'_> {
@@ -334,7 +468,7 @@ impl AsHeaders for ItemOptions<'_> {
             ));
         }
 
-        if !self.enable_content_response_on_write {
+        if !self.content_response_on_write_enabled {
             headers.push((headers::PREFER, constants::PREFER_MINIMAL));
         }
 
@@ -344,18 +478,21 @@ impl AsHeaders for ItemOptions<'_> {
 
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct QueryContainersOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 /// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases())
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct QueryDatabasesOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 /// Options to be passed to [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct QueryOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 
@@ -391,6 +528,31 @@ pub struct QueryOptions<'a> {
 }
 
 impl QueryOptions<'_> {
+    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
+        self.session_token = Some(session_token);
+        self
+    }
+
+    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
+        self.throughput_bucket = Some(throughput_bucket);
+        self
+    }
+
+    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
+
     pub fn into_owned(self) -> QueryOptions<'static> {
         QueryOptions {
             method_options: ClientMethodOptions {
@@ -445,18 +607,21 @@ impl AsHeaders for QueryOptions<'_> {
 
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ReadContainerOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ReadDatabaseOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 /// Options to be passed to operations related to Throughput offers.
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ThroughputOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -484,7 +649,7 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::Session),
             indexing_directive: Some(IndexingDirective::Include),
             if_match_etag: Some(Etag::from("etag_value")),
-            enable_content_response_on_write: false,
+            content_response_on_write_enabled: false,
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(2),
             custom_headers,
@@ -629,7 +794,7 @@ mod tests {
     #[test]
     fn item_options_empty_as_headers() {
         let item_options = ItemOptions {
-            enable_content_response_on_write: true,
+            content_response_on_write_enabled: true,
             ..Default::default()
         };
 

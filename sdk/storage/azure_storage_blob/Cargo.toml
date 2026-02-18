@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_blob"
-version = "0.9.0"
+version = "0.10.0"
 description = "Microsoft Azure Blob Storage client library for Rust"
 readme = "README.md"
 authors.workspace = true
@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_blob"
-keywords = ["sdk", "azure", "storage", "blob", "blobs"]
+keywords = ["sdk", "cloud", "blobs"]
 categories = ["api-bindings"]
 
 [features]
@@ -25,8 +25,6 @@ pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
-url.workspace = true
-uuid.workspace = true
 
 [lints]
 workspace = true
@@ -39,6 +37,7 @@ azure_core_test = { workspace = true, features = [
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
 futures.workspace = true
+opentelemetry.workspace = true
 opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true
 rand.workspace = true

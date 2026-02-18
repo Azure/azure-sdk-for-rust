@@ -1,5 +1,15 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-02-11)
 
 ### Features Added
@@ -18,10 +28,6 @@
 - The `credential` parameter is now `Option<Arc<dyn TokenCredential>>` on `new()` and `from_url()` client constructors, allowing for construction of public access clients and clients using SAS tokens.
 - Changed `QueueServiceClient::queue_client()` to return `Result<QueueClient>` instead of `QueueClient`.
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.2.0 (2025-11-11)
 
