@@ -36,14 +36,13 @@ impl TryFrom<&ClientOptions> for CosmosClientOptions {
             panic!("at least one HTTP transport feature must be enabled");
 
             let transport = azure_core::http::Transport::new(std::sync::Arc::new(client));
-            // ClientOptions is #[non_exhaustive] so struct literal syntax is unavailable here.
-            #[allow(clippy::field_reassign_with_default)]
-            let client_options = {
-                let mut opts: azure_core::http::ClientOptions = Default::default();
-                opts.transport = Some(transport);
-                opts
-            };
-            Ok(CosmosClientOptions::default().with_client_options(client_options))
+            Ok(Self {
+                client_options: azure_core::http::ClientOptions {
+                    transport: Some(transport),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
         } else {
             Ok(Default::default())
         }

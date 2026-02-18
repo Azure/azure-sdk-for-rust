@@ -17,41 +17,36 @@ use serde::{Deserialize, Serialize};
 /// then use the various `with_` methods to add operations.
 ///
 /// ```rust
-/// # use azure_data_cosmos::models::PatchDocument;
+/// # use azure_data_cosmos::models::{PatchDocument, PatchOperation};
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let patch = PatchDocument::default()
 ///     .with_add("/color", "silver")?
 ///     .with_move("/from", "/to")?;
-/// assert_eq!(patch.operations().len(), 2);
+/// # assert_eq!(patch, PatchDocument {
+/// #     condition: None,
+/// #     operations: vec![
+/// #         PatchOperation::Add {
+/// #             path: "/color".into(),
+/// #             value: serde_json::Value::String("silver".to_string()),
+/// #        },
+/// #        PatchOperation::Move {
+/// #            from: "/from".into(),
+/// #            to: "/to".into(),
+/// #        },
+/// #    ],
+/// # });
 /// # Ok(())
 /// # }
 /// ```
-#[non_exhaustive]
 #[derive(Default, SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
 #[safe(true)]
 pub struct PatchDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
-    condition: Option<Cow<'static, str>>,
-    operations: Vec<PatchOperation>,
+    pub condition: Option<Cow<'static, str>>,
+    pub operations: Vec<PatchOperation>,
 }
 
 impl PatchDocument {
-    /// Gets the condition, which determines whether or not the patch should be applied.
-    pub fn condition(&self) -> Option<&str> {
-        self.condition.as_deref()
-    }
-
-    /// Gets the list of patch operations.
-    pub fn operations(&self) -> &[PatchOperation] {
-        &self.operations
-    }
-
-    /// Sets the list of patch operations.
-    pub fn with_operations(mut self, operations: Vec<PatchOperation>) -> Self {
-        self.operations = operations;
-        self
-    }
-
     /// Adds a condition, which determines whether or not the patch should be applied.
     ///
     /// The value is an SQL-like filter predicate as a string. For example, `from c where c.taskNum = 3`.

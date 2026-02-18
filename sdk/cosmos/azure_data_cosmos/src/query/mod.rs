@@ -74,7 +74,6 @@ pub use executor::QueryExecutor;
 ///     .with_parameter("@customer_info", CustomerInfo { id: 42, name: "Contoso".into() }).unwrap();
 /// # assert_eq!(serde_json::to_string(&query).unwrap(), "{\"query\":\"\\n    SELECT * FROM c\\n    WHERE c.id = @customer_info.id\\n    AND c.name = @customer_info.name\",\"parameters\":[{\"name\":\"@customer_info\",\"value\":{\"id\":42,\"name\":\"Contoso\"}}]}");
 /// ```
-#[non_exhaustive]
 #[derive(Clone, Debug, Serialize)]
 pub struct Query {
     /// The query text itself.

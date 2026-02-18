@@ -301,19 +301,15 @@ impl TestClient {
                 let http_client: Arc<dyn HttpClient> = Arc::new(client);
                 options = builder.inject_with_http_client(http_client, options);
             } else {
-                options = options.with_client_options({
-                    let mut client_opts = azure_core::http::ClientOptions::default();
-                    client_opts.transport = Some(Transport::new(Arc::new(client)));
-                    client_opts
-                });
+                options.client_options.transport = Some(Transport::new(Arc::new(client)));
             }
         } else if let Some(builder) = fault_builder {
             options = builder.inject(options);
         }
 
         let cosmos_client = azure_data_cosmos::CosmosClient::with_key(
-            connection_string.account_endpoint(),
-            connection_string.account_key().clone(),
+            &connection_string.account_endpoint,
+            connection_string.account_key.clone(),
             Some(options),
         )?;
 
@@ -569,7 +565,7 @@ impl TestRunContext {
 
         let props = response.into_model()?;
 
-        let db_client = self.client().database_client(props.id());
+        let db_client = self.client().database_client(&props.id);
         Ok(db_client)
     }
 
@@ -681,7 +677,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(created.id()));
+                    return Ok(db_client.container_client(&created.id));
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                     println!(
@@ -693,7 +689,7 @@ impl TestRunContext {
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client.container_client(properties.id());
+                    let container_client = db_client.container_client(&properties.id);
                     container_client.delete(None).await?;
 
                     // recreate
@@ -701,7 +697,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(created.id()));
+                    return Ok(db_client.container_client(&created.id));
                 }
                 Err(e) => return Err(e),
             }
@@ -727,7 +723,10 @@ impl TestRunContext {
         let created_properties = db_client
             .create_container(
                 properties,
-                Some(CreateContainerOptions::default().with_throughput(throughput)),
+                Some(CreateContainerOptions {
+                    throughput: Some(throughput),
+                    ..Default::default()
+                }),
             )
             .await?
             .into_model()?;
@@ -736,7 +735,7 @@ impl TestRunContext {
         let hub_client = Self::create_client_with_preferred_region(HUB_REGION)?;
         let satellite_client = Self::create_client_with_preferred_region(SATELLITE_REGION)?;
 
-        let container_id = created_properties.id();
+        let container_id = &created_properties.id;
 
         // Wait for hub region client to successfully read the container
         loop {
@@ -801,12 +800,14 @@ impl TestRunContext {
             )
         })?;
 
-        let options =
-            CosmosClientOptions::default().with_application_preferred_regions(vec![region]);
+        let options = CosmosClientOptions {
+            application_preferred_regions: vec![region],
+            ..Default::default()
+        };
 
         CosmosClient::with_key(
-            parsed.account_endpoint(),
-            parsed.account_key().clone(),
+            &parsed.account_endpoint,
+            parsed.account_key.clone(),
             Some(options),
         )
     }
@@ -823,7 +824,7 @@ impl TestRunContext {
         let mut pager = self.client().query_databases(query, None)?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
-            ids.push(db.id().to_string());
+            ids.push(db.id);
         }
 
         // Now that we have a list of databases created by this test, we delete them.

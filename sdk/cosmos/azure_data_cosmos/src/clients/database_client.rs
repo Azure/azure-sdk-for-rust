@@ -19,7 +19,6 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 /// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
-#[non_exhaustive]
 pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
@@ -196,11 +195,11 @@ impl DatabaseClient {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
-            .system_properties()
-            .resource_id()
+            .system_properties
+            .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id.to_owned());
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
         offers_client.read(options.method_options.context).await
     }
 
@@ -220,11 +219,11 @@ impl DatabaseClient {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
-            .system_properties()
-            .resource_id()
+            .system_properties
+            .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id.to_owned());
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
         offers_client
             .replace(options.method_options.context, throughput)
             .await

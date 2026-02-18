@@ -24,7 +24,7 @@ use url::Url;
 /// and availability. It handles endpoint discovery, tracks unavailable endpoints, and supports
 /// multi-master write configurations.
 #[derive(Debug)]
-pub(crate) struct GlobalEndpointManager {
+pub struct GlobalEndpointManager {
     /// The primary default endpoint URL for the Cosmos DB account
     default_endpoint: Url,
 
@@ -527,10 +527,10 @@ mod tests {
     fn test_mark_endpoint_unavailable_for_read() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
-        let account_region = AccountRegion::new(
-            RegionName::from("West US".to_string()),
-            "https://test.documents.azure.com".parse().unwrap(),
-        );
+        let account_region = AccountRegion {
+            name: RegionName::from("West US".to_string()),
+            database_account_endpoint: "https://test.documents.azure.com".parse().unwrap(),
+        };
         // Populate the location cache's regions
         let _ = manager
             .location_cache
@@ -550,10 +550,10 @@ mod tests {
     fn test_mark_endpoint_unavailable_for_write() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
-        let account_region = AccountRegion::new(
-            RegionName::from("West US".to_string()),
-            "https://test.documents.azure.com".parse().unwrap(),
-        );
+        let account_region = AccountRegion {
+            name: RegionName::from("West US".to_string()),
+            database_account_endpoint: "https://test.documents.azure.com".parse().unwrap(),
+        };
         // Populate the location cache's regions
         let _ = manager
             .location_cache

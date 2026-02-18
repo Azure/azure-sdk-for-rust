@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 /// Handler for managing transport-level operations with Cosmos DB.
 #[derive(Debug, Clone)]
-pub(crate) struct ContainerConnection {
+pub struct ContainerConnection {
     pipeline: Arc<GatewayPipeline>,
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,

@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 /// Stores partition key ranges efficiently with some additional information and provides
 /// convenience methods for working with a set of ranges.
 #[derive(Debug, Clone)]
-pub(crate) struct CollectionRoutingMap {
+pub struct CollectionRoutingMap {
     /// Partition key range id to partition address and range.
     range_by_id: HashMap<String, (PartitionKeyRange, Option<ServiceIdentity>)>,
 

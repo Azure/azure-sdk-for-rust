@@ -97,7 +97,7 @@ impl ResourceType {
 /// This value is URL encoded, and can be [`Url::join`]ed to the endpoint root to produce the full absolute URL for a Cosmos DB resource.
 /// It's also intended for use by the signature algorithm used when authenticating with a primary key.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct ResourceLink {
+pub struct ResourceLink {
     parent: Option<LinkSegment>,
     item_id: Option<LinkSegment>,
     resource_type: ResourceType,

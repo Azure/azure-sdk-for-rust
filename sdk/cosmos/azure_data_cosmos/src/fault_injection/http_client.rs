@@ -16,7 +16,6 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
-#[non_exhaustive]
 #[derive(Debug)]
 pub struct FaultClient {
     /// The inner HTTP client to which requests are delegated.
@@ -62,19 +61,19 @@ impl FaultClient {
         }
 
         // Check if the rule has started
-        if now < rule.start_time() {
+        if now < rule.start_time {
             return false;
         }
 
         // Check if the rule has expired
-        if let Some(end_time) = rule.end_time() {
+        if let Some(end_time) = rule.end_time {
             if now >= end_time {
                 return false;
             }
         }
 
         // Check if we've exceeded the hit limit on the rule
-        if let Some(hit_limit) = rule.hit_limit() {
+        if let Some(hit_limit) = rule.hit_limit {
             if rule_state.hit_count.load(Ordering::SeqCst) >= hit_limit {
                 return false;
             }
@@ -85,11 +84,11 @@ impl FaultClient {
 
     /// Checks if the request matches the rule's condition.
     fn matches_condition(&self, request: &Request, rule: &FaultInjectionRule) -> bool {
-        let condition = rule.condition();
+        let condition = &rule.condition;
         let mut matches = true;
 
         // Check operation type if specified
-        if let Some(expected_op) = condition.operation_type() {
+        if let Some(expected_op) = condition.operation_type {
             let request_op = request
                 .headers()
                 .get_optional_str(&constants::FAULT_INJECTION_OPERATION)
@@ -107,14 +106,14 @@ impl FaultClient {
         }
 
         // Check region if specified
-        if let Some(region) = condition.region() {
+        if let Some(region) = &condition.region {
             if !request.url().as_str().contains(region.as_str()) {
                 matches = false;
             }
         }
 
         // Check container ID if specified
-        if let Some(container_id) = condition.container_id() {
+        if let Some(container_id) = &condition.container_id {
             if !request.url().as_str().contains(container_id) {
                 matches = false;
             }
@@ -145,7 +144,7 @@ impl FaultClient {
         }
 
         // Generate the appropriate error based on error type
-        let error_type = match server_error.error_type() {
+        let error_type = match server_error.error_type {
             Some(et) => et,
             None => return None, // No error type set, pass through
         };
@@ -235,7 +234,7 @@ impl HttpClient for FaultClient {
                 // Increment hit count
                 rule_state.hit_count.fetch_add(1, Ordering::SeqCst);
                 // Clone and return the result
-                Some(rule_state.rule.result().clone())
+                Some(rule_state.rule.result.clone())
             } else {
                 None
             }
@@ -263,8 +262,8 @@ impl HttpClient for FaultClient {
 
         // Apply delay after the request is sent
         if let Some(result) = fault_result {
-            if result.delay() > Duration::ZERO {
-                let delay = azure_core::time::Duration::try_from(result.delay())
+            if result.delay > Duration::ZERO {
+                let delay = azure_core::time::Duration::try_from(result.delay)
                     .unwrap_or(azure_core::time::Duration::ZERO);
                 azure_core::async_runtime::get_async_runtime()
                     .sleep(delay)

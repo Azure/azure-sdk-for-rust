@@ -24,7 +24,6 @@ use serde::{de::DeserializeOwned, Serialize};
 /// A client for working with a specific container in a Cosmos DB account.
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
-#[non_exhaustive]
 #[derive(Clone)]
 pub struct ContainerClient {
     link: ResourceLink,
@@ -116,11 +115,15 @@ impl ContainerClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let new_properties = ContainerProperties::new("MyContainer", "/id")
-    ///     .with_indexing_policy(
-    ///         IndexingPolicy::default()
-    ///             .with_included_paths(vec!["/index_me".into()]),
-    ///     );
+    /// let new_properties = ContainerProperties {
+    ///     id: "MyContainer".into(),
+    ///     partition_key: "/id".into(),
+    ///     indexing_policy: Some(IndexingPolicy {
+    ///         included_paths: vec!["/index_me".into()],
+    ///         ..Default::default()
+    ///     }),
+    ///     ..Default::default()
+    /// };
     /// let response = container_client.replace(new_properties, None)
     ///     .await?
     ///     .into_model()?;
@@ -158,11 +161,11 @@ impl ContainerClient {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
-            .system_properties()
-            .resource_id()
+            .system_properties
+            .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id.to_owned());
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
         offers_client.read(options.method_options.context).await
     }
 
@@ -182,11 +185,11 @@ impl ContainerClient {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
-            .system_properties()
-            .resource_id()
+            .system_properties
+            .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id.to_owned());
+        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
         offers_client
             .replace(options.method_options.context, throughput)
             .await
@@ -265,8 +268,10 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions::default()
-    ///     .with_enable_content_response_on_write(true);
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
     /// let created_item = container_client
     ///     .create_item("category1", p, Some(options))
     ///     .await?
@@ -349,8 +354,10 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions::default()
-    ///     .with_enable_content_response_on_write(true);
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
@@ -437,8 +444,10 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions::default()
-    ///     .with_enable_content_response_on_write(true);
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
     /// let updated_product = container_client
     ///     .upsert_item("category1", p, Some(options))
     ///     .await?
@@ -603,8 +612,10 @@ impl ContainerClient {
     ///     category_id: String,
     ///     product_name: String,
     /// }
-    /// let options = ItemOptions::default()
-    ///     .with_enable_content_response_on_write(true);
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
     /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
     /// let patched_item = client
     ///     .patch_item("partition1", "item1", patch, Some(options))

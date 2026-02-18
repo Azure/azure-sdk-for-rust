@@ -39,7 +39,7 @@ struct RetryContext {
 
 /// Retry policy for handling data plane request failures.
 #[derive(Debug)]
-pub(crate) struct ClientRetryPolicy {
+pub struct ClientRetryPolicy {
     /// Manages multi-region endpoint routing and failover logic
     global_endpoint_manager: Arc<GlobalEndpointManager>,
 

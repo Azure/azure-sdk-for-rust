@@ -7,36 +7,17 @@ use super::FaultOperationType;
 use crate::regions::RegionName;
 
 /// Defines the condition under which a fault injection rule should be applied.
-#[non_exhaustive]
 #[derive(Clone, Default, Debug)]
 pub struct FaultInjectionCondition {
     /// The type of operation to which the fault injection applies.
-    operation_type: Option<FaultOperationType>,
+    pub operation_type: Option<FaultOperationType>,
     /// The region to which the fault injection applies.
-    region: Option<RegionName>,
+    pub region: Option<RegionName>,
     /// The container ID to which the fault injection applies.
-    container_id: Option<String>,
-}
-
-impl FaultInjectionCondition {
-    /// Returns the operation type to which the fault injection applies.
-    pub fn operation_type(&self) -> Option<FaultOperationType> {
-        self.operation_type
-    }
-
-    /// Returns the region to which the fault injection applies.
-    pub fn region(&self) -> Option<&RegionName> {
-        self.region.as_ref()
-    }
-
-    /// Returns the container ID to which the fault injection applies.
-    pub fn container_id(&self) -> Option<&str> {
-        self.container_id.as_deref()
-    }
+    pub container_id: Option<String>,
 }
 
 /// Builder for creating a FaultInjectionCondition.
-#[non_exhaustive]
 pub struct FaultInjectionConditionBuilder {
     operation_type: Option<FaultOperationType>,
     region: Option<RegionName>,
@@ -95,8 +76,8 @@ mod tests {
     fn builder_default() {
         let builder = FaultInjectionConditionBuilder::default();
         let condition = builder.build();
-        assert!(condition.operation_type().is_none());
-        assert!(condition.region().is_none());
-        assert!(condition.container_id().is_none());
+        assert!(condition.operation_type.is_none());
+        assert!(condition.region.is_none());
+        assert!(condition.container_id.is_none());
     }
 }

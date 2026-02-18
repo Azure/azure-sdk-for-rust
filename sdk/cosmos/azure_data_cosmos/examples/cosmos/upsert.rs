@@ -33,8 +33,10 @@ impl UpsertCommand {
         let pk = PartitionKey::from(&self.partition_key);
         let item: serde_json::Value = serde_json::from_str(&self.json)?;
 
-        let options =
-            ItemOptions::default().with_enable_content_response_on_write(self.show_updated);
+        let options = ItemOptions {
+            enable_content_response_on_write: self.show_updated,
+            ..Default::default()
+        };
 
         let response = container_client
             .upsert_item(pk, item, Some(options))

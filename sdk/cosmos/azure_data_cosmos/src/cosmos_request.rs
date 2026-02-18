@@ -26,7 +26,7 @@ pub enum AuthorizationTokenType {
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct PartitionKeyRangeIdentity {
+pub struct PartitionKeyRangeIdentity {
     pub collection_rid: String,
     pub partition_key_range_id: String,
 }
@@ -39,7 +39,7 @@ pub(crate) struct PartitionKeyRangeIdentity {
 /// influence retry or gateway behaviors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(dead_code)]
-pub(crate) struct CosmosRequest {
+pub struct CosmosRequest {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
     pub resource_link: ResourceLink,
@@ -182,7 +182,7 @@ impl CosmosRequest {
 /// the original `new` constructor for backward compatibility.
 #[derive(Clone)]
 #[allow(dead_code)]
-pub(crate) struct CosmosRequestBuilder {
+pub struct CosmosRequestBuilder {
     operation_type: OperationType,
     resource_link: ResourceLink,
     partition_key: PartitionKey,
@@ -446,11 +446,13 @@ mod tests {
             HeaderValue::from_static("custom_value-2"),
         );
 
-        let client_options = CosmosClientOptions::default()
-            .with_consistency_level(ConsistencyLevel::Strong)
-            .with_throughput_bucket(5)
-            .with_priority(PriorityLevel::High)
-            .with_custom_headers(client_custom_headers);
+        let client_options = CosmosClientOptions {
+            consistency_level: Some(ConsistencyLevel::Strong),
+            throughput_bucket: Some(5),
+            priority: Some(PriorityLevel::High),
+            custom_headers: client_custom_headers,
+            ..Default::default()
+        };
         req_with_client_headers.client_headers(&client_options);
 
         let raw = req_with_client_headers.into_raw_request();

@@ -24,19 +24,19 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
             .await?
             .into_model()?;
 
-        assert_eq!(&test_db_id, properties.id());
+        assert_eq!(&test_db_id, &properties.id);
 
         let db_client = cosmos_client.database_client(&test_db_id);
         let read_properties = db_client.read(None).await?.into_model()?;
 
-        assert_eq!(&test_db_id, read_properties.id());
+        assert_eq!(&test_db_id, &read_properties.id);
 
         let query = Query::from("SELECT * FROM root r WHERE r.id = @id")
             .with_parameter("@id", &test_db_id)?;
         let mut pager = cosmos_client.query_databases(query.clone(), None)?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
-            ids.push(db.id().to_string());
+            ids.push(db.id);
         }
         assert_eq!(vec![test_db_id.clone()], ids);
 
@@ -49,7 +49,7 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
         let mut pager = cosmos_client.query_databases(query, None)?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
-            ids.push(db.id().to_string());
+            ids.push(db.id);
         }
         assert!(ids.is_empty());
 
@@ -70,16 +70,19 @@ pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
         let properties = cosmos_client
             .create_database(
                 &test_db_id,
-                Some(CreateDatabaseOptions::default().with_throughput(throughput)),
+                Some(CreateDatabaseOptions {
+                    throughput: Some(throughput),
+                    ..Default::default()
+                }),
             )
             .await?
             .into_model()?;
 
-        assert_eq!(&test_db_id, properties.id());
+        assert_eq!(&test_db_id, &properties.id);
 
         let db_client = cosmos_client.database_client(&test_db_id);
         let read_properties = db_client.read(None).await?.into_model()?;
-        assert_eq!(&test_db_id, read_properties.id());
+        assert_eq!(&test_db_id, &read_properties.id);
 
         // Read and then replace throughput
         let current_throughput = db_client

@@ -19,7 +19,6 @@ use crate::{
 /// A query executor that sends queries directly to the gateway endpoint.
 ///
 /// This executor does not support cross-partition queries and requires a partition key to be specified.
-#[non_exhaustive]
 pub struct QueryExecutor<T: DeserializeOwned + ConditionalSend> {
     http_pipeline: Arc<GatewayPipeline>,
     items_link: ResourceLink,
@@ -37,7 +36,7 @@ pub struct QueryExecutor<T: DeserializeOwned + ConditionalSend> {
 }
 
 impl<T: DeserializeOwned + ConditionalSend + 'static> QueryExecutor<T> {
-    pub(crate) fn new(
+    pub fn new(
         http_pipeline: Arc<GatewayPipeline>,
         items_link: ResourceLink,
         context: Context<'static>,

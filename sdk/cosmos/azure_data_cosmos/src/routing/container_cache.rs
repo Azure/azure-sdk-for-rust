@@ -21,7 +21,7 @@ use std::sync::Arc;
 /// to balance freshness with performance. Integrates with retry handler for resilient metadata fetching
 /// across regional endpoints.
 #[derive(Clone, Debug)]
-pub(crate) struct ContainerCache {
+pub struct ContainerCache {
     pipeline: Arc<GatewayPipeline>,
     container_link: ResourceLink,
     global_endpoint_manager: Arc<GlobalEndpointManager>,

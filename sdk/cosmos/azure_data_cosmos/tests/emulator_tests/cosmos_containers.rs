@@ -23,13 +23,18 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             // Create the container
-            let properties = ContainerProperties::new("TheContainer", "/id").with_indexing_policy(
-                IndexingPolicy::default()
-                    .with_included_paths(vec!["/*".into()])
-                    .with_excluded_paths(vec![r#"/"_etag"/?"#.into()])
-                    .with_automatic(true)
-                    .with_indexing_mode(IndexingMode::Consistent),
-            );
+            let properties = ContainerProperties {
+                id: "TheContainer".into(),
+                partition_key: "/id".into(),
+                indexing_policy: Some(IndexingPolicy {
+                    included_paths: vec!["/*".into()],
+                    excluded_paths: vec![r#"/"_etag"/?"#.into()],
+                    automatic: true,
+                    indexing_mode: Some(IndexingMode::Consistent),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
 
             let throughput = ThroughputProperties::manual(400);
 
@@ -37,73 +42,77 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 .create_container(
                     db_client,
                     properties.clone(),
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
+                    Some(CreateContainerOptions {
+                        throughput: Some(throughput),
+                        ..Default::default()
+                    }),
                 )
                 .await?;
 
             // Read the container to get its properties
             let created_properties = container_client.read(None).await?.into_model()?;
 
-            assert_eq!(properties.id(), created_properties.id());
+            assert_eq!(&properties.id, &created_properties.id);
             assert_eq!(
                 vec![String::from("/id")],
-                created_properties.partition_key().paths()
+                created_properties.partition_key.paths
             );
             assert_eq!(
-                &PartitionKeyKind::Hash,
-                created_properties.partition_key().kind()
+                PartitionKeyKind::Hash,
+                created_properties.partition_key.kind
             );
             let indexing_policy = created_properties
-                .indexing_policy()
+                .indexing_policy
                 .expect("created container should have an indexing policy");
             assert_eq!(
                 vec![PropertyPath::from("/*")],
-                indexing_policy.included_paths()
+                indexing_policy.included_paths
             );
             assert_eq!(
                 vec![PropertyPath::from(r#"/"_etag"/?"#)],
-                indexing_policy.excluded_paths()
+                indexing_policy.excluded_paths
             );
-            assert!(indexing_policy.automatic());
+            assert!(indexing_policy.automatic);
             assert_eq!(
                 IndexingMode::Consistent,
-                indexing_policy.indexing_mode().cloned().unwrap()
+                indexing_policy.indexing_mode.unwrap()
             );
 
             let mut query_pager = db_client.query_containers(
                 Query::from("SELECT * FROM root r WHERE r.id = @id")
-                    .with_parameter("@id", properties.id())?,
+                    .with_parameter("@id", &properties.id)?,
                 None,
             )?;
             let mut ids = vec![];
             while let Some(db) = query_pager.try_next().await? {
-                ids.push(db.id().to_string());
+                ids.push(db.id);
             }
-            assert_eq!(vec![properties.id().to_string()], ids);
+            assert_eq!(vec![properties.id.clone()], ids);
 
-            let container_client = db_client.container_client(properties.id());
-            let updated_properties = ContainerProperties::new(
-                properties.id().to_string(),
-                properties.partition_key().clone(),
-            )
-            .with_indexing_policy(
-                IndexingPolicy::default()
-                    .with_included_paths(vec![])
-                    .with_excluded_paths(vec![])
-                    .with_automatic(false)
-                    .with_indexing_mode(IndexingMode::None),
-            );
+            let container_client = db_client.container_client(&properties.id);
+            let updated_properties = ContainerProperties {
+                id: properties.id.clone(),
+                partition_key: properties.partition_key.clone(),
+                indexing_policy: Some(IndexingPolicy {
+                    included_paths: vec![],
+                    excluded_paths: vec![],
+                    automatic: false,
+                    indexing_mode: Some(IndexingMode::None),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
             let update_response = container_client
                 .replace(updated_properties, None)
                 .await?
                 .into_model()?;
-            let updated_indexing_policy = update_response.indexing_policy().unwrap();
-            assert!(updated_indexing_policy.included_paths().is_empty());
-            assert!(updated_indexing_policy.excluded_paths().is_empty());
-            assert!(!updated_indexing_policy.automatic());
+            let updated_indexing_policy = update_response.indexing_policy.unwrap();
+            assert!(updated_indexing_policy.included_paths.is_empty());
+            assert!(updated_indexing_policy.excluded_paths.is_empty());
+            assert!(!updated_indexing_policy.automatic);
             assert_eq!(
-                Some(&IndexingMode::None),
-                updated_indexing_policy.indexing_mode()
+                Some(IndexingMode::None),
+                updated_indexing_policy.indexing_mode
             );
 
             let current_throughput = container_client
@@ -124,12 +133,12 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             query_pager = db_client.query_containers(
                 Query::from("SELECT * FROM root r WHERE r.id = @id")
-                    .with_parameter("@id", properties.id())?,
+                    .with_parameter("@id", &properties.id)?,
                 None,
             )?;
             let mut ids = vec![];
             while let Some(db) = query_pager.try_next().await? {
-                ids.push(db.id().to_string());
+                ids.push(db.id);
             }
             assert!(ids.is_empty());
 
@@ -145,15 +154,18 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             // Create the container
-            let properties =
-                ContainerProperties::new("TheContainer", ("/parent", "/child", "/grandchild"))
-                    .with_indexing_policy(
-                        IndexingPolicy::default()
-                            .with_included_paths(vec!["/*".into()])
-                            .with_excluded_paths(vec![r#"/"_etag"/?"#.into()])
-                            .with_automatic(true)
-                            .with_indexing_mode(IndexingMode::Consistent),
-                    );
+            let properties = ContainerProperties {
+                id: "TheContainer".into(),
+                partition_key: ("/parent", "/child", "/grandchild").into(),
+                indexing_policy: Some(IndexingPolicy {
+                    included_paths: vec!["/*".into()],
+                    excluded_paths: vec![r#"/"_etag"/?"#.into()],
+                    automatic: true,
+                    indexing_mode: Some(IndexingMode::Consistent),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
 
             let container_client = run_context
                 .create_container(db_client, properties.clone(), None)
@@ -162,18 +174,18 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
             // Read the container to get its properties
             let created_properties = container_client.read(None).await?.into_model()?;
 
-            assert_eq!(properties.id(), created_properties.id());
+            assert_eq!(&properties.id, &created_properties.id);
             assert_eq!(
                 vec![
                     String::from("/parent"),
                     String::from("/child"),
                     String::from("/grandchild")
                 ],
-                created_properties.partition_key().paths()
+                created_properties.partition_key.paths
             );
             assert_eq!(
-                &PartitionKeyKind::MultiHash,
-                created_properties.partition_key().kind()
+                PartitionKeyKind::MultiHash,
+                created_properties.partition_key.kind
             );
 
             Ok(())

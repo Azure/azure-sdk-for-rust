@@ -16,7 +16,6 @@ use serde::de::DeserializeOwned;
 ///
 /// This wraps the underlying Azure Core typed response and provides convenient access
 /// to headers, status code, the original request, and Cosmos-specific response metadata.
-#[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosResponse<T> {
     /// The underlying typed HTTP response.
@@ -28,7 +27,7 @@ pub struct CosmosResponse<T> {
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
-    pub(crate) fn new(response: Response<T>, request: CosmosRequest) -> Self {
+    pub fn new(response: Response<T>, request: CosmosRequest) -> Self {
         Self { response, request }
     }
 
@@ -50,12 +49,12 @@ impl<T> CosmosResponse<T> {
         self.response.headers().get_optional_str(name)
     }
 
-    /// Returns the final request URL used to fulfill the operation.
+    /// Returns the final request used to fulfill the operation.
     /// This api is subject to change without a major version bump.
     ///
     #[cfg(feature = "fault_injection")]
-    pub fn request_url(&self) -> url::Url {
-        self.request.clone().into_raw_request().url().clone()
+    pub fn request(&self) -> &CosmosRequest {
+        &self.request
     }
 
     /// Consumes the response and returns the response body.

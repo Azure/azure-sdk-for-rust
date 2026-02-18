@@ -50,96 +50,42 @@ pub struct SystemProperties {
     #[serde(default)]
     #[serde(skip_serializing)]
     #[serde(rename = "_etag")]
-    etag: Option<Etag>,
+    pub etag: Option<Etag>,
 
     /// The self-link associated with the resource.
     #[serde(default)]
     #[serde(skip_serializing)]
     #[serde(rename = "_self")]
-    self_link: Option<String>,
+    pub self_link: Option<String>,
 
     /// The system-generated unique identifier associated with the resource.
     #[serde(default)]
     // Some APIs do expect the "_rid" to be provided (Replace Offer, for example), so we do want to serialize it if it's provided.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "_rid")]
-    resource_id: Option<String>,
+    pub resource_id: Option<String>,
 
     /// A [`OffsetDateTime`] representing the last modified time of the resource.
     #[serde(default)]
     #[serde(rename = "_ts")]
     #[serde(skip_serializing)]
     #[serde(deserialize_with = "deserialize_cosmos_timestamp")]
-    last_modified: Option<OffsetDateTime>,
-}
-
-impl SystemProperties {
-    /// Gets the entity tag associated with the resource.
-    pub fn etag(&self) -> Option<&Etag> {
-        self.etag.as_ref()
-    }
-
-    /// Gets the self-link associated with the resource.
-    pub fn self_link(&self) -> Option<&str> {
-        self.self_link.as_deref()
-    }
-
-    /// Gets the system-generated unique identifier associated with the resource.
-    pub fn resource_id(&self) -> Option<&str> {
-        self.resource_id.as_deref()
-    }
-
-    /// Gets the last modified time of the resource.
-    pub fn last_modified(&self) -> Option<&OffsetDateTime> {
-        self.last_modified.as_ref()
-    }
+    pub last_modified: Option<OffsetDateTime>,
 }
 
 /// Properties of a Cosmos DB database.
 ///
-/// # Required fields
-///
-/// * `id` — The unique identifier for the database.
-///
-/// Use [`DatabaseProperties::new()`] to construct an instance:
-///
-/// ```rust
-/// # use azure_data_cosmos::models::DatabaseProperties;
-/// let properties = DatabaseProperties::new("MyDatabase");
-/// ```
-///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[non_exhaustive]
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 pub struct DatabaseProperties {
     /// The ID of the database.
-    id: String,
+    pub id: String,
 
     /// A [`SystemProperties`] object containing common system properties for the database.
     #[serde(flatten)]
-    #[serde(default)]
-    system_properties: SystemProperties,
-}
-
-impl DatabaseProperties {
-    /// Creates a new [`DatabaseProperties`] with the required `id` field.
-    pub fn new(id: impl Into<String>) -> Self {
-        Self {
-            id: id.into(),
-            system_properties: SystemProperties::default(),
-        }
-    }
-
-    /// Gets the ID of the database.
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-
-    /// Gets the common system properties for the database.
-    pub fn system_properties(&self) -> &SystemProperties {
-        &self.system_properties
-    }
+    pub system_properties: SystemProperties,
 }
 
 #[cfg(test)]

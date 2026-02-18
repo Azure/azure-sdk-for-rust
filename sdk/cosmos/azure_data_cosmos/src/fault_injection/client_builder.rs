@@ -13,7 +13,6 @@ use super::http_client::FaultClient;
 use super::rule::FaultInjectionRule;
 
 /// Builder for creating a fault injection client.
-#[non_exhaustive]
 pub struct FaultInjectionClientBuilder {
     /// The fault injection rules to apply.
     /// First valid rule will be applied.

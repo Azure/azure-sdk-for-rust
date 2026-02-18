@@ -73,7 +73,11 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -135,7 +139,11 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -200,7 +208,11 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -232,7 +244,13 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
             assert_eq!(
-                response.request_url().host_str().unwrap(),
+                response
+                    .request()
+                    .clone()
+                    .into_raw_request()
+                    .url()
+                    .host_str()
+                    .unwrap(),
                 get_effective_hub_endpoint()
             );
 
@@ -266,7 +284,11 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -351,7 +373,11 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -385,7 +411,11 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(faulty_container_id, "/partition_key"),
+                    ContainerProperties {
+                        id: faulty_container_id.into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -447,7 +477,11 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -521,7 +555,11 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -595,7 +633,11 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -659,7 +701,11 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -721,7 +767,11 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -781,7 +831,11 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -852,7 +906,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             .build(),
     );
 
-    assert_eq!(rule.id(), "enable-disable-test");
+    assert_eq!(rule.id, "enable-disable-test");
     assert!(rule.is_enabled());
 
     let rule_handle = Arc::clone(&rule);
@@ -865,7 +919,11 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties {
+                        id: container_id.clone().into(),
+                        partition_key: "/partition_key".into(),
+                        ..Default::default()
+                    },
                     ThroughputProperties::manual(400),
                 )
                 .await?;
