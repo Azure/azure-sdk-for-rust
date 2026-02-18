@@ -55,6 +55,19 @@ use crate::constants;
 ///     None).unwrap();
 /// ```
 ///
+/// Undefined partition key values can be represented using [`PartitionKey::UNDEFINED`].
+/// This is used to refer to items where the partition key property is absent from the document.
+/// This is distinct from `null` (where the property exists but has a JSON null value).
+///
+/// ```rust,no_run
+/// # use azure_data_cosmos::{clients::ContainerClient, PartitionKey};
+/// # let container_client: ContainerClient = panic!("this is a non-running example");
+/// container_client.read_item::<serde_json::Value>(
+///     PartitionKey::UNDEFINED,
+///     "item_without_partition_key_property",
+///     None).unwrap();
+/// ```
+///
 /// Or, if you have an [`Option<T>`], for some `T` that is valid as a partition key, it will automatically be serialized as `null` if it has the value [`Option::None`]:
 ///
 /// ```rust,no_run
@@ -80,6 +93,13 @@ pub struct PartitionKey(Vec<PartitionKeyValue>);
 impl PartitionKey {
     /// A single null partition key value, which can be used as the sole partition key or as part of a hierarchical partition key.
     pub const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
+
+    /// A single undefined partition key value, used to target items where the partition key property is absent from the document.
+    ///
+    /// This is distinct from [`PartitionKey::NULL`], which targets items where the partition key property exists but has a JSON `null` value.
+    /// An undefined value is serialized as `{}` (an empty JSON object) in the partition key header.
+    /// For example, a single `UNDEFINED` value serializes to `[{}]`.
+    pub const UNDEFINED: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Undefined);
 
     /// An empty list of partition key values, which is used to signal a cross-partition query, when querying a container.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
@@ -114,6 +134,7 @@ impl AsHeaders for PartitionKey {
         json.push('[');
         for key in &self.0 {
             match key.0 {
+                InnerPartitionKeyValue::Undefined => json.push_str("{}"),
                 InnerPartitionKeyValue::Null => json.push_str("null"),
                 InnerPartitionKeyValue::String(ref string_key) => {
                     json.push('"');
@@ -147,8 +168,10 @@ impl AsHeaders for PartitionKey {
             json.push(',');
         }
 
-        // Pop the trailing ','
-        json.pop();
+        // Pop the trailing ',' (only if we actually wrote any values)
+        if json.ends_with(',') {
+            json.pop();
+        }
         json.push(']');
 
         Ok(std::iter::once((
@@ -167,6 +190,7 @@ pub struct PartitionKeyValue(InnerPartitionKeyValue);
 // We don't want to expose the implementation details of PartitionKeyValue (specifically the use of serde_json::Number), so we use this inner private enum to store the data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum InnerPartitionKeyValue {
+    Undefined,
     Null,
     String(Cow<'static, str>),
     Number(serde_json::Number), // serde_json::Number has special integer handling, so we'll use that.
@@ -483,5 +507,74 @@ mod tests {
         let (name, value) = headers_iter.next().unwrap();
         assert_eq!(constants::QUERY_ENABLE_CROSS_PARTITION, name);
         assert_eq!("True", value.as_str());
+    }
+
+    /// Helper to get the partition key header value (not cross-partition header).
+    fn key_to_pk_header(v: impl Into<PartitionKey>) -> (String, String) {
+        let key = v.into();
+        let mut headers_iter = key.as_headers().unwrap();
+        let (name, value) = headers_iter.next().unwrap();
+        (name.as_str().to_string(), value.as_str().to_string())
+    }
+
+    #[test]
+    fn undefined_single() {
+        // A single UNDEFINED value should produce [{}] via the partition key header,
+        // where {} is the wire representation of an undefined partition key component.
+        let (name, value) = key_to_pk_header(PartitionKey::UNDEFINED);
+        assert_eq!(constants::PARTITION_KEY.as_str(), name);
+        assert_eq!("[{}]", value);
+    }
+
+    #[test]
+    fn undefined_all_in_hierarchical() {
+        // All UNDEFINED values in a hierarchical key should produce [{},{}].
+        let (name, value) = key_to_pk_header((PartitionKey::UNDEFINED, PartitionKey::UNDEFINED));
+        assert_eq!(constants::PARTITION_KEY.as_str(), name);
+        assert_eq!("[{},{}]", value);
+    }
+
+    #[test]
+    fn undefined_mixed_with_values() {
+        // UNDEFINED values should be serialized as {} in the JSON array.
+        assert_eq!(
+            key_to_string(("parent", PartitionKey::UNDEFINED)),
+            r#"["parent",{}]"#
+        );
+        assert_eq!(
+            key_to_string((PartitionKey::UNDEFINED, "child")),
+            r#"[{},"child"]"#
+        );
+    }
+
+    #[test]
+    fn undefined_distinct_from_null() {
+        // UNDEFINED produces [{}] while NULL produces [null].
+        let (undef_name, undef_value) = key_to_pk_header(PartitionKey::UNDEFINED);
+        let null_value = key_to_string(PartitionKey::NULL);
+        assert_eq!(constants::PARTITION_KEY.as_str(), undef_name);
+        assert_eq!("[{}]", undef_value);
+        assert_eq!("[null]", null_value);
+    }
+
+    #[test]
+    fn undefined_distinct_from_empty() {
+        // UNDEFINED sends the partition key header with `[{}]`, while EMPTY sends the cross-partition header.
+        let (undef_name, undef_value) = key_to_pk_header(PartitionKey::UNDEFINED);
+        assert_eq!(constants::PARTITION_KEY.as_str(), undef_name);
+        assert_eq!("[{}]", undef_value);
+
+        let empty = PartitionKey::EMPTY;
+        let mut headers_iter = empty.as_headers().unwrap();
+        let (empty_name, empty_value) = headers_iter.next().unwrap();
+        assert_eq!(constants::QUERY_ENABLE_CROSS_PARTITION, empty_name);
+        assert_eq!("True", empty_value.as_str());
+    }
+
+    #[test]
+    fn undefined_in_vec() {
+        let keys = vec![PartitionKeyValue::from("tenant1"), PartitionKey::UNDEFINED];
+        let partition_key = PartitionKey::from(keys);
+        assert_eq!(key_to_string(partition_key), r#"["tenant1",{}]"#);
     }
 }
