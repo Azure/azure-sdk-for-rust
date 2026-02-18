@@ -158,6 +158,7 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// The number of preferred locations as usize
+    #[allow(dead_code)]
     pub fn preferred_location_count(&self) -> usize {
         self.location_cache
             .lock()
