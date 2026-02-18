@@ -76,7 +76,7 @@ use crate::models::PartitionKeyKind;
 /// let partition_key_1 = PartitionKey::from("simple_string");
 /// let partition_key_2 = PartitionKey::from(("parent", "child", 42));
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
 impl PartitionKey {
@@ -181,7 +181,7 @@ impl AsHeaders for PartitionKey {
 /// Represents a value for a single partition key.
 ///
 /// You shouldn't need to construct this type directly. The various implementations of [`Into<PartitionKey>`] will handle it for you.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
 
 impl From<InnerPartitionKeyValue> for PartitionKeyValue {

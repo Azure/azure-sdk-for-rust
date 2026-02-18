@@ -50,6 +50,11 @@ pub enum InnerPartitionKeyValue {
     Undefined,
 }
 
+// `f64` does not implement `Eq`, but in this domain partition key numbers are
+// always finite, non-NaN values, so total equality holds. We implement `Eq`
+// manually to express this invariant.
+impl Eq for InnerPartitionKeyValue {}
+
 impl InnerPartitionKeyValue {
     /// Common hashing writer core: writes type marker + payload (string suffix used by V2).
     fn write_for_hashing_core(&self, string_suffix: u8, writer: &mut Vec<u8>, truncate: bool) {

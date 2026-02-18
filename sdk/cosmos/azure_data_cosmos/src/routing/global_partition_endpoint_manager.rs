@@ -384,6 +384,9 @@ impl GlobalPartitionEndpointManager {
     ) -> bool {
         self.partition_level_circuit_breaker_enabled
             .load(Ordering::SeqCst)
+            && (request.resource_type == ResourceType::Documents
+                || (request.resource_type == ResourceType::StoredProcedures
+                    && request.operation_type == OperationType::Execute))
             && (request.is_read_only_request()
                 || (!request.is_read_only_request()
                     && self

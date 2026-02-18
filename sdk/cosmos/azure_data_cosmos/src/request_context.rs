@@ -14,8 +14,7 @@ use url::Url;
 /// endpoints have failed, how the request should be routed (by region index
 /// or explicit endpoint), resolved partition ranges, session tokens, and
 /// various internal flags influencing retries and cache refresh behavior.
-#[allow(dead_code)]
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct RequestContext {
     pub force_refresh_address_cache: bool,
     pub original_request_consistency_level: Option<String>, // Use enum if available
@@ -38,7 +37,6 @@ pub struct RequestContext {
     pub location_endpoint_to_route: Option<Url>,
 }
 
-#[allow(dead_code)]
 impl RequestContext {
     /// Marks a store endpoint as failed so subsequent retries can avoid it.
     /// In a full implementation the provided error would be inspected for

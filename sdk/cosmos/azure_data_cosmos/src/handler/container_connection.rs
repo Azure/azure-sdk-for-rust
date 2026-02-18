@@ -5,6 +5,7 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::CosmosResponse;
 use crate::pipeline::GatewayPipeline;
+use crate::resource_context::ResourceType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
@@ -50,6 +51,8 @@ impl ContainerConnection {
         if self
             .global_partition_endpoint_manager
             .partition_level_failover_enabled()
+            && (cosmos_request.resource_type.is_partitioned()
+                || cosmos_request.resource_type == ResourceType::StoredProcedures)
         {
             let mut container_properties = None;
             if let Some(container_id) = cosmos_request.container_id() {

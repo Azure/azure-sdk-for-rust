@@ -19,7 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// Implementation of the MurmurHash3 128-bit hash function.
+// Implementation of a variation of MurmurHash3 128-bit hash function.
 //
 // MurmurHash is a non-cryptographic hash function suitable for general hash-based lookup. The name comes from two basic
 // operations, multiply (MU) and rotate (R), used in its inner loop. Unlike cryptographic hash functions, it is not
