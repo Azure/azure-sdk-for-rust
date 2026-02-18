@@ -163,3 +163,13 @@ When enabled (the default), the `CreateItem` operation generates new items with
 unique IDs and partition keys. Successfully created items are added to the
 shared item pool so they become targets for subsequent read, query, and upsert
 operations.
+
+### Custom HTTP Transport
+
+The tool builds a custom `reqwest::Client` with connection pool settings matching
+the Cosmos DB driver defaults (from `azure_data_cosmos_driver`). This replaces the
+default bare `reqwest` client with:
+
+- **Max idle connections per host**: 1,000
+- **Connect timeout**: 5 seconds
+- **Request timeout**: 6 seconds
