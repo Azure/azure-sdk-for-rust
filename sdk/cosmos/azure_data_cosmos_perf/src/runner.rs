@@ -7,6 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use tokio::task::JoinSet;
+
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
 #[cfg(not(target_arch = "wasm32"))]
 fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
@@ -56,6 +58,9 @@ struct PerfResult {
     p99_ms: f64,
     cpu_percent: f32,
     memory_bytes: u64,
+    system_cpu_percent: f32,
+    system_total_memory_bytes: u64,
+    system_used_memory_bytes: u64,
 }
 
 /// Error document written to the results container for each individual operation failure.
@@ -154,7 +159,7 @@ pub async fn run(config: RunConfig) {
 
     // Spawn fixed worker pool — each worker loops until cancelled
     let start = Instant::now();
-    let mut workers = Vec::with_capacity(concurrency);
+    let mut workers = JoinSet::new();
 
     for _ in 0..concurrency {
         let ops = operations.clone();
@@ -164,7 +169,7 @@ pub async fn run(config: RunConfig) {
         let err_container = results_container.clone();
         let err_workload_id = workload_id.clone();
 
-        workers.push(tokio::spawn(async move {
+        workers.spawn(async move {
             while !cancelled.load(Ordering::Relaxed) {
                 let op_idx = rand::rng().random_range(0..ops.len());
                 let op = &ops[op_idx];
@@ -180,13 +185,11 @@ pub async fn run(config: RunConfig) {
                     }
                 }
             }
-        }));
+        });
     }
 
     // Wait for all workers to finish
-    for w in workers {
-        let _ = w.await;
-    }
+    workers.join_all().await;
 
     // Print final report
     let total_elapsed = start.elapsed();
@@ -223,9 +226,17 @@ async fn upsert_results(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    let (cpu, mem) = metrics
-        .map(|m| (m.cpu_percent, m.memory_bytes))
-        .unwrap_or((0.0, 0));
+    let (cpu, mem, sys_cpu, sys_total, sys_used) = metrics
+        .map(|m| {
+            (
+                m.cpu_percent,
+                m.memory_bytes,
+                m.system_cpu_percent,
+                m.system_total_memory_bytes,
+                m.system_used_memory_bytes,
+            )
+        })
+        .unwrap_or((0.0, 0, 0.0, 0, 0));
 
     for s in summaries {
         let result = PerfResult {
@@ -244,6 +255,9 @@ async fn upsert_results(
             p99_ms: s.p99.as_secs_f64() * 1000.0,
             cpu_percent: cpu,
             memory_bytes: mem,
+            system_cpu_percent: sys_cpu,
+            system_total_memory_bytes: sys_total,
+            system_used_memory_bytes: sys_used,
         };
 
         if let Err(e) = container

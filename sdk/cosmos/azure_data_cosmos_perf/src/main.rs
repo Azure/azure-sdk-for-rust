@@ -1,8 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// Provide a stub main for WASM targets since this crate is CLI-only.
 #[cfg(target_family = "wasm")]
-compile_error!("azure_data_cosmos_perf is a CLI tool and cannot be built for wasm targets");
+fn main() {
+    eprintln!("azure_data_cosmos_perf is not supported on WASM targets");
+}
 
 #[cfg(not(target_family = "wasm"))]
 mod config;
@@ -18,29 +21,20 @@ mod setup;
 mod stats;
 
 #[cfg(not(target_family = "wasm"))]
-use std::sync::Arc;
-#[cfg(not(target_family = "wasm"))]
-use std::time::Duration;
-
-#[cfg(not(target_family = "wasm"))]
-use azure_core::credentials::Secret;
-#[cfg(not(target_family = "wasm"))]
-use azure_data_cosmos::{CosmosClient, CosmosClientOptions};
-#[cfg(not(target_family = "wasm"))]
-use clap::Parser;
-
-#[cfg(not(target_family = "wasm"))]
-use crate::config::{AuthMethod, Config};
-#[cfg(not(target_family = "wasm"))]
-use crate::operations::create_operations;
-#[cfg(not(target_family = "wasm"))]
-use crate::runner::RunConfig;
-#[cfg(not(target_family = "wasm"))]
-use crate::stats::Stats;
-
-#[cfg(not(target_family = "wasm"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use azure_core::credentials::Secret;
+    use azure_data_cosmos::{CosmosClient, CosmosClientOptions};
+    use clap::Parser;
+
+    use crate::config::{AuthMethod, Config};
+    use crate::operations::create_operations;
+    use crate::runner::RunConfig;
+    use crate::stats::Stats;
+
     let config = Config::parse();
 
     // Validate configuration
@@ -140,13 +134,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     println!();
 
-    // Ensure the results container exists for storing metrics
-    setup::ensure_container(&db_client, &config.results_container, 400, default_ttl).await?;
-    let results_container = db_client.container_client(&config.results_container);
-    println!(
-        "Perf results will be stored in container '{}'. Workload ID: {}",
-        config.results_container, config.workload_id,
-    );
+    // Set up results container — either on the same account or a separate one
+    let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
+        let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
+        let results_client = match results_auth {
+            AuthMethod::Key => {
+                let key = config.results_key.as_deref().ok_or(
+                    "Results account key is required. Use --results-key or set AZURE_COSMOS_RESULTS_KEY.",
+                )?;
+                CosmosClient::with_key(results_endpoint, Secret::from(key.to_string()), None)?
+            }
+            AuthMethod::Aad => {
+                let credential = azure_identity::ManagedIdentityCredential::new(None)?;
+                CosmosClient::new(results_endpoint, credential, None)?
+            }
+        };
+        setup::ensure_database(&results_client, &config.results_database).await?;
+        let results_db = results_client.database_client(&config.results_database);
+        setup::ensure_container(&results_db, &config.results_container, 400, default_ttl).await?;
+        println!(
+            "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
+            results_endpoint, config.results_database, config.results_container, config.workload_id,
+        );
+        results_db.container_client(&config.results_container)
+    } else {
+        setup::ensure_container(&db_client, &config.results_container, 400, default_ttl).await?;
+        println!(
+            "Perf results will be stored in container '{}'. Workload ID: {}",
+            config.results_container, config.workload_id,
+        );
+        db_client.container_client(&config.results_container)
+    };
 
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
@@ -165,6 +183,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
-#[cfg(target_family = "wasm")]
-fn main() {}

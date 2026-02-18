@@ -70,6 +70,10 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--default-ttl` | `3600` | Default TTL in seconds for items (0 to disable) |
 | `--report-interval` | `300` | Stats reporting interval in seconds |
 | `--results-container` | `perfresults` | Container for storing perf results and error documents |
+| `--results-endpoint` | — | Cosmos DB endpoint for results (omit to use same account as `--endpoint`) |
+| `--results-database` | `perfdb` | Database name on the results account |
+| `--results-auth` | same as `--auth` | Authentication method for the results account: `key` or `aad` |
+| `--results-key` | — | Account key for results account (or set `AZURE_COSMOS_RESULTS_KEY` env var) |
 | `--workload-id` | random UUID | Unique identifier for this workload instance (for multi-VM correlation) |
 | `--no-reads` | `false` | Disable point read operations |
 | `--no-queries` | `false` | Disable query operations |
@@ -106,6 +110,7 @@ The tool prints periodic latency summaries like:
 ```text
 --- Interval Report ---
   Process: CPU 45.2%, Memory 128.3 MB
+  System:  CPU 12.8%, Memory 5.2 GB/16.0 GB
   Operation         Count   Errors        Min        Max       Mean        P50        P90        P99
   -------------------------------------------------------------------------------------------------------
   CreateItem          280        0      4.0ms     55.2ms     16.8ms     12.5ms     35.0ms     50.1ms
@@ -120,7 +125,8 @@ Periodic summary documents and individual error documents are written to the
 results container (`--results-container`, default `perfresults`).
 
 - **Summary documents**: Upserted at each reporting interval with latency
-  percentiles, process metrics, and workload ID per operation.
+  percentiles, process metrics (CPU/memory), system metrics (CPU/memory), and
+  workload ID per operation.
 - **Error documents**: Written for each individual operation failure with the
   operation name, error message, source error chain, workload ID, and timestamp.
   Errors during the perf run never stop the workload — they are captured and
@@ -129,6 +135,20 @@ results container (`--results-container`, default `perfresults`).
 If the tool cannot write a result or error document (e.g., the results container
 is temporarily unavailable), a warning is printed to stderr and the workload
 continues unaffected.
+
+### Separate Results Account
+
+By default, results are stored on the same account being tested. To avoid adding
+noise to your workload, use `--results-endpoint` to direct result/error documents
+to a different Cosmos DB account:
+
+```bash
+cargo run -p azure_data_cosmos_perf -- \
+  --endpoint https://workload.documents.azure.com:443/ \
+  --auth key --key "$AZURE_COSMOS_KEY" \
+  --results-endpoint https://results.documents.azure.com:443/ \
+  --results-auth key --results-key "$AZURE_COSMOS_RESULTS_KEY"
+```
 
 ### TTL
 

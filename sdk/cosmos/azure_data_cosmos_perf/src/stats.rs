@@ -232,15 +232,21 @@ fn format_duration(d: Duration) -> String {
     }
 }
 
-/// Process-level CPU and memory metrics.
+/// Process-level and system-level CPU and memory metrics.
 pub struct ProcessMetrics {
-    /// CPU usage as a percentage (may exceed 100% on multi-core).
+    /// Process CPU usage as a percentage (may exceed 100% on multi-core).
     pub cpu_percent: f32,
-    /// Resident memory in bytes.
+    /// Process resident memory in bytes.
     pub memory_bytes: u64,
+    /// System-wide CPU usage as a percentage.
+    pub system_cpu_percent: f32,
+    /// Total physical memory in bytes.
+    pub system_total_memory_bytes: u64,
+    /// Used physical memory in bytes.
+    pub system_used_memory_bytes: u64,
 }
 
-/// Captures process-level CPU and memory metrics for the current process.
+/// Captures process-level and system-level CPU and memory metrics.
 ///
 /// The `System` instance must be kept alive between calls for CPU usage
 /// to be computed correctly (it's based on the delta between refreshes).
@@ -248,10 +254,15 @@ pub fn refresh_process_metrics(sys: &mut System) -> Option<ProcessMetrics> {
     let pid = sysinfo::get_current_pid().ok()?;
     let refresh = ProcessRefreshKind::nothing().with_cpu().with_memory();
     sys.refresh_processes_specifics(ProcessesToUpdate::Some(&[pid]), true, refresh);
+    sys.refresh_cpu_usage();
+    sys.refresh_memory();
     let proc = sys.process(pid)?;
     Some(ProcessMetrics {
         cpu_percent: proc.cpu_usage(),
         memory_bytes: proc.memory(),
+        system_cpu_percent: sys.global_cpu_usage(),
+        system_total_memory_bytes: sys.total_memory(),
+        system_used_memory_bytes: sys.used_memory(),
     })
 }
 
@@ -270,12 +281,18 @@ fn format_bytes(bytes: u64) -> String {
     }
 }
 
-/// Prints process-level CPU and memory metrics.
+/// Prints process-level and system-level CPU and memory metrics.
 pub fn print_process_metrics(metrics: &ProcessMetrics) {
     println!(
         "  Process: CPU {:.1}%, Memory {}",
         metrics.cpu_percent,
         format_bytes(metrics.memory_bytes),
+    );
+    println!(
+        "  System:  CPU {:.1}%, Memory {}/{}",
+        metrics.system_cpu_percent,
+        format_bytes(metrics.system_used_memory_bytes),
+        format_bytes(metrics.system_total_memory_bytes),
     );
 }
 

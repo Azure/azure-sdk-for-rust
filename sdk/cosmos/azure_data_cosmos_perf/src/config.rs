@@ -81,6 +81,29 @@ pub struct Config {
     #[arg(long, default_value = "perfresults")]
     pub results_container: String,
 
+    /// Cosmos DB endpoint for the results account.
+    ///
+    /// When set, results are written to a separate Cosmos DB account so they
+    /// don't add load to the account being tested. When omitted, results go
+    /// to the same account as `--endpoint`.
+    #[arg(long)]
+    pub results_endpoint: Option<String>,
+
+    /// Database name on the results account.
+    #[arg(long, default_value = "perfdb")]
+    pub results_database: String,
+
+    /// Authentication method for the results account.
+    ///
+    /// Defaults to the same method as `--auth` when omitted.
+    #[arg(long, value_enum)]
+    pub results_auth: Option<AuthMethod>,
+
+    /// Account key for the results account (required when --results-auth=key).
+    /// Can also be set via AZURE_COSMOS_RESULTS_KEY env var.
+    #[arg(long, env = "AZURE_COSMOS_RESULTS_KEY")]
+    pub results_key: Option<String>,
+
     /// Default time-to-live in seconds for items in the container.
     ///
     /// Applied when creating new containers. Set to 0 to disable TTL.
