@@ -8,13 +8,6 @@ use azure_core::http::RawResponse;
 use std::collections::HashMap;
 use url::Url;
 
-/// Placeholder for a resolved physical partition key range.
-///
-/// In a fuller implementation this would include identifiers and possibly
-/// the min/max effective partition key values that define the range.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub(crate) struct PartitionKeyRange;
-
 /// Carries per-request routing, partition resolution, retry and regional state.
 ///
 /// `RequestContext` is mutated during pipeline execution to track which
