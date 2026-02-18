@@ -149,25 +149,6 @@ impl GlobalEndpointManager {
             .to_vec()
     }
 
-    /// Returns the count of preferred locations configured for routing.
-    ///
-    /// # Summary
-    /// Retrieves the number of preferred Azure regions that were specified during
-    /// initialization. This count is used by retry policies to determine failover
-    /// behavior and calculate maximum retry attempts across regions.
-    ///
-    /// # Returns
-    /// The number of preferred locations as usize
-    #[allow(dead_code)]
-    pub fn preferred_location_count(&self) -> usize {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .locations_info
-            .preferred_locations
-            .len()
-    }
-
     /// Resolves the appropriate service endpoint URL for a given request.
     ///
     /// # Summary
@@ -455,7 +436,6 @@ mod tests {
             manager.hub_uri(),
             &Url::parse("https://test.documents.azure.com/").unwrap()
         );
-        assert_eq!(manager.preferred_location_count(), 2);
     }
 
     #[test]
@@ -466,32 +446,6 @@ mod tests {
             hub_uri,
             &Url::parse("https://test.documents.azure.com/").unwrap()
         );
-    }
-
-    #[test]
-    fn test_preferred_location_count() {
-        let manager = GlobalEndpointManager::new(
-            "https://test.documents.azure.com/".parse().unwrap(),
-            vec![
-                RegionName::from("West US"),
-                RegionName::from("East US"),
-                RegionName::from("North Europe"),
-            ],
-            vec![],
-            create_test_pipeline(),
-        );
-        assert_eq!(manager.preferred_location_count(), 3);
-    }
-
-    #[test]
-    fn test_preferred_location_count_empty() {
-        let manager = GlobalEndpointManager::new(
-            "https://test.documents.azure.com".parse().unwrap(),
-            vec![],
-            vec![],
-            create_test_pipeline(),
-        );
-        assert_eq!(manager.preferred_location_count(), 0);
     }
 
     #[test]
