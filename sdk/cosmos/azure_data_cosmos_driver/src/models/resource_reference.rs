@@ -8,12 +8,17 @@
 //! internal enums, preventing mixed addressing modes.
 
 use crate::models::{
-    resource_id::{ResourceId, ResourceIdentifier, ResourceName},
-    AccountReference, PartitionKey, PartitionKeyDefinition,
+    resource_id::{
+        ContainerId, DatabaseId, PartitionKeyRangeId, ResourceIdentifierType, ResourceName,
+        ResourceRid,
+    },
+    AccountReference, ImmutableContainerProperties, PartitionKey,
 };
 
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
+
 // =============================================================================
 // DatabaseReference
 // =============================================================================
@@ -29,7 +34,7 @@ pub struct DatabaseReference {
     /// Reference to the parent account.
     account: AccountReference,
     /// The database identifier (by name or by RID).
-    id: ResourceIdentifier,
+    id: DatabaseId,
 }
 
 impl DatabaseReference {
@@ -37,18 +42,21 @@ impl DatabaseReference {
     pub fn from_name(account: AccountReference, name: impl Into<Cow<'static, str>>) -> Self {
         Self {
             account,
-            id: ResourceIdentifier::ByName(ResourceName::new(name)),
+            id: DatabaseId::ByName(ResourceName::new(name)),
+        }
+    }
+
+    /// Creates a new database reference by RID.
+    pub(crate) fn from_rid(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            account,
+            id: DatabaseId::ByRid(ResourceRid::new(rid)),
         }
     }
 
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
         &self.account
-    }
-
-    /// Consumes this database reference and returns the parent account.
-    pub fn into_account(self) -> AccountReference {
-        self.account
     }
 
     /// Returns the database name, if this is a name-based reference.
@@ -61,14 +69,19 @@ impl DatabaseReference {
         self.id.rid()
     }
 
+    /// Returns the internal database ID.
+    pub(crate) fn id(&self) -> &DatabaseId {
+        &self.id
+    }
+
     /// Returns `true` if this is a name-based reference.
     pub fn is_by_name(&self) -> bool {
-        matches!(self.id, ResourceIdentifier::ByName(_))
+        matches!(self.id, DatabaseId::ByName(_))
     }
 
     /// Returns `true` if this is a RID-based reference.
     pub fn is_by_rid(&self) -> bool {
-        matches!(self.id, ResourceIdentifier::ByRid(_))
+        matches!(self.id, DatabaseId::ByRid(_))
     }
 
     /// Returns the name-based relative path: `/dbs/{name}`
@@ -113,13 +126,13 @@ pub struct ContainerReference {
     /// The database user-provided name.
     db_name: ResourceName,
     /// The database internal RID.
-    db_rid: ResourceId,
+    db_rid: ResourceRid,
     /// The container user-provided name.
     container_name: ResourceName,
     /// The container internal RID.
-    container_rid: ResourceId,
-    /// Partition key definition for this container.
-    partition_key_definition: PartitionKeyDefinition,
+    container_rid: ResourceRid,
+    /// Immutable container properties (partition key, unique key policy).
+    immutable_properties: Arc<ImmutableContainerProperties>,
 }
 
 impl PartialEq for ContainerReference {
@@ -155,9 +168,9 @@ impl ContainerReference {
     pub(crate) fn new(
         account: AccountReference,
         db_name: impl Into<ResourceName>,
-        db_rid: impl Into<ResourceId>,
+        db_rid: impl Into<ResourceRid>,
         container_name: impl Into<ResourceName>,
-        container_rid: impl Into<ResourceId>,
+        container_rid: impl Into<ResourceRid>,
         container_properties: &crate::models::ContainerProperties,
     ) -> Self {
         Self {
@@ -166,7 +179,9 @@ impl ContainerReference {
             db_rid: db_rid.into(),
             container_name: container_name.into(),
             container_rid: container_rid.into(),
-            partition_key_definition: container_properties.partition_key.clone(),
+            immutable_properties: Arc::new(
+                ImmutableContainerProperties::from_container_properties(container_properties),
+            ),
         }
     }
 
@@ -196,15 +211,20 @@ impl ContainerReference {
     }
 
     /// Returns the partition key definition for this container.
-    pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition {
-        &self.partition_key_definition
+    pub(crate) fn partition_key(&self) -> &crate::models::PartitionKeyDefinition {
+        self.immutable_properties.partition_key()
+    }
+
+    /// Returns the immutable container properties.
+    pub(crate) fn immutable_properties(&self) -> &Arc<ImmutableContainerProperties> {
+        &self.immutable_properties
     }
 
     /// Returns a `DatabaseReference` for the parent database (name-based).
     pub(crate) fn database(&self) -> DatabaseReference {
         DatabaseReference {
             account: self.account.clone(),
-            id: ResourceIdentifier::ByName(self.db_name.clone()),
+            id: DatabaseId::ByName(self.db_name.clone()),
         }
     }
 
@@ -216,6 +236,26 @@ impl ContainerReference {
     /// Returns the RID-based relative path: `/dbs/{db_rid}/colls/{container_rid}`
     pub fn rid_based_path(&self) -> String {
         format!("/dbs/{}/colls/{}", self.db_rid, self.container_rid)
+    }
+
+    /// Returns the internal container name as a `ResourceName`.
+    pub(crate) fn container_name_ref(&self) -> &ResourceName {
+        &self.container_name
+    }
+
+    /// Returns the internal container RID as a `ResourceRid`.
+    pub(crate) fn container_rid_ref(&self) -> &ResourceRid {
+        &self.container_rid
+    }
+
+    /// Returns the internal database name as a `ResourceName`.
+    pub(crate) fn db_name_ref(&self) -> &ResourceName {
+        &self.db_name
+    }
+
+    /// Returns the internal database RID as a `ResourceRid`.
+    pub(crate) fn db_rid_ref(&self) -> &ResourceRid {
+        &self.db_rid
     }
 }
 
@@ -237,7 +277,7 @@ pub struct ItemReference {
     /// The partition key for the item.
     partition_key: PartitionKey,
     /// The item identifier (name or RID).
-    item_identifier: ResourceIdentifier,
+    item_identifier: ResourceIdentifierType,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -260,7 +300,7 @@ impl ItemReference {
         Self {
             container: container.clone(),
             partition_key,
-            item_identifier: ResourceIdentifier::by_name(name),
+            item_identifier: ResourceIdentifierType::by_name(name),
             resource_link,
         }
     }
@@ -277,12 +317,12 @@ impl ItemReference {
         partition_key: PartitionKey,
         item_rid: impl Into<Cow<'static, str>>,
     ) -> Self {
-        let rid = ResourceId::new(item_rid);
+        let rid = ResourceRid::new(item_rid);
         let resource_link = format!("{}/docs/{}", container.rid_based_path(), rid);
         Self {
             container: container.clone(),
             partition_key,
-            item_identifier: ResourceIdentifier::by_rid(rid),
+            item_identifier: ResourceIdentifierType::by_rid(rid),
             resource_link,
         }
     }
@@ -300,6 +340,11 @@ impl ItemReference {
     /// Returns a reference to the partition key.
     pub fn partition_key(&self) -> &PartitionKey {
         &self.partition_key
+    }
+
+    /// Returns a reference to the item identifier.
+    pub(crate) fn item_identifier(&self) -> &ResourceIdentifierType {
+        &self.item_identifier
     }
 
     /// Returns the item name (document ID), if this is a name-based reference.
@@ -344,7 +389,7 @@ pub struct StoredProcedureReference {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The stored procedure identifier.
-    stored_procedure_identifier: ResourceIdentifier,
+    stored_procedure_identifier: ResourceIdentifierType,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -363,7 +408,7 @@ impl StoredProcedureReference {
         );
         Self {
             container: container.clone(),
-            stored_procedure_identifier: ResourceIdentifier::by_name(stored_procedure_name),
+            stored_procedure_identifier: ResourceIdentifierType::by_name(stored_procedure_name),
             resource_link,
         }
     }
@@ -373,7 +418,7 @@ impl StoredProcedureReference {
         container: &ContainerReference,
         stored_procedure_rid: impl Into<Cow<'static, str>>,
     ) -> Self {
-        let stored_procedure_rid = ResourceId::new(stored_procedure_rid);
+        let stored_procedure_rid = ResourceRid::new(stored_procedure_rid);
         let resource_link = format!(
             "{}/sprocs/{}",
             container.rid_based_path(),
@@ -381,7 +426,7 @@ impl StoredProcedureReference {
         );
         Self {
             container: container.clone(),
-            stored_procedure_identifier: ResourceIdentifier::by_rid(stored_procedure_rid),
+            stored_procedure_identifier: ResourceIdentifierType::by_rid(stored_procedure_rid),
             resource_link,
         }
     }
@@ -441,7 +486,7 @@ pub struct TriggerReference {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The trigger identifier.
-    trigger_identifier: ResourceIdentifier,
+    trigger_identifier: ResourceIdentifierType,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -456,7 +501,7 @@ impl TriggerReference {
         let resource_link = format!("{}/triggers/{}", container.name_based_path(), trigger_name);
         Self {
             container: container.clone(),
-            trigger_identifier: ResourceIdentifier::by_name(trigger_name),
+            trigger_identifier: ResourceIdentifierType::by_name(trigger_name),
             resource_link,
         }
     }
@@ -466,11 +511,11 @@ impl TriggerReference {
         container: &ContainerReference,
         trigger_rid: impl Into<Cow<'static, str>>,
     ) -> Self {
-        let trigger_rid = ResourceId::new(trigger_rid);
+        let trigger_rid = ResourceRid::new(trigger_rid);
         let resource_link = format!("{}/triggers/{}", container.rid_based_path(), trigger_rid);
         Self {
             container: container.clone(),
-            trigger_identifier: ResourceIdentifier::by_rid(trigger_rid),
+            trigger_identifier: ResourceIdentifierType::by_rid(trigger_rid),
             resource_link,
         }
     }
@@ -524,7 +569,7 @@ pub struct UdfReference {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The UDF identifier.
-    udf_identifier: ResourceIdentifier,
+    udf_identifier: ResourceIdentifierType,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -539,18 +584,18 @@ impl UdfReference {
         let resource_link = format!("{}/udfs/{}", container.name_based_path(), udf_name);
         Self {
             container: container.clone(),
-            udf_identifier: ResourceIdentifier::by_name(udf_name),
+            udf_identifier: ResourceIdentifierType::by_name(udf_name),
             resource_link,
         }
     }
 
     /// Creates a new UDF reference by RID.
     pub fn from_rid(container: &ContainerReference, udf_rid: impl Into<Cow<'static, str>>) -> Self {
-        let udf_rid = ResourceId::new(udf_rid);
+        let udf_rid = ResourceRid::new(udf_rid);
         let resource_link = format!("{}/udfs/{}", container.rid_based_path(), udf_rid);
         Self {
             container: container.clone(),
-            udf_identifier: ResourceIdentifier::by_rid(udf_rid),
+            udf_identifier: ResourceIdentifierType::by_rid(udf_rid),
             resource_link,
         }
     }
@@ -599,71 +644,59 @@ impl UdfReference {
 ///
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PartitionKeyRangeReference {
-    /// Reference to the parent container.
-    container: ContainerReference,
+    /// Reference to the parent account.
+    account: AccountReference,
     /// The partition key range identifier.
-    range_id: ResourceName,
+    id: PartitionKeyRangeId,
 }
 
 impl PartitionKeyRangeReference {
-    /// Creates a new partition key range reference from a range ID.
-    pub fn from_range_id(
-        container: &ContainerReference,
-        range_id: impl Into<Cow<'static, str>>,
+    /// Creates a new partition key range reference by name.
+    pub fn from_name(
+        account: AccountReference,
+        db_name: impl Into<String>,
+        container_name: impl Into<String>,
+        range_id: impl Into<String>,
     ) -> Self {
-        let range_id = ResourceName::new(range_id);
         Self {
-            container: container.clone(),
-            range_id,
+            account,
+            id: PartitionKeyRangeId::ByName {
+                container: ContainerId::ByName {
+                    db_name: ResourceName::from(db_name.into()),
+                    name: ResourceName::from(container_name.into()),
+                },
+                range_id: ResourceName::from(range_id.into()),
+            },
         }
     }
 
-    /// Returns a reference to the parent container.
-    pub fn container(&self) -> &ContainerReference {
-        &self.container
+    /// Creates a new partition key range reference by RID.
+    pub fn from_rid(
+        account: AccountReference,
+        container_rid: impl Into<String>,
+        range_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            account,
+            id: PartitionKeyRangeId::ByRid {
+                container_rid: ResourceRid::from(container_rid.into()),
+                range_id: ResourceName::from(range_id.into()),
+            },
+        }
     }
 
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
-        self.container.account()
+        &self.account
     }
 
     /// Returns the partition key range ID.
     pub fn range_id(&self) -> &str {
-        self.range_id.as_str()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::{ContainerProperties, PartitionKeyDefinition};
-    use url::Url;
-
-    fn make_container_reference() -> ContainerReference {
-        let account = AccountReference::with_master_key(
-            Url::parse("https://example.documents.azure.com:443/").unwrap(),
-            "test-key",
-        );
-        let partition_key = PartitionKeyDefinition::new(["/tenantId"]);
-        let container_properties = ContainerProperties::new("my-container", partition_key);
-
-        ContainerReference::new(
-            account,
-            "my-db",
-            "db-rid",
-            "my-container",
-            "container-rid",
-            &container_properties,
-        )
+        self.id.range_id()
     }
 
-    #[test]
-    fn container_partition_key_definition_is_available() {
-        let container = make_container_reference();
-        let partition_key_definition = container.partition_key_definition();
-
-        assert_eq!(partition_key_definition.paths().len(), 1);
-        assert_eq!(partition_key_definition.paths()[0].as_ref(), "/tenantId");
+    /// Returns the internal partition key range ID.
+    pub(crate) fn id(&self) -> &PartitionKeyRangeId {
+        &self.id
     }
 }

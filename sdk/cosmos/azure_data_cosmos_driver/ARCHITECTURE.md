@@ -7,45 +7,46 @@ This document provides a comprehensive overview of the `azure_data_cosmos_driver
 The Azure Cosmos DB Rust ecosystem consists of three distinct layers:
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Layer 3: Language-Specific SDKs                                             │
-│                                                                             │
-│ ┌─────────────────────────────────────────────────────────────────────────┐ │
-│ │ azure_data_cosmos (Rust SDK)                                            │ │
-│ │ - Idiomatic Rust API with serde serialization                           │ │
-│ │ - Microsoft 24x7 support                                                │ │
-│ └──────────────────────────────┬──────────────────────────────────────────┘ │
-│                                │  DIRECT dependency (does NOT use native)   │
-│                                ▼                                            │
-│                      ┌─────────────────────────────────────────────────┐    │
-│                      │ Layer 1: azure_data_cosmos_driver               │    │
-│                      │ - Transport, routing, protocol handling         │    │
-│                      │ - raw-byte payloads                             │    │
-│                      │ - Community support only                        │    │
-│                      └─────────────────────────────────────────────────┘    │
-│                                      ▲                                      │
-│ ┌──────────────────────┐             │            ┌───────────────────────┐ │
-│ │ Java SDK (via JNI)   │             │            │ .NET / Python SDKs    │ │
-│ │ - Jackson types      │             │            │ - native interop      │ │
-│ └──────────┬───────────┘             │            └───────────┬───────────┘ │
-│            │                         │                        │             │
-│            ▼                         │                        ▼             │
-│ ┌─────────────────────────────────────────────────────────────────────────┐ │
-│ │ Layer 2: azure_data_cosmos_native (C-FFI, non-Rust interop only)        │ │
-│ │ - Stable C ABI for cross-language interop                               │ │
-│ │ - Memory-safe wrappers around driver                                    │ │
-│ └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Layer 3: Language-Specific SDKs                                        │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │ azure_data_cosmos (Rust)                                        │    │
+│  │ - Idiomatic Rust API with serde serialization                   │    │
+│  │ - Microsoft 24x7 support                                        │    │
+│  └────────────────────────────┬────────────────────────────────────┘    │
+│                               │ (direct Rust dependency)                │
+│                               │                                         │
+│  ┌─────────────────┐  ┌───────┼─────────┐  ┌─────────────────────────┐  │
+│  │ Java SDK        │  │       │         │  │ .NET / Python SDKs      │  │
+│  │ (via JNI)       │  │       │         │  │ (via native interop)    │  │
+│  │ - Jackson types │  │       │         │  │ - native serialization  │  │
+│  └────────┬────────┘  │       │         │  └────────────┬────────────┘  │
+│           │           │       │         │               │               │
+│           ▼           │       │         │               ▼               │
+│  ┌────────────────────┴───────┼─────────┴───────────────────────────┐   │
+│  │  Layer 2: azure_data_cosmos_native (C-FFI)                       │   │
+│  │  - Stable C ABI for cross-language interop (non-Rust languages)  │   │
+│  │  - Memory-safe wrappers around driver                            │   │
+│  └─────────────────────────────┬────────────────────────────────────┘   │
+│                                │                                        │
+│                                ▼                                        │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │  Layer 1: azure_data_cosmos_driver (This Crate)  ◄───────────────┼───┘
+│  │  - Transport, routing, protocol handling                         │
+│  │  - Typed metadata APIs; schema-agnostic data plane (raw bytes)   │
+│  │  - Community support only                                        │
+│  └──────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Layer Responsibilities
 
-| Layer | Crate                      | Responsibility                                       | Support Level    |
-|-------|----------------------------|------------------------------------------------------|------------------|
-| 1     | `azure_data_cosmos_driver` | Transport, routing, protocol, retries                | Community/GitHub |
-| 2     | `azure_data_cosmos_native` | C-FFI wrapper for non-Rust languages                 | Internal         |
-| 3     | `azure_data_cosmos`        | Idiomatic Rust API with serde (uses driver directly) | Microsoft 24x7   |
+| Layer | Crate | Responsibility | Support Level |
+|-------|-------|----------------|---------------|
+| 1 | `azure_data_cosmos_driver` | Transport, routing, protocol, retries | Community/GitHub |
+| 2 | `azure_data_cosmos_native` | C-FFI wrapper for non-Rust languages | Internal |
+| 3 | `azure_data_cosmos` | Idiomatic Rust API with serde (uses driver directly) | Microsoft 24x7 |
 
 > **Note**: The Rust SDK (`azure_data_cosmos`) depends directly on `azure_data_cosmos_driver` - it does **not** go through the native layer. The native layer exists solely for cross-language interop (Java, .NET, Python, etc.) via C-FFI.
 
@@ -79,7 +80,7 @@ The Azure Cosmos DB Rust ecosystem consists of three distinct layers:
           │ - DatabaseReference::from_name(...)
           │
           ▼
-    CosmosResponse                       (Response with diagnostics)
+    CosmosResult                         (Response with diagnostics)
           │
           ├── response_bytes: Vec<u8>
           ├── headers: ResponseHeaders
@@ -92,7 +93,7 @@ The Azure Cosmos DB Rust ecosystem consists of three distinct layers:
 2. **Driver** provides access to a specific Cosmos account
 3. **Resource Reference** built from typed references (`ContainerReference`, `ItemReference`, etc.)
 4. **Operation** created via factory methods: `CosmosOperation::create(resource_ref)`, `.read()`, `.query()`, etc.
-5. **Execution** happens via `driver.execute_operation(operation)` - returns `CosmosResponse`
+5. **Execution** happens via `driver.execute_operation(operation)` - returns `CosmosResult`
 
 ---
 
@@ -111,13 +112,12 @@ The driver is **completely ignorant of item/document schemas and serialization f
 pub async fn execute_operation(
     &self,
     operation: CosmosOperation,  // operation.body() is Vec<u8>
-) -> Result<CosmosResponse> {
-  // CosmosResponse::response_bytes() returns Vec<u8>
+) -> Result<CosmosResult> {
+    // CosmosResult::response_bytes() returns Vec<u8>
 }
 ```
 
-**Rationale**:
-
+**Rationale**: 
 - Cosmos DB is a schemaless database - item structure is application-defined
 - Serialization must be handled by each language SDK natively (Rust: serde, Java: Jackson, .NET: System.Text.Json)
 - Driver supports multiple consuming SDKs (Rust, Java, .NET, Python) via the native layer
@@ -126,14 +126,34 @@ pub async fn execute_operation(
 
 **Applies to**: Database/container/user/permission/offer management operations
 
-Even for metadata operations serialization must be handled by each language SDK natively (Rust: serde, Java: Jackson, .NET: System.Text.Json) - but the driver might also deserialize certain metadata responses - like Container or account metadata to populate driver-internal caches.
+The driver provides **typed models** for metadata resources and deserializes responses internally:
+
+```rust
+// Driver internally deserializes metadata
+let container_props: ContainerProperties = 
+    serde_json::from_slice(response.body())?;
+
+// Typed public API (future - not yet exposed)
+pub async fn read_container(
+    &self,
+    container_ref: ContainerReference,
+) -> Result<ContainerProperties> { /* ... */ }
+```
+
+**Rationale**:
+- Metadata schemas are defined by the Cosmos DB service, not applications
+- Typed APIs prevent misuse (e.g., setting invalid partition key definitions)
+- Applications should never parse raw JSON from metadata operations
+- Cross-language SDKs all use identical metadata models (service contract)
 
 ### Current Implementation
 
 The driver currently:
-
 - ✅ Uses typed metadata models internally for cache resolution (`DatabaseProperties`, `ContainerProperties`)
-- ✅ Returns raw bytes for all data plane  and metadata operations
+- ✅ Returns raw bytes for all data plane operations
+- ⚠️ Does not yet expose high-level typed metadata APIs publicly (operations return `CosmosResult` with raw bytes)
+
+Future iterations may expose dedicated metadata operation methods returning typed models directly.
 
 ---
 
@@ -285,7 +305,7 @@ async fn main() -> azure_core::Result<()> {
 Configuration cascades from most general to most specific:
 
 ```text
-Environment Variables (AZURE_COSMOS_*)
+Environment Variables (COSMOS_*)
         │
         ▼
 Runtime-Level Options (DriverOptions on runtime)
@@ -352,27 +372,27 @@ DiagnosticsContext                       (Immutable, per-operation)
 
 ### Pipeline Events & Reqwest Limitations
 
-> ⚠️ **Team Discussion Point**: The driver uses `reqwest` as the HTTP transport. Unlike Reactor Netty (used in the Java SDK), reqwest does **not** expose fine-grained connection lifecycle callbacks directly. Eventually we might need to look into the ClientBuilder::connector_layer which allows us to apply a tower::Layer to the Tower service that handles connections. It's quite low-level but I believe it would allow us to track connection establishment and teardown.
+> ⚠️ **Team Discussion Point**: The driver uses `reqwest` as the HTTP transport. Unlike Reactor Netty (used in the Java SDK), reqwest does **not** expose fine-grained connection lifecycle callbacks.
 
 #### What We **Cannot** Track (reqwest limitation)
 
-| Metric                      | Java SDK (Reactor Netty) | Rust SDK (reqwest)     |
-|-----------------------------|--------------------------|------------------------|
-| DNS resolution time         | ✅ Separate event         | ❌ Bundled in transport |
-| Connection pool acquisition | ✅ Separate event         | ❌ Not exposed          |
-| New connection vs reused    | ✅ Separate event         | ❌ Not exposed          |
-| TLS handshake time          | ✅ Separate event         | ❌ Not exposed          |
-| Time to first byte          | ✅ Separate event         | ❌ Not exposed          |
-| Request body sent           | ✅ Separate event         | ❌ Not exposed          |
+| Metric | Java SDK (Reactor Netty) | Rust SDK (reqwest) |
+|--------|--------------------------|---------------------|
+| DNS resolution time | ✅ Separate event | ❌ Bundled in transport |
+| Connection pool acquisition | ✅ Separate event | ❌ Not exposed |
+| New connection vs reused | ✅ Separate event | ❌ Not exposed |
+| TLS handshake time | ✅ Separate event | ❌ Not exposed |
+| Time to first byte | ✅ Separate event | ❌ Not exposed |
+| Request body sent | ✅ Separate event | ❌ Not exposed |
 
 #### What We **Can** Track
 
-| Event                     | Description                                                          |
-|---------------------------|----------------------------------------------------------------------|
-| `TransportStart`          | Request handed to reqwest - DNS/connect/TLS/send all happen opaquely |
-| `ResponseHeadersReceived` | Response headers received (confirms request was sent)                |
-| `TransportComplete`       | Headers + body fully received                                        |
-| `TransportFailed`         | Error occurred (analyze error type for retry safety)                 |
+| Event | Description |
+|-------|-------------|
+| `TransportStart` | Request handed to reqwest - DNS/connect/TLS/send all happen opaquely |
+| `ResponseHeadersReceived` | Response headers received (confirms request was sent) |
+| `TransportComplete` | Headers + body fully received |
+| `TransportFailed` | Error occurred (analyze error type for retry safety) |
 
 ---
 
@@ -380,10 +400,10 @@ DiagnosticsContext                       (Immutable, per-operation)
 
 The diagnostics output can be formatted at two verbosity levels:
 
-| Level      | Description                         | Use Case                                          |
-|------------|-------------------------------------|---------------------------------------------------|
-| `Detailed` | Full output with every request      | Deep debugging, local development                 |
-| `Summary`  | Compacted output with deduplication | Production logging, size-constrained environments |
+| Level | Description | Use Case |
+|-------|-------------|----------|
+| `Detailed` | Full output with every request | Deep debugging, local development |
+| `Summary` | Compacted output with deduplication | Production logging, size-constrained environments |
 
 ```rust
 use azure_data_cosmos_driver::options::DiagnosticsVerbosity;
@@ -623,12 +643,12 @@ Same operation with deduplication applied:
 
 **Key Differences:**
 
-| Aspect              | Detailed          | Summary                       |
-|---------------------|-------------------|-------------------------------|
-| Size                | ~2.8 KB           | ~0.8 KB                       |
-| Individual requests | All 11 shown      | First + Last only             |
-| Middle requests     | Full details each | Grouped as 1 entry with stats |
-| Debugging value     | Maximum           | Sufficient for most cases     |
+| Aspect | Detailed | Summary |
+|--------|----------|---------|
+| Size | ~2.8 KB | ~0.8 KB |
+| Individual requests | All 11 shown | First + Last only |
+| Middle requests | Full details each | Grouped as 1 entry with stats |
+| Debugging value | Maximum | Sufficient for most cases |
 
 ---
 
@@ -638,13 +658,13 @@ Same operation with deduplication applied:
 
 #### Core Types
 
-| Type                         | Description                                           |
-|------------------------------|-------------------------------------------------------|
-| `CosmosDriverRuntime`        | Entry point; manages drivers, pools, background tasks |
-| `CosmosDriverRuntimeBuilder` | Builder for `CosmosDriverRuntime`                     |
-| `CosmosDriver`               | Per-account driver for executing operations           |
-| `CosmosOperation`            | Single operation with context and options             |
-| `CosmosResponse`             | Response containing bytes, headers, diagnostics       |
+| Type | Description |
+|------|-------------|
+| `CosmosDriverRuntime` | Entry point; manages drivers, pools, background tasks |
+| `CosmosDriverRuntimeBuilder` | Builder for `CosmosDriverRuntime` |
+| `CosmosDriver` | Per-account driver for executing operations |
+| `CosmosOperation` | Single operation with context and options |
+| `CosmosResult` | Response containing bytes, headers, diagnostics |
 
 ---
 
@@ -654,18 +674,18 @@ Configuration types with builder pattern throughout.
 
 #### Option Types
 
-| Type                           | Description                         |
-|--------------------------------|-------------------------------------|
-| `DriverOptions`                | Top-level driver configuration      |
-| `DriverOptionsBuilder`         | Builder for `DriverOptions`         |
-| `RetryOptions`                 | Retry policy configuration          |
-| `RetryOptionsBuilder`          | Builder for `RetryOptions`          |
-| `ConnectionPoolOptions`        | HTTP connection pool settings       |
+| Type | Description |
+|------|-------------|
+| `DriverOptions` | Top-level driver configuration |
+| `DriverOptionsBuilder` | Builder for `DriverOptions` |
+| `RetryOptions` | Retry policy configuration |
+| `RetryOptionsBuilder` | Builder for `RetryOptions` |
+| `ConnectionPoolOptions` | HTTP connection pool settings |
 | `ConnectionPoolOptionsBuilder` | Builder for `ConnectionPoolOptions` |
-| `TimeoutOptions`               | Request/operation timeout settings  |
-| `TimeoutOptionsBuilder`        | Builder for `TimeoutOptions`        |
-| `TelemetryOptions`             | Distributed tracing and logging     |
-| `TelemetryOptionsBuilder`      | Builder for `TelemetryOptions`      |
+| `TimeoutOptions` | Request/operation timeout settings |
+| `TimeoutOptionsBuilder` | Builder for `TimeoutOptions` |
+| `TelemetryOptions` | Distributed tracing and logging |
+| `TelemetryOptionsBuilder` | Builder for `TelemetryOptions` |
 
 #### Key Configuration Fields
 
@@ -699,51 +719,51 @@ Resource definitions and metadata types.
 
 #### Account & Connection
 
-| Type                | Description                                                   |
-|---------------------|---------------------------------------------------------------|
-| `AccountReference`  | Account endpoint + credentials                                |
-| `AccountProperties` | Account metadata (regions, capabilities)                      |
-| `ConsistencyLevel`  | Strong, BoundedStaleness, Session, Eventual, ConsistentPrefix |
+| Type | Description |
+|------|-------------|
+| `AccountReference` | Account endpoint + credentials |
+| `AccountProperties` | Account metadata (regions, capabilities) |
+| `ConsistencyLevel` | Strong, BoundedStaleness, Session, Eventual, ConsistentPrefix |
 
 #### Database & Container
 
-| Type                            | Description                          |
-|---------------------------------|--------------------------------------|
-| `DatabaseProperties`            | Database metadata                    |
-| `ContainerProperties`           | Container configuration              |
-| `ContainerPropertiesBuilder`    | Builder for `ContainerProperties`    |
-| `PartitionKeyDefinition`        | Partition key path(s) and kind       |
+| Type | Description |
+|------|-------------|
+| `DatabaseProperties` | Database metadata |
+| `ContainerProperties` | Container configuration |
+| `ContainerPropertiesBuilder` | Builder for `ContainerProperties` |
+| `PartitionKeyDefinition` | Partition key path(s) and kind |
 | `PartitionKeyDefinitionBuilder` | Builder for `PartitionKeyDefinition` |
-| `PartitionKeyKind`              | Hash, Range, MultiHash               |
+| `PartitionKeyKind` | Hash, Range, MultiHash |
 
 #### Indexing
 
-| Type                    | Description                      |
-|-------------------------|----------------------------------|
-| `IndexingPolicy`        | Container indexing configuration |
-| `IndexingPolicyBuilder` | Builder for `IndexingPolicy`     |
-| `IndexingMode`          | Consistent, Lazy, None           |
-| `IncludedPath`          | Paths to include in index        |
-| `ExcludedPath`          | Paths to exclude from index      |
-| `SpatialIndex`          | Geospatial index configuration   |
-| `CompositeIndex`        | Multi-property composite index   |
-| `CompositeIndexOrder`   | Ascending, Descending            |
+| Type | Description |
+|------|-------------|
+| `IndexingPolicy` | Container indexing configuration |
+| `IndexingPolicyBuilder` | Builder for `IndexingPolicy` |
+| `IndexingMode` | Consistent, Lazy, None |
+| `IncludedPath` | Paths to include in index |
+| `ExcludedPath` | Paths to exclude from index |
+| `SpatialIndex` | Geospatial index configuration |
+| `CompositeIndex` | Multi-property composite index |
+| `CompositeIndexOrder` | Ascending, Descending |
 
 #### Throughput & Scaling
 
-| Type                          | Description                         |
-|-------------------------------|-------------------------------------|
-| `ThroughputProperties`        | Provisioned or autoscale throughput |
-| `ThroughputPropertiesBuilder` | Builder for `ThroughputProperties`  |
-| `AutoscaleSettings`           | Autoscale max throughput            |
+| Type | Description |
+|------|-------------|
+| `ThroughputProperties` | Provisioned or autoscale throughput |
+| `ThroughputPropertiesBuilder` | Builder for `ThroughputProperties` |
+| `AutoscaleSettings` | Autoscale max throughput |
 
 #### Conflicts & TTL
 
-| Type                              | Description                    |
-|-----------------------------------|--------------------------------|
-| `ConflictResolutionPolicy`        | LastWriterWins, Custom, Manual |
-| `ConflictResolutionPolicyBuilder` | Builder for conflict policy    |
-| `DefaultTimeToLive`               | Off, NoDefault, Seconds(i32)   |
+| Type | Description |
+|------|-------------|
+| `ConflictResolutionPolicy` | LastWriterWins, Custom, Manual |
+| `ConflictResolutionPolicyBuilder` | Builder for conflict policy |
+| `DefaultTimeToLive` | Off, NoDefault, Seconds(i32) |
 
 ---
 
@@ -753,27 +773,27 @@ Operational telemetry for debugging and monitoring.
 
 #### Core Diagnostics
 
-| Type                   | Description                     |
-|------------------------|---------------------------------|
-| `CosmosDiagnostics`    | Top-level diagnostics container |
-| `OperationDiagnostics` | Per-operation summary           |
-| `RequestDiagnostics`   | Per-HTTP-request details        |
+| Type | Description |
+|------|-------------|
+| `CosmosDiagnostics` | Top-level diagnostics container |
+| `OperationDiagnostics` | Per-operation summary |
+| `RequestDiagnostics` | Per-HTTP-request details |
 
 #### Metrics & Timing
 
-| Type            | Description                                   |
-|-----------------|-----------------------------------------------|
+| Type | Description |
+|------|-------------|
 | `RequestCharge` | RU consumption (total, per-request breakdown) |
-| `RetryInfo`     | Retry count, reasons, delays                  |
-| `TimingInfo`    | Request/response timing breakdown             |
-| `RegionInfo`    | Which region(s) handled the request           |
+| `RetryInfo` | Retry count, reasons, delays |
+| `TimingInfo` | Request/response timing breakdown |
+| `RegionInfo` | Which region(s) handled the request |
 
 #### Request Tracking
 
-| Type                | Description                                                |
-|---------------------|------------------------------------------------------------|
+| Type | Description |
+|------|-------------|
 | `RequestSentStatus` | Sent, NotSent, Unknown - tracks if request left the client |
-| `RequestEvent`      | Lifecycle events (headers received, body buffered, etc.)   |
+| `RequestEvent` | Lifecycle events (headers received, body buffered, etc.) |
 
 #### Key Diagnostic Fields
 
@@ -804,27 +824,27 @@ struct RequestDiagnostics {
 
 Fluent builders for complex type construction.
 
-| Type               | Description                  |
-|--------------------|------------------------------|
-| `PointReadBuilder` | Build point read operations  |
-| `QueryBuilder`     | Build query operations       |
-| `UpsertBuilder`    | Build upsert operations      |
-| `DeleteBuilder`    | Build delete operations      |
-| `PatchBuilder`     | Build patch operations       |
-| `BulkBuilder`      | Build bulk operation batches |
+| Type | Description |
+|------|-------------|
+| `PointReadBuilder` | Build point read operations |
+| `QueryBuilder` | Build query operations |
+| `UpsertBuilder` | Build upsert operations |
+| `DeleteBuilder` | Build delete operations |
+| `PatchBuilder` | Build patch operations |
+| `BulkBuilder` | Build bulk operation batches |
 
 ---
 
 ### Enums Summary
 
-| Enum                  | Variants                                                      | Description             |
-|-----------------------|---------------------------------------------------------------|-------------------------|
-| `ConsistencyLevel`    | Strong, BoundedStaleness, Session, Eventual, ConsistentPrefix | Read consistency        |
-| `PartitionKeyKind`    | Hash, Range, MultiHash                                        | Partition strategy      |
-| `IndexingMode`        | Consistent, Lazy, None                                        | When to index           |
-| `CompositeIndexOrder` | Ascending, Descending                                         | Sort order              |
-| `DefaultTimeToLive`   | Off, NoDefault, Seconds(i32)                                  | Document expiration     |
-| `RequestSentStatus`   | Sent, NotSent, Unknown                                        | Request lifecycle state |
+| Enum | Variants | Description |
+|------|----------|-------------|
+| `ConsistencyLevel` | Strong, BoundedStaleness, Session, Eventual, ConsistentPrefix | Read consistency |
+| `PartitionKeyKind` | Hash, Range, MultiHash | Partition strategy |
+| `IndexingMode` | Consistent, Lazy, None | When to index |
+| `CompositeIndexOrder` | Ascending, Descending | Sort order |
+| `DefaultTimeToLive` | Off, NoDefault, Seconds(i32) | Document expiration |
+| `RequestSentStatus` | Sent, NotSent, Unknown | Request lifecycle state |
 
 ---
 
@@ -834,12 +854,12 @@ All fallible operations return `azure_core::Result<T>` (alias for `Result<T, azu
 
 ### Error Categories
 
-| Category             | When                          | Retryable?        |
-|----------------------|-------------------------------|-------------------|
-| `HttpError`          | Network/transport failures    | Usually yes       |
-| `ServiceError`       | Cosmos DB returned error      | Depends on status |
-| `CredentialError`    | Auth token acquisition failed | Usually no        |
-| `ConfigurationError` | Invalid options/setup         | No                |
+| Category | When | Retryable? |
+|----------|------|------------|
+| `HttpError` | Network/transport failures | Usually yes |
+| `ServiceError` | Cosmos DB returned error | Depends on status |
+| `CredentialError` | Auth token acquisition failed | Usually no |
+| `ConfigurationError` | Invalid options/setup | No |
 
 ### Status Code Handling
 

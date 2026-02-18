@@ -4,20 +4,24 @@
 //! Cosmos DB driver instance.
 
 use crate::{
+    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
-        DatabaseReference,
+        CosmosHeaders, CosmosOperation, CosmosResult, DatabaseProperties, DatabaseReference,
+        RequestCharge, SubStatusCode,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
     },
 };
-use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
+use std::sync::Arc;
 
 use super::{
-    transport::{uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus},
+    transport::{
+        event_channel, is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
+        EventEmitter, TrackedRequestState,
+    },
     CosmosDriverRuntime,
 };
 
@@ -39,15 +43,6 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
-    fn should_retry_transport_failure(
-        attempt: usize,
-        max_transport_retries: usize,
-        is_idempotent: bool,
-        request_sent: RequestSentStatus,
-    ) -> bool {
-        attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
-    }
-
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
@@ -143,7 +138,7 @@ impl CosmosDriver {
     ///
     /// # Returns
     ///
-    /// Returns a [`crate::models::CosmosResponse`] on success.
+    /// Returns a [`CosmosResult`] containing the response body, headers, and diagnostics.
     ///
     /// # Errors
     ///
@@ -172,7 +167,7 @@ impl CosmosDriver {
     ///
     /// // Execute operations with operation-specific options that override defaults
     /// let options = OperationOptions::new()
-    ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled);
+    ///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED);
     ///
     /// // let result = driver.execute_operation(operation, options).await?;
     /// # Ok(())
@@ -182,7 +177,7 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<crate::models::CosmosResponse> {
+    ) -> azure_core::Result<CosmosResult> {
         // Step 1: Derive effective runtime options
         let effective_options = self.effective_runtime_options(&options);
 
@@ -191,15 +186,16 @@ impl CosmosDriver {
             self.effective_throughput_control_group(&effective_options, container)
         });
 
-        // Step 3: Initialize operation activity id
+        // Step 3: Initialize diagnostics
         let activity_id = ActivityId::new_uuid();
+        let mut diagnostics_builder = DiagnosticsContextBuilder::new(
+            activity_id.clone(),
+            Arc::clone(self.runtime.diagnostics_options()),
+        );
 
         // Step 4: Get authentication (guaranteed to be present by AccountReference)
         let account = operation.resource_reference().account();
         let auth = account.auth();
-
-        // Account-level metadata resolution is currently a direct fallback value.
-        let _account_write_region = Region::new("Unknown");
 
         // Step 5: Build resource link for authorization
         let resource_ref = operation.resource_reference();
@@ -210,17 +206,36 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let url = endpoint.join_path(&request_path);
 
-        // Step 7: Determine HTTP method
+        // Step 7: Determine HTTP method and create request
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let method = operation_type.http_method();
+        let mut request = Request::new(url, method);
 
-        // Step 8: Create authorization context
+        // Step 8: Add body if present
+        if let Some(body) = operation.body() {
+            request.set_body(body.to_vec());
+        }
+
+        // Step 9: Add operation headers
+        for (name, value) in operation.headers().iter() {
+            request.insert_header(name.clone(), value.clone());
+        }
+
+        // Step 9b: Add partition key header if set
+        if let Some(pk) = operation.partition_key() {
+            use azure_core::http::headers::AsHeaders;
+            for (name, value) in pk.as_headers()? {
+                request.insert_header(name, value);
+            }
+        }
+
+        // Step 10: Create authorization context
         // Strip leading slash from resource link for signing
         let signing_link = resource_link.trim_start_matches('/');
         let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
 
-        // Step 9: Select and create appropriate pipeline
+        // Step 11: Select and create appropriate pipeline
         let transport = self.runtime.transport();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
         let pipeline = if is_dataplane {
@@ -229,93 +244,130 @@ impl CosmosDriver {
             transport.create_metadata_pipeline(&endpoint, auth)
         };
 
-        // Step 10: Execute with a slim transport retry wrapper.
-        //
-        // Retry only once, and only when it is safe:
-        // - operation is idempotent, OR
-        // - operation may be non-idempotent but transport failure happened before bytes were sent
-        const MAX_TRANSPORT_RETRIES: usize = 1;
-        let mut attempt = 0usize;
+        // Determine pipeline type and transport security for diagnostics
+        let pipeline_type = if is_dataplane {
+            PipelineType::DataPlane
+        } else {
+            PipelineType::Metadata
+        };
+        let transport_security = if is_emulator_host(&endpoint) {
+            TransportSecurity::EmulatorWithInsecureCertificates
+        } else {
+            TransportSecurity::Secure
+        };
 
-        loop {
-            let mut request = Request::new(url.clone(), method);
+        // Step 12: Build context with authorization info and event emitter
+        let mut ctx = Context::default();
+        ctx.insert(auth_context);
 
-            if let Some(body) = operation.body() {
-                request.set_body(body.to_vec());
+        // Set up event channel for transport tracking
+        let (event_sender, event_receiver) = event_channel();
+        ctx.insert(EventEmitter::new(event_sender));
+
+        // Step 13: Start request tracking in diagnostics
+        // For now, use a placeholder region - proper region routing will come later
+        let region = Region::new("Unknown");
+        let request_handle = diagnostics_builder.start_request(
+            ExecutionContext::Initial,
+            pipeline_type,
+            transport_security,
+            region,
+            endpoint.host().to_owned(),
+        );
+
+        // Step 14: Execute request
+        let result = pipeline.send(&ctx, &mut request).await;
+
+        // Step 15: Collect events from transport tracking
+        let tracked_state = TrackedRequestState::collect(event_receiver);
+
+        // Step 16: Handle response or error
+        match result {
+            Ok(response) => {
+                let status_code = response.status();
+
+                // Extract sub-status from headers if present
+                let sub_status = response
+                    .headers()
+                    .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                        "x-ms-substatus",
+                    ))
+                    .and_then(SubStatusCode::from_header_value);
+
+                // Update request with response data (before completing to keep it mutable)
+                if let Some(charge) = response
+                    .headers()
+                    .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                        "x-ms-request-charge",
+                    ))
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .map(RequestCharge::new)
+                {
+                    diagnostics_builder.update_request(request_handle, |req| {
+                        req.request_charge = charge;
+                    });
+                }
+
+                // Add all transport events to diagnostics
+                for event in tracked_state.into_events() {
+                    diagnostics_builder.add_event(request_handle, event);
+                }
+
+                // Complete request tracking (makes request info immutable)
+                diagnostics_builder.complete_request(request_handle, status_code, sub_status);
+
+                // Set operation status
+                diagnostics_builder.set_operation_status(status_code, sub_status);
+
+                // Extract headers and body
+                let cosmos_headers = CosmosHeaders::from_headers(response.headers());
+                let body = response.into_body();
+
+                // Complete diagnostics
+                let diagnostics = Arc::new(diagnostics_builder.complete());
+
+                Ok(CosmosResult::new(
+                    body.as_ref().to_vec(),
+                    cosmos_headers,
+                    diagnostics,
+                ))
             }
+            Err(e) => {
+                // Request failed at transport level - no HTTP response received.
+                //
+                // Determine request sent status using both events and error analysis:
+                // - Sent: If we received ResponseHeadersReceived (definitive)
+                // - NotSent: If error indicates pre-send failure (DNS, connect refused)
+                // - Unknown: Otherwise (can't determine)
+                let request_sent = tracked_state.request_sent_status_with_error(&e);
 
-            operation
-                .request_headers()
-                .write_to_headers(request.headers_mut());
+                // Add all transport events to diagnostics
+                for event in tracked_state.into_events() {
+                    diagnostics_builder.add_event(request_handle, event);
+                }
 
-            if operation.request_headers().activity_id.is_none() {
-                request.insert_header(
-                    HeaderName::from_static("x-ms-activity-id"),
-                    HeaderValue::from(activity_id.as_str().to_owned()),
+                diagnostics_builder.fail_request(request_handle, e.to_string(), request_sent);
+
+                // Complete diagnostics with error state
+                diagnostics_builder.set_operation_status(
+                    azure_core::http::StatusCode::ServiceUnavailable,
+                    Some(SubStatusCode::TRANSPORT_GENERATED_503),
                 );
-            }
 
-            if let Some(pk) = operation.partition_key() {
-                let _partition_key_definition = operation
-                    .container()
-                    .map(|container| container.partition_key_definition());
-
-                use azure_core::http::headers::AsHeaders;
-                let pk_headers = match pk.as_headers() {
-                    Ok(headers) => headers,
-                    Err(e) => return Err(e),
-                };
-
-                for (name, value) in pk_headers {
-                    request.insert_header(name, value);
-                }
-            }
-
-            let mut ctx = Context::default();
-            ctx.insert(auth_context.clone());
-
-            let result = pipeline.send(&ctx, &mut request).await;
-
-            match result {
-                Ok(response) => {
-                    let status_code = response.status();
-                    let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
-                    let sub_status = cosmos_headers.substatus;
-
-                    let body = response.into_body();
-                    let status = CosmosStatus::from_parts(status_code, sub_status);
-
-                    return Ok(CosmosResponse::new(
-                        body.as_ref().to_vec(),
-                        cosmos_headers,
-                        status,
-                    ));
-                }
-                Err(e) => {
-                    let request_sent = e.request_sent_status();
-
-                    let should_retry = Self::should_retry_transport_failure(
-                        attempt,
-                        MAX_TRANSPORT_RETRIES,
-                        operation.is_idempotent(),
-                        request_sent,
-                    );
-
-                    if should_retry {
-                        attempt += 1;
-                        continue;
-                    }
-
-                    return Err(e);
-                }
+                Err(e)
             }
         }
     }
+}
+
+impl CosmosDriver {
     /// Resolves a container by database and container name.
     ///
     /// Reads the database and container from the service to obtain their
     /// resource IDs (RIDs) and container properties (partition key, unique key
-    /// policy).
+    /// policy). The resolved [`ContainerReference`] is cached so that
+    /// subsequent calls for the same database/container return immediately
+    /// without a network round-trip.
     ///
     /// # Parameters
     ///
@@ -340,7 +392,7 @@ impl CosmosDriver {
     /// );
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     ///
-    /// // Resolve the container (fetched from service on each call)
+    /// // Resolve the container (fetched from service on first call, cached after)
     /// let container = driver.resolve_container("mydb", "mycontainer").await?;
     ///
     /// // Use the resolved container for item operations
@@ -356,9 +408,23 @@ impl CosmosDriver {
         db_name: &str,
         container_name: &str,
     ) -> azure_core::Result<ContainerReference> {
-        let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
+        let account = self.account().clone();
+        let endpoint = account.endpoint().to_string();
+
+        // Fast path: check the cache first.
+        if let Some(cached) = self
+            .runtime
+            .get_cached_container_by_name(&endpoint, db_name, container_name)
+            .await
+        {
+            return Ok(cached.as_ref().clone());
+        }
+
+        // Cache miss — read database and container from the service.
+        let db_ref = DatabaseReference::from_name(account.clone(), db_name.to_owned());
         let options = OperationOptions::new();
 
+        // 1. Read the database to obtain its _rid.
         let db_result = self
             .execute_operation(
                 CosmosOperation::read_database(db_ref.clone()),
@@ -374,9 +440,10 @@ impl CosmosDriver {
             )
         })?;
 
+        // 2. Read the container to obtain its _rid and properties.
         let container_result = self
             .execute_operation(
-                CosmosOperation::read_container_by_name(db_ref.clone(), container_name.to_owned()),
+                CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
                 options,
             )
             .await?;
@@ -393,14 +460,20 @@ impl CosmosDriver {
                 )
             })?;
 
-        Ok(ContainerReference::new(
-            db_ref.into_account(),
-            db_props.id.into_owned(),
+        // 3. Build the resolved reference.
+        let container_ref = ContainerReference::new(
+            account,
+            db_name.to_owned(),
             db_rid,
-            container_props.id.clone().into_owned(),
+            container_name.to_owned(),
             container_rid,
             &container_props,
-        ))
+        );
+
+        // 4. Cache it (both name and RID indices).
+        self.runtime.cache_container(container_ref.clone()).await;
+
+        Ok(container_ref)
     }
 }
 
@@ -440,12 +513,14 @@ mod tests {
         assert!(runtime.workload_id().is_none());
         assert!(runtime.correlation_id().is_none());
         assert!(runtime.user_agent_suffix().is_none());
+        // machine_id is always available
+        assert!(!runtime.machine_id().is_empty());
     }
 
     #[tokio::test]
     async fn builder_sets_runtime_options() {
         let opts = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+            .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
             .build();
 
         let runtime = CosmosDriverRuntimeBuilder::new()
@@ -457,7 +532,7 @@ mod tests {
         let snapshot = runtime.runtime_options().snapshot();
         assert_eq!(
             snapshot.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            Some(ContentResponseOnWrite::DISABLED)
         );
     }
 
@@ -604,7 +679,7 @@ mod tests {
         // Modify at runtime
         runtime
             .runtime_options()
-            .set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
+            .set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
 
         // Now set
         assert_eq!(
@@ -612,7 +687,7 @@ mod tests {
                 .runtime_options()
                 .snapshot()
                 .content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            Some(ContentResponseOnWrite::ENABLED)
         );
     }
 
@@ -622,7 +697,7 @@ mod tests {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
                 RuntimeOptions::builder()
-                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+                    .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
                     .build(),
             )
             .build()
@@ -633,7 +708,7 @@ mod tests {
         let driver_options = DriverOptions::builder(test_account())
             .with_runtime_options(
                 RuntimeOptions::builder()
-                    .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+                    .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
                     .build(),
             )
             .build();
@@ -645,16 +720,16 @@ mod tests {
         let effective = driver.effective_runtime_options(&op_options);
         assert_eq!(
             effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            Some(ContentResponseOnWrite::DISABLED)
         );
 
         // Operation overrides to ENABLED - should get ENABLED
         let op_options =
-            OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
+            OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::ENABLED);
         let effective = driver.effective_runtime_options(&op_options);
         assert_eq!(
             effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            Some(ContentResponseOnWrite::ENABLED)
         );
     }
 
@@ -664,7 +739,7 @@ mod tests {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
                 RuntimeOptions::builder()
-                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+                    .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
                     .build(),
             )
             .build()
@@ -681,53 +756,23 @@ mod tests {
         let effective = driver.effective_runtime_options(&op_options);
         assert_eq!(
             effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            Some(ContentResponseOnWrite::ENABLED)
         );
     }
 
-    #[test]
-    fn retry_gate_allows_only_idempotent_not_sent_with_budget() {
-        assert!(CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            true,
-            RequestSentStatus::NotSent
-        ));
-    }
+    #[tokio::test]
+    async fn machine_id_always_available() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 
-    #[test]
-    fn retry_gate_blocks_non_idempotent_when_request_may_have_been_sent() {
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            RequestSentStatus::Unknown
-        ));
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            RequestSentStatus::Sent
-        ));
-    }
+        // machine_id is always available (either VM ID or generated UUID)
+        let machine_id = runtime.machine_id();
+        assert!(!machine_id.is_empty());
 
-    #[test]
-    fn retry_gate_allows_non_idempotent_when_not_sent() {
-        assert!(CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            RequestSentStatus::NotSent
-        ));
-    }
-
-    #[test]
-    fn retry_gate_blocks_when_budget_exhausted() {
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            1,
-            1,
-            true,
-            RequestSentStatus::NotSent
-        ));
+        // It should have one of the known prefixes
+        assert!(
+            machine_id.starts_with("vmId_") || machine_id.starts_with("uuid_"),
+            "machine_id should start with 'vmId_' or 'uuid_', got: {}",
+            machine_id
+        );
     }
 }

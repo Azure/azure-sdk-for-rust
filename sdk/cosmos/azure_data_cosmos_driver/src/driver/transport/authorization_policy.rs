@@ -7,7 +7,7 @@
 //! Unlike standard Azure services that use `Authorization: Bearer`, Cosmos DB
 //! uses a custom format as defined in the [official documentation](https://learn.microsoft.com/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
 
-use crate::models::{Credential as AccountCredential, ResourceType};
+use crate::models::{AuthOptions, ResourceType};
 use azure_core::{
     credentials::{Secret, TokenCredential},
     http::{
@@ -58,6 +58,18 @@ impl AuthorizationContext {
             resource_link: resource_link.into(),
         }
     }
+
+    /// Creates an authorization context for a feed request (e.g., list databases).
+    ///
+    /// For feed requests, the resource link points to the parent resource.
+    #[allow(dead_code)]
+    pub(crate) fn for_feed(
+        method: Method,
+        resource_type: ResourceType,
+        parent_link: impl Into<String>,
+    ) -> Self {
+        Self::new(method, resource_type, parent_link)
+    }
 }
 
 /// Authorization policy that adds the Cosmos DB authorization header.
@@ -96,16 +108,33 @@ impl std::fmt::Debug for AuthorizationPolicy {
 
 impl AuthorizationPolicy {
     /// Creates a new authorization policy from authentication options.
-    pub(crate) fn new(auth: &AccountCredential) -> Self {
+    pub(crate) fn new(auth: &AuthOptions) -> Self {
         let credential = match auth {
-            AccountCredential::MasterKey(key) => Credential::MasterKey(key.clone()),
-            AccountCredential::TokenCredential(cred) => Credential::Token(Arc::clone(cred)),
+            AuthOptions::MasterKey(key) => Credential::MasterKey(key.clone()),
+            AuthOptions::TokenCredential(cred) => Credential::Token(Arc::clone(cred)),
         };
         Self { credential }
     }
+
+    /// Creates a new authorization policy from a token credential.
+    #[allow(dead_code)]
+    pub(crate) fn from_token_credential(credential: Arc<dyn TokenCredential>) -> Self {
+        Self {
+            credential: Credential::Token(credential),
+        }
+    }
+
+    /// Creates a new authorization policy from a master key.
+    #[allow(dead_code)]
+    pub(crate) fn from_master_key(key: impl Into<Secret>) -> Self {
+        Self {
+            credential: Credential::MasterKey(key.into()),
+        }
+    }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Policy for AuthorizationPolicy {
     async fn send(
         &self,
@@ -229,7 +258,8 @@ mod tests {
     #[derive(Debug)]
     struct MockTransport;
 
-    #[async_trait::async_trait]
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl Policy for MockTransport {
         async fn send(
             &self,
@@ -249,7 +279,8 @@ mod tests {
     #[derive(Debug)]
     struct MockTokenCredential(String);
 
-    #[async_trait::async_trait]
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl TokenCredential for MockTokenCredential {
         async fn get_token(
             &self,
@@ -266,7 +297,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_master_key() {
         let key = Secret::new("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==");
-        let auth = AccountCredential::MasterKey(key);
+        let auth = AuthOptions::MasterKey(key);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);
@@ -292,7 +323,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_token_credential() {
         let cred = Arc::new(MockTokenCredential("test_token".to_string()));
-        let auth = AccountCredential::TokenCredential(cred);
+        let auth = AuthOptions::TokenCredential(cred);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);
@@ -335,7 +366,11 @@ mod tests {
     #[test]
     fn build_string_to_sign_for_feed() {
         // When listing databases, the resource link is empty
-        let auth_ctx = AuthorizationContext::new(Method::Get, ResourceType::Database, "");
+        let auth_ctx = AuthorizationContext::for_feed(
+            Method::Get,
+            ResourceType::Database,
+            "", // Empty for root-level feed
+        );
 
         let date_string = "mon, 01 jan 1900 01:00:00 gmt";
         let result = AuthorizationPolicy::build_string_to_sign(&auth_ctx, date_string);

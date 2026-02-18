@@ -3,8 +3,10 @@
 
 //! Request options for Cosmos DB operations.
 
+use azure_core::http::headers::Headers;
+
 use crate::{
-    models::{PartitionKey, Precondition, SessionToken, ThroughputControlGroupName},
+    models::{ETagCondition, PartitionKey, SessionToken, ThroughputControlGroupName},
     options::{
         ContentResponseOnWrite, DedicatedGatewayOptions, DiagnosticsThresholds,
         EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, QuotaInfoEnabled,
@@ -32,7 +34,7 @@ use crate::{
 /// let options = OperationOptions::new()
 ///     .with_partition_key(PartitionKey::from("my-partition"))
 ///     .with_priority_level(PriorityLevel::Low)
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled);
+///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED);
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
@@ -47,7 +49,7 @@ pub struct OperationOptions {
     priority_level: Option<PriorityLevel>,
 
     // Just read operations
-    etag_condition: Option<Precondition>,
+    etag_condition: Option<ETagCondition>,
 
     // Just write operations
     triggers: Option<TriggerOptions>,
@@ -114,6 +116,17 @@ impl OperationOptions {
         self.session_token.as_ref()
     }
 
+    /// Sets the ETag condition for optimistic concurrency.
+    pub(crate) fn with_etag_condition(mut self, condition: ETagCondition) -> Self {
+        self.etag_condition = Some(condition);
+        self
+    }
+
+    /// Gets the ETag condition.
+    pub(crate) fn etag_condition_ref(&self) -> Option<&ETagCondition> {
+        self.etag_condition.as_ref()
+    }
+
     /// Sets the partition key for this operation.
     pub fn with_partition_key(mut self, key: PartitionKey) -> Self {
         self.partition_key = Some(key);
@@ -123,17 +136,6 @@ impl OperationOptions {
     /// Gets the partition key.
     pub fn partition_key_ref(&self) -> Option<&PartitionKey> {
         self.partition_key.as_ref()
-    }
-
-    /// Sets the ETag condition for read operations.
-    pub fn with_etag_condition(mut self, condition: Precondition) -> Self {
-        self.etag_condition = Some(condition);
-        self
-    }
-
-    /// Gets the ETag condition.
-    pub fn etag_condition_ref(&self) -> Option<&Precondition> {
-        self.etag_condition.as_ref()
     }
 
     /// Sets whether the response should include the content after write operations.
@@ -236,5 +238,20 @@ impl OperationOptions {
     /// Gets the quota info enabled setting.
     pub fn quota_info_enabled_ref(&self) -> Option<&QuotaInfoEnabled> {
         self.quota_info_enabled.as_ref()
+    }
+
+    /// Sets custom HTTP headers to include in the request.
+    ///
+    /// Custom headers are best-effort: the caller may specify any header, but whether
+    /// it is actually sent to the service is at the discretion of the library. There
+    /// is no guarantee that a given custom header will be included in the outgoing request.
+    pub fn with_custom_headers(mut self, headers: Headers) -> Self {
+        self.runtime.custom_headers = Some(headers);
+        self
+    }
+
+    /// Gets the custom headers.
+    pub fn custom_headers_ref(&self) -> Option<&Headers> {
+        self.runtime.custom_headers.as_ref()
     }
 }

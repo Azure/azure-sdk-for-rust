@@ -25,6 +25,22 @@ impl<T> ValidationBounds<T> {
             max: Some(max),
         }
     }
+
+    /// Create validation bounds with only min.
+    pub const fn min(min: T) -> Self {
+        Self {
+            min: Some(min),
+            max: None,
+        }
+    }
+
+    /// Create validation bounds with only max.
+    pub const fn max(max: T) -> Self {
+        Self {
+            min: None,
+            max: Some(max),
+        }
+    }
 }
 
 /// Parses a value from an environment variable with proper error handling and optional validation.
@@ -211,166 +227,5 @@ pub(super) fn parse_optional_duration_millis_from_env(
             }
             Err(_) => Ok(None),
         },
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::{Mutex, OnceLock};
-
-    fn env_lock() -> &'static Mutex<()> {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        ENV_LOCK.get_or_init(|| Mutex::new(()))
-    }
-
-    fn with_env_var<R>(name: &str, value: Option<&str>, f: impl FnOnce() -> R) -> R {
-        let _guard = env_lock().lock().expect("env lock poisoned");
-        let previous = std::env::var(name).ok();
-
-        match value {
-            Some(v) => std::env::set_var(name, v),
-            None => std::env::remove_var(name),
-        }
-
-        let result = f();
-
-        match previous {
-            Some(v) => std::env::set_var(name, v),
-            None => std::env::remove_var(name),
-        }
-
-        result
-    }
-
-    #[test]
-    fn parse_from_env_prefers_builder_value() {
-        with_env_var("AZURE_COSMOS_TEST_INT", Some("42"), || {
-            let value = parse_from_env(
-                Some(7_u32),
-                "AZURE_COSMOS_TEST_INT",
-                1_u32,
-                ValidationBounds::none(),
-            )
-            .unwrap();
-
-            assert_eq!(value, 7);
-        });
-    }
-
-    #[test]
-    fn parse_from_env_uses_default_when_env_missing() {
-        with_env_var("AZURE_COSMOS_TEST_DEFAULT", None, || {
-            let value = parse_from_env(
-                None::<u32>,
-                "AZURE_COSMOS_TEST_DEFAULT",
-                99_u32,
-                ValidationBounds::none(),
-            )
-            .unwrap();
-
-            assert_eq!(value, 99);
-        });
-    }
-
-    #[test]
-    fn parse_from_env_reports_parse_error() {
-        with_env_var("AZURE_COSMOS_TEST_PARSE_ERR", Some("not-a-number"), || {
-            let err = parse_from_env(
-                None::<u32>,
-                "AZURE_COSMOS_TEST_PARSE_ERR",
-                5_u32,
-                ValidationBounds::none(),
-            )
-            .unwrap_err();
-
-            let message = err.to_string();
-            assert!(message.contains("AZURE_COSMOS_TEST_PARSE_ERR"));
-            assert!(message.contains("Failed to parse"));
-        });
-    }
-
-    #[test]
-    fn parse_from_env_validates_min_and_max_bounds() {
-        let below_min = parse_from_env(
-            Some(4_u32),
-            "AZURE_COSMOS_CONNECTION_POOL_TEST_LIMIT",
-            0_u32,
-            ValidationBounds::range(5_u32, 10_u32),
-        )
-        .unwrap_err()
-        .to_string();
-        assert!(below_min.contains("test_limit must be at least 5"));
-
-        let above_max = parse_from_env(
-            Some(11_u32),
-            "AZURE_COSMOS_CONNECTION_POOL_TEST_LIMIT",
-            0_u32,
-            ValidationBounds::range(5_u32, 10_u32),
-        )
-        .unwrap_err()
-        .to_string();
-        assert!(above_max.contains("test_limit must be at most 10"));
-    }
-
-    #[test]
-    fn parse_duration_millis_from_env_parses_and_validates() {
-        with_env_var("AZURE_COSMOS_TEST_DURATION", Some("250"), || {
-            let value =
-                parse_duration_millis_from_env(None, "AZURE_COSMOS_TEST_DURATION", 100, 50, 500)
-                    .unwrap();
-
-            assert_eq!(value, Duration::from_millis(250));
-        });
-    }
-
-    #[test]
-    fn parse_duration_millis_from_env_uses_default_when_missing() {
-        with_env_var("AZURE_COSMOS_TEST_DURATION_DEFAULT", None, || {
-            let value = parse_duration_millis_from_env(
-                None,
-                "AZURE_COSMOS_TEST_DURATION_DEFAULT",
-                123,
-                50,
-                500,
-            )
-            .unwrap();
-
-            assert_eq!(value, Duration::from_millis(123));
-        });
-    }
-
-    #[test]
-    fn parse_optional_duration_millis_from_env_none_when_missing() {
-        with_env_var("AZURE_COSMOS_TEST_OPTIONAL_DURATION", None, || {
-            let value = parse_optional_duration_millis_from_env(
-                None,
-                "AZURE_COSMOS_TEST_OPTIONAL_DURATION",
-                10,
-                1000,
-            )
-            .unwrap();
-
-            assert_eq!(value, None);
-        });
-    }
-
-    #[test]
-    fn parse_optional_duration_millis_from_env_parses_and_validates() {
-        with_env_var(
-            "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
-            Some("450"),
-            || {
-                let value = parse_optional_duration_millis_from_env(
-                    None,
-                    "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
-                    100,
-                    500,
-                )
-                .unwrap();
-
-                assert_eq!(value, Some(Duration::from_millis(450)));
-            },
-        );
     }
 }

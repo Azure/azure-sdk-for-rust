@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_driver"
-keywords = ["sdk", "internal"]
+keywords = ["sdk", "azure", "cosmos", "driver", "internal"]
 categories = ["api-bindings"]
 publish = false # Internal implementation layer, not yet ready for crates.io
 
@@ -35,6 +35,9 @@ azure_identity.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true }
 
 [lints]
 workspace = true

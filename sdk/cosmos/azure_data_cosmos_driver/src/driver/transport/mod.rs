@@ -20,7 +20,7 @@ mod pipeline;
 mod tracked_transport;
 
 use crate::{
-    models::{AccountEndpoint, Credential, OperationType, ResourceType},
+    models::{AccountEndpoint, AuthOptions, OperationType, ResourceType},
     options::ConnectionPoolOptions,
 };
 use authorization_policy::AuthorizationPolicy;
@@ -31,7 +31,7 @@ use std::sync::{Arc, OnceLock};
 
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
-pub(crate) use tracked_transport::{RequestSentExt, RequestSentStatus};
+pub(crate) use tracked_transport::{event_channel, EventEmitter, TrackedRequestState};
 
 /// Determines whether the dataplane pipeline should be used for a given operation.
 ///
@@ -144,10 +144,10 @@ impl CosmosTransport {
     pub(crate) fn create_metadata_pipeline(
         &self,
         endpoint: &AccountEndpoint,
-        credential: &Credential,
+        auth: &AuthOptions,
     ) -> CosmosPipeline {
         let transport = self.get_metadata_transport(endpoint);
-        self.create_authenticated_pipeline(transport, credential)
+        self.create_authenticated_pipeline(transport, auth)
     }
 
     /// Creates an authenticated pipeline for data plane operations.
@@ -159,10 +159,10 @@ impl CosmosTransport {
     pub(crate) fn create_dataplane_pipeline(
         &self,
         endpoint: &AccountEndpoint,
-        credential: &Credential,
+        auth: &AuthOptions,
     ) -> CosmosPipeline {
         let transport = self.get_dataplane_transport(endpoint);
-        self.create_authenticated_pipeline(transport, credential)
+        self.create_authenticated_pipeline(transport, auth)
     }
 
     /// Gets the transport for metadata operations.
@@ -199,9 +199,9 @@ impl CosmosTransport {
     fn create_authenticated_pipeline(
         &self,
         transport: Transport,
-        credential: &Credential,
+        auth: &AuthOptions,
     ) -> CosmosPipeline {
-        let auth_policy = Arc::new(AuthorizationPolicy::new(credential));
+        let auth_policy = Arc::new(AuthorizationPolicy::new(auth));
 
         let policies: Vec<Arc<dyn Policy>> = vec![
             Arc::clone(&self.headers_policy) as Arc<dyn Policy>,
@@ -211,17 +211,23 @@ impl CosmosTransport {
         CosmosPipeline::new(policies, transport)
     }
 
+    /// Returns the connection pool options.
+    pub(crate) fn connection_pool(&self) -> &ConnectionPoolOptions {
+        &self.connection_pool
+    }
+
     /// Determines if insecure emulator transport should be used for the given endpoint.
     ///
     /// Returns `true` when both conditions are met:
     /// - Emulator server certificate validation is disabled
     /// - The endpoint is a known emulator host (localhost, 127.0.0.1)
     fn should_use_insecure_emulator_transport(&self, endpoint: &AccountEndpoint) -> bool {
-        bool::from(self.connection_pool.emulator_server_cert_validation())
+        self.connection_pool
+            .emulator_server_cert_validation()
+            .is_dangerous_disabled()
             && is_emulator_host(endpoint)
     }
 
-    // TODO @fabianm: allow the caller to provide a client factory instead of hard-coding reqwest.
     /// Creates a reqwest client with the appropriate settings.
     ///
     /// # Arguments
@@ -234,41 +240,52 @@ impl CosmosTransport {
         is_metadata: bool,
         for_emulator: bool,
     ) -> azure_core::Result<reqwest::Client> {
+        #[allow(unused_mut)]
         let mut builder = reqwest::ClientBuilder::new();
 
-        // Connection pool settings
-        builder = builder.pool_max_idle_per_host(pool.max_idle_connections_per_endpoint());
+        // Native-only settings (not available on WASM)
+        // WASM uses browser's fetch API which handles connection pooling,
+        // timeouts, and TLS internally.
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            // Connection pool settings
+            builder = builder.pool_max_idle_per_host(pool.max_idle_connections_per_endpoint());
 
-        if let Some(idle_timeout) = pool.idle_connection_timeout() {
-            builder = builder.pool_idle_timeout(idle_timeout);
+            if let Some(idle_timeout) = pool.idle_connection_timeout() {
+                builder = builder.pool_idle_timeout(idle_timeout);
+            }
+
+            // Connect timeout
+            builder = builder.connect_timeout(pool.max_connect_timeout());
+
+            // Request timeout (different for metadata vs data plane)
+            let request_timeout = if is_metadata {
+                pool.max_metadata_request_timeout()
+            } else {
+                pool.max_dataplane_request_timeout()
+            };
+            builder = builder.timeout(request_timeout);
+
+            // Proxy settings
+            if !pool.is_proxy_allowed() {
+                builder = builder.no_proxy();
+            }
+            // When proxy is allowed, reqwest automatically respects HTTP_PROXY/HTTPS_PROXY env vars
+
+            // Local address binding
+            if let Some(local_addr) = pool.local_address() {
+                builder = builder.local_address(local_addr);
+            }
+
+            // Emulator settings - disable TLS validation
+            if for_emulator {
+                builder = builder.danger_accept_invalid_certs(true);
+            }
         }
 
-        // Connect timeout
-        builder = builder.connect_timeout(pool.max_connect_timeout());
-
-        // Request timeout (different for metadata vs data plane)
-        let request_timeout = if is_metadata {
-            pool.max_metadata_request_timeout()
-        } else {
-            pool.max_dataplane_request_timeout()
-        };
-        builder = builder.timeout(request_timeout);
-
-        // Proxy settings
-        if !pool.is_proxy_allowed() {
-            builder = builder.no_proxy();
-        }
-        // When proxy is allowed, reqwest automatically respects HTTP_PROXY/HTTPS_PROXY env vars
-
-        // Local address binding
-        if let Some(local_addr) = pool.local_address() {
-            builder = builder.local_address(local_addr);
-        }
-
-        // Emulator settings - disable TLS validation
-        if for_emulator {
-            builder = builder.danger_accept_invalid_certs(true);
-        }
+        // Suppress unused variable warnings on WASM
+        #[cfg(target_arch = "wasm32")]
+        let _ = (pool, is_metadata, for_emulator);
 
         builder.build().map_err(|e| {
             azure_core::Error::with_message(
@@ -298,7 +315,7 @@ mod tests {
     #[test]
     fn transport_detects_emulator_when_disabled() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
+            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DANGEROUS_DISABLED)
             .build()
             .unwrap();
         let transport = CosmosTransport::new(pool, "test-user-agent").unwrap();

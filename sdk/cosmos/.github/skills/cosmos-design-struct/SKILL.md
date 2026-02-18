@@ -122,22 +122,7 @@ For truly public structs, require `#[non_exhaustive]` **when all named fields ar
 
 If one or more fields are non-public, `#[non_exhaustive]` is optional and typically redundant for construction control.
 
-#### b) Prefer type-system enforcement for validation and invariants
-
-Before making a field non-public solely to validate it in a `with_*` setter or constructor, evaluate whether the **type system** can enforce the invariant instead. Newtypes, enums, and other constrained wrapper types make invalid states unrepresentable at compile time, which is stronger and more ergonomic than runtime checks.
-
-**Decision order** (prefer earlier options):
-
-1. **Enum** — When the domain is a closed set of named values (e.g., `ConsistencyLevel`, `IndexingMode`), use an enum. Invalid variants simply cannot be expressed.
-2. **Newtype with construction-time validation** — When values must satisfy a constraint (range, format, normalization), introduce a newtype that validates or normalizes in `new()` / `From` and guarantees the invariant internally (e.g., `RegionName` normalizes casing on construction; `SubStatusCode` wraps a raw number with parse validation).
-3. **Newtype for semantic clarity** — Even without a hard constraint, a newtype can prevent accidental misuse of stringly-typed or primitive fields (e.g., wrapping `String` as `DatabaseId` to avoid mixing up identifiers).
-4. **Runtime validation in `with_*`/constructor** — Use this as a **last resort**, only when type-level enforcement is impractical (e.g., cross-field invariants that span multiple values, constraints that depend on external state, or cases where introducing a new type would create excessive API friction for negligible safety gain).
-
-When a newtype is introduced, the field holding it can often remain `pub` because the invariant is encoded in the type itself — external code cannot construct an invalid value regardless of field visibility. See subsection (g) for newtype struct conventions.
-
-> **Rule of thumb**: If a `with_*` setter contains a `.clamp()`, range check, format validation, or normalization, that logic almost certainly belongs in a newtype's constructor instead.
-
-#### c) Field visibility on truly public structs — choose based on validation/invariant needs
+#### b) Field visibility on truly public structs — choose based on validation/invariant needs
 
 Fields on truly public structs may be `pub` **or** non-public. Choose visibility by checking (1) whether validation/invariant enforcement is needed and (2) whether crate-internal code in other modules needs direct non-getter access:
 
@@ -153,18 +138,17 @@ Fields on truly public structs may be `pub` **or** non-public. Choose visibility
 **How to determine the correct visibility**:
 
 1. Decide first whether the field requires invariant/validation enforcement.
-2. If yes, check whether a newtype or enum can encode the invariant in the type (see subsection (b) above). If the type itself enforces the invariant, `pub` is acceptable.
-3. If the invariant cannot be encoded in a type, keep the field non-public and evaluate crate-internal access needs to choose private vs `pub(crate)`/`pub(super)`.
-4. If no invariant is needed, `pub` is acceptable.
+2. If no, `pub` is acceptable.
+3. If yes, keep it non-public and evaluate crate-internal access needs to choose private vs `pub(crate)`/`pub(super)`.
 
-#### d) Getter methods for readable fields
+#### c) Getter methods for readable fields
 
 Every field that external consumers need to **read** must have a getter method:
 
 - Named after the field (e.g., `fn session_token(&self) -> &str`)
 - Returns `&T` for non-`Copy` types, or `T` for `Copy` types (e.g., `bool`, `u32`, `f64`)
 
-#### e) Construction APIs: required fluent pattern
+#### d) Construction APIs: required fluent pattern
 
 For truly public structs, construction APIs must be ergonomic without over-engineering. The baseline constructor and optional setters must follow this contract:
 
@@ -195,7 +179,7 @@ For `with_*` setters in **either** style (on the target type or on a builder), u
 
 Separate builder types are still optional. Fluent `with_*` support is required only when optional fields are present and the struct has more than one field.
 
-#### f) Required fields and setter placement
+#### e) Required fields and setter placement
 
 A **required field** is one that must be set for the struct to be semantically valid.
 
@@ -207,7 +191,7 @@ A **required field** is one that must be set for the struct to be semantically v
 
 When inferring required fields on existing structs, use docs, service behavior, and call-site usage patterns.
 
-#### g) Exemptions
+#### f) Exemptions
 
 **Newtype structs** are exempt from the named-field construction rules. Since a newtype wraps a single value, the full named-field struct rules do not apply. Instead, newtypes should:
 
@@ -220,7 +204,7 @@ When inferring required fields on existing structs, use docs, service behavior, 
 
 Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `pub(crate)` is needed for serde compatibility.
 
-#### h) Optional builder guidance (when used)
+#### g) Optional builder guidance (when used)
 
 If a separate builder type is used, follow these conventions:
 
@@ -229,7 +213,6 @@ If a separate builder type is used, follow these conventions:
 3. Provide `with_*` setters for optional fields.
 4. Provide terminal `build(self, ...) -> <Type>` (or `azure_core::Result<Type>` when fallible).
 5. Keep required fields on `build(...)`, not as optional builder state.
-6. Add `<Type>::builder(... required args ...) -> <Type>Builder` to initialize the builder type.
 
 These conventions apply only when a builder exists; they are not a requirement to introduce one.
 
@@ -240,12 +223,12 @@ These conventions apply only when a builder exists; they are not a requirement t
 1. Adjust visibility modifiers on structs and fields according to Steps 4–6.
 2. Add `#[non_exhaustive]` to truly public structs where all named fields are public and the attribute is missing.
 3. Remove `#[non_exhaustive]` from non-public structs that have it unnecessarily.
-4. For truly public structs, apply field visibility decisions per Step 6c (and type-system preferences per Step 6b) rather than forcing all `pub` fields to non-public:
+4. For truly public structs, apply field visibility decisions per Step 6b rather than forcing all `pub` fields to non-public:
   - If a field has no validation/invariant requirements, `pub` is allowed.
   - If invariants/validation are required, make the field non-public and provide/update constructor or `with_*` APIs as needed.
   - When non-public fields need ownership extraction without cloning, prefer `From`/`Into` trait-based conversion; add targeted `into_*` methods only when a trait-based API is not a good fit.
   - Generate getter methods for fields that external consumers need to read and that are non-public.
-5. Ensure each truly public struct has the required construction API (Step 6e), prioritizing rule compliance even if changes are semver-breaking:
+5. Ensure each truly public struct has the required construction API (Step 6d), prioritizing rule compliance even if changes are semver-breaking:
   a. Enforce mixed required+optional rules strictly (`new(required...)` or `build(required...)`) and remove/avoid `Default` in that case.
   b. If no ergonomic construction API exists, add the simplest valid option:
         - all-optional/simple types: `Default` + `with_*` on the target type.
@@ -322,7 +305,6 @@ Breaking changes include:
 - For ownership extraction from non-public fields, prefer standard `From`/`Into` traits first. Use targeted `into_*` methods as an exception when extracting a specific owned field without cloning is clearer than trait conversion.
 - Reference `sdk/cosmos/AGENTS.md` for canonical model, options, and builder patterns.
 - Do not skip required fixes to avoid semver-breaking outcomes; apply the rules and report all breaking changes clearly in the summary.
-- When generating **new** structs, apply these rules from the start — decide field visibility from invariants and API ergonomics up front, then keep construction APIs consistent with the field mix (all-optional: `Default` + `with_*`; mixed required+optional: `new` + `with_*`; required-only: simplest API, optional builder). Also evaluate whether any constrained fields warrant a newtype or enum rather than a bare primitive type (see Step 6b).
+- When generating **new** structs, apply these rules from the start — decide field visibility from invariants and API ergonomics up front, then keep construction APIs consistent with the field mix (all-optional: `Default` + `with_*`; mixed required+optional: `new` + `with_*`; required-only: simplest API, optional builder).
 - For **new** structs, explicitly ask the developer which fields are required if not obvious from the context.
 - For **existing** structs, infer required fields from: (1) doc comments mentioning "required", (2) server rejection of default values, (3) every call site always setting the field, (4) non-`Option` type with no semantically valid zero value.
-- When a field requires invariant enforcement, prefer encoding the invariant in the type system (newtypes, enums, constrained wrappers) over runtime validation in `with_*` setters or constructors. Setter-level validation (clamping, range checks, format normalization) is a last resort for invariants that cannot be practically expressed in the type system (see Step 6b).

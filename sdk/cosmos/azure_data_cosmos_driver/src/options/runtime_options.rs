@@ -3,6 +3,7 @@
 
 //! Runtime-configurable options shared across environment, driver, and operation levels.
 
+use azure_core::http::headers::Headers;
 // Note: `std::sync::RwLock` is used intentionally here instead of `tokio::sync::RwLock`
 // because `RuntimeOptions` may be read from synchronous contexts (e.g., builder construction,
 // configuration merging). The lock is held only briefly for reads/writes of option values,
@@ -33,6 +34,12 @@ pub struct RuntimeOptions {
     pub diagnostics_thresholds: Option<DiagnosticsThresholds>,
     /// End-to-end latency policy for timeout management.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
+    /// Custom HTTP headers to include in requests.
+    ///
+    /// These headers are best-effort: the caller may specify any header, but whether
+    /// it is actually sent to the service is at the discretion of the library. There
+    /// is no guarantee that a given custom header will be included in the outgoing request.
+    pub custom_headers: Option<Headers>,
     /// Regions to exclude from routing.
     pub excluded_regions: Option<ExcludedRegions>,
     /// Read consistency strategy for read operations.
@@ -81,6 +88,10 @@ impl RuntimeOptions {
                 .end_to_end_latency_policy
                 .clone()
                 .or_else(|| base.end_to_end_latency_policy.clone()),
+            custom_headers: self
+                .custom_headers
+                .clone()
+                .or_else(|| base.custom_headers.clone()),
             excluded_regions: self
                 .excluded_regions
                 .clone()
@@ -103,12 +114,12 @@ impl RuntimeOptions {
 /// use azure_data_cosmos_driver::options::{RuntimeOptions, RuntimeOptionsBuilder, ContentResponseOnWrite};
 ///
 /// let options = RuntimeOptionsBuilder::new()
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
 ///     .build();
 ///
 /// // Or modify an existing instance
 /// let modified = options.to_builder()
-///     .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+///     .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
 ///     .build();
 /// ```
 #[non_exhaustive]
@@ -152,6 +163,16 @@ impl RuntimeOptionsBuilder {
         policy: EndToEndOperationLatencyPolicy,
     ) -> Self {
         self.options.end_to_end_latency_policy = Some(policy);
+        self
+    }
+
+    /// Sets the custom headers.
+    ///
+    /// Custom headers are best-effort: the caller may specify any header, but whether
+    /// it is actually sent to the service is at the discretion of the library. There
+    /// is no guarantee that a given custom header will be included in the outgoing request.
+    pub fn with_custom_headers(mut self, headers: Headers) -> Self {
+        self.options.custom_headers = Some(headers);
         self
     }
 
@@ -237,6 +258,15 @@ impl SharedRuntimeOptions {
         self.write_guard().end_to_end_latency_policy = policy;
     }
 
+    /// Sets the custom headers.
+    ///
+    /// Custom headers are best-effort: the caller may specify any header, but whether
+    /// it is actually sent to the service is at the discretion of the library. There
+    /// is no guarantee that a given custom header will be included in the outgoing request.
+    pub fn set_custom_headers(&self, headers: Option<Headers>) {
+        self.write_guard().custom_headers = headers;
+    }
+
     /// Sets the excluded regions.
     pub fn set_excluded_regions(&self, regions: Option<ExcludedRegions>) {
         self.write_guard().excluded_regions = regions;
@@ -267,31 +297,31 @@ mod tests {
     #[test]
     fn builder_creates_options() {
         let options = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+            .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
             .build();
 
         assert_eq!(
             options.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            Some(ContentResponseOnWrite::DISABLED)
         );
     }
 
     #[test]
     fn to_builder_creates_modified_copy() {
         let original = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+            .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Eventual)
             .build();
 
         let modified = original
             .to_builder()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+            .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
             .build();
 
         // Modified value changed
         assert_eq!(
             modified.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            Some(ContentResponseOnWrite::DISABLED)
         );
         // Unmodified value preserved
         assert_eq!(
@@ -301,20 +331,20 @@ mod tests {
         // Original unchanged
         assert_eq!(
             original.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            Some(ContentResponseOnWrite::ENABLED)
         );
     }
 
     #[test]
     fn merge_with_base() {
         let base = RuntimeOptions {
-            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            content_response_on_write: Some(ContentResponseOnWrite::ENABLED),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
             ..Default::default()
         };
 
         let override_opts = RuntimeOptions {
-            content_response_on_write: Some(ContentResponseOnWrite::Disabled),
+            content_response_on_write: Some(ContentResponseOnWrite::DISABLED),
             ..Default::default()
         };
 
@@ -323,7 +353,7 @@ mod tests {
         // Override takes precedence
         assert_eq!(
             merged.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            Some(ContentResponseOnWrite::DISABLED)
         );
         // Base value used when override is None
         assert_eq!(
@@ -340,12 +370,12 @@ mod tests {
         assert!(shared.snapshot().content_response_on_write.is_none());
 
         // Modify
-        shared.set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
+        shared.set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
 
         // Verify change
         assert_eq!(
             shared.snapshot().content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            Some(ContentResponseOnWrite::ENABLED)
         );
     }
 }

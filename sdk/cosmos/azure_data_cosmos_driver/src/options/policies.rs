@@ -11,27 +11,18 @@ use std::time::Duration;
 /// When disabled, reduces networking and CPU load by not sending the payload
 /// back over the network. Does not impact RU usage.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum ContentResponseOnWrite {
+pub struct ContentResponseOnWrite(pub bool);
+
+impl ContentResponseOnWrite {
     /// Content response is enabled (response body returned).
-    Enabled,
+    pub const ENABLED: Self = Self(true);
     /// Content response is disabled (no response body).
-    #[default]
-    Disabled,
+    pub const DISABLED: Self = Self(false);
 }
 
 impl From<bool> for ContentResponseOnWrite {
     fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<ContentResponseOnWrite> for bool {
-    fn from(value: ContentResponseOnWrite) -> Self {
-        matches!(value, ContentResponseOnWrite::Enabled)
+        Self(value)
     }
 }
 
@@ -105,27 +96,18 @@ impl<T: Into<Region>> FromIterator<T> for ExcludedRegions {
 ///
 /// When enabled, script logs from stored procedures are included in the response.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum ScriptLoggingEnabled {
+pub struct ScriptLoggingEnabled(pub bool);
+
+impl ScriptLoggingEnabled {
     /// Script logging is enabled.
-    Enabled,
+    pub const ENABLED: Self = Self(true);
     /// Script logging is disabled.
-    #[default]
-    Disabled,
+    pub const DISABLED: Self = Self(false);
 }
 
 impl From<bool> for ScriptLoggingEnabled {
     fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<ScriptLoggingEnabled> for bool {
-    fn from(value: ScriptLoggingEnabled) -> Self {
-        matches!(value, ScriptLoggingEnabled::Enabled)
+        Self(value)
     }
 }
 
@@ -133,27 +115,18 @@ impl From<ScriptLoggingEnabled> for bool {
 ///
 /// When enabled, container quota stats are returned in the response headers.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum QuotaInfoEnabled {
+pub struct QuotaInfoEnabled(pub bool);
+
+impl QuotaInfoEnabled {
     /// Quota info is enabled.
-    Enabled,
+    pub const ENABLED: Self = Self(true);
     /// Quota info is disabled.
-    #[default]
-    Disabled,
+    pub const DISABLED: Self = Self(false);
 }
 
 impl From<bool> for QuotaInfoEnabled {
     fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<QuotaInfoEnabled> for bool {
-    fn from(value: QuotaInfoEnabled) -> Self {
-        matches!(value, QuotaInfoEnabled::Enabled)
+        Self(value)
     }
 }
 
@@ -168,33 +141,29 @@ impl From<QuotaInfoEnabled> for bool {
 /// use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
 ///
 /// // Safe default: validation is enabled.
-/// let validation = EmulatorServerCertValidation::Enabled;
+/// let validation = EmulatorServerCertValidation::ENABLED;
 ///
 /// // Dangerous: disables certificate validation for emulator use.
-/// let validation = EmulatorServerCertValidation::DangerousDisabled;
+/// let validation = EmulatorServerCertValidation::DANGEROUS_DISABLED;
 /// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum EmulatorServerCertValidation {
+pub struct EmulatorServerCertValidation(bool);
+
+impl EmulatorServerCertValidation {
     /// Certificate validation is enabled (default, safe).
-    #[default]
-    Enabled,
+    pub const ENABLED: Self = Self(false);
     /// Certificate validation is disabled (**dangerous** — only for local emulator connections).
-    DangerousDisabled,
+    pub const DANGEROUS_DISABLED: Self = Self(true);
+
+    /// Returns `true` if certificate validation is disabled.
+    pub fn is_dangerous_disabled(self) -> bool {
+        self.0
+    }
 }
 
 impl From<bool> for EmulatorServerCertValidation {
     /// Converts a `bool` where `true` means validation is disabled (dangerous).
     fn from(disabled: bool) -> Self {
-        if disabled {
-            Self::DangerousDisabled
-        } else {
-            Self::Enabled
-        }
-    }
-}
-
-impl From<EmulatorServerCertValidation> for bool {
-    fn from(value: EmulatorServerCertValidation) -> Self {
-        matches!(value, EmulatorServerCertValidation::DangerousDisabled)
+        Self(disabled)
     }
 }

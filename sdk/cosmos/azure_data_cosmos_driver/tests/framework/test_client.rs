@@ -63,15 +63,9 @@ impl DriverTestClient {
         let account = AccountReference::with_master_key(endpoint, key);
 
         // Build runtime with emulator certificate handling
-        let connection_pool_builder = ConnectionPoolOptions::builder();
-
-        if (connection_string.to_lowercase() == EMULATOR_CONNECTION_STRING) {
-            connection_pool_builder.with_emulator_server_cert_validation(
-                EmulatorServerCertValidation::DANGEROUS_DISABLED,
-            )
-        }
-
-        let connection_pool = connection_pool_builder.build()?;
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DANGEROUS_DISABLED)
+            .build()?;
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(connection_pool)
@@ -222,7 +216,7 @@ impl DriverTestRunContext {
             .await?;
 
         let body = format!(
-            r#"{{"id": "{}", "partitionKey": {{"paths": ["{}"], "kind": "Hash", "version": 2}}}}"#,
+            r#"{{"id": "{}", "partitionKey": {{"paths": ["{}"], "kind": "Hash"}}}}"#,
             container_name, partition_key_path
         );
         let operation =

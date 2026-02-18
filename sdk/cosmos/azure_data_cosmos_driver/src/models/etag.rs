@@ -62,17 +62,17 @@ impl std::fmt::Display for ETag {
 /// # Example
 ///
 /// ```
-/// use azure_data_cosmos_driver::models::{ETag, Precondition};
+/// use azure_data_cosmos_driver::models::{ETag, ETagCondition};
 ///
 /// // Update only if the resource hasn't changed (optimistic concurrency)
-/// let condition = Precondition::if_match("\"abc123\"");
+/// let condition = ETagCondition::if_match("\"abc123\"");
 ///
 /// // Create only if the resource doesn't exist
-/// let condition = Precondition::if_none_match("*");
+/// let condition = ETagCondition::if_none_match("*");
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Precondition {
+pub enum ETagCondition {
     /// Operation succeeds only if the resource's current ETag matches.
     ///
     /// Used for "update if unchanged" semantics (optimistic concurrency).
@@ -84,7 +84,7 @@ pub enum Precondition {
     IfNoneMatch(ETag),
 }
 
-impl Precondition {
+impl ETagCondition {
     /// Creates an If-Match condition.
     ///
     /// The operation succeeds only if the resource's current ETag matches the given value.
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn if_match_accessors() {
         let etag = ETag::new("abc123");
-        let condition = Precondition::if_match(etag.clone());
+        let condition = ETagCondition::if_match(etag.clone());
 
         assert!(condition.is_if_match());
         assert!(!condition.is_if_none_match());
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn if_none_match_accessors() {
         let etag = ETag::new("*");
-        let condition = Precondition::if_none_match(etag.clone());
+        let condition = ETagCondition::if_none_match(etag.clone());
 
         assert!(!condition.is_if_match());
         assert!(condition.is_if_none_match());

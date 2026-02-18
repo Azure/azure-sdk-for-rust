@@ -150,6 +150,10 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3"
 url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
+windows-sys = { version = "0.61", features = [
+  "Win32_System_Threading",
+  "Win32_System_SystemInformation",
+] }
 zip = { version = "7.4.0", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
@@ -157,7 +161,10 @@ large_futures = "deny"
 uninlined_format_args = "allow"
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)'] }
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(docsrs)',
+  'cfg(test_category, values("emulator", "multi_write"))',
+] }
 
 [workspace.lints.rustdoc]
 bare_urls = "allow"

@@ -2,6 +2,10 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+// Allow dead_code crate-wide: the driver is a skeleton under active development
+// and many public/internal APIs are defined ahead of their call sites.
+// This will be removed once the crate reaches feature-complete status.
+#![allow(dead_code)]
 
 //! Azure Cosmos DB Driver - Core Implementation Layer
 //!
@@ -21,11 +25,15 @@
 //! raw bytes (`&[u8]`) and return buffered responses (`Vec<u8>`). Serialization is handled by
 //! the consuming SDK in its native language.
 
+pub mod diagnostics;
 pub mod driver;
 pub mod models;
 pub mod options;
+pub mod system;
 
 // Re-export key types at crate root
+pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
-pub use models::{ActivityId, CosmosResponse, CosmosStatus, RequestCharge};
-pub use options::DriverOptions;
+pub use models::{ActivityId, CosmosResult, CosmosStatus, RequestCharge};
+pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};
+pub use system::{CpuMemoryHistory, CpuMemoryMonitor, VmMetadataService};

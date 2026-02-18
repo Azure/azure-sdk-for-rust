@@ -8,6 +8,7 @@
 
 mod connection_pool;
 mod dedicated_gateway;
+mod diagnostics_options;
 mod diagnostics_thresholds;
 mod driver_options;
 mod env_parsing;
@@ -23,6 +24,9 @@ mod triggers;
 
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
 pub use dedicated_gateway::DedicatedGatewayOptions;
+pub use diagnostics_options::{
+    DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
+};
 pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};

@@ -65,29 +65,10 @@ impl UserAgent {
         // If not set, falls back to "unknown" in the user agent string.
         let rust_version = option_env!("RUSTC_VERSION").unwrap_or("unknown");
 
-        let mut value = String::with_capacity(
-            AZSDK_USER_AGENT_PREFIX.len()
-                + SDK_NAME.len()
-                + 1
-                + SDK_VERSION.len()
-                + 1
-                + os_name.len()
-                + 1
-                + os_arch.len()
-                + 7
-                + rust_version.len(),
-        );
-        value.push_str(AZSDK_USER_AGENT_PREFIX);
-        value.push_str(SDK_NAME);
-        value.push('/');
-        value.push_str(SDK_VERSION);
-        value.push(' ');
-        value.push_str(os_name);
-        value.push('/');
-        value.push_str(os_arch);
-        value.push_str(" rustc/");
-        value.push_str(rust_version);
-        value
+        format!(
+            "{}{}/{} {}/{} rustc/{}",
+            AZSDK_USER_AGENT_PREFIX, SDK_NAME, SDK_VERSION, os_name, os_arch, rust_version
+        )
     }
 
     /// Creates a new user agent with an optional suffix.
@@ -95,28 +76,48 @@ impl UserAgent {
     /// The suffix is appended to the base user agent, separated by a space.
     /// If the resulting string exceeds 255 characters, the suffix is truncated.
     fn new(suffix: Option<impl Into<String>>) -> Self {
-        // Normalize to ASCII once; this makes byte-length checks safe and avoids
-        // reprocessing after we build the final string.
-        let base = strip_non_ascii(&Self::base_user_agent());
-        let normalized_suffix = suffix.map(Into::into).map(|s| strip_non_ascii(&s));
+        let base = Self::base_user_agent();
+        let suffix = suffix.map(Into::into);
+        let base_stripped = strip_non_ascii(&base);
 
-        let max_suffix_len = MAX_USER_AGENT_LENGTH.saturating_sub(base.len() + 1);
-        let effective_suffix = normalized_suffix.and_then(|s| {
-            if s.is_empty() || max_suffix_len == 0 {
-                None
-            } else {
-                Some(s[..s.len().min(max_suffix_len)].to_string())
+        let full_user_agent = match &suffix {
+            Some(s) if !s.is_empty() => {
+                let proposed = format!("{} {}", base, s);
+                if proposed.len() <= MAX_USER_AGENT_LENGTH {
+                    proposed
+                } else {
+                    // Truncate suffix to fit within limit, on a char boundary
+                    // to avoid panicking on multi-byte UTF-8 characters.
+                    let max_suffix_len = MAX_USER_AGENT_LENGTH.saturating_sub(base.len() + 1);
+                    if max_suffix_len > 0 {
+                        let limit = max_suffix_len.min(s.len());
+                        // Find the last char boundary at or before `limit`
+                        let safe_end = s[..limit]
+                            .char_indices()
+                            .last()
+                            .map_or(0, |(idx, ch)| idx + ch.len_utf8());
+                        format!("{} {}", base, &s[..safe_end])
+                    } else {
+                        base
+                    }
+                }
             }
-        });
+            _ => base,
+        };
 
-        let mut full_user_agent = String::with_capacity(
-            base.len() + effective_suffix.as_ref().map_or(0, |s| 1 + s.len()),
-        );
-        full_user_agent.push_str(&base);
-        if let Some(s) = &effective_suffix {
-            full_user_agent.push(' ');
-            full_user_agent.push_str(s);
-        }
+        let full_user_agent = strip_non_ascii(&full_user_agent);
+
+        // Compute the effective suffix that actually appears in `full_user_agent`
+        // after truncation and ASCII stripping, so that `suffix()` matches
+        // what was actually appended.
+        let effective_suffix = match &suffix {
+            Some(_) => full_user_agent
+                .strip_prefix(base_stripped.as_str())
+                .and_then(|rest| rest.strip_prefix(' '))
+                .filter(|s| !s.is_empty())
+                .map(String::from),
+            _ => None,
+        };
 
         Self {
             full_user_agent,
@@ -147,6 +148,11 @@ impl UserAgent {
     /// Returns the suffix that was used, if any.
     pub fn suffix(&self) -> Option<&str> {
         self.suffix.as_deref()
+    }
+
+    /// Returns the base user agent prefix (without any suffix).
+    pub(crate) fn base_prefix() -> String {
+        Self::base_user_agent()
     }
 }
 

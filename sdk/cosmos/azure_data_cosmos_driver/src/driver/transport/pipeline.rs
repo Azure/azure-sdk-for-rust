@@ -7,6 +7,8 @@
 //! azure_core's default retry, logging, and telemetry policies. Cosmos DB
 //! has its own retry logic and telemetry requirements.
 
+use super::tracked_transport::EventEmitter;
+use crate::diagnostics::RequestEventType;
 use azure_core::http::{
     policies::{Policy, PolicyResult},
     Context, RawResponse, Request, Transport,
@@ -49,6 +51,11 @@ impl CosmosPipeline {
     /// Sends a request through the pipeline and returns the buffered response.
     ///
     /// This method buffers the entire response body before returning.
+    /// It emits [`RequestEventType::TransportComplete`] after the body is fully buffered.
+    ///
+    /// To enable event tracking, insert an [`EventEmitter`] into the context
+    /// before calling this method. Events will be emitted to the emitter's
+    /// channel during request processing.
     pub(crate) async fn send(
         &self,
         ctx: &Context<'_>,
@@ -61,11 +68,38 @@ impl CosmosPipeline {
         // Buffer the entire response body
         let response = async_response.try_into_raw_response().await?;
 
+        // Emit TransportComplete now that headers AND body are fully received
+        if let Some(emitter) = ctx.value::<EventEmitter>() {
+            emitter.emit_type(RequestEventType::TransportComplete);
+        }
+
         Ok(response)
+    }
+
+    /// Returns the policies in the order a request is processed.
+    #[allow(dead_code)]
+    pub(crate) fn policies(&self) -> &[Arc<dyn Policy>] {
+        &self.policies
     }
 }
 
-/// A transport policy wrapper.
+/// A transport policy that emits request lifecycle events.
+///
+/// This policy wraps the standard transport and emits events at key points:
+/// - `TransportStart` - Before calling the underlying transport
+/// - `ResponseHeadersReceived` - When response headers arrive (body still streaming)
+/// - `TransportFailed` - On error, with details about the failure
+///
+/// Note: `TransportComplete` is NOT emitted here. It is emitted by
+/// [`CosmosPipeline::send()`] after the response body is fully buffered.
+///
+/// Events are emitted to an [`EventEmitter`] if one is present in the context.
+///
+/// # Limitations
+///
+/// Due to reqwest's high-level abstraction, we cannot track fine-grained
+/// connection events (DNS resolution, TLS handshake, etc.). We only know
+/// when transport starts and ends.
 #[derive(Debug)]
 struct TrackedTransportPolicy {
     transport: Transport,
@@ -75,9 +109,14 @@ impl TrackedTransportPolicy {
     fn new(transport: Transport) -> Self {
         Self { transport }
     }
+
+    fn get_emitter<'a>(ctx: &'a Context<'_>) -> Option<&'a EventEmitter> {
+        ctx.value::<EventEmitter>()
+    }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Policy for TrackedTransportPolicy {
     async fn send(
         &self,
@@ -92,8 +131,37 @@ impl Policy for TrackedTransportPolicy {
             "TrackedTransportPolicy must be the last policy"
         );
 
+        let emitter = Self::get_emitter(ctx);
+
+        // Emit: Transport is starting
+        // From here, reqwest handles DNS, connection pool, TLS, and sending internally.
+        // We cannot distinguish these phases with reqwest's API.
+        if let Some(e) = emitter {
+            e.emit_type(RequestEventType::TransportStart);
+        }
+
         // Send the request through the underlying transport
-        self.transport.send(ctx, request).await
+        let result = self.transport.send(ctx, request).await;
+
+        match &result {
+            Ok(_response) => {
+                // Response headers received - body is still a stream at this point.
+                // TransportComplete will be emitted by CosmosPipeline::send() after buffering.
+                if let Some(e) = emitter {
+                    e.emit_type(RequestEventType::ResponseHeadersReceived);
+                }
+            }
+            Err(err) => {
+                // Transport failed - emit failure event with error details.
+                // Retry safety analysis is done via RequestSentStatus in
+                // request_diagnostics.rs and RequestEventType::indicates_request_sent().
+                if let Some(e) = emitter {
+                    e.emit_with_details(RequestEventType::TransportFailed, err.to_string());
+                }
+            }
+        }
+
+        result
     }
 }
 
@@ -108,7 +176,8 @@ mod tests {
         response_status: u16,
     }
 
-    #[async_trait::async_trait]
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl Policy for MockTransport {
         async fn send(
             &self,
@@ -132,7 +201,8 @@ mod tests {
         name: &'static str,
     }
 
-    #[async_trait::async_trait]
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl Policy for RecordingPolicy {
         async fn send(
             &self,

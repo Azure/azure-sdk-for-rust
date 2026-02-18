@@ -33,7 +33,7 @@ use crate::{
 /// );
 ///
 /// let runtime = RuntimeOptions::builder()
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
 ///     .build();
 ///
 /// let options = DriverOptionsBuilder::new(account)
@@ -41,7 +41,7 @@ use crate::{
 ///     .build();
 ///
 /// // Later, modify defaults at runtime
-/// options.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
+/// options.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug)]
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn builder_sets_runtime_options() {
         let runtime = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+            .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
             .build();
 
         let options = DriverOptionsBuilder::new(test_account())
@@ -151,7 +151,7 @@ mod tests {
         let snapshot = options.runtime_options().snapshot();
         assert_eq!(
             snapshot.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            Some(ContentResponseOnWrite::DISABLED)
         );
     }
 
@@ -169,7 +169,7 @@ mod tests {
         // Modify at runtime
         options
             .runtime_options()
-            .set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
+            .set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
 
         // Now set
         assert_eq!(
@@ -177,7 +177,7 @@ mod tests {
                 .runtime_options()
                 .snapshot()
                 .content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            Some(ContentResponseOnWrite::ENABLED)
         );
     }
 }

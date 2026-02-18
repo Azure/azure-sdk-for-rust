@@ -3,10 +3,10 @@
 
 //! Newtype wrapper for Request Units (RU) charges.
 
-use crate::models::FiniteF64;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::iter::Sum;
 use std::ops::Add;
 
@@ -33,9 +33,9 @@ use std::ops::Add;
 /// let sum: RequestCharge = charges.into_iter().sum();
 /// assert_eq!(sum.value(), 6.0);
 /// ```
-#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct RequestCharge(FiniteF64);
+pub struct RequestCharge(f64);
 
 impl RequestCharge {
     /// Creates a new `RequestCharge` from a raw `f64` value.
@@ -43,20 +43,48 @@ impl RequestCharge {
     /// NaN is normalized to `0.0` and negative zero is normalized to positive
     /// zero so that `RequestCharge` can implement [`Eq`] and [`Hash`].
     pub fn new(value: f64) -> Self {
-        Self(FiniteF64::new_lossy(value))
+        Self(Self::normalize(value))
     }
 
     /// Returns the raw `f64` value of this request charge.
     pub const fn value(self) -> f64 {
-        self.0.value()
+        self.0
+    }
+
+    /// Normalizes an `f64` value: NaN becomes `0.0`, and `-0.0` becomes `+0.0`.
+    fn normalize(value: f64) -> f64 {
+        if value.is_nan() {
+            0.0
+        } else if value == 0.0 {
+            // Handles both +0.0 and -0.0; always store +0.0.
+            0.0
+        } else {
+            value
+        }
+    }
+
+    /// Returns canonical bits for hashing.
+    ///
+    /// After normalization, NaN and -0.0 are impossible, so `to_bits()` is
+    /// consistent with our [`PartialEq`] implementation.
+    fn canonical_bits(self) -> u64 {
+        self.0.to_bits()
     }
 }
 
 impl fmt::Display for RequestCharge {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value())
+        write!(f, "{}", self.0)
     }
 }
+
+impl PartialEq for RequestCharge {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Eq for RequestCharge {}
 
 impl PartialOrd for RequestCharge {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -67,7 +95,13 @@ impl PartialOrd for RequestCharge {
 impl Ord for RequestCharge {
     fn cmp(&self, other: &Self) -> Ordering {
         // After normalization NaN is impossible, so total_cmp is safe.
-        self.value().total_cmp(&other.value())
+        self.0.total_cmp(&other.0)
+    }
+}
+
+impl Hash for RequestCharge {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.canonical_bits().hash(state);
     }
 }
 
@@ -75,7 +109,7 @@ impl Add for RequestCharge {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self::new(self.value() + rhs.value())
+        Self::new(self.0 + rhs.0)
     }
 }
 
@@ -93,7 +127,7 @@ impl From<f64> for RequestCharge {
 
 impl From<RequestCharge> for f64 {
     fn from(charge: RequestCharge) -> Self {
-        charge.value()
+        charge.0
     }
 }
 
