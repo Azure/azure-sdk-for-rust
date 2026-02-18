@@ -115,15 +115,9 @@ impl ContainerClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let new_properties = ContainerProperties {
-    ///     id: "MyContainer".into(),
-    ///     partition_key: "/id".into(),
-    ///     indexing_policy: Some(IndexingPolicy {
-    ///         included_paths: vec!["/index_me".into()],
-    ///         ..Default::default()
-    ///     }),
-    ///     ..Default::default()
-    /// };
+    /// let indexing_policy = IndexingPolicy::default().with_included_path("/index_me");
+    /// let new_properties = ContainerProperties::new("MyContainer", "/id".into())
+    ///     .with_indexing_policy(indexing_policy);
     /// let response = container_client.replace(new_properties, None)
     ///     .await?
     ///     .into_model()?;
