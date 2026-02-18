@@ -62,10 +62,12 @@ use crate::constants;
 /// ```rust,no_run
 /// # use azure_data_cosmos::{clients::ContainerClient, PartitionKey};
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
+/// # async {
 /// container_client.read_item::<serde_json::Value>(
 ///     PartitionKey::UNDEFINED,
 ///     "item_without_partition_key_property",
-///     None).unwrap();
+///     None).await.unwrap();
+/// # };
 /// ```
 ///
 /// Or, if you have an [`Option<T>`], for some `T` that is valid as a partition key, it will automatically be serialized as `null` if it has the value [`Option::None`]:
