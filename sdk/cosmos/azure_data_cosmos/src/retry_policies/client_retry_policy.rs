@@ -403,9 +403,9 @@ impl ClientRetryPolicy {
     /// retries on different endpoints, 503 (ServiceUnavailable) attempts preferred location
     /// failover, and 500/408/410 with LeaseNotFound retry on alternative endpoints for reads.
     ///
-    /// For read operations, any status code not in the non-retryable whitelist (400, 401,
-    /// 404 without substatus 1002, 405, 409, 412, 413) is retried on an alternative endpoint.
-    /// For write operations, unhandled status codes are delegated to the throttling policy.
+    /// For read operations, any status code that is not considered non-retryable by
+    /// [`is_non_retryable_status_code`] is retried on an alternative endpoint. For write
+    /// operations, unhandled status codes are delegated to the throttling policy.
     ///
     /// # Arguments
     /// * `status_code` - The HTTP status code from the response
