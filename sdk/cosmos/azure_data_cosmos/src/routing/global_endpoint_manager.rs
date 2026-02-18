@@ -366,7 +366,7 @@ impl GlobalEndpointManager {
     ///
     /// # Returns
     /// `Ok(Response<AccountProperties>)` with account metadata, or `Err` if request failed
-    async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
+    pub async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
         let options = ReadDatabaseOptions {
             ..Default::default()
         };
@@ -388,6 +388,23 @@ impl GlobalEndpointManager {
             .send(&ctx_owned, &mut cosmos_request.into_raw_request(), None)
             .await
             .map(Into::into)
+    }
+
+    /// Updates the location cache with the given write and read regions.
+    ///
+    /// This is exposed as `pub(crate)` to allow other modules' tests to populate
+    /// endpoints without requiring a live service call to `refresh_location`.
+    #[cfg(test)]
+    pub(crate) fn update_location_cache(
+        &self,
+        write_locations: Vec<crate::models::AccountRegion>,
+        read_locations: Vec<crate::models::AccountRegion>,
+    ) {
+        let _ = self
+            .location_cache
+            .lock()
+            .unwrap()
+            .update(write_locations, read_locations);
     }
 }
 

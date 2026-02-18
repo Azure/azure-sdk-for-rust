@@ -897,3 +897,162 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
     )
     .await
 }
+
+/// An item type without a partition key property, for testing undefined partition keys.
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct UndefinedPkItem {
+    id: Cow<'static, str>,
+    value: usize,
+}
+
+/// An item type with an explicit partition key property.
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct ExplicitPkItem {
+    id: Cow<'static, str>,
+    partition_key: Cow<'static, str>,
+    value: usize,
+}
+
+#[tokio::test]
+pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            // Create an item WITHOUT the partition_key property (undefined PK).
+            let item_no_pk = UndefinedPkItem {
+                id: format!("Item-NoPK-{}", unique_id).into(),
+                value: 100,
+            };
+            let item_no_pk_id = format!("Item-NoPK-{}", unique_id);
+
+            let response = container_client
+                .create_item(PartitionKey::UNDEFINED, &item_no_pk, None)
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Create an item WITH a null partition_key property.
+            let item_null_pk = TestItem {
+                id: format!("Item-NullPK-{}", unique_id).into(),
+                partition_key: None,
+                value: 200,
+                nested: NestedItem {
+                    nested_value: "NullPK".into(),
+                },
+                bool_value: false,
+            };
+            let item_null_pk_id = format!("Item-NullPK-{}", unique_id);
+
+            let response = container_client
+                .create_item(PartitionKey::NULL, &item_null_pk, None)
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Create an item WITH an explicit partition_key value.
+            let pk_value = format!("PK-{}", unique_id);
+            let item_with_pk = ExplicitPkItem {
+                id: format!("Item-WithPK-{}", unique_id).into(),
+                partition_key: pk_value.clone().into(),
+                value: 300,
+            };
+            let item_with_pk_id = format!("Item-WithPK-{}", unique_id);
+
+            let response = container_client
+                .create_item(&pk_value, &item_with_pk, None)
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Read the undefined-PK item using UNDEFINED - should succeed.
+            let read_response = run_context
+                .read_item::<UndefinedPkItem>(
+                    &container_client,
+                    PartitionKey::UNDEFINED,
+                    &item_no_pk_id,
+                    None,
+                )
+                .await?;
+            assert_response(
+                &read_response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: UndefinedPkItem = read_response.into_model()?;
+            assert_eq!(item_no_pk, read_item);
+
+            // Reading the undefined-PK item with NULL should fail (wrong partition).
+            let result = container_client
+                .read_item::<serde_json::Value>(PartitionKey::NULL, &item_no_pk_id, None)
+                .await;
+            assert_eq!(
+                Some(azure_core::http::StatusCode::NotFound),
+                result
+                    .expect_err("expected a 404 for undefined-PK item read with NULL")
+                    .http_status()
+            );
+
+            // Read the null-PK item using NULL - should succeed.
+            let read_response = run_context
+                .read_item::<TestItem>(
+                    &container_client,
+                    PartitionKey::NULL,
+                    &item_null_pk_id,
+                    None,
+                )
+                .await?;
+            assert_response(
+                &read_response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: TestItem = read_response.into_model()?;
+            assert_eq!(item_null_pk, read_item);
+
+            // Reading the null-PK item with UNDEFINED should fail (wrong partition).
+            let result = container_client
+                .read_item::<serde_json::Value>(PartitionKey::UNDEFINED, &item_null_pk_id, None)
+                .await;
+            assert_eq!(
+                Some(azure_core::http::StatusCode::NotFound),
+                result
+                    .expect_err("expected a 404 for null-PK item read with UNDEFINED")
+                    .http_status()
+            );
+
+            // Delete the undefined-PK item using UNDEFINED.
+            let response = container_client
+                .delete_item(PartitionKey::UNDEFINED, &item_no_pk_id, None)
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::NoContent,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Suppress unused variable warning
+            let _ = item_with_pk_id;
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
