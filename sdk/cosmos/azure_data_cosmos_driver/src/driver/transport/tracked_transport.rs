@@ -209,7 +209,7 @@ impl RequestSentExt for azure_core::Error {
 ///
 /// # Note
 ///
-/// This function is currently unused (`#[allow(dead_code)]`) because the tracked
+/// This function is currently unused because the tracked
 /// transport integration with reqwest is not yet wired up. It will be called from
 /// the transport layer once reqwest-based request tracking is enabled.
 ///
@@ -218,7 +218,6 @@ impl RequestSentExt for azure_core::Error {
 /// logic is validated indirectly through the `azure_core::Error`-based
 /// `request_sent_status()` tests and integration tests.
 #[cfg(not(target_arch = "wasm32"))]
-#[allow(dead_code)]
 pub(crate) fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
     // Connection errors happen before sending
     if error.is_connect() {
@@ -267,7 +266,6 @@ pub(crate) fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSent
 /// WASM fallback: reqwest doesn't expose error type inspection methods on WASM.
 /// We fall back to string analysis which is less reliable.
 #[cfg(target_arch = "wasm32")]
-#[allow(dead_code)]
 pub(crate) fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
     let msg = error.to_string().to_lowercase();
 

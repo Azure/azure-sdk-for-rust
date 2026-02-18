@@ -62,7 +62,6 @@ impl AuthorizationContext {
     /// Creates an authorization context for a feed request (e.g., list databases).
     ///
     /// For feed requests, the resource link points to the parent resource.
-    #[allow(dead_code)]
     pub(crate) fn for_feed(
         method: Method,
         resource_type: ResourceType,
@@ -117,7 +116,6 @@ impl AuthorizationPolicy {
     }
 
     /// Creates a new authorization policy from a token credential.
-    #[allow(dead_code)]
     pub(crate) fn from_token_credential(credential: Arc<dyn TokenCredential>) -> Self {
         Self {
             credential: Credential::Token(credential),
@@ -125,7 +123,6 @@ impl AuthorizationPolicy {
     }
 
     /// Creates a new authorization policy from a master key.
-    #[allow(dead_code)]
     pub(crate) fn from_master_key(key: impl Into<Secret>) -> Self {
         Self {
             credential: Credential::MasterKey(key.into()),

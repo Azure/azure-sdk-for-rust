@@ -2,10 +2,6 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
-// Allow dead_code crate-wide: the driver is a skeleton under active development
-// and many public/internal APIs are defined ahead of their call sites.
-// This will be removed once the crate reaches feature-complete status.
-#![allow(dead_code)]
 
 //! Azure Cosmos DB Driver - Core Implementation Layer
 //!
