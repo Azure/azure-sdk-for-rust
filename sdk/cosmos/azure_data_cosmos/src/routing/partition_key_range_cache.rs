@@ -116,7 +116,7 @@ impl PartitionKeyRangeCache {
         }
     }
 
-    async fn try_lookup(
+    pub async fn try_lookup(
         &self,
         collection_rid: &str,
         previous_value: Option<CollectionRoutingMap>,

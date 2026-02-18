@@ -17,6 +17,7 @@ use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use serde::{de::DeserializeOwned, Serialize};
@@ -39,6 +40,7 @@ impl ContainerClient {
         database_link: &ResourceLink,
         container_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
@@ -60,6 +62,7 @@ impl ContainerClient {
             pipeline.clone(),
             container_cache,
             partition_key_range_cache,
+            global_partition_endpoint_manager.clone(),
         ));
 
         Self {
