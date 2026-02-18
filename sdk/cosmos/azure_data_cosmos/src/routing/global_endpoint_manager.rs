@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Concrete (yet unimplemented) GlobalEndpointManager.
 //! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
@@ -12,7 +15,6 @@ use crate::routing::location_cache::{LocationCache, RequestOperation};
 use crate::ReadDatabaseOptions;
 use azure_core::http::{Pipeline, Response};
 use azure_core::Error;
-use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 use url::Url;
@@ -80,75 +82,6 @@ impl GlobalEndpointManager {
         }
     }
 
-    /// Returns the default hub endpoint URL for the Cosmos DB account.
-    ///
-    /// # Summary
-    /// Retrieves the primary endpoint URL that was configured during manager initialization.
-    /// This is the main entry point for the Cosmos DB account and is used as a fallback
-    /// when no preferred regional endpoints are available or configured.
-    ///
-    /// # Returns
-    /// The default endpoint URL as a String
-    pub fn hub_uri(&self) -> &Url {
-        &self.default_endpoint
-    }
-
-    /// Returns the list of available read endpoints.
-    ///
-    /// # Summary
-    /// Retrieves all currently available read endpoints from the location cache. The list
-    /// includes regional endpoints that can handle read operations and are not marked as
-    /// unavailable. Initially empty until account properties are fetched and processed.
-    ///
-    /// # Returns
-    /// A vector of endpoint URLs available for read operations
-    #[allow(dead_code)]
-    pub fn read_endpoints(&self) -> Vec<Url> {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .read_endpoints()
-            .to_vec()
-    }
-
-    /// Returns the list of available account read endpoints.
-    ///
-    /// # Summary
-    /// Alias for `read_endpoints()` that retrieves all currently available read endpoints
-    /// from the location cache. Provides the same functionality with an alternative name
-    /// for clarity in account-level operations context.
-    ///
-    /// # Returns
-    /// A vector of endpoint URLs available for read operations
-    #[allow(dead_code)]
-    pub fn account_read_endpoints(&self) -> Vec<Url> {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .read_endpoints()
-            .to_vec()
-    }
-
-    /// Returns the list of available write endpoints.
-    ///
-    /// # Summary
-    /// Retrieves all currently available write endpoints from the location cache. The list
-    /// includes regional endpoints that can handle write operations and are not marked as
-    /// unavailable. For multi-master accounts, this may include multiple regions; for
-    /// single-master accounts, typically only the write region. Initially empty until
-    /// account properties are fetched.
-    ///
-    /// # Returns
-    /// A vector of endpoint URLs available for write operations
-    #[allow(dead_code)]
-    pub fn write_endpoints(&self) -> Vec<Url> {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .write_endpoints()
-            .to_vec()
-    }
-
     /// Returns the count of preferred locations configured for routing.
     ///
     /// # Summary
@@ -187,28 +120,43 @@ impl GlobalEndpointManager {
             .resolve_service_endpoint(request)
     }
 
-    /// Returns all endpoints applicable for handling a specific request.
+    /// Resolves the service endpoint using DOP components instead of a full request.
     ///
-    /// # Summary
-    /// Retrieves the list of endpoints that could potentially handle the request based
-    /// on its operation type (read or write) and current endpoint availability. Used by
-    /// retry policies to determine how many alternative endpoints are available for
-    /// failover attempts.
-    ///
-    /// # Arguments
-    /// * `request` - The Cosmos DB request to evaluate
-    ///
-    /// # Returns
-    /// A vector of applicable endpoint URLs
-    pub fn applicable_endpoints(
+    /// This is the component-based equivalent of [`resolve_service_endpoint`] and is
+    /// used by the new pipeline orchestration loop.
+    pub(crate) fn resolve_endpoint_from_components(
         &self,
-        operation_type: OperationType,
-        excluded_regions: Option<&Vec<RegionName>>,
-    ) -> Vec<Url> {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .get_applicable_endpoints(operation_type, excluded_regions)
+        routing: &crate::pipeline::components::RoutingState,
+        op: &crate::pipeline::components::OperationInfo,
+    ) -> Url {
+        let location_index = routing.location_index as usize;
+        let use_preferred = routing.use_preferred_locations;
+        let cache = self.location_cache.lock().unwrap();
+
+        let mut location_endpoint_to_route = None;
+        if !use_preferred
+            || (!op.is_read_only()
+                && !cache.can_support_multiple_write_locations(op.resource_type, op.operation_type))
+        {
+            let location_info = &cache.locations_info;
+            if !location_info.account_write_locations.is_empty() {
+                let idx = location_index % location_info.account_write_locations.len();
+                location_endpoint_to_route = Some(
+                    location_info.account_write_locations[idx]
+                        .database_account_endpoint
+                        .clone(),
+                );
+            }
+        } else {
+            let endpoints =
+                cache.get_applicable_endpoints(op.operation_type, op.excluded_regions.as_ref());
+            if !endpoints.is_empty() {
+                location_endpoint_to_route =
+                    Some(endpoints[location_index % endpoints.len()].clone());
+            }
+        }
+
+        location_endpoint_to_route.unwrap_or(self.default_endpoint.clone())
     }
 
     /// Marks an endpoint as unavailable for read operations.
@@ -311,46 +259,6 @@ impl GlobalEndpointManager {
         Ok(())
     }
 
-    /// Returns a map of write endpoints indexed by location name.
-    ///
-    /// # Summary
-    /// Retrieves a mapping from Azure region names to their corresponding write endpoint URLs.
-    /// This provides direct lookup of write endpoints by location, useful for diagnostic
-    /// and monitoring scenarios. The map reflects the current account configuration and
-    /// may be empty until account properties are fetched.
-    ///
-    /// # Returns
-    /// A HashMap containing the location names with their corresponding write endpoint URLs
-    #[allow(dead_code)]
-    fn available_write_endpoints_by_location(&self) -> HashMap<RegionName, Url> {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .locations_info
-            .account_write_endpoints_by_location
-            .clone()
-    }
-
-    /// Returns a map of read endpoints indexed by location name.
-    ///
-    /// # Summary
-    /// Retrieves a mapping from Azure region names to their corresponding read endpoint URLs.
-    /// This provides direct lookup of read endpoints by location, useful for diagnostic
-    /// and monitoring scenarios. The map reflects the current account configuration and
-    /// may be empty until account properties are fetched.
-    ///
-    /// # Returns
-    /// A HashMap mapping location names to read endpoint URLs
-    #[allow(dead_code)]
-    fn available_read_endpoints_by_location(&self) -> HashMap<RegionName, Url> {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .locations_info
-            .account_read_endpoints_by_location
-            .clone()
-    }
-
     /// Determines if the account supports multiple write locations for specific resource and operation types.
     ///
     /// # Summary
@@ -450,21 +358,7 @@ mod tests {
     #[test]
     fn test_new_manager_initialization() {
         let manager = create_test_manager();
-        assert_eq!(
-            manager.hub_uri(),
-            &Url::parse("https://test.documents.azure.com/").unwrap()
-        );
         assert_eq!(manager.preferred_location_count(), 2);
-    }
-
-    #[test]
-    fn test_hub_uri() {
-        let manager = create_test_manager();
-        let hub_uri = manager.hub_uri();
-        assert_eq!(
-            hub_uri,
-            &Url::parse("https://test.documents.azure.com/").unwrap()
-        );
     }
 
     #[test]
@@ -506,24 +400,6 @@ mod tests {
     }
 
     #[test]
-    fn test_read_endpoints_initial_state() {
-        let manager = create_test_manager();
-        let endpoints = manager.read_endpoints();
-        // Initial state may be empty until account properties are loaded
-        // Just verify it returns a valid vector and doesn't panic
-        let _ = endpoints.len();
-    }
-
-    #[test]
-    fn test_write_endpoints_initial_state() {
-        let manager = create_test_manager();
-        let endpoints = manager.write_endpoints();
-        // Initial state may be empty until account properties are loaded
-        // Just verify it returns a valid vector and doesn't panic
-        let _ = endpoints.len();
-    }
-
-    #[test]
     fn test_mark_endpoint_unavailable_for_read() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
@@ -540,10 +416,6 @@ mod tests {
 
         // This should not panic
         manager.mark_endpoint_unavailable_for_read(&endpoint);
-
-        // The endpoint should still be in the system but marked unavailable
-        let read_endpoints = manager.read_endpoints();
-        assert!(!read_endpoints.is_empty());
     }
 
     #[test]
@@ -563,10 +435,6 @@ mod tests {
 
         // This should not panic
         manager.mark_endpoint_unavailable_for_write(&endpoint);
-
-        // The endpoint should still be in the system but marked unavailable
-        let write_endpoints = manager.write_endpoints();
-        assert!(!write_endpoints.is_empty());
     }
 
     #[test]
@@ -619,52 +487,5 @@ mod tests {
 
         // Databases don't support multi-write
         assert!(!result);
-    }
-
-    #[test]
-    fn test_applicable_endpoints() {
-        let manager = create_test_manager();
-        let endpoints = manager.applicable_endpoints(OperationType::Read, None);
-        assert!(!endpoints.is_empty());
-    }
-
-    #[test]
-    fn test_applicable_excluded_endpoints() {
-        let manager = create_test_manager();
-        // Exclude all regions to test behavior - should still return default endpoint
-        let excluded_regions: Vec<RegionName> =
-            vec![RegionName::from("West US"), RegionName::from("East US")];
-        let endpoints = manager.applicable_endpoints(OperationType::Read, Some(&excluded_regions));
-        assert!(!endpoints.is_empty());
-        let endpoints =
-            manager.applicable_endpoints(OperationType::Create, Some(&excluded_regions));
-        assert!(!endpoints.is_empty());
-    }
-
-    #[test]
-    fn test_account_read_endpoints() {
-        let manager = create_test_manager();
-        let endpoints = manager.account_read_endpoints();
-
-        // Should return the same as read_endpoints
-        assert_eq!(endpoints, manager.read_endpoints());
-    }
-
-    #[test]
-    fn test_available_write_endpoints_by_location() {
-        let manager = create_test_manager();
-        let endpoints_map = manager.available_write_endpoints_by_location();
-
-        // Should not panic and return a valid map
-        let _ = endpoints_map.len();
-    }
-
-    #[test]
-    fn test_available_read_endpoints_by_location() {
-        let manager = create_test_manager();
-        let endpoints_map = manager.available_read_endpoints_by_location();
-
-        // Should not panic and return a valid map
-        let _ = endpoints_map.len();
     }
 }

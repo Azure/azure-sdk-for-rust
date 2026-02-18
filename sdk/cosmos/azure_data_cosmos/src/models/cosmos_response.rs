@@ -27,7 +27,7 @@ pub struct CosmosResponse<T> {
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
-    pub fn new(response: Response<T>, request: CosmosRequest) -> Self {
+    pub(crate) fn new(response: Response<T>, request: CosmosRequest) -> Self {
         Self { response, request }
     }
 
@@ -49,12 +49,21 @@ impl<T> CosmosResponse<T> {
         self.response.headers().get_optional_str(name)
     }
 
-    /// Returns the final request used to fulfill the operation.
-    /// This api is subject to change without a major version bump.
+    /// Returns the resolved URL of the final request used to fulfill the operation.
     ///
+    /// This is intended for test assertions that verify endpoint routing (e.g.,
+    /// confirming which region handled the request). This API is subject to
+    /// change without a major version bump.
     #[cfg(feature = "fault_injection")]
-    pub fn request(&self) -> &CosmosRequest {
-        &self.request
+    pub fn request_url(&self) -> url::Url {
+        let endpoint = self
+            .request
+            .request_context
+            .location_endpoint_to_route
+            .as_ref()
+            .expect("location_endpoint_to_route should be set after pipeline execution")
+            .clone();
+        self.request.resource_link.url(&endpoint)
     }
 
     /// Consumes the response and returns the response body.

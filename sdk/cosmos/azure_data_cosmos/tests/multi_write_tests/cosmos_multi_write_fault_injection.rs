@@ -242,13 +242,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
             assert_eq!(
-                response
-                    .request()
-                    .clone()
-                    .into_raw_request()
-                    .url()
-                    .host_str()
-                    .unwrap(),
+                response.request_url().host_str().unwrap(),
                 get_effective_hub_endpoint()
             );
 
@@ -327,12 +321,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 .await;
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             println!("Request succeeded via failover, final URL: {}", request_url);
             // Verify the request went to a different endpoint than the faulted one
             assert!(
@@ -415,12 +404,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             );
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             // Verify the request went to a different endpoint than the faulted one
             assert!(
                 request_url.contains(&SATELLITE_REGION.as_str()),
@@ -516,12 +500,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 .await;
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             println!("Request succeeded via failover, final URL: {}", request_url);
             // Verify the request was retried on the hub region
             assert!(

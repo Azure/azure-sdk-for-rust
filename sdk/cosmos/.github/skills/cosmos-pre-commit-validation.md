@@ -64,6 +64,14 @@ Follow these steps strictly:
    - Clippy lints pass for affected crates
    - Documentation builds successfully where applicable
    - Unit and emulator tests relevant to the touched modules and crates
+   - **CI-gated test compilation**: Some test files are conditionally compiled via `cfg` flags that CI sets but local builds omit.
+     These tests will silently pass `cargo test` locally even if they contain build errors.
+     Run the following checks to catch regressions before CI does:
+     - `RUSTFLAGS='--cfg test_category="emulator"' cargo check -p azure_data_cosmos --features fault_injection,key_auth --tests`
+     - `RUSTFLAGS='--cfg test_category="multi_write"' cargo check -p azure_data_cosmos --features fault_injection,key_auth --tests`
+     On Windows (PowerShell), set the env var first: `$env:RUSTFLAGS='--cfg test_category="emulator"'` then run the `cargo check` command, and clear it afterwards with `$env:RUSTFLAGS=$null`.
+     These commands only **compile** the test targets — they do not run the emulator or multi-write tests (those require a live Cosmos DB emulator or multi-region account).
+     If `scope` targets a specific crate other than `azure_data_cosmos`, skip these checks.
 
 4. Report results:
    - Summarize failures concisely
