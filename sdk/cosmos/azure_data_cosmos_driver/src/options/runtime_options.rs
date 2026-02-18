@@ -3,7 +3,6 @@
 
 //! Runtime-configurable options shared across environment, driver, and operation levels.
 
-use azure_core::http::headers::Headers;
 // Note: `std::sync::RwLock` is used intentionally here instead of `tokio::sync::RwLock`
 // because `RuntimeOptions` may be read from synchronous contexts (e.g., builder construction,
 // configuration merging). The lock is held only briefly for reads/writes of option values,
@@ -34,12 +33,6 @@ pub struct RuntimeOptions {
     pub diagnostics_thresholds: Option<DiagnosticsThresholds>,
     /// End-to-end latency policy for timeout management.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
-    /// Custom HTTP headers to include in requests.
-    ///
-    /// These headers are best-effort: the caller may specify any header, but whether
-    /// it is actually sent to the service is at the discretion of the library. There
-    /// is no guarantee that a given custom header will be included in the outgoing request.
-    pub custom_headers: Option<Headers>,
     /// Regions to exclude from routing.
     pub excluded_regions: Option<ExcludedRegions>,
     /// Read consistency strategy for read operations.
@@ -88,10 +81,6 @@ impl RuntimeOptions {
                 .end_to_end_latency_policy
                 .clone()
                 .or_else(|| base.end_to_end_latency_policy.clone()),
-            custom_headers: self
-                .custom_headers
-                .clone()
-                .or_else(|| base.custom_headers.clone()),
             excluded_regions: self
                 .excluded_regions
                 .clone()
@@ -163,16 +152,6 @@ impl RuntimeOptionsBuilder {
         policy: EndToEndOperationLatencyPolicy,
     ) -> Self {
         self.options.end_to_end_latency_policy = Some(policy);
-        self
-    }
-
-    /// Sets the custom headers.
-    ///
-    /// Custom headers are best-effort: the caller may specify any header, but whether
-    /// it is actually sent to the service is at the discretion of the library. There
-    /// is no guarantee that a given custom header will be included in the outgoing request.
-    pub fn with_custom_headers(mut self, headers: Headers) -> Self {
-        self.options.custom_headers = Some(headers);
         self
     }
 
@@ -256,15 +235,6 @@ impl SharedRuntimeOptions {
     /// Sets the end-to-end latency policy.
     pub fn set_end_to_end_latency_policy(&self, policy: Option<EndToEndOperationLatencyPolicy>) {
         self.write_guard().end_to_end_latency_policy = policy;
-    }
-
-    /// Sets the custom headers.
-    ///
-    /// Custom headers are best-effort: the caller may specify any header, but whether
-    /// it is actually sent to the service is at the discretion of the library. There
-    /// is no guarantee that a given custom header will be included in the outgoing request.
-    pub fn set_custom_headers(&self, headers: Option<Headers>) {
-        self.write_guard().custom_headers = headers;
     }
 
     /// Sets the excluded regions.

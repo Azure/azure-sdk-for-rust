@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 // =========================================================================
-// SubStatusCode — private implementation detail
+// SubStatusCode
 // =========================================================================
 //
 // Sub-status codes are derived from:
@@ -47,7 +47,7 @@ use std::fmt;
 /// HTTP status code.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub(crate) struct SubStatusCode(u32);
+pub struct SubStatusCode(u32);
 
 impl SubStatusCode {
     /// Creates a new `SubStatusCode` from a numeric value.
