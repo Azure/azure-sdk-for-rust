@@ -316,6 +316,8 @@ impl CosmosClientBuilder {
 
     /// Internal method to set a custom HTTP transport.
     /// This is used for testing purposes (e.g., to accept invalid certificates).
+    ///
+    /// Microsoft cannot guarantee support when using alternate transports.
     #[doc(hidden)]
     pub fn transport(mut self, transport: azure_core::http::Transport) -> Self {
         self.transport = Some(transport);
