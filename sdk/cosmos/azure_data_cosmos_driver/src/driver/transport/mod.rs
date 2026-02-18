@@ -236,7 +236,11 @@ impl CosmosTransport {
         is_metadata: bool,
         for_emulator: bool,
     ) -> azure_core::Result<reqwest::Client> {
+        #[cfg(not(target_arch = "wasm32"))]
         let mut builder = reqwest::ClientBuilder::new();
+
+        #[cfg(target_arch = "wasm32")]
+        let builder = reqwest::ClientBuilder::new();
 
         // Native-only settings (not available on WASM)
         // WASM uses browser's fetch API which handles connection pooling,
