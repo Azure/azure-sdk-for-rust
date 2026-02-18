@@ -77,7 +77,7 @@ Follow these steps strictly:
 
 Classify every struct into exactly one of these categories:
 
-1. **Truly public** — The struct is `pub` and **all** ancestor modules up to the crate root are also `pub` (the struct is reachable from outside the crate). These structs get the full set of rules: getter coverage for externally-readable fields, a consistent construction API, and explicit field-visibility decisions based on invariants/validation needs. Construction may use either direct fluent methods on the struct (`Default` and/or `new(...)` + `with_*`) or a separate builder type (`builder()`/`build()` + `with_*`).
+1. **Truly public** — The struct is `pub` and **all** ancestor modules up to the crate root are also `pub` (the struct is reachable from outside the crate). These structs get the full set of rules: getter coverage for externally-readable fields, a consistent construction API, and explicit field-visibility decisions based on invariants/validation needs. Construction may use either direct fluent methods on the struct (`new(...)` + `with_*`, and `Default` only when there are no logically required fields) or a separate builder type (`builder()`/`build()` + `with_*`).
 
 2. **Effectively scoped** — The struct has a `pub` visibility modifier but lives inside a module that restricts visibility (e.g., `pub(crate) mod`, `pub(super) mod`). The struct is **not** reachable from outside the crate. These structs should:
    - Have the **effective visibility** annotated explicitly on the struct (e.g., `pub(crate) struct Foo` not `pub struct Foo` inside a `pub(crate) mod`).
@@ -145,8 +145,9 @@ Every field that external consumers need to **read** must have a getter method:
 For truly public structs, both of the following construction styles are valid:
 
 1. **Direct fluent construction on the target struct**
-   - For all-optional/simple types: implement or derive `Default` as appropriate.
-   - For required fields: provide `new(required...)` with required parameters.
+  - For all-optional/simple types (no logically required fields): implement or derive `Default` as appropriate.
+  - For required fields: provide `new(required...)` with required parameters.
+  - If one or more logically required fields exist, do **not** implement `Default`.
    - Provide `with_*` setters on the target struct for optional fields.
 
 2. **Separate builder type**
@@ -164,6 +165,7 @@ A **required field** is one that must be set for the struct to be semantically v
 
 - If using the **direct** pattern, required fields belong in `new(required...)`, and `with_*` setters are for optional overrides.
 - If using the **builder** pattern, required fields belong in `build(required...)`, and `with_*` setters are for optional overrides.
+- If a struct has logically required fields, do **not** implement `Default` for that struct.
 - Do **not** model required fields as optional just to satisfy a construction style.
 
 When inferring required fields on existing structs, use docs, service behavior, and call-site usage patterns.
@@ -206,10 +208,10 @@ These conventions apply only when a builder exists; they are not a requirement t
   - When non-public fields need ownership extraction without cloning, prefer `From`/`Into` trait-based conversion; add targeted `into_*` methods only when a trait-based API is not a good fit.
   - Generate getter methods for fields that external consumers need to read and that are non-public.
 5. Ensure each truly public struct has a consistent allowed construction API (Step 6d), preferring minimal churn:
-    a. Keep existing style if already valid (`Default`/`new` + `with_*`, or `builder()`/`build()`).
+  a. Keep existing style if already valid (`new` + `with_*`, optional `Default` only when no required fields, or `builder()`/`build()`).
     b. If no ergonomic construction API exists, add the simplest valid option:
         - all-optional/simple types: prefer `Default` + `with_*` on the target type.
-        - types with required fields: prefer `new(required...)` + optional `with_*`.
+    - types with required fields: prefer `new(required...)` + optional `with_*` and remove/avoid `Default`.
         - use a separate builder only when complexity justifies it.
     c. Add getter methods for externally readable fields if missing.
     d. Update call sites only when required by other applied fixes; do not force style migrations solely to introduce builders.
@@ -275,6 +277,7 @@ Breaking changes include:
 - Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `pub(crate)` is needed for serde compatibility.
 - Builder-pattern setters use the `with_*` prefix per [Azure SDK Rust guidelines](https://azure.github.io/azure-sdk/rust_introduction.html) (not bare field names).
 - For truly public structs, separate builder types are optional. `Default`/`new` + `with_*` on the target struct are valid and often preferred for all-optional/simple types.
+- If a struct has logically required fields, those fields must be enforced via `new(...)` or `build(...)`, and the struct must not implement `Default`.
 - If a builder type is used, follow [Azure SDK Rust builder guidelines](https://azure.github.io/azure-sdk/rust_introduction.html): keep builder fields private, keep optional setters as `with_*`, and place required params on `build()`.
 - For ownership extraction from non-public fields, prefer standard `From`/`Into` traits first. Use targeted `into_*` methods as an exception when extracting a specific owned field without cloning is clearer than trait conversion.
 - Reference `sdk/cosmos/AGENTS.md` for canonical model, options, and builder patterns.
