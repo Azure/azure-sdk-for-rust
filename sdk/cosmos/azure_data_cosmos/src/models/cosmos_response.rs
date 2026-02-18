@@ -58,6 +58,13 @@ impl<T> CosmosResponse<T> {
         &self.request
     }
 
+    /// Returns the final request URL used to fulfill the operation.
+    /// This api is subject to change without a major version bump.
+    #[cfg(feature = "fault_injection")]
+    pub fn request_url(&self) -> azure_core::http::Url {
+        self.request.clone().into_raw_request().url().clone()
+    }
+
     /// Consumes the response and returns the response body.
     pub fn into_body(self) -> azure_core::http::response::ResponseBody {
         self.response.into_body()
