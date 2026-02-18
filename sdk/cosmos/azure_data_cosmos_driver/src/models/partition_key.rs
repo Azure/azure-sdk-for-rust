@@ -209,7 +209,6 @@ impl PartitionKey {
     pub fn len(&self) -> usize {
         self.0.len()
     }
-
 }
 
 impl AsHeaders for PartitionKey {

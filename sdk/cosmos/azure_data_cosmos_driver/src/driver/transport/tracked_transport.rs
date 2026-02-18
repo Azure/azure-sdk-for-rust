@@ -273,7 +273,10 @@ mod tests {
         let state = TrackedRequestState::collect(receiver);
         // Even without TransportComplete, ResponseHeadersReceived means request was sent
         let err = azure_core::Error::new(ErrorKind::Other, "test error");
-        assert_eq!(state.request_sent_status_with_error(&err), RequestSentStatus::Sent);
+        assert_eq!(
+            state.request_sent_status_with_error(&err),
+            RequestSentStatus::Sent
+        );
     }
 
     #[test]
@@ -287,7 +290,10 @@ mod tests {
         let state = TrackedRequestState::collect(receiver);
         // TransportFailed without headers received - we don't know if request was sent
         let err = azure_core::Error::new(ErrorKind::Other, "test error");
-        assert_eq!(state.request_sent_status_with_error(&err), RequestSentStatus::Unknown);
+        assert_eq!(
+            state.request_sent_status_with_error(&err),
+            RequestSentStatus::Unknown
+        );
     }
 
     #[test]
@@ -296,7 +302,10 @@ mod tests {
         // Don't emit any events
         let state = TrackedRequestState::collect(receiver);
         let err = azure_core::Error::new(ErrorKind::Other, "test error");
-        assert_eq!(state.request_sent_status_with_error(&err), RequestSentStatus::Unknown);
+        assert_eq!(
+            state.request_sent_status_with_error(&err),
+            RequestSentStatus::Unknown
+        );
     }
 
     #[test]

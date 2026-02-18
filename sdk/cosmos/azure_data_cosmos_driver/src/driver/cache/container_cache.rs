@@ -241,7 +241,6 @@ impl ContainerCache {
         self.by_name.clear().await;
         self.by_rid.clear().await;
     }
-
 }
 
 impl Default for ContainerCache {

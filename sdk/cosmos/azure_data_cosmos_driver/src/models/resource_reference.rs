@@ -8,9 +8,7 @@
 //! internal enums, preventing mixed addressing modes.
 
 use crate::models::{
-    resource_id::{
-        ResourceIdentifierType, ResourceName, ResourceRid,
-    },
+    resource_id::{ResourceIdentifierType, ResourceName, ResourceRid},
     AccountReference, ImmutableContainerProperties, PartitionKey,
 };
 
@@ -218,7 +216,6 @@ impl ContainerReference {
     pub fn rid_based_path(&self) -> String {
         format!("/dbs/{}/colls/{}", self.db_rid, self.container_rid)
     }
-
 }
 
 // =============================================================================
@@ -634,7 +631,6 @@ impl PartitionKeyRangeReference {
     pub fn range_id(&self) -> &str {
         self.range_id.as_str()
     }
-
 }
 
 #[cfg(test)]
