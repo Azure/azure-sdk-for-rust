@@ -475,70 +475,64 @@ impl CosmosDriver {
     ) -> azure_core::Result<ContainerReference> {
         let account = self.account().clone();
         let endpoint = account.endpoint().to_string();
+        let db_name_key = db_name.to_owned();
+        let container_name_key = container_name.to_owned();
+        let db_name = db_name_key.clone();
+        let container_name = container_name_key.clone();
 
-        // Fast path: check the cache first.
-        if let Some(cached) = self
-            .runtime
-            .get_cached_container_by_name(&endpoint, db_name, container_name)
+        self.runtime
+            .resolve_container_by_name(&endpoint, &db_name_key, &container_name_key, || async {
+                // Cache miss — read database and container from the service.
+                let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
+                let options = OperationOptions::new();
+
+                // 1. Read the database to obtain its _rid.
+                let db_result = self
+                    .execute_operation(
+                        CosmosOperation::read_database(db_ref.clone()),
+                        options.clone(),
+                    )
+                    .await?;
+                let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
+                    .map_err(|e| {
+                        azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
+                    })?;
+                let db_rid = db_props.system_properties.rid.ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        "database response missing _rid",
+                    )
+                })?;
+
+                // 2. Read the container to obtain its _rid and properties.
+                let container_result = self
+                    .execute_operation(
+                        CosmosOperation::read_container_by_name(db_ref, container_name.clone()),
+                        options,
+                    )
+                    .await?;
+                let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
+                    .map_err(|e| {
+                        azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
+                    })?;
+                let container_rid = container_props.system_properties.rid.clone().ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        "container response missing _rid",
+                    )
+                })?;
+
+                Ok(ContainerReference::new(
+                    account,
+                    db_name,
+                    db_rid,
+                    container_name,
+                    container_rid,
+                    &container_props,
+                ))
+            })
             .await
-        {
-            return Ok(cached.as_ref().clone());
-        }
-
-        // Cache miss — read database and container from the service.
-        let db_ref = DatabaseReference::from_name(account.clone(), db_name.to_owned());
-        let options = OperationOptions::new();
-
-        // 1. Read the database to obtain its _rid.
-        let db_result = self
-            .execute_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
-            .await?;
-        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
-        let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "database response missing _rid",
-            )
-        })?;
-
-        // 2. Read the container to obtain its _rid and properties.
-        let container_result = self
-            .execute_operation(
-                CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
-                options,
-            )
-            .await?;
-        let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
-        let container_rid = container_props
-            .system_properties
-            .rid
-            .clone()
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "container response missing _rid",
-                )
-            })?;
-
-        // 3. Build the resolved reference.
-        let container_ref = ContainerReference::new(
-            account,
-            db_name.to_owned(),
-            db_rid,
-            container_name.to_owned(),
-            container_rid,
-            &container_props,
-        );
-
-        // 4. Cache it (both name and RID indices).
-        self.runtime.cache_container(container_ref.clone()).await;
-
-        Ok(container_ref)
+            .map(|container| container.as_ref().clone())
     }
 }
 

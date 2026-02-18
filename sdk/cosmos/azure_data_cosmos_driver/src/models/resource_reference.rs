@@ -9,7 +9,7 @@
 
 use crate::models::{
     resource_id::{
-        ContainerId, PartitionKeyRangeId, ResourceIdentifierType, ResourceName, ResourceRid,
+        ResourceIdentifierType, ResourceName, ResourceRid,
     },
     AccountReference, ImmutableContainerProperties, PartitionKey,
 };
@@ -217,16 +217,6 @@ impl ContainerReference {
     /// Returns the RID-based relative path: `/dbs/{db_rid}/colls/{container_rid}`
     pub fn rid_based_path(&self) -> String {
         format!("/dbs/{}/colls/{}", self.db_rid, self.container_rid)
-    }
-
-    /// Returns the internal container name as a `ResourceName`.
-    pub(crate) fn container_name_ref(&self) -> &ResourceName {
-        &self.container_name
-    }
-
-    /// Returns the internal database name as a `ResourceName`.
-    pub(crate) fn db_name_ref(&self) -> &ResourceName {
-        &self.db_name
     }
 
 }
@@ -614,7 +604,7 @@ pub struct PartitionKeyRangeReference {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The partition key range identifier.
-    id: PartitionKeyRangeId,
+    range_id: ResourceName,
 }
 
 impl PartitionKeyRangeReference {
@@ -626,13 +616,7 @@ impl PartitionKeyRangeReference {
         let range_id = ResourceName::new(range_id);
         Self {
             container: container.clone(),
-            id: PartitionKeyRangeId::ByName {
-                container: ContainerId::ByName {
-                    db_name: container.db_name_ref().clone(),
-                    name: container.container_name_ref().clone(),
-                },
-                range_id,
-            },
+            range_id,
         }
     }
 
@@ -648,7 +632,7 @@ impl PartitionKeyRangeReference {
 
     /// Returns the partition key range ID.
     pub fn range_id(&self) -> &str {
-        self.id.range_id()
+        self.range_id.as_str()
     }
 
 }
