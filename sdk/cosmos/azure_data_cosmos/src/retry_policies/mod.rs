@@ -64,7 +64,7 @@ impl RetryResult {
 #[allow(dead_code)]
 pub enum RetryPolicy {
     /// Data plane retry policy for document operations with comprehensive failure handling
-    Client(ClientRetryPolicy),
+    Client(Box<ClientRetryPolicy>),
     /// Metadata operation retry policy for control plane operations with endpoint failover
     Metadata(MetadataRequestRetryPolicy),
     /// Throttling-focused retry policy for rate limit scenarios with exponential backoff

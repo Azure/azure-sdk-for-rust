@@ -27,10 +27,13 @@ pub use partition_key::*;
 pub use query::Query;
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
+mod background_task_manager;
 mod cosmos_request;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
 mod handler;
+mod hash;
+mod murmur_hash;
 mod operation_context;
 pub mod regions;
 mod request_context;
@@ -46,6 +49,13 @@ mod conditional_send {
     pub trait ConditionalSend: Send {}
 
     impl<T> ConditionalSend for T where T: Send {}
+
+    /// Conditionally implements [`Sync`] based on the `target_arch`.
+    ///
+    /// This implementation requires `Sync`.
+    pub trait ConditionalSync: Sync {}
+
+    impl<T> ConditionalSync for T where T: Sync {}
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -56,4 +66,11 @@ mod conditional_send {
     pub trait ConditionalSend {}
 
     impl<T> ConditionalSend for T {}
+
+    /// Conditionally implements [`Sync`] based on the `target_arch`.
+    ///
+    /// This implementation does not require `Sync`.
+    pub trait ConditionalSync {}
+
+    impl<T> ConditionalSync for T {}
 }
