@@ -323,7 +323,7 @@ pub struct ItemOptions<'a> {
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
-    pub enable_content_response_on_write: bool,
+    pub content_response_on_write_enabled: bool,
     /// The desired throughput bucket for this request
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
@@ -377,6 +377,14 @@ impl<'a> ItemOptions<'a> {
 
     pub fn with_if_match_etag(mut self, if_match_etag: Etag) -> Self {
         self.if_match_etag = Some(if_match_etag);
+        self
+    }
+
+    pub fn with_content_response_on_write_enabled(
+        mut self,
+        content_response_on_write_enabled: bool,
+    ) -> Self {
+        self.content_response_on_write_enabled = content_response_on_write_enabled;
         self
     }
 
@@ -460,7 +468,7 @@ impl AsHeaders for ItemOptions<'_> {
             ));
         }
 
-        if !self.enable_content_response_on_write {
+        if !self.content_response_on_write_enabled {
             headers.push((headers::PREFER, constants::PREFER_MINIMAL));
         }
 
@@ -641,7 +649,7 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::Session),
             indexing_directive: Some(IndexingDirective::Include),
             if_match_etag: Some(Etag::from("etag_value")),
-            enable_content_response_on_write: false,
+            content_response_on_write_enabled: false,
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(2),
             custom_headers,
@@ -786,7 +794,7 @@ mod tests {
     #[test]
     fn item_options_empty_as_headers() {
         let item_options = ItemOptions {
-            enable_content_response_on_write: true,
+            content_response_on_write_enabled: true,
             ..Default::default()
         };
 

@@ -163,7 +163,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     &item,
                     Some(ItemOptions {
-                        enable_content_response_on_write: true,
+                        content_response_on_write_enabled: true,
                         ..Default::default()
                     }),
                 )
@@ -354,7 +354,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item,
                     Some(ItemOptions {
-                        enable_content_response_on_write: true,
+                        content_response_on_write_enabled: true,
                         ..Default::default()
                     }),
                 )
@@ -436,7 +436,7 @@ pub async fn item_patch() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     patch,
                     Some(ItemOptions {
-                        enable_content_response_on_write: true,
+                        content_response_on_write_enabled: true,
                         ..Default::default()
                     }),
                 )

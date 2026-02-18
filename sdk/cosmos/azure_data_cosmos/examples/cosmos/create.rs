@@ -85,8 +85,8 @@ impl CreateCommand {
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let mut options = ItemOptions::default();
-                options.enable_content_response_on_write = show_updated;
+                let options =
+                    ItemOptions::default().with_content_response_on_write_enabled(show_updated);
 
                 let response = container_client
                     .create_item(pk, item, Some(options))
