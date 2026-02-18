@@ -3,7 +3,7 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, CosmosResponse, PatchDocument, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -546,80 +546,6 @@ impl ContainerClient {
         let cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
             .request_headers(&options)
-            .excluded_regions(options.excluded_regions)
-            .build()?;
-
-        self.container_connection
-            .send(cosmos_request, options.method_options.context)
-            .await
-    }
-
-    /// Patches an item in the container.
-    ///
-    /// # Arguments
-    /// * `partition_key` - The partition key of the item to patch.
-    /// * `item_id` - The id of the item to patch.
-    /// * `patch` - The patch document to apply to the item.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// use azure_data_cosmos::models::PatchDocument;
-    /// use serde::{Deserialize, Serialize};
-    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
-    /// container_client
-    ///     .patch_item("partition1", "item1", patch, None)
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// # Content Response on Write
-    ///
-    /// By default, the patched item is *not* returned in the HTTP response.
-    /// If you want the patched item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
-    ///
-    /// For example:
-    ///
-    /// ```rust,no_run
-    /// use azure_data_cosmos::{models::PatchDocument, ItemOptions};
-    /// use serde::Deserialize;
-    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// #[derive(Debug, Deserialize)]
-    /// pub struct Product {
-    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
-    ///     product_id: String,
-    ///     category_id: String,
-    ///     product_name: String,
-    /// }
-    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
-    /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
-    /// let patched_item = client
-    ///     .patch_item("partition1", "item1", patch, Some(options))
-    ///     .await?
-    ///     .into_body().json::<Product>()?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
-    pub async fn patch_item(
-        &self,
-        partition_key: impl Into<PartitionKey>,
-        item_id: &str,
-        patch: PatchDocument,
-        options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
-        let options = options.clone().unwrap_or_default();
-        let link = self.items_link.item(item_id);
-        let cosmos_request = CosmosRequest::builder(OperationType::Patch, link)
-            .partition_key(partition_key.into())
-            .request_headers(&options)
-            .json(&patch)
             .excluded_regions(options.excluded_regions)
             .build()?;
 
