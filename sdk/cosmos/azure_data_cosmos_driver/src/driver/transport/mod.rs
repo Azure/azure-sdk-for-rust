@@ -228,7 +228,7 @@ impl CosmosTransport {
             && is_emulator_host(endpoint)
     }
 
-    // TODO @fabianm - we will need to allow the caller to produce a factory instead of hard-coding reqwest
+    // TODO @fabianm: allow the caller to provide a client factory instead of hard-coding reqwest.
     /// Creates a reqwest client with the appropriate settings.
     ///
     /// # Arguments
