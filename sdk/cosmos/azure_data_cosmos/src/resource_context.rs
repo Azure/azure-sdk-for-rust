@@ -49,6 +49,7 @@ impl LinkSegment {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum ResourceType {
     Databases,
     DatabaseAccount,
@@ -237,20 +238,6 @@ impl ResourceLink {
         endpoint
             .join(&self.path())
             .expect("ResourceLink should always be url-safe")
-    }
-
-    /// Extracts the database ID from the resource link path.
-    ///
-    /// The resource link path follows the pattern `dbs/{db_id}/...`.
-    /// Returns `None` if the path does not contain a database segment.
-    pub fn database_id(&self) -> Option<String> {
-        let path = self.unencoded_path();
-        let segments: Vec<&str> = path.split('/').collect();
-        segments
-            .iter()
-            .position(|&s| s == "dbs")
-            .and_then(|i| segments.get(i + 1))
-            .map(|s| s.to_string())
     }
 
     /// Extracts the container ID from the resource link path.

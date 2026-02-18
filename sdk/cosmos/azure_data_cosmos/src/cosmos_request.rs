@@ -101,11 +101,6 @@ impl CosmosRequest {
         self.operation_type.is_read_only()
     }
 
-    /// Returns the database ID extracted from the request's resource link, if present.
-    pub fn database_id(&self) -> Option<String> {
-        self.resource_link.database_id()
-    }
-
     /// Returns the container ID extracted from the request's resource link, if present.
     pub fn container_id(&self) -> Option<String> {
         self.resource_link.container_id()

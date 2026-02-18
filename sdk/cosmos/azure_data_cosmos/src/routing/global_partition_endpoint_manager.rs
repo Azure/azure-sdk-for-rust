@@ -26,7 +26,7 @@ const DEFAULT_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_SECS: i64 = 5;
 const DEFAULT_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_SECS: i64 = 300;
 
 /// Default threshold of consecutive read failures before the circuit breaker trips.
-const DEFAULT_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS: i32 = 10;
+const DEFAULT_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS: i32 = 2;
 
 /// Default threshold of consecutive write failures before the circuit breaker trips.
 const DEFAULT_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES: i32 = 5;
