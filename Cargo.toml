@@ -114,7 +114,6 @@ include-file = { version = "0.5.1", default-features = false }
 openssl = { version = "0.10.75" }
 opentelemetry = { version = "0.31", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.31" }
-opentelemetry-http = "0.31"
 opentelemetry-stdout = { version = "0.31" }
 opentelemetry_sdk = "0.31"
 pin-project = "1.1"

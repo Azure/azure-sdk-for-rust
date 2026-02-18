@@ -17,6 +17,7 @@ use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use serde::{de::DeserializeOwned, Serialize};
@@ -39,6 +40,7 @@ impl ContainerClient {
         database_link: &ResourceLink,
         container_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
         let link = database_link
             .feed(ResourceType::Containers)
@@ -60,6 +62,7 @@ impl ContainerClient {
             pipeline.clone(),
             container_cache,
             partition_key_range_cache,
+            global_partition_endpoint_manager.clone(),
         ));
 
         Self {
@@ -115,15 +118,9 @@ impl ContainerClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let new_properties = ContainerProperties {
-    ///     id: "MyContainer".into(),
-    ///     partition_key: "/id".into(),
-    ///     indexing_policy: Some(IndexingPolicy {
-    ///         included_paths: vec!["/index_me".into()],
-    ///         ..Default::default()
-    ///     }),
-    ///     ..Default::default()
-    /// };
+    /// let indexing_policy = IndexingPolicy::default().with_included_path("/index_me");
+    /// let new_properties = ContainerProperties::new("MyContainer", "/id".into())
+    ///     .with_indexing_policy(indexing_policy);
     /// let response = container_client.replace(new_properties, None)
     ///     .await?
     ///     .into_model()?;
@@ -248,7 +245,7 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
-    /// If you want the new item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// If you want the new item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
     /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
@@ -268,10 +265,7 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
     /// let created_item = container_client
     ///     .create_item("category1", p, Some(options))
     ///     .await?
@@ -334,7 +328,7 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
-    /// If you want the replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// If you want the replaced item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
     /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
@@ -354,10 +348,7 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
@@ -424,7 +415,7 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
-    /// If you want the created/replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// If you want the created/replaced item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
     /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
@@ -444,10 +435,7 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
     /// let updated_product = container_client
     ///     .upsert_item("category1", p, Some(options))
     ///     .await?
@@ -482,7 +470,7 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to read.
     /// * `options` - Optional parameters for the request
     ///
-    /// NOTE: The read item is always returned, so the [`ItemOptions::enable_content_response_on_write`] option is ignored.
+    /// NOTE: The read item is always returned, so the [`ItemOptions::content_response_on_write_enabled`] option is ignored.
     ///
     /// # Examples
     ///
@@ -515,7 +503,7 @@ impl ContainerClient {
         let mut options = options.unwrap_or_default();
 
         // Read APIs should always return the item, ignoring whatever the user set.
-        options.enable_content_response_on_write = true;
+        options.content_response_on_write_enabled = true;
 
         let link = self.items_link.item(item_id);
         let cosmos_request = CosmosRequest::builder(OperationType::Read, link)
@@ -536,7 +524,7 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to delete.
     /// * `options` - Optional parameters for the request
     ///
-    /// NOTE: The deleted item is never returned by the Cosmos API, so the [`ItemOptions::enable_content_response_on_write`] option is ignored.
+    /// NOTE: The deleted item is never returned by the Cosmos API, so the [`ItemOptions::content_response_on_write_enabled`] option is ignored.
     ///
     /// # Examples
     ///
@@ -595,7 +583,7 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the patched item is *not* returned in the HTTP response.
-    /// If you want the patched item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// If you want the patched item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
     /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// For example:
@@ -612,10 +600,7 @@ impl ContainerClient {
     ///     category_id: String,
     ///     product_name: String,
     /// }
-    /// let options = ItemOptions {
-    ///     enable_content_response_on_write: true,
-    ///     ..Default::default()
-    /// };
+    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
     /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
     /// let patched_item = client
     ///     .patch_item("partition1", "item1", patch, Some(options))

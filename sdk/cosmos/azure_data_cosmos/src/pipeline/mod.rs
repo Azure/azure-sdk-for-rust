@@ -9,8 +9,9 @@ use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::models::CosmosResponse;
 use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::CosmosClientOptions;
-pub use authorization_policy::AuthorizationPolicy;
+pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
 use std::sync::Arc;
@@ -30,11 +31,12 @@ const SUCCESS_CODES: [u16; 101] = {
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
-pub struct GatewayPipeline {
+pub(crate) struct GatewayPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
     retry_handler: BackOffRetryHandler,
     options: CosmosClientOptions,
+    #[allow(dead_code)]
     pub fault_injection_enabled: bool,
 }
 
@@ -43,10 +45,12 @@ impl GatewayPipeline {
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
         options: CosmosClientOptions,
         fault_injection_enabled: bool,
     ) -> Self {
-        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
+        let retry_handler =
+            BackOffRetryHandler::new(global_endpoint_manager, global_partition_endpoint_manager);
         GatewayPipeline {
             endpoint,
             pipeline,
@@ -61,7 +65,8 @@ impl GatewayPipeline {
     /// This is a little backwards, ideally we'd accept [`ResourceLink`] in the [`GatewayPipeline::send`] method,
     /// but we need callers to be able to build an [`azure_core::Request`] so they need to be able to get the full URL.
     /// This allows the clients to hold a single thing representing the "connection" to a Cosmos DB account though.
-    pub fn url(&self, link: &ResourceLink) -> Url {
+    #[allow(dead_code)]
+    pub(crate) fn url(&self, link: &ResourceLink) -> Url {
         link.url(&self.endpoint)
     }
 

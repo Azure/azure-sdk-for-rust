@@ -42,7 +42,7 @@ enum Credential {
 
 #[derive(SafeDebug, Clone)]
 #[safe(true)]
-pub struct AuthorizationPolicy {
+pub(crate) struct AuthorizationPolicy {
     credential: Credential,
 }
 
