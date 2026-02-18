@@ -74,12 +74,12 @@ impl CosmosClient {
             None,
         );
 
-        let preferred_regions = options.application_preferred_regions.clone();
+        let preferred_regions = options.application_preferred_regions().to_vec();
         #[cfg(feature = "fault_injection")]
         let fault_injection_enabled = options.fault_injection_enabled;
         #[cfg(not(feature = "fault_injection"))]
         let fault_injection_enabled = false;
-        let excluded_regions = options.excluded_regions.clone();
+        let excluded_regions = options.excluded_regions().to_vec();
         let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
@@ -146,7 +146,7 @@ impl CosmosClient {
             None,
         );
 
-        let preferred_regions = options.application_preferred_regions.clone();
+        let preferred_regions = options.application_preferred_regions().to_vec();
         let fault_injection_enabled = {
             #[cfg(feature = "fault_injection")]
             {
@@ -157,7 +157,7 @@ impl CosmosClient {
                 false
             }
         };
-        let excluded_regions = options.excluded_regions.clone();
+        let excluded_regions = options.excluded_regions().to_vec();
         let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,

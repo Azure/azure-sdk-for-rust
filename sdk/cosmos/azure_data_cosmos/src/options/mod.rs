@@ -41,8 +41,8 @@ pub struct CosmosClientOptions {
     // right now it is exposed behind a feature flag
     #[cfg(feature = "fault_injection")]
     pub(crate) fault_injection_enabled: bool,
-    pub(crate) application_preferred_regions: Vec<RegionName>,
-    pub(crate) excluded_regions: Vec<RegionName>,
+    application_preferred_regions: Vec<RegionName>,
+    excluded_regions: Vec<RegionName>,
     account_initialization_custom_endpoints: Option<HashSet<String>>,
     /// Used to specify the consistency level for the operation.
     ///
@@ -58,7 +58,7 @@ pub struct CosmosClientOptions {
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
     throughput_bucket: Option<usize>,
-    pub(crate) session_retry_options: SessionRetryOptions,
+    session_retry_options: SessionRetryOptions,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
     ///
