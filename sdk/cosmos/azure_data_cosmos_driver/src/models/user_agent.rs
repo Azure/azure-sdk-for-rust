@@ -149,7 +149,6 @@ impl UserAgent {
     pub fn suffix(&self) -> Option<&str> {
         self.suffix.as_deref()
     }
-
 }
 
 impl fmt::Display for UserAgent {

@@ -75,7 +75,6 @@ impl CosmosPipeline {
 
         Ok(response)
     }
-
 }
 
 /// A transport policy that emits request lifecycle events.

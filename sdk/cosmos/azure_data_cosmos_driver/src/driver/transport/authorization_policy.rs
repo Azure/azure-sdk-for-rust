@@ -58,7 +58,6 @@ impl AuthorizationContext {
             resource_link: resource_link.into(),
         }
     }
-
 }
 
 /// Authorization policy that adds the Cosmos DB authorization header.
@@ -104,7 +103,6 @@ impl AuthorizationPolicy {
         };
         Self { credential }
     }
-
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]

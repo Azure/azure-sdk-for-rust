@@ -10,8 +10,8 @@ use crate::{
     },
     models::{
         AccountEndpoint, AccountProperties, AccountReference, ActivityId, ContainerProperties,
-        ContainerReference, CosmosOperation, CosmosResponseHeaders, CosmosResult, DatabaseProperties,
-        DatabaseReference, RequestCharge, SubStatusCode,
+        ContainerReference, CosmosOperation, CosmosResponseHeaders, CosmosResult,
+        DatabaseProperties, DatabaseReference, RequestCharge, SubStatusCode,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
@@ -287,8 +287,9 @@ impl CosmosDriver {
             }
 
             if let Some(pk) = operation.partition_key() {
-                let _partition_key_definition =
-                    operation.container().map(|container| container.partition_key_definition());
+                let _partition_key_definition = operation
+                    .container()
+                    .map(|container| container.partition_key_definition());
 
                 use azure_core::http::headers::AsHeaders;
                 let pk_headers = match pk.as_headers() {
@@ -511,16 +512,21 @@ impl CosmosDriver {
                         options,
                     )
                     .await?;
-                let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
-                    .map_err(|e| {
+                let container_props: ContainerProperties =
+                    serde_json::from_slice(container_result.body()).map_err(|e| {
                         azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
                     })?;
-                let container_rid = container_props.system_properties.rid.clone().ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        "container response missing _rid",
-                    )
-                })?;
+                let container_rid =
+                    container_props
+                        .system_properties
+                        .rid
+                        .clone()
+                        .ok_or_else(|| {
+                            azure_core::Error::with_message(
+                                azure_core::error::ErrorKind::DataConversion,
+                                "container response missing _rid",
+                            )
+                        })?;
 
                 Ok(ContainerReference::new(
                     account,

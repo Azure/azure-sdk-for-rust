@@ -88,8 +88,7 @@ pub(crate) struct DatabaseProperties {
     pub system_properties: SystemProperties,
 }
 
-impl DatabaseProperties {
-}
+impl DatabaseProperties {}
 
 /// Properties of a Cosmos DB container.
 ///
@@ -556,8 +555,14 @@ mod tests {
 
     #[test]
     fn partition_key_version_numeric_mapping() {
-        assert_eq!(PartitionKeyVersion::try_from(1), Ok(PartitionKeyVersion::V1));
-        assert_eq!(PartitionKeyVersion::try_from(2), Ok(PartitionKeyVersion::V2));
+        assert_eq!(
+            PartitionKeyVersion::try_from(1),
+            Ok(PartitionKeyVersion::V1)
+        );
+        assert_eq!(
+            PartitionKeyVersion::try_from(2),
+            Ok(PartitionKeyVersion::V2)
+        );
         assert!(PartitionKeyVersion::try_from(3).is_err());
         assert_eq!(u32::from(PartitionKeyVersion::V1), 1);
         assert_eq!(u32::from(PartitionKeyVersion::V2), 2);

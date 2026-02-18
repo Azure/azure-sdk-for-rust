@@ -171,8 +171,16 @@ mod tests {
             result.diagnostics().status().unwrap().status_code(),
             StatusCode::Created
         );
-        assert!(result.diagnostics().status().unwrap().sub_status().is_none());
-        assert_eq!(result.headers().request_charge(), Some(RequestCharge::new(1.0)));
+        assert!(result
+            .diagnostics()
+            .status()
+            .unwrap()
+            .sub_status()
+            .is_none());
+        assert_eq!(
+            result.headers().request_charge(),
+            Some(RequestCharge::new(1.0))
+        );
 
         let body = result.into_body();
         assert_eq!(body, b"body");
