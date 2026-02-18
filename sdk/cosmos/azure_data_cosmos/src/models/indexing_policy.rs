@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct IndexingPolicy {
     /// Indicates that the indexing policy is automatic.
     #[serde(default)]
@@ -46,6 +47,38 @@ pub struct IndexingPolicy {
     pub vector_indexes: Vec<VectorIndex>,
 }
 
+impl IndexingPolicy {
+    pub fn with_indexing_mode(mut self, indexing_mode: IndexingMode) -> Self {
+        self.indexing_mode = Some(indexing_mode);
+        self
+    }
+
+    pub fn with_included_path(mut self, included_path: impl Into<PropertyPath>) -> Self {
+        self.included_paths.push(included_path.into());
+        self
+    }
+
+    pub fn with_excluded_path(mut self, excluded_path: impl Into<PropertyPath>) -> Self {
+        self.excluded_paths.push(excluded_path.into());
+        self
+    }
+
+    pub fn with_spatial_index(mut self, spatial_index: SpatialIndex) -> Self {
+        self.spatial_indexes.push(spatial_index);
+        self
+    }
+
+    pub fn with_composite_index(mut self, composite_index: CompositeIndex) -> Self {
+        self.composite_indexes.push(composite_index);
+        self
+    }
+
+    pub fn with_vector_index(mut self, vector_index: VectorIndex) -> Self {
+        self.vector_indexes.push(vector_index);
+        self
+    }
+}
+
 /// Defines the indexing modes supported by Azure Cosmos DB.
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
@@ -59,6 +92,7 @@ pub enum IndexingMode {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct PropertyPath {
     // The path to the property referenced in this index.
     pub path: String,
@@ -74,6 +108,7 @@ impl<T: Into<String>> From<T> for PropertyPath {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct SpatialIndex {
     /// The path to the property referenced in this index.
     pub path: String,
@@ -97,6 +132,7 @@ pub enum SpatialType {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(transparent)]
+#[non_exhaustive]
 pub struct CompositeIndex {
     /// The properties in this composite index
     pub properties: Vec<CompositeIndexProperty>,
@@ -106,6 +142,7 @@ pub struct CompositeIndex {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct CompositeIndexProperty {
     /// The path to the property referenced in this index.
     pub path: String,
@@ -132,6 +169,7 @@ pub enum CompositeIndexOrder {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct VectorIndex {
     /// The path to the property referenced in this index.
     pub path: String,
