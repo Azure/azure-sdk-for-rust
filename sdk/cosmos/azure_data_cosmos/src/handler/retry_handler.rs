@@ -56,7 +56,7 @@ pub trait RetryHandler: Send + Sync {
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackOffRetryHandler {
+pub(crate) struct BackOffRetryHandler {
     global_endpoint_manager: Arc<GlobalEndpointManager>,
 }
 

@@ -26,7 +26,7 @@ pub enum AuthorizationTokenType {
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PartitionKeyRangeIdentity {
+pub(crate) struct PartitionKeyRangeIdentity {
     pub collection_rid: String,
     pub partition_key_range_id: String,
 }
@@ -39,7 +39,7 @@ pub struct PartitionKeyRangeIdentity {
 /// influence retry or gateway behaviors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(dead_code)]
-pub struct CosmosRequest {
+pub(crate) struct CosmosRequest {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
     pub resource_link: ResourceLink,
@@ -182,7 +182,7 @@ impl CosmosRequest {
 /// the original `new` constructor for backward compatibility.
 #[derive(Clone)]
 #[allow(dead_code)]
-pub struct CosmosRequestBuilder {
+pub(crate) struct CosmosRequestBuilder {
     operation_type: OperationType,
     resource_link: ResourceLink,
     partition_key: PartitionKey,

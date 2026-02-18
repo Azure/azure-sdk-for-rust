@@ -9,7 +9,7 @@ use std::hash::{Hash, Hasher};
 
 /// Represents a range with generic bounds that implement comparison
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Range<T>
+pub(crate) struct Range<T>
 where
     T: Ord + Clone,
 {
@@ -159,7 +159,7 @@ where
 
 /// Comparer for Range that compares by minimum value
 #[derive(Debug, Clone, Copy)]
-pub struct MinComparer;
+pub(crate) struct MinComparer;
 
 impl MinComparer {
     /// Compares two ranges by their minimum bounds
@@ -182,7 +182,7 @@ impl MinComparer {
 
 /// Comparer for Range that compares by maximum value
 #[derive(Debug, Clone, Copy)]
-pub struct MaxComparer;
+pub(crate) struct MaxComparer;
 
 impl MaxComparer {
     /// Compares two ranges by their maximum bounds

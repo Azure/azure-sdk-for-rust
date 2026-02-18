@@ -24,7 +24,7 @@ use url::Url;
 /// and availability. It handles endpoint discovery, tracks unavailable endpoints, and supports
 /// multi-master write configurations.
 #[derive(Debug)]
-pub struct GlobalEndpointManager {
+pub(crate) struct GlobalEndpointManager {
     /// The primary default endpoint URL for the Cosmos DB account
     default_endpoint: Url,
 

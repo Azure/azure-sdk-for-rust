@@ -22,24 +22,16 @@ use serde::{Deserialize, Serialize};
 /// let patch = PatchDocument::default()
 ///     .with_add("/color", "silver")?
 ///     .with_move("/from", "/to")?;
-/// # assert_eq!(patch, PatchDocument {
-/// #     condition: None,
-/// #     operations: vec![
-/// #         PatchOperation::Add {
-/// #             path: "/color".into(),
-/// #             value: serde_json::Value::String("silver".to_string()),
-/// #        },
-/// #        PatchOperation::Move {
-/// #            from: "/from".into(),
-/// #            to: "/to".into(),
-/// #        },
-/// #    ],
-/// # });
+/// # assert!(patch.condition.is_none());
+/// # assert_eq!(patch.operations.len(), 2);
+/// # assert!(matches!(&patch.operations[0], PatchOperation::Add { path, .. } if path == "/color"));
+/// # assert!(matches!(&patch.operations[1], PatchOperation::Move { from, to } if from == "/from" && to == "/to"));
 /// # Ok(())
 /// # }
 /// ```
 #[derive(Default, SafeDebug, Serialize, Deserialize, PartialEq, Eq)]
 #[safe(true)]
+#[non_exhaustive]
 pub struct PatchDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub condition: Option<Cow<'static, str>>,
