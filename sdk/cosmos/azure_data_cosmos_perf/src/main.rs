@@ -1,31 +1,50 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#[cfg(target_family = "wasm")]
+compile_error!("azure_data_cosmos_perf is a CLI tool and cannot be built for wasm targets");
+
+#[cfg(not(target_family = "wasm"))]
 mod config;
+#[cfg(not(target_family = "wasm"))]
 mod operations;
+#[cfg(not(target_family = "wasm"))]
 mod runner;
+#[cfg(not(target_family = "wasm"))]
 mod seed;
+#[cfg(not(target_family = "wasm"))]
 mod setup;
+#[cfg(not(target_family = "wasm"))]
 mod stats;
 
+#[cfg(not(target_family = "wasm"))]
 use std::sync::Arc;
+#[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
 
+#[cfg(not(target_family = "wasm"))]
 use azure_core::credentials::Secret;
+#[cfg(not(target_family = "wasm"))]
 use azure_data_cosmos::{CosmosClient, CosmosClientOptions};
+#[cfg(not(target_family = "wasm"))]
 use clap::Parser;
 
+#[cfg(not(target_family = "wasm"))]
 use crate::config::{AuthMethod, Config};
+#[cfg(not(target_family = "wasm"))]
 use crate::operations::create_operations;
+#[cfg(not(target_family = "wasm"))]
 use crate::runner::RunConfig;
+#[cfg(not(target_family = "wasm"))]
 use crate::stats::Stats;
 
+#[cfg(not(target_family = "wasm"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::parse();
 
     // Validate configuration
-    if config.no_reads && config.no_queries && config.no_upserts {
+    if config.no_reads && config.no_queries && config.no_upserts && config.no_creates {
         eprintln!("Error: all operations are disabled. Enable at least one.");
         std::process::exit(1);
     }
@@ -81,13 +100,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Ensure the database exists (with retry logic for multi-region setups)
     setup::ensure_database(&client, &config.database).await?;
 
+    // Convert TTL: 0 means disabled (None), >0 means that duration
+    let default_ttl = if config.default_ttl == 0 {
+        None
+    } else {
+        Some(Duration::from_secs(config.default_ttl))
+    };
+
     // Ensure the container exists (with retry logic for multi-region setups)
-    setup::ensure_container(&db_client, &config.container, config.throughput).await?;
+    setup::ensure_container(
+        &db_client,
+        &config.container,
+        config.throughput,
+        default_ttl,
+    )
+    .await?;
 
     // Seed the container
     let seeded_items =
         seed::seed_container(&container_client, config.seed_count, config.concurrency).await?;
-    let seeded_items = Arc::new(seeded_items);
+    let seeded_items = seed::SharedItems::new(seeded_items);
 
     // Create enabled operations
     let ops = create_operations(&config, seeded_items);
@@ -109,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Ensure the results container exists for storing metrics
-    setup::ensure_container(&db_client, &config.results_container, 400).await?;
+    setup::ensure_container(&db_client, &config.results_container, 400, default_ttl).await?;
     let results_container = db_client.container_client(&config.results_container);
     println!(
         "Perf results will be stored in container '{}'. Workload ID: {}",
@@ -117,7 +149,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Run the perf test
-    let stats = Arc::new(Stats::new());
+    let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
+    let stats = Arc::new(Stats::new(&op_names));
     runner::run(RunConfig {
         container: container_client,
         operations: ops,
@@ -132,3 +165,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[cfg(target_family = "wasm")]
+fn main() {}

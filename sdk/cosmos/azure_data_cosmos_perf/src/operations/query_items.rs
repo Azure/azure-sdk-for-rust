@@ -9,19 +9,18 @@ use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::Query;
 use futures::StreamExt;
-use rand::RngExt;
 
 use super::Operation;
-use crate::seed::SeededItem;
+use crate::seed::SharedItems;
 
 /// Runs a single-partition query against a random seeded partition key.
 pub struct QueryItemsOperation {
-    items: Arc<Vec<SeededItem>>,
+    items: Arc<SharedItems>,
 }
 
 impl QueryItemsOperation {
     /// Creates a new query operation targeting the given seeded items.
-    pub fn new(items: Arc<Vec<SeededItem>>) -> Self {
+    pub fn new(items: Arc<SharedItems>) -> Self {
         Self { items }
     }
 }
@@ -33,8 +32,8 @@ impl Operation for QueryItemsOperation {
     }
 
     async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()> {
-        let idx = rand::rng().random_range(0..self.items.len());
-        let pk = &self.items[idx].partition_key;
+        let item = self.items.random();
+        let pk = &item.partition_key;
 
         let query =
             Query::from("SELECT * FROM c WHERE c.partition_key = @pk").with_parameter("@pk", pk)?;

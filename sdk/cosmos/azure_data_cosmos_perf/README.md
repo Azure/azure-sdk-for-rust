@@ -1,8 +1,8 @@
 # Azure Cosmos DB Performance Testing Tool
 
 A CLI tool for performance and scale testing the Azure Cosmos DB Rust SDK. It runs
-point reads, single-partition queries, and upserts concurrently and reports latency
-statistics at configurable intervals.
+point reads, single-partition queries, upserts, and creates concurrently and reports
+latency statistics at configurable intervals.
 
 ## Prerequisites
 
@@ -67,12 +67,14 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--duration` | indefinite | Run duration in seconds |
 | `--seed-count` | `1000` | Number of items to pre-seed |
 | `--throughput` | `100000` | Throughput (RU/s) when creating the container |
+| `--default-ttl` | `3600` | Default TTL in seconds for items (0 to disable) |
 | `--report-interval` | `300` | Stats reporting interval in seconds |
 | `--results-container` | `perfresults` | Container for storing perf results and error documents |
 | `--workload-id` | random UUID | Unique identifier for this workload instance (for multi-VM correlation) |
 | `--no-reads` | `false` | Disable point read operations |
 | `--no-queries` | `false` | Disable query operations |
 | `--no-upserts` | `false` | Disable upsert operations |
+| `--no-creates` | `false` | Disable create operations |
 
 ### Examples
 
@@ -82,7 +84,7 @@ Run reads only with 100 concurrent operations for 60 seconds:
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://myaccount.documents.azure.com:443/ \
   --auth key --key "$AZURE_COSMOS_KEY" \
-  --no-queries --no-upserts \
+  --no-queries --no-upserts --no-creates \
   --concurrency 100 --duration 60 --report-interval 10
 ```
 
@@ -106,6 +108,7 @@ The tool prints periodic latency summaries like:
   Process: CPU 45.2%, Memory 128.3 MB
   Operation         Count   Errors        Min        Max       Mean        P50        P90        P99
   -------------------------------------------------------------------------------------------------------
+  CreateItem          280        0      4.0ms     55.2ms     16.8ms     12.5ms     35.0ms     50.1ms
   QueryItems          312        0      3.2ms     45.1ms     12.4ms      9.8ms     28.3ms     41.2ms
   ReadItem            298        2      1.8ms     38.7ms      8.2ms      6.1ms     19.5ms     35.4ms
   UpsertItem          325        0      4.5ms     52.3ms     15.1ms     11.2ms     32.1ms     48.7ms
@@ -127,29 +130,16 @@ If the tool cannot write a result or error document (e.g., the results container
 is temporarily unavailable), a warning is printed to stderr and the workload
 continues unaffected.
 
-## Extending with New Operations
+### TTL
 
-To add a new operation type:
+Containers are created with a default TTL (`--default-ttl`, default 1 hour).
+Items automatically expire after this duration, keeping the container from
+growing unboundedly during long or repeated runs. Set `--default-ttl 0` to
+disable TTL.
 
-1. Create a new file in `src/operations/` (e.g., `delete_item.rs`).
-2. Implement the `Operation` trait:
+### Create Operation
 
-    ```rust
-    use async_trait::async_trait;
-    use azure_data_cosmos::clients::ContainerClient;
-    use crate::operations::Operation;
-
-    pub struct DeleteItemOperation { /* ... */ }
-
-    #[async_trait]
-    impl Operation for DeleteItemOperation {
-        fn name(&self) -> &'static str { "DeleteItem" }
-        async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()> {
-            // implementation
-            Ok(())
-        }
-    }
-    ```
-
-3. Register it in `src/operations/mod.rs` by adding it to `create_operations()`.
-4. Add a CLI flag (e.g., `--no-deletes`) in `src/config.rs`.
+When enabled (the default), the `CreateItem` operation generates new items with
+unique IDs and partition keys. Successfully created items are added to the
+shared item pool so they become targets for subsequent read, query, and upsert
+operations.

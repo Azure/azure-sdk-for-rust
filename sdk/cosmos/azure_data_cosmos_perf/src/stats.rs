@@ -2,24 +2,91 @@
 // Licensed under the MIT License.
 
 //! Latency tracking and periodic summary reporting.
+//!
+//! Uses reservoir sampling (Algorithm R) and per-operation sharded mutexes to
+//! keep memory bounded and lock contention low regardless of throughput.
 
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
+use rand::RngExt;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
+/// Maximum number of latency samples retained per operation per interval.
+///
+/// Reservoir sampling guarantees a uniform random subset of all observations,
+/// giving accurate percentile estimates with O(1) memory.
+const RESERVOIR_SIZE: usize = 10_000;
+
 /// Collects per-operation latency measurements and error counts.
-#[derive(Debug)]
+///
+/// Each operation name gets its own [`Mutex`]-protected [`OperationStats`],
+/// so workers recording different operations never contend with each other.
 pub struct Stats {
-    inner: Mutex<HashMap<String, OperationStats>>,
+    shards: HashMap<String, Mutex<OperationStats>>,
 }
 
 /// Latency data for a single operation type within a reporting window.
-#[derive(Debug, Default)]
+///
+/// Instead of storing every latency, we use reservoir sampling (Algorithm R)
+/// to keep at most [`RESERVOIR_SIZE`] samples. Exact count, min, max, and sum
+/// are tracked separately so mean is always precise.
 struct OperationStats {
-    latencies: Vec<Duration>,
+    /// Fixed-size sample reservoir for percentile estimation.
+    reservoir: Vec<Duration>,
+    /// Total number of successful operations observed (may exceed reservoir size).
+    count: u64,
+    /// Running minimum latency.
+    min: Duration,
+    /// Running maximum latency.
+    max: Duration,
+    /// Running sum for exact mean calculation.
+    sum: Duration,
+    /// Number of failed operations.
     errors: u64,
+}
+
+impl Default for OperationStats {
+    fn default() -> Self {
+        Self {
+            reservoir: Vec::with_capacity(RESERVOIR_SIZE),
+            count: 0,
+            min: Duration::MAX,
+            max: Duration::ZERO,
+            sum: Duration::ZERO,
+            errors: 0,
+        }
+    }
+}
+
+impl OperationStats {
+    /// Records a latency sample using reservoir sampling (Algorithm R).
+    fn record(&mut self, latency: Duration) {
+        self.count += 1;
+        self.sum += latency;
+        if latency < self.min {
+            self.min = latency;
+        }
+        if latency > self.max {
+            self.max = latency;
+        }
+
+        if self.reservoir.len() < RESERVOIR_SIZE {
+            self.reservoir.push(latency);
+        } else {
+            // Algorithm R: replace a random element with probability RESERVOIR_SIZE / count
+            let j = rand::rng().random_range(0..self.count as usize);
+            if j < RESERVOIR_SIZE {
+                self.reservoir[j] = latency;
+            }
+        }
+    }
+
+    /// Resets all counters and returns a fresh default instance.
+    fn drain(&mut self) -> Self {
+        std::mem::take(self)
+    }
 }
 
 /// Summary statistics for a single operation type.
@@ -36,43 +103,46 @@ pub struct Summary {
 }
 
 impl Stats {
-    /// Creates a new empty stats collector.
-    pub fn new() -> Self {
-        Self {
-            inner: Mutex::new(HashMap::new()),
+    /// Creates a new stats collector pre-sharded for the given operation names.
+    pub fn new(operation_names: &[&str]) -> Self {
+        let mut shards = HashMap::with_capacity(operation_names.len());
+        for name in operation_names {
+            shards.insert(name.to_string(), Mutex::new(OperationStats::default()));
         }
+        Self { shards }
     }
 
     /// Records a successful operation latency.
+    ///
+    /// Only locks the mutex for this specific operation — no cross-operation
+    /// contention.
     pub fn record_latency(&self, operation: &str, latency: Duration) {
-        let mut map = self.inner.lock().unwrap();
-        map.entry(operation.to_string())
-            .or_default()
-            .latencies
-            .push(latency);
+        if let Some(m) = self.shards.get(operation) {
+            m.lock().unwrap().record(latency);
+        }
     }
 
     /// Records an operation error.
     pub fn record_error(&self, operation: &str) {
-        let mut map = self.inner.lock().unwrap();
-        map.entry(operation.to_string()).or_default().errors += 1;
+        if let Some(m) = self.shards.get(operation) {
+            m.lock().unwrap().errors += 1;
+        }
     }
 
     /// Drains all collected data and returns per-operation summaries.
     ///
-    /// This resets the internal state so each report covers only the
-    /// interval since the last drain.
+    /// Each shard is locked, drained, and released independently. This resets
+    /// the internal state so each report covers only the interval since the
+    /// last drain.
     pub fn drain_summaries(&self) -> Vec<Summary> {
-        let mut map = self.inner.lock().unwrap();
-        let mut summaries = Vec::new();
+        let mut summaries = Vec::with_capacity(self.shards.len());
 
-        for (name, stats) in map.drain() {
-            if stats.latencies.is_empty() && stats.errors == 0 {
+        for (name, shard) in &self.shards {
+            let drained = shard.lock().unwrap().drain();
+            if drained.count == 0 && drained.errors == 0 {
                 continue;
             }
-            if let Some(summary) = compute_summary(name, stats) {
-                summaries.push(summary);
-            }
+            summaries.push(compute_summary(name.clone(), drained));
         }
 
         summaries.sort_by(|a, b| a.name.cmp(&b.name));
@@ -80,11 +150,11 @@ impl Stats {
     }
 }
 
-fn compute_summary(name: String, mut stats: OperationStats) -> Option<Summary> {
+fn compute_summary(name: String, mut stats: OperationStats) -> Summary {
     let errors = stats.errors;
 
-    if stats.latencies.is_empty() {
-        return Some(Summary {
+    if stats.count == 0 {
+        return Summary {
             name,
             count: 0,
             errors,
@@ -94,30 +164,26 @@ fn compute_summary(name: String, mut stats: OperationStats) -> Option<Summary> {
             p50: Duration::ZERO,
             p90: Duration::ZERO,
             p99: Duration::ZERO,
-        });
+        };
     }
 
-    stats.latencies.sort();
-    let count = stats.latencies.len() as u64;
-    let min = stats.latencies[0];
-    let max = *stats.latencies.last().unwrap();
-    let sum: Duration = stats.latencies.iter().sum();
-    let mean = sum / count as u32;
-    let p50 = percentile(&stats.latencies, 50.0);
-    let p90 = percentile(&stats.latencies, 90.0);
-    let p99 = percentile(&stats.latencies, 99.0);
+    stats.reservoir.sort();
+    let mean = stats.sum / stats.count as u32;
+    let p50 = percentile(&stats.reservoir, 50.0);
+    let p90 = percentile(&stats.reservoir, 90.0);
+    let p99 = percentile(&stats.reservoir, 99.0);
 
-    Some(Summary {
+    Summary {
         name,
-        count,
+        count: stats.count,
         errors,
-        min,
-        max,
+        min: stats.min,
+        max: stats.max,
         mean,
         p50,
         p90,
         p99,
-    })
+    }
 }
 
 fn percentile(sorted: &[Duration], pct: f64) -> Duration {
@@ -220,7 +286,7 @@ mod tests {
 
     #[test]
     fn record_and_drain() {
-        let stats = Stats::new();
+        let stats = Stats::new(&["read"]);
         stats.record_latency("read", Duration::from_millis(10));
         stats.record_latency("read", Duration::from_millis(20));
         stats.record_latency("read", Duration::from_millis(30));
@@ -240,7 +306,7 @@ mod tests {
 
     #[test]
     fn errors_only() {
-        let stats = Stats::new();
+        let stats = Stats::new(&["upsert"]);
         stats.record_error("upsert");
         stats.record_error("upsert");
 
@@ -248,5 +314,28 @@ mod tests {
         assert_eq!(summaries.len(), 1);
         assert_eq!(summaries[0].count, 0);
         assert_eq!(summaries[0].errors, 2);
+    }
+
+    #[test]
+    fn reservoir_caps_memory() {
+        let stats = Stats::new(&["write"]);
+        // Record more samples than RESERVOIR_SIZE
+        for i in 0..20_000u64 {
+            stats.record_latency("write", Duration::from_micros(i));
+        }
+        let summaries = stats.drain_summaries();
+        assert_eq!(summaries.len(), 1);
+        assert_eq!(summaries[0].count, 20_000);
+        assert_eq!(summaries[0].min, Duration::from_micros(0));
+        assert_eq!(summaries[0].max, Duration::from_micros(19_999));
+    }
+
+    #[test]
+    fn unknown_operation_ignored() {
+        let stats = Stats::new(&["read"]);
+        stats.record_latency("unknown", Duration::from_millis(10));
+        stats.record_error("unknown");
+        let summaries = stats.drain_summaries();
+        assert!(summaries.is_empty());
     }
 }

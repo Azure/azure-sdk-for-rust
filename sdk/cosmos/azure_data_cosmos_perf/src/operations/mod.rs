@@ -8,6 +8,7 @@
 //! 2. Register it in [`create_operations`].
 //! 3. Add a CLI flag in `config.rs` to enable/disable it.
 
+mod create_item;
 mod query_items;
 mod read_item;
 mod upsert_item;
@@ -18,10 +19,11 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::config::Config;
+pub use crate::operations::create_item::CreateItemOperation;
 pub use crate::operations::query_items::QueryItemsOperation;
 pub use crate::operations::read_item::ReadItemOperation;
 pub use crate::operations::upsert_item::UpsertItemOperation;
-use crate::seed::SeededItem;
+use crate::seed::SharedItems;
 
 /// A single executable perf test operation.
 ///
@@ -48,7 +50,7 @@ pub struct PerfItem {
 /// Creates the list of enabled operations based on CLI configuration.
 pub fn create_operations(
     config: &Config,
-    seeded_items: Arc<Vec<SeededItem>>,
+    seeded_items: Arc<SharedItems>,
 ) -> Vec<Arc<dyn Operation>> {
     let mut ops: Vec<Arc<dyn Operation>> = Vec::new();
 
@@ -59,7 +61,10 @@ pub fn create_operations(
         ops.push(Arc::new(QueryItemsOperation::new(seeded_items.clone())));
     }
     if !config.no_upserts {
-        ops.push(Arc::new(UpsertItemOperation::new(seeded_items)));
+        ops.push(Arc::new(UpsertItemOperation::new(seeded_items.clone())));
+    }
+    if !config.no_creates {
+        ops.push(Arc::new(CreateItemOperation::new(seeded_items)));
     }
 
     ops

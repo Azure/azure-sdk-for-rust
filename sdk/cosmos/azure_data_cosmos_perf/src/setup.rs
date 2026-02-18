@@ -24,6 +24,7 @@ pub async fn ensure_container(
     db_client: &DatabaseClient,
     container_name: &str,
     throughput: usize,
+    default_ttl: Option<Duration>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let container_client = db_client.container_client(container_name);
 
@@ -41,6 +42,7 @@ pub async fn ensure_container(
     let props = ContainerProperties {
         id: container_name.to_string().into(),
         partition_key: "/partition_key".into(),
+        default_ttl,
         ..Default::default()
     };
     let create_opts = CreateContainerOptions {

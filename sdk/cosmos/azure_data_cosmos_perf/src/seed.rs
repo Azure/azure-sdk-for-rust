@@ -3,7 +3,10 @@
 
 //! Container seeding with test data.
 
+use std::sync::{Arc, Mutex};
+
 use azure_data_cosmos::clients::ContainerClient;
+use rand::RngExt;
 use uuid::Uuid;
 
 use crate::operations::PerfItem;
@@ -13,6 +16,50 @@ use crate::operations::PerfItem;
 pub struct SeededItem {
     pub id: String,
     pub partition_key: String,
+}
+
+/// Thread-safe, capacity-capped collection of seeded items.
+///
+/// Operations read randomly from the list, and the create operation adds new
+/// items so they become available to subsequent reads and queries. When the
+/// list reaches its capacity, new items replace random existing entries to
+/// prevent unbounded memory growth.
+#[derive(Debug)]
+pub struct SharedItems {
+    items: Mutex<Vec<SeededItem>>,
+    capacity: usize,
+}
+
+impl SharedItems {
+    /// Creates a new shared item list from the initial seeded items.
+    ///
+    /// Capacity is set to `2 * items.len()` so creates can grow the pool
+    /// without unbounded allocation.
+    pub fn new(items: Vec<SeededItem>) -> Arc<Self> {
+        let capacity = items.len() * 2;
+        Arc::new(Self {
+            items: Mutex::new(items),
+            capacity,
+        })
+    }
+
+    /// Returns a random item from the list.
+    pub fn random(&self) -> SeededItem {
+        let items = self.items.lock().unwrap();
+        let idx = rand::rng().random_range(0..items.len());
+        items[idx].clone()
+    }
+
+    /// Adds a new item, replacing a random existing entry if at capacity.
+    pub fn push(&self, item: SeededItem) {
+        let mut items = self.items.lock().unwrap();
+        if items.len() < self.capacity {
+            items.push(item);
+        } else {
+            let idx = rand::rng().random_range(0..items.len());
+            items[idx] = item;
+        }
+    }
 }
 
 /// Seeds the container with `count` items using UUID-based IDs and partition keys.

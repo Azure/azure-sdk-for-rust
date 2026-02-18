@@ -10,19 +10,26 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-azure_core = { workspace = true, features = ["reqwest"] }
-reqwest = { workspace = true, features = ["http2"] }
-azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
-azure_identity = { path = "../../../sdk/identity/azure_identity" }
 async-trait.workspace = true
-clap = { version = "4.5.45", features = ["derive", "env"] }
 futures.workspace = true
 rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+azure_core = { workspace = true, features = ["reqwest"] }
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
+azure_identity = { path = "../../../sdk/identity/azure_identity" }
+clap = { version = "4.5.45", features = ["derive", "env"] }
+reqwest = { workspace = true, features = ["http2"] }
 sysinfo = "0.33"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "signal"] }
 uuid.workspace = true
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }
+getrandom = { workspace = true, features = ["wasm_js"] }
+uuid = { workspace = true, features = ["js"] }
 
 [lints]
 workspace = true

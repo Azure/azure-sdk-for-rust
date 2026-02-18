@@ -49,6 +49,10 @@ pub struct Config {
     #[arg(long, default_value_t = false)]
     pub no_upserts: bool,
 
+    /// Disable create operations.
+    #[arg(long, default_value_t = false)]
+    pub no_creates: bool,
+
     /// Number of concurrent operations (minimum: 1).
     #[arg(long, default_value_t = 50)]
     pub concurrency: usize,
@@ -76,6 +80,13 @@ pub struct Config {
     /// The container is auto-created if it does not exist.
     #[arg(long, default_value = "perfresults")]
     pub results_container: String,
+
+    /// Default time-to-live in seconds for items in the container.
+    ///
+    /// Applied when creating new containers. Set to 0 to disable TTL.
+    /// Items expire after this duration unless overridden per-item.
+    #[arg(long, default_value_t = 3600)]
+    pub default_ttl: u64,
 
     /// Unique identifier for this workload instance.
     ///
