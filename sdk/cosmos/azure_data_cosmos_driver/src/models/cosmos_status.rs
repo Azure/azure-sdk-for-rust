@@ -839,13 +839,8 @@ impl CosmosStatus {
         self.status_code
     }
 
-    /// Returns the numeric sub-status code, if present.
-    pub fn sub_status_code(&self) -> Option<u32> {
-        self.sub_status.map(|sub_status| sub_status.value())
-    }
-
     /// Returns the sub-status code, if present.
-    pub(crate) fn sub_status(&self) -> Option<SubStatusCode> {
+    pub fn sub_status(&self) -> Option<SubStatusCode> {
         self.sub_status
     }
 
@@ -1090,7 +1085,7 @@ mod tests {
     fn new_without_sub_status() {
         let status = CosmosStatus::new(StatusCode::Ok);
         assert_eq!(status.status_code(), StatusCode::Ok);
-        assert!(status.sub_status_code().is_none());
+        assert!(status.sub_status().is_none());
         assert!(status.is_success());
         assert!(status.name().is_none());
     }
@@ -1099,7 +1094,7 @@ mod tests {
     fn with_sub_status_unambiguous() {
         let status = CosmosStatus::new_with_sub_status(StatusCode::TooManyRequests, 3200);
         assert_eq!(status.status_code(), StatusCode::TooManyRequests);
-        assert_eq!(status.sub_status_code(), Some(3200));
+        assert_eq!(status.sub_status(), Some(SubStatusCode::RU_BUDGET_EXCEEDED));
         assert!(status.is_throttled());
         assert_eq!(status.name(), Some("RUBudgetExceeded"));
     }
@@ -1203,7 +1198,7 @@ mod tests {
     fn new_with_zero_status() {
         let status = CosmosStatus::new(StatusCode::from(0));
         assert_eq!(u16::from(status.status_code()), 0);
-        assert!(status.sub_status_code().is_none());
+        assert!(status.sub_status().is_none());
     }
 
     // =========================================================================

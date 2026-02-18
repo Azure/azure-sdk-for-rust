@@ -34,11 +34,6 @@ impl AccountEndpoint {
         self.0.host_str().unwrap_or("")
     }
 
-    /// Consumes the `AccountEndpoint` and returns the inner URL.
-    pub(crate) fn into_url(self) -> Url {
-        self.0
-    }
-
     /// Joins a resource path to this endpoint to create a full request URL.
     ///
     /// The path should be the resource path (e.g., "/dbs/mydb/colls/mycoll").

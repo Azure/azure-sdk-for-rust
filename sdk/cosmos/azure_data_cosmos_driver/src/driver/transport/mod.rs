@@ -211,11 +211,6 @@ impl CosmosTransport {
         CosmosPipeline::new(policies, transport)
     }
 
-    /// Returns the connection pool options.
-    pub(crate) fn connection_pool(&self) -> &ConnectionPoolOptions {
-        &self.connection_pool
-    }
-
     /// Determines if insecure emulator transport should be used for the given endpoint.
     ///
     /// Returns `true` when both conditions are met:

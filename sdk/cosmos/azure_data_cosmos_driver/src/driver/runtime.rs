@@ -11,8 +11,8 @@ use std::{
 
 use crate::{
     models::{
-        AccountEndpoint, AccountReference, ContainerReference, ThroughputControlGroupName,
-        UserAgent,
+        AccountEndpoint, AccountProperties, AccountReference, ContainerReference,
+        ThroughputControlGroupName, UserAgent,
     },
     options::{
         ConnectionPoolOptions, CorrelationId, DiagnosticsOptions, DriverOptions, RuntimeOptions,
@@ -299,6 +299,22 @@ impl CosmosDriverRuntime {
         &self.throughput_control_groups
     }
 
+    /// Returns cached account properties for the given account, fetching on cache miss.
+    pub(crate) async fn get_or_fetch_account_properties<F, Fut>(
+        &self,
+        account: &AccountReference,
+        fetch_fn: F,
+    ) -> Arc<AccountProperties>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = AccountProperties>,
+    {
+        let endpoint = AccountEndpoint::from(account);
+        self.account_metadata_cache
+            .get_or_fetch(endpoint, fetch_fn)
+            .await
+    }
+
     /// Returns a throughput control group by container and name.
     ///
     /// This is a convenience method for looking up a specific group.
@@ -345,7 +361,8 @@ impl CosmosDriverRuntime {
     /// On a cache miss the resolved reference is cross-populated into the
     /// by-RID cache as well. Concurrent requests for the same container
     /// share the same fetch operation.
-    async fn resolve_container_by_name<F, Fut>(
+    #[allow(dead_code)]
+    pub(crate) async fn resolve_container_by_name<F, Fut>(
         &self,
         account_endpoint: &str,
         db_name: &str,
@@ -366,7 +383,8 @@ impl CosmosDriverRuntime {
     /// The `fetch_fn` is only called if the container is not in the cache.
     /// On a cache miss the resolved reference is cross-populated into the
     /// by-name cache as well.
-    async fn resolve_container_by_rid<F, Fut>(
+    #[allow(dead_code)]
+    pub(crate) async fn resolve_container_by_rid<F, Fut>(
         &self,
         account_endpoint: &str,
         container_rid: &str,
@@ -385,7 +403,8 @@ impl CosmosDriverRuntime {
     ///
     /// Call this when container properties may have changed (e.g., after
     /// updating indexing policy) or when a container has been deleted/recreated.
-    async fn invalidate_container_cache(&self, container: &ContainerReference) {
+    #[allow(dead_code)]
+    pub(crate) async fn invalidate_container_cache(&self, container: &ContainerReference) {
         self.container_cache.invalidate(container).await;
     }
 
@@ -400,17 +419,28 @@ impl CosmosDriverRuntime {
     ///
     /// Call this when account configuration may have changed (e.g., after
     /// adding/removing regions).
-    async fn invalidate_account_cache(&self, endpoint: &AccountEndpoint) {
-        self.account_metadata_cache.invalidate(endpoint).await;
+    #[allow(dead_code)]
+    pub(crate) async fn invalidate_account_cache(&self, account: &AccountReference) {
+        let endpoint = AccountEndpoint::from(account);
+        self.account_metadata_cache.invalidate(&endpoint).await;
     }
 
     /// Clears all caches.
     ///
     /// This is primarily useful for testing or when the connection needs
     /// to be fully refreshed.
-    async fn clear_all_caches(&self) {
-        self.account_metadata_cache.clear().await;
-        self.container_cache.clear().await;
+    pub(crate) async fn clear_all_caches(
+        &self,
+        account: Option<&AccountReference>,
+        container: Option<&ContainerReference>,
+    ) {
+        if let Some(account) = account {
+            self.invalidate_account_cache(account).await;
+        }
+
+        if let Some(container) = container {
+            self.invalidate_container_cache(container).await;
+        }
     }
 
     /// Gets or creates a driver for the specified account.

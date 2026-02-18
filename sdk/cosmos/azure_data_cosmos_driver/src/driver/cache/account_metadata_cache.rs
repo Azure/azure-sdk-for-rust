@@ -9,14 +9,13 @@ use std::sync::Arc;
 
 /// Cache for Cosmos DB account metadata.
 ///
-/// Stores account properties (regions, capabilities) keyed by account endpoint.
-/// Uses single-pending-I/O semantics - concurrent requests for the same account
-/// share one initialization future.
+/// Stores account properties keyed by account endpoint.
 #[derive(Debug)]
 pub(crate) struct AccountMetadataCache {
     cache: AsyncCache<AccountEndpoint, AccountProperties>,
 }
 
+#[allow(dead_code)]
 impl AccountMetadataCache {
     /// Creates a new empty account metadata cache.
     pub(crate) fn new() -> Self {
@@ -26,10 +25,6 @@ impl AccountMetadataCache {
     }
 
     /// Gets account properties, fetching them if not cached.
-    ///
-    /// If the account is not in the cache, calls `fetch_fn` to retrieve
-    /// the properties. Concurrent requests for the same endpoint share
-    /// the same fetch operation.
     pub(crate) async fn get_or_fetch<F, Fut>(
         &self,
         endpoint: AccountEndpoint,
@@ -145,7 +140,9 @@ mod tests {
     #[tokio::test]
     async fn get_returns_none_before_fetch() {
         let cache = AccountMetadataCache::new();
-        assert!(cache.get(&test_endpoint("unknown")).await.is_none());
+        let endpoint = test_endpoint("myaccount");
+
+        assert!(cache.get(&endpoint).await.is_none());
     }
 
     #[tokio::test]
@@ -159,6 +156,7 @@ mod tests {
 
         let removed = cache.invalidate(&endpoint).await;
         assert!(removed.is_some());
+        assert_eq!(removed.unwrap().write_region.as_str(), "westus");
         assert!(cache.get(&endpoint).await.is_none());
     }
 

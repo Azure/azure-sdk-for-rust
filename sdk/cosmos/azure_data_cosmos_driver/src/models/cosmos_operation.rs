@@ -181,6 +181,7 @@ impl CosmosOperation {
     ///
     /// Accepts any type that can be converted into a `CosmosResourceReference`,
     /// including typed references like `ItemReference`, `ContainerReference`, etc.
+    #[cfg(test)]
     pub(crate) fn create(resource_reference: impl Into<CosmosResourceReference>) -> Self {
         Self::new(OperationType::Create, resource_reference)
     }
@@ -189,72 +190,27 @@ impl CosmosOperation {
     ///
     /// Accepts any type that can be converted into a `CosmosResourceReference`,
     /// including typed references like `ItemReference`, `ContainerReference`, etc.
+    #[cfg(test)]
     pub(crate) fn read(resource_reference: impl Into<CosmosResourceReference>) -> Self {
         Self::new(OperationType::Read, resource_reference)
-    }
-
-    /// Creates a ReadFeed operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ContainerReference`, `DatabaseReference`, etc.
-    pub(crate) fn read_feed(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::ReadFeed, resource_reference)
     }
 
     /// Creates a Replace operation.
     ///
     /// Accepts any type that can be converted into a `CosmosResourceReference`,
     /// including typed references like `ItemReference`, `ContainerReference`, etc.
+    #[cfg(test)]
     pub(crate) fn replace(resource_reference: impl Into<CosmosResourceReference>) -> Self {
         Self::new(OperationType::Replace, resource_reference)
-    }
-
-    /// Creates a Delete operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    pub(crate) fn delete(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Delete, resource_reference)
     }
 
     /// Creates an Upsert operation.
     ///
     /// Accepts any type that can be converted into a `CosmosResourceReference`,
     /// including typed references like `ItemReference`.
+    #[cfg(test)]
     pub(crate) fn upsert(resource_reference: impl Into<CosmosResourceReference>) -> Self {
         Self::new(OperationType::Upsert, resource_reference)
-    }
-
-    /// Creates a Query operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ContainerReference`.
-    pub(crate) fn query(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Query, resource_reference)
-    }
-
-    /// Creates an Execute operation (for stored procedures).
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including `StoredProcedureReference`.
-    pub(crate) fn execute(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Execute, resource_reference)
-    }
-
-    /// Creates a Batch operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ContainerReference`.
-    pub(crate) fn batch(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Batch, resource_reference)
-    }
-
-    /// Creates a Head operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    pub(crate) fn head(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Head, resource_reference)
     }
 
     // ===== Control Plane Factory Methods =====
@@ -624,9 +580,7 @@ impl CosmosOperation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{
-        AccountReference, ContainerReference, DatabaseReference, PartitionKeyDefinition,
-    };
+    use crate::models::{AccountReference, ContainerReference, PartitionKeyDefinition};
 
     use url::Url;
 
@@ -635,10 +589,6 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
-    }
-
-    fn test_database() -> DatabaseReference {
-        DatabaseReference::from_name(test_account(), "testdb")
     }
 
     fn test_container_props() -> crate::models::ContainerProperties {

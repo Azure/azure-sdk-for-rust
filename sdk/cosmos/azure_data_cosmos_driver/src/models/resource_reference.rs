@@ -9,8 +9,7 @@
 
 use crate::models::{
     resource_id::{
-        ContainerId, DatabaseId, PartitionKeyRangeId, ResourceIdentifierType, ResourceName,
-        ResourceRid,
+        ContainerId, PartitionKeyRangeId, ResourceIdentifierType, ResourceName, ResourceRid,
     },
     AccountReference, ImmutableContainerProperties, PartitionKey,
 };
@@ -34,7 +33,7 @@ pub struct DatabaseReference {
     /// Reference to the parent account.
     account: AccountReference,
     /// The database identifier (by name or by RID).
-    id: DatabaseId,
+    id: ResourceIdentifierType,
 }
 
 impl DatabaseReference {
@@ -42,15 +41,7 @@ impl DatabaseReference {
     pub fn from_name(account: AccountReference, name: impl Into<Cow<'static, str>>) -> Self {
         Self {
             account,
-            id: DatabaseId::ByName(ResourceName::new(name)),
-        }
-    }
-
-    /// Creates a new database reference by RID.
-    pub(crate) fn from_rid(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self {
-        Self {
-            account,
-            id: DatabaseId::ByRid(ResourceRid::new(rid)),
+            id: ResourceIdentifierType::ByName(ResourceName::new(name)),
         }
     }
 
@@ -69,19 +60,14 @@ impl DatabaseReference {
         self.id.rid()
     }
 
-    /// Returns the internal database ID.
-    pub(crate) fn id(&self) -> &DatabaseId {
-        &self.id
-    }
-
     /// Returns `true` if this is a name-based reference.
     pub fn is_by_name(&self) -> bool {
-        matches!(self.id, DatabaseId::ByName(_))
+        matches!(self.id, ResourceIdentifierType::ByName(_))
     }
 
     /// Returns `true` if this is a RID-based reference.
     pub fn is_by_rid(&self) -> bool {
-        matches!(self.id, DatabaseId::ByRid(_))
+        matches!(self.id, ResourceIdentifierType::ByRid(_))
     }
 
     /// Returns the name-based relative path: `/dbs/{name}`
@@ -211,20 +197,15 @@ impl ContainerReference {
     }
 
     /// Returns the partition key definition for this container.
-    pub(crate) fn partition_key(&self) -> &crate::models::PartitionKeyDefinition {
+    pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition {
         self.immutable_properties.partition_key()
-    }
-
-    /// Returns the immutable container properties.
-    pub(crate) fn immutable_properties(&self) -> &Arc<ImmutableContainerProperties> {
-        &self.immutable_properties
     }
 
     /// Returns a `DatabaseReference` for the parent database (name-based).
     pub(crate) fn database(&self) -> DatabaseReference {
         DatabaseReference {
             account: self.account.clone(),
-            id: DatabaseId::ByName(self.db_name.clone()),
+            id: ResourceIdentifierType::ByName(self.db_name.clone()),
         }
     }
 
@@ -243,20 +224,11 @@ impl ContainerReference {
         &self.container_name
     }
 
-    /// Returns the internal container RID as a `ResourceRid`.
-    pub(crate) fn container_rid_ref(&self) -> &ResourceRid {
-        &self.container_rid
-    }
-
     /// Returns the internal database name as a `ResourceName`.
     pub(crate) fn db_name_ref(&self) -> &ResourceName {
         &self.db_name
     }
 
-    /// Returns the internal database RID as a `ResourceRid`.
-    pub(crate) fn db_rid_ref(&self) -> &ResourceRid {
-        &self.db_rid
-    }
 }
 
 // =============================================================================
@@ -340,11 +312,6 @@ impl ItemReference {
     /// Returns a reference to the partition key.
     pub fn partition_key(&self) -> &PartitionKey {
         &self.partition_key
-    }
-
-    /// Returns a reference to the item identifier.
-    pub(crate) fn item_identifier(&self) -> &ResourceIdentifierType {
-        &self.item_identifier
     }
 
     /// Returns the item name (document ID), if this is a name-based reference.
@@ -684,8 +651,38 @@ impl PartitionKeyRangeReference {
         self.id.range_id()
     }
 
-    /// Returns the internal partition key range ID.
-    pub(crate) fn id(&self) -> &PartitionKeyRangeId {
-        &self.id
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{ContainerProperties, PartitionKeyDefinition};
+    use url::Url;
+
+    fn make_container_reference() -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://example.documents.azure.com:443/").unwrap(),
+            "test-key",
+        );
+        let partition_key = PartitionKeyDefinition::new(["/tenantId"]);
+        let container_properties = ContainerProperties::new("my-container", partition_key);
+
+        ContainerReference::new(
+            account,
+            "my-db",
+            "db-rid",
+            "my-container",
+            "container-rid",
+            &container_properties,
+        )
+    }
+
+    #[test]
+    fn container_partition_key_definition_is_available() {
+        let container = make_container_reference();
+        let partition_key_definition = container.partition_key_definition();
+
+        assert_eq!(partition_key_definition.paths().len(), 1);
+        assert_eq!(partition_key_definition.paths()[0].as_ref(), "/tenantId");
     }
 }

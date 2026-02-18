@@ -72,18 +72,6 @@ impl AccountProperties {
             rid: None,
         }
     }
-
-    /// Sets the account's resource ID.
-    pub fn with_rid(mut self, rid: impl Into<String>) -> Self {
-        self.rid = Some(rid.into());
-        self
-    }
-
-    /// Sets account system-managed properties.
-    pub fn with_system_properties(mut self, system_properties: SystemProperties) -> Self {
-        self.rid = system_properties.rid;
-        self
-    }
 }
 
 /// Properties of a Cosmos DB database.
@@ -97,29 +85,10 @@ pub(crate) struct DatabaseProperties {
 
     /// System-managed properties (e.g., _rid, _ts, _etag).
     #[serde(flatten)]
-    pub(crate) system_properties: SystemProperties,
+    pub system_properties: SystemProperties,
 }
 
 impl DatabaseProperties {
-    /// Creates new database properties with the given identifier.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `id` is empty.
-    pub fn new(id: impl Into<Cow<'static, str>>) -> Self {
-        let id = id.into();
-        assert!(!id.is_empty(), "database id must not be empty");
-        Self {
-            id,
-            system_properties: SystemProperties::default(),
-        }
-    }
-
-    /// Sets the database's system-managed properties.
-    pub(crate) fn with_system_properties(mut self, system_properties: SystemProperties) -> Self {
-        self.system_properties = system_properties;
-        self
-    }
 }
 
 /// Properties of a Cosmos DB container.
@@ -145,6 +114,7 @@ impl ContainerProperties {
     /// # Panics
     ///
     /// Panics if `id` is empty.
+    #[cfg(test)]
     pub fn new(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self {
         let id = id.into();
         assert!(!id.is_empty(), "container id must not be empty");
@@ -154,24 +124,11 @@ impl ContainerProperties {
             system_properties: SystemProperties::default(),
         }
     }
-
-    /// Sets the container's system-managed properties.
-    pub fn with_system_properties(mut self, system_properties: SystemProperties) -> Self {
-        self.system_properties = system_properties;
-        self
-    }
 }
 
 /// Immutable container properties that never change after creation.
-///
-/// This struct captures the subset of [`ContainerProperties`] that is fixed at container
-/// creation time: the partition key definition.
-/// It is designed to be wrapped in an `Arc` and carried on resolved references.
-///
-/// Not exposed publicly — use [`ContainerReference::partition_key()`] to access members.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ImmutableContainerProperties {
-    /// Partition key definition specifying the partition key path(s).
     partition_key: PartitionKeyDefinition,
 }
 
@@ -194,34 +151,92 @@ impl ImmutableContainerProperties {
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
-pub(crate) struct PartitionKeyDefinition {
+pub struct PartitionKeyDefinition {
     /// List of partition key paths (e.g., `["/tenantId"]` for single partition key).
-    pub paths: Vec<Cow<'static, str>>,
+    paths: Vec<Cow<'static, str>>,
 
     /// Partition key version (1 for single, 2 for hierarchical).
     #[serde(default = "default_pk_version")]
-    pub version: u32,
+    version: PartitionKeyVersion,
 
     /// Partition key kind (Hash is the standard).
     #[serde(default)]
-    pub kind: PartitionKeyKind,
+    kind: PartitionKeyKind,
 }
 
 impl PartitionKeyDefinition {
+    /// Returns the partition key paths.
+    pub fn paths(&self) -> &[Cow<'static, str>] {
+        &self.paths
+    }
+
+    /// Returns the partition key version.
+    pub fn version(&self) -> PartitionKeyVersion {
+        self.version
+    }
+
+    /// Returns the partition key kind.
+    pub fn kind(&self) -> PartitionKeyKind {
+        self.kind
+    }
+
     /// Creates a new partition key definition with the given paths.
     ///
     /// Uses version 2 and `Hash` kind by default.
-    pub fn new(paths: impl IntoIterator<Item = impl Into<Cow<'static, str>>>) -> Self {
+    #[cfg(test)]
+    pub(crate) fn new(paths: impl IntoIterator<Item = impl Into<Cow<'static, str>>>) -> Self {
         Self {
             paths: paths.into_iter().map(Into::into).collect(),
-            version: 2,
+            version: PartitionKeyVersion::V2,
             kind: PartitionKeyKind::Hash,
         }
     }
 }
 
-fn default_pk_version() -> u32 {
-    2
+fn default_pk_version() -> PartitionKeyVersion {
+    PartitionKeyVersion::V2
+}
+
+/// Partition key version.
+///
+/// Cosmos DB uses numeric wire values for partition key version:
+/// - `1` -> `V1`
+/// - `2` -> `V2`
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "u32", into = "u32")]
+pub enum PartitionKeyVersion {
+    /// Partition key version 1.
+    V1,
+    /// Partition key version 2.
+    V2,
+}
+
+impl PartitionKeyVersion {
+    /// Returns the wire value used by Cosmos DB.
+    pub const fn value(self) -> u32 {
+        match self {
+            PartitionKeyVersion::V1 => 1,
+            PartitionKeyVersion::V2 => 2,
+        }
+    }
+}
+
+impl TryFrom<u32> for PartitionKeyVersion {
+    type Error = &'static str;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(Self::V1),
+            2 => Ok(Self::V2),
+            _ => Err("invalid partition key version; expected 1 or 2"),
+        }
+    }
+}
+
+impl From<PartitionKeyVersion> for u32 {
+    fn from(version: PartitionKeyVersion) -> Self {
+        version.value()
+    }
 }
 
 /// Partition key kind.
@@ -250,26 +265,6 @@ pub(crate) struct SystemProperties {
     /// ETag for optimistic concurrency control.
     #[serde(rename = "_etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-}
-
-impl SystemProperties {
-    /// Sets the resource ID.
-    pub fn with_rid(mut self, rid: impl Into<String>) -> Self {
-        self.rid = Some(rid.into());
-        self
-    }
-
-    /// Sets the resource timestamp.
-    pub fn with_ts(mut self, ts: u64) -> Self {
-        self.ts = Some(ts);
-        self
-    }
-
-    /// Sets the ETag.
-    pub fn with_etag(mut self, etag: impl Into<String>) -> Self {
-        self.etag = Some(etag.into());
-        self
-    }
 }
 
 // ── ResourceType & OperationType (moved from resource_types.rs) ─────────────
@@ -551,5 +546,50 @@ impl From<Cow<'static, str>> for ThroughputControlGroupName {
 impl std::fmt::Display for ThroughputControlGroupName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde::{Deserialize, Serialize};
+
+    #[test]
+    fn partition_key_version_numeric_mapping() {
+        assert_eq!(PartitionKeyVersion::try_from(1), Ok(PartitionKeyVersion::V1));
+        assert_eq!(PartitionKeyVersion::try_from(2), Ok(PartitionKeyVersion::V2));
+        assert!(PartitionKeyVersion::try_from(3).is_err());
+        assert_eq!(u32::from(PartitionKeyVersion::V1), 1);
+        assert_eq!(u32::from(PartitionKeyVersion::V2), 2);
+    }
+
+    #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+    struct VersionEnvelope {
+        version: PartitionKeyVersion,
+    }
+
+    #[test]
+    fn partition_key_version_serde_uses_wire_values() {
+        let parsed_v1: VersionEnvelope = serde_json::from_str(r#"{"version":1}"#).unwrap();
+        let parsed_v2: VersionEnvelope = serde_json::from_str(r#"{"version":2}"#).unwrap();
+
+        assert_eq!(parsed_v1.version, PartitionKeyVersion::V1);
+        assert_eq!(parsed_v2.version, PartitionKeyVersion::V2);
+
+        let serialized = serde_json::to_string(&VersionEnvelope {
+            version: PartitionKeyVersion::V2,
+        })
+        .unwrap();
+        assert_eq!(serialized, r#"{"version":2}"#);
+    }
+
+    #[test]
+    fn partition_key_definition_defaults_and_getters() {
+        let parsed: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+
+        assert_eq!(parsed.paths().len(), 1);
+        assert_eq!(parsed.paths()[0].as_ref(), "/pk");
+        assert_eq!(parsed.version(), PartitionKeyVersion::V2);
+        assert_eq!(parsed.kind(), PartitionKeyKind::Hash);
     }
 }

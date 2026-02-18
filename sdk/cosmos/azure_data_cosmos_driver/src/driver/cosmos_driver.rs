@@ -4,16 +4,20 @@
 //! Cosmos DB driver instance.
 
 use crate::{
-    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
+    diagnostics::{
+        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestSentStatus,
+        TransportSecurity,
+    },
     models::{
-        AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, CosmosResponseHeaders, CosmosResult, DatabaseProperties,
+        AccountEndpoint, AccountProperties, AccountReference, ActivityId, ContainerProperties,
+        ContainerReference, CosmosOperation, CosmosResponseHeaders, CosmosResult, DatabaseProperties,
         DatabaseReference, RequestCharge, SubStatusCode,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
     },
 };
+use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
 use std::sync::Arc;
 
@@ -43,6 +47,15 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    fn should_retry_transport_failure(
+        attempt: usize,
+        max_transport_retries: usize,
+        is_idempotent: bool,
+        request_sent: RequestSentStatus,
+    ) -> bool {
+        attempt < max_transport_retries && is_idempotent && request_sent.definitely_not_sent()
+    }
+
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
@@ -197,6 +210,16 @@ impl CosmosDriver {
         let account = operation.resource_reference().account();
         let auth = account.auth();
 
+        // Resolve account metadata through AccountMetadataCache (demo behavior).
+        // For now, derive placeholder properties from AccountReference on cache miss.
+        let account_properties = self
+            .runtime
+            .get_or_fetch_account_properties(account, || async {
+                let fallback_region = Region::new("Unknown");
+                AccountProperties::new(fallback_region.clone(), vec![fallback_region])
+            })
+            .await;
+
         // Step 5: Build resource link for authorization
         let resource_ref = operation.resource_reference();
         let resource_link = resource_ref.link_for_signing();
@@ -206,36 +229,17 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let url = endpoint.join_path(&request_path);
 
-        // Step 7: Determine HTTP method and create request
+        // Step 7: Determine HTTP method
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let method = operation_type.http_method();
-        let mut request = Request::new(url, method);
 
-        // Step 8: Add body if present
-        if let Some(body) = operation.body() {
-            request.set_body(body.to_vec());
-        }
-
-        // Step 9: Add operation request headers
-        operation
-            .request_headers()
-            .write_to_headers(request.headers_mut());
-
-        // Step 9b: Add partition key header if set
-        if let Some(pk) = operation.partition_key() {
-            use azure_core::http::headers::AsHeaders;
-            for (name, value) in pk.as_headers()? {
-                request.insert_header(name, value);
-            }
-        }
-
-        // Step 10: Create authorization context
+        // Step 8: Create authorization context
         // Strip leading slash from resource link for signing
         let signing_link = resource_link.trim_start_matches('/');
         let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
 
-        // Step 11: Select and create appropriate pipeline
+        // Step 9: Select and create appropriate pipeline
         let transport = self.runtime.transport();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
         let pipeline = if is_dataplane {
@@ -256,98 +260,166 @@ impl CosmosDriver {
             TransportSecurity::Secure
         };
 
-        // Step 12: Build context with authorization info and event emitter
-        let mut ctx = Context::default();
-        ctx.insert(auth_context);
+        // Step 12+: Execute with a slim transport retry wrapper.
+        //
+        // Retry only once, and only when it is safe:
+        // - operation is idempotent
+        // - transport failure happened before bytes were sent
+        const MAX_TRANSPORT_RETRIES: usize = 1;
+        let mut attempt = 0usize;
 
-        // Set up event channel for transport tracking
-        let (event_sender, event_receiver) = event_channel();
-        ctx.insert(EventEmitter::new(event_sender));
+        loop {
+            let mut request = Request::new(url.clone(), method);
 
-        // Step 13: Start request tracking in diagnostics
-        // For now, use a placeholder region - proper region routing will come later
-        let region = Region::new("Unknown");
-        let request_handle = diagnostics_builder.start_request(
-            ExecutionContext::Initial,
-            pipeline_type,
-            transport_security,
-            region,
-            endpoint.host().to_owned(),
-        );
-
-        // Step 14: Execute request
-        let result = pipeline.send(&ctx, &mut request).await;
-
-        // Step 15: Collect events from transport tracking
-        let tracked_state = TrackedRequestState::collect(event_receiver);
-
-        // Step 16: Handle response or error
-        match result {
-            Ok(response) => {
-                let status_code = response.status();
-                let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
-
-                // Extract sub-status from headers if present
-                let sub_status = cosmos_headers.substatus();
-
-                // Update request with response data (before completing to keep it mutable)
-                if let Some(charge) = response
-                    .headers()
-                    .get_optional_str(&CosmosResponseHeaders::request_charge_header_name())
-                    .and_then(|s| s.parse::<f64>().ok())
-                    .map(RequestCharge::new)
-                {
-                    diagnostics_builder.update_request(request_handle, |req| {
-                        req.request_charge = charge;
-                    });
-                }
-
-                // Add all transport events to diagnostics
-                for event in tracked_state.into_events() {
-                    diagnostics_builder.add_event(request_handle, event);
-                }
-
-                // Complete request tracking (makes request info immutable)
-                diagnostics_builder.complete_request(request_handle, status_code, sub_status);
-
-                // Set operation status
-                diagnostics_builder.set_operation_status(status_code, sub_status);
-
-                // Extract headers and body
-                let body = response.into_body();
-
-                // Complete diagnostics
-                let diagnostics = Arc::new(diagnostics_builder.complete());
-
-                Ok(CosmosResult::new(
-                    body.as_ref().to_vec(),
-                    cosmos_headers,
-                    diagnostics,
-                ))
+            if let Some(body) = operation.body() {
+                request.set_body(body.to_vec());
             }
-            Err(e) => {
-                // Request failed at transport level - no HTTP response received.
-                //
-                // Determine request sent status using both events and error analysis:
-                // - Sent: If we received ResponseHeadersReceived (definitive)
-                // - NotSent: If error indicates pre-send failure (DNS, connect refused)
-                // - Unknown: Otherwise (can't determine)
-                let request_sent = tracked_state.request_sent_status_with_error(&e);
 
-                // Add all transport events to diagnostics
-                for event in tracked_state.into_events() {
-                    diagnostics_builder.add_event(request_handle, event);
-                }
+            operation
+                .request_headers()
+                .write_to_headers(request.headers_mut());
 
-                diagnostics_builder.fail_request(request_handle, e.to_string(), request_sent);
-
-                // Complete diagnostics with error state
-                diagnostics_builder.set_operation_status(
-                    azure_core::http::StatusCode::ServiceUnavailable,
-                    Some(SubStatusCode::TRANSPORT_GENERATED_503),
+            if operation.request_headers().activity_id().is_none() {
+                request.insert_header(
+                    HeaderName::from_static("x-ms-activity-id"),
+                    HeaderValue::from(diagnostics_builder.activity_id().as_str().to_owned()),
                 );
+            }
 
-                Err(e)
+            if let Some(pk) = operation.partition_key() {
+                let _partition_key_definition =
+                    operation.container().map(|container| container.partition_key_definition());
+
+                use azure_core::http::headers::AsHeaders;
+                let pk_headers = match pk.as_headers() {
+                    Ok(headers) => headers,
+                    Err(e) => {
+                        self.runtime
+                            .clear_all_caches(Some(account), operation.container())
+                            .await;
+                        return Err(e);
+                    }
+                };
+
+                for (name, value) in pk_headers {
+                    request.insert_header(name, value);
+                }
+            }
+
+            let mut ctx = Context::default();
+            ctx.insert(auth_context.clone());
+
+            let (event_sender, event_receiver) = event_channel();
+            ctx.insert(EventEmitter::new(event_sender));
+
+            let region = account_properties.write_region.clone();
+            let execution_context = if diagnostics_builder.request_count() == 0 {
+                ExecutionContext::Initial
+            } else {
+                ExecutionContext::Retry
+            };
+            let request_handle = diagnostics_builder.start_request(
+                execution_context,
+                pipeline_type,
+                transport_security,
+                region,
+                endpoint.host().to_owned(),
+            );
+
+            let result = pipeline.send(&ctx, &mut request).await;
+            let tracked_state = TrackedRequestState::collect(event_receiver);
+
+            match result {
+                Ok(response) => {
+                    let status_code = response.status();
+                    let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
+                    let sub_status = cosmos_headers.substatus();
+
+                    if let Some(charge) = response
+                        .headers()
+                        .get_optional_str(&CosmosResponseHeaders::request_charge_header_name())
+                        .and_then(|s| s.parse::<f64>().ok())
+                        .map(RequestCharge::new)
+                    {
+                        diagnostics_builder.update_request(request_handle, |req| {
+                            req.with_charge(charge);
+                        });
+                    }
+
+                    if let Some(activity_id) = cosmos_headers.activity_id().cloned() {
+                        diagnostics_builder.update_request(request_handle, |req| {
+                            req.with_activity_id(activity_id);
+                        });
+                    }
+
+                    if let Some(session_token) = cosmos_headers.session_token() {
+                        diagnostics_builder.update_request(request_handle, |req| {
+                            req.with_session_token(session_token.to_string());
+                        });
+                    }
+
+                    if let Some(sub_status) = sub_status {
+                        diagnostics_builder.update_request(request_handle, |req| {
+                            req.with_sub_status(sub_status);
+                        });
+                    }
+
+                    for event in tracked_state.into_events() {
+                        diagnostics_builder.add_event(request_handle, event);
+                    }
+
+                    diagnostics_builder.complete_request(request_handle, status_code, sub_status);
+                    diagnostics_builder.set_operation_status(status_code, sub_status);
+
+                    let body = response.into_body();
+                    let diagnostics = Arc::new(diagnostics_builder.complete());
+
+                    return Ok(CosmosResult::new(
+                        body.as_ref().to_vec(),
+                        cosmos_headers,
+                        diagnostics,
+                    ));
+                }
+                Err(e) => {
+                    let request_sent = tracked_state.request_sent_status_with_error(&e);
+                    let error_message = e.to_string();
+
+                    for event in tracked_state.into_events() {
+                        diagnostics_builder.add_event(request_handle, event);
+                    }
+
+                    diagnostics_builder.update_request(request_handle, |req| {
+                        req.with_error(error_message.clone());
+                        req.with_sub_status(SubStatusCode::TRANSPORT_GENERATED_503);
+                    });
+
+                    diagnostics_builder.fail_request(request_handle, error_message, request_sent);
+
+                    let should_retry = Self::should_retry_transport_failure(
+                        attempt,
+                        MAX_TRANSPORT_RETRIES,
+                        operation.is_idempotent(),
+                        request_sent,
+                    );
+
+                    if should_retry {
+                        attempt += 1;
+                        self.runtime
+                            .clear_all_caches(Some(account), operation.container())
+                            .await;
+                        continue;
+                    }
+
+                    diagnostics_builder.set_operation_status(
+                        azure_core::http::StatusCode::ServiceUnavailable,
+                        Some(SubStatusCode::TRANSPORT_GENERATED_503),
+                    );
+
+                    self.runtime
+                        .clear_all_caches(Some(account), operation.container())
+                        .await;
+                    return Err(e);
+                }
             }
         }
     }
@@ -767,5 +839,47 @@ mod tests {
             "machine_id should start with 'vmId_' or 'uuid_', got: {}",
             machine_id
         );
+    }
+
+    #[test]
+    fn retry_gate_allows_only_idempotent_not_sent_with_budget() {
+        assert!(CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            true,
+            RequestSentStatus::NotSent
+        ));
+    }
+
+    #[test]
+    fn retry_gate_blocks_when_request_may_have_been_sent() {
+        assert!(!CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            true,
+            RequestSentStatus::Unknown
+        ));
+        assert!(!CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            true,
+            RequestSentStatus::Sent
+        ));
+    }
+
+    #[test]
+    fn retry_gate_blocks_non_idempotent_or_exhausted_budget() {
+        assert!(!CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            false,
+            RequestSentStatus::NotSent
+        ));
+        assert!(!CosmosDriver::should_retry_transport_failure(
+            1,
+            1,
+            true,
+            RequestSentStatus::NotSent
+        ));
     }
 }

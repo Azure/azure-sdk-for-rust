@@ -155,6 +155,7 @@ impl ContainerCache {
     }
 
     /// Returns a cached container looked up by RID, or `None` if not cached.
+    #[cfg(test)]
     pub(crate) async fn get_by_rid(
         &self,
         account_endpoint: &str,
@@ -193,6 +194,7 @@ impl ContainerCache {
     }
 
     /// Clears all cached container metadata from both indices.
+    #[cfg(test)]
     pub(crate) async fn clear(&self) {
         self.by_name.clear().await;
         self.by_rid.clear().await;
