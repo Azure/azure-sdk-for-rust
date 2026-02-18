@@ -77,7 +77,7 @@ Follow these steps strictly:
 
 Classify every struct into exactly one of these categories:
 
-1. **Truly public** — The struct is `pub` and **all** ancestor modules up to the crate root are also `pub` (the struct is reachable from outside the crate). These structs get the full set of rules: `#[non_exhaustive]`, private/non-`pub` fields, getters, and a consistent construction API. Construction may use either direct fluent methods on the struct (`Default` and/or `new(...)` + `with_*`) or a separate builder type (`builder()`/`build()` + `with_*`).
+1. **Truly public** — The struct is `pub` and **all** ancestor modules up to the crate root are also `pub` (the struct is reachable from outside the crate). These structs get the full set of rules: getter coverage for externally-readable fields, a consistent construction API, and explicit field-visibility decisions based on invariants/validation needs. Construction may use either direct fluent methods on the struct (`Default` and/or `new(...)` + `with_*`) or a separate builder type (`builder()`/`build()` + `with_*`).
 
 2. **Effectively scoped** — The struct has a `pub` visibility modifier but lives inside a module that restricts visibility (e.g., `pub(crate) mod`, `pub(super) mod`). The struct is **not** reachable from outside the crate. These structs should:
    - Have the **effective visibility** annotated explicitly on the struct (e.g., `pub(crate) struct Foo` not `pub struct Foo` inside a `pub(crate) mod`).
@@ -108,25 +108,30 @@ Additional rules:
 
 These rules apply **only** to structs classified as **truly public** in Step 3:
 
-#### a) `#[non_exhaustive]` required
+#### a) `#[non_exhaustive]` required only for all-public-field truly public structs
 
-Every truly public struct must be annotated with `#[non_exhaustive]`. This prevents external code from constructing the struct with literal syntax, ensuring forward compatibility when fields are added in future versions.
+For truly public structs, require `#[non_exhaustive]` **when all named fields are public**. This prevents external code from constructing the struct with literal syntax, ensuring forward compatibility when fields are added in future versions.
 
-#### b) No `pub` fields — use the most restrictive visibility
+If one or more fields are non-public, `#[non_exhaustive]` is optional and typically redundant for construction control.
 
-Fields on truly public structs must **never** be `pub`. Choose the visibility by checking both (1) whether a public accessor exists **and** (2) whether crate-internal code in other modules accesses the field directly:
+#### b) Field visibility on truly public structs — choose based on validation/invariant needs
+
+Fields on truly public structs may be `pub` **or** non-public. Choose visibility by checking (1) whether validation/invariant enforcement is needed and (2) whether crate-internal code in other modules needs direct non-getter access:
 
 | Scenario | Field visibility |
 |---|---|
-| Field has a public getter and/or `with_*` setter **and** no crate-internal code outside the defining module accesses the field directly | **Private** (no modifier). All access — including crate-internal — goes through the accessor methods. |
-| Field has a public getter and crate-internal code outside the defining module only **reads** the field | **Private** (no modifier). Rewrite those read sites to call the getter rather than exposing the field. |
-| Field has a public getter and crate-internal code outside the defining module requires **non-getter semantics** (e.g., mutation, move/consume of field state, taking mutable references, or writing nested internals) | **`pub(crate)`**. This is an explicit exception and should be justified by usage. |
-| Field has no public accessor but is read/written inside the crate | **`pub(crate)`** (or `pub(super)` if only the parent module needs access) |
-| Field has no accessor and is only used in the declaring module | **Private** (no modifier) |
+| Field has no validation/invariant constraints and direct access is acceptable for external consumers | **`pub`** is allowed. `with_*` setters and direct field modification may coexist. |
+| Field requires validation/invariant enforcement (e.g., value constraints, normalization, coupled-field invariants) | **Non-public** (private by default; `pub(crate)` only when justified by crate-internal usage). Route external mutation through `with_*`/constructor APIs. |
+| Field is non-public and crate-internal code in other modules only reads it | Prefer **private** plus getter usage at call sites. |
+| Field is non-public and crate-internal code outside the defining module requires non-getter semantics (mutation, move/consume, mutable references, nested writes) | **`pub(crate)`** (or `pub(super)` when parent-only). |
 
-**Rationale**: Making a field `pub` is a semver commitment — removing it later is a breaking change. Private fields with accessors keep the API surface controllable.
+**Rationale**: Public fields maximize ergonomics and avoid forced ownership extractors for simple data. Non-public fields keep API evolution and validation logic controllable where invariants matter.
 
-**How to determine the correct visibility**: Before deciding between private and `pub(crate)`, search the crate for direct field access outside the defining module (e.g., `grep` for `.field_name` in other `.rs` files). If usage is read-only and a getter exists (or can be generated), rewrite call sites to use the getter and keep the field private. Use `pub(crate)` only when non-getter semantics are required (mutation/move/borrowing patterns that a getter cannot represent cleanly).
+**How to determine the correct visibility**:
+
+1. Decide first whether the field requires invariant/validation enforcement.
+2. If no, `pub` is acceptable.
+3. If yes, keep it non-public and evaluate crate-internal access needs to choose private vs `pub(crate)`/`pub(super)`.
 
 #### c) Getter methods for readable fields
 
@@ -193,14 +198,13 @@ These conventions apply only when a builder exists; they are not a requirement t
 #### If `auto-fix` is `true`
 
 1. Adjust visibility modifiers on structs and fields according to Steps 4–6.
-2. Add `#[non_exhaustive]` to truly public structs that lack it.
+2. Add `#[non_exhaustive]` to truly public structs where all named fields are public and the attribute is missing.
 3. Remove `#[non_exhaustive]` from non-public structs that have it unnecessarily.
-4. Make `pub` fields private or `pub(crate)` on truly public structs. For each field that was previously `pub`:
-   - Search the crate for direct field access outside the defining module.
-  - If a getter exists (or is being generated) and usage outside the defining module is read-only, rewrite those sites to getter calls and make the field **private** (no modifier).
-  - If a getter exists but crate-internal code in other modules requires non-getter semantics (mutation, move/consume, mutable borrowing, nested traversal that cannot be represented by current accessors), keep field **`pub(crate)`**.
-   - If no accessor is generated and the field is used elsewhere in the crate, use the most restrictive visibility that compiles (`pub(crate)` or `pub(super)`).
-   - Generate getter methods for each field that external consumers need to read.
+4. For truly public structs, apply field visibility decisions per Step 6b rather than forcing all `pub` fields to non-public:
+  - If a field has no validation/invariant requirements, `pub` is allowed.
+  - If invariants/validation are required, make the field non-public and provide/update constructor or `with_*` APIs as needed.
+  - When non-public fields need ownership extraction without cloning, prefer `From`/`Into` trait-based conversion; add targeted `into_*` methods only when a trait-based API is not a good fit.
+  - Generate getter methods for fields that external consumers need to read and that are non-public.
 5. Ensure each truly public struct has a consistent allowed construction API (Step 6d), preferring minimal churn:
     a. Keep existing style if already valid (`Default`/`new` + `with_*`, or `builder()`/`build()`).
     b. If no ergonomic construction API exists, add the simplest valid option:
@@ -252,7 +256,7 @@ Highlight any change that constitutes a **semver breaking change** with:
 ```
 ⚠️ BREAKING CHANGE: `StructName::field_name` was `pub` and is now private.
    External code using `instance.field_name` must change to `instance.field_name()` (getter).
-   External code constructing via struct literal must change to builder pattern.
+  External code constructing via struct literal must change to non-literal construction APIs.
 ```
 
 Breaking changes include:
@@ -265,14 +269,16 @@ Breaking changes include:
 ## Notes
 
 - Never modify files in `generated/` subdirectories.
-- `#[non_exhaustive]` is **only** for truly public structs. Effectively-scoped and internal structs must omit it — it adds no value when external code cannot reach the struct.
+- `#[non_exhaustive]` is only applicable to truly public structs; effectively-scoped and internal structs must omit it.
+- For truly public structs, require `#[non_exhaustive]` when all named fields are public. If a struct has non-public fields, `#[non_exhaustive]` is optional and usually redundant for construction control.
 - Fields on effectively-scoped structs can remain `pub` without additional restriction — the struct-level visibility already limits access, and repeating `pub(crate)` on every field is unnecessary noise.
 - Serde derive macros (`Serialize`, `Deserialize`) work on private fields — no `pub(crate)` is needed for serde compatibility.
 - Builder-pattern setters use the `with_*` prefix per [Azure SDK Rust guidelines](https://azure.github.io/azure-sdk/rust_introduction.html) (not bare field names).
 - For truly public structs, separate builder types are optional. `Default`/`new` + `with_*` on the target struct are valid and often preferred for all-optional/simple types.
 - If a builder type is used, follow [Azure SDK Rust builder guidelines](https://azure.github.io/azure-sdk/rust_introduction.html): keep builder fields private, keep optional setters as `with_*`, and place required params on `build()`.
+- For ownership extraction from non-public fields, prefer standard `From`/`Into` traits first. Use targeted `into_*` methods as an exception when extracting a specific owned field without cloning is clearer than trait conversion.
 - Reference `sdk/cosmos/AGENTS.md` for canonical model, options, and builder patterns.
 - Breaking changes in public surface area require explicit acknowledgment from the developer before merging.
-- When generating **new** structs, apply these rules from the start — it is far easier to design with private fields, getters, and a consistent construction API than to retrofit them later.
+- When generating **new** structs, apply these rules from the start — decide field visibility from invariants and API ergonomics up front, then keep construction APIs consistent (`Default`/`new` + `with_*`, or optional builder).
 - For **new** structs, explicitly ask the developer which fields are required if not obvious from the context.
 - For **existing** structs, infer required fields from: (1) doc comments mentioning "required", (2) server rejection of default values, (3) every call site always setting the field, (4) non-`Option` type with no semantically valid zero value.
