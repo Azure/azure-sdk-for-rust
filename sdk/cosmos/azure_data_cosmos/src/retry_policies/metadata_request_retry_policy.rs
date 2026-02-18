@@ -212,9 +212,7 @@ impl MetadataRequestRetryPolicy {
         status_code: StatusCode,
         sub_status_code: Option<SubStatusCode>,
     ) -> RetryResult {
-        // sub_status_code reserved for future use
-        let _ = sub_status_code;
-        if !is_non_retryable_status_code(status_code)
+        if !is_non_retryable_status_code(status_code, sub_status_code)
             && self.increment_retry_index_on_unavailable_endpoint_for_metadata_read()
         {
             return RetryResult::Retry {

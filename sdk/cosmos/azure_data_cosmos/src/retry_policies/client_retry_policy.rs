@@ -404,8 +404,8 @@ impl ClientRetryPolicy {
     /// failover, and 500/408/410 with LeaseNotFound retry on alternative endpoints for reads.
     ///
     /// For read operations, any status code not in the non-retryable whitelist (400, 401,
-    /// 404, 409, 412, 413) is retried on an alternative endpoint. For write operations,
-    /// unhandled status codes are delegated to the throttling policy.
+    /// 404 without substatus 1002, 405, 409, 412, 413) is retried on an alternative endpoint.
+    /// For write operations, unhandled status codes are delegated to the throttling policy.
     ///
     /// # Arguments
     /// * `status_code` - The HTTP status code from the response
@@ -456,7 +456,7 @@ impl ClientRetryPolicy {
             .operation_type
             .as_ref()
             .is_some_and(|op| op.is_read_only())
-            && !is_non_retryable_status_code(status_code)
+            && !is_non_retryable_status_code(status_code, sub_status_code)
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }

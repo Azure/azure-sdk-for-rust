@@ -127,19 +127,29 @@ impl RetryPolicy {
     }
 }
 
-/// Returns `true` if the given status code is non-retryable.
+/// Returns `true` if the given status code and sub-status code combination is non-retryable.
 ///
-/// These status codes indicate client-side errors that will not succeed on retry,
-/// regardless of which endpoint handles the request. Note that `TooManyRequests` (429)
-/// is included here because it should not be retried by the client/metadata retry
-/// policies; instead, it is handled by the dedicated `ResourceThrottleRetryPolicy`
-/// which implements proper exponential backoff with `x-ms-retry-after-ms` headers.
-fn is_non_retryable_status_code(status_code: StatusCode) -> bool {
+/// Most status codes listed here indicate client-side errors that will not succeed on retry,
+/// regardless of which endpoint handles the request. The sub-status code is needed for
+/// `NotFound` (404): a plain 404 is non-retryable, but `404:1002` (ReadSessionNotAvailable)
+/// is retryable and handled by session-aware retry logic. `TooManyRequests` (429) is also
+/// included because it should not be retried by the client/metadata retry policies; instead,
+/// it is handled by the dedicated `ResourceThrottleRetryPolicy` which implements proper
+/// exponential backoff with `x-ms-retry-after-ms` headers.
+fn is_non_retryable_status_code(
+    status_code: StatusCode,
+    sub_status_code: Option<SubStatusCode>,
+) -> bool {
+    // 404 is non-retryable unless the sub-status indicates ReadSessionNotAvailable (1002),
+    // which is a transient routing condition retried via session-aware logic.
+    if status_code == StatusCode::NotFound {
+        return sub_status_code != Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+    }
+
     matches!(
         status_code,
         StatusCode::BadRequest
             | StatusCode::Unauthorized
-            | StatusCode::NotFound
             | StatusCode::MethodNotAllowed
             | StatusCode::Conflict
             | StatusCode::PreconditionFailed
