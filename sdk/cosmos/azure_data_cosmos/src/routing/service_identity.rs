@@ -7,7 +7,7 @@ use std::fmt;
 
 /// Represents a service identity with federation information
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ServiceIdentity {
+pub(crate) struct ServiceIdentity {
     #[serde(rename = "FederationId")]
     federation_id: String,
 
