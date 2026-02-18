@@ -1,28 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+#![cfg(not(target_family = "wasm"))]
 
-// Provide a stub main for WASM targets since this crate is CLI-only.
-#[cfg(target_family = "wasm")]
-fn main() {
-    eprintln!("azure_data_cosmos_perf is not supported on WASM targets");
-}
-
-#[cfg(not(target_family = "wasm"))]
 mod config;
-#[cfg(not(target_family = "wasm"))]
 mod operations;
-#[cfg(not(target_family = "wasm"))]
 mod runner;
-#[cfg(not(target_family = "wasm"))]
 mod seed;
-#[cfg(not(target_family = "wasm"))]
 mod setup;
-#[cfg(not(target_family = "wasm"))]
 mod stats;
-#[cfg(not(target_family = "wasm"))]
 mod transport;
 
-#[cfg(not(target_family = "wasm"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::sync::Arc;
