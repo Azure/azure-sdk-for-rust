@@ -184,7 +184,6 @@ impl AsHeaders for PartitionKey {
                     json.push_str(&num.to_string());
                 }
                 InnerPartitionKeyValue::Infinity => json.push_str("\"Infinity\""),
-                InnerPartitionKeyValue::Undefined => json.push_str("undefined"),
             }
 
             json.push(',');
