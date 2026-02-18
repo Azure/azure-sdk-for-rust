@@ -68,8 +68,8 @@ impl ContainerRidKey {
 /// same container share one fetch operation.
 #[derive(Debug)]
 pub(crate) struct ContainerCache {
-    by_name: AsyncCache<ContainerNameKey, ContainerReference>,
-    by_rid: AsyncCache<ContainerRidKey, ContainerReference>,
+    by_name: AsyncCache<ContainerNameKey, azure_core::Result<ContainerReference>>,
+    by_rid: AsyncCache<ContainerRidKey, azure_core::Result<ContainerReference>>,
 }
 
 impl ContainerCache {
@@ -84,31 +84,50 @@ impl ContainerCache {
     /// Looks up a container by name, fetching if not cached.
     ///
     /// On a cache miss, calls `fetch_fn` to resolve the container from the
-    /// service. The resolved reference is then cross-populated into the
-    /// by-RID cache. Concurrent requests for the same name share one fetch.
+    /// service. The resolved reference is then populated into both the
+    /// by-name and by-RID caches.
     pub(crate) async fn get_or_fetch_by_name<F, Fut>(
         &self,
         account_endpoint: &str,
         db_name: &str,
         container_name: &str,
         fetch_fn: F,
-    ) -> Arc<ContainerReference>
+    ) -> azure_core::Result<Arc<ContainerReference>>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = ContainerReference>,
+        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
     {
+        if let Some(cached) = self
+            .get_by_name(account_endpoint, db_name, container_name)
+            .await
+        {
+            return Ok(cached);
+        }
+
         let name_key = ContainerNameKey {
             account_endpoint: account_endpoint.to_owned(),
             db_name: db_name.to_owned(),
             container_name: container_name.to_owned(),
         };
 
-        let resolved = self.by_name.get_or_insert_with(name_key, fetch_fn).await;
+        let resolved = self
+            .by_name
+            .get_or_insert_with(name_key.clone(), fetch_fn)
+            .await;
 
-        // Cross-populate by-RID cache
-        self.cross_populate_by_rid(&resolved).await;
-
-        resolved
+        match resolved.as_ref() {
+            Ok(container) => {
+                self.put(container.clone()).await;
+                Ok(Arc::new(container.clone()))
+            }
+            Err(error) => {
+                self.by_name.invalidate(&name_key).await;
+                Err(azure_core::Error::with_message(
+                    error.kind().clone(),
+                    error.to_string(),
+                ))
+            }
+        }
     }
 
     /// Looks up a container by RID, fetching if not cached.
@@ -116,27 +135,44 @@ impl ContainerCache {
     /// On a cache miss, calls `fetch_fn` to resolve the container from the
     /// service. The resolved reference is then cross-populated into the
     /// by-name cache. Concurrent requests for the same RID share one fetch.
+    #[cfg(test)]
     pub(crate) async fn get_or_fetch_by_rid<F, Fut>(
         &self,
         account_endpoint: &str,
         container_rid: &str,
         fetch_fn: F,
-    ) -> Arc<ContainerReference>
+    ) -> azure_core::Result<Arc<ContainerReference>>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = ContainerReference>,
+        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
     {
+        if let Some(cached) = self.get_by_rid(account_endpoint, container_rid).await {
+            return Ok(cached);
+        }
+
         let rid_key = ContainerRidKey {
             account_endpoint: account_endpoint.to_owned(),
             container_rid: container_rid.to_owned(),
         };
 
-        let resolved = self.by_rid.get_or_insert_with(rid_key, fetch_fn).await;
+        let resolved = self
+            .by_rid
+            .get_or_insert_with(rid_key.clone(), fetch_fn)
+            .await;
 
-        // Cross-populate by-name cache
-        self.cross_populate_by_name(&resolved).await;
-
-        resolved
+        match resolved.as_ref() {
+            Ok(container) => {
+                self.put(container.clone()).await;
+                Ok(Arc::new(container.clone()))
+            }
+            Err(error) => {
+                self.by_rid.invalidate(&rid_key).await;
+                Err(azure_core::Error::with_message(
+                    error.kind().clone(),
+                    error.to_string(),
+                ))
+            }
+        }
     }
 
     /// Returns a cached container looked up by name, or `None` if not cached.
@@ -151,7 +187,10 @@ impl ContainerCache {
             db_name: db_name.to_owned(),
             container_name: container_name.to_owned(),
         };
-        self.by_name.get(&name_key).await
+        self.by_name
+            .get(&name_key)
+            .await
+            .and_then(|entry| entry.as_ref().as_ref().ok().map(|c| Arc::new(c.clone())))
     }
 
     /// Returns a cached container looked up by RID, or `None` if not cached.
@@ -165,7 +204,10 @@ impl ContainerCache {
             account_endpoint: account_endpoint.to_owned(),
             container_rid: container_rid.to_owned(),
         };
-        self.by_rid.get(&rid_key).await
+        self.by_rid
+            .get(&rid_key)
+            .await
+            .and_then(|entry| entry.as_ref().as_ref().ok().map(|c| Arc::new(c.clone())))
     }
 
     /// Inserts a known-resolved container reference into both caches.
@@ -178,10 +220,10 @@ impl ContainerCache {
         let container_for_rid = container.clone();
 
         self.by_name
-            .get_or_insert_with(name_key, || async { container })
+            .get_or_insert_with(name_key, || async { Ok(container) })
             .await;
         self.by_rid
-            .get_or_insert_with(rid_key, || async { container_for_rid })
+            .get_or_insert_with(rid_key, || async { Ok(container_for_rid) })
             .await;
     }
 
@@ -200,25 +242,6 @@ impl ContainerCache {
         self.by_rid.clear().await;
     }
 
-    // ----- internal helpers -----
-
-    /// Cross-populates the by-RID cache from a resolved reference.
-    async fn cross_populate_by_rid(&self, resolved: &Arc<ContainerReference>) {
-        let rid_key = ContainerRidKey::from_container(resolved);
-        let cloned = resolved.as_ref().clone();
-        self.by_rid
-            .get_or_insert_with(rid_key, || async { cloned })
-            .await;
-    }
-
-    /// Cross-populates the by-name cache from a resolved reference.
-    async fn cross_populate_by_name(&self, resolved: &Arc<ContainerReference>) {
-        let name_key = ContainerNameKey::from_container(resolved);
-        let cloned = resolved.as_ref().clone();
-        self.by_name
-            .get_or_insert_with(name_key, || async { cloned })
-            .await;
-    }
 }
 
 impl Default for ContainerCache {
@@ -275,9 +298,10 @@ mod tests {
         let resolved = cache
             .get_or_fetch_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll", || async move {
                 counter_clone.fetch_add(1, Ordering::SeqCst);
-                container_clone
+                Ok(container_clone)
             })
-            .await;
+            .await
+            .unwrap();
 
         assert_eq!(resolved.name(), "mycoll");
         assert_eq!(counter.load(Ordering::SeqCst), 1);
@@ -305,9 +329,10 @@ mod tests {
         cache
             .get_or_fetch_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll", || async move {
                 counter1.fetch_add(1, Ordering::SeqCst);
-                c1
+                Ok(c1)
             })
-            .await;
+            .await
+            .unwrap();
 
         // Second fetch should use cache, not call factory
         let c2 = container.clone();
@@ -315,9 +340,10 @@ mod tests {
         let resolved = cache
             .get_or_fetch_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll", || async move {
                 counter2.fetch_add(1, Ordering::SeqCst);
-                c2
+                Ok(c2)
             })
-            .await;
+            .await
+            .unwrap();
 
         assert_eq!(resolved.name(), "mycoll");
         assert_eq!(counter.load(Ordering::SeqCst), 1);
@@ -338,9 +364,10 @@ mod tests {
         let resolved = cache
             .get_or_fetch_by_rid(ACCOUNT_ENDPOINT, &container_rid, || async move {
                 counter_clone.fetch_add(1, Ordering::SeqCst);
-                container_clone
+                Ok(container_clone)
             })
-            .await;
+            .await
+            .unwrap();
 
         assert_eq!(resolved.name(), "mycoll");
         assert_eq!(counter.load(Ordering::SeqCst), 1);

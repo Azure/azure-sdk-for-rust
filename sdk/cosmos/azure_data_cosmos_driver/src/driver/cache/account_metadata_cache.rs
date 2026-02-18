@@ -15,7 +15,6 @@ pub(crate) struct AccountMetadataCache {
     cache: AsyncCache<AccountEndpoint, AccountProperties>,
 }
 
-#[allow(dead_code)]
 impl AccountMetadataCache {
     /// Creates a new empty account metadata cache.
     pub(crate) fn new() -> Self {
@@ -40,6 +39,7 @@ impl AccountMetadataCache {
     /// Gets cached account properties if available.
     ///
     /// Returns `None` if the account is not in the cache.
+    #[cfg(test)]
     pub(crate) async fn get(&self, endpoint: &AccountEndpoint) -> Option<Arc<AccountProperties>> {
         self.cache.get(endpoint).await
     }
@@ -55,6 +55,7 @@ impl AccountMetadataCache {
     }
 
     /// Clears all cached account metadata.
+    #[cfg(test)]
     pub(crate) async fn clear(&self) {
         self.cache.clear().await;
     }

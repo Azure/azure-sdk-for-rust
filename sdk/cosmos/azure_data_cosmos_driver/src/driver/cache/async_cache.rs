@@ -93,6 +93,7 @@ where
     }
 
     /// Clears all entries from the cache.
+    #[cfg(test)]
     pub(crate) async fn clear(&self) {
         let mut write_guard = self.map.write().await;
         write_guard.clear();
