@@ -4,10 +4,9 @@
 //! Cosmos DB operation representation.
 
 use crate::models::{
-    AccountReference, ContainerReference, CosmosResourceReference, DatabaseReference,
-    ItemReference, OperationType, PartitionKey, ResourceType,
+    AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
+    DatabaseReference, ItemReference, OperationType, PartitionKey, ResourceType,
 };
-use azure_core::http::headers::Headers;
 
 /// Represents a Cosmos DB operation with its routing and execution context.
 ///
@@ -64,8 +63,8 @@ pub struct CosmosOperation {
     resource_reference: CosmosResourceReference,
     /// Optional partition key for data plane operations.
     partition_key: Option<PartitionKey>,
-    /// Additional headers to include in the request.
-    headers: Headers,
+    /// Additional request headers to include in the request.
+    request_headers: CosmosRequestHeaders,
     /// Optional request body (raw bytes, schema-agnostic).
     body: Option<Vec<u8>>,
 }
@@ -98,9 +97,9 @@ impl CosmosOperation {
         self.partition_key.as_ref()
     }
 
-    /// Returns the additional headers.
-    pub fn headers(&self) -> &Headers {
-        &self.headers
+    /// Returns the request headers.
+    pub fn request_headers(&self) -> &CosmosRequestHeaders {
+        &self.request_headers
     }
 
     /// Returns the request body, if set.
@@ -114,13 +113,24 @@ impl CosmosOperation {
         self
     }
 
-    /// Adds a header to the operation.
-    pub fn with_header(
+    /// Sets request headers for the operation.
+    pub fn with_request_headers(mut self, headers: CosmosRequestHeaders) -> Self {
+        self.request_headers = headers;
+        self
+    }
+
+    /// Sets the session token request header for the operation.
+    pub fn with_session_token(
         mut self,
-        name: impl Into<azure_core::http::headers::HeaderName>,
-        value: impl Into<azure_core::http::headers::HeaderValue>,
+        session_token: impl Into<crate::models::SessionToken>,
     ) -> Self {
-        self.headers.insert(name, value);
+        self.request_headers = self.request_headers.with_session_token(session_token);
+        self
+    }
+
+    /// Sets the activity ID request header for the operation.
+    pub fn with_activity_id(mut self, activity_id: crate::models::ActivityId) -> Self {
+        self.request_headers = self.request_headers.with_activity_id(activity_id);
         self
     }
 
@@ -144,7 +154,7 @@ impl CosmosOperation {
             resource_type,
             resource_reference,
             partition_key: None,
-            headers: Headers::new(),
+            request_headers: CosmosRequestHeaders::new(),
             body: None,
         }
     }
@@ -162,7 +172,7 @@ impl CosmosOperation {
             resource_type,
             resource_reference,
             partition_key: Some(partition_key),
-            headers: Headers::new(),
+            request_headers: CosmosRequestHeaders::new(),
             body: None,
         }
     }

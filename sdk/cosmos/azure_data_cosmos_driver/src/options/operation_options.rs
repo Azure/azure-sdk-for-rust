@@ -3,8 +3,6 @@
 
 //! Request options for Cosmos DB operations.
 
-use azure_core::http::headers::Headers;
-
 use crate::{
     models::{ETagCondition, PartitionKey, SessionToken, ThroughputControlGroupName},
     options::{
@@ -238,20 +236,5 @@ impl OperationOptions {
     /// Gets the quota info enabled setting.
     pub fn quota_info_enabled_ref(&self) -> Option<&QuotaInfoEnabled> {
         self.quota_info_enabled.as_ref()
-    }
-
-    /// Sets custom HTTP headers to include in the request.
-    ///
-    /// Custom headers are best-effort: the caller may specify any header, but whether
-    /// it is actually sent to the service is at the discretion of the library. There
-    /// is no guarantee that a given custom header will be included in the outgoing request.
-    pub fn with_custom_headers(mut self, headers: Headers) -> Self {
-        self.runtime.custom_headers = Some(headers);
-        self
-    }
-
-    /// Gets the custom headers.
-    pub fn custom_headers_ref(&self) -> Option<&Headers> {
-        self.runtime.custom_headers.as_ref()
     }
 }

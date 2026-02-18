@@ -7,8 +7,8 @@ use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosHeaders, CosmosOperation, CosmosResult, DatabaseProperties, DatabaseReference,
-        RequestCharge, SubStatusCode,
+        CosmosOperation, CosmosResponseHeaders, CosmosResult, DatabaseProperties,
+        DatabaseReference, RequestCharge, SubStatusCode,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
@@ -217,10 +217,10 @@ impl CosmosDriver {
             request.set_body(body.to_vec());
         }
 
-        // Step 9: Add operation headers
-        for (name, value) in operation.headers().iter() {
-            request.insert_header(name.clone(), value.clone());
-        }
+        // Step 9: Add operation request headers
+        operation
+            .request_headers()
+            .write_to_headers(request.headers_mut());
 
         // Step 9b: Add partition key header if set
         if let Some(pk) = operation.partition_key() {
@@ -285,21 +285,15 @@ impl CosmosDriver {
         match result {
             Ok(response) => {
                 let status_code = response.status();
+                let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
 
                 // Extract sub-status from headers if present
-                let sub_status = response
-                    .headers()
-                    .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
-                        "x-ms-substatus",
-                    ))
-                    .and_then(SubStatusCode::from_header_value);
+                let sub_status = cosmos_headers.substatus();
 
                 // Update request with response data (before completing to keep it mutable)
                 if let Some(charge) = response
                     .headers()
-                    .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
-                        "x-ms-request-charge",
-                    ))
+                    .get_optional_str(&CosmosResponseHeaders::request_charge_header_name())
                     .and_then(|s| s.parse::<f64>().ok())
                     .map(RequestCharge::new)
                 {
@@ -320,7 +314,6 @@ impl CosmosDriver {
                 diagnostics_builder.set_operation_status(status_code, sub_status);
 
                 // Extract headers and body
-                let cosmos_headers = CosmosHeaders::from_headers(response.headers());
                 let body = response.into_body();
 
                 // Complete diagnostics

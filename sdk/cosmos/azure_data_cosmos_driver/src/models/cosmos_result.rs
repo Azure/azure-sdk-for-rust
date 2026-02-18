@@ -3,30 +3,8 @@
 
 //! Cosmos DB operation result types.
 
-use crate::{
-    diagnostics::DiagnosticsContext,
-    models::{ActivityId, RequestCharge},
-};
-use azure_core::http::headers::Headers;
+use crate::{diagnostics::DiagnosticsContext, models::CosmosResponseHeaders};
 use std::sync::Arc;
-
-/// Standard Cosmos DB response header names.
-///
-/// All names are lowercase as required by [`HeaderName`]. The azure_core [`Headers`]
-/// type normalizes header names to lowercase on insertion, so lookups are case-sensitive
-/// but will always match since both sides are lowercase.
-mod header_names {
-    use azure_core::http::headers::HeaderName;
-
-    pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-    pub static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
-    pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-    pub static CONTENT_LOCATION: HeaderName = HeaderName::from_static("content-location");
-    pub static ETAG: HeaderName = HeaderName::from_static("etag");
-    pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
-    pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
-    pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
-}
 
 /// Result of a Cosmos DB operation.
 ///
@@ -62,7 +40,7 @@ pub struct CosmosResult {
     body: Vec<u8>,
 
     /// Extracted Cosmos-specific headers.
-    headers: CosmosHeaders,
+    headers: CosmosResponseHeaders,
 
     /// Full diagnostics context for this operation (contains status codes).
     diagnostics: Arc<DiagnosticsContext>,
@@ -76,7 +54,7 @@ impl CosmosResult {
     /// (set via `DiagnosticsContextBuilder::set_operation_status` before completion).
     pub(crate) fn new(
         body: Vec<u8>,
-        headers: CosmosHeaders,
+        headers: CosmosResponseHeaders,
         diagnostics: Arc<DiagnosticsContext>,
     ) -> Self {
         Self {
@@ -100,12 +78,12 @@ impl CosmosResult {
     }
 
     /// Consumes the result and returns all parts.
-    pub(crate) fn into_parts(self) -> (Vec<u8>, CosmosHeaders, Arc<DiagnosticsContext>) {
+    pub(crate) fn into_parts(self) -> (Vec<u8>, CosmosResponseHeaders, Arc<DiagnosticsContext>) {
         (self.body, self.headers, self.diagnostics)
     }
 
     /// Returns a reference to the extracted headers.
-    pub(crate) fn headers(&self) -> &CosmosHeaders {
+    pub fn headers(&self) -> &CosmosResponseHeaders {
         &self.headers
     }
 
@@ -119,158 +97,12 @@ impl CosmosResult {
     }
 }
 
-/// Cosmos-specific headers extracted from HTTP response.
-///
-/// These headers contain important metadata about the operation including
-/// request charges (RU), session tokens, and activity IDs for debugging.
-#[derive(Clone, Debug, Default)]
-#[non_exhaustive]
-pub(crate) struct CosmosHeaders {
-    /// Activity ID for request correlation (`x-ms-activity-id`).
-    activity_id: Option<ActivityId>,
-
-    /// Request charge in Request Units (`x-ms-request-charge`).
-    request_charge: Option<RequestCharge>,
-
-    /// Session token for session consistency (`x-ms-session-token`).
-    session_token: Option<String>,
-
-    /// Content location URI (`content-location`).
-    content_location: Option<String>,
-
-    /// ETag for optimistic concurrency (`etag`).
-    etag: Option<String>,
-
-    /// Continuation token for pagination (`x-ms-continuation`).
-    continuation: Option<String>,
-
-    /// Item count in response (`x-ms-item-count`).
-    item_count: Option<u32>,
-}
-
-impl CosmosHeaders {
-    /// Creates an empty `CosmosHeaders`.
-    pub(crate) fn new() -> Self {
-        Self::default()
-    }
-
-    /// Extracts Cosmos headers from HTTP response headers.
-    ///
-    /// This parses standard Cosmos headers into typed fields for easy access.
-    pub(crate) fn from_headers(headers: &Headers) -> Self {
-        Self {
-            activity_id: headers
-                .get_optional_str(&header_names::ACTIVITY_ID)
-                .map(|s| ActivityId::from_string(s.to_owned())),
-            request_charge: headers
-                .get_optional_str(&header_names::REQUEST_CHARGE)
-                .and_then(|s| s.parse::<f64>().ok())
-                .map(RequestCharge::new),
-            session_token: headers
-                .get_optional_str(&header_names::SESSION_TOKEN)
-                .map(|s| s.to_owned()),
-            content_location: headers
-                .get_optional_str(&header_names::CONTENT_LOCATION)
-                .map(|s| s.to_owned()),
-            etag: headers
-                .get_optional_str(&header_names::ETAG)
-                .map(|s| s.to_owned()),
-            continuation: headers
-                .get_optional_str(&header_names::CONTINUATION)
-                .map(|s| s.to_owned()),
-            item_count: headers
-                .get_optional_str(&header_names::ITEM_COUNT)
-                .and_then(|s| s.parse().ok()),
-        }
-    }
-
-    /// Returns the activity ID for request correlation.
-    pub fn activity_id(&self) -> Option<&ActivityId> {
-        self.activity_id.as_ref()
-    }
-
-    /// Returns the request charge (RU) for this response.
-    ///
-    /// For the total RU across all requests (including retries),
-    /// use [`DiagnosticsContext::total_request_charge`].
-    pub fn request_charge(&self) -> Option<RequestCharge> {
-        self.request_charge
-    }
-
-    /// Returns the session token for session consistency.
-    ///
-    /// When using session consistency, this token should be propagated
-    /// to subsequent requests to ensure read-your-writes semantics.
-    pub fn session_token(&self) -> Option<&str> {
-        self.session_token.as_deref()
-    }
-
-    /// Returns the content location URI.
-    pub fn content_location(&self) -> Option<&str> {
-        self.content_location.as_deref()
-    }
-
-    /// Returns the ETag for optimistic concurrency control.
-    pub fn etag(&self) -> Option<&str> {
-        self.etag.as_deref()
-    }
-
-    /// Returns the continuation token for pagination.
-    ///
-    /// If present, there are more results available. Pass this token
-    /// to the next request to retrieve the next page.
-    pub fn continuation(&self) -> Option<&str> {
-        self.continuation.as_deref()
-    }
-
-    /// Returns the item count in this response.
-    pub fn item_count(&self) -> Option<u32> {
-        self.item_count
-    }
-
-    /// Sets the activity ID.
-    pub fn with_activity_id(mut self, activity_id: ActivityId) -> Self {
-        self.activity_id = Some(activity_id);
-        self
-    }
-
-    /// Sets the request charge.
-    pub fn with_request_charge(mut self, charge: RequestCharge) -> Self {
-        self.request_charge = Some(charge);
-        self
-    }
-
-    /// Sets the session token.
-    pub fn with_session_token(mut self, token: String) -> Self {
-        self.session_token = Some(token);
-        self
-    }
-
-    /// Sets the ETag.
-    pub fn with_etag(mut self, etag: String) -> Self {
-        self.etag = Some(etag);
-        self
-    }
-
-    /// Sets the continuation token.
-    pub fn with_continuation(mut self, continuation: String) -> Self {
-        self.continuation = Some(continuation);
-        self
-    }
-
-    /// Sets the item count.
-    pub fn with_item_count(mut self, count: u32) -> Self {
-        self.item_count = Some(count);
-        self
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
         diagnostics::DiagnosticsContextBuilder,
-        models::{CosmosStatus, RequestCharge, SubStatusCode},
+        models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
         options::DiagnosticsOptions,
     };
     use azure_core::http::StatusCode;
@@ -291,7 +123,7 @@ mod tests {
 
     #[test]
     fn cosmos_result_accessors() {
-        let headers = CosmosHeaders::new()
+        let headers = CosmosResponseHeaders::new()
             .with_request_charge(RequestCharge::new(5.5))
             .with_activity_id(ActivityId::from_string("test-activity".to_string()));
 
@@ -317,7 +149,7 @@ mod tests {
     fn cosmos_result_error_status() {
         let result = CosmosResult::new(
             b"{}".to_vec(),
-            CosmosHeaders::new(),
+            CosmosResponseHeaders::new(),
             make_diagnostics(
                 Some(StatusCode::TooManyRequests),
                 Some(SubStatusCode::new(3200)),
@@ -332,7 +164,7 @@ mod tests {
 
     #[test]
     fn cosmos_result_into_parts() {
-        let headers = CosmosHeaders::new().with_request_charge(RequestCharge::new(1.0));
+        let headers = CosmosResponseHeaders::new().with_request_charge(RequestCharge::new(1.0));
         let result = CosmosResult::new(
             b"body".to_vec(),
             headers,
@@ -355,7 +187,11 @@ mod tests {
             Some(StatusCode::NotFound),
             Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
         );
-        let result = CosmosResult::new(b"{}".to_vec(), CosmosHeaders::new(), diagnostics.clone());
+        let result = CosmosResult::new(
+            b"{}".to_vec(),
+            CosmosResponseHeaders::new(),
+            diagnostics.clone(),
+        );
 
         // Status codes are only accessible via diagnostics
         let status = diagnostics.status().unwrap();
@@ -365,58 +201,5 @@ mod tests {
         let result_status = result.diagnostics().status().unwrap();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);
         assert!(result_status.is_read_session_not_available());
-    }
-
-    #[test]
-    fn cosmos_headers_from_azure_headers() {
-        let mut headers = Headers::new();
-        headers.insert("x-ms-activity-id", "abc-123");
-        headers.insert("x-ms-request-charge", "5.67");
-        headers.insert("x-ms-session-token", "session:456");
-        headers.insert("etag", "\"version-1\"");
-        headers.insert("x-ms-continuation", "next-page-token");
-        headers.insert("x-ms-item-count", "10");
-
-        let cosmos_headers = CosmosHeaders::from_headers(&headers);
-
-        assert_eq!(
-            cosmos_headers.activity_id().map(|a| a.as_str()),
-            Some("abc-123")
-        );
-        assert!((cosmos_headers.request_charge().unwrap().value() - 5.67).abs() < f64::EPSILON);
-        assert_eq!(cosmos_headers.session_token(), Some("session:456"));
-        assert_eq!(cosmos_headers.etag(), Some("\"version-1\""));
-        assert_eq!(cosmos_headers.continuation(), Some("next-page-token"));
-        assert_eq!(cosmos_headers.item_count(), Some(10));
-    }
-
-    #[test]
-    fn cosmos_headers_builder_pattern() {
-        let headers = CosmosHeaders::new()
-            .with_activity_id(ActivityId::from_string("test".to_string()))
-            .with_request_charge(RequestCharge::new(2.0))
-            .with_session_token("token".to_string())
-            .with_etag("etag".to_string())
-            .with_continuation("cont".to_string())
-            .with_item_count(5);
-
-        assert_eq!(headers.activity_id().map(|a| a.as_str()), Some("test"));
-        assert_eq!(headers.request_charge(), Some(RequestCharge::new(2.0)));
-        assert_eq!(headers.session_token(), Some("token"));
-        assert_eq!(headers.etag(), Some("etag"));
-        assert_eq!(headers.continuation(), Some("cont"));
-        assert_eq!(headers.item_count(), Some(5));
-    }
-
-    #[test]
-    fn cosmos_headers_default_empty() {
-        let headers = CosmosHeaders::default();
-
-        assert!(headers.activity_id().is_none());
-        assert!(headers.request_charge().is_none());
-        assert!(headers.session_token().is_none());
-        assert!(headers.etag().is_none());
-        assert!(headers.continuation().is_none());
-        assert!(headers.item_count().is_none());
     }
 }
