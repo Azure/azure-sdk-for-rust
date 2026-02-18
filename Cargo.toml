@@ -13,6 +13,7 @@ members = [
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
+  "sdk/cosmos/azure_data_cosmos_driver",
   "sdk/cosmos/azure_data_cosmos_native",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
@@ -151,6 +152,10 @@ url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
 wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
+windows-sys = { version = "0.61", features = [
+  "Win32_System_Threading",
+  "Win32_System_SystemInformation",
+] }
 zip = { version = "7.4.0", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
@@ -158,7 +163,10 @@ large_futures = "deny"
 uninlined_format_args = "allow"
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)'] }
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(docsrs)',
+  'cfg(test_category, values("emulator", "multi_write"))',
+] }
 
 [workspace.lints.rustdoc]
 bare_urls = "allow"
