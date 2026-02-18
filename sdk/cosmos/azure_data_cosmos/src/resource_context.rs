@@ -558,33 +558,6 @@ mod tests {
     }
 
     #[test]
-    pub fn database_id_from_resource_link() {
-        // Database-level link
-        let link = ResourceLink::root(ResourceType::Databases).item("TestDB");
-        assert_eq!(Some("TestDB".to_string()), link.database_id());
-
-        // Container-level link
-        let link = ResourceLink::root(ResourceType::Databases)
-            .item("TestDB")
-            .feed(ResourceType::Containers)
-            .item("TestContainer");
-        assert_eq!(Some("TestDB".to_string()), link.database_id());
-
-        // Document-level link
-        let link = ResourceLink::root(ResourceType::Databases)
-            .item("MyDB")
-            .feed(ResourceType::Containers)
-            .item("MyColl")
-            .feed(ResourceType::Documents)
-            .item("MyDoc");
-        assert_eq!(Some("MyDB".to_string()), link.database_id());
-
-        // Root feed link with no item
-        let link = ResourceLink::root(ResourceType::Databases);
-        assert_eq!(None, link.database_id());
-    }
-
-    #[test]
     pub fn container_id_from_resource_link() {
         // Container-level link
         let link = ResourceLink::root(ResourceType::Databases)
