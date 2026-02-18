@@ -178,7 +178,10 @@ fn authentication_error(credential_name: &str, err: Error) -> Error {
         stringify!(WorkloadIdentityCredential) => "#workload",
         _ => "",
     };
+    const WHITESPACE: &[char; 3] = &['\t', '\x0c', ' '];
+
     let err_str = err.to_string();
+    let err_str = err_str.trim_matches(WHITESPACE);
     let separator = if err_str.starts_with('\n') { "" } else { " " };
     let mut message = format!("{credential_name} authentication failed.{separator}{err_str}");
     if !link_fragment.is_empty() {
