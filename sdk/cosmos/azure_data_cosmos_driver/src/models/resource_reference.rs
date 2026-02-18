@@ -644,50 +644,39 @@ impl UdfReference {
 ///
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PartitionKeyRangeReference {
-    /// Reference to the parent account.
-    account: AccountReference,
+    /// Reference to the parent container.
+    container: ContainerReference,
     /// The partition key range identifier.
     id: PartitionKeyRangeId,
 }
 
 impl PartitionKeyRangeReference {
-    /// Creates a new partition key range reference by name.
-    pub fn from_name(
-        account: AccountReference,
-        db_name: impl Into<String>,
-        container_name: impl Into<String>,
-        range_id: impl Into<String>,
+    /// Creates a new partition key range reference from a range ID.
+    pub fn from_range_id(
+        container: &ContainerReference,
+        range_id: impl Into<Cow<'static, str>>,
     ) -> Self {
+        let range_id = ResourceName::new(range_id);
         Self {
-            account,
+            container: container.clone(),
             id: PartitionKeyRangeId::ByName {
                 container: ContainerId::ByName {
-                    db_name: ResourceName::from(db_name.into()),
-                    name: ResourceName::from(container_name.into()),
+                    db_name: container.db_name_ref().clone(),
+                    name: container.container_name_ref().clone(),
                 },
-                range_id: ResourceName::from(range_id.into()),
+                range_id,
             },
         }
     }
 
-    /// Creates a new partition key range reference by RID.
-    pub fn from_rid(
-        account: AccountReference,
-        container_rid: impl Into<String>,
-        range_id: impl Into<String>,
-    ) -> Self {
-        Self {
-            account,
-            id: PartitionKeyRangeId::ByRid {
-                container_rid: ResourceRid::from(container_rid.into()),
-                range_id: ResourceName::from(range_id.into()),
-            },
-        }
+    /// Returns a reference to the parent container.
+    pub fn container(&self) -> &ContainerReference {
+        &self.container
     }
 
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
-        &self.account
+        self.container.account()
     }
 
     /// Returns the partition key range ID.
