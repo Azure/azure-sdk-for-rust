@@ -26,10 +26,6 @@ impl ResourceName {
         &self.0
     }
 
-    /// Consumes the `ResourceName` and returns the inner `Cow<'static, str>`.
-    pub fn into_inner(self) -> Cow<'static, str> {
-        self.0
-    }
 }
 
 impl From<&'static str> for ResourceName {
@@ -75,10 +71,6 @@ impl ResourceRid {
         &self.0
     }
 
-    /// Consumes the `ResourceRid` and returns the inner `Cow<'static, str>`.
-    pub fn into_inner(self) -> Cow<'static, str> {
-        self.0
-    }
 }
 
 impl From<&'static str> for ResourceRid {
@@ -110,47 +102,23 @@ impl std::fmt::Display for ResourceRid {
 // =============================================================================
 // These enums enforce either all-names or all-RIDs addressing at compile time.
 
-/// Database identifier - either by name or by RID.
+/// Generic resource identifier: either by name or by RID.
+///
+/// This is reused across resource reference types (including databases) to avoid
+/// duplicating identical `ByName`/`ByRid` enums per resource.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum DatabaseId {
-    /// Reference by user-provided name.
+pub(crate) enum ResourceIdentifierType {
+    /// Reference by user-provided resource name.
     ByName(ResourceName),
     /// Reference by internal RID.
     ByRid(ResourceRid),
-}
-
-impl DatabaseId {
-    /// Returns the name if this is a name-based identifier.
-    pub(crate) fn name(&self) -> Option<&str> {
-        match self {
-            Self::ByName(name) => Some(name.as_str()),
-            Self::ByRid(_) => None,
-        }
-    }
-
-    /// Returns the RID if this is a RID-based identifier.
-    pub(crate) fn rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName(_) => None,
-            Self::ByRid(rid) => Some(rid.as_str()),
-        }
-    }
-
-    /// Returns the name-based path segment: `{name}` or `None` if RID-based.
-    pub(crate) fn name_segment(&self) -> Option<&str> {
-        self.name()
-    }
-
-    /// Returns the RID-based path segment: `{rid}` or `None` if name-based.
-    pub(crate) fn rid_segment(&self) -> Option<&str> {
-        self.rid()
-    }
 }
 
 /// Container identifier - either by name (with database name) or by RID (with database RID).
 ///
 /// Enforces consistency: if container is by name, database must also be by name.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) enum ContainerId {
     /// Reference by user-provided names (database name + container name).
     ByName {
@@ -168,6 +136,7 @@ pub(crate) enum ContainerId {
     },
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 impl ContainerId {
     /// Returns the container name if this is a name-based identifier.
     pub(crate) fn name(&self) -> Option<&str> {
@@ -201,25 +170,6 @@ impl ContainerId {
         }
     }
 
-    /// Extracts the database ID from this container ID.
-    pub(crate) fn database_id(&self) -> DatabaseId {
-        match self {
-            Self::ByName { db_name, .. } => DatabaseId::ByName(db_name.clone()),
-            Self::ByRid { db_rid, .. } => DatabaseId::ByRid(db_rid.clone()),
-        }
-    }
-}
-
-/// Simple resource identifier type - just name or RID.
-///
-/// Used in references where the parent container is stored separately
-/// (for example [`crate::models::ItemReference`]).
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum ResourceIdentifierType {
-    /// Reference by user-provided resource name.
-    ByName(ResourceName),
-    /// Reference by internal RID.
-    ByRid(ResourceRid),
 }
 
 impl ResourceIdentifierType {
@@ -264,6 +214,7 @@ impl ResourceIdentifierType {
 ///
 /// Enforces consistency: if item is by name, container must also be by name.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg(test)]
 pub(crate) enum ItemId {
     /// Reference by user-provided names.
     ByName {
@@ -281,6 +232,7 @@ pub(crate) enum ItemId {
     },
 }
 
+#[cfg(test)]
 impl ItemId {
     /// Returns the item name if this is a name-based identifier.
     pub(crate) fn name(&self) -> Option<&str> {
@@ -315,169 +267,11 @@ impl ItemId {
     }
 }
 
-/// Stored procedure identifier - either by name or by RID.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum StoredProcedureId {
-    /// Reference by user-provided names.
-    ByName {
-        /// Parent container identifier (by name).
-        container: ContainerId,
-        /// Stored procedure name.
-        name: ResourceName,
-    },
-    /// Reference by internal RIDs.
-    ByRid {
-        /// Parent container RID.
-        container_rid: ResourceRid,
-        /// Stored procedure RID.
-        rid: ResourceRid,
-    },
-}
-
-impl StoredProcedureId {
-    /// Returns the stored procedure name if this is a name-based identifier.
-    pub(crate) fn name(&self) -> Option<&str> {
-        match self {
-            Self::ByName { name, .. } => Some(name.as_str()),
-            Self::ByRid { .. } => None,
-        }
-    }
-
-    /// Returns the stored procedure RID if this is a RID-based identifier.
-    pub(crate) fn rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName { .. } => None,
-            Self::ByRid { rid, .. } => Some(rid.as_str()),
-        }
-    }
-
-    /// Returns the container ID if this is a name-based identifier.
-    pub(crate) fn container_id(&self) -> Option<&ContainerId> {
-        match self {
-            Self::ByName { container, .. } => Some(container),
-            Self::ByRid { .. } => None,
-        }
-    }
-
-    /// Returns the container RID if this is a RID-based identifier.
-    pub(crate) fn container_rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName { .. } => None,
-            Self::ByRid { container_rid, .. } => Some(container_rid.as_str()),
-        }
-    }
-}
-
-/// Trigger identifier - either by name or by RID.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum TriggerId {
-    /// Reference by user-provided names.
-    ByName {
-        /// Parent container identifier (by name).
-        container: ContainerId,
-        /// Trigger name.
-        name: ResourceName,
-    },
-    /// Reference by internal RIDs.
-    ByRid {
-        /// Parent container RID.
-        container_rid: ResourceRid,
-        /// Trigger RID.
-        rid: ResourceRid,
-    },
-}
-
-impl TriggerId {
-    /// Returns the trigger name if this is a name-based identifier.
-    pub(crate) fn name(&self) -> Option<&str> {
-        match self {
-            Self::ByName { name, .. } => Some(name.as_str()),
-            Self::ByRid { .. } => None,
-        }
-    }
-
-    /// Returns the trigger RID if this is a RID-based identifier.
-    pub(crate) fn rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName { .. } => None,
-            Self::ByRid { rid, .. } => Some(rid.as_str()),
-        }
-    }
-
-    /// Returns the container ID if this is a name-based identifier.
-    pub(crate) fn container_id(&self) -> Option<&ContainerId> {
-        match self {
-            Self::ByName { container, .. } => Some(container),
-            Self::ByRid { .. } => None,
-        }
-    }
-
-    /// Returns the container RID if this is a RID-based identifier.
-    pub(crate) fn container_rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName { .. } => None,
-            Self::ByRid { container_rid, .. } => Some(container_rid.as_str()),
-        }
-    }
-}
-
-/// User-defined function identifier - either by name or by RID.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum UdfId {
-    /// Reference by user-provided names.
-    ByName {
-        /// Parent container identifier (by name).
-        container: ContainerId,
-        /// UDF name.
-        name: ResourceName,
-    },
-    /// Reference by internal RIDs.
-    ByRid {
-        /// Parent container RID.
-        container_rid: ResourceRid,
-        /// UDF RID.
-        rid: ResourceRid,
-    },
-}
-
-impl UdfId {
-    /// Returns the UDF name if this is a name-based identifier.
-    pub(crate) fn name(&self) -> Option<&str> {
-        match self {
-            Self::ByName { name, .. } => Some(name.as_str()),
-            Self::ByRid { .. } => None,
-        }
-    }
-
-    /// Returns the UDF RID if this is a RID-based identifier.
-    pub(crate) fn rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName { .. } => None,
-            Self::ByRid { rid, .. } => Some(rid.as_str()),
-        }
-    }
-
-    /// Returns the container ID if this is a name-based identifier.
-    pub(crate) fn container_id(&self) -> Option<&ContainerId> {
-        match self {
-            Self::ByName { container, .. } => Some(container),
-            Self::ByRid { .. } => None,
-        }
-    }
-
-    /// Returns the container RID if this is a RID-based identifier.
-    pub(crate) fn container_rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName { .. } => None,
-            Self::ByRid { container_rid, .. } => Some(container_rid.as_str()),
-        }
-    }
-}
-
 /// Partition key range identifier.
 ///
 /// Partition key ranges are internal resources identified by their ID string.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[allow(dead_code)]
 pub(crate) enum PartitionKeyRangeId {
     /// Reference by range ID within a container (by name).
     ByName {
@@ -503,21 +297,6 @@ impl PartitionKeyRangeId {
         }
     }
 
-    /// Returns the container ID if this is a name-based identifier.
-    pub(crate) fn container_id(&self) -> Option<&ContainerId> {
-        match self {
-            Self::ByName { container, .. } => Some(container),
-            Self::ByRid { .. } => None,
-        }
-    }
-
-    /// Returns the container RID if this is a RID-based identifier.
-    pub(crate) fn container_rid(&self) -> Option<&str> {
-        match self {
-            Self::ByName { .. } => None,
-            Self::ByRid { container_rid, .. } => Some(container_rid.as_str()),
-        }
-    }
 }
 
 // =============================================================================
@@ -529,6 +308,7 @@ impl PartitionKeyRangeId {
 /// RIDs encode the resource hierarchy. This struct extracts the individual
 /// components for validation and path construction.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg(test)]
 pub(crate) struct ParsedResourceId {
     /// The database RID component (if present).
     database_rid: Option<ResourceRid>,
@@ -538,6 +318,7 @@ pub(crate) struct ParsedResourceId {
     document_rid: Option<ResourceRid>,
 }
 
+#[cfg(test)]
 impl ParsedResourceId {
     /// Creates an empty parsed resource ID.
     pub(crate) fn empty() -> Self {
@@ -614,11 +395,13 @@ impl ParsedResourceId {
 ///
 /// Valid RID byte lengths: 3 (offer), 4 (database), 8 (collection),
 /// 16 (document/SP/trigger/UDF/PKRange), 20 (attachment).
+#[cfg(test)]
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 /// Decodes a Cosmos DB RID string into its raw bytes.
 ///
 /// RIDs use standard Base64 with `-` substituted for `/`.
+#[cfg(test)]
 fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
     if rid.is_empty() {
         return Err(RidParseError::Empty);
@@ -635,6 +418,7 @@ fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
 /// Encodes raw bytes into a Cosmos DB RID string.
 ///
 /// Uses standard Base64 with `/` replaced by `-`.
+#[cfg(test)]
 fn encode_rid(bytes: &[u8]) -> String {
     STANDARD.encode(bytes).replace('/', "-")
 }
@@ -654,6 +438,7 @@ fn encode_rid(bytes: &[u8]) -> String {
 /// ```ignore
 /// let db_rid = extract_database_rid_from_container_rid("dbs-rid==").unwrap();
 /// ```
+#[cfg(test)]
 pub(crate) fn extract_database_rid_from_container_rid(
     container_rid: &str,
 ) -> Result<ResourceRid, RidParseError> {
@@ -675,6 +460,7 @@ pub(crate) fn extract_database_rid_from_container_rid(
 ///
 /// Returns `Err` if the input is not a valid document/sub-resource RID
 /// (must decode to at least 16 bytes with `buffer.len() % 4 == 0`).
+#[cfg(test)]
 pub(crate) fn extract_container_rid_from_document_rid(
     document_rid: &str,
 ) -> Result<ResourceRid, RidParseError> {
@@ -695,6 +481,7 @@ pub(crate) fn extract_container_rid_from_document_rid(
 /// # Errors
 ///
 /// Returns `Err` if the input is not a valid Cosmos DB RID.
+#[cfg(test)]
 pub(crate) fn parse_rid(rid: &str) -> Result<ParsedResourceId, RidParseError> {
     let bytes = decode_rid(rid)?;
     let len = bytes.len();
@@ -730,6 +517,7 @@ pub(crate) fn parse_rid(rid: &str) -> Result<ParsedResourceId, RidParseError> {
 
 /// Errors that can occur when parsing a Cosmos DB RID.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg(test)]
 pub(crate) enum RidParseError {
     /// The RID string is empty.
     Empty,
@@ -739,6 +527,7 @@ pub(crate) enum RidParseError {
     InvalidBase64,
 }
 
+#[cfg(test)]
 impl std::fmt::Display for RidParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -749,6 +538,7 @@ impl std::fmt::Display for RidParseError {
     }
 }
 
+#[cfg(test)]
 impl std::error::Error for RidParseError {}
 
 #[cfg(test)]
@@ -775,14 +565,14 @@ mod tests {
 
     #[test]
     fn database_id_by_name() {
-        let id = DatabaseId::ByName(ResourceName::from("testdb"));
+        let id = ResourceIdentifierType::ByName(ResourceName::from("testdb"));
         assert_eq!(id.name(), Some("testdb"));
         assert_eq!(id.rid(), None);
     }
 
     #[test]
     fn database_id_by_rid() {
-        let id = DatabaseId::ByRid(ResourceRid::from("abc123"));
+        let id = ResourceIdentifierType::ByRid(ResourceRid::from("abc123"));
         assert_eq!(id.name(), None);
         assert_eq!(id.rid(), Some("abc123"));
     }
@@ -809,25 +599,6 @@ mod tests {
         assert_eq!(id.name(), None);
         assert_eq!(id.database_rid(), Some("db123"));
         assert_eq!(id.rid(), Some("coll456"));
-    }
-
-    #[test]
-    fn container_id_extracts_database_id() {
-        let container_by_name = ContainerId::ByName {
-            db_name: ResourceName::from("testdb"),
-            name: ResourceName::from("testcontainer"),
-        };
-        let db_id = container_by_name.database_id();
-        assert!(matches!(db_id, DatabaseId::ByName(_)));
-        assert_eq!(db_id.name(), Some("testdb"));
-
-        let container_by_rid = ContainerId::ByRid {
-            db_rid: ResourceRid::from("db123"),
-            rid: ResourceRid::from("coll456"),
-        };
-        let db_id = container_by_rid.database_id();
-        assert!(matches!(db_id, DatabaseId::ByRid(_)));
-        assert_eq!(db_id.rid(), Some("db123"));
     }
 
     #[test]

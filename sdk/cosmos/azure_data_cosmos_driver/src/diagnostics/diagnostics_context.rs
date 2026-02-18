@@ -306,6 +306,7 @@ impl RequestDiagnostics {
     /// Sets the status to 408 (Request Timeout) with sub-status
     /// [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
     /// operation timeout from the client side.
+    #[cfg(test)]
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
         self.timed_out = true;
@@ -344,33 +345,28 @@ impl RequestDiagnostics {
     }
 
     /// Records an error for this request.
-    pub(crate) fn with_error(mut self, error: impl Into<String>) -> Self {
+    pub(crate) fn with_error(&mut self, error: impl Into<String>) {
         self.error = Some(error.into());
-        self
     }
 
     /// Sets the sub-status code.
-    pub(crate) fn with_sub_status(mut self, sub_status: SubStatusCode) -> Self {
+    pub(crate) fn with_sub_status(&mut self, sub_status: SubStatusCode) {
         self.status = CosmosStatus::from_parts(self.status.status_code(), Some(sub_status));
-        self
     }
 
     /// Sets the request charge.
-    pub(crate) fn with_charge(mut self, charge: RequestCharge) -> Self {
+    pub(crate) fn with_charge(&mut self, charge: RequestCharge) {
         self.request_charge = charge;
-        self
     }
 
     /// Sets the activity ID.
-    pub(crate) fn with_activity_id(mut self, activity_id: ActivityId) -> Self {
+    pub(crate) fn with_activity_id(&mut self, activity_id: ActivityId) {
         self.activity_id = Some(activity_id);
-        self
     }
 
     /// Sets the session token.
-    pub(crate) fn with_session_token(mut self, token: String) -> Self {
+    pub(crate) fn with_session_token(&mut self, token: String) {
         self.session_token = Some(token);
-        self
     }
 
     /// Adds a pipeline event.
@@ -764,9 +760,14 @@ impl DiagnosticsContextBuilder {
         }
     }
 
-    /// Returns the operation's activity ID.
+    /// Returns the operation-level activity ID.
     pub(crate) fn activity_id(&self) -> &ActivityId {
         &self.activity_id
+    }
+
+    /// Returns the number of tracked requests for this operation.
+    pub(crate) fn request_count(&self) -> usize {
+        self.requests.len()
     }
 
     /// Sets the operation-level status codes.
@@ -827,6 +828,7 @@ impl DiagnosticsContextBuilder {
     ///
     /// For transport-level timeouts (connection timeouts, etc.), use
     /// [`fail_request`](Self::fail_request) instead with the appropriate error.
+    #[cfg(test)]
     pub(crate) fn timeout_request(&mut self, handle: RequestHandle) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.timeout();
@@ -883,16 +885,6 @@ impl DiagnosticsContextBuilder {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.add_event(event);
         }
-    }
-
-    /// Returns the total request charge (RU) across all requests.
-    pub(crate) fn total_request_charge(&self) -> RequestCharge {
-        self.requests.iter().map(|r| r.request_charge).sum()
-    }
-
-    /// Returns the number of requests made during this operation.
-    pub(crate) fn request_count(&self) -> usize {
-        self.requests.len()
     }
 
     /// Completes the builder and returns an immutable [`DiagnosticsContext`].

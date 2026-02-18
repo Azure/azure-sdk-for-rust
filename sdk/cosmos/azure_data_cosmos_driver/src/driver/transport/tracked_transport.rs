@@ -92,36 +92,9 @@ impl TrackedRequestState {
         Self { events }
     }
 
-    /// Returns the collected events.
-    pub(crate) fn events(&self) -> &[RequestEvent] {
-        &self.events
-    }
-
     /// Consumes this state and returns the events.
     pub(crate) fn into_events(self) -> Vec<RequestEvent> {
         self.events
-    }
-
-    /// Returns the request sent status based on recorded events only.
-    ///
-    /// - `Sent`: If we received `ResponseHeadersReceived` or `TransportComplete`,
-    ///   the request was definitely sent.
-    /// - `Unknown`: If we can't determine from events alone.
-    ///
-    /// For better accuracy when an error occurred, use
-    /// [`request_sent_status_with_error`](Self::request_sent_status_with_error).
-    pub fn request_sent_status(&self) -> RequestSentStatus {
-        // If any event indicates request was sent, it was definitely sent
-        if self
-            .events
-            .iter()
-            .any(|e| e.event_type().indicates_request_sent())
-        {
-            return RequestSentStatus::Sent;
-        }
-
-        // Without error context, we can't determine if request was sent
-        RequestSentStatus::Unknown
     }
 
     /// Returns the request sent status using both events and error analysis.
@@ -146,11 +119,6 @@ impl TrackedRequestState {
 
         // Use error heuristics to determine if request was definitely not sent
         error.request_sent_status()
-    }
-
-    /// Returns the last event type recorded, if any.
-    pub fn last_event_type(&self) -> Option<&RequestEventType> {
-        self.events.last().map(|e| e.event_type())
     }
 }
 
@@ -199,88 +167,6 @@ impl RequestSentExt for azure_core::Error {
             _ => RequestSentStatus::Unknown,
         }
     }
-}
-
-/// Determines request sent status from reqwest error type.
-///
-/// Reqwest errors can occur at various stages:
-/// - Before sending: DNS failure, connection refused, TLS error
-/// - After sending: Timeout waiting for response, connection reset
-///
-/// # Note
-///
-/// This function is currently unused because the tracked
-/// transport integration with reqwest is not yet wired up. It will be called from
-/// the transport layer once reqwest-based request tracking is enabled.
-///
-/// Unit tests for this function are limited because `reqwest::Error` is an opaque
-/// type that cannot be directly constructed in tests. The error classification
-/// logic is validated indirectly through the `azure_core::Error`-based
-/// `request_sent_status()` tests and integration tests.
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
-    // Connection errors happen before sending
-    if error.is_connect() {
-        return RequestSentStatus::NotSent;
-    }
-
-    // Request build errors happen before sending
-    if error.is_request() {
-        return RequestSentStatus::NotSent;
-    }
-
-    // Timeout could be connect timeout (not sent) or read timeout (sent)
-    if error.is_timeout() {
-        let msg = error.to_string().to_lowercase();
-        if msg.contains("connect") {
-            return RequestSentStatus::NotSent;
-        }
-        // Read/write timeout - can't be certain
-        return RequestSentStatus::Unknown;
-    }
-
-    // Decode errors happen after receiving response (request was sent)
-    if error.is_decode() {
-        return RequestSentStatus::Sent;
-    }
-
-    // Redirect errors happen after receiving response (request was sent)
-    if error.is_redirect() {
-        return RequestSentStatus::Sent;
-    }
-
-    // Status errors have a response (request was sent)
-    if error.is_status() {
-        return RequestSentStatus::Sent;
-    }
-
-    // Body errors during sending - can't determine
-    if error.is_body() {
-        return RequestSentStatus::Unknown;
-    }
-
-    // Default: can't determine
-    RequestSentStatus::Unknown
-}
-
-/// WASM fallback: reqwest doesn't expose error type inspection methods on WASM.
-/// We fall back to string analysis which is less reliable.
-#[cfg(target_arch = "wasm32")]
-pub(crate) fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
-    let msg = error.to_string().to_lowercase();
-
-    // Connection-related errors (before sending)
-    if msg.contains("dns") || msg.contains("connection refused") || msg.contains("connect") {
-        return RequestSentStatus::NotSent;
-    }
-
-    // Response-related errors (after sending)
-    if msg.contains("status") || msg.contains("redirect") || msg.contains("decode") {
-        return RequestSentStatus::Sent;
-    }
-
-    // Default: can't determine
-    RequestSentStatus::Unknown
 }
 
 #[cfg(test)]
@@ -371,8 +257,8 @@ mod tests {
         emitter.emit_type(RequestEventType::TransportComplete);
 
         let state = TrackedRequestState::collect(receiver);
-        assert_eq!(state.events().len(), 3);
-        assert_eq!(state.request_sent_status(), RequestSentStatus::Sent);
+        let events = state.into_events();
+        assert_eq!(events.len(), 3);
     }
 
     #[test]
@@ -385,9 +271,9 @@ mod tests {
         // Simulate body buffering failure - no TransportComplete
 
         let state = TrackedRequestState::collect(receiver);
-        assert_eq!(state.events().len(), 2);
         // Even without TransportComplete, ResponseHeadersReceived means request was sent
-        assert_eq!(state.request_sent_status(), RequestSentStatus::Sent);
+        let err = azure_core::Error::new(ErrorKind::Other, "test error");
+        assert_eq!(state.request_sent_status_with_error(&err), RequestSentStatus::Sent);
     }
 
     #[test]
@@ -400,7 +286,8 @@ mod tests {
 
         let state = TrackedRequestState::collect(receiver);
         // TransportFailed without headers received - we don't know if request was sent
-        assert_eq!(state.request_sent_status(), RequestSentStatus::Unknown);
+        let err = azure_core::Error::new(ErrorKind::Other, "test error");
+        assert_eq!(state.request_sent_status_with_error(&err), RequestSentStatus::Unknown);
     }
 
     #[test]
@@ -408,7 +295,8 @@ mod tests {
         let (_sender, receiver) = event_channel();
         // Don't emit any events
         let state = TrackedRequestState::collect(receiver);
-        assert_eq!(state.request_sent_status(), RequestSentStatus::Unknown);
+        let err = azure_core::Error::new(ErrorKind::Other, "test error");
+        assert_eq!(state.request_sent_status_with_error(&err), RequestSentStatus::Unknown);
     }
 
     #[test]

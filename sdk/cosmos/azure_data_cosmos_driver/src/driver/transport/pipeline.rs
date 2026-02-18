@@ -76,10 +76,6 @@ impl CosmosPipeline {
         Ok(response)
     }
 
-    /// Returns the policies in the order a request is processed.
-    pub(crate) fn policies(&self) -> &[Arc<dyn Policy>] {
-        &self.policies
-    }
 }
 
 /// A transport policy that emits request lifecycle events.

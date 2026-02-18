@@ -74,6 +74,7 @@ impl<T> AsyncLazy<T> {
     }
 
     /// Returns `true` if the value has been initialized.
+    #[cfg(test)]
     pub(crate) fn is_initialized(&self) -> bool {
         self.value
             .try_lock()

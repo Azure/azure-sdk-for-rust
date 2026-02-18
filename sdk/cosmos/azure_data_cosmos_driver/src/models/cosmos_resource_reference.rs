@@ -47,6 +47,7 @@ impl CosmosResourceReference {
     }
 
     /// Returns a reference to the database, if applicable.
+    #[cfg(test)]
     pub(crate) fn database(&self) -> Option<&DatabaseReference> {
         self.database.as_ref()
     }
@@ -57,21 +58,25 @@ impl CosmosResourceReference {
     }
 
     /// Returns the resource name, if set.
+    #[cfg(test)]
     pub(crate) fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
 
     /// Returns the resource identifier (RID), if set.
+    #[cfg(test)]
     pub(crate) fn rid(&self) -> Option<&str> {
         self.rid.as_deref()
     }
 
     /// Returns `true` if this reference is name-based.
+    #[cfg(test)]
     pub(crate) fn is_by_name(&self) -> bool {
         self.name.is_some()
     }
 
     /// Returns `true` if this reference is RID-based.
+    #[cfg(test)]
     pub(crate) fn is_by_rid(&self) -> bool {
         self.rid.is_some()
     }
@@ -80,13 +85,6 @@ impl CosmosResourceReference {
     pub(crate) fn with_name(mut self, name: impl Into<Cow<'static, str>>) -> Self {
         self.name = Some(name.into());
         self.rid = None;
-        self
-    }
-
-    /// Sets the resource identifier (RID).
-    pub(crate) fn with_rid(mut self, rid: impl Into<Cow<'static, str>>) -> Self {
-        self.rid = Some(rid.into());
-        self.name = None;
         self
     }
 

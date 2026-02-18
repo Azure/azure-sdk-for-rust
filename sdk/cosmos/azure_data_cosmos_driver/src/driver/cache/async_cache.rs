@@ -99,23 +99,17 @@ where
     }
 
     /// Returns the number of entries in the cache (including those still initializing).
-    pub(crate) async fn len(&self) -> usize {
+    #[cfg(test)]
+    async fn len(&self) -> usize {
         let read_guard = self.map.read().await;
         read_guard.len()
     }
 
     /// Returns `true` if the cache is empty.
-    pub(crate) async fn is_empty(&self) -> bool {
+    #[cfg(test)]
+    async fn is_empty(&self) -> bool {
         let read_guard = self.map.read().await;
         read_guard.is_empty()
-    }
-
-    /// Returns `true` if the cache contains an entry for the key.
-    ///
-    /// Note: The entry may still be initializing.
-    pub(crate) async fn contains_key(&self, key: &K) -> bool {
-        let read_guard = self.map.read().await;
-        read_guard.contains_key(key)
     }
 
     /// Gets a value, optionally forcing a refresh based on a predicate.
@@ -138,6 +132,7 @@ where
     /// Unlike `invalidate` + `get_or_insert_with`, this approach keeps the old value
     /// available while refresh is in progress, and only replaces it atomically when
     /// the new value is ready.
+    #[cfg(test)]
     pub(crate) async fn get_or_refresh_with<F, Fut, P>(
         &self,
         key: K,

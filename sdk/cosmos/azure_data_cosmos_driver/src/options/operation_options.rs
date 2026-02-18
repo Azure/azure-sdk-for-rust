@@ -114,17 +114,6 @@ impl OperationOptions {
         self.session_token.as_ref()
     }
 
-    /// Sets the ETag condition for optimistic concurrency.
-    pub(crate) fn with_etag_condition(mut self, condition: ETagCondition) -> Self {
-        self.etag_condition = Some(condition);
-        self
-    }
-
-    /// Gets the ETag condition.
-    pub(crate) fn etag_condition_ref(&self) -> Option<&ETagCondition> {
-        self.etag_condition.as_ref()
-    }
-
     /// Sets the partition key for this operation.
     pub fn with_partition_key(mut self, key: PartitionKey) -> Self {
         self.partition_key = Some(key);
@@ -134,6 +123,17 @@ impl OperationOptions {
     /// Gets the partition key.
     pub fn partition_key_ref(&self) -> Option<&PartitionKey> {
         self.partition_key.as_ref()
+    }
+
+    /// Sets the ETag condition for read operations.
+    pub fn with_etag_condition(mut self, condition: ETagCondition) -> Self {
+        self.etag_condition = Some(condition);
+        self
+    }
+
+    /// Gets the ETag condition.
+    pub fn etag_condition_ref(&self) -> Option<&ETagCondition> {
+        self.etag_condition.as_ref()
     }
 
     /// Sets whether the response should include the content after write operations.

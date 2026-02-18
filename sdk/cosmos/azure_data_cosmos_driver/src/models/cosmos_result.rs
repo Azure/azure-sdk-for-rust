@@ -77,11 +77,6 @@ impl CosmosResult {
         self.body
     }
 
-    /// Consumes the result and returns all parts.
-    pub(crate) fn into_parts(self) -> (Vec<u8>, CosmosResponseHeaders, Arc<DiagnosticsContext>) {
-        (self.body, self.headers, self.diagnostics)
-    }
-
     /// Returns a reference to the extracted headers.
     pub fn headers(&self) -> &CosmosResponseHeaders {
         &self.headers
@@ -137,7 +132,7 @@ mod tests {
         let status = result.diagnostics().status().unwrap();
         assert_eq!(status.status_code(), StatusCode::Ok);
         assert!(status.is_success());
-        assert!(status.sub_status_code().is_none());
+        assert!(status.sub_status().is_none());
         assert_eq!(result.body(), b"{\"id\": \"test\"}");
         assert_eq!(
             result.headers().request_charge(),
@@ -163,7 +158,7 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_result_into_parts() {
+    fn cosmos_result_accessors_created_status() {
         let headers = CosmosResponseHeaders::new().with_request_charge(RequestCharge::new(1.0));
         let result = CosmosResult::new(
             b"body".to_vec(),
@@ -171,14 +166,16 @@ mod tests {
             make_diagnostics(Some(StatusCode::Created), None),
         );
 
-        let (body, headers, diagnostics) = result.into_parts();
-        assert_eq!(body, b"body");
+        assert_eq!(result.body(), b"body");
         assert_eq!(
-            diagnostics.status().unwrap().status_code(),
+            result.diagnostics().status().unwrap().status_code(),
             StatusCode::Created
         );
-        assert!(diagnostics.status().unwrap().sub_status_code().is_none());
-        assert_eq!(headers.request_charge(), Some(RequestCharge::new(1.0)));
+        assert!(result.diagnostics().status().unwrap().sub_status().is_none());
+        assert_eq!(result.headers().request_charge(), Some(RequestCharge::new(1.0)));
+
+        let body = result.into_body();
+        assert_eq!(body, b"body");
     }
 
     #[test]

@@ -194,6 +194,7 @@ impl Region {
     ///
     /// **Note**: This is an internal implementation detail and may change.
     /// The returned ID should be treated as an opaque value.
+    #[cfg(test)]
     pub(crate) fn id(&self) -> Option<u8> {
         REGION_ID_MAPPING
             .iter()
@@ -240,6 +241,7 @@ fn normalize_region_name(name: impl AsRef<str>) -> Cow<'static, str> {
 // ===== Region ID Mapping =====
 // Maps normalized region names to internal IDs for session token tracking.
 // Source: RegionNameToRegionIdMap.java from Azure SDK for Java
+#[cfg(test)]
 const REGION_ID_MAPPING: &[(&str, u8)] = &[
     ("eastus", 1),
     ("eastus2", 2),

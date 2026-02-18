@@ -34,13 +34,6 @@ impl<T> ValidationBounds<T> {
         }
     }
 
-    /// Create validation bounds with only max.
-    pub const fn max(max: T) -> Self {
-        Self {
-            min: None,
-            max: Some(max),
-        }
-    }
 }
 
 /// Parses a value from an environment variable with proper error handling and optional validation.

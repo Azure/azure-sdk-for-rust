@@ -59,16 +59,6 @@ impl AuthorizationContext {
         }
     }
 
-    /// Creates an authorization context for a feed request (e.g., list databases).
-    ///
-    /// For feed requests, the resource link points to the parent resource.
-    pub(crate) fn for_feed(
-        method: Method,
-        resource_type: ResourceType,
-        parent_link: impl Into<String>,
-    ) -> Self {
-        Self::new(method, resource_type, parent_link)
-    }
 }
 
 /// Authorization policy that adds the Cosmos DB authorization header.
@@ -115,19 +105,6 @@ impl AuthorizationPolicy {
         Self { credential }
     }
 
-    /// Creates a new authorization policy from a token credential.
-    pub(crate) fn from_token_credential(credential: Arc<dyn TokenCredential>) -> Self {
-        Self {
-            credential: Credential::Token(credential),
-        }
-    }
-
-    /// Creates a new authorization policy from a master key.
-    pub(crate) fn from_master_key(key: impl Into<Secret>) -> Self {
-        Self {
-            credential: Credential::MasterKey(key.into()),
-        }
-    }
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -363,11 +340,7 @@ mod tests {
     #[test]
     fn build_string_to_sign_for_feed() {
         // When listing databases, the resource link is empty
-        let auth_ctx = AuthorizationContext::for_feed(
-            Method::Get,
-            ResourceType::Database,
-            "", // Empty for root-level feed
-        );
+        let auth_ctx = AuthorizationContext::new(Method::Get, ResourceType::Database, "");
 
         let date_string = "mon, 01 jan 1900 01:00:00 gmt";
         let result = AuthorizationPolicy::build_string_to_sign(&auth_ctx, date_string);

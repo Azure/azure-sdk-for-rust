@@ -192,21 +192,12 @@ impl Default for PartitionKey {
 }
 
 impl PartitionKey {
-    /// A null partition key value that can be used as a single partition key
-    /// or as part of a hierarchical partition key.
-    pub(crate) const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
-
     /// An empty partition key, used to signal a cross-partition operation.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
     /// Creates a new partition key from a single value.
     pub(crate) fn new(value: impl Into<PartitionKeyValue>) -> Self {
         Self(vec![value.into()])
-    }
-
-    /// Creates a new partition key from multiple values (hierarchical partition key).
-    pub(crate) fn from_values(values: Vec<PartitionKeyValue>) -> Self {
-        Self(values)
     }
 
     /// Returns true if this partition key is empty (cross-partition).
@@ -219,15 +210,6 @@ impl PartitionKey {
         self.0.len()
     }
 
-    /// Returns an iterator over the partition key values.
-    pub(crate) fn iter(&self) -> impl Iterator<Item = &PartitionKeyValue> {
-        self.0.iter()
-    }
-
-    /// Returns the partition key values as a slice.
-    pub(crate) fn values(&self) -> &[PartitionKeyValue] {
-        &self.0
-    }
 }
 
 impl AsHeaders for PartitionKey {

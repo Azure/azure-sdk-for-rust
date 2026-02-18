@@ -150,10 +150,6 @@ impl UserAgent {
         self.suffix.as_deref()
     }
 
-    /// Returns the base user agent prefix (without any suffix).
-    pub(crate) fn base_prefix() -> String {
-        Self::base_user_agent()
-    }
 }
 
 impl fmt::Display for UserAgent {
