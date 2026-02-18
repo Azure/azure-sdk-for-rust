@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_core_tracing_opentelemetry"
-keywords = ["sdk", "azure", "tracing", "opentelemetry", "observability"]
+keywords = ["sdk", "cloud", "tracing", "observability"]
 categories = ["api-bindings", "development-tools::debugging"]
 edition.workspace = true
 rust-version.workspace = true
@@ -19,9 +19,7 @@ default = ["azure_core/default"]
 [dependencies]
 azure_core.workspace = true
 opentelemetry.workspace = true
-opentelemetry-http.workspace = true
 opentelemetry_sdk.workspace = true
-reqwest.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
