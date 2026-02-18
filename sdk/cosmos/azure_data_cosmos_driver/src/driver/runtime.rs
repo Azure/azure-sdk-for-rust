@@ -345,7 +345,6 @@ impl CosmosDriverRuntime {
     /// On a cache miss the resolved reference is cross-populated into the
     /// by-RID cache as well. Concurrent requests for the same container
     /// share the same fetch operation.
-    #[allow(dead_code)]
     async fn resolve_container_by_name<F, Fut>(
         &self,
         account_endpoint: &str,
@@ -367,7 +366,6 @@ impl CosmosDriverRuntime {
     /// The `fetch_fn` is only called if the container is not in the cache.
     /// On a cache miss the resolved reference is cross-populated into the
     /// by-name cache as well.
-    #[allow(dead_code)]
     async fn resolve_container_by_rid<F, Fut>(
         &self,
         account_endpoint: &str,
@@ -387,7 +385,6 @@ impl CosmosDriverRuntime {
     ///
     /// Call this when container properties may have changed (e.g., after
     /// updating indexing policy) or when a container has been deleted/recreated.
-    #[allow(dead_code)]
     async fn invalidate_container_cache(&self, container: &ContainerReference) {
         self.container_cache.invalidate(container).await;
     }
@@ -403,7 +400,6 @@ impl CosmosDriverRuntime {
     ///
     /// Call this when account configuration may have changed (e.g., after
     /// adding/removing regions).
-    #[allow(dead_code)]
     async fn invalidate_account_cache(&self, endpoint: &AccountEndpoint) {
         self.account_metadata_cache.invalidate(endpoint).await;
     }
@@ -412,7 +408,6 @@ impl CosmosDriverRuntime {
     ///
     /// This is primarily useful for testing or when the connection needs
     /// to be fully refreshed.
-    #[allow(dead_code)]
     async fn clear_all_caches(&self) {
         self.account_metadata_cache.clear().await;
         self.container_cache.clear().await;

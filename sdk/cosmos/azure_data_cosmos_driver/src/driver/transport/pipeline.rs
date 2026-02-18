@@ -77,7 +77,6 @@ impl CosmosPipeline {
     }
 
     /// Returns the policies in the order a request is processed.
-    #[allow(dead_code)]
     pub(crate) fn policies(&self) -> &[Arc<dyn Policy>] {
         &self.policies
     }

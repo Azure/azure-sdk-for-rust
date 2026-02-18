@@ -241,7 +241,6 @@ impl CosmosTransport {
         is_metadata: bool,
         for_emulator: bool,
     ) -> azure_core::Result<reqwest::Client> {
-        #[allow(unused_mut)]
         let mut builder = reqwest::ClientBuilder::new();
 
         // Native-only settings (not available on WASM)

@@ -333,6 +333,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_data_cosmos_driver"
+version = "0.1.0"
+dependencies = [
+ "async-lock",
+ "async-trait",
+ "azure_core",
+ "azure_identity",
+ "base64",
+ "futures",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "url",
+ "uuid",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "azure_data_cosmos_native"
 version = "0.27.0"
 dependencies = [
@@ -3544,6 +3564,7 @@ checksum = "b672338555252d43fd2240c714dc444b8c6fb0a5c5335e65a07bba7742735ddb"
 dependencies = [
  "getrandom 0.4.1",
  "js-sys",
+ "rand 0.9.2",
  "uuid-rng-internal",
  "wasm-bindgen",
 ]
