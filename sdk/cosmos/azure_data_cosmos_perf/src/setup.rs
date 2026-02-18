@@ -39,16 +39,12 @@ pub async fn ensure_container(
         Err(e) => return Err(e.into()),
     }
 
-    let props = ContainerProperties {
-        id: container_name.to_string().into(),
-        partition_key: "/partition_key".into(),
-        default_ttl,
-        ..Default::default()
-    };
-    let create_opts = CreateContainerOptions {
-        throughput: Some(ThroughputProperties::manual(throughput)),
-        ..Default::default()
-    };
+    let mut props = ContainerProperties::new(container_name.to_string(), "/partition_key".into());
+    if let Some(ttl) = default_ttl {
+        props = props.with_default_ttl(ttl);
+    }
+    let create_opts =
+        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(throughput));
 
     match db_client.create_container(props, Some(create_opts)).await {
         Ok(_) => {

@@ -48,23 +48,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let custom_transport = crate::transport::create_transport()?;
 
     // Build client options
-    let options = CosmosClientOptions {
-        client_options: azure_core::http::ClientOptions {
-            transport: Some(custom_transport),
-            ..Default::default()
-        },
-        application_preferred_regions: config
-            .preferred_regions
-            .iter()
-            .map(|r| r.clone().into())
-            .collect(),
-        excluded_regions: config
-            .excluded_regions
-            .iter()
-            .map(|r| r.clone().into())
-            .collect(),
-        ..Default::default()
-    };
+    let mut options = CosmosClientOptions::default()
+        .with_preferred_regions(
+            config
+                .preferred_regions
+                .iter()
+                .map(|r| r.clone().into())
+                .collect(),
+        )
+        .with_excluded_regions(
+            config
+                .excluded_regions
+                .iter()
+                .map(|r| r.clone().into())
+                .collect(),
+        );
+    options.client_options.transport = Some(custom_transport);
 
     // Create the Cosmos client
     let client = match &config.auth {
