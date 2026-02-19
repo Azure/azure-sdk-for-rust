@@ -26,6 +26,14 @@ pub enum ErrorKind {
         /// The raw response returned by the service.
         raw_response: Option<Box<RawResponse>>,
     },
+    /// A connection to the server could not be established.
+    ///
+    /// The request was never sent, so it is safe to retry both reads and writes.
+    ConnectionAborted,
+    /// The operation timed out before completing.
+    ///
+    /// It is unknown whether the server received the request.
+    Timeout,
     /// An error performing IO.
     Io,
     /// An error converting data.
@@ -56,6 +64,8 @@ impl Display for ErrorKind {
                 .field(status)
                 .field(&error_code.as_deref().unwrap_or("(unknown error code)"))
                 .finish(),
+            ErrorKind::ConnectionAborted => f.write_str("ConnectionAborted"),
+            ErrorKind::Timeout => f.write_str("Timeout"),
             ErrorKind::Io => f.write_str("Io"),
             ErrorKind::DataConversion => f.write_str("DataConversion"),
             ErrorKind::Credential => f.write_str("Credential"),

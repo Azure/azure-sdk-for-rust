@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added `ErrorKind::ConnectionAborted` for connection failures where the request was never sent.
+- Added `ErrorKind::Timeout` for operations that timed out before completing.
+
 ### Breaking Changes
 
 ### Bugs Fixed
