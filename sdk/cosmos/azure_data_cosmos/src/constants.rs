@@ -222,6 +222,13 @@ pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
 #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
 pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
 
+/// Default maximum idle connections per host (1000).
+///
+/// Limits connection pool growth to prevent resource exhaustion under high
+/// concurrency while still allowing ample connection reuse.
+#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
+pub(crate) const DEFAULT_MAX_CONNECTION_POOL_SIZE: usize = 1000;
+
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
 /// Sub-status codes provide additional context for HTTP error responses from Cosmos DB.

@@ -218,18 +218,21 @@ where
                     (Ok(response), retry_after)
                 }
                 Err(error) => {
-                    if error.kind() == &ErrorKind::Io {
+                    if matches!(
+                        error.kind(),
+                        &ErrorKind::Io | &ErrorKind::ConnectionAborted | &ErrorKind::Timeout
+                    ) {
                         debug!(
-                            "io error occurred when making request which will be retried: {}",
+                            "transport error occurred when making request which will be retried: {}",
                             error
                         );
-                        // IO error so no Retry-After headers - leave the retry period up to the policy
+                        // Transport error so no Retry-After headers - leave the retry period up to the policy
                         let retry_after = None;
                         (Err(error), retry_after)
                     } else {
-                        return Err(
-                            error.with_context("non-io error occurred which will not be retried")
-                        );
+                        return Err(error.with_context(
+                            "non-transport error occurred which will not be retried",
+                        ));
                     }
                 }
             };

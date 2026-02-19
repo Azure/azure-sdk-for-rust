@@ -3,7 +3,9 @@
 
 use crate::constants::COSMOS_ALLOWED_HEADERS;
 #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
-use crate::constants::{DEFAULT_CONNECTION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT};
+use crate::constants::{
+    DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
+};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
@@ -54,6 +56,8 @@ impl CosmosClient {
         if client_options.transport.is_none() {
             // There is also a read timeout but this is addressed by the total timeout
             let http_client = reqwest::ClientBuilder::new()
+                .http1_only()
+                .pool_max_idle_per_host(DEFAULT_MAX_CONNECTION_POOL_SIZE)
                 .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
                 .timeout(DEFAULT_REQUEST_TIMEOUT)
                 .build()
