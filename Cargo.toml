@@ -152,10 +152,6 @@ url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
 wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
-windows-sys = { version = "0.61", features = [
-  "Win32_System_Threading",
-  "Win32_System_SystemInformation",
-] }
 zip = { version = "7.4.0", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
