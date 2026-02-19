@@ -61,6 +61,7 @@ impl HttpClient for ::reqwest::Client {
         let rsp = match self.execute(reqwest_request).await {
             Ok(rsp) => rsp,
             Err(err) => {
+                #[cfg(not(target_arch = "wasm32"))]
                 let kind = if err.is_connect() {
                     ErrorKind::ConnectionAborted
                 } else if err.is_timeout() {
@@ -68,6 +69,8 @@ impl HttpClient for ::reqwest::Client {
                 } else {
                     ErrorKind::Io
                 };
+                #[cfg(target_arch = "wasm32")]
+                let kind = ErrorKind::Io;
                 return Err(Error::with_error(
                     kind,
                     err,
