@@ -294,7 +294,7 @@ impl CosmosClientBuilder {
     ///
     /// ```rust,no_run,ignore
     /// use azure_data_cosmos::CosmosClientBuilder;
-    /// use azure_core::http::options::InstrumentationOptions;
+    /// use azure_core::http::InstrumentationOptions;
     /// use std::sync::Arc;
     ///
     /// let tracer_provider = /* your TracerProvider implementation */;
