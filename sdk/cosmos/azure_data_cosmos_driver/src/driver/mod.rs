@@ -12,7 +12,6 @@
 
 mod cosmos_driver;
 mod runtime;
-pub(crate) mod transport;
 
 pub use cosmos_driver::CosmosDriver;
 pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};

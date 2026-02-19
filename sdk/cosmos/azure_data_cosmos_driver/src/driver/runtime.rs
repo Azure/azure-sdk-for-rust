@@ -21,7 +21,7 @@ use crate::{
     },
 };
 
-use super::{transport::CosmosTransport, CosmosDriver};
+use super::CosmosDriver;
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -76,12 +76,6 @@ pub struct CosmosDriverRuntime {
     /// Connection pool configuration for managing TCP connections.
     connection_pool: ConnectionPoolOptions,
 
-    /// HTTP transport manager with connection pools.
-    ///
-    /// Manages separate pools for metadata and data plane operations,
-    /// with lazy initialization of emulator-specific pools.
-    transport: Arc<CosmosTransport>,
-
     /// Thread-safe runtime options for operation options.
     runtime_options: SharedRuntimeOptions,
 
@@ -134,14 +128,6 @@ impl CosmosDriverRuntime {
     /// Returns the connection pool options.
     pub fn connection_pool(&self) -> &ConnectionPoolOptions {
         &self.connection_pool
-    }
-
-    /// Returns the HTTP transport manager.
-    ///
-    /// The transport provides access to connection pools configured for
-    /// metadata and data plane operations, with automatic emulator detection.
-    pub(crate) fn transport(&self) -> &Arc<CosmosTransport> {
-        &self.transport
     }
 
     /// Returns the thread-safe runtime options.
@@ -454,8 +440,7 @@ impl CosmosDriverRuntimeBuilder {
     ///
     /// # Errors
     ///
-    /// Returns an error if the HTTP transport cannot be created (e.g., TLS
-    /// configuration failure).
+    /// Returns an error if runtime initialization fails.
     ///
     pub async fn build(self) -> azure_core::Result<CosmosDriverRuntime> {
         // Compute user agent from suffix/workloadId/correlationId (in priority order)
@@ -470,15 +455,10 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let transport = Arc::new(CosmosTransport::new(
-            connection_pool.clone(),
-            user_agent.as_str(),
-        )?);
 
         Ok(CosmosDriverRuntime {
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
-            transport,
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),

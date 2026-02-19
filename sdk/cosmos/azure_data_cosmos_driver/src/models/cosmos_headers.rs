@@ -236,6 +236,7 @@ impl CosmosResponseHeaders {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::http::headers::HeaderName;
 
     #[test]
     fn cosmos_response_headers_from_azure_headers() {
