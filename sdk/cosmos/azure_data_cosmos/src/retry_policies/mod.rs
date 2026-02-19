@@ -13,7 +13,6 @@ use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetry
 use azure_core::error::ErrorKind;
 use azure_core::http::RawResponse;
 use azure_core::time::Duration;
-use std::error::Error as StdError;
 
 /// Result of a retry policy decision
 ///
@@ -197,13 +196,9 @@ pub(crate) enum RequestSentStatus {
 
 /// Extension trait for determining request sent status from errors.
 ///
-/// Walks the error source chain looking for typed transport errors
-/// ([`hyper_util::client::legacy::Error`] for connect detection,
-/// [`reqwest::Error`] for timeout/decode/redirect/status) and falls back
-/// to [`ErrorKind`]-based heuristics.
-///
-/// Using `hyper_util` directly makes connect detection work for any HTTP
-/// client built on `hyper_util` (reqwest, future transports, etc.).
+/// Uses [`ErrorKind`] to classify errors. The HTTP client layer (e.g., reqwest)
+/// is responsible for mapping transport errors to the appropriate `ErrorKind`
+/// variants (`ConnectionAborted`, `Timeout`, etc.).
 pub(crate) trait RequestSentExt {
     /// Returns the [`RequestSentStatus`] based on error analysis.
     fn request_sent_status(&self) -> RequestSentStatus;
@@ -211,109 +206,56 @@ pub(crate) trait RequestSentExt {
 
 impl RequestSentExt for azure_core::Error {
     fn request_sent_status(&self) -> RequestSentStatus {
-        // Walk the source chain for typed transport errors.
-        let mut source: Option<&(dyn StdError + 'static)> = self.source();
-        while let Some(s) = source {
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                // Check hyper_util first: works for any hyper_util-based transport
-                // (reqwest, future HTTP clients, etc.).
-                if let Some(hyper_err) = s.downcast_ref::<hyper_util::client::legacy::Error>() {
-                    if hyper_err.is_connect() {
-                        return RequestSentStatus::NotSent;
-                    }
-                }
-
-                // Then check reqwest for remaining classifications (timeout, decode, etc.).
-                if let Some(reqwest_err) = s.downcast_ref::<reqwest::Error>() {
-                    return reqwest_request_sent_status(reqwest_err);
-                }
-            }
-            source = s.source();
-        }
-
-        // WASM: reqwest errors don't support downcast, so fall back to string analysis.
-        #[cfg(target_arch = "wasm32")]
-        {
-            let status = wasm_request_sent_status(self);
-            if status != RequestSentStatus::Unknown {
-                return status;
-            }
-        }
-
-        // Fallback: use ErrorKind heuristics when no typed inner error is found.
         match self.kind() {
-            ErrorKind::Credential | ErrorKind::DataConversion => RequestSentStatus::NotSent,
+            ErrorKind::ConnectionAborted | ErrorKind::Credential | ErrorKind::DataConversion => {
+                RequestSentStatus::NotSent
+            }
+            ErrorKind::Timeout => RequestSentStatus::Unknown,
             ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
             _ => RequestSentStatus::Unknown,
         }
     }
 }
 
-/// Determines [`RequestSentStatus`] from a [`reqwest::Error`] for non-connect errors.
-///
-/// Connect errors are already handled by `hyper_util::client::legacy::Error::is_connect()`
-/// earlier in the source chain walk. This function classifies remaining reqwest errors:
-/// 1. `is_connect()` → `NotSent` — fallback if hyper_util downcast was missed.
-/// 2. `is_timeout()` → `Unknown` — response/read timeouts where sent status is uncertain.
-/// 3. `is_decode()` / `is_redirect()` / `is_status()` → `Sent` — response was received.
-/// 4. Everything else → `Unknown`.
-#[cfg(not(target_arch = "wasm32"))]
-fn reqwest_request_sent_status(error: &reqwest::Error) -> RequestSentStatus {
-    // Connect errors (including connect timeouts) — request was never sent.
-    if error.is_connect() {
-        return RequestSentStatus::NotSent;
-    }
-
-    if error.is_timeout() {
-        return RequestSentStatus::Unknown;
-    }
-
-    if error.is_decode() || error.is_redirect() || error.is_status() {
-        return RequestSentStatus::Sent;
-    }
-
-    RequestSentStatus::Unknown
-}
-
-/// WASM fallback: reqwest doesn't expose error type inspection methods on WASM,
-/// so we fall back to string analysis which is less reliable.
-#[cfg(target_arch = "wasm32")]
-fn wasm_request_sent_status(error: &azure_core::Error) -> RequestSentStatus {
-    let msg = error.to_string().to_lowercase();
-
-    // Connection-related errors (before sending)
-    if msg.contains("dns")
-        || msg.contains("connection refused")
-        || msg.contains("connection error")
-        || msg.contains("connection timed out")
-    {
-        return RequestSentStatus::NotSent;
-    }
-
-    // Response-related errors (after sending)
-    if msg.contains("status") || msg.contains("redirect") || msg.contains("decode") {
-        return RequestSentStatus::Sent;
-    }
-
-    RequestSentStatus::Unknown
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn wrap_reqwest_error(err: reqwest::Error) -> azure_core::Error {
-        azure_core::Error::with_error(ErrorKind::Io, err, "failed to execute `reqwest` request")
+    #[test]
+    fn connection_aborted_is_not_sent() {
+        let err =
+            azure_core::Error::with_message(ErrorKind::ConnectionAborted, "connection refused");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
     }
 
-    #[tokio::test]
-    async fn reqwest_connect_error_is_not_sent() {
-        let client = reqwest::Client::new();
-        let reqwest_err = client.get("http://127.0.0.1:1").send().await.unwrap_err();
-        assert!(reqwest_err.is_connect(), "expected connect error");
+    #[test]
+    fn timeout_is_unknown() {
+        let err = azure_core::Error::with_message(ErrorKind::Timeout, "request timed out");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+    }
 
-        let err = wrap_reqwest_error(reqwest_err);
+    #[test]
+    fn http_response_is_sent() {
+        let err = azure_core::Error::with_message(
+            ErrorKind::HttpResponse {
+                status: azure_core::http::StatusCode::InternalServerError,
+                error_code: None,
+                raw_response: None,
+            },
+            "server error",
+        );
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Sent);
+    }
+
+    #[test]
+    fn io_error_is_unknown() {
+        let err = azure_core::Error::with_message(ErrorKind::Io, "some io error");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+    }
+
+    #[test]
+    fn credential_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Credential, "auth failed");
         assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
     }
 }

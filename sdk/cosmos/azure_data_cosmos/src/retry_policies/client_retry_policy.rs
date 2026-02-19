@@ -528,7 +528,7 @@ impl ClientRetryPolicy {
     /// # Summary
     /// First checks the [`RequestSentStatus`] to handle transport-level errors:
     /// - `NotSent`: retries reads and writes (request never reached server).
-    /// - `Sent`/`Unknown` with `ErrorKind::Io`: retries reads only.
+    /// - `Sent`/`Unknown` with transport errors (`Timeout`, `Io`): retries reads only.
     ///
     /// For HTTP-level errors, delegates to `should_retry_on_http_status` for
     /// scenario-specific retry logic (403.3, 404.1022, 503, 500, 410), then falls
@@ -549,7 +549,10 @@ impl ClientRetryPolicy {
                 return self.should_retry_on_connection_failure().await;
             }
             RequestSentStatus::Sent | RequestSentStatus::Unknown => {
-                if matches!(err.kind(), ErrorKind::Io) {
+                if matches!(
+                    err.kind(),
+                    ErrorKind::Io | ErrorKind::Timeout | ErrorKind::ConnectionAborted
+                ) {
                     if self.is_read_only() {
                         return self.should_retry_on_unavailable_endpoint_status_codes();
                     }
@@ -1230,27 +1233,19 @@ mod tests {
         assert_eq!(MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE, 1);
     }
 
-    fn create_io_error(message: &str) -> azure_core::Error {
-        azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
+    fn create_connection_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(
+            azure_core::error::ErrorKind::ConnectionAborted,
+            message.to_string(),
+        )
     }
 
-    /// Creates a real `reqwest::Error` with `is_connect() == true` by attempting
-    /// to connect to a port that refuses connections.
-    async fn create_connection_refused_error() -> azure_core::Error {
-        let client = reqwest::Client::builder()
-            .connect_timeout(std::time::Duration::from_millis(100))
-            .build()
-            .expect("failed to build reqwest client");
-        let err = client
-            .get("http://127.0.0.1:1")
-            .send()
-            .await
-            .expect_err("request to 127.0.0.1:1 should fail");
-        azure_core::Error::with_error(
-            azure_core::error::ErrorKind::Io,
-            err,
-            "Injected fault: connection error",
-        )
+    fn create_timeout_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Timeout, message.to_string())
+    }
+
+    fn create_io_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
     }
 
     #[tokio::test]
@@ -1259,7 +1254,7 @@ mod tests {
         let mut request = create_test_request();
         policy.before_send_request(&mut request).await;
 
-        let err = create_connection_refused_error().await;
+        let err = create_connection_error("connection refused");
         let result = policy.should_retry(&Err(err)).await;
         assert!(
             result.is_retry(),
@@ -1273,7 +1268,7 @@ mod tests {
         let mut request = create_write_request();
         policy.before_send_request(&mut request).await;
 
-        let err = create_connection_refused_error().await;
+        let err = create_connection_error("connection refused");
         let result = policy.should_retry(&Err(err)).await;
         assert!(
             result.is_retry(),
@@ -1287,7 +1282,7 @@ mod tests {
         let mut request = create_test_request();
         policy.before_send_request(&mut request).await;
 
-        let err = create_io_error("Injected fault: response timeout");
+        let err = create_timeout_error("response timeout");
         let result = policy.should_retry(&Err(err)).await;
         assert!(
             result.is_retry(),
@@ -1301,7 +1296,7 @@ mod tests {
         let mut request = create_write_request();
         policy.before_send_request(&mut request).await;
 
-        let err = create_io_error("Injected fault: response timeout");
+        let err = create_timeout_error("response timeout");
         let result = policy.should_retry(&Err(err)).await;
         assert_eq!(
             result,
@@ -1318,7 +1313,7 @@ mod tests {
 
         // First 3 connection errors should retry on the same endpoint.
         for i in 1..=3 {
-            let err = create_connection_refused_error().await;
+            let err = create_connection_error("connection refused");
             let result = policy.should_retry(&Err(err)).await;
             assert!(result.is_retry(), "connection attempt {i} should retry");
             assert_eq!(policy.connection_retry_count, i);
@@ -1337,12 +1332,12 @@ mod tests {
 
         // Exhaust local retries.
         for _ in 0..3 {
-            let err = create_connection_refused_error().await;
+            let err = create_connection_error("connection refused");
             policy.should_retry(&Err(err)).await;
         }
 
         // Next connection error should trigger failover.
-        let err = create_connection_refused_error().await;
+        let err = create_connection_error("connection refused");
         let result = policy.should_retry(&Err(err)).await;
         assert!(result.is_retry(), "should failover to next endpoint");
         assert_eq!(
@@ -1361,7 +1356,7 @@ mod tests {
         let mut request = create_test_request();
         policy.before_send_request(&mut request).await;
 
-        let err = create_io_error("Injected fault: response timeout");
+        let err = create_timeout_error("response timeout");
         let result = policy.should_retry(&Err(err)).await;
         assert!(result.is_retry());
         assert_eq!(

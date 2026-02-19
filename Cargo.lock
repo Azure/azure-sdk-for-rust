@@ -323,7 +323,6 @@ dependencies = [
  "azure_identity",
  "clap",
  "futures",
- "hyper-util",
  "pin-project",
  "reqwest",
  "serde",

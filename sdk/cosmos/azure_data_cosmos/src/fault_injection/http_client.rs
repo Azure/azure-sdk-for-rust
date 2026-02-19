@@ -264,7 +264,11 @@ impl FaultClient {
             .await
             .expect_err("request to 127.0.0.1:1 should fail with connection error");
 
-        azure_core::Error::with_error(ErrorKind::Io, err, "Injected fault: connection error")
+        azure_core::Error::with_error(
+            ErrorKind::ConnectionAborted,
+            err,
+            "Injected fault: connection error",
+        )
     }
 
     /// Generates a real `reqwest::Error` with `is_timeout() == true` by connecting
@@ -298,7 +302,7 @@ impl FaultClient {
             .await
             .expect_err("request to timeout listener should fail with timeout");
 
-        azure_core::Error::with_error(ErrorKind::Io, err, "Injected fault: response timeout")
+        azure_core::Error::with_error(ErrorKind::Timeout, err, "Injected fault: response timeout")
     }
 }
 
@@ -376,6 +380,7 @@ mod tests {
     };
     use crate::regions;
     use async_trait::async_trait;
+    use azure_core::error::ErrorKind;
     use azure_core::http::{AsyncRawResponse, HttpClient, Method, Request, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
@@ -761,6 +766,12 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
+        assert_eq!(
+            err.kind(),
+            &ErrorKind::ConnectionAborted,
+            "connection error should have ConnectionAborted ErrorKind"
+        );
+
         // Walk the source chain to find reqwest::Error
         let mut source: Option<&(dyn std::error::Error + 'static)> =
             std::error::Error::source(&err);
@@ -799,6 +810,12 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
+        assert_eq!(
+            err.kind(),
+            &ErrorKind::Timeout,
+            "response timeout should have Timeout ErrorKind"
+        );
+
         // Walk the source chain to find reqwest::Error
         let mut source: Option<&(dyn std::error::Error + 'static)> =
             std::error::Error::source(&err);
@@ -806,7 +823,6 @@ mod tests {
         while let Some(s) = source {
             if let Some(reqwest_err) = s.downcast_ref::<reqwest::Error>() {
                 // The error should be a timeout or a request-phase error wrapping a timeout.
-                // Both are classified as RequestSentStatus::Unknown by the retry policy.
                 assert!(
                     reqwest_err.is_timeout() || reqwest_err.is_request(),
                     "expected is_timeout() or is_request(), got: {reqwest_err}"
