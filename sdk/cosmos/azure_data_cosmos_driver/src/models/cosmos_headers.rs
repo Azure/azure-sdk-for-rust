@@ -4,7 +4,7 @@
 //! Cosmos DB request/response header models.
 
 use crate::models::{ActivityId, ETag, RequestCharge, SessionToken, SubStatusCode};
-use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
+use azure_core::http::headers::{HeaderValue, Headers};
 
 /// Standard Cosmos DB request header names.
 ///
@@ -231,10 +231,6 @@ impl CosmosResponseHeaders {
         self
     }
 
-    /// Returns the request-charge header name.
-    pub(crate) fn request_charge_header_name() -> HeaderName {
-        response_header_names::REQUEST_CHARGE.clone()
-    }
 }
 
 #[cfg(test)]

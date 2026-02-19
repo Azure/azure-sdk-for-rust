@@ -21,13 +21,11 @@
 //! raw bytes (`&[u8]`) and return buffered responses (`Vec<u8>`). Serialization is handled by
 //! the consuming SDK in its native language.
 
-pub mod diagnostics;
 pub mod driver;
 pub mod models;
 pub mod options;
 
 // Re-export key types at crate root
-pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 pub use models::{ActivityId, CosmosResult, CosmosStatus, RequestCharge};
-pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};
+pub use options::DriverOptions;

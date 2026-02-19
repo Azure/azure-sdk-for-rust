@@ -4,14 +4,10 @@
 //! Cosmos DB driver instance.
 
 use crate::{
-    diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestSentStatus,
-        TransportSecurity,
-    },
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, CosmosResponseHeaders, CosmosResult, DatabaseProperties,
-        DatabaseReference, RequestCharge, SubStatusCode,
+        CosmosOperation, CosmosResponseHeaders, CosmosResult, CosmosStatus, DatabaseProperties,
+        DatabaseReference,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
@@ -19,12 +15,10 @@ use crate::{
 };
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
-use std::sync::Arc;
 
 use super::{
     transport::{
-        event_channel, is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
-        EventEmitter, TrackedRequestState,
+        uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus,
     },
     CosmosDriverRuntime,
 };
@@ -151,7 +145,7 @@ impl CosmosDriver {
     ///
     /// # Returns
     ///
-    /// Returns a [`CosmosResult`] containing the response body, headers, and diagnostics.
+    /// Returns a [`CosmosResult`] containing the response body, headers, and status.
     ///
     /// # Errors
     ///
@@ -199,19 +193,15 @@ impl CosmosDriver {
             self.effective_throughput_control_group(&effective_options, container)
         });
 
-        // Step 3: Initialize diagnostics
+        // Step 3: Initialize operation activity id
         let activity_id = ActivityId::new_uuid();
-        let mut diagnostics_builder = DiagnosticsContextBuilder::new(
-            activity_id.clone(),
-            Arc::clone(self.runtime.diagnostics_options()),
-        );
 
         // Step 4: Get authentication (guaranteed to be present by AccountReference)
         let account = operation.resource_reference().account();
         let auth = account.auth();
 
         // Account-level metadata resolution is currently a direct fallback value.
-        let account_write_region = Region::new("Unknown");
+        let _account_write_region = Region::new("Unknown");
 
         // Step 5: Build resource link for authorization
         let resource_ref = operation.resource_reference();
@@ -241,18 +231,6 @@ impl CosmosDriver {
             transport.create_metadata_pipeline(&endpoint, auth)
         };
 
-        // Determine pipeline type and transport security for diagnostics
-        let pipeline_type = if is_dataplane {
-            PipelineType::DataPlane
-        } else {
-            PipelineType::Metadata
-        };
-        let transport_security = if is_emulator_host(&endpoint) {
-            TransportSecurity::EmulatorWithInsecureCertificates
-        } else {
-            TransportSecurity::Secure
-        };
-
         // Step 12+: Execute with a slim transport retry wrapper.
         //
         // Retry only once, and only when it is safe:
@@ -275,7 +253,7 @@ impl CosmosDriver {
             if operation.request_headers().activity_id().is_none() {
                 request.insert_header(
                     HeaderName::from_static("x-ms-activity-id"),
-                    HeaderValue::from(diagnostics_builder.activity_id().as_str().to_owned()),
+                    HeaderValue::from(activity_id.as_str().to_owned()),
                 );
             }
 
@@ -298,25 +276,7 @@ impl CosmosDriver {
             let mut ctx = Context::default();
             ctx.insert(auth_context.clone());
 
-            let (event_sender, event_receiver) = event_channel();
-            ctx.insert(EventEmitter::new(event_sender));
-
-            let region = account_write_region.clone();
-            let execution_context = if diagnostics_builder.request_count() == 0 {
-                ExecutionContext::Initial
-            } else {
-                ExecutionContext::Retry
-            };
-            let request_handle = diagnostics_builder.start_request(
-                execution_context,
-                pipeline_type,
-                transport_security,
-                region,
-                endpoint.host().to_owned(),
-            );
-
             let result = pipeline.send(&ctx, &mut request).await;
-            let tracked_state = TrackedRequestState::collect(event_receiver);
 
             match result {
                 Ok(response) => {
@@ -324,65 +284,17 @@ impl CosmosDriver {
                     let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
                     let sub_status = cosmos_headers.substatus();
 
-                    if let Some(charge) = response
-                        .headers()
-                        .get_optional_str(&CosmosResponseHeaders::request_charge_header_name())
-                        .and_then(|s| s.parse::<f64>().ok())
-                        .map(RequestCharge::new)
-                    {
-                        diagnostics_builder.update_request(request_handle, |req| {
-                            req.with_charge(charge);
-                        });
-                    }
-
-                    if let Some(activity_id) = cosmos_headers.activity_id().cloned() {
-                        diagnostics_builder.update_request(request_handle, |req| {
-                            req.with_activity_id(activity_id);
-                        });
-                    }
-
-                    if let Some(session_token) = cosmos_headers.session_token() {
-                        diagnostics_builder.update_request(request_handle, |req| {
-                            req.with_session_token(session_token.to_string());
-                        });
-                    }
-
-                    if let Some(sub_status) = sub_status {
-                        diagnostics_builder.update_request(request_handle, |req| {
-                            req.with_sub_status(sub_status);
-                        });
-                    }
-
-                    for event in tracked_state.into_events() {
-                        diagnostics_builder.add_event(request_handle, event);
-                    }
-
-                    diagnostics_builder.complete_request(request_handle, status_code, sub_status);
-                    diagnostics_builder.set_operation_status(status_code, sub_status);
-
                     let body = response.into_body();
-                    let diagnostics = Arc::new(diagnostics_builder.complete());
+                    let status = CosmosStatus::from_parts(status_code, sub_status);
 
                     return Ok(CosmosResult::new(
                         body.as_ref().to_vec(),
                         cosmos_headers,
-                        diagnostics,
+                        status,
                     ));
                 }
                 Err(e) => {
-                    let request_sent = tracked_state.request_sent_status_with_error(&e);
-                    let error_message = e.to_string();
-
-                    for event in tracked_state.into_events() {
-                        diagnostics_builder.add_event(request_handle, event);
-                    }
-
-                    diagnostics_builder.update_request(request_handle, |req| {
-                        req.with_error(error_message.clone());
-                        req.with_sub_status(SubStatusCode::TRANSPORT_GENERATED_503);
-                    });
-
-                    diagnostics_builder.fail_request(request_handle, error_message, request_sent);
+                    let request_sent = e.request_sent_status();
 
                     let should_retry = Self::should_retry_transport_failure(
                         attempt,
@@ -395,11 +307,6 @@ impl CosmosDriver {
                         attempt += 1;
                         continue;
                     }
-
-                    diagnostics_builder.set_operation_status(
-                        azure_core::http::StatusCode::ServiceUnavailable,
-                        Some(SubStatusCode::TRANSPORT_GENERATED_503),
-                    );
 
                     return Err(e);
                 }

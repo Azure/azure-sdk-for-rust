@@ -3,13 +3,12 @@
 
 //! Cosmos DB operation result types.
 
-use crate::{diagnostics::DiagnosticsContext, models::CosmosResponseHeaders};
-use std::sync::Arc;
+use crate::models::{CosmosResponseHeaders, CosmosStatus};
 
 /// Result of a Cosmos DB operation.
 ///
 /// Contains the response body (as raw bytes), relevant headers, and comprehensive
-/// diagnostics for the entire operation including status codes.
+/// status information for the operation.
 ///
 /// # Schema-Agnostic Design
 ///
@@ -22,15 +21,12 @@ use std::sync::Arc;
 /// ```ignore
 /// let result = driver.execute_operation(/* ... */).await?;
 ///
-/// // Status codes are accessed via diagnostics
-/// let diagnostics = result.diagnostics();
-/// if let Some(status) = diagnostics.status() {
-///     println!("Status: {}", status);
-///     println!("RU Charge: {}", result.headers().request_charge().unwrap_or(0.0));
-///     if status.is_success() {
-///         let body = result.into_body();
-///         // Deserialize body...
-///     }
+/// let status = result.status();
+/// println!("Status: {}", status);
+/// println!("RU Charge: {}", result.headers().request_charge().unwrap_or(0.0));
+/// if status.is_success() {
+///     let body = result.into_body();
+///     // Deserialize body...
 /// }
 /// ```
 #[derive(Debug)]
@@ -42,25 +38,23 @@ pub struct CosmosResult {
     /// Extracted Cosmos-specific headers.
     headers: CosmosResponseHeaders,
 
-    /// Full diagnostics context for this operation (contains status codes).
-    diagnostics: Arc<DiagnosticsContext>,
+    /// Operation status including HTTP status code and optional sub-status.
+    status: CosmosStatus,
 }
 
 impl CosmosResult {
     /// Creates a new `CosmosResult`.
     ///
     /// This is typically called by the driver after completing an operation.
-    /// The diagnostics context should already contain the status codes
-    /// (set via `DiagnosticsContextBuilder::set_operation_status` before completion).
     pub(crate) fn new(
         body: Vec<u8>,
         headers: CosmosResponseHeaders,
-        diagnostics: Arc<DiagnosticsContext>,
+        status: CosmosStatus,
     ) -> Self {
         Self {
             body,
             headers,
-            diagnostics,
+            status,
         }
     }
 
@@ -82,38 +76,23 @@ impl CosmosResult {
         &self.headers
     }
 
-    /// Returns a reference to the diagnostics context.
-    ///
-    /// The diagnostics context contains detailed information about all
-    /// requests made during this operation, including retries, hedging,
-    /// and regional failovers. It also holds the operation-level status codes.
-    pub fn diagnostics(&self) -> &Arc<DiagnosticsContext> {
-        &self.diagnostics
+    /// Returns the operation status.
+    pub fn status(&self) -> CosmosStatus {
+        self.status
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        diagnostics::DiagnosticsContextBuilder,
-        models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
-        options::DiagnosticsOptions,
-    };
+    use crate::models::{ActivityId, CosmosResponseHeaders, RequestCharge, SubStatusCode};
     use azure_core::http::StatusCode;
 
-    fn make_diagnostics(
+    fn make_status(
         status_code: Option<StatusCode>,
         sub_status_code: Option<SubStatusCode>,
-    ) -> Arc<DiagnosticsContext> {
-        let mut builder = DiagnosticsContextBuilder::new(
-            ActivityId::new_uuid(),
-            Arc::new(DiagnosticsOptions::default()),
-        );
-        if let Some(status) = status_code {
-            builder.set_operation_status(status, sub_status_code);
-        }
-        Arc::new(builder.complete())
+    ) -> CosmosStatus {
+        CosmosStatus::from_parts(status_code.unwrap_or(StatusCode::Ok), sub_status_code)
     }
 
     #[test]
@@ -125,11 +104,10 @@ mod tests {
         let result = CosmosResult::new(
             b"{\"id\": \"test\"}".to_vec(),
             headers,
-            make_diagnostics(Some(StatusCode::Ok), None),
+            make_status(Some(StatusCode::Ok), None),
         );
 
-        // Status codes are accessed via diagnostics
-        let status = result.diagnostics().status().unwrap();
+        let status = result.status();
         assert_eq!(status.status_code(), StatusCode::Ok);
         assert!(status.is_success());
         assert!(status.sub_status().is_none());
@@ -145,16 +123,16 @@ mod tests {
         let result = CosmosResult::new(
             b"{}".to_vec(),
             CosmosResponseHeaders::new(),
-            make_diagnostics(
+            make_status(
                 Some(StatusCode::TooManyRequests),
                 Some(SubStatusCode::new(3200)),
             ),
         );
 
-        let status = result.diagnostics().status().unwrap();
+        let status = result.status();
         assert!(!status.is_success());
         assert!(status.is_throttled());
-        assert_eq!(status, &CosmosStatus::RU_BUDGET_EXCEEDED);
+        assert_eq!(status, CosmosStatus::RU_BUDGET_EXCEEDED);
     }
 
     #[test]
@@ -163,20 +141,12 @@ mod tests {
         let result = CosmosResult::new(
             b"body".to_vec(),
             headers,
-            make_diagnostics(Some(StatusCode::Created), None),
+            make_status(Some(StatusCode::Created), None),
         );
 
         assert_eq!(result.body(), b"body");
-        assert_eq!(
-            result.diagnostics().status().unwrap().status_code(),
-            StatusCode::Created
-        );
-        assert!(result
-            .diagnostics()
-            .status()
-            .unwrap()
-            .sub_status()
-            .is_none());
+        assert_eq!(result.status().status_code(), StatusCode::Created);
+        assert!(result.status().sub_status().is_none());
         assert_eq!(
             result.headers().request_charge(),
             Some(RequestCharge::new(1.0))
@@ -187,23 +157,18 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_result_status_via_diagnostics() {
-        let diagnostics = make_diagnostics(
+    fn cosmos_result_status_accessor() {
+        let status = make_status(
             Some(StatusCode::NotFound),
             Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
         );
         let result = CosmosResult::new(
             b"{}".to_vec(),
             CosmosResponseHeaders::new(),
-            diagnostics.clone(),
+            status,
         );
 
-        // Status codes are only accessible via diagnostics
-        let status = diagnostics.status().unwrap();
-        assert_eq!(status.status_code(), StatusCode::NotFound);
-        assert!(status.is_read_session_not_available());
-        // Same via result.diagnostics()
-        let result_status = result.diagnostics().status().unwrap();
+        let result_status = result.status();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);
         assert!(result_status.is_read_session_not_available());
     }

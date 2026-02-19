@@ -14,8 +14,8 @@ use crate::{
         AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent,
     },
     options::{
-        ConnectionPoolOptions, CorrelationId, DiagnosticsOptions, DriverOptions, RuntimeOptions,
-        SharedRuntimeOptions, ThroughputControlGroupOptions,
+        ConnectionPoolOptions, CorrelationId, DriverOptions, RuntimeOptions, SharedRuntimeOptions,
+        ThroughputControlGroupOptions,
         ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry, UserAgentSuffix,
         WorkloadId,
     },
@@ -82,9 +82,6 @@ pub struct CosmosDriverRuntime {
     /// with lazy initialization of emulator-specific pools.
     transport: Arc<CosmosTransport>,
 
-    /// Diagnostics configuration for output verbosity and size limits.
-    diagnostics_options: Arc<DiagnosticsOptions>,
-
     /// Thread-safe runtime options for operation options.
     runtime_options: SharedRuntimeOptions,
 
@@ -145,13 +142,6 @@ impl CosmosDriverRuntime {
     /// metadata and data plane operations, with automatic emulator detection.
     pub(crate) fn transport(&self) -> &Arc<CosmosTransport> {
         &self.transport
-    }
-
-    /// Returns the diagnostics options.
-    ///
-    /// Use this to access verbosity and size settings for diagnostic output.
-    pub fn diagnostics_options(&self) -> &Arc<DiagnosticsOptions> {
-        &self.diagnostics_options
     }
 
     /// Returns the thread-safe runtime options.
@@ -324,7 +314,6 @@ impl CosmosDriverRuntime {
 pub struct CosmosDriverRuntimeBuilder {
     client_options: Option<ClientOptions>,
     connection_pool: Option<ConnectionPoolOptions>,
-    diagnostics_options: Option<DiagnosticsOptions>,
     runtime_options: Option<RuntimeOptions>,
     workload_id: Option<WorkloadId>,
     correlation_id: Option<CorrelationId>,
@@ -347,14 +336,6 @@ impl CosmosDriverRuntimeBuilder {
     /// Sets the connection pool options.
     pub fn with_connection_pool(mut self, options: ConnectionPoolOptions) -> Self {
         self.connection_pool = Some(options);
-        self
-    }
-
-    /// Sets the diagnostics options.
-    ///
-    /// Controls verbosity and size limits for diagnostic output.
-    pub fn with_diagnostics_options(mut self, options: DiagnosticsOptions) -> Self {
-        self.diagnostics_options = Some(options);
         self
     }
 
@@ -498,7 +479,6 @@ impl CosmosDriverRuntimeBuilder {
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
             transport,
-            diagnostics_options: Arc::new(self.diagnostics_options.unwrap_or_default()),
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),
