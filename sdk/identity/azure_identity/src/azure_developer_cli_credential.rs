@@ -54,9 +54,9 @@ impl OutputProcessor for AzdTokenResponse {
     fn get_error_message(stderr: &str) -> Option<String> {
         // Try to parse azd's JSON error output and extract the message
         if let Ok(error_output) = from_json::<_, AzdErrorOutput>(stderr) {
-            let message = &error_output.data.message;
+            let message = error_output.data.message.trim();
             if !message.is_empty() {
-                return Some(message.to_string());
+                return Some(format!("\n{message}"));
             }
         }
         // Fall back to raw stderr if parsing fails or message is empty
@@ -231,7 +231,7 @@ mod tests {
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. \nERROR: not logged in, run `azd auth login` to login\n\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed.\nERROR: not logged in, run `azd auth login` to login\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
@@ -242,7 +242,7 @@ mod tests {
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed. ERROR: fetching token: some error occurred\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed.\nERROR: fetching token: some error occurred\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
@@ -276,7 +276,7 @@ mod tests {
         let err = run_test(1, "", stderr, None).await.expect_err("error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
         assert_eq!(
-            "AzureDeveloperCliCredential authentication failed.   \n  ERROR: some error  \n  \nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
+            "AzureDeveloperCliCredential authentication failed.\nERROR: some error\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd",
             err.to_string()
         );
     }
