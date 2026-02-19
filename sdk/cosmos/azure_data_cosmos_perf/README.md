@@ -170,6 +170,7 @@ The tool builds a custom `reqwest::Client` with connection pool settings matchin
 the Cosmos DB driver defaults (from `azure_data_cosmos_driver`). This replaces the
 default bare `reqwest` client with:
 
+- **HTTP/1.1 only**: disables HTTP/2 to match the driver's protocol settings
 - **Max idle connections per host**: 1,000
 - **Connect timeout**: 5 seconds
 - **Request timeout**: 6 seconds

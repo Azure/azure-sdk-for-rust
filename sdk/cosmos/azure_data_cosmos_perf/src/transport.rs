@@ -19,6 +19,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(6);
 /// Creates a custom HTTP transport with the Cosmos DB driver's connection pool defaults.
 pub fn create_transport() -> Result<Transport, Box<dyn std::error::Error>> {
     let client = reqwest::ClientBuilder::new()
+        .http1_only()
         .pool_max_idle_per_host(MAX_IDLE_CONNECTIONS_PER_HOST)
         .connect_timeout(CONNECT_TIMEOUT)
         .timeout(REQUEST_TIMEOUT)
