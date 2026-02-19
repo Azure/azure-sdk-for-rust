@@ -15,6 +15,7 @@
 use super::framework;
 
 use azure_core::http::StatusCode;
+use azure_core::Uuid;
 use azure_data_cosmos::fault_injection::{
     FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
@@ -25,7 +26,6 @@ use framework::{TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{borrow::Cow, error::Error};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {
@@ -112,12 +112,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             assert!(
                 request_url.contains(&SATELLITE_REGION.as_str()),
                 "read should have failed over to satellite region, but URL was: {}",
@@ -418,12 +413,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             assert!(
                 request_url.contains(&SATELLITE_REGION.as_str()),
                 "read should have failed over to satellite region, but URL was: {}",
