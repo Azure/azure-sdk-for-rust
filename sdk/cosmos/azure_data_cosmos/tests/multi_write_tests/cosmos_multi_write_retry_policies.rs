@@ -63,10 +63,8 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -75,11 +73,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -156,10 +150,8 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -168,11 +160,7 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -232,10 +220,8 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -244,11 +230,7 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -311,10 +293,8 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -323,11 +303,7 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -394,10 +370,8 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -406,11 +380,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -486,10 +456,8 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -498,11 +466,7 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -579,10 +543,8 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -591,11 +553,7 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
