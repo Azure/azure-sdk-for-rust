@@ -21,7 +21,6 @@ use azure_core::{credentials::TokenCredential, http::Url};
 use serde::Serialize;
 use std::sync::Arc;
 
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Client for Azure Cosmos DB.
