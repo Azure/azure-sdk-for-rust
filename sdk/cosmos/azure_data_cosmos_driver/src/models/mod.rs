@@ -45,34 +45,8 @@ pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
 
-use crate::options::Region;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-
-/// Properties of a Cosmos DB account.
-///
-/// Contains metadata about a Cosmos DB account including its regions and capabilities.
-/// Used internally by the driver for routing and caching.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct AccountProperties {
-    /// The account's primary (write) region.
-    pub write_region: Region,
-    /// All readable regions for this account (ordered by preference).
-    pub read_regions: Vec<Region>,
-    /// The system-assigned resource ID for the account.
-    pub rid: Option<String>,
-}
-
-impl AccountProperties {
-    /// Creates new account properties.
-    pub fn new(write_region: Region, read_regions: Vec<Region>) -> Self {
-        Self {
-            write_region,
-            read_regions,
-            rid: None,
-        }
-    }
-}
 
 /// Properties of a Cosmos DB database.
 ///

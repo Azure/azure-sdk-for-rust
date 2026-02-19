@@ -10,7 +10,6 @@
 //! - [`CosmosDriverRuntimeBuilder`] - Builder for creating runtime instances
 //! - [`CosmosDriver`] - A driver instance for a specific Cosmos DB account
 
-pub(crate) mod cache;
 mod cosmos_driver;
 mod runtime;
 pub(crate) mod transport;

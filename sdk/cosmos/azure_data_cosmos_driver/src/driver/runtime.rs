@@ -11,8 +11,7 @@ use std::{
 
 use crate::{
     models::{
-        AccountEndpoint, AccountProperties, AccountReference, ContainerReference,
-        ThroughputControlGroupName, UserAgent,
+        AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent,
     },
     options::{
         ConnectionPoolOptions, CorrelationId, DiagnosticsOptions, DriverOptions, RuntimeOptions,
@@ -22,11 +21,7 @@ use crate::{
     },
 };
 
-use super::{
-    cache::{AccountMetadataCache, ContainerCache},
-    transport::CosmosTransport,
-    CosmosDriver,
-};
+use super::{transport::CosmosTransport, CosmosDriver};
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -126,17 +121,6 @@ pub struct CosmosDriverRuntime {
     /// Ensures singleton driver per account reference.
     driver_registry: Arc<RwLock<HashMap<String, Arc<CosmosDriver>>>>,
 
-    /// Cache for account metadata (regions, capabilities).
-    ///
-    /// Entries are populated on first access to an account and used for routing.
-    /// Wrapped in `Arc` for cheap cloning.
-    account_metadata_cache: Arc<AccountMetadataCache>,
-
-    /// Cache for container metadata (partition key definition, indexing policy).
-    ///
-    /// Entries are populated on first access to a container and used for
-    /// partition key extraction and routing. Wrapped in `Arc` for cheap cloning.
-    container_cache: Arc<ContainerCache>,
 }
 
 impl CosmosDriverRuntime {
@@ -219,22 +203,6 @@ impl CosmosDriverRuntime {
         &self.throughput_control_groups
     }
 
-    /// Returns cached account properties for the given account, fetching on cache miss.
-    pub(crate) async fn get_or_fetch_account_properties<F, Fut>(
-        &self,
-        account: &AccountReference,
-        fetch_fn: F,
-    ) -> Arc<AccountProperties>
-    where
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = AccountProperties>,
-    {
-        let endpoint = AccountEndpoint::from(account);
-        self.account_metadata_cache
-            .get_or_fetch(endpoint, fetch_fn)
-            .await
-    }
-
     /// Returns a throughput control group by container and name.
     ///
     /// This is a convenience method for looking up a specific group.
@@ -256,64 +224,6 @@ impl CosmosDriverRuntime {
     ) -> Option<&Arc<ThroughputControlGroupOptions>> {
         self.throughput_control_groups
             .get_default_for_container(container)
-    }
-
-    // ===== Cache Access Methods =====
-
-    /// Resolves a container by name, fetching and caching if not already cached.
-    ///
-    /// The `fetch_fn` is only called if the container is not in the cache.
-    /// On a cache miss the resolved reference is populated into both
-    /// by-name and by-RID caches.
-    pub(crate) async fn resolve_container_by_name<F, Fut>(
-        &self,
-        account_endpoint: &str,
-        db_name: &str,
-        container_name: &str,
-        fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
-    where
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
-    {
-        self.container_cache
-            .get_or_fetch_by_name(account_endpoint, db_name, container_name, fetch_fn)
-            .await
-    }
-
-    /// Invalidates the cached container reference from both name and RID caches.
-    ///
-    /// Call this when container properties may have changed (e.g., after
-    /// updating indexing policy) or when a container has been deleted/recreated.
-    pub(crate) async fn invalidate_container_cache(&self, container: &ContainerReference) {
-        self.container_cache.invalidate(container).await;
-    }
-
-    /// Invalidates cached account metadata.
-    ///
-    /// Call this when account configuration may have changed (e.g., after
-    /// adding/removing regions).
-    pub(crate) async fn invalidate_account_cache(&self, account: &AccountReference) {
-        let endpoint = AccountEndpoint::from(account);
-        self.account_metadata_cache.invalidate(&endpoint).await;
-    }
-
-    /// Clears all caches.
-    ///
-    /// This is primarily useful for testing or when the connection needs
-    /// to be fully refreshed.
-    pub(crate) async fn clear_all_caches(
-        &self,
-        account: Option<&AccountReference>,
-        container: Option<&ContainerReference>,
-    ) {
-        if let Some(account) = account {
-            self.invalidate_account_cache(account).await;
-        }
-
-        if let Some(container) = container {
-            self.invalidate_container_cache(container).await;
-        }
     }
 
     /// Gets or creates a driver for the specified account.
@@ -598,8 +508,6 @@ impl CosmosDriverRuntimeBuilder {
             user_agent_suffix: self.user_agent_suffix,
             throughput_control_groups: self.throughput_control_groups,
             driver_registry: Arc::new(RwLock::new(HashMap::new())),
-            account_metadata_cache: Arc::new(AccountMetadataCache::new()),
-            container_cache: Arc::new(ContainerCache::new()),
         })
     }
 }

@@ -9,9 +9,9 @@ use crate::{
         TransportSecurity,
     },
     models::{
-        AccountEndpoint, AccountProperties, AccountReference, ActivityId, ContainerProperties,
-        ContainerReference, CosmosOperation, CosmosResponseHeaders, CosmosResult,
-        DatabaseProperties, DatabaseReference, RequestCharge, SubStatusCode,
+        AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
+        CosmosOperation, CosmosResponseHeaders, CosmosResult, DatabaseProperties,
+        DatabaseReference, RequestCharge, SubStatusCode,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
@@ -210,15 +210,8 @@ impl CosmosDriver {
         let account = operation.resource_reference().account();
         let auth = account.auth();
 
-        // Resolve account metadata through AccountMetadataCache (demo behavior).
-        // For now, derive placeholder properties from AccountReference on cache miss.
-        let account_properties = self
-            .runtime
-            .get_or_fetch_account_properties(account, || async {
-                let fallback_region = Region::new("Unknown");
-                AccountProperties::new(fallback_region.clone(), vec![fallback_region])
-            })
-            .await;
+        // Account-level metadata resolution is currently a direct fallback value.
+        let account_write_region = Region::new("Unknown");
 
         // Step 5: Build resource link for authorization
         let resource_ref = operation.resource_reference();
@@ -294,12 +287,7 @@ impl CosmosDriver {
                 use azure_core::http::headers::AsHeaders;
                 let pk_headers = match pk.as_headers() {
                     Ok(headers) => headers,
-                    Err(e) => {
-                        self.runtime
-                            .clear_all_caches(Some(account), operation.container())
-                            .await;
-                        return Err(e);
-                    }
+                    Err(e) => return Err(e),
                 };
 
                 for (name, value) in pk_headers {
@@ -313,7 +301,7 @@ impl CosmosDriver {
             let (event_sender, event_receiver) = event_channel();
             ctx.insert(EventEmitter::new(event_sender));
 
-            let region = account_properties.write_region.clone();
+            let region = account_write_region.clone();
             let execution_context = if diagnostics_builder.request_count() == 0 {
                 ExecutionContext::Initial
             } else {
@@ -405,9 +393,6 @@ impl CosmosDriver {
 
                     if should_retry {
                         attempt += 1;
-                        self.runtime
-                            .clear_all_caches(Some(account), operation.container())
-                            .await;
                         continue;
                     }
 
@@ -416,9 +401,6 @@ impl CosmosDriver {
                         Some(SubStatusCode::TRANSPORT_GENERATED_503),
                     );
 
-                    self.runtime
-                        .clear_all_caches(Some(account), operation.container())
-                        .await;
                     return Err(e);
                 }
             }
@@ -431,9 +413,7 @@ impl CosmosDriver {
     ///
     /// Reads the database and container from the service to obtain their
     /// resource IDs (RIDs) and container properties (partition key, unique key
-    /// policy). The resolved [`ContainerReference`] is cached so that
-    /// subsequent calls for the same database/container return immediately
-    /// without a network round-trip.
+    /// policy).
     ///
     /// # Parameters
     ///
@@ -458,7 +438,7 @@ impl CosmosDriver {
     /// );
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     ///
-    /// // Resolve the container (fetched from service on first call, cached after)
+    /// // Resolve the container (fetched from service on each call)
     /// let container = driver.resolve_container("mydb", "mycontainer").await?;
     ///
     /// // Use the resolved container for item operations
@@ -475,70 +455,47 @@ impl CosmosDriver {
         container_name: &str,
     ) -> azure_core::Result<ContainerReference> {
         let account = self.account().clone();
-        let endpoint = account.endpoint().to_string();
-        let db_name_key = db_name.to_owned();
-        let container_name_key = container_name.to_owned();
-        let db_name = db_name_key.clone();
-        let container_name = container_name_key.clone();
+        let db_name = db_name.to_owned();
+        let container_name = container_name.to_owned();
+        let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
+        let options = OperationOptions::new();
 
-        self.runtime
-            .resolve_container_by_name(&endpoint, &db_name_key, &container_name_key, || async {
-                // Cache miss — read database and container from the service.
-                let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
-                let options = OperationOptions::new();
+        let db_result = self
+            .execute_operation(CosmosOperation::read_database(db_ref.clone()), options.clone())
+            .await?;
+        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body()).map_err(|e| {
+            azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
+        })?;
+        let db_rid = db_props.system_properties.rid.ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "database response missing _rid",
+            )
+        })?;
 
-                // 1. Read the database to obtain its _rid.
-                let db_result = self
-                    .execute_operation(
-                        CosmosOperation::read_database(db_ref.clone()),
-                        options.clone(),
-                    )
-                    .await?;
-                let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
-                    .map_err(|e| {
-                        azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
-                    })?;
-                let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        "database response missing _rid",
-                    )
-                })?;
+        let container_result = self
+            .execute_operation(
+                CosmosOperation::read_container_by_name(db_ref, container_name.clone()),
+                options,
+            )
+            .await?;
+        let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let container_rid = container_props.system_properties.rid.clone().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "container response missing _rid",
+            )
+        })?;
 
-                // 2. Read the container to obtain its _rid and properties.
-                let container_result = self
-                    .execute_operation(
-                        CosmosOperation::read_container_by_name(db_ref, container_name.clone()),
-                        options,
-                    )
-                    .await?;
-                let container_props: ContainerProperties =
-                    serde_json::from_slice(container_result.body()).map_err(|e| {
-                        azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
-                    })?;
-                let container_rid =
-                    container_props
-                        .system_properties
-                        .rid
-                        .clone()
-                        .ok_or_else(|| {
-                            azure_core::Error::with_message(
-                                azure_core::error::ErrorKind::DataConversion,
-                                "container response missing _rid",
-                            )
-                        })?;
-
-                Ok(ContainerReference::new(
-                    account,
-                    db_name,
-                    db_rid,
-                    container_name,
-                    container_rid,
-                    &container_props,
-                ))
-            })
-            .await
-            .map(|container| container.as_ref().clone())
+        Ok(ContainerReference::new(
+            account,
+            db_name,
+            db_rid,
+            container_name,
+            container_rid,
+            &container_props,
+        ))
     }
 }
 
