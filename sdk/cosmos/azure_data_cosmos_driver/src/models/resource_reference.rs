@@ -8,7 +8,7 @@
 //! internal enums, preventing mixed addressing modes.
 
 use crate::models::{
-    resource_id::{ResourceIdentifierType, ResourceName, ResourceRid},
+    resource_id::{ResourceIdentifier, ResourceName, ResourceRid},
     AccountReference, ImmutableContainerProperties, PartitionKey,
 };
 
@@ -31,7 +31,7 @@ pub struct DatabaseReference {
     /// Reference to the parent account.
     account: AccountReference,
     /// The database identifier (by name or by RID).
-    id: ResourceIdentifierType,
+    id: ResourceIdentifier,
 }
 
 impl DatabaseReference {
@@ -39,7 +39,7 @@ impl DatabaseReference {
     pub fn from_name(account: AccountReference, name: impl Into<Cow<'static, str>>) -> Self {
         Self {
             account,
-            id: ResourceIdentifierType::ByName(ResourceName::new(name)),
+            id: ResourceIdentifier::ByName(ResourceName::new(name)),
         }
     }
 
@@ -60,12 +60,12 @@ impl DatabaseReference {
 
     /// Returns `true` if this is a name-based reference.
     pub fn is_by_name(&self) -> bool {
-        matches!(self.id, ResourceIdentifierType::ByName(_))
+        matches!(self.id, ResourceIdentifier::ByName(_))
     }
 
     /// Returns `true` if this is a RID-based reference.
     pub fn is_by_rid(&self) -> bool {
-        matches!(self.id, ResourceIdentifierType::ByRid(_))
+        matches!(self.id, ResourceIdentifier::ByRid(_))
     }
 
     /// Returns the name-based relative path: `/dbs/{name}`
@@ -203,7 +203,7 @@ impl ContainerReference {
     pub(crate) fn database(&self) -> DatabaseReference {
         DatabaseReference {
             account: self.account.clone(),
-            id: ResourceIdentifierType::ByName(self.db_name.clone()),
+            id: ResourceIdentifier::ByName(self.db_name.clone()),
         }
     }
 
@@ -236,7 +236,7 @@ pub struct ItemReference {
     /// The partition key for the item.
     partition_key: PartitionKey,
     /// The item identifier (name or RID).
-    item_identifier: ResourceIdentifierType,
+    item_identifier: ResourceIdentifier,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -259,7 +259,7 @@ impl ItemReference {
         Self {
             container: container.clone(),
             partition_key,
-            item_identifier: ResourceIdentifierType::by_name(name),
+            item_identifier: ResourceIdentifier::by_name(name),
             resource_link,
         }
     }
@@ -281,7 +281,7 @@ impl ItemReference {
         Self {
             container: container.clone(),
             partition_key,
-            item_identifier: ResourceIdentifierType::by_rid(rid),
+            item_identifier: ResourceIdentifier::by_rid(rid),
             resource_link,
         }
     }
@@ -343,7 +343,7 @@ pub struct StoredProcedureReference {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The stored procedure identifier.
-    stored_procedure_identifier: ResourceIdentifierType,
+    stored_procedure_identifier: ResourceIdentifier,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -362,7 +362,7 @@ impl StoredProcedureReference {
         );
         Self {
             container: container.clone(),
-            stored_procedure_identifier: ResourceIdentifierType::by_name(stored_procedure_name),
+            stored_procedure_identifier: ResourceIdentifier::by_name(stored_procedure_name),
             resource_link,
         }
     }
@@ -380,7 +380,7 @@ impl StoredProcedureReference {
         );
         Self {
             container: container.clone(),
-            stored_procedure_identifier: ResourceIdentifierType::by_rid(stored_procedure_rid),
+            stored_procedure_identifier: ResourceIdentifier::by_rid(stored_procedure_rid),
             resource_link,
         }
     }
@@ -440,7 +440,7 @@ pub struct TriggerReference {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The trigger identifier.
-    trigger_identifier: ResourceIdentifierType,
+    trigger_identifier: ResourceIdentifier,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -455,7 +455,7 @@ impl TriggerReference {
         let resource_link = format!("{}/triggers/{}", container.name_based_path(), trigger_name);
         Self {
             container: container.clone(),
-            trigger_identifier: ResourceIdentifierType::by_name(trigger_name),
+            trigger_identifier: ResourceIdentifier::by_name(trigger_name),
             resource_link,
         }
     }
@@ -469,7 +469,7 @@ impl TriggerReference {
         let resource_link = format!("{}/triggers/{}", container.rid_based_path(), trigger_rid);
         Self {
             container: container.clone(),
-            trigger_identifier: ResourceIdentifierType::by_rid(trigger_rid),
+            trigger_identifier: ResourceIdentifier::by_rid(trigger_rid),
             resource_link,
         }
     }
@@ -523,7 +523,7 @@ pub struct UdfReference {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The UDF identifier.
-    udf_identifier: ResourceIdentifierType,
+    udf_identifier: ResourceIdentifier,
     /// Pre-computed resource link.
     resource_link: String,
 }
@@ -538,7 +538,7 @@ impl UdfReference {
         let resource_link = format!("{}/udfs/{}", container.name_based_path(), udf_name);
         Self {
             container: container.clone(),
-            udf_identifier: ResourceIdentifierType::by_name(udf_name),
+            udf_identifier: ResourceIdentifier::by_name(udf_name),
             resource_link,
         }
     }
@@ -549,7 +549,7 @@ impl UdfReference {
         let resource_link = format!("{}/udfs/{}", container.rid_based_path(), udf_rid);
         Self {
             container: container.clone(),
-            udf_identifier: ResourceIdentifierType::by_rid(udf_rid),
+            udf_identifier: ResourceIdentifier::by_rid(udf_rid),
             resource_link,
         }
     }
