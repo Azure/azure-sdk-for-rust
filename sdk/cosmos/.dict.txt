@@ -3,6 +3,9 @@ documentdb
 dotproduct
 euclidian
 pkranges
+partitionkey
+pksysdocs
+rwcache
 sprocs
 udfs
 backoff
@@ -28,6 +31,10 @@ enablepreview
 westus
 eastus
 accountname
+murmurhash
+failback
+Appleby's
+bytearray
 
 # Cosmos' docs all use "Autoscale" as a single word, rather than a compound "AutoScale" or "Auto Scale"
 autoscale

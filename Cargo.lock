@@ -265,9 +265,7 @@ dependencies = [
  "azure_core_test_macros",
  "azure_identity",
  "opentelemetry",
- "opentelemetry-http",
  "opentelemetry_sdk",
- "reqwest",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -364,7 +362,6 @@ dependencies = [
  "include-file",
  "openssl",
  "pin-project",
- "reqwest",
  "serde",
  "serde_json",
  "serde_test",
@@ -2059,18 +2056,6 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "opentelemetry-http"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7a6d09a73194e6b66df7c8f1b680f156d916a1a942abf2de06823dd02b7855d"
-dependencies = [
- "async-trait",
- "bytes",
- "http",
- "opentelemetry",
 ]
 
 [[package]]

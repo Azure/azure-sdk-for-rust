@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 /// Represents a partition key range in the Azure Cosmos DB service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PartitionKeyRange {
+pub(crate) struct PartitionKeyRange {
     /// Gets or sets the Id of the resource
     #[serde(rename = "id")]
     pub id: String,

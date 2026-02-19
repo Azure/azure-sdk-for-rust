@@ -15,6 +15,7 @@ use url::Url;
 #[derive(SafeDebug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct AccountRegion {
     pub name: RegionName,
 
@@ -27,6 +28,7 @@ pub struct AccountRegion {
 #[safe(true)]
 // cSpell:disable
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct ReplicationPolicy {
     pub min_replica_set_size: i32,
 
@@ -39,6 +41,7 @@ pub struct ReplicationPolicy {
 #[derive(SafeDebug, Clone, Serialize, Deserialize)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct ConsistencyPolicy {
     pub default_consistency_level: String,
 }
@@ -47,6 +50,7 @@ pub struct ConsistencyPolicy {
 #[derive(SafeDebug, Clone, Serialize, Deserialize)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct ReadPolicy {
     pub primary_read_coefficient: i32,
 
@@ -61,6 +65,7 @@ pub struct ReadPolicy {
 #[derive(SafeDebug, Clone, Serialize, Deserialize)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct AccountProperties {
     #[serde(rename = "_self")]
     pub self_link: String,

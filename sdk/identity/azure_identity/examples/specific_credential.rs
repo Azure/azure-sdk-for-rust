@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Demonstrates how to define a custom [`TokenCredential`] that selects a
+//! specific credential based on an environment variable.
+
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
@@ -10,36 +13,6 @@ use azure_core::{
 use azure_identity::AzureCliCredential;
 use azure_identity::{ManagedIdentityCredential, WorkloadIdentityCredential};
 use std::sync::Arc;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let subscription_id =
-        std::env::var("AZURE_SUBSCRIPTION_ID").expect("AZURE_SUBSCRIPTION_ID required");
-
-    let credential = SpecificAzureCredential::new()?;
-
-    // Enumerate the Azure storage accounts in the subscription using the REST API directly.
-    // This is just an example: you would normally pass in an `Arc::new(credential)` to an Azure SDK client.
-    let url = url::Url::parse(&format!("https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Storage/storageAccounts?api-version=2019-06-01"))?;
-
-    let access_token = credential
-        .get_token(&["https://management.azure.com/.default"], None)
-        .await?;
-
-    let response = reqwest::Client::new()
-        .get(url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", access_token.token.secret()),
-        )
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{response}");
-    Ok(())
-}
 
 // Define the variable name and possible values you want to detect from the environment.
 const AZURE_CREDENTIAL_KIND: &str = "AZURE_CREDENTIAL_KIND";
@@ -84,7 +57,7 @@ impl TokenCredential for SpecificAzureCredentialKind {
 /// Define a credential that uses an environment variable named `AZURE_CREDENTIAL_KIND`
 /// that creates the appropriate [`TokenCredential`].
 #[derive(Debug)]
-struct SpecificAzureCredential {
+pub struct SpecificAzureCredential {
     source: SpecificAzureCredentialKind,
 }
 
