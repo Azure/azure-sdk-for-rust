@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::constants::COSMOS_ALLOWED_HEADERS;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
 use crate::constants::{DEFAULT_CONNECTION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
@@ -47,7 +47,7 @@ impl CosmosClient {
             additional_allowed_query_params: vec![],
         };
 
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
         if client_options.transport.is_none() {
             // There is also a read timeout but this is addressed by the total timeout
             let http_client = reqwest::ClientBuilder::new()

@@ -210,7 +210,7 @@ pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 /// After 1 second it times out locally.
 ///
 /// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
 pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(1);
 
@@ -219,7 +219,7 @@ pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
 /// Chosen to balance fast failure with allowing multiple retry attempts and to
 /// remain just above typical 60s service timeouts.
 /// See `next_generation_sdks_design_principles.md` for detailed rationale.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
 pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
 
 /// A newtype wrapper for Cosmos DB sub-status codes.
