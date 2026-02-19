@@ -5,7 +5,7 @@
 
 use super::framework;
 
-use azure_core::http::StatusCode;
+use azure_core::{http::StatusCode, Uuid};
 use azure_core::Uuid;
 use azure_data_cosmos::fault_injection::{
     FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
@@ -62,11 +62,7 @@ async fn verify_read_fails_with_injected_error(
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -195,11 +191,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -243,13 +235,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
             assert_eq!(
-                response
-                    .request()
-                    .clone()
-                    .into_raw_request()
-                    .url()
-                    .host_str()
-                    .unwrap(),
+                response.request_url().host_str().unwrap(),
                 get_effective_hub_endpoint()
             );
 
@@ -279,10 +265,8 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -291,11 +275,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -328,12 +308,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 .await;
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             println!("Request succeeded via failover, final URL: {}", request_url);
             // Verify the request went to a different endpoint than the faulted one
             assert!(
@@ -367,10 +342,8 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -379,11 +352,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -416,12 +385,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             );
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             // Verify the request went to a different endpoint than the faulted one
             assert!(
                 request_url.contains(&SATELLITE_REGION.as_str()),
@@ -455,10 +419,8 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![SATELLITE_REGION, HUB_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -467,11 +429,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -502,10 +460,8 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, None)
                 .await;
-            let options = ItemOptions {
-                excluded_regions: Some(vec![SATELLITE_REGION.into()]),
-                ..Default::default()
-            };
+            let options =
+                ItemOptions::default().with_excluded_regions(vec![SATELLITE_REGION.into()]);
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
@@ -517,12 +473,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 .await;
 
             let response = result.unwrap();
-            let request_url = response
-                .request()
-                .clone()
-                .into_raw_request()
-                .url()
-                .to_string();
+            let request_url = response.request_url().to_string();
             println!("Request succeeded via failover, final URL: {}", request_url);
             // Verify the request was retried on the hub region
             assert!(

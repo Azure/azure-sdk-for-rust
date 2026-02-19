@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_blob"
-keywords = ["sdk", "azure", "storage", "blob", "blobs"]
+keywords = ["sdk", "cloud", "blobs"]
 categories = ["api-bindings"]
 
 [features]

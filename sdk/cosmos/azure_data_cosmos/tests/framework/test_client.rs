@@ -723,10 +723,7 @@ impl TestRunContext {
         let created_properties = db_client
             .create_container(
                 properties,
-                Some(CreateContainerOptions {
-                    throughput: Some(throughput),
-                    ..Default::default()
-                }),
+                Some(CreateContainerOptions::default().with_throughput(throughput)),
             )
             .await?
             .into_model()?;
@@ -800,10 +797,7 @@ impl TestRunContext {
             )
         })?;
 
-        let options = CosmosClientOptions {
-            application_preferred_regions: vec![region],
-            ..Default::default()
-        };
+        let options = CosmosClientOptions::default().with_preferred_regions(vec![region]);
 
         CosmosClient::with_key(
             &parsed.account_endpoint,

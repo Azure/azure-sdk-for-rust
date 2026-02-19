@@ -11,7 +11,7 @@ license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventhubs"
-keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
+keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
 
 edition.workspace = true
