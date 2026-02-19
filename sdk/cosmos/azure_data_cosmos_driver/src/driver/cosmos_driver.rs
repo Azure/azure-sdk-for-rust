@@ -17,9 +17,7 @@ use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
 
 use super::{
-    transport::{
-        uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus,
-    },
+    transport::{uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus},
     CosmosDriverRuntime,
 };
 
@@ -368,11 +366,13 @@ impl CosmosDriver {
         let options = OperationOptions::new();
 
         let db_result = self
-            .execute_operation(CosmosOperation::read_database(db_ref.clone()), options.clone())
+            .execute_operation(
+                CosmosOperation::read_database(db_ref.clone()),
+                options.clone(),
+            )
             .await?;
-        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body()).map_err(|e| {
-            azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
-        })?;
+        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let db_rid = db_props.system_properties.rid.ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
@@ -388,12 +388,16 @@ impl CosmosDriver {
             .await?;
         let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
-        let container_rid = container_props.system_properties.rid.clone().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "container response missing _rid",
-            )
-        })?;
+        let container_rid = container_props
+            .system_properties
+            .rid
+            .clone()
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "container response missing _rid",
+                )
+            })?;
 
         Ok(ContainerReference::new(
             account,

@@ -46,11 +46,7 @@ impl CosmosResult {
     /// Creates a new `CosmosResult`.
     ///
     /// This is typically called by the driver after completing an operation.
-    pub(crate) fn new(
-        body: Vec<u8>,
-        headers: CosmosResponseHeaders,
-        status: CosmosStatus,
-    ) -> Self {
+    pub(crate) fn new(body: Vec<u8>, headers: CosmosResponseHeaders, status: CosmosStatus) -> Self {
         Self {
             body,
             headers,
@@ -162,11 +158,7 @@ mod tests {
             Some(StatusCode::NotFound),
             Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
         );
-        let result = CosmosResult::new(
-            b"{}".to_vec(),
-            CosmosResponseHeaders::new(),
-            status,
-        );
+        let result = CosmosResult::new(b"{}".to_vec(), CosmosResponseHeaders::new(), status);
 
         let result_status = result.status();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);

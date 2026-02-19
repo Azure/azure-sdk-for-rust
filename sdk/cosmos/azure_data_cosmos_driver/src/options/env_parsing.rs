@@ -25,14 +25,6 @@ impl<T> ValidationBounds<T> {
             max: Some(max),
         }
     }
-
-    /// Create validation bounds with only min.
-    pub const fn min(min: T) -> Self {
-        Self {
-            min: Some(min),
-            max: None,
-        }
-    }
 }
 
 /// Parses a value from an environment variable with proper error handling and optional validation.
