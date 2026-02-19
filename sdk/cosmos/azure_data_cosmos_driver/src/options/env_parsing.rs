@@ -25,7 +25,6 @@ impl<T> ValidationBounds<T> {
             max: Some(max),
         }
     }
-
 }
 
 /// Parses a value from an environment variable with proper error handling and optional validation.

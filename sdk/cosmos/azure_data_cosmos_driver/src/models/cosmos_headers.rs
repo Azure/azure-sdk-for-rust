@@ -230,7 +230,6 @@ impl CosmosResponseHeaders {
         self.substatus = Some(substatus);
         self
     }
-
 }
 
 #[cfg(test)]
