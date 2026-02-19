@@ -63,9 +63,7 @@ impl HttpClient for ::reqwest::Client {
             Err(err) => {
                 #[cfg(not(target_arch = "wasm32"))]
                 let kind = if err.is_connect() {
-                    ErrorKind::ConnectionAborted
-                } else if err.is_timeout() {
-                    ErrorKind::Timeout
+                    ErrorKind::Connection
                 } else {
                     ErrorKind::Io
                 };

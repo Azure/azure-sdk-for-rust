@@ -198,7 +198,7 @@ pub(crate) enum RequestSentStatus {
 ///
 /// Uses [`ErrorKind`] to classify errors. The HTTP client layer (e.g., reqwest)
 /// is responsible for mapping transport errors to the appropriate `ErrorKind`
-/// variants (`ConnectionAborted`, `Timeout`, etc.).
+/// variants (`Connection`, etc.).
 pub(crate) trait RequestSentExt {
     /// Returns the [`RequestSentStatus`] based on error analysis.
     fn request_sent_status(&self) -> RequestSentStatus;
@@ -207,10 +207,9 @@ pub(crate) trait RequestSentExt {
 impl RequestSentExt for azure_core::Error {
     fn request_sent_status(&self) -> RequestSentStatus {
         match self.kind() {
-            ErrorKind::ConnectionAborted | ErrorKind::Credential | ErrorKind::DataConversion => {
+            ErrorKind::Connection | ErrorKind::Credential | ErrorKind::DataConversion => {
                 RequestSentStatus::NotSent
             }
-            ErrorKind::Timeout => RequestSentStatus::Unknown,
             ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
             _ => RequestSentStatus::Unknown,
         }
@@ -222,15 +221,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn connection_aborted_is_not_sent() {
-        let err =
-            azure_core::Error::with_message(ErrorKind::ConnectionAborted, "connection refused");
+    fn connection_error_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Connection, "connection refused");
         assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
     }
 
     #[test]
-    fn timeout_is_unknown() {
-        let err = azure_core::Error::with_message(ErrorKind::Timeout, "request timed out");
+    fn io_error_is_unknown() {
+        let err = azure_core::Error::with_message(ErrorKind::Io, "some io error");
         assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
     }
 
@@ -245,12 +243,6 @@ mod tests {
             "server error",
         );
         assert_eq!(err.request_sent_status(), RequestSentStatus::Sent);
-    }
-
-    #[test]
-    fn io_error_is_unknown() {
-        let err = azure_core::Error::with_message(ErrorKind::Io, "some io error");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
     }
 
     #[test]

@@ -4,9 +4,8 @@
 
 ### Features Added
 
-- Added `ErrorKind::ConnectionAborted` for connection failures where the request was never sent.
-- Added `ErrorKind::Timeout` for operations that timed out before completing.
-- The `reqwest` HTTP client now classifies connection and timeout errors into the new `ErrorKind` variants.
+- Added `ErrorKind::Connection` for connection errors.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
 
 ### Breaking Changes
 

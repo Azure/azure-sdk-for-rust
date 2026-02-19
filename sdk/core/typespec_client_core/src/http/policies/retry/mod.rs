@@ -218,10 +218,7 @@ where
                     (Ok(response), retry_after)
                 }
                 Err(error) => {
-                    if matches!(
-                        error.kind(),
-                        &ErrorKind::Io | &ErrorKind::ConnectionAborted | &ErrorKind::Timeout
-                    ) {
+                    if matches!(error.kind(), &ErrorKind::Io | &ErrorKind::Connection) {
                         debug!(
                             "transport error occurred when making request which will be retried: {}",
                             error

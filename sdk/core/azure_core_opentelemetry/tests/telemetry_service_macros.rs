@@ -560,7 +560,7 @@ mod tests {
                         "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
                     ),
                     ("server.port", 443.into()),
-                    ("error.type", "ConnectionAborted".into()),
+                    ("error.type", "Connection".into()),
                 ],
             },
         )?;
@@ -590,7 +590,7 @@ mod tests {
                     ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 1.into()),
-                    ("error.type", "ConnectionAborted".into()),
+                    ("error.type", "Connection".into()),
                 ],
             },
         )?;
@@ -620,7 +620,7 @@ mod tests {
                     ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 2.into()),
-                    ("error.type", "ConnectionAborted".into()),
+                    ("error.type", "Connection".into()),
                 ],
             },
         )?;
@@ -650,7 +650,7 @@ mod tests {
                     ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 3.into()),
-                    ("error.type", "ConnectionAborted".into()),
+                    ("error.type", "Connection".into()),
                 ],
             },
         )?;
@@ -662,11 +662,11 @@ mod tests {
                 kind: OpenTelemetrySpanKind::Internal,
                 parent_span_id: None,
                 status: OpenTelemetrySpanStatus::Error {
-                    description: "ConnectionAborted".into(),
+                    description: "Connection".into(),
                 },
                 attributes: vec![
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("error.type", "ConnectionAborted".into()),
+                    ("error.type", "Connection".into()),
                     ("a.b", 1.into()),              // added by tracing macro.
                     ("az.telemetry", "Abc".into()), // added by tracing macro
                     ("string attribute", "failing_url".into()), // added by tracing macro.

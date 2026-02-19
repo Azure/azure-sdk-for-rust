@@ -675,10 +675,7 @@ impl ClientRetryPolicy {
                 return self.should_retry_on_connection_failure().await;
             }
             RequestSentStatus::Sent | RequestSentStatus::Unknown => {
-                if matches!(
-                    err.kind(),
-                    ErrorKind::Io | ErrorKind::Timeout | ErrorKind::ConnectionAborted
-                ) {
+                if matches!(err.kind(), ErrorKind::Io | ErrorKind::Connection) {
                     if self.is_read_only() {
                         return self.should_retry_on_unavailable_endpoint_status_codes();
                     }
@@ -1364,13 +1361,13 @@ mod tests {
 
     fn create_connection_error(message: &str) -> azure_core::Error {
         azure_core::Error::with_message(
-            azure_core::error::ErrorKind::ConnectionAborted,
+            azure_core::error::ErrorKind::Connection,
             message.to_string(),
         )
     }
 
     fn create_timeout_error(message: &str) -> azure_core::Error {
-        azure_core::Error::with_message(azure_core::error::ErrorKind::Timeout, message.to_string())
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
     }
 
     fn create_io_error(message: &str) -> azure_core::Error {
