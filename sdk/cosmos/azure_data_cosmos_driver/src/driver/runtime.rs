@@ -10,9 +10,7 @@ use std::{
 };
 
 use crate::{
-    models::{
-        AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent,
-    },
+    models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
         ConnectionPoolOptions, CorrelationId, DiagnosticsOptions, DriverOptions, RuntimeOptions,
         SharedRuntimeOptions, ThroughputControlGroupOptions,
@@ -120,7 +118,6 @@ pub struct CosmosDriverRuntime {
     ///
     /// Ensures singleton driver per account reference.
     driver_registry: Arc<RwLock<HashMap<String, Arc<CosmosDriver>>>>,
-
 }
 
 impl CosmosDriverRuntime {
