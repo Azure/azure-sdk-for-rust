@@ -106,19 +106,6 @@ impl CosmosRequest {
         self.resource_link.container_id()
     }
 
-    #[allow(dead_code)]
-    pub fn client_headers<T: AsHeaders>(&mut self, headers: &T) {
-        // Collect all headers exposed by the `AsHeaders` implementation for client options
-        // always prioritize existing headers in the request over client-level headers.
-        if let Ok(iter) = headers.as_headers() {
-            for (name, value) in iter {
-                if self.headers.get_optional_str(&name).is_none() {
-                    self.headers.insert(name, value);
-                }
-            }
-        }
-    }
-
     /// Gets the corresponding http method for the given `OperationType`.
     pub fn http_method(&self) -> Method {
         self.operation_type.http_method()
