@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Re-export the generated PageBlobClient as the public type.
-pub use crate::generated::clients::PageBlobClient;
+pub use crate::generated::clients::{PageBlobClient, PageBlobClientOptions};
 
 use crate::{logging::apply_storage_logging_defaults, pipeline::StorageHeadersPolicy};
 use azure_core::{
@@ -15,24 +14,6 @@ use azure_core::{
     tracing, Result,
 };
 use std::sync::Arc;
-
-/// Options used when creating a [`PageBlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct PageBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for PageBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl PageBlobClient {
     /// Creates a new PageBlobClient, using Entra ID authentication.

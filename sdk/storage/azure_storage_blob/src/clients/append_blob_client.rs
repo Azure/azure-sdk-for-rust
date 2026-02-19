@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::AppendBlobClient;
+pub use crate::generated::clients::{AppendBlobClient, AppendBlobClientOptions};
 
 use crate::{logging::apply_storage_logging_defaults, pipeline::StorageHeadersPolicy};
 use azure_core::{
@@ -14,24 +14,6 @@ use azure_core::{
     tracing, Result,
 };
 use std::sync::Arc;
-
-/// Options used when creating an [`AppendBlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct AppendBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for AppendBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl AppendBlobClient {
     /// Creates a new AppendBlobClient, using Entra ID authentication.

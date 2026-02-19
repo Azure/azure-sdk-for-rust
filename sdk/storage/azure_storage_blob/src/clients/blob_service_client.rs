@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+pub use crate::generated::clients::{BlobServiceClient, BlobServiceClientOptions};
+
 use crate::{
     logging::apply_storage_logging_defaults, pipeline::StorageHeadersPolicy, BlobClient,
     BlobContainerClient,
@@ -15,26 +17,6 @@ use azure_core::{
     tracing, Result,
 };
 use std::sync::Arc;
-
-pub use crate::generated::clients::BlobServiceClient;
-
-/// Options used when creating a [`BlobServiceClient`].
-#[derive(Clone, SafeDebug)]
-pub struct BlobServiceClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for BlobServiceClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl BlobServiceClient {
     /// Creates a new BlobServiceClient, using Entra ID authentication.
