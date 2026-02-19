@@ -6,10 +6,8 @@ pub use crate::generated::clients::{AppendBlobClient, AppendBlobClientOptions};
 use crate::{logging::apply_storage_logging_defaults, pipeline::StorageHeadersPolicy};
 use azure_core::{
     credentials::TokenCredential,
-    fmt::SafeDebug,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Pipeline, Url,
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy}, Pipeline, Url,
     },
     tracing, Result,
 };

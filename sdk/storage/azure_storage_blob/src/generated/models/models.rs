@@ -163,7 +163,7 @@ pub struct BlobItem {
         rename = "Name",
         skip_serializing_if = "Option::is_none"
     )]
-    pub name: Option<BlobName>,
+    pub name: Option<String>,
 
     /// The object replication metadata of the blob.
     #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]

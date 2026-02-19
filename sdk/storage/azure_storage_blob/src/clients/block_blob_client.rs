@@ -15,10 +15,9 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, ClientOptions, NoFormat, Pipeline, RequestContent, Url,
+        Body, NoFormat, Pipeline, RequestContent, Url,
     },
     tracing, Bytes, Result, Uuid,
 };

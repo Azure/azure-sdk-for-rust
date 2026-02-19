@@ -19,11 +19,10 @@ use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
+        AsyncRawResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode,
         Url, UrlExt,
     },
     tracing, Bytes, Result,

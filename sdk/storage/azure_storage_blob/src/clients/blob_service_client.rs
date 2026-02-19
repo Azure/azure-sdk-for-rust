@@ -9,10 +9,8 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    fmt::SafeDebug,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Pipeline, Url,
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy}, Pipeline, Url,
     },
     tracing, Result,
 };
