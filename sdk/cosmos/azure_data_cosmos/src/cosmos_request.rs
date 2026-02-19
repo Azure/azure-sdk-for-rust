@@ -106,6 +106,7 @@ impl CosmosRequest {
         self.resource_link.container_id()
     }
 
+    #[allow(dead_code)]
     pub fn client_headers<T: AsHeaders>(&mut self, headers: &T) {
         // Collect all headers exposed by the `AsHeaders` implementation for client options
         // always prioritize existing headers in the request over client-level headers.
@@ -428,15 +429,15 @@ mod tests {
             custom_headers: request_custom_headers,
             ..Default::default()
         };
-        let req = CosmosRequest::builder(
+        let mut req = CosmosRequest::builder(
             OperationType::Create,
             ResourceLink::root(ResourceType::Documents),
         )
-        .request_headers(&item_options)
         .build()
         .unwrap();
+        item_options.apply_headers(&mut req.headers);
 
-        let mut req_with_client_headers = req.clone();
+        let mut req_with_client_headers = req;
         req_with_client_headers
             .request_context
             .location_endpoint_to_route = Some("https://example.com/".parse().unwrap());
@@ -454,7 +455,17 @@ mod tests {
             custom_headers: client_custom_headers,
             ..Default::default()
         };
-        req_with_client_headers.client_headers(&client_options);
+        let mut client_headers = Headers::new();
+        client_options.apply_headers(&mut client_headers);
+        for (name, value) in client_headers {
+            if req_with_client_headers
+                .headers
+                .get_optional_str(&name)
+                .is_none()
+            {
+                req_with_client_headers.headers.insert(name, value);
+            }
+        }
 
         let raw = req_with_client_headers.into_raw_request();
         let get_header = |name: &HeaderName| {

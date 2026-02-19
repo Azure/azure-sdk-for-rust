@@ -13,6 +13,7 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 use crate::CosmosClientOptions;
 pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
+use azure_core::http::headers::Headers;
 use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
 use std::sync::Arc;
 use url::Url;
@@ -75,7 +76,13 @@ impl GatewayPipeline {
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<CosmosResponse<T>> {
-        cosmos_request.client_headers(&self.options);
+        let mut client_headers = Headers::new();
+        self.options.apply_headers(&mut client_headers);
+        for (name, value) in client_headers {
+            if cosmos_request.headers.get_optional_str(&name).is_none() {
+                cosmos_request.headers.insert(name, value);
+            }
+        }
         // Prepare a callback delegate to invoke the http request.
         let sender = |req: &mut CosmosRequest| {
             let pipeline = self.pipeline.clone();
