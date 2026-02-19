@@ -6,6 +6,8 @@ use std::borrow::Cow;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::constants;
+use crate::hash::{get_hashed_partition_key_string, EffectivePartitionKey, InnerPartitionKeyValue};
+use crate::models::PartitionKeyKind;
 
 /// Specifies a partition key value, usually used when querying a specific partition.
 ///
@@ -110,6 +112,23 @@ impl PartitionKey {
     pub(crate) fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Returns a hex string representation of the partition key hash.
+    ///
+    /// # Arguments
+    /// * `kind` - The partition key kind (Hash or MultiHash)
+    /// * `version` - The hash version (1 or 2)
+    ///
+    /// # Returns
+    /// An `EffectivePartitionKey` representing the hashed partition key
+    pub fn get_hashed_partition_key_string(
+        &self,
+        kind: PartitionKeyKind,
+        version: u8,
+    ) -> EffectivePartitionKey {
+        let inner_values: Vec<&InnerPartitionKeyValue> = self.0.iter().map(|v| &v.0).collect();
+        get_hashed_partition_key_string(&inner_values, kind, version)
+    }
 }
 
 impl AsHeaders for PartitionKey {
@@ -138,6 +157,7 @@ impl AsHeaders for PartitionKey {
             match key.0 {
                 InnerPartitionKeyValue::Undefined => json.push_str("{}"),
                 InnerPartitionKeyValue::Null => json.push_str("null"),
+                InnerPartitionKeyValue::Bool(b) => json.push_str(if b { "true" } else { "false" }),
                 InnerPartitionKeyValue::String(ref string_key) => {
                     json.push('"');
                     for char in string_key.chars() {
@@ -161,10 +181,9 @@ impl AsHeaders for PartitionKey {
                     json.push('"');
                 }
                 InnerPartitionKeyValue::Number(ref num) => {
-                    json.push_str(
-                        serde_json::to_string(&serde_json::Value::Number(num.clone()))?.as_str(),
-                    );
+                    json.push_str(&num.to_string());
                 }
+                InnerPartitionKeyValue::Infinity => json.push_str("\"Infinity\""),
             }
 
             json.push(',');
@@ -189,15 +208,6 @@ impl AsHeaders for PartitionKey {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
 
-// We don't want to expose the implementation details of PartitionKeyValue (specifically the use of serde_json::Number), so we use this inner private enum to store the data.
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum InnerPartitionKeyValue {
-    Undefined,
-    Null,
-    String(Cow<'static, str>),
-    Number(serde_json::Number), // serde_json::Number has special integer handling, so we'll use that.
-}
-
 impl From<InnerPartitionKeyValue> for PartitionKeyValue {
     fn from(value: InnerPartitionKeyValue) -> Self {
         PartitionKeyValue(value)
@@ -206,25 +216,25 @@ impl From<InnerPartitionKeyValue> for PartitionKeyValue {
 
 impl From<&'static str> for PartitionKeyValue {
     fn from(value: &'static str) -> Self {
-        InnerPartitionKeyValue::String(Cow::Borrowed(value)).into()
+        InnerPartitionKeyValue::String(value.to_string()).into()
     }
 }
 
 impl From<String> for PartitionKeyValue {
     fn from(value: String) -> Self {
-        InnerPartitionKeyValue::String(Cow::Owned(value)).into()
+        InnerPartitionKeyValue::String(value).into()
     }
 }
 
 impl From<&String> for PartitionKeyValue {
     fn from(value: &String) -> Self {
-        InnerPartitionKeyValue::String(Cow::Owned(value.clone())).into()
+        InnerPartitionKeyValue::String(value.clone()).into()
     }
 }
 
 impl From<Cow<'static, str>> for PartitionKeyValue {
     fn from(value: Cow<'static, str>) -> Self {
-        InnerPartitionKeyValue::String(value.clone()).into()
+        InnerPartitionKeyValue::String(value.into_owned()).into()
     }
 }
 
@@ -232,7 +242,7 @@ macro_rules! impl_from_number {
     ($source_type: ty) => {
         impl From<$source_type> for PartitionKeyValue {
             fn from(value: $source_type) -> Self {
-                InnerPartitionKeyValue::Number(serde_json::Number::from(value)).into()
+                InnerPartitionKeyValue::Number(value as f64).into()
             }
         }
     };
@@ -258,11 +268,11 @@ impl From<f32> for PartitionKeyValue {
     ///
     /// This method panics if given an Infinite or NaN value.
     fn from(value: f32) -> Self {
-        InnerPartitionKeyValue::Number(
-            serde_json::Number::from_f64(value as f64)
-                .expect("value should be a non-infinite number"),
-        )
-        .into()
+        assert!(
+            !value.is_infinite() && !value.is_nan(),
+            "value should be a non-infinite number"
+        );
+        InnerPartitionKeyValue::Number(value as f64).into()
     }
 }
 
@@ -273,10 +283,11 @@ impl From<f64> for PartitionKeyValue {
     ///
     /// This method panics if given an Infinite or NaN value.
     fn from(value: f64) -> Self {
-        InnerPartitionKeyValue::Number(
-            serde_json::Number::from_f64(value).expect("value should be a non-infinite number"),
-        )
-        .into()
+        assert!(
+            !value.is_infinite() && !value.is_nan(),
+            "value should be a non-infinite number"
+        );
+        InnerPartitionKeyValue::Number(value).into()
     }
 }
 

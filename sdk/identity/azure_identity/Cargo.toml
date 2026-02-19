@@ -31,7 +31,6 @@ azure_core_test.workspace = true
 azure_security_keyvault_secrets = { path = "../../keyvault/azure_security_keyvault_secrets" }
 clap.workspace = true
 include-file.workspace = true
-reqwest.workspace = true
 serde_json.workspace = true
 serde_test.workspace = true
 serial_test.workspace = true
@@ -45,6 +44,10 @@ client_certificate = ["openssl"]
 
 [lints]
 workspace = true
+
+[[example]]
+name = "specific_credential"
+crate-type = ["lib"]
 
 [package.metadata.docs.rs]
 all-features = true

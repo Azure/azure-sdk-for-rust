@@ -9,6 +9,7 @@ use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::models::CosmosResponse;
 use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::CosmosClientOptions;
 pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
@@ -44,10 +45,12 @@ impl GatewayPipeline {
         endpoint: Url,
         pipeline: azure_core::http::Pipeline,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
         options: CosmosClientOptions,
         fault_injection_enabled: bool,
     ) -> Self {
-        let retry_handler = BackOffRetryHandler::new(global_endpoint_manager);
+        let retry_handler =
+            BackOffRetryHandler::new(global_endpoint_manager, global_partition_endpoint_manager);
         GatewayPipeline {
             endpoint,
             pipeline,

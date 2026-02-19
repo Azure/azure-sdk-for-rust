@@ -16,6 +16,7 @@ use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
 use azure_core::http::{LoggingOptions, RetryOptions};
@@ -26,6 +27,7 @@ pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl CosmosClient {
@@ -86,10 +88,23 @@ impl CosmosClient {
             pipeline_core.clone(),
         ));
 
+        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
+            GlobalPartitionEndpointManager::new(
+                global_endpoint_manager.clone(),
+                false,
+                options.enable_partition_level_circuit_breaker,
+            );
+
+        #[allow(
+            clippy::arc_with_non_send_sync,
+            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
+        )]
+        // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             global_endpoint_manager.clone(),
+            global_partition_endpoint_manager.clone(),
             options,
             fault_injection_enabled,
         ));
@@ -98,6 +113,7 @@ impl CosmosClient {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         })
     }
 
@@ -164,10 +180,22 @@ impl CosmosClient {
             pipeline_core.clone(),
         ));
 
+        let global_partition_endpoint_manager = GlobalPartitionEndpointManager::new(
+            global_endpoint_manager.clone(),
+            false,
+            options.enable_partition_level_circuit_breaker,
+        );
+
+        #[allow(
+            clippy::arc_with_non_send_sync,
+            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
+        )]
+        // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             global_endpoint_manager.clone(),
+            global_partition_endpoint_manager.clone(),
             options,
             fault_injection_enabled,
         ));
@@ -176,6 +204,7 @@ impl CosmosClient {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         })
     }
 
@@ -218,6 +247,7 @@ impl CosmosClient {
             self.pipeline.clone(),
             id,
             self.global_endpoint_manager.clone(),
+            self.global_partition_endpoint_manager.clone(),
         )
     }
 
