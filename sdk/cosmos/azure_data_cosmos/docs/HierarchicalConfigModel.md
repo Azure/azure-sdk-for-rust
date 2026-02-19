@@ -60,14 +60,28 @@ to the lowest, returning the first `Some` value found, or `None` if the option i
 ### Option Groups
 
 An **option group** is a plain Rust struct whose fields are all `Option<T>`. The same
-struct type is reused at every layer it participates in. All fields within a group must
-share the same set of applicable layers.
+struct type is reused at every explicit layer (runtime, account, operation) it participates in.
+All fields within a group must share the same set of these explicit layers.
 
 If a setting is only relevant at certain layers, it belongs in a group scoped to those
-layers. This constraint keeps the model simple: there are no per-field layer annotations
-and no per-layer struct variants. It does mean we need to carefully design option groups
-to ensure they are all aligned to the same layering.
+layers. This constraint keeps the model simple: there are no per-field annotations for the
+explicit layers (runtime, account, operation) and no per-layer struct variants. It does
+mean we need to carefully design option groups to ensure they are all aligned to the same
+explicit layering.
 
+Environment variable support is orthogonal to these explicit layers. Marking a field with
+`#[option(env = "...")]` opts that field into an implicit **Environment** layer for its group.
+The `#[options(layers(...))]` annotation only controls which layers users can explicitly set
+values at (`runtime`, `account`, `operation`). Any group that has at least one
+`#[option(env)]` field will:
+
+- Participate in the implicit environment layer, and
+- Have an `env` field on its generated `View` struct,
+
+regardless of which explicit layers are listed in `layers()`. For example, a
+`ConnectionOptions` group with `#[options(layers(runtime, account))]` and at least one
+`#[option(env)]` field will still have its values resolved from environment variables and its
+`View` will include an `env` field.
 #### Example: `RequestOptions`
 
 ```rust
@@ -390,7 +404,7 @@ impl<'a> RequestOptionsView<'a> {
             .or(self.env.throughput_bucket)
     }
 
-    /// Additive merge: env → runtime → account → operation.
+    /// Per-key merged headers: env → runtime → account → operation.
     pub fn custom_headers(&self) -> HashMap<HeaderName, HeaderValue> {
         let mut merged = HashMap::new();
         if let Some(ref h) = self.env.custom_headers { merged.extend(h.clone()); }
@@ -489,7 +503,9 @@ Types used with `#[option(env)]` must implement `FromStr`. Parsing rules:
 
 - Primitives (`usize`, `u32`, `bool`) — standard `.parse()`
 - `String` — direct use
-- `Duration` — parsed as seconds (e.g., `"30"` → `Duration::from_secs(30)`)
+- `azure_core::time::Duration` — parsed using its `FromStr` implementation (the required
+  string format, such as an ISO 8601 duration, is determined by that type; the macro
+  does not add custom "seconds-only" parsing)
 - Enums (`ConsistencyLevel`, `PriorityLevel`) — require `FromStr` impls
 - `Vec<T>` — comma-separated (e.g., `"West US,East US"`)
 
@@ -507,7 +523,9 @@ A new proc-macro crate at `sdk/cosmos/azure_data_cosmos_macros/` provides
 - **Field-level** `#[option(merge = "extend")]` — additive merge instead of shadow.
 - **Field-level** `#[option(nested)]` — delegates resolution to a child View.
 
-The macro also generates `with_*()` builder methods for each field.
+The macro also generates `with_*()` builder methods for each field, and a `Default`
+implementation for option groups whose fields are all `Option<T>` (all fields default
+to `None`), enabling patterns like `..Default::default()`.
 
 ### Crate structure
 
