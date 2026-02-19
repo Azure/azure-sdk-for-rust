@@ -578,8 +578,6 @@ mod tests {
         assert!(runtime.workload_id().is_none());
         assert!(runtime.correlation_id().is_none());
         assert!(runtime.user_agent_suffix().is_none());
-        // machine_id is always available
-        assert!(!runtime.machine_id().is_empty());
     }
 
     #[tokio::test]
@@ -822,22 +820,6 @@ mod tests {
         assert_eq!(
             effective.content_response_on_write,
             Some(ContentResponseOnWrite::ENABLED)
-        );
-    }
-
-    #[tokio::test]
-    async fn machine_id_always_available() {
-        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-
-        // machine_id is always available (either VM ID or generated UUID)
-        let machine_id = runtime.machine_id();
-        assert!(!machine_id.is_empty());
-
-        // It should have one of the known prefixes
-        assert!(
-            machine_id.starts_with("vmId_") || machine_id.starts_with("uuid_"),
-            "machine_id should start with 'vmId_' or 'uuid_', got: {}",
-            machine_id
         );
     }
 

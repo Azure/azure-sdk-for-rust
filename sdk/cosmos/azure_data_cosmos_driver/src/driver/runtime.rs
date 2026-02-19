@@ -20,7 +20,6 @@ use crate::{
         ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry, UserAgentSuffix,
         WorkloadId,
     },
-    system::{AzureVmMetadata, CpuMemoryHistory, CpuMemoryMonitor, VmMetadataService},
 };
 
 use super::{
@@ -116,18 +115,6 @@ pub struct CosmosDriverRuntime {
     /// is more strict for this field.
     user_agent_suffix: Option<UserAgentSuffix>,
 
-    /// Process-wide CPU and memory monitor singleton.
-    ///
-    /// Provides access to historical CPU/memory snapshots for client telemetry.
-    /// The monitor runs in a background thread and samples every 5 seconds.
-    cpu_memory_monitor: CpuMemoryMonitor,
-
-    /// Process-wide Azure VM metadata service singleton.
-    ///
-    /// Provides access to VM metadata from the Instance Metadata Service (IMDS).
-    /// Metadata is fetched once on first access and cached for the process lifetime.
-    vm_metadata_service: VmMetadataService,
-
     /// Registry of throughput control groups.
     ///
     /// Groups are registered during builder construction and are immutable after
@@ -222,73 +209,6 @@ impl CosmosDriverRuntime {
             .as_ref()
             .map(|c| c.as_str())
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
-    }
-
-    /// Returns a snapshot of the current CPU and memory usage history.
-    ///
-    /// The history contains the most recent CPU load and memory usage samples,
-    /// typically covering the last 30 seconds (6 samples at 5-second intervals).
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    ///
-    /// # async fn example() -> azure_core::Result<()> {
-    /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let history = runtime.cpu_memory_snapshot();
-    ///
-    /// if let Some(cpu) = history.latest_cpu() {
-    ///     println!("Latest CPU: {:.1}%", cpu.value());
-    /// }
-    ///
-    /// if history.is_cpu_overloaded() {
-    ///     println!("Warning: CPU is overloaded");
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn cpu_memory_snapshot(&self) -> CpuMemoryHistory {
-        self.cpu_memory_monitor.snapshot()
-    }
-
-    /// Returns the cached Azure VM metadata, if available.
-    ///
-    /// Returns `None` if:
-    /// - Not running on an Azure VM
-    /// - The `COSMOS_DISABLE_IMDS` environment variable is set
-    /// - The IMDS endpoint is unreachable
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    ///
-    /// # async fn example() -> azure_core::Result<()> {
-    /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// if let Some(metadata) = runtime.vm_metadata() {
-    ///     println!("VM ID: {}", metadata.vm_id());
-    ///     println!("Location: {}", metadata.location());
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn vm_metadata(&self) -> Option<&AzureVmMetadata> {
-        self.vm_metadata_service.metadata()
-    }
-
-    /// Returns the unique machine ID.
-    ///
-    /// This is always available:
-    /// - On Azure VMs: "vmId_{vm-id}" from IMDS
-    /// - Off Azure: "uuid_{generated-uuid}" (stable for process lifetime)
-    pub fn machine_id(&self) -> &str {
-        self.vm_metadata_service.machine_id()
-    }
-
-    /// Returns `true` if running on an Azure VM with accessible IMDS.
-    pub fn is_on_azure(&self) -> bool {
-        self.vm_metadata_service.is_on_azure()
     }
 
     /// Returns the throughput control group registry.
@@ -635,9 +555,6 @@ impl CosmosDriverRuntimeBuilder {
 
     /// Builds the [`CosmosDriverRuntime`].
     ///
-    /// This automatically initializes the process-wide CPU/memory monitor and
-    /// VM metadata service singletons if they haven't been initialized already.
-    ///
     /// The user agent is computed from (in priority order):
     /// 1. `user_agent_suffix` if set
     /// 2. `workload_id` if set (formatted as `w{id}`)
@@ -649,10 +566,6 @@ impl CosmosDriverRuntimeBuilder {
     /// Returns an error if the HTTP transport cannot be created (e.g., TLS
     /// configuration failure).
     ///
-    /// # Note
-    ///
-    /// This method is async because it may need to fetch Azure VM metadata from
-    /// the Instance Metadata Service (IMDS) on first initialization.
     pub async fn build(self) -> azure_core::Result<CosmosDriverRuntime> {
         // Compute user agent from suffix/workloadId/correlationId (in priority order)
         let user_agent = if let Some(ref suffix) = self.user_agent_suffix {
@@ -683,8 +596,6 @@ impl CosmosDriverRuntimeBuilder {
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
-            cpu_memory_monitor: CpuMemoryMonitor::get_or_init(),
-            vm_metadata_service: VmMetadataService::get_or_init().await,
             throughput_control_groups: self.throughput_control_groups,
             driver_registry: Arc::new(RwLock::new(HashMap::new())),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),

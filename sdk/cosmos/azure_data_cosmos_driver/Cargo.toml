@@ -36,9 +36,6 @@ serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
-[target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true }
-
 [lints]
 workspace = true
 
