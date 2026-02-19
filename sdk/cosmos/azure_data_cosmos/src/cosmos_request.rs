@@ -442,17 +442,7 @@ mod tests {
             custom_headers: client_custom_headers,
             ..Default::default()
         };
-        let mut client_headers = Headers::new();
-        client_options.apply_headers(&mut client_headers);
-        for (name, value) in client_headers {
-            if req_with_client_headers
-                .headers
-                .get_optional_str(&name)
-                .is_none()
-            {
-                req_with_client_headers.headers.insert(name, value);
-            }
-        }
+        client_options.apply_headers(&mut req_with_client_headers.headers);
 
         let raw = req_with_client_headers.into_raw_request();
         let get_header = |name: &HeaderName| {

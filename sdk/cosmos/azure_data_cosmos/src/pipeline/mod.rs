@@ -75,12 +75,7 @@ impl GatewayPipeline {
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<CosmosResponse<T>> {
-        let request_headers = std::mem::take(&mut cosmos_request.headers);
         self.options.apply_headers(&mut cosmos_request.headers);
-        // Keep request-level headers authoritative over client-level defaults.
-        for (name, value) in request_headers {
-            cosmos_request.headers.insert(name, value);
-        }
         // Prepare a callback delegate to invoke the http request.
         let sender = |req: &mut CosmosRequest| {
             let pipeline = self.pipeline.clone();

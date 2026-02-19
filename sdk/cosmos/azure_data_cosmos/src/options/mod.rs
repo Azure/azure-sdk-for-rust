@@ -124,21 +124,29 @@ impl CosmosClientOptions {
         self
     }
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
+        let mut option_headers = Headers::new();
+
         // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
-            headers.insert(header_name.clone(), header_value.clone());
+            option_headers.insert(header_name.clone(), header_value.clone());
         }
 
         if let Some(consistency_level) = &self.consistency_level {
-            headers.insert(constants::CONSISTENCY_LEVEL, consistency_level.to_string());
+            option_headers.insert(constants::CONSISTENCY_LEVEL, consistency_level.to_string());
         }
 
         if let Some(priority) = &self.priority {
-            headers.insert(constants::PRIORITY_LEVEL, priority.to_string());
+            option_headers.insert(constants::PRIORITY_LEVEL, priority.to_string());
         }
 
         if let Some(throughput_bucket) = &self.throughput_bucket {
-            headers.insert(constants::THROUGHPUT_BUCKET, throughput_bucket.to_string());
+            option_headers.insert(constants::THROUGHPUT_BUCKET, throughput_bucket.to_string());
+        }
+
+        for (name, value) in option_headers {
+            if headers.get_optional_str(&name).is_none() {
+                headers.insert(name, value);
+            }
         }
     }
 }
