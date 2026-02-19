@@ -7,7 +7,8 @@ use crate::{logging::apply_storage_logging_defaults, pipeline::StorageHeadersPol
 use azure_core::{
     credentials::TokenCredential,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy}, Pipeline, Url,
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        Pipeline, Url,
     },
     tracing, Result,
 };

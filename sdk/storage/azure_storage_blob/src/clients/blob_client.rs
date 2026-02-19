@@ -22,8 +22,7 @@ use azure_core::{
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode,
-        Url, UrlExt,
+        AsyncRawResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };

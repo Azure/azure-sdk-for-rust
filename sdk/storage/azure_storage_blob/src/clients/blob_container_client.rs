@@ -11,7 +11,8 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy}, Pipeline, StatusCode, Url,
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        Pipeline, StatusCode, Url,
     },
     tracing, Result,
 };
