@@ -108,9 +108,8 @@ impl CreateCommand {
             } => {
                 let throughput_properties: Option<ThroughputProperties> =
                     throughput_options.try_into()?;
-                let options = throughput_properties.map(|p| CreateDatabaseOptions {
-                    throughput: Some(p),
-                });
+                let options = throughput_properties
+                    .map(|p| CreateDatabaseOptions::default().with_throughput(p));
 
                 let db = client.create_database(&id, options).await?.into_model()?;
                 println!("Created database:");
@@ -127,9 +126,8 @@ impl CreateCommand {
             } => {
                 let throughput_properties: Option<ThroughputProperties> =
                     throughput_options.try_into()?;
-                let options = throughput_properties.map(|p| CreateContainerOptions {
-                    throughput: Some(p),
-                });
+                let options = throughput_properties
+                    .map(|p| CreateContainerOptions::default().with_throughput(p));
 
                 let properties = match json {
                     Some(j) => serde_json::from_str(&j).unwrap(),

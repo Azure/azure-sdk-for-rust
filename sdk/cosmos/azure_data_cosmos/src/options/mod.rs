@@ -160,6 +160,7 @@ pub struct SessionRetryOptions {
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct CreateContainerOptions {
     pub throughput: Option<ThroughputProperties>,
 }
@@ -173,10 +174,12 @@ impl CreateContainerOptions {
 
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ReplaceContainerOptions;
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct CreateDatabaseOptions {
     pub throughput: Option<ThroughputProperties>,
 }
@@ -190,10 +193,12 @@ impl CreateDatabaseOptions {
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct DeleteContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct DeleteDatabaseOptions;
 
 /// Specifies consistency levels that can be used when working with Cosmos APIs.
@@ -262,6 +267,7 @@ impl Display for IndexingDirective {
 
 /// Options to be passed to APIs that manipulate items.
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ItemOptions {
     /// Triggers executed before the operation.
     ///
@@ -446,14 +452,17 @@ impl AsHeaders for ItemOptions {
 
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct QueryContainersOptions;
 
 /// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases())
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct QueryDatabasesOptions;
 
 /// Options to be passed to [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct QueryOptions {
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
@@ -553,14 +562,17 @@ impl AsHeaders for QueryOptions {
 
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ReadContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ReadDatabaseOptions;
 
 /// Options to be passed to operations related to Throughput offers.
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct ThroughputOptions;
 
 #[cfg(test)]
