@@ -46,6 +46,11 @@ impl DatabaseReference {
         &self.account
     }
 
+    /// Consumes this database reference and returns the parent account.
+    pub fn into_account(self) -> AccountReference {
+        self.account
+    }
+
     /// Returns the database name, if this is a name-based reference.
     pub fn name(&self) -> Option<&str> {
         self.id.name()
