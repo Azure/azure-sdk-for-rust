@@ -507,10 +507,8 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -519,7 +517,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -579,10 +577,8 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -591,7 +587,7 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -619,10 +615,7 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Ensure replication to satellite before reading with fault client
-            let options = ItemOptions {
-                excluded_regions: Some(vec![HUB_REGION.into()]),
-                ..Default::default()
-            };
+            let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
@@ -664,10 +657,8 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -676,7 +667,7 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -733,10 +724,8 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -745,7 +734,7 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -772,10 +761,7 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Ensure replication to satellite
-            let options = ItemOptions {
-                excluded_regions: Some(vec![HUB_REGION.into()]),
-                ..Default::default()
-            };
+            let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
@@ -817,10 +803,8 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![SATELLITE_REGION, HUB_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -829,7 +813,7 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -890,10 +874,8 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
     let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
@@ -902,7 +884,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties::new(container_id.clone(), "/partition_key"),
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
