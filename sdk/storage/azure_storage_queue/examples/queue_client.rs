@@ -25,7 +25,7 @@ async fn send_message(
     };
 
     queue_client
-        .send_message(queue_message.try_into()?, None)
+        .send_message_wrapper(queue_message.try_into()?, None)
         .await
 }
 
@@ -90,7 +90,7 @@ async fn set_and_get_metadata(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let result = queue_client
         .set_metadata(
-            HashMap::from([
+            &HashMap::from([
                 ("key1".to_string(), "value1".to_string()),
                 ("key2".to_string(), "value2".to_string()),
             ]),
@@ -107,7 +107,7 @@ async fn set_and_get_metadata(
         println!("Metadata - {}: {}", key, value);
     }
 
-    let result = queue_client.set_metadata(HashMap::new(), None).await;
+    let result = queue_client.set_metadata(&HashMap::new(), None).await;
     log_operation_result(&result, "set_metadata_empty");
 
     let result = queue_client.get_metadata(None).await;

@@ -10,18 +10,15 @@ use crate::generated::models::{
     QueueServiceProperties, QueueServiceStats, UserDelegationKey,
 };
 use azure_core::{
-    credentials::TokenCredential,
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     tracing, xml, Result,
 };
-use std::sync::Arc;
 
 #[tracing::client]
 pub struct QueueServiceClient {
@@ -40,46 +37,6 @@ pub struct QueueServiceClientOptions {
 }
 
 impl QueueServiceClient {
-    /// Creates a new QueueServiceClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Queues.Service")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<QueueServiceClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -91,7 +48,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Service.getProperties")]
+    #[tracing::function("Storage.Queues.QueueServiceClient.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<QueueServiceClientGetPropertiesOptions<'_>>,
@@ -133,7 +90,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Service.getStatistics")]
+    #[tracing::function("Storage.Queues.QueueServiceClient.getStatistics")]
     pub async fn get_statistics(
         &self,
         options: Option<QueueServiceClientGetStatisticsOptions<'_>>,
@@ -175,7 +132,7 @@ impl QueueServiceClient {
     ///
     /// * `key_info` - Key information
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Service.getUserDelegationKey")]
+    #[tracing::function("Storage.Queues.QueueServiceClient.getUserDelegationKey")]
     pub async fn get_user_delegation_key(
         &self,
         key_info: RequestContent<KeyInfo, XmlFormat>,
@@ -218,7 +175,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Service.getQueues")]
+    #[tracing::function("Storage.Queues.QueueServiceClient.getQueues")]
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
@@ -301,7 +258,7 @@ impl QueueServiceClient {
     ///
     /// * `queue_service_properties` - The storage service properties to set.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Service.setProperties")]
+    #[tracing::function("Storage.Queues.QueueServiceClient.setProperties")]
     pub async fn set_properties(
         &self,
         queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>,
