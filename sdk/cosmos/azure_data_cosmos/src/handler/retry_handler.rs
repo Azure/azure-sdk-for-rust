@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::conditional_send::{ConditionalSend, ConditionalSync};
+use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::{conditional_send::ConditionalSend, cosmos_request::CosmosRequest};
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
 use std::sync::Arc;
@@ -19,7 +21,7 @@ use tracing::debug;
 #[allow(dead_code)]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-pub trait RetryHandler: Send + Sync {
+pub trait RetryHandler: ConditionalSend + ConditionalSync {
     /// Sends an HTTP request with automatic retry logic
     ///
     /// This method wraps the provided sender callback with retry logic, automatically
@@ -47,7 +49,7 @@ pub trait RetryHandler: Send + Sync {
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
+        Sender: Fn(&mut CosmosRequest) -> Fut + ConditionalSend + ConditionalSync,
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend;
 }
 
@@ -56,8 +58,9 @@ pub trait RetryHandler: Send + Sync {
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackOffRetryHandler {
+pub(crate) struct BackOffRetryHandler {
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl BackOffRetryHandler {
@@ -79,16 +82,21 @@ impl BackOffRetryHandler {
                 self.global_endpoint_manager.clone(),
             ))
         } else {
-            RetryPolicy::Client(ClientRetryPolicy::new(
+            RetryPolicy::Client(Box::from(ClientRetryPolicy::new(
                 self.global_endpoint_manager.clone(),
+                self.global_partition_endpoint_manager.clone(),
                 request.excluded_regions.clone(),
-            ))
+            )))
         }
     }
 
-    pub fn new(global_endpoint_manager: Arc<GlobalEndpointManager>) -> Self {
+    pub fn new(
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+    ) -> Self {
         Self {
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         }
     }
 }
@@ -110,7 +118,7 @@ impl RetryHandler for BackOffRetryHandler {
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
+        Sender: Fn(&mut CosmosRequest) -> Fut + ConditionalSend + ConditionalSync,
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
     {
         // Get the appropriate retry policy based on the request

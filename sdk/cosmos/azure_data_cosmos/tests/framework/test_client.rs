@@ -6,8 +6,10 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 #![cfg(feature = "fault_injection")]
 
-use azure_core::http::HttpClient;
-use azure_core::http::{StatusCode, Transport};
+use azure_core::{
+    http::{HttpClient, StatusCode, Transport},
+    Uuid,
+};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
 use azure_data_cosmos::models::{CosmosResponse, ThroughputProperties};
@@ -509,7 +511,7 @@ pub struct TestRunContext {
 
 impl TestRunContext {
     pub fn new(client: CosmosClient, fault_client: Option<CosmosClient>) -> Self {
-        let run_id = uuid::Uuid::new_v4().simple().to_string();
+        let run_id = Uuid::new_v4().simple().to_string();
         Self {
             run_id,
             client,
@@ -735,10 +737,7 @@ impl TestRunContext {
         let created_properties = db_client
             .create_container(
                 properties,
-                Some(CreateContainerOptions {
-                    throughput: Some(throughput),
-                    ..Default::default()
-                }),
+                Some(CreateContainerOptions::default().with_throughput(throughput)),
             )
             .await?
             .into_model()?;

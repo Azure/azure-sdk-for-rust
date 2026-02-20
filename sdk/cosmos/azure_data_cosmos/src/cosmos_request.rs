@@ -26,7 +26,7 @@ pub enum AuthorizationTokenType {
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PartitionKeyRangeIdentity {
+pub(crate) struct PartitionKeyRangeIdentity {
     pub collection_rid: String,
     pub partition_key_range_id: String,
 }
@@ -37,15 +37,13 @@ pub struct PartitionKeyRangeIdentity {
 /// It collects operation intent (create/read/query/etc.), resource routing
 /// information, partition key, optional item-level options and flags that
 /// influence retry or gateway behaviors.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
-pub struct CosmosRequest {
+pub(crate) struct CosmosRequest {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
     pub resource_link: ResourceLink,
     pub resource_id: Option<String>,
-    pub database_name: Option<String>,
-    pub collection_name: Option<String>,
     pub document_name: Option<String>,
     pub partition_key: Option<PartitionKey>,
     pub is_feed: bool,
@@ -72,8 +70,6 @@ impl CosmosRequest {
             resource_type,
             resource_link,
             resource_id: None,
-            database_name: None,
-            collection_name: None,
             document_name: None,
             partition_key: Some(PartitionKey::EMPTY),
             is_feed: false,
@@ -103,6 +99,11 @@ impl CosmosRequest {
     /// Determines if the given operation type is read only.
     pub fn is_read_only_request(&self) -> bool {
         self.operation_type.is_read_only()
+    }
+
+    /// Returns the container ID extracted from the request's resource link, if present.
+    pub fn container_id(&self) -> Option<String> {
+        self.resource_link.container_id()
     }
 
     pub fn client_headers<T: AsHeaders>(&mut self, headers: &T) {
@@ -182,7 +183,7 @@ impl CosmosRequest {
 /// the original `new` constructor for backward compatibility.
 #[derive(Clone)]
 #[allow(dead_code)]
-pub struct CosmosRequestBuilder {
+pub(crate) struct CosmosRequestBuilder {
     operation_type: OperationType,
     resource_link: ResourceLink,
     partition_key: PartitionKey,

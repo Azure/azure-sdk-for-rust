@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_core"
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["development-tools::testing"]
 edition.workspace = true
 rust-version.workspace = true
@@ -56,7 +56,6 @@ azure_security_keyvault_secrets = { path = "../../keyvault/azure_security_keyvau
 clap.workspace = true
 tokio = { workspace = true, features = ["macros", "rt"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-uuid.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tokio = { workspace = true, features = ["signal"] }

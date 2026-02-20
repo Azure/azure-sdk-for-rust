@@ -35,6 +35,7 @@ impl Display for SessionToken {
 /// Use the builder pattern via [`CosmosClient::builder()`](crate::CosmosClient::builder())
 /// to configure client options.
 #[derive(Clone, Default, Debug)]
+#[non_exhaustive]
 pub struct CosmosClientOptions {
     pub(crate) application_name: Option<String>,
     pub(crate) application_region: Option<RegionName>,
@@ -70,6 +71,58 @@ pub struct CosmosClientOptions {
     ///
     /// Custom headers will not override headers that are already set by the SDK.
     pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
+}
+
+impl CosmosClientOptions {
+    pub fn with_application_name(mut self, application_name: impl Into<String>) -> Self {
+        self.application_name = Some(application_name.into());
+        self
+    }
+
+    pub fn with_application_region(mut self, application_region: impl Into<RegionName>) -> Self {
+        self.application_region = Some(application_region.into());
+        self
+    }
+
+    pub fn with_preferred_regions(mut self, regions: Vec<RegionName>) -> Self {
+        self.application_preferred_regions = regions;
+        self
+    }
+
+    pub fn with_excluded_regions(mut self, regions: Vec<RegionName>) -> Self {
+        self.excluded_regions = regions;
+        self
+    }
+
+    pub fn with_custom_endpoints(mut self, endpoints: HashSet<String>) -> Self {
+        self.account_initialization_custom_endpoints = Some(endpoints);
+        self
+    }
+
+    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    pub fn with_request_timeout(mut self, request_timeout: Duration) -> Self {
+        self.request_timeout = Some(request_timeout);
+        self
+    }
+
+    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
+        self.throughput_bucket = Some(throughput_bucket);
+        self
+    }
+
+    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
 }
 
 impl AsHeaders for CosmosClientOptions {
@@ -108,6 +161,7 @@ impl AsHeaders for CosmosClientOptions {
 
 /// SessionRetryOptions is used to configure retry behavior for session consistency scenarios.
 #[derive(Clone, Debug, Default)]
+#[non_exhaustive]
 pub struct SessionRetryOptions {
     /// Minimum retry time for 404/1002 retries within each region for read and write operations.
     /// The minimum value is 100ms. Default is 500ms.
@@ -126,6 +180,13 @@ pub struct CreateContainerOptions {
     pub throughput: Option<ThroughputProperties>,
 }
 
+impl<'a> CreateContainerOptions<'a> {
+    pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
+        self.throughput = Some(throughput);
+        self
+    }
+}
+
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
 #[derive(Clone, Default)]
 pub struct ReplaceContainerOptions;
@@ -134,6 +195,13 @@ pub struct ReplaceContainerOptions;
 #[derive(Clone, Default)]
 pub struct CreateDatabaseOptions {
     pub throughput: Option<ThroughputProperties>,
+}
+
+impl<'a> CreateDatabaseOptions<'a> {
+    pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
+        self.throughput = Some(throughput);
+        self
+    }
 }
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
@@ -239,7 +307,7 @@ pub struct ItemOptions {
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
-    pub enable_content_response_on_write: bool,
+    pub content_response_on_write_enabled: bool,
     /// The desired throughput bucket for this request
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
@@ -324,7 +392,7 @@ impl AsHeaders for ItemOptions {
             ));
         }
 
-        if !self.enable_content_response_on_write {
+        if !self.content_response_on_write_enabled {
             headers.push((headers::PREFER, constants::PREFER_MINIMAL));
         }
 
@@ -447,7 +515,7 @@ mod tests {
             consistency_level: Some(ConsistencyLevel::Session),
             indexing_directive: Some(IndexingDirective::Include),
             if_match_etag: Some(Etag::from("etag_value")),
-            enable_content_response_on_write: false,
+            content_response_on_write_enabled: false,
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(2),
             custom_headers,
@@ -591,7 +659,7 @@ mod tests {
     #[test]
     fn item_options_empty_as_headers() {
         let item_options = ItemOptions {
-            enable_content_response_on_write: true,
+            content_response_on_write_enabled: true,
             ..Default::default()
         };
 

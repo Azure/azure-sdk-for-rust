@@ -10,36 +10,36 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos"
-keywords = ["sdk", "azure", "rest", "cloud", "cosmos"]
+keywords = ["sdk", "cloud", "rest", "nosql"]
 categories = ["api-bindings"]
 
 [dependencies]
+async-lock.workspace = true
 async-trait.workspace = true
 azure_core.workspace = true
 futures.workspace = true
-serde_json.workspace = true
+pin-project.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 tracing.workspace = true
 url.workspace = true
-async-lock.workspace = true
-pin-project.workspace = true
 
 [dev-dependencies]
-uuid.workspace = true
-azure_identity.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
+azure_identity.workspace = true
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 time.workspace = true
-tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [lints]
 workspace = true
 
 [features]
 default = ["hmac_rust"]
-key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+key_auth = [
+] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [] # Enables support for fault injection testing

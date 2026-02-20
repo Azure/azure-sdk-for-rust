@@ -5,12 +5,12 @@
 
 mod common;
 
+use azure_core::Uuid;
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_servicebus::{CreateReceiverOptions, Message, ReceiveMode, ServiceBusClient};
 use common::{get_queue_name, get_servicebus_namespace};
 use std::error::Error;
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 #[recorded::test(live)]
 async fn test_message_properties_preservation(ctx: TestContext) -> Result<(), Box<dyn Error>> {

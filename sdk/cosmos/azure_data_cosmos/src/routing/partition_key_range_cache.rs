@@ -25,7 +25,7 @@ use tracing::info;
 const PAGE_SIZE_STRING: &str = "-1";
 
 #[derive(Clone, Debug)]
-pub struct PartitionKeyRangeCache {
+pub(crate) struct PartitionKeyRangeCache {
     routing_map_cache: AsyncCache<String, CollectionRoutingMap>,
     pipeline: Arc<GatewayPipeline>,
     container_cache: Arc<ContainerCache>,
@@ -116,7 +116,7 @@ impl PartitionKeyRangeCache {
         }
     }
 
-    async fn try_lookup(
+    pub async fn try_lookup(
         &self,
         collection_rid: &str,
         previous_value: Option<CollectionRoutingMap>,

@@ -76,11 +76,7 @@ async fn create_container_and_write_item(
     container_id: &str,
     _expected_region: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let properties = ContainerProperties {
-        id: Cow::Owned(String::from(container_id)),
-        partition_key: "/id".into(),
-        ..Default::default()
-    };
+    let properties = ContainerProperties::new(Cow::Owned(String::from(container_id)), "/id".into());
 
     let throughput = ThroughputProperties::manual(400);
 

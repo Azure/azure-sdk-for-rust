@@ -8,8 +8,10 @@ use azure_core::{
     http::headers::{HeaderName, HeaderValue},
     tracing::{AsAny, AttributeValue, Span, SpanGuard, SpanStatus},
 };
-use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
-use opentelemetry_http::HeaderInjector;
+use opentelemetry::{
+    propagation::{Injector, TextMapPropagator},
+    trace::TraceContextExt,
+};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use std::{error::Error as StdError, sync::Arc};
 
@@ -25,6 +27,16 @@ impl From<OpenTelemetrySpanKind> for opentelemetry::trace::SpanKind {
             azure_core::tracing::SpanKind::Producer => opentelemetry::trace::SpanKind::Producer,
             azure_core::tracing::SpanKind::Consumer => opentelemetry::trace::SpanKind::Consumer,
         }
+    }
+}
+
+struct HeaderMap(Vec<(HeaderName, HeaderValue)>);
+
+impl Injector for HeaderMap {
+    fn set(&mut self, key: &str, value: String) {
+        // Convert the key and value to HeaderName and HeaderValue. Note that we need to
+        // allocate new strings for the key because it's passed in as a string slice reference.
+        self.0.push((key.to_owned().into(), value.into()));
     }
 }
 
@@ -81,30 +93,22 @@ impl Span for OpenTelemetrySpan {
     fn propagate_headers(&self, request: &mut azure_core::http::Request) {
         // A TraceContextPropagator is used to inject trace context information into HTTP headers.
         let trace_propagator = TraceContextPropagator::new();
-        // We need to map between a reqwest header map (which is what the OpenTelemetry SDK requires)
+        // We need to map between a header map (which is what the OpenTelemetry SDK requires)
         // and the Azure Core request headers.
         //
         // We start with an empty header map and inject the OpenTelemetry headers into it.
-        let mut header_map = reqwest::header::HeaderMap::new();
-        trace_propagator.inject_context(&self.context, &mut HeaderInjector(&mut header_map));
+        let mut header_map = HeaderMap(Vec::new());
+        trace_propagator.inject_context(&self.context, &mut header_map);
 
         // We then insert each of the headers from the OpenTelemetry header map into the
         // Request's header map.
-        for (key, value) in header_map {
-            // Note: The OpenTelemetry HeaderInjector will always produce unique header names, so we don't need to
-            // handle the multiple headers case here.
-
-            if let Some(key) = key {
-                request.insert_header(
-                    HeaderName::from(key.as_str().to_owned()),
-                    // The value is guaranteed to be a valid UTF-8 string by the OpenTelemetry SDK,
-                    // so we can safely unwrap it.
-                    HeaderValue::from(value.to_str().unwrap().to_owned()),
-                );
-            } else {
-                // If the key is a duplicate of the previous header, we ignore it
-                tracing::warn!("Duplicate header key detected. Skipping this header.");
-            }
+        for (key, value) in header_map.0 {
+            request.insert_header(
+                key,
+                // The value is guaranteed to be a valid UTF-8 string by the OpenTelemetry SDK,
+                // so we can safely unwrap it.
+                value,
+            );
         }
     }
 

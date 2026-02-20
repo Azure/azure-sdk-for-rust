@@ -15,8 +15,11 @@ use std::sync::Arc;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-
 pub use super::cosmos_client_builder::CosmosClientBuilder;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
+#[cfg(feature = "key_auth")]
+use azure_core::credentials::Secret;
+use azure_core::http::{LoggingOptions, RetryOptions};
 
 /// Client for Azure Cosmos DB.
 ///
@@ -60,6 +63,7 @@ pub struct CosmosClient {
     pub(crate) databases_link: ResourceLink,
     pub(crate) pipeline: Arc<GatewayPipeline>,
     pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
+    pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl CosmosClient {
@@ -92,6 +96,7 @@ impl CosmosClient {
             self.pipeline.clone(),
             id,
             self.global_endpoint_manager.clone(),
+            self.global_partition_endpoint_manager.clone(),
         )
     }
 

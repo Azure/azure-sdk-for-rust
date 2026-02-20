@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::cosmos_request::CosmosRequest;
+use crate::operation_context::OperationType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
     clients::{ContainerClient, OffersClient},
     models::{ContainerProperties, CosmosResponse, DatabaseProperties, ThroughputProperties},
@@ -11,10 +15,6 @@ use crate::{
     ThroughputOptions,
 };
 use std::sync::Arc;
-
-use crate::cosmos_request::CosmosRequest;
-use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use azure_core::http::Context;
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -26,6 +26,7 @@ pub struct DatabaseClient {
     database_id: String,
     pipeline: Arc<GatewayPipeline>,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl DatabaseClient {
@@ -33,6 +34,7 @@ impl DatabaseClient {
         pipeline: Arc<GatewayPipeline>,
         database_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
@@ -44,6 +46,7 @@ impl DatabaseClient {
             database_id,
             pipeline,
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         }
     }
 
@@ -57,6 +60,7 @@ impl DatabaseClient {
             &self.link,
             name,
             self.global_endpoint_manager.clone(),
+            self.global_partition_endpoint_manager.clone(),
         )
     }
 

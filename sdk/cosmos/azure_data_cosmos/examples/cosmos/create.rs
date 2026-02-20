@@ -85,10 +85,8 @@ impl CreateCommand {
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let options = ItemOptions {
-                    enable_content_response_on_write: show_updated,
-                    ..Default::default()
-                };
+                let options =
+                    ItemOptions::default().with_content_response_on_write_enabled(show_updated);
 
                 let response = container_client
                     .create_item(pk, item, Some(options))
@@ -110,8 +108,10 @@ impl CreateCommand {
             } => {
                 let throughput_properties: Option<ThroughputProperties> =
                     throughput_options.try_into()?;
-                let options = throughput_properties.map(|p| CreateDatabaseOptions {
-                    throughput: Some(p),
+                let options = throughput_properties.map(|p| {
+                    let mut options = CreateDatabaseOptions::default();
+                    options.throughput = Some(p);
+                    options
                 });
 
                 let db = client.create_database(&id, options).await?.into_model()?;
@@ -129,8 +129,10 @@ impl CreateCommand {
             } => {
                 let throughput_properties: Option<ThroughputProperties> =
                     throughput_options.try_into()?;
-                let options = throughput_properties.map(|p| CreateContainerOptions {
-                    throughput: Some(p),
+                let options = throughput_properties.map(|p| {
+                    let mut options = CreateContainerOptions::default();
+                    options.throughput = Some(p);
+                    options
                 });
 
                 let properties = match json {
@@ -144,13 +146,10 @@ impl CreateCommand {
                             panic!("only up to 3 partition key paths are supported");
                         }
 
-                        ContainerProperties {
-                            id: id
-                                .expect("the ID is required when not using '--json'")
-                                .into(),
-                            partition_key: PartitionKeyDefinition::new(partition_key),
-                            ..Default::default()
-                        }
+                        ContainerProperties::new(
+                            id.expect("the ID is required when not using '--json'"),
+                            PartitionKeyDefinition::new(partition_key),
+                        )
                     }
                 };
                 let container = client

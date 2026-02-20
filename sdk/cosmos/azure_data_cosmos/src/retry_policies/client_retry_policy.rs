@@ -10,9 +10,11 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::regions::RegionName;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::sync::Arc;
+use tracing::error;
 use url::Url;
 
 /// An integer indicating the default retry intervals between two retry attempts.
@@ -39,9 +41,12 @@ struct RetryContext {
 
 /// Retry policy for handling data plane request failures.
 #[derive(Debug)]
-pub struct ClientRetryPolicy {
+pub(crate) struct ClientRetryPolicy {
     /// Manages multi-region endpoint routing and failover logic
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+
+    /// An instance of GlobalPartitionEndpointManager that manages partition key range to endpoint mapping
+    partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
 
     /// Whether automatic endpoint discovery is enabled for failover scenarios
     enable_endpoint_discovery: bool,
@@ -57,6 +62,9 @@ pub struct ClientRetryPolicy {
 
     /// Whether the current request is a read operation (true) or write operation (false)
     operation_type: Option<OperationType>,
+
+    /// The Cosmos request being processed by the retry policy.
+    request: Option<CosmosRequest>,
 
     /// Whether the account supports writing to multiple locations simultaneously
     can_use_multiple_write_locations: bool,
@@ -91,15 +99,18 @@ impl ClientRetryPolicy {
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
     pub fn new(
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
         excluded_regions: Option<Vec<RegionName>>,
     ) -> Self {
         Self {
             global_endpoint_manager,
+            partition_key_range_location_cache,
             enable_endpoint_discovery: true,
             failover_retry_count: 0,
             session_token_retry_count: 0,
             service_unavailable_retry_count: 0,
             operation_type: None,
+            request: None,
             can_use_multiple_write_locations: false,
             location_endpoint: None,
             retry_context: None,
@@ -179,6 +190,17 @@ impl ClientRetryPolicy {
                 .request_context
                 .route_to_location_endpoint(endpoint.clone());
         }
+
+        if self
+            .partition_key_range_location_cache
+            .partition_level_failover_enabled()
+            && request.resource_type.is_partitioned()
+        {
+            self.partition_key_range_location_cache
+                .try_add_partition_level_location_override(request);
+        }
+
+        self.request = Some(request.clone());
     }
 
     /// Determines whether a Data Plane request should be retried based on the response or error
@@ -375,7 +397,12 @@ impl ClientRetryPolicy {
         }
 
         // automatic failover support needed to be plugged in.
-        if !self.can_use_multiple_write_locations && !self.operation_type.unwrap().is_read_only() {
+        if !self.can_use_multiple_write_locations
+            && !self.operation_type.unwrap().is_read_only()
+            && !self
+                .partition_key_range_location_cache
+                .partition_level_automatic_failover_enabled()
+        {
             return RetryResult::DoNotRetry;
         }
 
@@ -422,6 +449,21 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::Forbidden
             && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
+            if self
+                .partition_key_range_location_cache
+                .partition_level_failover_enabled()
+                && self.request.is_some()
+                && self
+                    .partition_key_range_location_cache
+                    .try_mark_endpoint_unavailable_for_partition_key_range(
+                        self.request.as_ref().unwrap(),
+                    )
+            {
+                return Some(RetryResult::Retry {
+                    after: Duration::ZERO,
+                });
+            }
+
             // automatic failover support needed to be plugged in here.
             return Some(
                 self.should_retry_on_endpoint_failure(false, false, true, false, false)
@@ -436,9 +478,30 @@ impl ClientRetryPolicy {
             return Some(self.should_retry_on_session_not_available());
         }
 
+        if self.should_mark_endpoint_unavailable_on_system_resource_unavailable_for_write(
+            Some(status_code),
+            sub_status_code,
+        ) {
+            error!(
+                "Operation will NOT be retried on local region. \
+                     Treating SystemResourceUnavailable (429/3092) as ServiceUnavailable (503). \
+                     Status code: 429, sub status code: 3092"
+            );
+
+            return Some(
+                self.try_mark_endpoint_unavailable_for_pk_range_and_retry_on_service_unavailable(
+                    true,
+                ),
+            );
+        }
+
         // Service unavailable (503)
         if status_code == StatusCode::ServiceUnavailable {
-            return Some(self.should_retry_on_unavailable_endpoint_status_codes());
+            return Some(
+                self.try_mark_endpoint_unavailable_for_pk_range_and_retry_on_service_unavailable(
+                    false,
+                ),
+            );
         }
 
         // Internal server error (500) or Gone - Lease not found (410)
@@ -451,6 +514,69 @@ impl ClientRetryPolicy {
         }
 
         None
+    }
+
+    /// Marks endpoint unavailable for partition key range and retries on service unavailable.
+    fn try_mark_endpoint_unavailable_for_pk_range_and_retry_on_service_unavailable(
+        &mut self,
+        is_system_resource_unavailable_for_write: bool,
+    ) -> RetryResult {
+        self.try_mark_endpoint_unavailable_for_pk_range(is_system_resource_unavailable_for_write);
+        self.should_retry_on_unavailable_endpoint_status_codes()
+    }
+
+    /// Attempts to mark the endpoint unavailable for the partition key range.
+    fn try_mark_endpoint_unavailable_for_pk_range(
+        &self,
+        is_system_resource_unavailable_for_write: bool,
+    ) -> bool {
+        if let Some(request) = self.request.as_ref() {
+            if is_system_resource_unavailable_for_write
+                || self.is_request_eligible_for_per_partition_automatic_failover()
+                || self.is_request_eligible_for_partition_level_circuit_breaker()
+            {
+                return self
+                    .partition_key_range_location_cache
+                    .try_mark_endpoint_unavailable_for_partition_key_range(request);
+            }
+        }
+        false
+    }
+
+    /// Checks if endpoint should be marked unavailable on system resource unavailable for write.
+    fn should_mark_endpoint_unavailable_on_system_resource_unavailable_for_write(
+        &self,
+        status_code: Option<StatusCode>,
+        sub_status_code: Option<SubStatusCode>,
+    ) -> bool {
+        self.can_use_multiple_write_locations
+            && status_code == Some(StatusCode::TooManyRequests)
+            && sub_status_code == Some(SubStatusCode::SYSTEM_RESOURCE_NOT_AVAILABLE)
+    }
+
+    /// Checks if request is eligible for per-partition automatic failover.
+    fn is_request_eligible_for_per_partition_automatic_failover(&self) -> bool {
+        if let Some(request) = self.request.as_ref() {
+            return self
+                .partition_key_range_location_cache
+                .is_request_eligible_for_per_partition_automatic_failover(request);
+        }
+        false
+    }
+
+    /// Checks if request is eligible for partition-level circuit breaker.
+    fn is_request_eligible_for_partition_level_circuit_breaker(&self) -> bool {
+        if let Some(request) = self.request.as_ref() {
+            return self
+                .partition_key_range_location_cache
+                .is_request_eligible_for_partition_level_circuit_breaker(request)
+                && self
+                    .partition_key_range_location_cache
+                    .increment_request_failure_counter_and_check_if_partition_can_failover(
+                        request,
+                    );
+        }
+        false
     }
 
     /// Evaluates an error to determine if the request should be retried.
@@ -584,17 +710,20 @@ mod tests {
 
     fn create_test_policy() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager();
-        ClientRetryPolicy::new(manager, None)
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, false);
+        ClientRetryPolicy::new(manager, partition_manager, None)
     }
 
     fn create_test_policy_no_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_no_locations();
-        ClientRetryPolicy::new(manager, None)
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, false);
+        ClientRetryPolicy::new(manager, partition_manager, None)
     }
 
     fn create_test_policy_with_preferred_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_with_preferred_locations();
-        ClientRetryPolicy::new(manager, None)
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, false);
+        ClientRetryPolicy::new(manager, partition_manager, None)
     }
 
     fn create_test_request() -> CosmosRequest {

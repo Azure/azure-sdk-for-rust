@@ -1,6 +1,6 @@
 [package]
 name = "typespec"
-version = "0.12.0"
+version = "0.13.0"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,7 +9,7 @@ homepage = "https://typespec.io"
 repository.workspace = true
 license.workspace = true
 categories = ["compilers", "development-tools"]
-keywords = ["typespec"]
+keywords = []
 
 [dependencies]
 base64.workspace = true
