@@ -87,9 +87,10 @@ impl DatabaseClient {
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
-        _options: Option<ReadDatabaseOptions>,
+        options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
         let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
@@ -122,10 +123,11 @@ impl DatabaseClient {
     ///
     /// See [`Query`] for more information on how to specify a query.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub fn query_containers(
         &self,
         query: impl Into<Query>,
-        _options: Option<QueryContainersOptions>,
+        options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
         crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),
@@ -145,6 +147,7 @@ impl DatabaseClient {
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn create_container(
         &self,
         properties: ContainerProperties,
@@ -167,9 +170,10 @@ impl DatabaseClient {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
-        _options: Option<DeleteDatabaseOptions>,
+        options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
@@ -185,9 +189,10 @@ impl DatabaseClient {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read_throughput(
         &self,
-        _options: Option<ThroughputOptions>,
+        options: Option<ThroughputOptions>,
     ) -> azure_core::Result<Option<ThroughputProperties>> {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
@@ -206,10 +211,11 @@ impl DatabaseClient {
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
-        _options: Option<ThroughputOptions>,
+        options: Option<ThroughputOptions>,
     ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
