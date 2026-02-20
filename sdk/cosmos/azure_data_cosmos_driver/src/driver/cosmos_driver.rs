@@ -143,7 +143,7 @@ impl CosmosDriver {
     ///
     /// # Returns
     ///
-    /// Returns a [`CosmosResult`] containing the response body, headers, and status.
+    /// Returns a [`crate::models::CosmosResponse`] on success.
     ///
     /// # Errors
     ///
@@ -182,7 +182,7 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<CosmosResult> {
+    ) -> azure_core::Result<crate::models::CosmosResponse> {
         // Step 1: Derive effective runtime options
         let effective_options = self.effective_runtime_options(&options);
 
@@ -310,6 +310,18 @@ impl CosmosDriver {
                 }
             }
         }
+
+        let response_headers = CosmosResponseHeaders::from_headers(&Headers::new());
+        let _dummy_result = crate::models::CosmosResponse::new(
+            Vec::new(),
+            response_headers,
+            CosmosStatus::from_parts(azure_core::http::StatusCode::Ok, None),
+        );
+
+        Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "execute_operation is not implemented in this transport-free driver build",
+        ))
     }
 }
 
