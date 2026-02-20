@@ -279,12 +279,12 @@ mod tests {
             None,
         );
 
-        Arc::new(GlobalEndpointManager::new(
+        GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US"), RegionName::from("East US")],
             vec![],
             pipeline,
-        ))
+        )
     }
 
     fn create_test_endpoint_manager_no_locations() -> Arc<GlobalEndpointManager> {
@@ -297,12 +297,12 @@ mod tests {
             None,
         );
 
-        Arc::new(GlobalEndpointManager::new(
+        GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![],
             vec![],
             pipeline,
-        ))
+        )
     }
 
     fn create_test_endpoint_manager_with_preferred_locations() -> Arc<GlobalEndpointManager> {
@@ -315,7 +315,7 @@ mod tests {
             None,
         );
 
-        Arc::new(GlobalEndpointManager::new(
+        GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
                 regions::EAST_ASIA,
@@ -324,7 +324,7 @@ mod tests {
             ],
             vec![],
             pipeline,
-        ))
+        )
     }
 
     fn create_test_policy() -> MetadataRequestRetryPolicy {

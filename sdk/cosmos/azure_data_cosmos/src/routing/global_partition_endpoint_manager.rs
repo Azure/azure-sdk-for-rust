@@ -808,6 +808,26 @@ impl GlobalPartitionEndpointManager {
             partition_failover.can_circuit_breaker_trigger_partition_failover(is_read_only)
         }
     }
+
+    /// Sets whether per partition automatic failover is enabled.
+    pub fn configure_partition_level_automatic_failover(&self, is_enabled: bool) {
+        info!(
+            "Setting per partition automatic failover enablement flag: {}",
+            is_enabled
+        );
+        self.partition_level_automatic_failover_enabled
+            .store(is_enabled, Ordering::SeqCst);
+    }
+
+    /// Sets whether per partition circuit breaker is enabled.
+    pub fn configure_per_partition_circuit_breaker(&self, is_enabled: bool) {
+        info!(
+            "Setting per partition circuit breaker enablement flag: {}",
+            is_enabled
+        );
+        self.partition_level_circuit_breaker_enabled
+            .store(is_enabled, Ordering::SeqCst);
+    }
 }
 
 /// Contains failover tracking information for a single partition key range.
@@ -1097,7 +1117,7 @@ mod tests {
         )
     }
 
-    fn create_single_region_manager() -> GlobalEndpointManager {
+    fn create_single_region_manager() -> Arc<GlobalEndpointManager> {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US")],
@@ -1106,7 +1126,7 @@ mod tests {
         )
     }
 
-    fn create_multi_region_manager() -> GlobalEndpointManager {
+    fn create_multi_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US"), RegionName::from("East US")],
@@ -1127,7 +1147,7 @@ mod tests {
         manager
     }
 
-    fn create_three_region_manager() -> GlobalEndpointManager {
+    fn create_three_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
@@ -1163,7 +1183,7 @@ mod tests {
 
     /// Creates a multi-region manager that simulates a single-master account:
     /// one write endpoint (West US) and two read endpoints (West US + East US).
-    fn create_single_master_multi_region_manager() -> GlobalEndpointManager {
+    fn create_single_master_multi_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US"), RegionName::from("East US")],
@@ -1635,7 +1655,7 @@ mod tests {
 
     #[test]
     fn test_new_both_flags_disabled() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         assert!(!manager.partition_level_automatic_failover_enabled());
@@ -1645,7 +1665,7 @@ mod tests {
 
     #[test]
     fn test_new_auto_failover_enabled_only() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         assert!(manager.partition_level_automatic_failover_enabled());
@@ -1655,7 +1675,7 @@ mod tests {
 
     #[test]
     fn test_new_circuit_breaker_enabled_only() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         assert!(!manager.partition_level_automatic_failover_enabled());
@@ -1665,7 +1685,7 @@ mod tests {
 
     #[test]
     fn test_new_both_flags_enabled() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         assert!(manager.partition_level_automatic_failover_enabled());
@@ -1679,7 +1699,7 @@ mod tests {
 
     #[test]
     fn test_can_use_failover_locations_with_single_endpoint() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_read_request();
@@ -1689,7 +1709,7 @@ mod tests {
 
     #[test]
     fn test_can_use_failover_locations_with_multiple_endpoints_documents() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_read_request();
@@ -1698,7 +1718,7 @@ mod tests {
 
     #[test]
     fn test_can_use_failover_locations_with_stored_procedure_execute() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_stored_procedure_execute_request();
@@ -1707,7 +1727,7 @@ mod tests {
 
     #[test]
     fn test_can_use_failover_locations_with_database_resource() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_database_request();
@@ -1722,7 +1742,7 @@ mod tests {
     #[test]
     fn test_auto_failover_eligible_write_on_single_master() {
         // Single master: can_support_multiple_write_locations returns false
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_write_request();
@@ -1732,7 +1752,7 @@ mod tests {
 
     #[test]
     fn test_auto_failover_not_eligible_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_write_request();
@@ -1741,7 +1761,7 @@ mod tests {
 
     #[test]
     fn test_auto_failover_not_eligible_for_read_request() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_read_request();
@@ -1755,7 +1775,7 @@ mod tests {
 
     #[test]
     fn test_circuit_breaker_eligible_for_read_request() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1764,7 +1784,7 @@ mod tests {
 
     #[test]
     fn test_circuit_breaker_not_eligible_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -1774,7 +1794,7 @@ mod tests {
     #[test]
     fn test_circuit_breaker_not_eligible_write_on_single_master() {
         // Single-master: can_support_multiple_write_locations returns false for writes
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_write_request();
@@ -1789,7 +1809,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_when_both_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -1800,7 +1820,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_some_when_eligible() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1814,7 +1834,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_validates_failed_location() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1832,7 +1852,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_without_partition_key_range() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1845,7 +1865,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_for_ineligible_resource_type() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_database_request();
@@ -1856,7 +1876,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_without_failed_location() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1874,7 +1894,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_circuit_breaker_path() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1898,7 +1918,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_auto_failover_path() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_write_request();
@@ -1916,7 +1936,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_returns_false_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -1925,7 +1945,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_returns_false_without_failed_location() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1936,7 +1956,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_sequential_failover_removes_on_exhaust() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -1975,7 +1995,7 @@ mod tests {
 
     #[test]
     fn test_add_override_returns_false_when_no_override_exists() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1984,7 +2004,7 @@ mod tests {
 
     #[test]
     fn test_add_override_routes_to_override_location() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // First, mark endpoint as unavailable to create an override
@@ -2021,7 +2041,7 @@ mod tests {
 
     #[test]
     fn test_add_override_returns_false_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let mut request = create_read_request();
@@ -2030,7 +2050,7 @@ mod tests {
 
     #[test]
     fn test_add_override_circuit_breaker_below_threshold_returns_false() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Mark endpoint unavailable to create override
@@ -2045,7 +2065,7 @@ mod tests {
 
     #[test]
     fn test_add_override_auto_failover_path() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         // Mark write endpoint as unavailable
@@ -2064,7 +2084,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_returns_false_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -2074,7 +2094,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_creates_entry_on_first_call() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2091,7 +2111,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_below_threshold_returns_false() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2103,7 +2123,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_above_threshold_returns_true() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2121,7 +2141,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_auto_failover_path_for_writes() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_write_request();
@@ -2150,7 +2170,7 @@ mod tests {
 
     #[test]
     fn test_add_or_update_moves_to_next_location() {
-        let gem = Arc::new(create_three_region_manager());
+        let gem = create_three_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -2179,7 +2199,7 @@ mod tests {
 
     #[test]
     fn test_add_or_update_removes_on_all_exhausted() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -2222,7 +2242,7 @@ mod tests {
 
     #[test]
     fn test_different_partition_key_ranges_tracked_independently() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Create two requests with different partition key ranges
@@ -2252,7 +2272,7 @@ mod tests {
 
     #[test]
     fn test_debug_formatting() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let debug_str = format!("{:?}", manager);
@@ -2276,7 +2296,7 @@ mod tests {
 
     #[test]
     fn test_three_region_sequential_failover() {
-        let gem = Arc::new(create_three_region_manager());
+        let gem = create_three_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -2335,7 +2355,7 @@ mod tests {
 
     #[test]
     fn test_background_init_flag_set_on_construction() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         assert!(manager
@@ -2345,7 +2365,7 @@ mod tests {
 
     #[test]
     fn test_second_background_init_is_noop() {
-        let gem = Arc::new(create_single_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         // Flag is already true after construction
@@ -2366,7 +2386,7 @@ mod tests {
 
     #[test]
     fn test_end_to_end_failover_and_override_routing() {
-        let gem = Arc::new(create_multi_region_manager());
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Step 1: A read request fails at West US
@@ -2402,7 +2422,7 @@ mod tests {
 
     #[test]
     fn test_end_to_end_auto_failover_write_request() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         // Step 1: A write request fails at West US

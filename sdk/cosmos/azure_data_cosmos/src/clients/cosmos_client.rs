@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::cosmos_request::CosmosRequest;
+use crate::models::AccountProperties;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
@@ -81,19 +82,18 @@ impl CosmosClient {
         #[cfg(not(feature = "fault_injection"))]
         let fault_injection_enabled = false;
         let excluded_regions = options.excluded_regions.clone();
-        let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
+        let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
             excluded_regions,
             pipeline_core.clone(),
-        ));
+        );
 
-        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
-            GlobalPartitionEndpointManager::new(
-                global_endpoint_manager.clone(),
-                false,
-                options.enable_partition_level_circuit_breaker,
-            );
+        let global_partition_endpoint_manager = GlobalPartitionEndpointManager::new(
+            global_endpoint_manager.clone(),
+            false,
+            options.enable_partition_level_circuit_breaker,
+        );
 
         #[allow(
             clippy::arc_with_non_send_sync,
@@ -105,8 +105,25 @@ impl CosmosClient {
             pipeline_core,
             global_endpoint_manager.clone(),
             global_partition_endpoint_manager.clone(),
-            options,
+            options.clone(),
             fault_injection_enabled,
+        ));
+
+        // Register the callback for account refresh to update partition-level failover config
+        let partition_manager_clone = Arc::clone(&global_partition_endpoint_manager);
+        let enable_partition_level_circuit_breaker = options.enable_partition_level_circuit_breaker;
+
+        global_endpoint_manager.set_on_account_refresh_callback(Arc::new(
+            move |account_props: &AccountProperties| {
+                partition_manager_clone.configure_partition_level_automatic_failover(
+                    account_props.enable_per_partition_failover_behavior,
+                );
+
+                partition_manager_clone.configure_per_partition_circuit_breaker(
+                    account_props.enable_per_partition_failover_behavior
+                        || enable_partition_level_circuit_breaker,
+                );
+            },
         ));
 
         Ok(Self {
@@ -173,12 +190,12 @@ impl CosmosClient {
             }
         };
         let excluded_regions = options.excluded_regions.clone();
-        let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
+        let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
             excluded_regions,
             pipeline_core.clone(),
-        ));
+        );
 
         let global_partition_endpoint_manager = GlobalPartitionEndpointManager::new(
             global_endpoint_manager.clone(),
@@ -196,8 +213,24 @@ impl CosmosClient {
             pipeline_core,
             global_endpoint_manager.clone(),
             global_partition_endpoint_manager.clone(),
-            options,
+            options.clone(),
             fault_injection_enabled,
+        ));
+
+        // Register the callback for account refresh to update partition-level failover config
+        let partition_manager_clone = Arc::clone(&global_partition_endpoint_manager);
+
+        global_endpoint_manager.set_on_account_refresh_callback(Arc::new(
+            move |account_props: &AccountProperties| {
+                partition_manager_clone.configure_partition_level_automatic_failover(
+                    account_props.enable_per_partition_failover_behavior,
+                );
+
+                partition_manager_clone.configure_per_partition_circuit_breaker(
+                    account_props.enable_per_partition_failover_behavior
+                        || options.enable_partition_level_circuit_breaker,
+                );
+            },
         ));
 
         Ok(Self {
