@@ -103,12 +103,12 @@ impl RuntimeOptions {
 /// use azure_data_cosmos_driver::options::{RuntimeOptions, RuntimeOptionsBuilder, ContentResponseOnWrite};
 ///
 /// let options = RuntimeOptionsBuilder::new()
-///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
+///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
 ///     .build();
 ///
 /// // Or modify an existing instance
 /// let modified = options.to_builder()
-///     .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
+///     .with_content_response_on_write(ContentResponseOnWrite::Enabled)
 ///     .build();
 /// ```
 #[non_exhaustive]
@@ -267,31 +267,31 @@ mod tests {
     #[test]
     fn builder_creates_options() {
         let options = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
+            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .build();
 
         assert_eq!(
             options.content_response_on_write,
-            Some(ContentResponseOnWrite::DISABLED)
+            Some(ContentResponseOnWrite::Disabled)
         );
     }
 
     #[test]
     fn to_builder_creates_modified_copy() {
         let original = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
+            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Eventual)
             .build();
 
         let modified = original
             .to_builder()
-            .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
+            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .build();
 
         // Modified value changed
         assert_eq!(
             modified.content_response_on_write,
-            Some(ContentResponseOnWrite::DISABLED)
+            Some(ContentResponseOnWrite::Disabled)
         );
         // Unmodified value preserved
         assert_eq!(
@@ -301,20 +301,20 @@ mod tests {
         // Original unchanged
         assert_eq!(
             original.content_response_on_write,
-            Some(ContentResponseOnWrite::ENABLED)
+            Some(ContentResponseOnWrite::Enabled)
         );
     }
 
     #[test]
     fn merge_with_base() {
         let base = RuntimeOptions {
-            content_response_on_write: Some(ContentResponseOnWrite::ENABLED),
+            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
             ..Default::default()
         };
 
         let override_opts = RuntimeOptions {
-            content_response_on_write: Some(ContentResponseOnWrite::DISABLED),
+            content_response_on_write: Some(ContentResponseOnWrite::Disabled),
             ..Default::default()
         };
 
@@ -323,7 +323,7 @@ mod tests {
         // Override takes precedence
         assert_eq!(
             merged.content_response_on_write,
-            Some(ContentResponseOnWrite::DISABLED)
+            Some(ContentResponseOnWrite::Disabled)
         );
         // Base value used when override is None
         assert_eq!(
@@ -340,12 +340,12 @@ mod tests {
         assert!(shared.snapshot().content_response_on_write.is_none());
 
         // Modify
-        shared.set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
+        shared.set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
 
         // Verify change
         assert_eq!(
             shared.snapshot().content_response_on_write,
-            Some(ContentResponseOnWrite::ENABLED)
+            Some(ContentResponseOnWrite::Enabled)
         );
     }
 }

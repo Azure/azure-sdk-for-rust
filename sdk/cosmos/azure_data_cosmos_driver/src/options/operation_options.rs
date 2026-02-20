@@ -32,7 +32,7 @@ use crate::{
 /// let options = OperationOptions::new()
 ///     .with_partition_key(PartitionKey::from("my-partition"))
 ///     .with_priority_level(PriorityLevel::Low)
-///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED);
+///     .with_content_response_on_write(ContentResponseOnWrite::Disabled);
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
