@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::generated::{
-    clients::{QueueClient as GeneratedQueueClient, QueueClientOptions},
-    models::*,
+use crate::{
+    generated::{
+        clients::{QueueClient as GeneratedQueueClient, QueueClientOptions},
+        models::*,
+    },
+    logging::apply_storage_logging_defaults,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -35,6 +38,7 @@ impl GeneratedQueueClient {
         options: Option<QueueClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        apply_storage_logging_defaults(&mut options.client_options);
 
         if let Some(token_credential) = credential {
             if !queue_url.scheme().starts_with("https") {

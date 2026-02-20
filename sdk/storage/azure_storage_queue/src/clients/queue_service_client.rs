@@ -10,6 +10,7 @@ use crate::{
         },
         models::*,
     },
+    logging::apply_storage_logging_defaults,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -41,6 +42,7 @@ impl GeneratedQueueServiceClient {
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        apply_storage_logging_defaults(&mut options.client_options);
 
         if let Some(token_credential) = credential {
             if !service_url.scheme().starts_with("https") {
