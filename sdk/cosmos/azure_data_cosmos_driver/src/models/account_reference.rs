@@ -26,14 +26,6 @@ impl AccountEndpoint {
         &self.0
     }
 
-    /// Returns the host portion of the endpoint URL.
-    ///
-    /// Returns an empty string if the URL has no host (which shouldn't
-    /// happen for valid Cosmos DB endpoints).
-    pub(crate) fn host(&self) -> &str {
-        self.0.host_str().unwrap_or("")
-    }
-
     /// Joins a resource path to this endpoint to create a full request URL.
     ///
     /// The path should be the resource path (e.g., "/dbs/mydb/colls/mycoll").
@@ -317,13 +309,6 @@ mod tests {
         let url = endpoint.join_path("");
         // Empty path is normalized to "/" by the URL library
         assert_eq!(url.path(), "/");
-    }
-
-    #[test]
-    fn account_endpoint_host() {
-        let endpoint =
-            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
-        assert_eq!(endpoint.host(), "myaccount.documents.azure.com");
     }
 
     #[test]

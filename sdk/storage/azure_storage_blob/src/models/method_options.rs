@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{collections::HashMap, num::NonZero};
+use std::{collections::HashMap, num::NonZero, ops::Range};
 
 use azure_core::{fmt::SafeDebug, http::ClientMethodOptions};
 use time::OffsetDateTime;
@@ -10,7 +10,7 @@ use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode}
 
 /// Options to be passed to `BlockBlobClient::managed_download()`
 #[derive(Clone, Default, SafeDebug)]
-pub(crate) struct BlobClientManagedDownloadOptions<'a> {
+pub struct BlobClientManagedDownloadOptions<'a> {
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -52,6 +52,15 @@ pub(crate) struct BlobClientManagedDownloadOptions<'a> {
     /// Optional. Size to partition data into.
     /// A default value will be chosen if none is provided.
     pub partition_size: Option<NonZero<usize>>,
+
+    /// Optional range of the blob to download.
+    ///
+    /// The range is specified in byte offsets and uses standard Rust range semantics:
+    /// `start` is the first byte offset to include, and `end` is a byte offset that is
+    /// *not* included in the download (i.e. `start..end` is end-exclusive).
+    ///
+    /// When set to `None`, the entire blob will be downloaded.
+    pub range: Option<Range<usize>>,
 
     /// Optional. When this header is set to true and specified together with the Range header, the service returns the CRC64
     /// hash for the range, as long as the range is less than or equal to 4 MB in size.

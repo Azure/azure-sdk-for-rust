@@ -381,7 +381,6 @@ dependencies = [
  "include-file",
  "openssl",
  "pin-project",
- "reqwest",
  "serde",
  "serde_json",
  "serde_test",
