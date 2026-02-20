@@ -40,9 +40,9 @@ impl GeneratedQueueServiceClient {
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
 
-        let per_retry_policies = if let Some(token_credential) = credential.clone() {
+        if let Some(token_credential) = credential {
             if !service_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -53,17 +53,15 @@ impl GeneratedQueueServiceClient {
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            vec![auth_policy]
-        } else {
-            Vec::default()
-        };
+            options.client_options.per_try_policies.push(auth_policy);
+        }
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            per_retry_policies,
+            Vec::default(),
             None,
         );
 

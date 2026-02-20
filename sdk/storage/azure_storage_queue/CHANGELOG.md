@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Queue Storage client.
+
 ### Other Changes
 
 ## 0.3.0 (2026-02-11)
