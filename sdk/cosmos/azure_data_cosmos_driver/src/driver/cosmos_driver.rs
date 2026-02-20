@@ -241,9 +241,6 @@ impl CosmosDriver {
             "execute_operation is not implemented in this transport-free driver build",
         ))
     }
-}
-
-impl CosmosDriver {
     /// Resolves a container by database and container name.
     ///
     /// Reads the database and container from the service to obtain their
@@ -289,10 +286,7 @@ impl CosmosDriver {
         db_name: &str,
         container_name: &str,
     ) -> azure_core::Result<ContainerReference> {
-        let account = self.account().clone();
-        let db_name = db_name.to_owned();
-        let container_name = container_name.to_owned();
-        let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
+        let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
         let options = OperationOptions::new();
 
         let db_result = self
@@ -312,7 +306,7 @@ impl CosmosDriver {
 
         let container_result = self
             .execute_operation(
-                CosmosOperation::read_container_by_name(db_ref, container_name.clone()),
+                CosmosOperation::read_container_by_name(db_ref.clone(), container_name.to_owned()),
                 options,
             )
             .await?;
@@ -330,10 +324,10 @@ impl CosmosDriver {
             })?;
 
         Ok(ContainerReference::new(
-            account,
-            db_name,
+            db_ref.into_account(),
+            db_props.id.into_owned(),
             db_rid,
-            container_name,
+            container_props.id.clone().into_owned(),
             container_rid,
             &container_props,
         ))
