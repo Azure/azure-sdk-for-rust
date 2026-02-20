@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_driver"
-keywords = ["sdk", "internal"]
+keywords = ["sdk", "azure", "cosmos", "driver", "internal"]
 categories = ["api-bindings"]
 publish = false # Internal implementation layer, not yet ready for crates.io
 
