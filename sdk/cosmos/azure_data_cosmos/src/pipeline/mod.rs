@@ -75,7 +75,7 @@ impl GatewayPipeline {
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<CosmosResponse<T>> {
-        cosmos_request.client_headers(&self.options);
+        self.options.apply_headers(&mut cosmos_request.headers);
         // Prepare a callback delegate to invoke the http request.
         let sender = |req: &mut CosmosRequest| {
             let pipeline = self.pipeline.clone();
