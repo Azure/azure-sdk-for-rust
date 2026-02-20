@@ -316,14 +316,9 @@ mod tests {
     #[test]
     fn parse_duration_millis_from_env_parses_and_validates() {
         with_env_var("AZURE_COSMOS_TEST_DURATION", Some("250"), || {
-            let value = parse_duration_millis_from_env(
-                None,
-                "AZURE_COSMOS_TEST_DURATION",
-                100,
-                50,
-                500,
-            )
-            .unwrap();
+            let value =
+                parse_duration_millis_from_env(None, "AZURE_COSMOS_TEST_DURATION", 100, 50, 500)
+                    .unwrap();
 
             assert_eq!(value, Duration::from_millis(250));
         });
@@ -362,16 +357,20 @@ mod tests {
 
     #[test]
     fn parse_optional_duration_millis_from_env_parses_and_validates() {
-        with_env_var("AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET", Some("450"), || {
-            let value = parse_optional_duration_millis_from_env(
-                None,
-                "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
-                100,
-                500,
-            )
-            .unwrap();
+        with_env_var(
+            "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
+            Some("450"),
+            || {
+                let value = parse_optional_duration_millis_from_env(
+                    None,
+                    "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
+                    100,
+                    500,
+                )
+                .unwrap();
 
-            assert_eq!(value, Some(Duration::from_millis(450)));
-        });
+                assert_eq!(value, Some(Duration::from_millis(450)));
+            },
+        );
     }
 }
