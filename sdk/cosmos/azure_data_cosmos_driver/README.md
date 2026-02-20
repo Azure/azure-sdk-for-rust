@@ -63,13 +63,12 @@ This crate follows **strict semantic versioning** but can move to new major vers
 use azure_data_cosmos_driver::{CosmosDriverRuntime, options::DriverOptions};
 use azure_data_cosmos_driver::models::AccountReference;
 use azure_identity::DeveloperToolsCredential;
-use std::sync::Arc;
 use url::Url;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     // Use logged-in developer credentials (Azure CLI, azd, etc.)
-    let credential = Arc::new(DeveloperToolsCredential::new(None)?);
+    let credential = DeveloperToolsCredential::new(None)?;
 
     let account = AccountReference::with_credential(
         Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
