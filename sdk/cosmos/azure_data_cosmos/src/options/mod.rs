@@ -46,7 +46,6 @@ pub struct CosmosClientOptions {
     /// The default value is the consistency level set on the Cosmos DB account.
     /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
     pub(crate) consistency_level: Option<ConsistencyLevel>,
-    pub(crate) request_timeout: Option<Duration>,
     /// The desired throughput bucket for the client
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
@@ -91,11 +90,6 @@ impl CosmosClientOptions {
 
     pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
         self.consistency_level = Some(consistency_level);
-        self
-    }
-
-    pub fn with_request_timeout(mut self, request_timeout: Duration) -> Self {
-        self.request_timeout = Some(request_timeout);
         self
     }
 

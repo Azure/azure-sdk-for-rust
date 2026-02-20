@@ -34,9 +34,6 @@ pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
 
-// Re-export tracing types for convenience
-pub use azure_core::http::InstrumentationOptions;
-
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
 mod background_task_manager;
 mod cosmos_request;

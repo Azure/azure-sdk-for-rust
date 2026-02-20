@@ -15,7 +15,7 @@ use std::sync::Arc;
 use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
-use azure_core::http::{ClientOptions, InstrumentationOptions, LoggingOptions, RetryOptions};
+use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 
 /// Builder for creating [`CosmosClient`] instances.
 ///
@@ -62,8 +62,6 @@ use azure_core::http::{ClientOptions, InstrumentationOptions, LoggingOptions, Re
 #[derive(Default)]
 pub struct CosmosClientBuilder {
     options: CosmosClientOptions,
-    /// Instrumentation options for distributed tracing
-    instrumentation: InstrumentationOptions,
     /// Whether to accept invalid TLS certificates (e.g., for emulator testing)
     #[cfg(feature = "allow_invalid_certificates")]
     allow_invalid_certificates: bool,
@@ -142,16 +140,6 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets the request timeout.
-    ///
-    /// # Arguments
-    ///
-    /// * `timeout` - The timeout duration for requests.
-    pub fn with_request_timeout(mut self, timeout: azure_core::time::Duration) -> Self {
-        self.options.request_timeout = Some(timeout);
-        self
-    }
-
     /// Configures fault injection for testing.
     ///
     /// Pass a [`FaultInjectionClientBuilder`](crate::fault_injection::FaultInjectionClientBuilder)
@@ -159,6 +147,7 @@ impl CosmosClientBuilder {
     /// to construct the transport internally when [`build()`](Self::build) is called.
     ///
     /// This is only available when the `fault_injection` feature is enabled.
+    #[doc(hidden)]
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection(
         mut self,
@@ -178,37 +167,6 @@ impl CosmosClientBuilder {
         options: crate::options::SessionRetryOptions,
     ) -> Self {
         self.options.session_retry_options = options;
-        self
-    }
-
-    /// Sets the instrumentation options for distributed tracing.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - The instrumentation configuration, including tracer provider.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run,ignore
-    /// use azure_data_cosmos::CosmosClientBuilder;
-    /// use azure_core::http::InstrumentationOptions;
-    /// use std::sync::Arc;
-    ///
-    /// let tracer_provider = /* your TracerProvider implementation */;
-    /// let options = InstrumentationOptions {
-    ///     tracer_provider: Some(Arc::new(tracer_provider)),
-    /// };
-    ///
-    /// let client = CosmosClientBuilder::new()
-    ///     .with_instrumentation(options)
-    ///     .build(CosmosAccountReference::with_master_key(
-    ///         "https://myaccount.documents.azure.com/",
-    ///         Secret::from("my_account_key"),
-    ///     ).unwrap())
-    ///     .unwrap();
-    /// ```
-    pub fn with_instrumentation(mut self, options: InstrumentationOptions) -> Self {
-        self.instrumentation = options;
         self
     }
 
@@ -297,7 +255,6 @@ impl CosmosClientBuilder {
                     .collect(),
                 additional_allowed_query_params: vec![],
             },
-            instrumentation: self.instrumentation,
             transport,
             ..Default::default()
         };
