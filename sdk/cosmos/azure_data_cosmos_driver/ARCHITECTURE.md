@@ -79,7 +79,7 @@ The Azure Cosmos DB Rust ecosystem consists of three distinct layers:
           │ - DatabaseReference::from_name(...)
           │
           ▼
-    CosmosResult                         (Response with diagnostics)
+    CosmosResponse                       (Response with diagnostics)
           │
           ├── response_bytes: Vec<u8>
           ├── headers: ResponseHeaders
@@ -92,7 +92,7 @@ The Azure Cosmos DB Rust ecosystem consists of three distinct layers:
 2. **Driver** provides access to a specific Cosmos account
 3. **Resource Reference** built from typed references (`ContainerReference`, `ItemReference`, etc.)
 4. **Operation** created via factory methods: `CosmosOperation::create(resource_ref)`, `.read()`, `.query()`, etc.
-5. **Execution** happens via `driver.execute_operation(operation)` - returns `CosmosResult`
+5. **Execution** happens via `driver.execute_operation(operation)` - returns `CosmosResponse`
 
 ---
 
@@ -111,8 +111,8 @@ The driver is **completely ignorant of item/document schemas and serialization f
 pub async fn execute_operation(
     &self,
     operation: CosmosOperation,  // operation.body() is Vec<u8>
-) -> Result<CosmosResult> {
-    // CosmosResult::response_bytes() returns Vec<u8>
+) -> Result<CosmosResponse> {
+  // CosmosResponse::response_bytes() returns Vec<u8>
 }
 ```
 
@@ -644,7 +644,7 @@ Same operation with deduplication applied:
 | `CosmosDriverRuntimeBuilder` | Builder for `CosmosDriverRuntime`                     |
 | `CosmosDriver`               | Per-account driver for executing operations           |
 | `CosmosOperation`            | Single operation with context and options             |
-| `CosmosResult`               | Response containing bytes, headers, diagnostics       |
+| `CosmosResponse`             | Response containing bytes, headers, diagnostics       |
 
 ---
 

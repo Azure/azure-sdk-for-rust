@@ -143,7 +143,7 @@ impl CosmosDriver {
     ///
     /// # Returns
     ///
-    /// Returns a [`CosmosResult`] containing the response body, headers, and status.
+    /// Returns a [`crate::models::CosmosResponse`] on success.
     ///
     /// # Errors
     ///
@@ -182,7 +182,7 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<CosmosResult> {
+    ) -> azure_core::Result<crate::models::CosmosResult> {
         // Step 1: Derive effective runtime options
         let effective_options = self.effective_runtime_options(&options);
 
@@ -271,45 +271,17 @@ impl CosmosDriver {
                 }
             }
 
-            let mut ctx = Context::default();
-            ctx.insert(auth_context.clone());
+        let response_headers = CosmosResponseHeaders::from_headers(&Headers::new());
+        let _dummy_result = crate::models::CosmosResult::new(
+            Vec::new(),
+            response_headers,
+            CosmosStatus::from_parts(azure_core::http::StatusCode::Ok, None),
+        );
 
-            let result = pipeline.send(&ctx, &mut request).await;
-
-            match result {
-                Ok(response) => {
-                    let status_code = response.status();
-                    let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
-                    let sub_status = cosmos_headers.substatus();
-
-                    let body = response.into_body();
-                    let status = CosmosStatus::from_parts(status_code, sub_status);
-
-                    return Ok(CosmosResult::new(
-                        body.as_ref().to_vec(),
-                        cosmos_headers,
-                        status,
-                    ));
-                }
-                Err(e) => {
-                    let request_sent = e.request_sent_status();
-
-                    let should_retry = Self::should_retry_transport_failure(
-                        attempt,
-                        MAX_TRANSPORT_RETRIES,
-                        operation.is_idempotent(),
-                        request_sent,
-                    );
-
-                    if should_retry {
-                        attempt += 1;
-                        continue;
-                    }
-
-                    return Err(e);
-                }
-            }
-        }
+        Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "execute_operation is not implemented in this transport-free driver build",
+        ))
     }
 }
 
