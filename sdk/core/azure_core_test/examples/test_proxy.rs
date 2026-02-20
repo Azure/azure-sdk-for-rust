@@ -3,7 +3,6 @@
 
 use clap::{ArgAction, Parser};
 
-#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use azure_core_test::proxy;
@@ -72,7 +71,6 @@ struct Args {
 }
 
 impl Args {
-    #[cfg(not(target_arch = "wasm32"))]
     fn trace_level(&self) -> tracing::level_filters::LevelFilter {
         use tracing::level_filters::LevelFilter;
         match self.verbose {
@@ -83,7 +81,6 @@ impl Args {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl From<Args> for azure_core_test::proxy::ProxyOptions {
     fn from(args: Args) -> Self {
         Self {
@@ -92,10 +89,4 @@ impl From<Args> for azure_core_test::proxy::ProxyOptions {
             auto_shutdown_in_seconds: args.auto_shutdown_in_seconds,
         }
     }
-}
-
-#[cfg(target_arch = "wasm32")]
-fn main() {
-    let _ = Args::parse();
-    println!("wasm32 target architecture not supported");
 }

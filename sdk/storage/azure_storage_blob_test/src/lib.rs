@@ -254,7 +254,6 @@ impl BodyTestExt for Body {
     async fn collect_bytes(&mut self) -> azure_core::Result<Bytes> {
         match self {
             Body::Bytes(bytes) => Ok(bytes.clone()),
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(seekable_stream) => {
                 seekable_stream.reset().await?;
                 let mut bytes = BytesMut::with_capacity(seekable_stream.len());
@@ -346,8 +345,7 @@ impl TestPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Policy for TestPolicy {
     async fn send(
         &self,

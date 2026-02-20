@@ -36,8 +36,7 @@ impl LoggingPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl Policy for LoggingPolicy {
     async fn send(
         &self,
@@ -172,8 +171,7 @@ mod tests {
     #[derive(Debug, Clone)]
     struct ErrorPolicy;
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for ErrorPolicy {
         async fn send(
             &self,
@@ -191,8 +189,7 @@ mod tests {
     #[derive(Debug, Clone)]
     struct MockPolicy;
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for MockPolicy {
         async fn send(
             &self,

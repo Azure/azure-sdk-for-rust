@@ -15,8 +15,7 @@ use std::sync::Arc;
 #[derive(Debug, Clone)]
 pub struct StorageHeadersPolicy;
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Policy for StorageHeadersPolicy {
     async fn send(
         &self,

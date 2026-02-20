@@ -264,8 +264,7 @@ fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     ))
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for ClientCertificateCredential {
     async fn get_token(
         &self,
@@ -333,8 +332,7 @@ mod tests {
         }
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for VerifyAssertionPolicy {
         async fn send(
             &self,

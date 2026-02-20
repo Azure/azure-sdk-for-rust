@@ -97,8 +97,7 @@ pub struct RetryHeaders {
 ///
 /// `wait` can be implemented in more complex cases where a simple test of time
 /// is not enough.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// Determine if no more retries should be performed.
     ///
@@ -149,8 +148,7 @@ const DEFAULT_RETRY_STATUS_CODES: &[StatusCode] = &[
     StatusCode::GatewayTimeout,
 ];
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl<T> Policy for T
 where
     T: RetryPolicy,
@@ -272,8 +270,7 @@ mod test {
         status: StatusCode,
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    #[async_trait]
     impl Policy for StatusResponder {
         async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
             let mut count = self.request_count.lock().unwrap();

@@ -4,7 +4,6 @@
 param(
   [string]$PackageInfoDirectory,
   [string]$Toolchain = 'stable',
-  [switch]$CheckWasm = $true,
   [switch]$Deny,
   [switch]$SkipPackageAnalysis
 )
@@ -22,10 +21,6 @@ Analyzing code with
     RUST_LOG: '${env:RUST_LOG}'
 "@
 
-if ($CheckWasm) {
-  Invoke-LoggedCommand "rustup target add wasm32-unknown-unknown" -GroupOutput
-}
-
 if ($Deny) {
   Invoke-LoggedCommand "cargo install cargo-deny --locked" -GroupOutput
 }
@@ -39,18 +34,6 @@ Invoke-LoggedCommand "cargo check --package azure_core --all-features --all-targ
 Invoke-LoggedCommand "cargo fmt --all -- --check" -GroupOutput
 
 Invoke-LoggedCommand "cargo clippy --workspace --all-features --all-targets --keep-going --no-deps" -GroupOutput
-
-if ($CheckWasm) {
-  # Save the original RUSTFLAGS to restore later
-  $OriginalRustFlags = $env:RUSTFLAGS
-  # This is needed to ensure that the `getrandom` crate uses the `wasm_js` backend
-  $env:RUSTFLAGS = ${env:RUSTFLAGS} + ' --cfg getrandom_backend="wasm_js"'
-
-  Invoke-LoggedCommand "cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps" -GroupOutput
-
-  # Restore the original RUSTFLAGS, since the getrandom config option can only be set for wasm32-unknown-unknown builds.
-  $env:RUSTFLAGS = $OriginalRustFlags
-}
 
 if ($Deny) {
   Invoke-LoggedCommand "cargo deny --all-features check" -GroupOutput

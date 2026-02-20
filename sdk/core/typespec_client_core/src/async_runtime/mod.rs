@@ -30,29 +30,20 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-#[cfg_attr(any(feature = "tokio", feature = "wasm_bindgen"), allow(dead_code))]
+#[cfg_attr(feature = "tokio", allow(dead_code))]
 mod standard_runtime;
 
 #[cfg(feature = "tokio")]
 mod tokio_runtime;
 
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-mod web_runtime;
-
 #[cfg(test)]
 mod tests;
 
 /// A `TaskFuture` is a boxed future that represents a task that can be spawned and executed asynchronously.
-#[cfg(not(target_arch = "wasm32"))]
 pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
-
-/// A `TaskFuture` is a boxed future that represents a task that can be spawned and executed asynchronously.
-#[cfg(target_arch = "wasm32")]
-pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 
 /// A `SpawnedTask` is a future that represents a running task.
 /// It can be awaited to block until the task has completed.
-#[cfg(not(target_arch = "wasm32"))]
 pub type SpawnedTask = Pin<
     Box<
         dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>>
@@ -60,12 +51,6 @@ pub type SpawnedTask = Pin<
             + 'static,
     >,
 >;
-
-/// A `SpawnedTask` is a future that represents a running task.
-/// It can be awaited to block until the task has completed.
-#[cfg(target_arch = "wasm32")]
-pub type SpawnedTask =
-    Pin<Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + 'static>>;
 
 /// An Asynchronous Runtime.
 ///
@@ -128,7 +113,7 @@ static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock:
 ///
 /// The implementation depends on the target architecture and the features enabled:
 /// - If the `tokio` feature is enabled, it uses a tokio based spawner and timer.
-/// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses a std::thread based spawner and timer.
+/// - If the `tokio` feature is not enabled, it uses a std::thread based spawner and timer.
 ///
 /// # Returns
 ///  An instance of a [`AsyncRuntime`] which can be used to spawn background tasks or perform other asynchronous operations.
@@ -200,15 +185,11 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-    {
-        Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
-    }
     #[cfg(feature = "tokio")]
     {
         Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
     }
-    #[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+    #[cfg(not(feature = "tokio"))]
     {
         Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
     }

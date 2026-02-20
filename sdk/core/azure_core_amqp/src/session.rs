@@ -8,10 +8,10 @@ use super::{
 use crate::error::Result;
 use std::fmt::Debug;
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 
-#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
 /// Options for an AMQP Session.
@@ -45,8 +45,7 @@ pub struct AmqpSessionOptions {
 impl AmqpSessionOptions {}
 
 /// A trait for AMQP Session operations.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait AmqpSessionApis {
     /// Begin the session.
     async fn begin(
@@ -65,8 +64,7 @@ pub struct AmqpSession {
     pub(crate) implementation: SessionImplementation,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl AmqpSessionApis for AmqpSession {
     async fn begin(
         &self,

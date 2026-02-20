@@ -159,8 +159,7 @@ mod tests {
         #[derive(Debug)]
         struct Responder {}
 
-        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        #[async_trait::async_trait]
         impl Policy for Responder {
             async fn send(
                 &self,
@@ -208,8 +207,7 @@ mod tests {
         }
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for Counter {
         async fn send(
             &self,
@@ -271,8 +269,7 @@ mod tests {
             }
         }
 
-        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        #[async_trait::async_trait]
         impl Policy for Responder {
             async fn send(
                 &self,
@@ -365,8 +362,7 @@ mod tests {
             }
         }
 
-        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        #[async_trait::async_trait]
         impl Policy for Responder {
             async fn send(
                 &self,

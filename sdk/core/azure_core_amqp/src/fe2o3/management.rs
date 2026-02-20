@@ -57,8 +57,7 @@ impl Fe2o3AmqpManagement {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn attach(&self) -> Result<()> {
         let management = fe2o3_amqp_management::client::MgmtClient::builder()

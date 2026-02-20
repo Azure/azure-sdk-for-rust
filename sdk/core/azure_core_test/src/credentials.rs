@@ -7,9 +7,6 @@ use azure_core::{
     http::ClientOptions,
     time::{Duration, OffsetDateTime},
 };
-#[cfg(target_arch = "wasm32")]
-use azure_core::{error::ErrorKind, Error};
-#[cfg(not(target_arch = "wasm32"))]
 use azure_identity::DeveloperToolsCredential;
 use azure_identity::{
     AzurePipelinesCredential, AzurePipelinesCredentialOptions, ClientAssertionCredentialOptions,
@@ -27,8 +24,7 @@ impl MockCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for MockCredential {
     async fn get_token(
         &self,
@@ -74,13 +70,5 @@ pub fn from_env(options: Option<ClientOptions>) -> azure_core::Result<Arc<dyn To
             )? as Arc<dyn TokenCredential>);
         }
     }
-    #[cfg(target_arch = "wasm32")]
-    {
-        Err(Error::with_message(
-            ErrorKind::Other,
-            "No local development credential for WASM.",
-        ))
-    }
-    #[cfg(not(target_arch = "wasm32"))]
     Ok(DeveloperToolsCredential::new(None)? as Arc<dyn TokenCredential>)
 }

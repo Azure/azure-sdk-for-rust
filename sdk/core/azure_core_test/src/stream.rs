@@ -4,7 +4,6 @@
 //! Streams for testing purposes.
 
 use azure_core::stream::SeekableStream;
-#[cfg(not(target_arch = "wasm32"))]
 use azure_core::{
     http::{Body, NoFormat, RequestContent},
     Bytes,
@@ -165,8 +164,7 @@ where
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl<I, const LENGTH: usize, const CHUNK: usize> SeekableStream
     for GeneratedStream<I, LENGTH, CHUNK>
 where
@@ -184,7 +182,6 @@ where
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl<I, const LENGTH: usize, const CHUNK: usize> From<&GeneratedStream<I, LENGTH, CHUNK>> for Body
 where
     for<'a> I: Clone + Send + Sync + 'a,
@@ -195,7 +192,6 @@ where
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl<I, const LENGTH: usize, const CHUNK: usize> From<GeneratedStream<I, LENGTH, CHUNK>> for Body
 where
     for<'a> I: Clone + Send + Sync + 'a,
@@ -206,7 +202,6 @@ where
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl<I, const LENGTH: usize, const CHUNK: usize> From<&GeneratedStream<I, LENGTH, CHUNK>>
     for RequestContent<Bytes, NoFormat>
 where
@@ -218,7 +213,6 @@ where
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl<I, const LENGTH: usize, const CHUNK: usize> From<GeneratedStream<I, LENGTH, CHUNK>>
     for RequestContent<Bytes, NoFormat>
 where

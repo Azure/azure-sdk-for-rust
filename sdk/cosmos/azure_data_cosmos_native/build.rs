@@ -90,9 +90,5 @@ fn main() {
         return;
     };
 
-    // Don't generate bindings if the target is wasm, as we don't produce C bindings for wasm targets.
-    if std::env::var("CARGO_CFG_TARGET_FAMILY").unwrap_or_default() == "wasm" {
-        return;
-    }
     bindings.write_to_file("include/azurecosmos.h");
 }

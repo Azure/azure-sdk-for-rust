@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::conditional_send::{ConditionalSend, ConditionalSync};
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
@@ -19,9 +18,8 @@ use tracing::debug;
 /// with automatic retry capabilities. Implementations can inject custom retry policies
 /// and handle both transient failures (errors) and non-success HTTP responses.
 #[allow(dead_code)]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-pub trait RetryHandler: ConditionalSend + ConditionalSync {
+#[async_trait]
+pub trait RetryHandler: Send + Sync {
     /// Sends an HTTP request with automatic retry logic
     ///
     /// This method wraps the provided sender callback with retry logic, automatically
@@ -49,8 +47,8 @@ pub trait RetryHandler: ConditionalSend + ConditionalSync {
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut CosmosRequest) -> Fut + ConditionalSend + ConditionalSync,
-        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend;
+        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
+        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + Send;
 }
 
 /// Concrete retry handler implementation with exponential back off.
@@ -101,8 +99,7 @@ impl BackOffRetryHandler {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl RetryHandler for BackOffRetryHandler {
     /// Sends an HTTP request with automatic retry and exponential back off
     ///
@@ -118,8 +115,8 @@ impl RetryHandler for BackOffRetryHandler {
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn(&mut CosmosRequest) -> Fut + ConditionalSend + ConditionalSync,
-        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
+        Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
+        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + Send,
     {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
