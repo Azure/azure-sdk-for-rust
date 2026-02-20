@@ -17,9 +17,6 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
-#[cfg(feature = "key_auth")]
-use azure_core::credentials::Secret;
-use azure_core::http::{LoggingOptions, RetryOptions};
 
 /// Client for Azure Cosmos DB.
 ///

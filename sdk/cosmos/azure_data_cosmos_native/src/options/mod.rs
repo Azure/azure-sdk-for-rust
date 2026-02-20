@@ -9,37 +9,17 @@ pub struct ClientOptions {
 }
 
 impl ClientOptions {
-    /// Returns a custom transport if needed based on the options.
-    /// Returns `None` if the default transport should be used.
-    #[cfg_attr(
-        target_family = "wasm",
-        allow(unused_variables, reason = "used in other targets")
-    )]
-    pub fn transport(&self) -> azure_core::Result<Option<azure_core::http::Transport>> {
-        #[cfg(not(target_family = "wasm"))]
-        if self.danger_allow_invalid_certificates {
-            #[cfg(feature = "reqwest")]
-            {
-                let client = reqwest::ClientBuilder::new()
-                    .danger_accept_invalid_certs(true)
-                    .build()
-                    .map_err(|e| {
-                        azure_core::Error::new(
-                            azure_core::error::ErrorKind::Other,
-                            format!("failed to build reqwest client: {}", e),
-                        )
-                    })?;
+    /// Returns whether to allow invalid TLS certificates.
+    /// Only applicable on non-WASM targets.
+    #[cfg(not(target_family = "wasm"))]
+    pub fn allow_invalid_certificates(&self) -> bool {
+        self.danger_allow_invalid_certificates
+    }
 
-                return Ok(Some(azure_core::http::Transport::new(std::sync::Arc::new(
-                    client,
-                ))));
-            }
-
-            #[cfg(not(feature = "reqwest"))]
-            panic!("at least one HTTP transport feature must be enabled");
-        }
-
-        Ok(None)
+    /// Returns false on WASM targets since TLS certificate validation is not applicable.
+    #[cfg(target_family = "wasm")]
+    pub fn allow_invalid_certificates(&self) -> bool {
+        false
     }
 }
 
