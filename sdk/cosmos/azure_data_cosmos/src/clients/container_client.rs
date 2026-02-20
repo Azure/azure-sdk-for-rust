@@ -89,9 +89,10 @@ impl ContainerClient {
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
-        _options: Option<ReadContainerOptions>,
+        options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
@@ -131,10 +132,11 @@ impl ContainerClient {
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn replace(
         &self,
         properties: ContainerProperties,
-        _options: Option<ReplaceContainerOptions>,
+        options: Option<ReplaceContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
             .json(&properties)
@@ -151,9 +153,10 @@ impl ContainerClient {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read_throughput(
         &self,
-        _options: Option<ThroughputOptions>,
+        options: Option<ThroughputOptions>,
     ) -> azure_core::Result<Option<ThroughputProperties>> {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
@@ -172,12 +175,13 @@ impl ContainerClient {
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
     ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
-        let _options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
@@ -197,9 +201,10 @@ impl ContainerClient {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
-        _options: Option<DeleteContainerOptions>,
+        options: Option<DeleteContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;

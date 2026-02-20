@@ -27,27 +27,32 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::CosmosClient;
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
 /// use std::sync::Arc;
 ///
-/// let credential = azure_identity::DeveloperToolsCredential::new(None).unwrap();
+/// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
+///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
+/// let account = CosmosAccountReference::with_credential(
+///     "https://myaccount.documents.azure.com/",
+///     credential,
+/// ).unwrap();
 /// let client = CosmosClient::builder()
-///     .endpoint("https://myaccount.documents.azure.com/")
-///     .credential(credential)
-///     .build()
+///     .build(account)
 ///     .unwrap();
 /// ```
 ///
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::CosmosClient;
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
 /// use azure_core::credentials::Secret;
 ///
+/// let account = CosmosAccountReference::with_master_key(
+///     "https://myaccount.documents.azure.com/",
+///     Secret::from("my_account_key"),
+/// ).unwrap();
 /// let client = CosmosClient::builder()
-///     .endpoint("https://myaccount.documents.azure.com/")
-///     .key(Secret::from("my_account_key"))
-///     .build()
+///     .build(account)
 ///     .unwrap();
 /// ```
 #[derive(Debug, Clone)]
@@ -63,19 +68,21 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::CosmosClient;
+    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
     ///
-    /// let credential = azure_identity::DeveloperToolsCredential::new(None).unwrap();
+    /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
+    ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
+    /// let account = CosmosAccountReference::with_credential(
+    ///     "https://myaccount.documents.azure.com/",
+    ///     credential,
+    /// ).unwrap();
     /// let client = CosmosClient::builder()
-    ///     .endpoint("https://myaccount.documents.azure.com/")
-    ///     .credential(credential)
-    ///     .build()
+    ///     .build(account)
     ///     .unwrap();
     /// ```
     pub fn builder() -> CosmosClientBuilder {
         CosmosClientBuilder::new()
     }
-
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
     ///
     /// # Arguments

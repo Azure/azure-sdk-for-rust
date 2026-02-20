@@ -7,76 +7,59 @@ use crate::{
     pipeline::{AuthorizationPolicy, GatewayPipeline},
     regions::RegionName,
     resource_context::{ResourceLink, ResourceType},
-    CosmosClient, CosmosClientOptions,
+    CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential,
 };
 
-use azure_core::{credentials::TokenCredential, http::Url};
 use std::sync::Arc;
 
 use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-#[cfg(feature = "key_auth")]
-use azure_core::credentials::Secret;
 use azure_core::http::{ClientOptions, InstrumentationOptions, LoggingOptions, RetryOptions};
-
-/// Credential type for authentication with Cosmos DB.
-enum Credential {
-    /// Entra ID (Azure AD) token credential
-    Token(Arc<dyn TokenCredential>),
-    /// Primary or secondary account key
-    #[cfg(feature = "key_auth")]
-    Key(Secret),
-}
 
 /// Builder for creating [`CosmosClient`] instances.
 ///
 /// Use this builder to configure and create a `CosmosClient` for interacting with Azure Cosmos DB.
+///
+/// An account reference (endpoint + credential) is required when calling [`build()`](Self::build).
+/// Pass any type that implements `Into<CosmosAccountReference>`, such as a
+/// [`CosmosAccountReference`] created via convenience constructors, or a tuple of
+/// `(CosmosAccountEndpoint, credential)` or `(Url, credential)`.
 ///
 /// # Examples
 ///
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::CosmosClientBuilder;
+/// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference};
 /// use std::sync::Arc;
 ///
-/// let credential = azure_identity::DeveloperToolsCredential::new(None).unwrap();
+/// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
+///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
+/// let account = CosmosAccountReference::with_credential(
+///     "https://myaccount.documents.azure.com/",
+///     credential,
+/// ).unwrap();
 /// let client = CosmosClientBuilder::new()
-///     .endpoint("https://myaccount.documents.azure.com/")
-///     .credential(credential)
-///     .build()
+///     .build(account)
 ///     .unwrap();
 /// ```
 ///
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::CosmosClientBuilder;
+/// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference};
 /// use azure_core::credentials::Secret;
 ///
+/// let account = CosmosAccountReference::with_master_key(
+///     "https://myaccount.documents.azure.com/",
+///     Secret::from("my_account_key"),
+/// ).unwrap();
 /// let client = CosmosClientBuilder::new()
-///     .endpoint("https://myaccount.documents.azure.com/")
-///     .key(Secret::from("my_account_key"))
-///     .build()
-///     .unwrap();
-/// ```
-///
-/// Using a connection string (requires `key_auth` feature):
-///
-/// ```rust,no_run,ignore
-/// use azure_data_cosmos::CosmosClientBuilder;
-/// use azure_core::credentials::Secret;
-///
-/// let client = CosmosClientBuilder::new()
-///     .connection_string(Secret::from("AccountEndpoint=https://myaccount.documents.azure.com:443/;AccountKey=mykey"))
-///     .unwrap()
-///     .build()
+///     .build(account)
 ///     .unwrap();
 /// ```
 #[derive(Default)]
 pub struct CosmosClientBuilder {
-    endpoint: Option<String>,
-    credential: Option<Credential>,
     options: CosmosClientOptions,
     /// Instrumentation options for distributed tracing
     instrumentation: InstrumentationOptions,
@@ -87,63 +70,10 @@ pub struct CosmosClientBuilder {
 impl CosmosClientBuilder {
     /// Creates a new empty builder.
     ///
-    /// Use [`endpoint()`](Self::endpoint) and either [`credential()`](Self::credential)
-    /// or [`key()`](Self::key) to configure authentication, or use
-    /// [`connection_string()`](Self::connection_string) to set both at once.
+    /// Configure the builder with the desired options, then call [`build()`](Self::build)
+    /// with the account endpoint and credential.
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Sets the endpoint URL for the Cosmos DB account.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Cosmos DB account, for example `https://myaccount.documents.azure.com/`.
-    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
-        self.endpoint = Some(endpoint.into());
-        self
-    }
-
-    /// Sets the Entra ID (Azure AD) credential for authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token.
-    pub fn credential(mut self, credential: Arc<dyn TokenCredential>) -> Self {
-        self.credential = Some(Credential::Token(credential));
-        self
-    }
-
-    /// Sets the account key for authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `key` - The primary or secondary key for the Cosmos DB account.
-    #[cfg(feature = "key_auth")]
-    pub fn key(mut self, key: Secret) -> Self {
-        self.credential = Some(Credential::Key(key));
-        self
-    }
-
-    /// Sets both the endpoint and credential from a connection string.
-    ///
-    /// This is a convenience method that parses the connection string and sets
-    /// both the endpoint and key credential.
-    ///
-    /// # Arguments
-    ///
-    /// * `connection_string` - The connection string to use for the client, e.g.
-    ///   `AccountEndpoint=https://accountname.documents.azure.com:443/;AccountKey=accountkey`
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the connection string cannot be parsed.
-    #[cfg(feature = "key_auth")]
-    pub fn connection_string(mut self, connection_string: Secret) -> azure_core::Result<Self> {
-        let connection_str = crate::ConnectionString::try_from(&connection_string)?;
-        self.endpoint = Some(connection_str.account_endpoint);
-        self.credential = Some(Credential::Key(connection_str.account_key));
-        Ok(self)
     }
 
     /// Sets the preferred regions for the client.
@@ -303,10 +233,11 @@ impl CosmosClientBuilder {
     /// };
     ///
     /// let client = CosmosClientBuilder::new()
-    ///     .endpoint("https://myaccount.documents.azure.com/")
-    ///     .key(Secret::from("my_account_key"))
     ///     .with_instrumentation(options)
-    ///     .build()
+    ///     .build(CosmosAccountReference::with_master_key(
+    ///         "https://myaccount.documents.azure.com/",
+    ///         Secret::from("my_account_key"),
+    ///     ).unwrap())
     ///     .unwrap();
     /// ```
     pub fn with_instrumentation(mut self, options: InstrumentationOptions) -> Self {
@@ -324,30 +255,28 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Builds the [`CosmosClient`].
+    /// Builds the [`CosmosClient`] with the specified account reference.
+    ///
+    /// The account reference bundles an endpoint and credential. You can create one using
+    /// [`CosmosAccountReference::with_credential()`], [`CosmosAccountReference::with_master_key()`],
+    /// or [`CosmosAccountReferenceBuilder`](crate::CosmosAccountReferenceBuilder).
+    ///
+    /// You can also pass a tuple of `(CosmosAccountEndpoint, credential)` or `(Url, credential)`,
+    /// where `credential` is any type that implements `Into<CosmosCredential>`.
+    ///
+    /// # Arguments
+    ///
+    /// * `account` - The account reference containing the endpoint and credential.
     ///
     /// # Errors
     ///
-    /// Returns an error if:
-    /// - The endpoint is not set
-    /// - The credential is not set
-    /// - The endpoint URL is invalid
-    pub fn build(self) -> azure_core::Result<CosmosClient> {
-        let endpoint_str = self.endpoint.ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "endpoint is required - use endpoint() or connection_string()",
-            )
-        })?;
-
-        let credential = self.credential.ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "credential is required - use credential(), key(), or connection_string()",
-            )
-        })?;
-
-        let endpoint: Url = endpoint_str.parse()?;
+    /// Returns an error if the client cannot be constructed.
+    pub fn build(
+        self,
+        account: impl Into<CosmosAccountReference>,
+    ) -> azure_core::Result<CosmosClient> {
+        let (account_endpoint, credential) = account.into().into_parts();
+        let endpoint = account_endpoint.into_url();
 
         // Create internal ClientOptions - users cannot configure this directly
         let client_options = ClientOptions {
@@ -365,9 +294,11 @@ impl CosmosClientBuilder {
         };
 
         let auth_policy: Arc<AuthorizationPolicy> = match credential {
-            Credential::Token(cred) => Arc::new(AuthorizationPolicy::from_token_credential(cred)),
+            CosmosCredential::TokenCredential(cred) => {
+                Arc::new(AuthorizationPolicy::from_token_credential(cred))
+            }
             #[cfg(feature = "key_auth")]
-            Credential::Key(key) => Arc::new(AuthorizationPolicy::from_shared_key(key)),
+            CosmosCredential::MasterKey(key) => Arc::new(AuthorizationPolicy::from_shared_key(key)),
         };
 
         let pipeline_core = azure_core::http::Pipeline::new(

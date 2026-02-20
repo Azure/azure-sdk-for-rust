@@ -271,9 +271,8 @@ impl TestClient {
             }
         }
 
-        let mut builder = azure_data_cosmos::CosmosClient::builder()
-            .endpoint(&connection_string.account_endpoint)
-            .key(connection_string.account_key.clone());
+        let credential = connection_string.account_key.clone();
+        let mut builder = azure_data_cosmos::CosmosClient::builder();
 
         // Apply preferred regions for the client
         if !preferred_regions.is_empty() {
@@ -317,7 +316,11 @@ impl TestClient {
             builder = builder.with_application_preferred_regions(fault_client_preferred_regions);
         }
 
-        let cosmos_client = builder.build()?;
+        let cosmos_client =
+            builder.build(azure_data_cosmos::CosmosAccountReference::with_master_key(
+                &connection_string.account_endpoint,
+                credential,
+            )?)?;
 
         Ok(TestClient {
             cosmos_client: Some(cosmos_client),
@@ -810,10 +813,11 @@ impl TestRunContext {
         })?;
 
         CosmosClient::builder()
-            .endpoint(&parsed.account_endpoint)
-            .key(parsed.account_key.clone())
             .with_application_preferred_regions(vec![region])
-            .build()
+            .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
+                &parsed.account_endpoint,
+                parsed.account_key.clone(),
+            )?)
     }
 
     /// Cleans up test resources.

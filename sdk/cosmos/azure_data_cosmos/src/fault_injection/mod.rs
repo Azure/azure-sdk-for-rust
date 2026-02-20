@@ -42,6 +42,7 @@
 //!     FaultInjectionRuleBuilder, FaultOperationType,
 //! };
 //! use azure_data_cosmos::CosmosClientBuilder;
+//! use azure_data_cosmos::CosmosAccountReference;
 //! use azure_core::credentials::Secret;
 //! use std::sync::Arc;
 //! use std::time::{Duration, Instant};
@@ -73,11 +74,12 @@
 //!
 //! // 5. Create the client with fault injection enabled
 //! let client = CosmosClientBuilder::new()
-//!     .endpoint("https://myaccount.documents.azure.com/")
-//!     .key(Secret::new("my_account_key"))
 //!     .with_fault_injection(true)
 //!     .transport(transport)
-//!     .build()
+//!     .build(CosmosAccountReference::with_master_key(
+//!         "https://myaccount.documents.azure.com/",
+//!         Secret::new("my_account_key"),
+//!     ).unwrap())
 //!     .unwrap();
 //! ```
 //!

@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_data_cosmos::CosmosClient;
+use azure_data_cosmos::{CosmosAccountReference, CosmosClient};
 use azure_identity::DeveloperToolsCredential;
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::error::Error;
+use std::sync::Arc;
 
 mod create;
 mod delete;
@@ -82,10 +83,11 @@ fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
     if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
         {
-            Ok(CosmosClient::builder()
-                .endpoint(&args.endpoint)
-                .key(key.clone().into())
-                .build()?)
+            let account = CosmosAccountReference::with_master_key(
+                &args.endpoint,
+                azure_core::credentials::Secret::from(key.clone()),
+            )?;
+            Ok(CosmosClient::builder().build(account)?)
         }
         #[cfg(not(feature = "key_auth"))]
         {
@@ -93,10 +95,9 @@ fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
             Err("cannot authenticate with a key unless the 'key_auth' feature is enabled".into())
         }
     } else {
-        let cred = DeveloperToolsCredential::new(None).unwrap();
-        Ok(CosmosClient::builder()
-            .endpoint(&args.endpoint)
-            .credential(cred)
-            .build()?)
+        let cred: Arc<dyn azure_core::credentials::TokenCredential> =
+            DeveloperToolsCredential::new(None).unwrap();
+        let account = CosmosAccountReference::with_credential(&args.endpoint, cred)?;
+        Ok(CosmosClient::builder().build(account)?)
     }
 }
