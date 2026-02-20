@@ -14,7 +14,7 @@
 
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Changed return type of query methods from `FeedPager<T>` (an alias for `ItemIterator<FeedPage<T>, String>`) to `FeedItemIterator<T>`, which implements `Stream<Item = Result<T>>` and provides `into_pages()` for page-level access. ([#3515](https://github.com/Azure/azure-sdk-for-rust/pull/3515))
-- Removed direct access to `CosmosClientOptions` fields in favor of builder methods on `CosmosClientBuilder`. ([#3744](https://github.com/Azure/azure-sdk-for-rust/pull/3744)
+- Introduced `CosmosClientBuilder` for constructing `CosmosClient` instances, replacing the previous builder pattern that directly modified `CosmosClientOptions`. ([#3744](https://github.com/Azure/azure-sdk-for-rust/pull/3744)
 
 ### Bugs Fixed
 
