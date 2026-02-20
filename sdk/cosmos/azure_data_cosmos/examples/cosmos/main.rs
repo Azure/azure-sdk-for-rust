@@ -6,6 +6,7 @@ use azure_identity::DeveloperToolsCredential;
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::error::Error;
 
+mod batch;
 mod create;
 mod delete;
 mod metadata;
@@ -41,6 +42,7 @@ struct SharedArgs {
 
 #[derive(Clone, Subcommand)]
 enum Subcommands {
+    Batch(batch::BatchCommand),
     Create(create::CreateCommand),
     Delete(delete::DeleteCommand),
     Metadata(metadata::MetadataCommand),
@@ -67,6 +69,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let client = create_client(&args.shared_args)?;
 
     match cmd {
+        Subcommands::Batch(cmd) => cmd.run(&client).await,
         Subcommands::Create(cmd) => cmd.run(client).await,
         Subcommands::Delete(cmd) => cmd.run(client).await,
         Subcommands::Metadata(cmd) => cmd.run(client).await,
