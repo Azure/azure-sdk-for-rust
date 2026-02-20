@@ -33,7 +33,7 @@ pub use cosmos_resource_reference::CosmosResourceReference;
 pub use cosmos_result::CosmosResult;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
-pub use etag::{ETag, ETagCondition};
+pub use etag::{ETag, Precondition};
 pub use partition_key::PartitionKey;
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
@@ -96,26 +96,6 @@ impl ContainerProperties {
             partition_key,
             system_properties: SystemProperties::default(),
         }
-    }
-}
-
-/// Immutable container properties that never change after creation.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct ImmutableContainerProperties {
-    partition_key: PartitionKeyDefinition,
-}
-
-impl ImmutableContainerProperties {
-    /// Creates immutable container properties from a full `ContainerProperties`.
-    pub(crate) fn from_container_properties(props: &ContainerProperties) -> Self {
-        Self {
-            partition_key: props.partition_key.clone(),
-        }
-    }
-
-    /// Returns the partition key definition.
-    pub(crate) fn partition_key(&self) -> &PartitionKeyDefinition {
-        &self.partition_key
     }
 }
 
@@ -240,7 +220,6 @@ pub(crate) struct SystemProperties {
     pub etag: Option<String>,
 }
 
-// ── ResourceType & OperationType (moved from resource_types.rs) ─────────────
 
 /// The type of resource being operated on.
 ///
@@ -409,7 +388,6 @@ impl OperationType {
     }
 }
 
-// ── SessionToken (moved from session.rs) ────────────────────────────────────
 
 /// A session token for maintaining session consistency.
 ///
@@ -442,7 +420,6 @@ impl std::fmt::Display for SessionToken {
     }
 }
 
-// ── TriggerInvocation (moved from triggers.rs) ──────────────────────────────
 
 /// Represents a trigger to be invoked before or after an operation.
 ///
@@ -477,7 +454,6 @@ impl From<String> for TriggerInvocation {
     }
 }
 
-// ── ThroughputControlGroupName (moved from throughput_control.rs) ───────────
 
 /// Unique name identifying a throughput control group.
 ///
