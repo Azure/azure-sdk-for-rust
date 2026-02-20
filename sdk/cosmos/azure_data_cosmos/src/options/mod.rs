@@ -317,6 +317,66 @@ pub struct ItemOptions {
     pub excluded_regions: Option<Vec<RegionName>>,
 }
 
+impl ItemOptions {
+    pub fn with_pre_triggers(mut self, pre_triggers: Vec<String>) -> Self {
+        self.pre_triggers = Some(pre_triggers);
+        self
+    }
+
+    pub fn with_post_triggers(mut self, post_triggers: Vec<String>) -> Self {
+        self.post_triggers = Some(post_triggers);
+        self
+    }
+
+    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
+        self.session_token = Some(session_token);
+        self
+    }
+
+    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    pub fn with_indexing_directive(mut self, indexing_directive: IndexingDirective) -> Self {
+        self.indexing_directive = Some(indexing_directive);
+        self
+    }
+
+    pub fn with_if_match_etag(mut self, if_match_etag: Etag) -> Self {
+        self.if_match_etag = Some(if_match_etag);
+        self
+    }
+
+    pub fn with_content_response_on_write_enabled(
+        mut self,
+        content_response_on_write_enabled: bool,
+    ) -> Self {
+        self.content_response_on_write_enabled = content_response_on_write_enabled;
+        self
+    }
+
+    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
+        self.throughput_bucket = Some(throughput_bucket);
+        self
+    }
+
+    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
+
+    pub fn with_excluded_regions(mut self, excluded_regions: Vec<RegionName>) -> Self {
+        self.excluded_regions = Some(excluded_regions);
+        self
+    }
+}
+
 impl AsHeaders for ItemOptions {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
@@ -424,6 +484,33 @@ pub struct QueryOptions {
     ///
     /// Custom headers will not override headers that are already set by the SDK.
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
+}
+
+impl QueryOptions {
+    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
+        self.session_token = Some(session_token);
+        self
+    }
+
+    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
+        self.throughput_bucket = Some(throughput_bucket);
+        self
+    }
+
+    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
 }
 
 impl AsHeaders for QueryOptions {
