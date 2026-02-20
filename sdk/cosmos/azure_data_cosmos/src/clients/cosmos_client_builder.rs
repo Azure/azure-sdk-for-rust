@@ -324,10 +324,18 @@ impl CosmosClientBuilder {
             pipeline_core.clone(),
         ));
 
+        let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
+            GlobalPartitionEndpointManager::new(
+                global_endpoint_manager.clone(),
+                false,
+                options.enable_partition_level_circuit_breaker,
+            );
+
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             global_endpoint_manager.clone(),
+            global_partition_endpoint_manager.clone(),
             self.options,
             fault_injection_enabled,
         ));
@@ -336,6 +344,7 @@ impl CosmosClientBuilder {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         })
     }
 }
