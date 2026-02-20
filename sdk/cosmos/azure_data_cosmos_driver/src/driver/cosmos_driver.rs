@@ -131,7 +131,7 @@ impl CosmosDriver {
     ///
     /// # Returns
     ///
-    /// Returns a [`crate::models::CosmosResult`] on success.
+    /// Returns a [`crate::models::CosmosResponse`] on success.
     ///
     /// # Errors
     ///
@@ -167,7 +167,7 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<crate::models::CosmosResult> {
+    ) -> azure_core::Result<crate::models::CosmosResponse> {
         // Step 1: Derive effective runtime options
         let effective_options = self.effective_runtime_options(&options);
 
@@ -230,7 +230,7 @@ impl CosmosDriver {
         }
 
         let response_headers = CosmosResponseHeaders::from_headers(&Headers::new());
-        let _dummy_result = crate::models::CosmosResult::new(
+        let _dummy_result = crate::models::CosmosResponse::new(
             Vec::new(),
             response_headers,
             CosmosStatus::from_parts(azure_core::http::StatusCode::Ok, None),
