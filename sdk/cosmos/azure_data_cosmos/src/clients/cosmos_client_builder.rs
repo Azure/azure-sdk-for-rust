@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use azure_core::http::{ClientOptions, InstrumentationOptions, LoggingOptions, RetryOptions};
 
 /// Builder for creating [`CosmosClient`] instances.
@@ -92,32 +93,6 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets the regions to exclude from routing.
-    ///
-    /// Requests will not be routed to these regions. If all regions are excluded,
-    /// the primary/hub region will be used.
-    ///
-    /// # Arguments
-    ///
-    /// * `regions` - The regions to exclude.
-    pub fn with_excluded_regions(mut self, regions: impl Into<Vec<RegionName>>) -> Self {
-        self.options.excluded_regions = regions.into();
-        self
-    }
-
-    /// Sets the default consistency level for operations.
-    ///
-    /// This can be overridden on a per-request basis. If not set, the account's
-    /// default consistency level is used.
-    ///
-    /// # Arguments
-    ///
-    /// * `level` - The consistency level to use.
-    pub fn with_consistency_level(mut self, level: crate::options::ConsistencyLevel) -> Self {
-        self.options.consistency_level = Some(level);
-        self
-    }
-
     /// Sets the default priority level for operations.
     ///
     /// Priority-based execution allows throttling low-priority requests before
@@ -143,13 +118,13 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets the application name for telemetry.
+    /// Sets a suffix to append to the User-Agent header for telemetry.
     ///
     /// # Arguments
     ///
-    /// * `name` - The application name to include in telemetry.
-    pub fn with_application_name(mut self, name: impl Into<String>) -> Self {
-        self.options.application_name = Some(name.into());
+    /// * `suffix` - The suffix to append to the User-Agent header.
+    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
+        self.options.user_agent_suffix = Some(suffix.into());
         self
     }
 
@@ -192,25 +167,6 @@ impl CosmosClientBuilder {
         options: crate::options::SessionRetryOptions,
     ) -> Self {
         self.options.session_retry_options = options;
-        self
-    }
-
-    /// Enables partition-level circuit breaker.
-    ///
-    /// When enabled, the client will track failures at the partition level and
-    /// temporarily avoid partitions that are experiencing issues.
-    pub fn with_partition_level_circuit_breaker(mut self, enabled: bool) -> Self {
-        self.options.enable_partition_level_circuit_breaker = enabled;
-        self
-    }
-
-    /// Disables partition-level failover.
-    ///
-    /// # Arguments
-    ///
-    /// * `disabled` - If true, partition-level failover is disabled.
-    pub fn with_disable_partition_level_failover(mut self, disabled: bool) -> Self {
-        self.options.disable_partition_level_failover = disabled;
         self
     }
 
@@ -325,11 +281,7 @@ impl CosmosClientBuilder {
         ));
 
         let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
-            GlobalPartitionEndpointManager::new(
-                global_endpoint_manager.clone(),
-                false,
-                options.enable_partition_level_circuit_breaker,
-            );
+            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), false, true);
 
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,

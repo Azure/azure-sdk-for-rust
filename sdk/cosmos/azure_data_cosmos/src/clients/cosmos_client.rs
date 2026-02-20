@@ -12,10 +12,10 @@ use azure_core::http::{Context, Url};
 use serde::Serialize;
 use std::sync::Arc;
 
+pub use super::cosmos_client_builder::CosmosClientBuilder;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-pub use super::cosmos_client_builder::CosmosClientBuilder;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;

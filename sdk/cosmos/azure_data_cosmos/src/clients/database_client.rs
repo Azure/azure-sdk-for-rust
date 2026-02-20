@@ -14,8 +14,8 @@ use crate::{
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
-use std::sync::Arc;
 use azure_core::http::Context;
+use std::sync::Arc;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///

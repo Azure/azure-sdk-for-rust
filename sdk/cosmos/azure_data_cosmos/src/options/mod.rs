@@ -37,7 +37,7 @@ impl Display for SessionToken {
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct CosmosClientOptions {
-    pub(crate) application_name: Option<String>,
+    pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
     #[cfg(feature = "fault_injection")]
     pub(crate) fault_injection_enabled: bool,
@@ -49,9 +49,6 @@ pub struct CosmosClientOptions {
     /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
     pub(crate) consistency_level: Option<ConsistencyLevel>,
     pub(crate) request_timeout: Option<Duration>,
-    pub(crate) enable_partition_level_circuit_breaker: bool,
-    /// When set to true, disables partition-level failover.
-    pub(crate) disable_partition_level_failover: bool,
     /// The desired throughput bucket for the client
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
@@ -74,8 +71,8 @@ pub struct CosmosClientOptions {
 }
 
 impl CosmosClientOptions {
-    pub fn with_application_name(mut self, application_name: impl Into<String>) -> Self {
-        self.application_name = Some(application_name.into());
+    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
+        self.user_agent_suffix = Some(suffix.into());
         self
     }
 
@@ -91,11 +88,6 @@ impl CosmosClientOptions {
 
     pub fn with_excluded_regions(mut self, regions: Vec<RegionName>) -> Self {
         self.excluded_regions = regions;
-        self
-    }
-
-    pub fn with_custom_endpoints(mut self, endpoints: HashSet<String>) -> Self {
-        self.account_initialization_custom_endpoints = Some(endpoints);
         self
     }
 
@@ -180,7 +172,7 @@ pub struct CreateContainerOptions {
     pub throughput: Option<ThroughputProperties>,
 }
 
-impl<'a> CreateContainerOptions<'a> {
+impl CreateContainerOptions {
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
         self.throughput = Some(throughput);
         self
@@ -197,7 +189,7 @@ pub struct CreateDatabaseOptions {
     pub throughput: Option<ThroughputProperties>,
 }
 
-impl<'a> CreateDatabaseOptions<'a> {
+impl CreateDatabaseOptions {
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
         self.throughput = Some(throughput);
         self
