@@ -9,6 +9,7 @@
 use azure_core::http::{
     headers::{HeaderName, HeaderValue},
     request::options::ContentType,
+    StatusCode,
 };
 
 /// Macro to define Cosmos DB header constants and the allowed headers list in one place.
@@ -202,6 +203,12 @@ pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("applicatio
 pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=minimal");
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
+
+/// The Cosmos DB-specific 449 Retry With status code.
+///
+/// This status code indicates the client must retry with modified request parameters.
+/// It is non-retryable because automatic retry without parameter changes will not succeed.
+pub(crate) const RETRY_WITH: StatusCode = StatusCode::UnknownValue(449);
 
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
@@ -408,6 +415,7 @@ impl SubStatusCode {
         Self::CONFIGURATION_PROPERTY_NOT_FOUND;
     #[allow(dead_code)]
     pub(crate) const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = Self::COMPLETING_SPLIT;
+    #[allow(dead_code)]
     pub(crate) const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode =
         Self::COMPLETING_PARTITION_MIGRATION;
 }
