@@ -57,9 +57,9 @@ impl std::fmt::Display for ResourceName {
 /// They encode the resource hierarchy (account → database → container → document).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub(crate) struct ResourceRid(Cow<'static, str>);
+pub(crate) struct ResourceId(Cow<'static, str>);
 
-impl ResourceRid {
+impl ResourceId {
     /// Creates a new resource RID.
     pub fn new(rid: impl Into<Cow<'static, str>>) -> Self {
         Self(rid.into())
@@ -71,25 +71,25 @@ impl ResourceRid {
     }
 }
 
-impl From<&'static str> for ResourceRid {
+impl From<&'static str> for ResourceId {
     fn from(s: &'static str) -> Self {
         Self::new(s)
     }
 }
 
-impl From<String> for ResourceRid {
+impl From<String> for ResourceId {
     fn from(s: String) -> Self {
         Self::new(s)
     }
 }
 
-impl AsRef<str> for ResourceRid {
+impl AsRef<str> for ResourceId {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl std::fmt::Display for ResourceRid {
+impl std::fmt::Display for ResourceId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -109,7 +109,7 @@ pub(crate) enum ResourceIdentifier {
     /// Reference by user-provided resource name.
     ByName(ResourceName),
     /// Reference by internal RID.
-    ByRid(ResourceRid),
+    ByRid(ResourceId),
 }
 
 impl ResourceIdentifier {
@@ -119,7 +119,7 @@ impl ResourceIdentifier {
     }
 
     /// Creates a resource identifier by RID.
-    pub(crate) fn by_rid(rid: impl Into<ResourceRid>) -> Self {
+    pub(crate) fn by_rid(rid: impl Into<ResourceId>) -> Self {
         Self::ByRid(rid.into())
     }
 
@@ -162,11 +162,11 @@ mod tests {
     #[derive(Clone, Debug, PartialEq, Eq)]
     struct ParsedResourceId {
         /// The database RID component (if present).
-        database_rid: Option<ResourceRid>,
+        database_rid: Option<ResourceId>,
         /// The container/collection RID component (if present).
-        container_rid: Option<ResourceRid>,
+        container_rid: Option<ResourceId>,
         /// The document/item RID component (if present).
-        document_rid: Option<ResourceRid>,
+        document_rid: Option<ResourceId>,
     }
 
     impl ParsedResourceId {
@@ -180,7 +180,7 @@ mod tests {
         }
 
         /// Creates a parsed resource ID for a database.
-        fn database(database_rid: ResourceRid) -> Self {
+        fn database(database_rid: ResourceId) -> Self {
             Self {
                 database_rid: Some(database_rid),
                 container_rid: None,
@@ -189,7 +189,7 @@ mod tests {
         }
 
         /// Creates a parsed resource ID for a container.
-        fn container(database_rid: ResourceRid, container_rid: ResourceRid) -> Self {
+        fn container(database_rid: ResourceId, container_rid: ResourceId) -> Self {
             Self {
                 database_rid: Some(database_rid),
                 container_rid: Some(container_rid),
@@ -199,9 +199,9 @@ mod tests {
 
         /// Creates a parsed resource ID for a document.
         fn document(
-            database_rid: ResourceRid,
-            container_rid: ResourceRid,
-            document_rid: ResourceRid,
+            database_rid: ResourceId,
+            container_rid: ResourceId,
+            document_rid: ResourceId,
         ) -> Self {
             Self {
                 database_rid: Some(database_rid),
@@ -211,17 +211,17 @@ mod tests {
         }
 
         /// Returns the database RID component.
-        fn database_rid(&self) -> Option<&ResourceRid> {
+        fn database_rid(&self) -> Option<&ResourceId> {
             self.database_rid.as_ref()
         }
 
         /// Returns the container RID component.
-        fn container_rid(&self) -> Option<&ResourceRid> {
+        fn container_rid(&self) -> Option<&ResourceId> {
             self.container_rid.as_ref()
         }
 
         /// Returns the document RID component.
-        fn document_rid(&self) -> Option<&ResourceRid> {
+        fn document_rid(&self) -> Option<&ResourceId> {
             self.document_rid.as_ref()
         }
     }
@@ -289,14 +289,14 @@ mod tests {
     /// ```
     fn extract_database_rid_from_container_rid(
         container_rid: &str,
-    ) -> Result<ResourceRid, RidParseError> {
+    ) -> Result<ResourceId, RidParseError> {
         let bytes = decode_rid(container_rid)?;
         if bytes.len() < 8 || bytes.len() % 4 != 0 {
             return Err(RidParseError::InvalidLength);
         }
         // First 4 bytes are the database ID
         let db_bytes = &bytes[0..4];
-        Ok(ResourceRid::new(encode_rid(db_bytes)))
+        Ok(ResourceId::new(encode_rid(db_bytes)))
     }
 
     /// Extracts the container (collection) RID string from a document or sub-resource RID string.
@@ -310,14 +310,14 @@ mod tests {
     /// (must decode to at least 16 bytes with `buffer.len() % 4 == 0`).
     fn extract_container_rid_from_document_rid(
         document_rid: &str,
-    ) -> Result<ResourceRid, RidParseError> {
+    ) -> Result<ResourceId, RidParseError> {
         let bytes = decode_rid(document_rid)?;
         if bytes.len() < 16 || bytes.len() % 4 != 0 {
             return Err(RidParseError::InvalidLength);
         }
         // First 8 bytes are the container ID (which includes the database ID)
         let container_bytes = &bytes[0..8];
-        Ok(ResourceRid::new(encode_rid(container_bytes)))
+        Ok(ResourceId::new(encode_rid(container_bytes)))
     }
 
     /// Parses a RID string into its hierarchical components.
@@ -345,17 +345,17 @@ mod tests {
 
         if len >= 4 {
             let db_rid = encode_rid(&bytes[0..4]);
-            parsed.database_rid = Some(ResourceRid::new(db_rid));
+            parsed.database_rid = Some(ResourceId::new(db_rid));
         }
 
         if len >= 8 {
             let container_rid = encode_rid(&bytes[0..8]);
-            parsed.container_rid = Some(ResourceRid::new(container_rid));
+            parsed.container_rid = Some(ResourceId::new(container_rid));
         }
 
         if len >= 16 {
             let document_rid = encode_rid(&bytes[0..16]);
-            parsed.document_rid = Some(ResourceRid::new(document_rid));
+            parsed.document_rid = Some(ResourceId::new(document_rid));
         }
 
         Ok(parsed)
@@ -375,7 +375,7 @@ mod tests {
 
     #[test]
     fn resource_rid_from_str() {
-        let rid = ResourceRid::from("abc123");
+        let rid = ResourceId::from("abc123");
         assert_eq!(rid.as_str(), "abc123");
     }
 
@@ -388,14 +388,14 @@ mod tests {
 
     #[test]
     fn database_id_by_rid() {
-        let id = ResourceIdentifier::ByRid(ResourceRid::from("abc123"));
+        let id = ResourceIdentifier::ByRid(ResourceId::from("abc123"));
         assert_eq!(id.name(), None);
         assert_eq!(id.rid(), Some("abc123"));
     }
 
     #[test]
     fn parsed_resource_id_database() {
-        let parsed = ParsedResourceId::database(ResourceRid::from("db123"));
+        let parsed = ParsedResourceId::database(ResourceId::from("db123"));
         assert_eq!(parsed.database_rid().map(|r| r.as_str()), Some("db123"));
         assert!(parsed.container_rid().is_none());
         assert!(parsed.document_rid().is_none());
@@ -404,7 +404,7 @@ mod tests {
     #[test]
     fn parsed_resource_id_container() {
         let parsed =
-            ParsedResourceId::container(ResourceRid::from("db123"), ResourceRid::from("coll456"));
+            ParsedResourceId::container(ResourceId::from("db123"), ResourceId::from("coll456"));
         assert_eq!(parsed.database_rid().map(|r| r.as_str()), Some("db123"));
         assert_eq!(parsed.container_rid().map(|r| r.as_str()), Some("coll456"));
         assert!(parsed.document_rid().is_none());
@@ -413,9 +413,9 @@ mod tests {
     #[test]
     fn parsed_resource_id_document() {
         let parsed = ParsedResourceId::document(
-            ResourceRid::from("db123"),
-            ResourceRid::from("coll456"),
-            ResourceRid::from("doc789"),
+            ResourceId::from("db123"),
+            ResourceId::from("coll456"),
+            ResourceId::from("doc789"),
         );
         assert_eq!(parsed.database_rid().map(|r| r.as_str()), Some("db123"));
         assert_eq!(parsed.container_rid().map(|r| r.as_str()), Some("coll456"));

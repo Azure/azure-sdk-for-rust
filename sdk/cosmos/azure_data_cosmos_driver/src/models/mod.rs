@@ -18,13 +18,14 @@ mod cosmos_resource_reference;
 mod cosmos_response;
 mod cosmos_status;
 mod etag;
+mod finite_f64;
 mod partition_key;
 mod request_charge;
 mod resource_id;
 mod resource_reference;
 mod user_agent;
 
-pub use account_reference::{AccountReference, AccountReferenceBuilder, AuthOptions};
+pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
 pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
@@ -44,6 +45,7 @@ pub use resource_reference::{
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
+pub(crate) use finite_f64::FiniteF64;
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
