@@ -23,7 +23,7 @@ use crate::models::{CosmosResponseHeaders, CosmosStatus};
 ///
 /// let status = result.status();
 /// println!("Status: {}", status);
-/// println!("RU Charge: {}", result.headers().request_charge().unwrap_or(0.0));
+/// println!("RU Charge: {}", result.headers().request_charge.unwrap_or_default().value());
 /// if status.is_success() {
 ///     let body = result.into_body();
 ///     // Deserialize body...
@@ -93,9 +93,11 @@ mod tests {
 
     #[test]
     fn cosmos_response_accessors() {
-        let headers = CosmosResponseHeaders::new()
-            .with_request_charge(RequestCharge::new(5.5))
-            .with_activity_id(ActivityId::from_string("test-activity".to_string()));
+        let headers = CosmosResponseHeaders {
+            request_charge: Some(RequestCharge::new(5.5)),
+            activity_id: Some(ActivityId::from_string("test-activity".to_string())),
+            ..Default::default()
+        };
 
         let result = CosmosResponse::new(
             b"{\"id\": \"test\"}".to_vec(),
@@ -109,7 +111,7 @@ mod tests {
         assert!(status.sub_status().is_none());
         assert_eq!(result.body(), b"{\"id\": \"test\"}");
         assert_eq!(
-            result.headers().request_charge(),
+            result.headers().request_charge,
             Some(RequestCharge::new(5.5))
         );
     }
@@ -133,7 +135,10 @@ mod tests {
 
     #[test]
     fn cosmos_response_accessors_created_status() {
-        let headers = CosmosResponseHeaders::new().with_request_charge(RequestCharge::new(1.0));
+        let headers = CosmosResponseHeaders {
+            request_charge: Some(RequestCharge::new(1.0)),
+            ..Default::default()
+        };
         let result = CosmosResponse::new(
             b"body".to_vec(),
             headers,
@@ -144,7 +149,7 @@ mod tests {
         assert_eq!(result.status().status_code(), StatusCode::Created);
         assert!(result.status().sub_status().is_none());
         assert_eq!(
-            result.headers().request_charge(),
+            result.headers().request_charge,
             Some(RequestCharge::new(1.0))
         );
 

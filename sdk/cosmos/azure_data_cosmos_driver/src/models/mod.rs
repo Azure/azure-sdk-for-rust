@@ -220,7 +220,6 @@ pub(crate) struct SystemProperties {
     pub etag: Option<String>,
 }
 
-
 /// The type of resource being operated on.
 ///
 /// Used to identify the Cosmos DB resource category for routing and authorization.
@@ -388,7 +387,6 @@ impl OperationType {
     }
 }
 
-
 /// A session token for maintaining session consistency.
 ///
 /// Session tokens track the logical sequence number of operations, enabling
@@ -419,7 +417,6 @@ impl std::fmt::Display for SessionToken {
         f.write_str(&self.0)
     }
 }
-
 
 /// Represents a trigger to be invoked before or after an operation.
 ///
@@ -453,7 +450,6 @@ impl From<String> for TriggerInvocation {
         Self::new(name)
     }
 }
-
 
 /// Unique name identifying a throughput control group.
 ///

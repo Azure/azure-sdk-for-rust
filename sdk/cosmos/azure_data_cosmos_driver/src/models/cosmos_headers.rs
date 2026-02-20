@@ -38,38 +38,16 @@ mod response_header_names {
 #[non_exhaustive]
 pub struct CosmosRequestHeaders {
     /// Activity ID for request correlation (`x-ms-activity-id`).
-    activity_id: Option<ActivityId>,
+    pub activity_id: Option<ActivityId>,
 
     /// Session token for session consistency (`x-ms-session-token`).
-    session_token: Option<SessionToken>,
+    pub session_token: Option<SessionToken>,
 }
 
 impl CosmosRequestHeaders {
     /// Creates an empty `CosmosRequestHeaders`.
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Returns the activity ID for request correlation.
-    pub fn activity_id(&self) -> Option<&ActivityId> {
-        self.activity_id.as_ref()
-    }
-
-    /// Returns the session token for session consistency.
-    pub fn session_token(&self) -> Option<&SessionToken> {
-        self.session_token.as_ref()
-    }
-
-    /// Sets the activity ID.
-    pub fn with_activity_id(mut self, activity_id: ActivityId) -> Self {
-        self.activity_id = Some(activity_id);
-        self
-    }
-
-    /// Sets the session token.
-    pub fn with_session_token(mut self, token: impl Into<SessionToken>) -> Self {
-        self.session_token = Some(token.into());
-        self
     }
 
     /// Writes allowed request headers into the provided HTTP header map.
@@ -97,25 +75,25 @@ impl CosmosRequestHeaders {
 #[non_exhaustive]
 pub struct CosmosResponseHeaders {
     /// Activity ID for request correlation (`x-ms-activity-id`).
-    activity_id: Option<ActivityId>,
+    pub activity_id: Option<ActivityId>,
 
     /// Request charge in Request Units (`x-ms-request-charge`).
-    request_charge: Option<RequestCharge>,
+    pub request_charge: Option<RequestCharge>,
 
     /// Session token for session consistency (`x-ms-session-token`).
-    session_token: Option<SessionToken>,
+    pub session_token: Option<SessionToken>,
 
     /// ETag for optimistic concurrency (`etag`).
-    etag: Option<ETag>,
+    pub etag: Option<ETag>,
 
     /// Continuation token for pagination (`x-ms-continuation`).
-    continuation: Option<String>,
+    pub continuation: Option<String>,
 
     /// Item count in response (`x-ms-item-count`).
-    item_count: Option<u32>,
+    pub item_count: Option<u32>,
 
     /// Cosmos substatus code (`x-ms-substatus`).
-    substatus: Option<SubStatusCode>,
+    pub substatus: Option<SubStatusCode>,
 }
 
 impl CosmosResponseHeaders {
@@ -153,83 +131,6 @@ impl CosmosResponseHeaders {
                 .and_then(SubStatusCode::from_header_value),
         }
     }
-
-    /// Returns the activity ID for request correlation.
-    pub fn activity_id(&self) -> Option<&ActivityId> {
-        self.activity_id.as_ref()
-    }
-
-    /// Returns the request charge (RU) for this response.
-    pub fn request_charge(&self) -> Option<RequestCharge> {
-        self.request_charge
-    }
-
-    /// Returns the session token for session consistency.
-    pub fn session_token(&self) -> Option<&SessionToken> {
-        self.session_token.as_ref()
-    }
-
-    /// Returns the ETag for optimistic concurrency control.
-    pub fn etag(&self) -> Option<&ETag> {
-        self.etag.as_ref()
-    }
-
-    /// Returns the continuation token for pagination.
-    pub fn continuation(&self) -> Option<&str> {
-        self.continuation.as_deref()
-    }
-
-    /// Returns the item count in this response.
-    pub fn item_count(&self) -> Option<u32> {
-        self.item_count
-    }
-
-    /// Returns the Cosmos substatus code, if present.
-    pub fn substatus(&self) -> Option<SubStatusCode> {
-        self.substatus
-    }
-
-    /// Sets the activity ID.
-    pub fn with_activity_id(mut self, activity_id: ActivityId) -> Self {
-        self.activity_id = Some(activity_id);
-        self
-    }
-
-    /// Sets the request charge.
-    pub fn with_request_charge(mut self, charge: RequestCharge) -> Self {
-        self.request_charge = Some(charge);
-        self
-    }
-
-    /// Sets the session token.
-    pub fn with_session_token(mut self, token: impl Into<SessionToken>) -> Self {
-        self.session_token = Some(token.into());
-        self
-    }
-
-    /// Sets the ETag.
-    pub fn with_etag(mut self, etag: impl Into<ETag>) -> Self {
-        self.etag = Some(etag.into());
-        self
-    }
-
-    /// Sets the continuation token.
-    pub fn with_continuation(mut self, continuation: String) -> Self {
-        self.continuation = Some(continuation);
-        self
-    }
-
-    /// Sets the item count.
-    pub fn with_item_count(mut self, count: u32) -> Self {
-        self.item_count = Some(count);
-        self
-    }
-
-    /// Sets the substatus code.
-    pub fn with_substatus(mut self, substatus: SubStatusCode) -> Self {
-        self.substatus = Some(substatus);
-        self
-    }
 }
 
 #[cfg(test)]
@@ -251,80 +152,92 @@ mod tests {
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
         assert_eq!(
-            cosmos_headers.activity_id().map(|a| a.as_str()),
+            cosmos_headers.activity_id.as_ref().map(|a| a.as_str()),
             Some("abc-123")
         );
-        assert!((cosmos_headers.request_charge().unwrap().value() - 5.67).abs() < f64::EPSILON);
+        assert!((cosmos_headers.request_charge.unwrap().value() - 5.67).abs() < f64::EPSILON);
         assert_eq!(
-            cosmos_headers.session_token().map(SessionToken::as_str),
+            cosmos_headers
+                .session_token
+                .as_ref()
+                .map(SessionToken::as_str),
             Some("session:456")
         );
         assert_eq!(
-            cosmos_headers.etag().map(ETag::as_str),
+            cosmos_headers.etag.as_ref().map(ETag::as_str),
             Some("\"version-1\"")
         );
-        assert_eq!(cosmos_headers.continuation(), Some("next-page-token"));
-        assert_eq!(cosmos_headers.item_count(), Some(10));
-        assert_eq!(cosmos_headers.substatus(), Some(SubStatusCode::new(3200)));
+        assert_eq!(
+            cosmos_headers.continuation.as_deref(),
+            Some("next-page-token")
+        );
+        assert_eq!(cosmos_headers.item_count, Some(10));
+        assert_eq!(cosmos_headers.substatus, Some(SubStatusCode::new(3200)));
     }
 
     #[test]
     fn cosmos_response_headers_builder_pattern() {
-        let headers = CosmosResponseHeaders::new()
-            .with_activity_id(ActivityId::from_string("test".to_string()))
-            .with_request_charge(RequestCharge::new(2.0))
-            .with_session_token("token".to_string())
-            .with_etag("etag".to_string())
-            .with_continuation("cont".to_string())
-            .with_item_count(5)
-            .with_substatus(SubStatusCode::new(1002));
+        let headers = CosmosResponseHeaders {
+            activity_id: Some(ActivityId::from_string("test".to_string())),
+            request_charge: Some(RequestCharge::new(2.0)),
+            session_token: Some(SessionToken::new("token".to_string())),
+            etag: Some(ETag::new("etag".to_string())),
+            continuation: Some("cont".to_string()),
+            item_count: Some(5),
+            substatus: Some(SubStatusCode::new(1002)),
+        };
 
-        assert_eq!(headers.activity_id().map(|a| a.as_str()), Some("test"));
-        assert_eq!(headers.request_charge(), Some(RequestCharge::new(2.0)));
         assert_eq!(
-            headers.session_token().map(SessionToken::as_str),
+            headers.activity_id.as_ref().map(|a| a.as_str()),
+            Some("test")
+        );
+        assert_eq!(headers.request_charge, Some(RequestCharge::new(2.0)));
+        assert_eq!(
+            headers.session_token.as_ref().map(SessionToken::as_str),
             Some("token")
         );
-        assert_eq!(headers.etag().map(ETag::as_str), Some("etag"));
-        assert_eq!(headers.continuation(), Some("cont"));
-        assert_eq!(headers.item_count(), Some(5));
-        assert_eq!(headers.substatus(), Some(SubStatusCode::new(1002)));
+        assert_eq!(headers.etag.as_ref().map(ETag::as_str), Some("etag"));
+        assert_eq!(headers.continuation.as_deref(), Some("cont"));
+        assert_eq!(headers.item_count, Some(5));
+        assert_eq!(headers.substatus, Some(SubStatusCode::new(1002)));
     }
 
     #[test]
     fn cosmos_response_headers_default_empty() {
         let headers = CosmosResponseHeaders::default();
 
-        assert!(headers.activity_id().is_none());
-        assert!(headers.request_charge().is_none());
-        assert!(headers.session_token().is_none());
-        assert!(headers.etag().is_none());
-        assert!(headers.continuation().is_none());
-        assert!(headers.item_count().is_none());
-        assert!(headers.substatus().is_none());
+        assert!(headers.activity_id.is_none());
+        assert!(headers.request_charge.is_none());
+        assert!(headers.session_token.is_none());
+        assert!(headers.etag.is_none());
+        assert!(headers.continuation.is_none());
+        assert!(headers.item_count.is_none());
+        assert!(headers.substatus.is_none());
     }
 
     #[test]
     fn cosmos_request_headers_builder_pattern() {
-        let headers = CosmosRequestHeaders::new()
-            .with_activity_id(ActivityId::from_string("test-request".to_string()))
-            .with_session_token("session-token");
+        let headers = CosmosRequestHeaders {
+            activity_id: Some(ActivityId::from_string("test-request".to_string())),
+            session_token: Some(SessionToken::new("session-token".to_string())),
+        };
 
         assert_eq!(
-            headers.activity_id().map(ActivityId::as_str),
+            headers.activity_id.as_ref().map(ActivityId::as_str),
             Some("test-request")
         );
         assert_eq!(
-            headers.session_token().map(SessionToken::as_str),
+            headers.session_token.as_ref().map(SessionToken::as_str),
             Some("session-token")
         );
     }
 
     #[test]
     fn cosmos_request_headers_write_to_headers() {
-        let cosmos_headers = CosmosRequestHeaders::new()
-            .with_activity_id(ActivityId::from_string("test-request".to_string()))
-            .with_session_token("session-token");
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: Some(ActivityId::from_string("test-request".to_string())),
+            session_token: Some(SessionToken::new("session-token".to_string())),
+        };
         let mut headers = Headers::new();
 
         cosmos_headers.write_to_headers(&mut headers);

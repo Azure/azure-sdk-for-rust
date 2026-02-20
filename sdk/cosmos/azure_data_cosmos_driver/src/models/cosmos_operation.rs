@@ -124,13 +124,13 @@ impl CosmosOperation {
         mut self,
         session_token: impl Into<crate::models::SessionToken>,
     ) -> Self {
-        self.request_headers = self.request_headers.with_session_token(session_token);
+        self.request_headers.session_token = Some(session_token.into());
         self
     }
 
     /// Sets the activity ID request header for the operation.
     pub fn with_activity_id(mut self, activity_id: crate::models::ActivityId) -> Self {
-        self.request_headers = self.request_headers.with_activity_id(activity_id);
+        self.request_headers.activity_id = Some(activity_id);
         self
     }
 
