@@ -23,6 +23,7 @@ serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 url.workspace = true
+reqwest = { workspace = true, optional = true }
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
@@ -43,10 +44,12 @@ key_auth = [
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [] # Enables support for fault injection testing
+allow_invalid_certificates = ["dep:reqwest"] # Enables accepting invalid TLS certificates (e.g., for emulator testing)
 
 [package.metadata.docs.rs]
 features = [
   "key_auth",
   "hmac_rust",
   "hmac_openssl",
+  "allow_invalid_certificates",
 ]

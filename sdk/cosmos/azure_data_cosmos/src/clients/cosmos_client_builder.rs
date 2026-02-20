@@ -64,8 +64,12 @@ pub struct CosmosClientBuilder {
     options: CosmosClientOptions,
     /// Instrumentation options for distributed tracing
     instrumentation: InstrumentationOptions,
-    /// Custom transport for testing - not part of the public API
-    transport: Option<azure_core::http::Transport>,
+    /// Whether to accept invalid TLS certificates (e.g., for emulator testing)
+    #[cfg(feature = "allow_invalid_certificates")]
+    allow_invalid_certificates: bool,
+    /// Fault injection builder for testing error handling
+    #[cfg(feature = "fault_injection")]
+    fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
 }
 
 impl CosmosClientBuilder {
@@ -148,12 +152,19 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Enables fault injection for testing.
+    /// Configures fault injection for testing.
+    ///
+    /// Pass a [`FaultInjectionClientBuilder`](crate::fault_injection::FaultInjectionClientBuilder)
+    /// configured with the desired fault injection rules. The builder will be used
+    /// to construct the transport internally when [`build()`](Self::build) is called.
     ///
     /// This is only available when the `fault_injection` feature is enabled.
     #[cfg(feature = "fault_injection")]
-    pub fn with_fault_injection(mut self, enabled: bool) -> Self {
-        self.options.fault_injection_enabled = enabled;
+    pub fn with_fault_injection(
+        mut self,
+        builder: crate::fault_injection::FaultInjectionClientBuilder,
+    ) -> Self {
+        self.fault_injection_builder = Some(builder);
         self
     }
 
@@ -201,13 +212,18 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Internal method to set a custom HTTP transport.
-    /// This is used for testing purposes (e.g., to accept invalid certificates).
+    /// Configures the client to accept invalid TLS certificates.
     ///
-    /// Microsoft cannot guarantee support when using alternate transports.
+    /// This is intended for testing with the Azure Cosmos DB emulator,
+    /// which uses a self-signed certificate.
+    ///
+    /// # Arguments
+    ///
+    /// * `allow` - Whether to accept invalid certificates.
     #[doc(hidden)]
-    pub fn transport(mut self, transport: azure_core::http::Transport) -> Self {
-        self.transport = Some(transport);
+    #[cfg(feature = "allow_invalid_certificates")]
+    pub fn with_allow_invalid_certificates(mut self, allow: bool) -> Self {
+        self.allow_invalid_certificates = allow;
         self
     }
 
@@ -234,6 +250,43 @@ impl CosmosClientBuilder {
         let (account_endpoint, credential) = account.into().into_parts();
         let endpoint = account_endpoint.into_url();
 
+        // Derive fault_injection_enabled from builder state
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_enabled = self.fault_injection_builder.is_some();
+        #[cfg(not(feature = "fault_injection"))]
+        let fault_injection_enabled = false;
+
+        // Build custom transport if needed
+        #[cfg(feature = "allow_invalid_certificates")]
+        let base_client: Option<Arc<dyn azure_core::http::HttpClient>> =
+            if self.allow_invalid_certificates {
+                let client = reqwest::ClientBuilder::new()
+                    .danger_accept_invalid_certs(true)
+                    .pool_max_idle_per_host(0)
+                    .build()
+                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+                Some(Arc::new(client))
+            } else {
+                None
+            };
+        #[cfg(not(feature = "allow_invalid_certificates"))]
+        let base_client: Option<Arc<dyn azure_core::http::HttpClient>> = None;
+
+        #[cfg(feature = "fault_injection")]
+        let transport: Option<azure_core::http::Transport> =
+            if let Some(fault_builder) = self.fault_injection_builder {
+                let fault_builder = match base_client {
+                    Some(client) => fault_builder.with_inner_client(client),
+                    None => fault_builder,
+                };
+                Some(fault_builder.build())
+            } else {
+                base_client.map(azure_core::http::Transport::new)
+            };
+        #[cfg(not(feature = "fault_injection"))]
+        let transport: Option<azure_core::http::Transport> =
+            base_client.map(azure_core::http::Transport::new);
+
         // Create internal ClientOptions - users cannot configure this directly
         let client_options = ClientOptions {
             retry: RetryOptions::none(),
@@ -245,7 +298,7 @@ impl CosmosClientBuilder {
                 additional_allowed_query_params: vec![],
             },
             instrumentation: self.instrumentation,
-            transport: self.transport,
+            transport,
             ..Default::default()
         };
 
@@ -267,10 +320,6 @@ impl CosmosClientBuilder {
         );
 
         let preferred_regions = self.options.application_preferred_regions.clone();
-        #[cfg(feature = "fault_injection")]
-        let fault_injection_enabled = self.options.fault_injection_enabled;
-        #[cfg(not(feature = "fault_injection"))]
-        let fault_injection_enabled = false;
         let excluded_regions = self.options.excluded_regions.clone();
 
         let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(

@@ -39,8 +39,6 @@ impl Display for SessionToken {
 pub struct CosmosClientOptions {
     pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
-    #[cfg(feature = "fault_injection")]
-    pub(crate) fault_injection_enabled: bool,
     pub(crate) application_preferred_regions: Vec<RegionName>,
     pub(crate) excluded_regions: Vec<RegionName>,
     /// Used to specify the consistency level for the operation.

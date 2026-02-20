@@ -6,10 +6,7 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 #![cfg(feature = "fault_injection")]
 
-use azure_core::{
-    http::{HttpClient, StatusCode, Transport},
-    Uuid,
-};
+use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
 use azure_data_cosmos::models::{CosmosResponse, ThroughputProperties};
@@ -20,13 +17,8 @@ use azure_data_cosmos::{
     Query,
 };
 use futures::TryStreamExt;
-use reqwest::ClientBuilder;
-
 use std::time::Duration;
-use std::{
-    str::FromStr,
-    sync::{Arc, OnceLock},
-};
+use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
 
 /// Represents a Cosmos DB client connected to a test account.
@@ -281,36 +273,23 @@ impl TestClient {
             builder = builder.with_application_preferred_regions(preferred_regions);
         }
 
-        let has_fault_injection = fault_builder.is_some();
-
-        // Build the transport, potentially with fault injection
-        let transport = if allow_invalid_certificates {
-            let client = ClientBuilder::new()
-                .danger_accept_invalid_certs(true)
-                .pool_max_idle_per_host(0)
-                .build()?;
-
-            if let Some(fault_builder) = fault_builder {
-                // Wrap the invalid-cert-accepting client with the fault client
-                let inner_client: Arc<dyn HttpClient> = Arc::new(client);
-                Some(fault_builder.with_inner_client(inner_client).build())
-            } else {
-                Some(Transport::new(Arc::new(client)))
-            }
-        } else if let Some(fault_builder) = fault_builder {
-            // Use default client wrapped with fault injection
-            Some(fault_builder.build())
-        } else {
-            None
-        };
-
-        if let Some(transport) = transport {
-            builder = builder.transport(transport);
+        // Configure invalid certificate acceptance (e.g., for emulator)
+        #[cfg(feature = "allow_invalid_certificates")]
+        if allow_invalid_certificates {
+            builder = builder.with_allow_invalid_certificates(true);
+        }
+        #[cfg(not(feature = "allow_invalid_certificates"))]
+        if allow_invalid_certificates {
+            return Err(
+                "The 'allow_invalid_certificates' feature must be enabled to accept invalid certificates. \
+                 Add `allow_invalid_certificates` to the features list."
+                    .into(),
+            );
         }
 
-        // Apply fault injection settings if provided
-        if has_fault_injection {
-            builder = builder.with_fault_injection(true);
+        // Configure fault injection if builder provided
+        if let Some(fault_builder) = fault_builder {
+            builder = builder.with_fault_injection(fault_builder);
         }
 
         // Apply fault client preferred regions

@@ -25,16 +25,15 @@ use super::rule::FaultInjectionRule;
 ///     // configure rule...
 ///     .build());
 ///
-/// let transport = FaultInjectionClientBuilder::new()
-///     .with_rule(rule)
-///     .build();
+/// let fault_builder = FaultInjectionClientBuilder::new()
+///     .with_rule(rule);
 ///
 /// let client = CosmosClientBuilder::new()
-///     .endpoint("https://myaccount.documents.azure.com/")
-///     .credential(credential)
-///     .fault_injection(true)
-///     .transport(transport)
-///     .build()
+///     .with_fault_injection(fault_builder)
+///     .build(CosmosAccountReference::with_credential(
+///         "https://myaccount.documents.azure.com/",
+///         credential,
+///     ).unwrap())
 ///     .unwrap();
 /// ```
 pub struct FaultInjectionClientBuilder {
@@ -78,8 +77,10 @@ impl FaultInjectionClientBuilder {
     /// Builds the fault injection transport.
     ///
     /// Returns a [`Transport`] that wraps the inner HTTP client with fault injection capabilities.
-    /// Use this transport with [`CosmosClientBuilder::transport()`](crate::CosmosClientBuilder::transport())
-    /// and enable fault injection with [`CosmosClientBuilder::with_fault_injection(true)`](crate::CosmosClientBuilder::with_fault_injection()).
+    ///
+    /// Note: When using [`CosmosClientBuilder::with_fault_injection()`](crate::CosmosClientBuilder::with_fault_injection()),
+    /// this method is called internally. You only need to call `build()` directly if constructing
+    /// the transport for use outside of `CosmosClientBuilder`.
     pub fn build(self) -> Transport {
         let inner_client = self
             .inner_client
