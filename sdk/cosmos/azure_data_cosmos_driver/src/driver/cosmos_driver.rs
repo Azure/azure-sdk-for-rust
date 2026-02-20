@@ -212,7 +212,7 @@ impl CosmosDriver {
         operation
             .request_headers()
             .write_to_headers(request.headers_mut());
-        if operation.request_headers().activity_id().is_none() {
+        if operation.request_headers().activity_id.is_none() {
             request.insert_header(
                 HeaderName::from_static("x-ms-activity-id"),
                 HeaderValue::from(activity_id.as_str().to_owned()),

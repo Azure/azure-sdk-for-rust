@@ -4,7 +4,7 @@
 //! Request options for Cosmos DB operations.
 
 use crate::{
-    models::{Precondition, PartitionKey, SessionToken, ThroughputControlGroupName},
+    models::{PartitionKey, Precondition, SessionToken, ThroughputControlGroupName},
     options::{
         ContentResponseOnWrite, DedicatedGatewayOptions, DiagnosticsThresholds,
         EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, QuotaInfoEnabled,
