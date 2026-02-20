@@ -15,6 +15,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos",
   "sdk/cosmos/azure_data_cosmos_driver",
   "sdk/cosmos/azure_data_cosmos_native",
+  "sdk/cosmos/azure_data_cosmos_perf",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
