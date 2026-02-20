@@ -210,3 +210,77 @@ fn get_substatus_code_from_response(response: &RawResponse) -> Option<SubStatusC
         .ok()
         .map(SubStatusCode::from)
 }
+
+/// Whether the HTTP request was actually sent to the server.
+///
+/// This determines retry safety:
+/// - [`NotSent`](RequestSentStatus::NotSent): safe to retry both reads and writes.
+/// - [`Sent`](RequestSentStatus::Sent) or [`Unknown`](RequestSentStatus::Unknown):
+///   only safe to retry reads because writes may have been applied.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RequestSentStatus {
+    /// The request was definitely not sent (e.g., connection refused, DNS failure).
+    NotSent,
+    /// The request was definitely sent (e.g., got an HTTP response, decode error).
+    Sent,
+    /// Cannot determine whether the request was sent (e.g., timeout, body error).
+    Unknown,
+}
+
+/// Extension trait for determining request sent status from errors.
+///
+/// Uses [`ErrorKind`] to classify errors. The HTTP client layer (e.g., reqwest)
+/// is responsible for mapping transport errors to the appropriate `ErrorKind`
+/// variants (`Connection`, etc.).
+pub(crate) trait RequestSentExt {
+    /// Returns the [`RequestSentStatus`] based on error analysis.
+    fn request_sent_status(&self) -> RequestSentStatus;
+}
+
+impl RequestSentExt for azure_core::Error {
+    fn request_sent_status(&self) -> RequestSentStatus {
+        match self.kind() {
+            ErrorKind::Connection | ErrorKind::Credential | ErrorKind::DataConversion => {
+                RequestSentStatus::NotSent
+            }
+            ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
+            _ => RequestSentStatus::Unknown,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn connection_error_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Connection, "connection refused");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
+
+    #[test]
+    fn io_error_is_unknown() {
+        let err = azure_core::Error::with_message(ErrorKind::Io, "some io error");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+    }
+
+    #[test]
+    fn http_response_is_sent() {
+        let err = azure_core::Error::with_message(
+            ErrorKind::HttpResponse {
+                status: azure_core::http::StatusCode::InternalServerError,
+                error_code: None,
+                raw_response: None,
+            },
+            "server error",
+        );
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Sent);
+    }
+
+    #[test]
+    fn credential_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Credential, "auth failed");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
+}
