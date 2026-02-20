@@ -20,7 +20,7 @@ mod pipeline;
 mod tracked_transport;
 
 use crate::{
-    models::{AccountEndpoint, AuthOptions, OperationType, ResourceType},
+    models::{AccountEndpoint, Credential, OperationType, ResourceType},
     options::ConnectionPoolOptions,
 };
 use authorization_policy::AuthorizationPolicy;
@@ -144,7 +144,7 @@ impl CosmosTransport {
     pub(crate) fn create_metadata_pipeline(
         &self,
         endpoint: &AccountEndpoint,
-        auth: &AuthOptions,
+        auth: &Credential,
     ) -> CosmosPipeline {
         let transport = self.get_metadata_transport(endpoint);
         self.create_authenticated_pipeline(transport, auth)
@@ -159,7 +159,7 @@ impl CosmosTransport {
     pub(crate) fn create_dataplane_pipeline(
         &self,
         endpoint: &AccountEndpoint,
-        auth: &AuthOptions,
+        auth: &Credential,
     ) -> CosmosPipeline {
         let transport = self.get_dataplane_transport(endpoint);
         self.create_authenticated_pipeline(transport, auth)
@@ -199,7 +199,7 @@ impl CosmosTransport {
     fn create_authenticated_pipeline(
         &self,
         transport: Transport,
-        auth: &AuthOptions,
+        auth: &Credential,
     ) -> CosmosPipeline {
         let auth_policy = Arc::new(AuthorizationPolicy::new(auth));
 
@@ -217,9 +217,7 @@ impl CosmosTransport {
     /// - Emulator server certificate validation is disabled
     /// - The endpoint is a known emulator host (localhost, 127.0.0.1)
     fn should_use_insecure_emulator_transport(&self, endpoint: &AccountEndpoint) -> bool {
-        self.connection_pool
-            .emulator_server_cert_validation()
-            .is_dangerous_disabled()
+        bool::from(self.connection_pool.emulator_server_cert_validation())
             && is_emulator_host(endpoint)
     }
 
@@ -314,7 +312,7 @@ mod tests {
     #[test]
     fn transport_detects_emulator_when_disabled() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DANGEROUS_DISABLED)
+            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
             .build()
             .unwrap();
         let transport = CosmosTransport::new(pool, "test-user-agent").unwrap();

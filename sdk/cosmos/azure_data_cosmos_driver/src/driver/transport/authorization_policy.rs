@@ -7,7 +7,7 @@
 //! Unlike standard Azure services that use `Authorization: Bearer`, Cosmos DB
 //! uses a custom format as defined in the [official documentation](https://learn.microsoft.com/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
 
-use crate::models::{AuthOptions, ResourceType};
+use crate::models::{Credential as AccountCredential, ResourceType};
 use azure_core::{
     credentials::{Secret, TokenCredential},
     http::{
@@ -96,10 +96,10 @@ impl std::fmt::Debug for AuthorizationPolicy {
 
 impl AuthorizationPolicy {
     /// Creates a new authorization policy from authentication options.
-    pub(crate) fn new(auth: &AuthOptions) -> Self {
+    pub(crate) fn new(auth: &AccountCredential) -> Self {
         let credential = match auth {
-            AuthOptions::MasterKey(key) => Credential::MasterKey(key.clone()),
-            AuthOptions::TokenCredential(cred) => Credential::Token(Arc::clone(cred)),
+            AccountCredential::MasterKey(key) => Credential::MasterKey(key.clone()),
+            AccountCredential::TokenCredential(cred) => Credential::Token(Arc::clone(cred)),
         };
         Self { credential }
     }
@@ -269,7 +269,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_master_key() {
         let key = Secret::new("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==");
-        let auth = AuthOptions::MasterKey(key);
+        let auth = AccountCredential::MasterKey(key);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);
@@ -295,7 +295,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_token_credential() {
         let cred = Arc::new(MockTokenCredential("test_token".to_string()));
-        let auth = AuthOptions::TokenCredential(cred);
+        let auth = AccountCredential::TokenCredential(cred);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);

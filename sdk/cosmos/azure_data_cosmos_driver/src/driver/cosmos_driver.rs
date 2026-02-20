@@ -6,7 +6,7 @@
 use crate::{
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, CosmosResponseHeaders, CosmosResult, CosmosStatus, DatabaseProperties,
+        CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
         DatabaseReference,
     },
     options::{
@@ -248,7 +248,7 @@ impl CosmosDriver {
                 .request_headers()
                 .write_to_headers(request.headers_mut());
 
-            if operation.request_headers().activity_id().is_none() {
+            if operation.request_headers().activity_id.is_none() {
                 request.insert_header(
                     HeaderName::from_static("x-ms-activity-id"),
                     HeaderValue::from(activity_id.as_str().to_owned()),
@@ -280,12 +280,12 @@ impl CosmosDriver {
                 Ok(response) => {
                     let status_code = response.status();
                     let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
-                    let sub_status = cosmos_headers.substatus();
+                    let sub_status = cosmos_headers.substatus;
 
                     let body = response.into_body();
                     let status = CosmosStatus::from_parts(status_code, sub_status);
 
-                    return Ok(CosmosResult::new(
+                    return Ok(CosmosResponse::new(
                         body.as_ref().to_vec(),
                         cosmos_headers,
                         status,
@@ -310,18 +310,6 @@ impl CosmosDriver {
                 }
             }
         }
-
-        let response_headers = CosmosResponseHeaders::from_headers(&Headers::new());
-        let _dummy_result = crate::models::CosmosResponse::new(
-            Vec::new(),
-            response_headers,
-            CosmosStatus::from_parts(azure_core::http::StatusCode::Ok, None),
-        );
-
-        Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "execute_operation is not implemented in this transport-free driver build",
-        ))
     }
     /// Resolves a container by database and container name.
     ///
