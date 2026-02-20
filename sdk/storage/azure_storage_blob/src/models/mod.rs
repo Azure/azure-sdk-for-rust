@@ -3,9 +3,9 @@
 
 //! Model types for Azure Blob Storage.
 
-pub(crate) mod content_range;
 pub mod error;
 mod extensions;
+pub(crate) mod http_ranges;
 pub mod method_options;
 
 pub use crate::generated::models::*;
