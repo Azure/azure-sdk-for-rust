@@ -63,6 +63,42 @@ typedef struct cosmos_container_client cosmos_container_client;
 
 /**
  * Client for Azure Cosmos DB.
+ *
+ * Use [`CosmosClientBuilder`] to create instances of this client.
+ *
+ * # Examples
+ *
+ * Using Entra ID authentication:
+ *
+ * ```rust,no_run
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
+ * use std::sync::Arc;
+ *
+ * let credential: Arc<dyn azure_core::credentials::TokenCredential> =
+ *     azure_identity::DeveloperToolsCredential::new(None).unwrap();
+ * let account = CosmosAccountReference::with_credential(
+ *     "https://myaccount.documents.azure.com/",
+ *     credential,
+ * ).unwrap();
+ * let client = CosmosClient::builder()
+ *     .build(account)
+ *     .unwrap();
+ * ```
+ *
+ * Using key authentication (requires `key_auth` feature):
+ *
+ * ```rust,no_run,ignore
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
+ * use azure_core::credentials::Secret;
+ *
+ * let account = CosmosAccountReference::with_master_key(
+ *     "https://myaccount.documents.azure.com/",
+ *     Secret::from("my_account_key"),
+ * ).unwrap();
+ * let client = CosmosClient::builder()
+ *     .build(account)
+ *     .unwrap();
+ * ```
  */
 typedef struct cosmos_client cosmos_client;
 
@@ -215,6 +251,8 @@ typedef struct cosmos_runtime_options {
    */
   uint8_t _unused;
 } cosmos_runtime_options;
+
+
 
 
 

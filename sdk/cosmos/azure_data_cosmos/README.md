@@ -58,11 +58,17 @@ Instantiate a `DeveloperToolsCredential` to pass to the client. The same instanc
 
 ```rust
 use azure_identity::DeveloperToolsCredential;
-use azure_data_cosmos::CosmosClient;
+use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
 
 async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let cosmos_client = CosmosClient::new("myAccountEndpointURL", credential.clone(), None)?;
+    let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
+        DeveloperToolsCredential::new(None)?;
+    let account = CosmosAccountReference::with_credential(
+        "https://myaccount.documents.azure.com/",
+        credential,
+    )?;
+    let cosmos_client = CosmosClient::builder()
+        .build(account)?;
     Ok(())
 }
 ```

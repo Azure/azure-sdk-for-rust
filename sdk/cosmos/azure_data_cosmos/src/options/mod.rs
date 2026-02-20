@@ -5,9 +5,9 @@ use crate::constants;
 use crate::models::ThroughputProperties;
 use crate::regions::RegionName;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
+use azure_core::http::{headers, Etag};
 use azure_core::time::Duration;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Display;
@@ -30,39 +30,32 @@ impl Display for SessionToken {
 }
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
+///
+/// This struct is used internally by [`CosmosClientBuilder`](crate::CosmosClientBuilder).
+/// Use the builder pattern via [`CosmosClient::builder()`](crate::CosmosClient::builder())
+/// to configure client options.
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct CosmosClientOptions {
-    pub client_options: ClientOptions,
-    pub application_name: Option<String>,
-    pub application_region: Option<RegionName>,
-    // when the cosmos client options is changed to builder pattern, this shouldn't be exposed directly to customers
-    // right now it is exposed behind a feature flag
-    #[cfg(feature = "fault_injection")]
-    pub fault_injection_enabled: bool,
-    pub application_preferred_regions: Vec<RegionName>,
-    pub excluded_regions: Vec<RegionName>,
-    pub account_initialization_custom_endpoints: Option<HashSet<String>>,
+    pub(crate) user_agent_suffix: Option<String>,
+    pub(crate) application_region: Option<RegionName>,
+    pub(crate) application_preferred_regions: Vec<RegionName>,
+    pub(crate) excluded_regions: Vec<RegionName>,
     /// Used to specify the consistency level for the operation.
     ///
     /// The default value is the consistency level set on the Cosmos DB account.
     /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-    pub consistency_level: Option<ConsistencyLevel>,
-    pub request_timeout: Option<Duration>,
-    pub enable_remote_region_preferred_for_session_retry: bool,
-    pub enable_partition_level_circuit_breaker: bool,
-    pub disable_partition_level_failover: bool,
-    pub enable_upgrade_consistency_to_local_quorum: bool,
+    pub(crate) consistency_level: Option<ConsistencyLevel>,
     /// The desired throughput bucket for the client
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<usize>,
-    pub session_retry_options: SessionRetryOptions,
+    pub(crate) throughput_bucket: Option<usize>,
+    pub(crate) session_retry_options: SessionRetryOptions,
     /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
     /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
     ///
     /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
-    pub priority: Option<PriorityLevel>,
+    pub(crate) priority: Option<PriorityLevel>,
     /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
@@ -71,12 +64,12 @@ pub struct CosmosClientOptions {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     ///
     /// Custom headers will not override headers that are already set by the SDK.
-    pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl CosmosClientOptions {
-    pub fn with_application_name(mut self, application_name: impl Into<String>) -> Self {
-        self.application_name = Some(application_name.into());
+    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
+        self.user_agent_suffix = Some(suffix.into());
         self
     }
 
@@ -95,18 +88,8 @@ impl CosmosClientOptions {
         self
     }
 
-    pub fn with_custom_endpoints(mut self, endpoints: HashSet<String>) -> Self {
-        self.account_initialization_custom_endpoints = Some(endpoints);
-        self
-    }
-
     pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
         self.consistency_level = Some(consistency_level);
-        self
-    }
-
-    pub fn with_request_timeout(mut self, request_timeout: Duration) -> Self {
-        self.request_timeout = Some(request_timeout);
         self
     }
 
@@ -178,12 +161,11 @@ pub struct SessionRetryOptions {
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct CreateContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
+pub struct CreateContainerOptions {
     pub throughput: Option<ThroughputProperties>,
 }
 
-impl<'a> CreateContainerOptions<'a> {
+impl CreateContainerOptions {
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
         self.throughput = Some(throughput);
         self
@@ -193,19 +175,16 @@ impl<'a> CreateContainerOptions<'a> {
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReplaceContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ReplaceContainerOptions;
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct CreateDatabaseOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
+pub struct CreateDatabaseOptions {
     pub throughput: Option<ThroughputProperties>,
 }
 
-impl<'a> CreateDatabaseOptions<'a> {
+impl CreateDatabaseOptions {
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
         self.throughput = Some(throughput);
         self
@@ -215,16 +194,12 @@ impl<'a> CreateDatabaseOptions<'a> {
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct DeleteContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct DeleteContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct DeleteDatabaseOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct DeleteDatabaseOptions;
 
 /// Specifies consistency levels that can be used when working with Cosmos APIs.
 ///
@@ -293,8 +268,7 @@ impl Display for IndexingDirective {
 /// Options to be passed to APIs that manipulate items.
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ItemOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
+pub struct ItemOptions {
     /// Triggers executed before the operation.
     ///
     /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
@@ -349,7 +323,7 @@ pub struct ItemOptions<'a> {
     pub excluded_regions: Option<Vec<RegionName>>,
 }
 
-impl<'a> ItemOptions<'a> {
+impl ItemOptions {
     pub fn with_pre_triggers(mut self, pre_triggers: Vec<String>) -> Self {
         self.pre_triggers = Some(pre_triggers);
         self
@@ -409,7 +383,7 @@ impl<'a> ItemOptions<'a> {
     }
 }
 
-impl AsHeaders for ItemOptions<'_> {
+impl AsHeaders for ItemOptions {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
@@ -479,23 +453,17 @@ impl AsHeaders for ItemOptions<'_> {
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct QueryContainersOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct QueryContainersOptions;
 
 /// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases())
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct QueryDatabasesOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct QueryDatabasesOptions;
 
 /// Options to be passed to [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct QueryOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-
+pub struct QueryOptions {
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
@@ -527,7 +495,7 @@ pub struct QueryOptions<'a> {
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
-impl QueryOptions<'_> {
+impl QueryOptions {
     pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
         self.session_token = Some(session_token);
         self
@@ -552,22 +520,9 @@ impl QueryOptions<'_> {
         self.custom_headers = custom_headers;
         self
     }
-
-    pub fn into_owned(self) -> QueryOptions<'static> {
-        QueryOptions {
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-            session_token: self.session_token,
-            consistency_level: self.consistency_level,
-            throughput_bucket: self.throughput_bucket,
-            priority: self.priority,
-            custom_headers: self.custom_headers,
-        }
-    }
 }
 
-impl AsHeaders for QueryOptions<'_> {
+impl AsHeaders for QueryOptions {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
@@ -608,23 +563,17 @@ impl AsHeaders for QueryOptions<'_> {
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReadContainerOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ReadContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReadDatabaseOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ReadDatabaseOptions;
 
 /// Options to be passed to operations related to Throughput offers.
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ThroughputOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
-}
+pub struct ThroughputOptions;
 
 #[cfg(test)]
 mod tests {
@@ -758,7 +707,6 @@ mod tests {
             priority: Some(PriorityLevel::High),
             throughput_bucket: Some(10),
             custom_headers,
-            ..Default::default()
         };
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =
