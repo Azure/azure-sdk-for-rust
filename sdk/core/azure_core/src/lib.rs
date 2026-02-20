@@ -15,6 +15,8 @@ pub mod credentials;
 pub mod error;
 pub mod hmac;
 pub mod http;
+#[cfg(feature = "resourcemanager")]
+pub mod resourcemanager;
 #[cfg(feature = "test")]
 pub mod test;
 
