@@ -164,7 +164,7 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS`: Idle connection timeout in milliseconds (default: none, min: `300_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED`: Whether Gateway 2.0 feature is allowed (default: `false`)
-/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`EmulatorServerCertValidation::DANGEROUS_DISABLED`], `false` to [`EmulatorServerCertValidation::ENABLED`] (default: `false`)
+/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`EmulatorServerCertValidation::DangerousDisabled`], `false` to [`EmulatorServerCertValidation::Enabled`] (default: `false`)
 /// - `AZURE_COSMOS_LOCAL_ADDRESS`: Local IP address to bind to (default: none)
 ///
 /// # Example
@@ -295,7 +295,7 @@ impl ConnectionPoolOptionsBuilder {
 
     /// Sets the emulator server certificate validation behavior.
     ///
-    /// Use [`EmulatorServerCertValidation::DANGEROUS_DISABLED`] to skip TLS certificate
+    /// Use [`EmulatorServerCertValidation::DangerousDisabled`] to skip TLS certificate
     /// validation when connecting to a local Cosmos DB emulator with a self-signed certificate.
     pub fn with_emulator_server_cert_validation(
         mut self,
@@ -493,7 +493,7 @@ mod tests {
         assert!(!options.is_gateway20_allowed());
         assert_eq!(
             options.emulator_server_cert_validation(),
-            EmulatorServerCertValidation::ENABLED
+            EmulatorServerCertValidation::Enabled
         );
         assert_eq!(options.idle_connection_timeout(), None);
         assert_eq!(options.local_address(), None);
@@ -515,7 +515,7 @@ mod tests {
             .with_idle_connection_timeout(Duration::from_millis(600_000))
             .with_is_http2_allowed(false)
             .with_is_gateway20_allowed(true)
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DANGEROUS_DISABLED)
+            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
             .build()
             .unwrap();
 
@@ -548,7 +548,7 @@ mod tests {
         assert!(!options.is_gateway20_allowed());
         assert_eq!(
             options.emulator_server_cert_validation(),
-            EmulatorServerCertValidation::DANGEROUS_DISABLED
+            EmulatorServerCertValidation::DangerousDisabled
         );
     }
 
