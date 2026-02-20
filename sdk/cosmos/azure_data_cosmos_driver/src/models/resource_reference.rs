@@ -9,11 +9,13 @@
 
 use crate::models::{
     resource_id::{ResourceIdentifier, ResourceName, ResourceRid},
-    AccountReference, PartitionKey, PartitionKeyDefinition,
+    AccountReference, ImmutableContainerProperties, PartitionKey,
 };
 
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
+
 // =============================================================================
 // DatabaseReference
 // =============================================================================
@@ -113,8 +115,8 @@ pub struct ContainerReference {
     container_name: ResourceName,
     /// The container internal RID.
     container_rid: ResourceRid,
-    /// Partition key definition for this container.
-    partition_key_definition: PartitionKeyDefinition,
+    /// Immutable container properties (partition key, unique key policy).
+    immutable_properties: Arc<ImmutableContainerProperties>,
 }
 
 impl PartialEq for ContainerReference {
@@ -161,7 +163,9 @@ impl ContainerReference {
             db_rid: db_rid.into(),
             container_name: container_name.into(),
             container_rid: container_rid.into(),
-            partition_key_definition: container_properties.partition_key.clone(),
+            immutable_properties: Arc::new(
+                ImmutableContainerProperties::from_container_properties(container_properties),
+            ),
         }
     }
 
@@ -192,7 +196,7 @@ impl ContainerReference {
 
     /// Returns the partition key definition for this container.
     pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition {
-        &self.partition_key_definition
+        self.immutable_properties.partition_key()
     }
 
     /// Returns a `DatabaseReference` for the parent database (name-based).
