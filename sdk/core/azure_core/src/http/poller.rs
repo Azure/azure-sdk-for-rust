@@ -4,7 +4,6 @@
 //! Types and methods for long-running operations (LROs).
 
 use crate::{
-    conditional_send::ConditionalSend,
     error::{ErrorKind, ErrorResponse},
     http::{
         headers::{HeaderName, Headers},
@@ -259,13 +258,12 @@ pub trait StatusMonitor {
     /// The format used to deserialize the `Output`.
     ///
     /// Set this to [`NoFormat`](crate::http::NoFormat) if no final resource is expected.
-    type Format: Format + ConditionalSend;
+    type Format: Format + Send;
 
     /// Gets the [`PollerStatus`] from the status monitor.
     fn status(&self) -> PollerStatus;
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 mod types {
     use super::{PollerResult, Response, StatusMonitor, Stream};
     use std::{future::Future, pin::Pin};
@@ -283,26 +281,6 @@ mod types {
     /// A pinned boxed [`Future`] that can be stored and called dynamically.
     pub type PollerResultFuture<M, F> =
         Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F>>> + Send + 'static>>;
-}
-
-#[cfg(target_arch = "wasm32")]
-mod types {
-    use super::{PollerResult, Response, StatusMonitor, Stream};
-    use std::{future::Future, pin::Pin};
-
-    pub type BoxedStream<M, F> = Box<dyn Stream<Item = crate::Result<Response<M, F>>>>;
-    pub type BoxedFuture<M> = Box<
-        dyn Future<
-            Output = crate::Result<
-                Response<<M as StatusMonitor>::Output, <M as StatusMonitor>::Format>,
-            >,
-        >,
-    >;
-    pub type BoxedCallback<M> = Box<dyn FnOnce() -> Pin<BoxedFuture<M>>>;
-
-    /// A pinned boxed [`Future`] that can be stored and called dynamically.
-    pub type PollerResultFuture<M, F> =
-        Pin<Box<dyn Future<Output = crate::Result<PollerResult<M, F>>> + 'static>>;
 }
 
 pub use types::PollerResultFuture;
@@ -489,9 +467,7 @@ where
         M: Send + 'static,
         M::Output: Send + 'static,
         M::Format: Send + 'static,
-        Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F>
-            + ConditionalSend
-            + 'static,
+        Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + Send + 'static,
     {
         let options = options.unwrap_or_default();
         let (stream, target) = create_poller_stream(make_request, options);
@@ -522,17 +498,13 @@ where
 impl<M, F> IntoFuture for Poller<M, F>
 where
     M: StatusMonitor + 'static,
-    M::Output: ConditionalSend + 'static,
-    M::Format: ConditionalSend + 'static,
+    M::Output: Send + 'static,
+    M::Format: Send + 'static,
     F: Format + 'static,
 {
     type Output = crate::Result<Response<M::Output, M::Format>>;
 
-    #[cfg(not(target_arch = "wasm32"))]
     type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + Send>>;
-
-    #[cfg(target_arch = "wasm32")]
-    type IntoFuture = Pin<Box<dyn Future<Output = Self::Output>>>;
 
     fn into_future(mut self) -> Self::IntoFuture {
         Box::pin(async move {
@@ -595,7 +567,7 @@ where
 fn create_poller_stream<
     M,
     F: Format,
-    Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + ConditionalSend + 'static,
+    Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + Send + 'static,
 >(
     make_request: Fun,
     options: PollerOptions<'static>,
@@ -605,8 +577,8 @@ fn create_poller_stream<
 )
 where
     M: StatusMonitor + 'static,
-    M::Output: ConditionalSend + 'static,
-    M::Format: ConditionalSend + 'static,
+    M::Output: Send + 'static,
+    M::Format: Send + 'static,
 {
     let (target_tx, target_rx) = oneshot::channel();
 

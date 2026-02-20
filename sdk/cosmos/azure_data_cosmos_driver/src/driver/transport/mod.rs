@@ -234,55 +234,41 @@ impl CosmosTransport {
         is_metadata: bool,
         for_emulator: bool,
     ) -> azure_core::Result<reqwest::Client> {
-        #[cfg(not(target_arch = "wasm32"))]
         let mut builder = reqwest::ClientBuilder::new();
 
-        #[cfg(target_arch = "wasm32")]
-        let builder = reqwest::ClientBuilder::new();
+        // Connection pool settings
+        builder = builder.pool_max_idle_per_host(pool.max_idle_connections_per_endpoint());
 
-        // Native-only settings (not available on WASM)
-        // WASM uses browser's fetch API which handles connection pooling,
-        // timeouts, and TLS internally.
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            // Connection pool settings
-            builder = builder.pool_max_idle_per_host(pool.max_idle_connections_per_endpoint());
-
-            if let Some(idle_timeout) = pool.idle_connection_timeout() {
-                builder = builder.pool_idle_timeout(idle_timeout);
-            }
-
-            // Connect timeout
-            builder = builder.connect_timeout(pool.max_connect_timeout());
-
-            // Request timeout (different for metadata vs data plane)
-            let request_timeout = if is_metadata {
-                pool.max_metadata_request_timeout()
-            } else {
-                pool.max_dataplane_request_timeout()
-            };
-            builder = builder.timeout(request_timeout);
-
-            // Proxy settings
-            if !pool.is_proxy_allowed() {
-                builder = builder.no_proxy();
-            }
-            // When proxy is allowed, reqwest automatically respects HTTP_PROXY/HTTPS_PROXY env vars
-
-            // Local address binding
-            if let Some(local_addr) = pool.local_address() {
-                builder = builder.local_address(local_addr);
-            }
-
-            // Emulator settings - disable TLS validation
-            if for_emulator {
-                builder = builder.danger_accept_invalid_certs(true);
-            }
+        if let Some(idle_timeout) = pool.idle_connection_timeout() {
+            builder = builder.pool_idle_timeout(idle_timeout);
         }
 
-        // Suppress unused variable warnings on WASM
-        #[cfg(target_arch = "wasm32")]
-        let _ = (pool, is_metadata, for_emulator);
+        // Connect timeout
+        builder = builder.connect_timeout(pool.max_connect_timeout());
+
+        // Request timeout (different for metadata vs data plane)
+        let request_timeout = if is_metadata {
+            pool.max_metadata_request_timeout()
+        } else {
+            pool.max_dataplane_request_timeout()
+        };
+        builder = builder.timeout(request_timeout);
+
+        // Proxy settings
+        if !pool.is_proxy_allowed() {
+            builder = builder.no_proxy();
+        }
+        // When proxy is allowed, reqwest automatically respects HTTP_PROXY/HTTPS_PROXY env vars
+
+        // Local address binding
+        if let Some(local_addr) = pool.local_address() {
+            builder = builder.local_address(local_addr);
+        }
+
+        // Emulator settings - disable TLS validation
+        if for_emulator {
+            builder = builder.danger_accept_invalid_certs(true);
+        }
 
         builder.build().map_err(|e| {
             azure_core::Error::with_message(

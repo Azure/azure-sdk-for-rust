@@ -217,7 +217,7 @@ pub(crate) const RETRY_WITH: StatusCode = StatusCode::UnknownValue(449);
 /// After 1 second it times out locally.
 ///
 /// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
-#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
+#[cfg(feature = "reqwest")]
 pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(1);
 
@@ -226,14 +226,14 @@ pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
 /// Chosen to balance fast failure with allowing multiple retry attempts and to
 /// remain just above typical 60s service timeouts.
 /// See `next_generation_sdks_design_principles.md` for detailed rationale.
-#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
+#[cfg(feature = "reqwest")]
 pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
 
 /// Default maximum idle connections per host (1000).
 ///
 /// Limits connection pool growth to prevent resource exhaustion under high
 /// concurrency while still allowing ample connection reuse.
-#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
+#[cfg(feature = "reqwest")]
 pub(crate) const DEFAULT_MAX_CONNECTION_POOL_SIZE: usize = 1000;
 
 /// A newtype wrapper for Cosmos DB sub-status codes.
