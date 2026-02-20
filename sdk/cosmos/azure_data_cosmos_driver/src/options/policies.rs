@@ -11,18 +11,23 @@ use std::time::Duration;
 /// When disabled, reduces networking and CPU load by not sending the payload
 /// back over the network. Does not impact RU usage.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct ContentResponseOnWrite(pub bool);
-
-impl ContentResponseOnWrite {
+pub enum ContentResponseOnWrite {
     /// Content response is enabled (response body returned).
-    pub const ENABLED: Self = Self(true);
+    Enabled,
     /// Content response is disabled (no response body).
-    pub const DISABLED: Self = Self(false);
+    #[default]
+    Disabled,
 }
 
 impl From<bool> for ContentResponseOnWrite {
     fn from(value: bool) -> Self {
-        Self(value)
+        if value { Self::Enabled } else { Self::Disabled }
+    }
+}
+
+impl From<ContentResponseOnWrite> for bool {
+    fn from(value: ContentResponseOnWrite) -> Self {
+        matches!(value, ContentResponseOnWrite::Enabled)
     }
 }
 

@@ -43,7 +43,7 @@ use super::{transport::CosmosTransport, CosmosDriver};
 ///
 /// # async fn example() -> azure_core::Result<()> {
 /// let runtime = RuntimeOptions::builder()
-///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
+///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
 ///     .build();
 ///
 /// let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
@@ -60,7 +60,7 @@ use super::{transport::CosmosTransport, CosmosDriver};
 /// let driver = cosmos_runtime.get_or_create_driver(account, None).await?;
 ///
 /// // Later, modify defaults at runtime
-/// cosmos_runtime.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
+/// cosmos_runtime.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
 /// # Ok(())
 /// # }
 /// ```

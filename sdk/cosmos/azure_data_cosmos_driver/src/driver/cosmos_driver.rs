@@ -172,7 +172,7 @@ impl CosmosDriver {
     ///
     /// // Execute operations with operation-specific options that override defaults
     /// let options = OperationOptions::new()
-    ///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED);
+    ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled);
     ///
     /// // let result = driver.execute_operation(operation, options).await?;
     /// # Ok(())
@@ -463,7 +463,7 @@ mod tests {
     #[tokio::test]
     async fn builder_sets_runtime_options() {
         let opts = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
+            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .build();
 
         let runtime = CosmosDriverRuntimeBuilder::new()
@@ -475,7 +475,7 @@ mod tests {
         let snapshot = runtime.runtime_options().snapshot();
         assert_eq!(
             snapshot.content_response_on_write,
-            Some(ContentResponseOnWrite::DISABLED)
+            Some(ContentResponseOnWrite::Disabled)
         );
     }
 
@@ -622,7 +622,7 @@ mod tests {
         // Modify at runtime
         runtime
             .runtime_options()
-            .set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
+            .set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
 
         // Now set
         assert_eq!(
@@ -630,7 +630,7 @@ mod tests {
                 .runtime_options()
                 .snapshot()
                 .content_response_on_write,
-            Some(ContentResponseOnWrite::ENABLED)
+            Some(ContentResponseOnWrite::Enabled)
         );
     }
 
@@ -640,7 +640,7 @@ mod tests {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
                 RuntimeOptions::builder()
-                    .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
+                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
                     .build(),
             )
             .build()
@@ -651,7 +651,7 @@ mod tests {
         let driver_options = DriverOptions::builder(test_account())
             .with_runtime_options(
                 RuntimeOptions::builder()
-                    .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
+                    .with_content_response_on_write(ContentResponseOnWrite::Disabled)
                     .build(),
             )
             .build();
@@ -663,16 +663,16 @@ mod tests {
         let effective = driver.effective_runtime_options(&op_options);
         assert_eq!(
             effective.content_response_on_write,
-            Some(ContentResponseOnWrite::DISABLED)
+            Some(ContentResponseOnWrite::Disabled)
         );
 
         // Operation overrides to ENABLED - should get ENABLED
         let op_options =
-            OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::ENABLED);
+            OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
         let effective = driver.effective_runtime_options(&op_options);
         assert_eq!(
             effective.content_response_on_write,
-            Some(ContentResponseOnWrite::ENABLED)
+            Some(ContentResponseOnWrite::Enabled)
         );
     }
 
@@ -682,7 +682,7 @@ mod tests {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
                 RuntimeOptions::builder()
-                    .with_content_response_on_write(ContentResponseOnWrite::ENABLED)
+                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
                     .build(),
             )
             .build()
@@ -699,7 +699,7 @@ mod tests {
         let effective = driver.effective_runtime_options(&op_options);
         assert_eq!(
             effective.content_response_on_write,
-            Some(ContentResponseOnWrite::ENABLED)
+            Some(ContentResponseOnWrite::Enabled)
         );
     }
 
