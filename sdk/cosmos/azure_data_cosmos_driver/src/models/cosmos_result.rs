@@ -31,7 +31,7 @@ use crate::models::{CosmosResponseHeaders, CosmosStatus};
 /// ```
 #[derive(Debug)]
 #[non_exhaustive]
-pub struct CosmosResponse {
+pub struct CosmosResult {
     /// Raw response body (UTF-8 JSON or Cosmos binary encoding).
     body: Vec<u8>,
 
@@ -42,8 +42,8 @@ pub struct CosmosResponse {
     status: CosmosStatus,
 }
 
-impl CosmosResponse {
-    /// Creates a new `CosmosResponse`.
+impl CosmosResult {
+    /// Creates a new `CosmosResult`.
     ///
     /// This is typically called by the driver after completing an operation.
     pub(crate) fn new(body: Vec<u8>, headers: CosmosResponseHeaders, status: CosmosStatus) -> Self {
@@ -92,12 +92,12 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_response_accessors() {
+    fn cosmos_result_accessors() {
         let headers = CosmosResponseHeaders::new()
             .with_request_charge(RequestCharge::new(5.5))
             .with_activity_id(ActivityId::from_string("test-activity".to_string()));
 
-        let result = CosmosResponse::new(
+        let result = CosmosResult::new(
             b"{\"id\": \"test\"}".to_vec(),
             headers,
             make_status(Some(StatusCode::Ok), None),
@@ -115,8 +115,8 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_response_error_status() {
-        let result = CosmosResponse::new(
+    fn cosmos_result_error_status() {
+        let result = CosmosResult::new(
             b"{}".to_vec(),
             CosmosResponseHeaders::new(),
             make_status(
@@ -132,9 +132,9 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_response_accessors_created_status() {
+    fn cosmos_result_accessors_created_status() {
         let headers = CosmosResponseHeaders::new().with_request_charge(RequestCharge::new(1.0));
-        let result = CosmosResponse::new(
+        let result = CosmosResult::new(
             b"body".to_vec(),
             headers,
             make_status(Some(StatusCode::Created), None),
@@ -153,12 +153,12 @@ mod tests {
     }
 
     #[test]
-    fn cosmos_response_status_accessor() {
+    fn cosmos_result_status_accessor() {
         let status = make_status(
             Some(StatusCode::NotFound),
             Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
         );
-        let result = CosmosResponse::new(b"{}".to_vec(), CosmosResponseHeaders::new(), status);
+        let result = CosmosResult::new(b"{}".to_vec(), CosmosResponseHeaders::new(), status);
 
         let result_status = result.status();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);
