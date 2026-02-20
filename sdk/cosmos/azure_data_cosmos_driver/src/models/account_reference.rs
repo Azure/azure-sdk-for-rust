@@ -92,14 +92,14 @@ impl From<&AccountReference> for AccountEndpoint {
 /// Either key-based authentication using a master key, or token-based
 /// authentication using an Azure credential (e.g., managed identity, service principal).
 #[derive(Clone)]
-pub enum AuthOptions {
+pub enum Credential {
     /// Key-based authentication using the account's primary or secondary master key.
     MasterKey(Secret),
     /// Token-based authentication using an Azure credential.
     TokenCredential(Arc<dyn TokenCredential>),
 }
 
-impl std::fmt::Debug for AuthOptions {
+impl std::fmt::Debug for Credential {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::MasterKey(_) => f.debug_tuple("MasterKey").field(&"***").finish(),
@@ -108,13 +108,13 @@ impl std::fmt::Debug for AuthOptions {
     }
 }
 
-impl From<Secret> for AuthOptions {
+impl From<Secret> for Credential {
     fn from(key: Secret) -> Self {
         Self::MasterKey(key)
     }
 }
 
-impl From<Arc<dyn TokenCredential>> for AuthOptions {
+impl From<Arc<dyn TokenCredential>> for Credential {
     fn from(credential: Arc<dyn TokenCredential>) -> Self {
         Self::TokenCredential(credential)
     }
@@ -151,10 +151,10 @@ pub struct AccountReference {
     /// The service endpoint URL (required).
     endpoint: AccountEndpoint,
     /// Authentication credentials (required).
-    auth: AuthOptions,
+    auth: Credential,
 }
 
-// Manual PartialEq implementation because AuthOptions contains Arc<dyn TokenCredential>
+// Manual PartialEq implementation because Credential contains Arc<dyn TokenCredential>
 // which doesn't implement PartialEq. We compare by endpoint only.
 impl PartialEq for AccountReference {
     fn eq(&self, other: &Self) -> bool {
@@ -185,7 +185,7 @@ impl AccountReference {
     pub fn with_master_key(endpoint: Url, key: impl Into<Secret>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: AuthOptions::MasterKey(key.into()),
+            auth: Credential::MasterKey(key.into()),
         }
     }
 
@@ -195,7 +195,7 @@ impl AccountReference {
     pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: AuthOptions::TokenCredential(credential),
+            auth: Credential::TokenCredential(credential),
         }
     }
 
@@ -207,7 +207,7 @@ impl AccountReference {
     /// Returns the authentication options.
     ///
     /// Authentication is always present - it's required during construction.
-    pub fn auth(&self) -> &AuthOptions {
+    pub fn auth(&self) -> &Credential {
         &self.auth
     }
 }
@@ -233,7 +233,7 @@ impl AccountReference {
 #[non_exhaustive]
 pub struct AccountReferenceBuilder {
     endpoint: AccountEndpoint,
-    auth: Option<AuthOptions>,
+    auth: Option<Credential>,
 }
 
 impl AccountReferenceBuilder {
@@ -253,18 +253,18 @@ impl AccountReferenceBuilder {
 
     /// Sets master key authentication.
     pub fn master_key(mut self, key: impl Into<Secret>) -> Self {
-        self.auth = Some(AuthOptions::MasterKey(key.into()));
+        self.auth = Some(Credential::MasterKey(key.into()));
         self
     }
 
     /// Sets token credential authentication.
     pub fn credential(mut self, credential: Arc<dyn TokenCredential>) -> Self {
-        self.auth = Some(AuthOptions::TokenCredential(credential));
+        self.auth = Some(Credential::TokenCredential(credential));
         self
     }
 
     /// Sets authentication options directly.
-    pub fn auth(mut self, auth: AuthOptions) -> Self {
+    pub fn auth(mut self, auth: Credential) -> Self {
         self.auth = Some(auth);
         self
     }
@@ -335,7 +335,7 @@ mod tests {
                 .unwrap();
 
         match account.auth() {
-            AuthOptions::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
+            Credential::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
             _ => panic!("Expected MasterKey auth"),
         }
     }
@@ -373,7 +373,7 @@ mod tests {
         );
 
         match account.auth() {
-            AuthOptions::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
+            Credential::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
             _ => panic!("Expected MasterKey auth"),
         }
     }

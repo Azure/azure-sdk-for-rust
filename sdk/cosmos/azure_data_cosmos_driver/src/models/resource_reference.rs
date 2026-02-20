@@ -8,7 +8,7 @@
 //! internal enums, preventing mixed addressing modes.
 
 use crate::models::{
-    resource_id::{ResourceIdentifier, ResourceName, ResourceRid},
+    resource_id::{ResourceId, ResourceIdentifier, ResourceName},
     AccountReference, PartitionKey, PartitionKeyDefinition,
 };
 
@@ -108,11 +108,11 @@ pub struct ContainerReference {
     /// The database user-provided name.
     db_name: ResourceName,
     /// The database internal RID.
-    db_rid: ResourceRid,
+    db_rid: ResourceId,
     /// The container user-provided name.
     container_name: ResourceName,
     /// The container internal RID.
-    container_rid: ResourceRid,
+    container_rid: ResourceId,
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
 }
@@ -150,9 +150,9 @@ impl ContainerReference {
     pub(crate) fn new(
         account: AccountReference,
         db_name: impl Into<ResourceName>,
-        db_rid: impl Into<ResourceRid>,
+        db_rid: impl Into<ResourceId>,
         container_name: impl Into<ResourceName>,
-        container_rid: impl Into<ResourceRid>,
+        container_rid: impl Into<ResourceId>,
         container_properties: &crate::models::ContainerProperties,
     ) -> Self {
         Self {
@@ -272,7 +272,7 @@ impl ItemReference {
         partition_key: PartitionKey,
         item_rid: impl Into<Cow<'static, str>>,
     ) -> Self {
-        let rid = ResourceRid::new(item_rid);
+        let rid = ResourceId::new(item_rid);
         let resource_link = format!("{}/docs/{}", container.rid_based_path(), rid);
         Self {
             container: container.clone(),
@@ -368,7 +368,7 @@ impl StoredProcedureReference {
         container: &ContainerReference,
         stored_procedure_rid: impl Into<Cow<'static, str>>,
     ) -> Self {
-        let stored_procedure_rid = ResourceRid::new(stored_procedure_rid);
+        let stored_procedure_rid = ResourceId::new(stored_procedure_rid);
         let resource_link = format!(
             "{}/sprocs/{}",
             container.rid_based_path(),
@@ -461,7 +461,7 @@ impl TriggerReference {
         container: &ContainerReference,
         trigger_rid: impl Into<Cow<'static, str>>,
     ) -> Self {
-        let trigger_rid = ResourceRid::new(trigger_rid);
+        let trigger_rid = ResourceId::new(trigger_rid);
         let resource_link = format!("{}/triggers/{}", container.rid_based_path(), trigger_rid);
         Self {
             container: container.clone(),
@@ -541,7 +541,7 @@ impl UdfReference {
 
     /// Creates a new UDF reference by RID.
     pub fn from_rid(container: &ContainerReference, udf_rid: impl Into<Cow<'static, str>>) -> Self {
-        let udf_rid = ResourceRid::new(udf_rid);
+        let udf_rid = ResourceId::new(udf_rid);
         let resource_link = format!("{}/udfs/{}", container.rid_based_path(), udf_rid);
         Self {
             container: container.clone(),
