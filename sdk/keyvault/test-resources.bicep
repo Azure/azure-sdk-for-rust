@@ -34,3 +34,4 @@ resource kvAdmin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 output AZURE_KEYVAULT_URL string = kv.properties.vaultUri
+output KEYVAULT_TENANT_ID string = subscription().tenantId
