@@ -4,9 +4,15 @@
 
 ### Features Added
 
+- Default Azure Storage logging configuration (allowed headers and query parameters) is now automatically applied to all Queue clients.
+
 ### Breaking Changes
 
+- Changed `QueueClient::set_metadata()` `metadata` parameter from owned `HashMap<String, String>` to `&HashMap<String, String>`.
+
 ### Bugs Fixed
+
+- Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Queue Storage client.
 
 ### Other Changes
 

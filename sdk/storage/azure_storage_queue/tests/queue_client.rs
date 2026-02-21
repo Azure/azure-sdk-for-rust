@@ -125,7 +125,7 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 
         let response = queue_client
             .set_metadata(
-                HashMap::from([
+                &HashMap::from([
                     ("key1".to_string(), "value1".to_string()),
                     ("key2".to_string(), "value2".to_string()),
                 ]),
