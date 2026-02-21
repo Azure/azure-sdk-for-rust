@@ -26,6 +26,7 @@ futures.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
 tracing.workspace = true
+url.workspace = true
 
 [build-dependencies]
 rustc_version.workspace = true
@@ -44,7 +45,9 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
 in_memory_checkpoint_store = []
-default = ["azure_core_amqp/default"]
+default = ["azure_core_amqp/default", "hmac_rust"]
+hmac_rust = ["azure_core/hmac_rust"]
+hmac_openssl = ["azure_core/hmac_openssl"]
 
 [[bench]]
 name = "benchmarks"
