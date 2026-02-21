@@ -79,10 +79,7 @@ impl AppendBlobClient {
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            options
-                .client_options
-                .per_try_policies
-                .push(auth_policy);
+            options.client_options.per_try_policies.push(auth_policy);
         }
 
         let pipeline = Pipeline::new(
