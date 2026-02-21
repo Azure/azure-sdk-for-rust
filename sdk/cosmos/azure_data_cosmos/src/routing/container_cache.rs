@@ -199,12 +199,8 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        Arc::new(GlobalEndpointManager::new(
-            endpoint,
-            vec![],
-            vec![],
-            pipeline,
-        ))
+
+        GlobalEndpointManager::new(endpoint, vec![], vec![], pipeline)
     }
 
     // Helper function to create a test GlobalEndpointManager with preferred locations
@@ -218,12 +214,12 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        Arc::new(GlobalEndpointManager::new(
+        GlobalEndpointManager::new(
             endpoint,
             vec![RegionName::from("East US"), RegionName::from("West US")],
             vec![],
             pipeline,
-        ))
+        )
     }
 
     #[tokio::test]
