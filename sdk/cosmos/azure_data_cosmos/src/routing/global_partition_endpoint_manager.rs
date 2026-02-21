@@ -1709,7 +1709,7 @@ mod tests {
 
     #[test]
     fn test_can_use_failover_locations_with_multiple_endpoints_documents() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_read_request();
@@ -1718,7 +1718,7 @@ mod tests {
 
     #[test]
     fn test_can_use_failover_locations_with_stored_procedure_execute() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_stored_procedure_execute_request();
@@ -1727,7 +1727,7 @@ mod tests {
 
     #[test]
     fn test_can_use_failover_locations_with_database_resource() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_database_request();
@@ -1752,7 +1752,7 @@ mod tests {
 
     #[test]
     fn test_auto_failover_not_eligible_when_disabled() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_write_request();
@@ -1761,7 +1761,7 @@ mod tests {
 
     #[test]
     fn test_auto_failover_not_eligible_for_read_request() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_read_request();
@@ -1775,7 +1775,7 @@ mod tests {
 
     #[test]
     fn test_circuit_breaker_eligible_for_read_request() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1784,7 +1784,7 @@ mod tests {
 
     #[test]
     fn test_circuit_breaker_not_eligible_when_disabled() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -1809,7 +1809,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_when_both_disabled() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -1820,7 +1820,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_some_when_eligible() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1834,7 +1834,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_validates_failed_location() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1852,7 +1852,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_without_partition_key_range() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1865,7 +1865,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_for_ineligible_resource_type() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_database_request();
@@ -1876,7 +1876,7 @@ mod tests {
 
     #[test]
     fn test_partition_failover_returns_none_without_failed_location() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1894,7 +1894,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_circuit_breaker_path() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1936,7 +1936,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_returns_false_when_disabled() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -1945,7 +1945,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_returns_false_without_failed_location() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1956,7 +1956,7 @@ mod tests {
 
     #[test]
     fn test_mark_endpoint_unavailable_sequential_failover_removes_on_exhaust() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -1995,7 +1995,7 @@ mod tests {
 
     #[test]
     fn test_add_override_returns_false_when_no_override_exists() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -2004,7 +2004,7 @@ mod tests {
 
     #[test]
     fn test_add_override_routes_to_override_location() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // First, mark endpoint as unavailable to create an override
@@ -2041,7 +2041,7 @@ mod tests {
 
     #[test]
     fn test_add_override_returns_false_when_disabled() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let mut request = create_read_request();
@@ -2050,7 +2050,7 @@ mod tests {
 
     #[test]
     fn test_add_override_circuit_breaker_below_threshold_returns_false() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Mark endpoint unavailable to create override
@@ -2084,7 +2084,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_returns_false_when_disabled() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -2094,7 +2094,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_creates_entry_on_first_call() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2111,7 +2111,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_below_threshold_returns_false() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2123,7 +2123,7 @@ mod tests {
 
     #[test]
     fn test_increment_failure_counter_above_threshold_returns_true() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2199,7 +2199,7 @@ mod tests {
 
     #[test]
     fn test_add_or_update_removes_on_all_exhausted() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -2242,7 +2242,7 @@ mod tests {
 
     #[test]
     fn test_different_partition_key_ranges_tracked_independently() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Create two requests with different partition key ranges
@@ -2386,7 +2386,7 @@ mod tests {
 
     #[test]
     fn test_end_to_end_failover_and_override_routing() {
-        let gem = create_single_region_manager();
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Step 1: A read request fails at West US
