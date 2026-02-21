@@ -47,7 +47,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
 
     let test_result = async {
         let response = queue_client
-            .send_message_wrapper(queue_message.try_into()?, None)
+            .send_message(queue_message.try_into()?, None)
             .await?;
 
         assert!(
@@ -182,7 +182,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         // Send a message to the queue
         // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
         let sent_message_response = queue_client
-            .send_message_wrapper(
+            .send_message(
                 QueueMessage {
                     message_text: Some(
                         "Example message created from Rust, ready for deletion".to_string(),
@@ -225,7 +225,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
     let test_result = async {
         // Send a message to the queue
         let send_message_response = queue_client
-            .send_message_wrapper(
+            .send_message(
                 QueueMessage {
                     message_text: Some(
                         "Example message created from Rust, ready for update".to_string(),
@@ -471,7 +471,7 @@ async fn setup_test_queue_with_messages(
             message_text: Some(message.to_string()),
         };
         queue_client
-            .send_message_wrapper(queue_message.try_into()?, None)
+            .send_message(queue_message.try_into()?, None)
             .await?;
     }
     Ok(())

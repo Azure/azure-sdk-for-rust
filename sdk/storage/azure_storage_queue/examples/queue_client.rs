@@ -25,7 +25,7 @@ async fn send_message(
     };
 
     queue_client
-        .send_message_wrapper(queue_message.try_into()?, None)
+        .send_message(queue_message.try_into()?, None)
         .await
 }
 

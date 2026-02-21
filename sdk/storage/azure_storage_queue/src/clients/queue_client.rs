@@ -102,20 +102,20 @@ impl QueueClient {
 
     /// Enqueues a message and returns the single [`SentMessage`] from the response.
     ///
-    /// The raw generated [`send_message`](QueueClient::send_message) returns
-    /// `Response<ListOfSentMessage>`. This convenience wrapper unwraps that list
+    /// TODO: Need to figure out what to do to finalize this design.
+    /// The underlying operation returns a list; this method unwraps that list
     /// and returns `Response<SentMessage>` directly.
     ///
     /// # Arguments
     ///
     /// * `queue_message` - The message to enqueue.
     /// * `options` - Optional configuration for the request.
-    pub async fn send_message_wrapper(
+    pub async fn send_message(
         &self,
         queue_message: RequestContent<QueueMessage, XmlFormat>,
-        options: Option<QueueClientSendMessageOptions<'_>>,
+        options: Option<QueueClientSendMessageInternalOptions<'_>>,
     ) -> Result<Response<SentMessage, XmlFormat>> {
-        let response = self.send_message(queue_message, options).await?;
+        let response = self.send_message_internal(queue_message, options).await?;
         Self::extract_first_sent_message(response).await
     }
 

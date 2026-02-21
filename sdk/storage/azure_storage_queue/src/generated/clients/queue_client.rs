@@ -8,7 +8,7 @@ use crate::generated::models::{
     QueueClientClearOptions, QueueClientCreateOptions, QueueClientDeleteMessageOptions,
     QueueClientDeleteOptions, QueueClientGetAccessPolicyOptions, QueueClientGetMetadataOptions,
     QueueClientGetMetadataResult, QueueClientPeekMessagesOptions,
-    QueueClientReceiveMessagesOptions, QueueClientSendMessageOptions,
+    QueueClientReceiveMessagesOptions, QueueClientSendMessageInternalOptions,
     QueueClientSetAccessPolicyOptions, QueueClientSetMetadataOptions, QueueClientUpdateOptions,
     QueueMessage,
 };
@@ -413,10 +413,10 @@ impl QueueClient {
     /// * `queue_message` - A Message object which can be stored in a Queue
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.QueueClient.sendMessage")]
-    pub async fn send_message(
+    pub async fn send_message_internal(
         &self,
         queue_message: RequestContent<QueueMessage, XmlFormat>,
-        options: Option<QueueClientSendMessageOptions<'_>>,
+        options: Option<QueueClientSendMessageInternalOptions<'_>>,
     ) -> Result<Response<ListOfSentMessage, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();

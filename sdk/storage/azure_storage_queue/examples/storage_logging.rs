@@ -132,9 +132,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let message = QueueMessage {
         message_text: Some(message_text.to_string()),
     };
-    let sent = queue_client
-        .send_message_wrapper(message.try_into()?, None)
-        .await?;
+    let sent = queue_client.send_message(message.try_into()?, None).await?;
     let sent_message = sent.into_model()?;
     println!(
         "Message sent. ID: {}",
