@@ -14,9 +14,10 @@ use crate::generated::models::{
 use azure_core::{
     base64,
     error::CheckSuccessOptions,
+    fmt::SafeDebug,
     http::{
-        Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent, Response, Url,
-        UrlExt, XmlFormat,
+        ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
+        Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
@@ -27,6 +28,15 @@ pub struct PageBlobClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
+}
+
+/// Options used when creating a `PageBlobClient`
+#[derive(Clone, SafeDebug)]
+pub struct PageBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
 }
 
 impl PageBlobClient {
@@ -74,7 +84,7 @@ impl PageBlobClient {
     /// * [`content_crc64`()](crate::generated::models::PageBlobClientClearPagesResultHeaders::content_crc64) - x-ms-content-crc64
     ///
     /// [`PageBlobClientClearPagesResultHeaders`]: crate::generated::models::PageBlobClientClearPagesResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.clearPages")]
+    #[tracing::function("Storage.Blob.PageBlobClient.clearPages")]
     pub async fn clear_pages(
         &self,
         range: String,
@@ -205,7 +215,7 @@ impl PageBlobClient {
     /// * [`version_id`()](crate::generated::models::PageBlobClientCreateResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`PageBlobClientCreateResultHeaders`]: crate::generated::models::PageBlobClientCreateResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.create")]
+    #[tracing::function("Storage.Blob.PageBlobClient.create")]
     pub async fn create(
         &self,
         size: u64,
@@ -359,7 +369,7 @@ impl PageBlobClient {
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
-    #[tracing::function("Storage.Blob.PageBlob.getPageRanges")]
+    #[tracing::function("Storage.Blob.PageBlobClient.getPageRanges")]
     pub async fn get_page_ranges(
         &self,
         options: Option<PageBlobClientGetPageRangesOptions<'_>>,
@@ -384,7 +394,6 @@ impl PageBlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -461,7 +470,7 @@ impl PageBlobClient {
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientResizeResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
     ///
     /// [`PageBlobClientResizeResultHeaders`]: crate::generated::models::PageBlobClientResizeResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.resize")]
+    #[tracing::function("Storage.Blob.PageBlobClient.resize")]
     pub async fn resize(
         &self,
         size: u64,
@@ -477,7 +486,6 @@ impl PageBlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -568,7 +576,7 @@ impl PageBlobClient {
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
     ///
     /// [`PageBlobClientSetSequenceNumberResultHeaders`]: crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.setSequenceNumber")]
+    #[tracing::function("Storage.Blob.PageBlobClient.setSequenceNumber")]
     pub async fn set_sequence_number(
         &self,
         sequence_number_action: SequenceNumberActionType,
@@ -584,7 +592,6 @@ impl PageBlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -674,7 +681,7 @@ impl PageBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.uploadPages")]
+    #[tracing::function("Storage.Blob.PageBlobClient.uploadPages")]
     pub async fn upload_pages(
         &self,
         body: RequestContent<Bytes, NoFormat>,
@@ -832,7 +839,7 @@ impl PageBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesFromUrlResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.uploadPagesFromUrl")]
+    #[tracing::function("Storage.Blob.PageBlobClient.uploadPagesFromUrl")]
     pub async fn upload_pages_from_url(
         &self,
         source_url: String,
@@ -975,5 +982,14 @@ impl PageBlobClient {
             )
             .await?;
         Ok(rsp.into())
+    }
+}
+
+impl Default for PageBlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
     }
 }

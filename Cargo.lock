@@ -550,6 +550,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-stdout",
  "opentelemetry_sdk",
+ "percent-encoding",
  "pin-project",
  "rand 0.10.0",
  "serde",

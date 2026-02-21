@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::BlobClient;
+pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
@@ -19,35 +19,15 @@ use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
-        Url, UrlExt,
+        AsyncRawResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
 use std::sync::Arc;
 use std::{num::NonZero, ops::Range};
-
-/// Options used when creating a [`BlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct BlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for BlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl BlobClient {
     /// Creates a new BlobClient, using Entra ID authentication.
