@@ -33,6 +33,9 @@ impl RequestSentExt for azure_core::Error {
     fn request_sent_status(&self) -> RequestSentStatus {
         use azure_core::error::ErrorKind;
 
+        // TODO @fabianm: this is a temporary hack - will need to be revisited when making the transport layer more robust
+        // and adaptable via feature flags (reqwest vs. fetch).
+        // The idea is to classify certain types of errors (like DNS failures or credential errors) for fetch and reqwest.
         match self.kind() {
             ErrorKind::Io => {
                 let msg = self.to_string().to_lowercase();

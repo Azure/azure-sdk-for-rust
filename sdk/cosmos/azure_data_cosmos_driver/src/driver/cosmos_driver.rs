@@ -45,7 +45,7 @@ impl CosmosDriver {
         is_idempotent: bool,
         request_sent: RequestSentStatus,
     ) -> bool {
-        attempt < max_transport_retries && is_idempotent && request_sent.definitely_not_sent()
+        attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
     }
 
     /// Creates a new driver instance.
@@ -229,11 +229,11 @@ impl CosmosDriver {
             transport.create_metadata_pipeline(&endpoint, auth)
         };
 
-        // Step 12+: Execute with a slim transport retry wrapper.
+        // Step 10: Execute with a slim transport retry wrapper.
         //
         // Retry only once, and only when it is safe:
-        // - operation is idempotent
-        // - transport failure happened before bytes were sent
+        // - operation is idempotent, OR
+        // - operation may be non-idempotent but transport failure happened before bytes were sent
         const MAX_TRANSPORT_RETRIES: usize = 1;
         let mut attempt = 0usize;
 
@@ -696,29 +696,33 @@ mod tests {
     }
 
     #[test]
-    fn retry_gate_blocks_when_request_may_have_been_sent() {
+    fn retry_gate_blocks_non_idempotent_when_request_may_have_been_sent() {
         assert!(!CosmosDriver::should_retry_transport_failure(
             0,
             1,
-            true,
+            false,
             RequestSentStatus::Unknown
         ));
         assert!(!CosmosDriver::should_retry_transport_failure(
             0,
             1,
-            true,
+            false,
             RequestSentStatus::Sent
         ));
     }
 
     #[test]
-    fn retry_gate_blocks_non_idempotent_or_exhausted_budget() {
-        assert!(!CosmosDriver::should_retry_transport_failure(
+    fn retry_gate_allows_non_idempotent_when_not_sent() {
+        assert!(CosmosDriver::should_retry_transport_failure(
             0,
             1,
             false,
             RequestSentStatus::NotSent
         ));
+    }
+
+    #[test]
+    fn retry_gate_blocks_when_budget_exhausted() {
         assert!(!CosmosDriver::should_retry_transport_failure(
             1,
             1,

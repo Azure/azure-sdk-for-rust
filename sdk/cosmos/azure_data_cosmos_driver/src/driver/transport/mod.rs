@@ -144,10 +144,10 @@ impl CosmosTransport {
     pub(crate) fn create_metadata_pipeline(
         &self,
         endpoint: &AccountEndpoint,
-        auth: &Credential,
+        credential: &Credential,
     ) -> CosmosPipeline {
         let transport = self.get_metadata_transport(endpoint);
-        self.create_authenticated_pipeline(transport, auth)
+        self.create_authenticated_pipeline(transport, credential)
     }
 
     /// Creates an authenticated pipeline for data plane operations.
@@ -159,10 +159,10 @@ impl CosmosTransport {
     pub(crate) fn create_dataplane_pipeline(
         &self,
         endpoint: &AccountEndpoint,
-        auth: &Credential,
+        credential: &Credential,
     ) -> CosmosPipeline {
         let transport = self.get_dataplane_transport(endpoint);
-        self.create_authenticated_pipeline(transport, auth)
+        self.create_authenticated_pipeline(transport, credential)
     }
 
     /// Gets the transport for metadata operations.
@@ -199,9 +199,9 @@ impl CosmosTransport {
     fn create_authenticated_pipeline(
         &self,
         transport: Transport,
-        auth: &Credential,
+        credential: &Credential,
     ) -> CosmosPipeline {
-        let auth_policy = Arc::new(AuthorizationPolicy::new(auth));
+        let auth_policy = Arc::new(AuthorizationPolicy::new(credential));
 
         let policies: Vec<Arc<dyn Policy>> = vec![
             Arc::clone(&self.headers_policy) as Arc<dyn Policy>,

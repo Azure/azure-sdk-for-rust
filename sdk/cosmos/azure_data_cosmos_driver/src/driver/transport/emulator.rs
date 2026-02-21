@@ -12,7 +12,14 @@ use crate::models::AccountEndpoint;
 const AZURE_COSMOS_EMULATOR_HOST: &str = "AZURE_COSMOS_EMULATOR_HOST";
 
 /// Known localhost hostnames that indicate an emulator endpoint.
-const EMULATOR_LOCALHOST_HOSTS: &[&str] = &["localhost", "127.0.0.1", "::1", "0:0:0:0:0:0:0:1", "[::1]", "[0:0:0:0:0:0:0:1]"];
+const EMULATOR_LOCALHOST_HOSTS: &[&str] = &[
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "0:0:0:0:0:0:0:1",
+    "[::1]",
+    "[0:0:0:0:0:0:0:1]",
+];
 
 /// Determines if the given endpoint is pointing to a Cosmos DB emulator.
 ///
@@ -168,4 +175,3 @@ mod tests {
         }
     }
 }
-
