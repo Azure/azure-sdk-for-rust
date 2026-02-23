@@ -6,9 +6,7 @@
 use azure_core::http::{policies::Policy, Context, RawResponse, Request, Transport};
 use std::sync::Arc;
 
-use super::tracked_transport::{
-    RequestAttemptTelemetryContext, TrackedTransportPolicy,
-};
+use super::tracked_transport::{RequestAttemptTelemetryContext, TrackedTransportPolicy};
 
 #[derive(Debug, Clone)]
 pub(crate) struct CosmosPipeline {
@@ -148,4 +146,3 @@ mod tests {
         assert!(has_events);
     }
 }
-
