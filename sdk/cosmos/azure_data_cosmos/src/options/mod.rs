@@ -40,22 +40,7 @@ pub struct CosmosClientOptions {
     pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
     pub(crate) application_preferred_regions: Vec<RegionName>,
-    pub(crate) excluded_regions: Vec<RegionName>,
-    /// Used to specify the consistency level for the operation.
-    ///
-    /// The default value is the consistency level set on the Cosmos DB account.
-    /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-    pub(crate) consistency_level: Option<ConsistencyLevel>,
-    /// The desired throughput bucket for the client
-    ///
-    /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub(crate) throughput_bucket: Option<usize>,
     pub(crate) session_retry_options: SessionRetryOptions,
-    /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
-    /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
-    ///
-    /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
-    pub(crate) priority: Option<PriorityLevel>,
     /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
@@ -83,26 +68,6 @@ impl CosmosClientOptions {
         self
     }
 
-    pub fn with_excluded_regions(mut self, regions: Vec<RegionName>) -> Self {
-        self.excluded_regions = regions;
-        self
-    }
-
-    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
-        self.consistency_level = Some(consistency_level);
-        self
-    }
-
-    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
-        self.throughput_bucket = Some(throughput_bucket);
-        self
-    }
-
-    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
-        self.priority = Some(priority);
-        self
-    }
-
     pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
         self.custom_headers = custom_headers;
         self
@@ -121,24 +86,6 @@ impl AsHeaders for CosmosClientOptions {
             headers.push((header_name.clone(), header_value.clone()));
         }
 
-        if let Some(consistency_level) = &self.consistency_level {
-            headers.push((
-                constants::CONSISTENCY_LEVEL,
-                consistency_level.to_string().into(),
-            ));
-        }
-
-        if let Some(priority) = &self.priority {
-            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
-        }
-
-        if let Some(throughput_bucket) = &self.throughput_bucket {
-            headers.push((
-                constants::THROUGHPUT_BUCKET,
-                throughput_bucket.to_string().into(),
-            ));
-        }
-
         Ok(headers.into_iter())
     }
 }
@@ -149,20 +96,55 @@ impl AsHeaders for CosmosClientOptions {
 pub struct SessionRetryOptions {
     /// Minimum retry time for 404/1002 retries within each region for read and write operations.
     /// The minimum value is 100ms. Default is 500ms.
-    pub min_in_region_retry_time: Duration,
+    min_in_region_retry_time: Duration,
     /// Maximum number of retries within each region for read and write operations. Minimum is 1.
-    pub max_in_region_retry_count: usize,
+    max_in_region_retry_count: usize,
     /// Hints to SDK-internal retry policies on how early to switch retries to a different region.
     /// If true, will retry all replicas once and add a minimum delay before switching to the next region.
     /// If false, will retry in the local region up to 5s.
-    pub remote_region_preferred: bool,
+    remote_region_preferred: bool,
+}
+
+impl SessionRetryOptions {
+    /// Gets the minimum retry time for 404/1002 retries within each region.
+    pub fn min_in_region_retry_time(&self) -> Duration {
+        self.min_in_region_retry_time
+    }
+
+    /// Gets the maximum number of retries within each region.
+    pub fn max_in_region_retry_count(&self) -> usize {
+        self.max_in_region_retry_count
+    }
+
+    /// Gets whether remote region is preferred for session retries.
+    pub fn remote_region_preferred(&self) -> bool {
+        self.remote_region_preferred
+    }
+
+    /// Sets the minimum retry time for 404/1002 retries within each region.
+    pub fn with_min_in_region_retry_time(mut self, time: Duration) -> Self {
+        self.min_in_region_retry_time = time;
+        self
+    }
+
+    /// Sets the maximum number of retries within each region.
+    pub fn with_max_in_region_retry_count(mut self, count: usize) -> Self {
+        self.max_in_region_retry_count = count;
+        self
+    }
+
+    /// Sets whether remote region is preferred for session retries.
+    pub fn with_remote_region_preferred(mut self, preferred: bool) -> Self {
+        self.remote_region_preferred = preferred;
+        self
+    }
 }
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct CreateContainerOptions {
-    pub throughput: Option<ThroughputProperties>,
+    pub(crate) throughput: Option<ThroughputProperties>,
 }
 
 impl CreateContainerOptions {
@@ -181,7 +163,7 @@ pub struct ReplaceContainerOptions;
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct CreateDatabaseOptions {
-    pub throughput: Option<ThroughputProperties>,
+    pub(crate) throughput: Option<ThroughputProperties>,
 }
 
 impl CreateDatabaseOptions {
@@ -226,26 +208,6 @@ impl Display for ConsistencyLevel {
     }
 }
 
-/// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
-/// before high priority requests start getting throttled. Feature must first be enabled at the account level.
-///
-/// Learn more at [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution)
-#[derive(Clone, Debug)]
-pub enum PriorityLevel {
-    High,
-    Low,
-}
-
-impl Display for PriorityLevel {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value = match self {
-            PriorityLevel::High => "High",
-            PriorityLevel::Low => "Low",
-        };
-        write!(f, "{}", value)
-    }
-}
-
 /// Specifies indexing directives that can be used when working with Cosmos APIs.
 #[derive(Clone)]
 pub enum IndexingDirective {
@@ -272,41 +234,27 @@ pub struct ItemOptions {
     /// Triggers executed before the operation.
     ///
     /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    pub pre_triggers: Option<Vec<String>>,
+    pre_triggers: Option<Vec<String>>,
     /// Triggers executed after the operation.
     ///
     /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    pub post_triggers: Option<Vec<String>>,
+    post_triggers: Option<Vec<String>>,
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
     ///
     /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    pub session_token: Option<SessionToken>,
-    /// Used to specify the consistency level for the operation.
-    ///
-    /// The default value is the consistency level set on the Cosmos DB account.
-    /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-    pub consistency_level: Option<ConsistencyLevel>,
+    session_token: Option<SessionToken>,
     /// Sets indexing directive for the operation.
-    pub indexing_directive: Option<IndexingDirective>,
+    indexing_directive: Option<IndexingDirective>,
     /// If specified, the operation will only be performed if the item matches the provided Etag.
     ///
     /// See [Optimistic Concurrency Control](https://learn.microsoft.com/azure/cosmos-db/nosql/database-transactions-optimistic-concurrency#optimistic-concurrency-control) for more.
-    pub if_match_etag: Option<Etag>,
+    if_match_etag: Option<Etag>,
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
-    pub content_response_on_write_enabled: bool,
-    /// The desired throughput bucket for this request
-    ///
-    /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<usize>,
-    /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
-    /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
-    ///
-    /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
-    pub priority: Option<PriorityLevel>,
+    content_response_on_write_enabled: bool,
     /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
@@ -315,12 +263,12 @@ pub struct ItemOptions {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     ///
     /// Custom headers will not override headers that are already set by the SDK.
-    pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    custom_headers: HashMap<HeaderName, HeaderValue>,
     /// Regions to be skipped from regional routing preferences. The regions in this list are specified as the names of the Azure Cosmos locations like, 'West US', 'East US' and so on.
     /// If all regions were excluded, the primary/hub region will be used to route requests.
     /// If None is provided, client-level excluded regions will be used.
     /// If an empty vector is provided, no regions will be excluded for this request.
-    pub excluded_regions: Option<Vec<RegionName>>,
+    pub(crate) excluded_regions: Option<Vec<RegionName>>,
 }
 
 impl ItemOptions {
@@ -339,11 +287,6 @@ impl ItemOptions {
         self
     }
 
-    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
-        self.consistency_level = Some(consistency_level);
-        self
-    }
-
     pub fn with_indexing_directive(mut self, indexing_directive: IndexingDirective) -> Self {
         self.indexing_directive = Some(indexing_directive);
         self
@@ -359,16 +302,6 @@ impl ItemOptions {
         content_response_on_write_enabled: bool,
     ) -> Self {
         self.content_response_on_write_enabled = content_response_on_write_enabled;
-        self
-    }
-
-    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
-        self.throughput_bucket = Some(throughput_bucket);
-        self
-    }
-
-    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
-        self.priority = Some(priority);
         self
     }
 
@@ -413,13 +346,6 @@ impl AsHeaders for ItemOptions {
             headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
         }
 
-        if let Some(consistency_level) = &self.consistency_level {
-            headers.push((
-                constants::CONSISTENCY_LEVEL,
-                consistency_level.to_string().into(),
-            ));
-        }
-
         if let Some(indexing_directive) = &self.indexing_directive {
             headers.push((
                 constants::INDEXING_DIRECTIVE,
@@ -429,17 +355,6 @@ impl AsHeaders for ItemOptions {
 
         if let Some(etag) = &self.if_match_etag {
             headers.push((headers::IF_MATCH, etag.to_string().into()));
-        }
-
-        if let Some(priority) = &self.priority {
-            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
-        }
-
-        if let Some(throughput_bucket) = &self.throughput_bucket {
-            headers.push((
-                constants::THROUGHPUT_BUCKET,
-                throughput_bucket.to_string().into(),
-            ));
         }
 
         if !self.content_response_on_write_enabled {
@@ -469,21 +384,7 @@ pub struct QueryOptions {
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
     ///
     /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    pub session_token: Option<SessionToken>,
-    /// Used to specify the consistency level for the operation.
-    ///
-    /// The default value is the consistency level set on the Cosmos DB account.
-    /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-    pub consistency_level: Option<ConsistencyLevel>,
-    /// The desired throughput bucket for this query operation
-    ///
-    /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<usize>,
-    /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
-    /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
-    ///
-    /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
-    pub priority: Option<PriorityLevel>,
+    session_token: Option<SessionToken>,
     /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
@@ -492,27 +393,12 @@ pub struct QueryOptions {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     ///
     /// Custom headers will not override headers that are already set by the SDK.
-    pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl QueryOptions {
     pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
         self.session_token = Some(session_token);
-        self
-    }
-
-    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
-        self.consistency_level = Some(consistency_level);
-        self
-    }
-
-    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
-        self.throughput_bucket = Some(throughput_bucket);
-        self
-    }
-
-    pub fn with_priority(mut self, priority: PriorityLevel) -> Self {
-        self.priority = Some(priority);
         self
     }
 
@@ -536,24 +422,6 @@ impl AsHeaders for QueryOptions {
 
         if let Some(session_token) = &self.session_token {
             headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
-        }
-
-        if let Some(consistency_level) = &self.consistency_level {
-            headers.push((
-                constants::CONSISTENCY_LEVEL,
-                consistency_level.to_string().into(),
-            ));
-        }
-
-        if let Some(priority) = &self.priority {
-            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
-        }
-
-        if let Some(throughput_bucket) = &self.throughput_bucket {
-            headers.push((
-                constants::THROUGHPUT_BUCKET,
-                throughput_bucket.to_string().into(),
-            ));
         }
 
         Ok(headers.into_iter())
@@ -591,19 +459,13 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let item_options = ItemOptions {
-            pre_triggers: Some(vec!["PreTrigger1".to_string(), "PreTrigger2".to_string()]),
-            post_triggers: Some(vec!["PostTrigger1".to_string(), "PostTrigger2".to_string()]),
-            session_token: Some("SessionToken".to_string().into()),
-            consistency_level: Some(ConsistencyLevel::Session),
-            indexing_directive: Some(IndexingDirective::Include),
-            if_match_etag: Some(Etag::from("etag_value")),
-            content_response_on_write_enabled: false,
-            priority: Some(PriorityLevel::High),
-            throughput_bucket: Some(2),
-            custom_headers,
-            ..Default::default()
-        };
+        let item_options = ItemOptions::default()
+            .with_pre_triggers(vec!["PreTrigger1".to_string(), "PreTrigger2".to_string()])
+            .with_post_triggers(vec!["PostTrigger1".to_string(), "PostTrigger2".to_string()])
+            .with_session_token("SessionToken".to_string().into())
+            .with_indexing_directive(IndexingDirective::Include)
+            .with_if_match_etag(Etag::from("etag_value"))
+            .with_custom_headers(custom_headers);
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =
             item_options.as_headers().unwrap().collect();
@@ -618,12 +480,9 @@ mod tests {
                 "PostTrigger1,PostTrigger2".into(),
             ),
             ("x-custom-header".into(), "custom_value".into()),
-            (constants::CONSISTENCY_LEVEL, "Session".into()),
-            (headers::IF_MATCH, "etag_value".into()),
             (constants::SESSION_TOKEN, "SessionToken".into()),
             (constants::INDEXING_DIRECTIVE, "Include".into()),
-            (constants::PRIORITY_LEVEL, "High".into()),
-            (constants::THROUGHPUT_BUCKET, "2".into()),
+            (headers::IF_MATCH, "etag_value".into()),
             (headers::PREFER, constants::PREFER_MINIMAL),
         ];
 
@@ -637,21 +496,19 @@ mod tests {
     fn custom_headers_should_not_override_sdk_set_headers() {
         let mut custom_headers = HashMap::new();
         custom_headers.insert(
-            constants::CONSISTENCY_LEVEL,
-            HeaderValue::from_static("CustomConsistency"),
+            constants::SESSION_TOKEN,
+            HeaderValue::from_static("CustomSession"),
         );
 
-        let item_options = ItemOptions {
-            consistency_level: Some(ConsistencyLevel::Strong),
-            custom_headers,
-            ..Default::default()
-        };
+        let item_options = ItemOptions::default()
+            .with_session_token("RealSessionToken".to_string().into())
+            .with_custom_headers(custom_headers);
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =
             item_options.as_headers().unwrap().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            (constants::CONSISTENCY_LEVEL, "Strong".into()),
+            (constants::SESSION_TOKEN, "RealSessionToken".into()),
             (headers::PREFER, constants::PREFER_MINIMAL),
         ];
 
@@ -669,23 +526,13 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let client_options = CosmosClientOptions {
-            consistency_level: Some(ConsistencyLevel::Eventual),
-            throughput_bucket: Some(5),
-            priority: Some(PriorityLevel::Low),
-            custom_headers,
-            ..Default::default()
-        };
+        let client_options = CosmosClientOptions::default().with_custom_headers(custom_headers);
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =
             client_options.as_headers().unwrap().collect();
 
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::CONSISTENCY_LEVEL, "Eventual".into()),
-            (constants::PRIORITY_LEVEL, "Low".into()),
-            (constants::THROUGHPUT_BUCKET, "5".into()),
-        ];
+        let headers_expected: Vec<(HeaderName, HeaderValue)> =
+            vec![("x-custom-header".into(), "custom_value".into())];
 
         assert_eq!(
             headers_to_map(headers_result),
@@ -701,13 +548,9 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let query_options = QueryOptions {
-            session_token: Some("QuerySessionToken".to_string().into()),
-            consistency_level: Some(ConsistencyLevel::BoundedStaleness),
-            priority: Some(PriorityLevel::High),
-            throughput_bucket: Some(10),
-            custom_headers,
-        };
+        let query_options = QueryOptions::default()
+            .with_session_token("QuerySessionToken".to_string().into())
+            .with_custom_headers(custom_headers);
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =
             query_options.as_headers().unwrap().collect();
@@ -715,9 +558,6 @@ mod tests {
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             ("x-custom-header".into(), "custom_value".into()),
             (constants::SESSION_TOKEN, "QuerySessionToken".into()),
-            (constants::CONSISTENCY_LEVEL, "BoundedStaleness".into()),
-            (constants::PRIORITY_LEVEL, "High".into()),
-            (constants::THROUGHPUT_BUCKET, "10".into()),
         ];
 
         assert_eq!(
@@ -741,10 +581,7 @@ mod tests {
 
     #[test]
     fn item_options_empty_as_headers() {
-        let item_options = ItemOptions {
-            content_response_on_write_enabled: true,
-            ..Default::default()
-        };
+        let item_options = ItemOptions::default().with_content_response_on_write_enabled(true);
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =
             item_options.as_headers().unwrap().collect();

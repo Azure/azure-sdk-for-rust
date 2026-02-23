@@ -95,36 +95,14 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets the default priority level for operations.
-    ///
-    /// Priority-based execution allows throttling low-priority requests before
-    /// high-priority ones. This feature must be enabled at the account level.
-    ///
-    /// # Arguments
-    ///
-    /// * `priority` - The priority level to use.
-    pub fn with_priority(mut self, priority: crate::options::PriorityLevel) -> Self {
-        self.options.priority = Some(priority);
-        self
-    }
-
-    /// Sets the throughput bucket for the client.
-    ///
-    /// See [Throughput Control](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    ///
-    /// # Arguments
-    ///
-    /// * `bucket` - The throughput bucket identifier.
-    pub fn with_throughput_bucket(mut self, bucket: usize) -> Self {
-        self.options.throughput_bucket = Some(bucket);
-        self
-    }
-
     /// Sets a suffix to append to the User-Agent header for telemetry.
     ///
     /// # Arguments
     ///
     /// * `suffix` - The suffix to append to the User-Agent header.
+    // TODO: User-Agent construction must be reworked per central team patterns
+    // (prefixes instead of suffixes). See driver PR for implementation sample.
+    // Document cardinality limits when reworking.
     pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
         self.options.user_agent_suffix = Some(suffix.into());
         self
@@ -277,12 +255,11 @@ impl CosmosClientBuilder {
         );
 
         let preferred_regions = self.options.application_preferred_regions.clone();
-        let excluded_regions = self.options.excluded_regions.clone();
 
         let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
-            excluded_regions,
+            Vec::new(),
             pipeline_core.clone(),
         ));
 
