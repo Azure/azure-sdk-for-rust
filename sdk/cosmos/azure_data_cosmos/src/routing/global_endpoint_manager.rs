@@ -458,12 +458,15 @@ impl GlobalEndpointManager {
             .map(Into::into)
     }
 
-    /// Initializes and starts the background circuit-breaker failback periodic refresh task.
+    /// Initializes and starts the background account refresh loop.
     ///
-    /// Uses an atomic `compare_exchange` on [`background_connection_init_active`] to ensure
-    /// only one background task is ever spawned, regardless of how many times this method
-    /// is called. The spawned task runs [`initiate_circuit_breaker_failback_loop`] indefinitely
-    /// to periodically re-evaluate whether failed partitions can be marked healthy again.
+    /// # Summary
+    /// Atomically checks and sets the `background_account_refresh_active` flag to ensure only
+    /// one background refresh task runs at a time. If the flag is already set, the call is a
+    /// no-op. Otherwise, it spawns a background task via [`BackgroundTaskManager`] that
+    /// periodically refreshes account properties. The spawned task captures a `Weak<Self>`
+    /// reference to avoid a reference cycle, allowing the `GlobalEndpointManager` to be
+    /// dropped normally, which in turn cancels the background task.
     fn initialize_and_start_background_account_refresh(self: &Arc<Self>) {
         // Atomically try to set from false to true.
         // If it was already true, another thread already started the task.
@@ -479,24 +482,24 @@ impl GlobalEndpointManager {
         // Spawn via BackgroundTaskManager so the task is tracked and will be
         // canceled when the manager (and thus the client) is dropped.
         // We capture a Weak<Self> (not Arc<Self>) to avoid a reference cycle
-        // that would prevent the GlobalPartitionEndpointManager from ever
-        // being dropped.
+        // that would prevent the GlobalEndpointManager from ever being dropped.
         self.background_task_manager.spawn(Box::pin(async move {
             Self::initiate_background_account_refresh_loop(weak_self).await;
         }));
     }
 
-    /// Runs a loop that periodically attempts to fail back partitions to their
-    /// original (previously failed) endpoints.
+    /// Runs the background account refresh loop that periodically updates location information.
     ///
-    /// On each iteration the loop sleeps for [`background_connection_init_interval_secs`]
-    /// seconds and then calls [`initiate_failback_to_unhealthy_endpoints`]. Any errors
-    /// during the failback attempt are logged but do not terminate the loop.
+    /// # Summary
+    /// Executes an infinite loop that sleeps for the configured refresh interval and then
+    /// calls [`refresh_location`](Self::refresh_location) with `force_refresh: true` to
+    /// fetch the latest account properties from the service. The loop holds only a
+    /// [`Weak`] reference to the `GlobalEndpointManager`; if the manager has been dropped
+    /// (i.e., the `Weak` upgrade fails), the loop exits gracefully. Any errors during
+    /// refresh are logged but do not terminate the loop.
     ///
-    /// The loop exits when `weak_self.upgrade()` returns `None` (all strong
-    /// `Arc` references are gone), which happens when the owning client is
-    /// dropped. Dropping the client drops the [`BackgroundTaskManager`], which
-    /// drops the stored future, cancelling this task.
+    /// # Arguments
+    /// * `weak_self` - A weak reference to the owning `GlobalEndpointManager`
     async fn initiate_background_account_refresh_loop(weak_self: Weak<Self>) {
         // Briefly upgrade to read the interval, then release the strong ref
         // so it does not keep Self alive across the sleep.
@@ -524,7 +527,7 @@ impl GlobalEndpointManager {
             info!("GlobalEndpointManager: refresh_location() trying to refresh database account.");
 
             if let Err(e) = strong.refresh_location(true).await {
-                tracing::error!("GlobalPartitionEndpointManager: initiate_circuit_breaker_failback_loop() - failed to mark the failed partitions back to healthy. Exception: {}", e);
+                tracing::error!("GlobalEndpointManager: initiate_background_account_refresh_loop() - failed to refresh database account. Exception: {}", e);
             }
             // `strong` is dropped here, releasing the temporary strong ref
             // before the next sleep.
