@@ -225,12 +225,6 @@ impl ContainerCache {
             .await;
     }
 
-    /// Clears all cached container metadata from both indices.
-    #[cfg(test)]
-    pub(crate) async fn clear(&self) {
-        self.by_name.clear().await;
-        self.by_rid.clear().await;
-    }
 }
 
 impl Default for ContainerCache {
@@ -465,7 +459,8 @@ mod tests {
         cache.put(test_container("db", "coll1")).await;
         cache.put(test_container("db", "coll2")).await;
 
-        cache.clear().await;
+        cache.by_name.clear().await;
+        cache.by_rid.clear().await;
 
         assert!(cache
             .get_by_name(ACCOUNT_ENDPOINT, "db", "coll1")

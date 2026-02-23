@@ -49,22 +49,6 @@ impl<T> AsyncLazy<T> {
         value
     }
 
-    /// Waits for the value to be initialized and returns it.
-    ///
-    /// If the value is already initialized, returns it immediately.
-    /// If initialization is in progress, waits for it to complete.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the value was never initialized (i.e., `get_or_init` was never called).
-    /// This should only be used when you know the value will be initialized.
-    pub(crate) async fn get(&self) -> Arc<T> {
-        let guard = self.value.lock().await;
-        guard
-            .clone()
-            .expect("AsyncLazy::get called but value was never initialized")
-    }
-
     /// Gets the value if it has been initialized, without blocking.
     ///
     /// Returns `None` if initialization has not completed or is in progress.
@@ -73,14 +57,20 @@ impl<T> AsyncLazy<T> {
         self.value.try_lock().and_then(|guard| guard.clone())
     }
 
-    /// Returns `true` if the value has been initialized.
-    #[cfg(test)]
-    pub(crate) fn is_initialized(&self) -> bool {
+    /// Gets the value, waiting for initialization to complete.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called before initialization has started.
+    pub(crate) async fn get(&self) -> Arc<T> {
         self.value
-            .try_lock()
-            .map(|guard| guard.is_some())
-            .unwrap_or(false)
+            .lock()
+            .await
+            .as_ref()
+            .expect("value should be initialized")
+            .clone()
     }
+
 }
 
 impl<T> Default for AsyncLazy<T> {
@@ -158,7 +148,6 @@ mod tests {
     async fn try_get_returns_none_before_init() {
         let lazy: AsyncLazy<i32> = AsyncLazy::new();
         assert!(lazy.try_get().is_none());
-        assert!(!lazy.is_initialized());
     }
 
     #[tokio::test]
@@ -166,7 +155,6 @@ mod tests {
         let lazy = AsyncLazy::new();
         lazy.get_or_init(|| async { 42 }).await;
 
-        assert!(lazy.is_initialized());
         assert_eq!(*lazy.try_get().unwrap(), 42);
     }
 

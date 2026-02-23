@@ -36,14 +36,6 @@ impl AccountMetadataCache {
         self.cache.get_or_insert_with(endpoint, fetch_fn).await
     }
 
-    /// Gets cached account properties if available.
-    ///
-    /// Returns `None` if the account is not in the cache.
-    #[cfg(test)]
-    pub(crate) async fn get(&self, endpoint: &AccountEndpoint) -> Option<Arc<AccountProperties>> {
-        self.cache.get(endpoint).await
-    }
-
     /// Invalidates the cached properties for an account.
     ///
     /// Returns the previously cached value if it existed.
@@ -54,11 +46,6 @@ impl AccountMetadataCache {
         self.cache.invalidate(endpoint).await
     }
 
-    /// Clears all cached account metadata.
-    #[cfg(test)]
-    pub(crate) async fn clear(&self) {
-        self.cache.clear().await;
-    }
 }
 
 impl Default for AccountMetadataCache {
@@ -143,7 +130,7 @@ mod tests {
         let cache = AccountMetadataCache::new();
         let endpoint = test_endpoint("myaccount");
 
-        assert!(cache.get(&endpoint).await.is_none());
+        assert!(cache.cache.get(&endpoint).await.is_none());
     }
 
     #[tokio::test]
@@ -158,7 +145,7 @@ mod tests {
         let removed = cache.invalidate(&endpoint).await;
         assert!(removed.is_some());
         assert_eq!(removed.unwrap().write_region.as_str(), "westus");
-        assert!(cache.get(&endpoint).await.is_none());
+        assert!(cache.cache.get(&endpoint).await.is_none());
     }
 
     #[tokio::test]
@@ -176,9 +163,9 @@ mod tests {
             })
             .await;
 
-        cache.clear().await;
+        cache.cache.clear().await;
 
-        assert!(cache.get(&test_endpoint("account1")).await.is_none());
-        assert!(cache.get(&test_endpoint("account2")).await.is_none());
+        assert!(cache.cache.get(&test_endpoint("account1")).await.is_none());
+        assert!(cache.cache.get(&test_endpoint("account2")).await.is_none());
     }
 }

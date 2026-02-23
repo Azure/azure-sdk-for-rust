@@ -124,13 +124,13 @@ impl CosmosOperation {
         mut self,
         session_token: impl Into<crate::models::SessionToken>,
     ) -> Self {
-        self.request_headers = self.request_headers.with_session_token(session_token);
+        self.request_headers.session_token = Some(session_token.into());
         self
     }
 
     /// Sets the activity ID request header for the operation.
     pub fn with_activity_id(mut self, activity_id: crate::models::ActivityId) -> Self {
-        self.request_headers = self.request_headers.with_activity_id(activity_id);
+        self.request_headers.activity_id = Some(activity_id);
         self
     }
 
@@ -157,60 +157,6 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
         }
-    }
-
-    /// Creates a new operation with the specified type, resource reference, and partition key.
-    fn new_with_partition_key(
-        operation_type: OperationType,
-        resource_reference: impl Into<CosmosResourceReference>,
-        partition_key: PartitionKey,
-    ) -> Self {
-        let resource_reference = resource_reference.into();
-        let resource_type = resource_reference.resource_type();
-        Self {
-            operation_type,
-            resource_type,
-            resource_reference,
-            partition_key: Some(partition_key),
-            request_headers: CosmosRequestHeaders::new(),
-            body: None,
-        }
-    }
-
-    /// Creates a Create operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    #[cfg(test)]
-    pub(crate) fn create(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Create, resource_reference)
-    }
-
-    /// Creates a Read operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    #[cfg(test)]
-    pub(crate) fn read(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Read, resource_reference)
-    }
-
-    /// Creates a Replace operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    #[cfg(test)]
-    pub(crate) fn replace(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Replace, resource_reference)
-    }
-
-    /// Creates an Upsert operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`.
-    #[cfg(test)]
-    pub(crate) fn upsert(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Upsert, resource_reference)
     }
 
     // ===== Control Plane Factory Methods =====
@@ -457,7 +403,7 @@ impl CosmosOperation {
     /// ```
     pub fn create_item(item: ItemReference) -> Self {
         let partition_key = item.partition_key().clone();
-        Self::new_with_partition_key(OperationType::Create, item, partition_key)
+        Self::new(OperationType::Create, item).with_partition_key(partition_key)
     }
 
     /// Reads an item (document) from a container.
@@ -494,7 +440,7 @@ impl CosmosOperation {
     /// ```
     pub fn read_item(item: ItemReference) -> Self {
         let partition_key = item.partition_key().clone();
-        Self::new_with_partition_key(OperationType::Read, item, partition_key)
+        Self::new(OperationType::Read, item).with_partition_key(partition_key)
     }
 
     /// Deletes an item (document) from a container.
@@ -503,7 +449,7 @@ impl CosmosOperation {
     /// providing all the information needed for the operation.
     pub fn delete_item(item: ItemReference) -> Self {
         let partition_key = item.partition_key().clone();
-        Self::new_with_partition_key(OperationType::Delete, item, partition_key)
+        Self::new(OperationType::Delete, item).with_partition_key(partition_key)
     }
 
     /// Upserts (creates or replaces) an item (document) in a container.
@@ -514,7 +460,7 @@ impl CosmosOperation {
     /// If an item with the same ID exists, it will be replaced; otherwise, a new item is created.
     pub fn upsert_item(item: ItemReference) -> Self {
         let partition_key = item.partition_key().clone();
-        Self::new_with_partition_key(OperationType::Upsert, item, partition_key)
+        Self::new(OperationType::Upsert, item).with_partition_key(partition_key)
     }
 
     /// Replaces an existing item (document) in a container.
@@ -524,7 +470,7 @@ impl CosmosOperation {
     /// Use `with_body()` to provide the new document JSON.
     pub fn replace_item(item: ItemReference) -> Self {
         let partition_key = item.partition_key().clone();
-        Self::new_with_partition_key(OperationType::Replace, item, partition_key)
+        Self::new(OperationType::Replace, item).with_partition_key(partition_key)
     }
 
     /// Reads (lists) all items within a single partition.
@@ -535,7 +481,7 @@ impl CosmosOperation {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
-        Self::new_with_partition_key(OperationType::ReadFeed, resource_ref, partition_key)
+        Self::new(OperationType::ReadFeed, resource_ref).with_partition_key(partition_key)
     }
 
     /// Reads (lists) all items across all partitions.
@@ -560,7 +506,7 @@ impl CosmosOperation {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
-        Self::new_with_partition_key(OperationType::Query, resource_ref, partition_key)
+        Self::new(OperationType::Query, resource_ref).with_partition_key(partition_key)
     }
 
     /// Queries items across all partitions.
@@ -625,7 +571,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::create(resource_ref);
+        let op = CosmosOperation::new(OperationType::Create, resource_ref);
 
         assert_eq!(op.operation_type(), OperationType::Create);
         assert_eq!(op.resource_type(), ResourceType::Document);
@@ -638,7 +584,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::read(resource_ref);
+        let op = CosmosOperation::new(OperationType::Read, resource_ref);
 
         assert_eq!(op.operation_type(), OperationType::Read);
         assert_eq!(op.resource_type(), ResourceType::Document);
@@ -651,7 +597,8 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::read(resource_ref).with_partition_key(PartitionKey::from("pk1"));
+        let op = CosmosOperation::new(OperationType::Read, resource_ref)
+            .with_partition_key(PartitionKey::from("pk1"));
 
         assert!(op.partition_key().is_some());
     }
@@ -662,7 +609,7 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
         let body = b"{\"id\":\"doc1\"}".to_vec();
-        let op = CosmosOperation::create(resource_ref).with_body(body.clone());
+        let op = CosmosOperation::new(OperationType::Create, resource_ref).with_body(body.clone());
 
         assert_eq!(op.body(), Some(body.as_slice()));
     }
@@ -672,7 +619,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::replace(resource_ref);
+        let op = CosmosOperation::new(OperationType::Replace, resource_ref);
 
         assert!(!op.is_read_only());
         assert!(op.is_idempotent());
@@ -683,7 +630,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::upsert(resource_ref);
+        let op = CosmosOperation::new(OperationType::Upsert, resource_ref);
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());

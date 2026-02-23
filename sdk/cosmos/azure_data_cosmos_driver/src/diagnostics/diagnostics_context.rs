@@ -606,12 +606,6 @@ impl RequestEvent {
         self
     }
 
-    /// Returns the stage name for backwards compatibility.
-    #[deprecated(note = "Use event_type() instead")]
-    pub fn stage(&self) -> &str {
-        self.event_type.as_str()
-    }
-
     // Public getters for read-only access to fields
 
     /// Returns the type of the pipeline event.
@@ -1666,3 +1660,4 @@ mod tests {
         assert_eq!(event.duration_ms, Some(50));
     }
 }
+
