@@ -9,7 +9,6 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     Error,
 };
-#[cfg(not(target_arch = "wasm32"))]
 use azure_identity::AzureCliCredential;
 use azure_identity::{ManagedIdentityCredential, WorkloadIdentityCredential};
 use std::sync::Arc;
@@ -17,7 +16,6 @@ use std::sync::Arc;
 // Define the variable name and possible values you want to detect from the environment.
 const AZURE_CREDENTIAL_KIND: &str = "AZURE_CREDENTIAL_KIND";
 mod azure_credential_kinds {
-    #[cfg(not(target_arch = "wasm32"))]
     pub const AZURE_CLI: &str = "azurecli";
     pub const MANAGED_IDENTITY: &str = "managedidentity";
     pub const WORKLOAD_IDENTITY: &str = "workloadidentity";
@@ -25,14 +23,12 @@ mod azure_credential_kinds {
 
 #[derive(Debug)]
 enum SpecificAzureCredentialKind {
-    #[cfg(not(target_arch = "wasm32"))]
     AzureCli(Arc<AzureCliCredential>),
     ManagedIdentity(Arc<ManagedIdentityCredential>),
     WorkloadIdentity(Arc<WorkloadIdentityCredential>),
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for SpecificAzureCredentialKind {
     async fn get_token(
         &self,
@@ -40,7 +36,6 @@ impl TokenCredential for SpecificAzureCredentialKind {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         match self {
-            #[cfg(not(target_arch = "wasm32"))]
             SpecificAzureCredentialKind::AzureCli(credential) => {
                 credential.get_token(scopes, options).await
             }
@@ -78,7 +73,6 @@ impl SpecificAzureCredential {
                             )
                         })?
                 }
-                #[cfg(not(target_arch = "wasm32"))]
                 azure_credential_kinds::AZURE_CLI => AzureCliCredential::new(None)
                     .map(SpecificAzureCredentialKind::AzureCli)
                     .with_context_fn(ErrorKind::Credential, || {
@@ -107,8 +101,7 @@ impl SpecificAzureCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for SpecificAzureCredential {
     async fn get_token(
         &self,

@@ -9,10 +9,10 @@ use crate::{
     ReceiverSettleMode, SenderSettleMode,
 };
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
 
-#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 type SenderImplementation = super::noop::NoopAmqpSender;
 
 /// AMQP Sender options.
@@ -45,8 +45,7 @@ pub struct AmqpSenderOptions {
 impl AmqpSenderOptions {}
 
 /// A trait for AMQP Sender operations.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait AmqpSenderApis {
     /// Attach the sender to a session.
     ///
@@ -180,8 +179,7 @@ pub struct AmqpSender {
     implementation: SenderImplementation,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl AmqpSenderApis for AmqpSender {
     async fn attach(
         &self,

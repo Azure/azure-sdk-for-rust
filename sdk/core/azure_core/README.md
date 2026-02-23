@@ -57,7 +57,6 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
 - `tokio`: enables and sets `tokio` as the default async runtime.
-- `wasm_bindgen`: enables the async runtime for WASM.
 - `xml`: enables XML support.
 
 ### Enabling dependencies' features
@@ -558,7 +557,6 @@ use azure_security_keyvault_secrets::SecretClientOptions;
 
 let client = Arc::new(
     ::reqwest::ClientBuilder::new()
-        // Note that reqwest does not support `pool_max_idle_per_host` on WASM.
         .pool_max_idle_per_host(0)
         .build()?,
 );

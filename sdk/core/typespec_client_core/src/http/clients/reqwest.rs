@@ -30,8 +30,7 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     Arc::new(client)
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
         let url = request.url().clone();
@@ -44,10 +43,6 @@ impl HttpClient for ::reqwest::Client {
 
         let reqwest_request = match body {
             Body::Bytes(bytes) => req.body(bytes).build(),
-
-            // We cannot currently implement `Body::SeekableStream` for WASM
-            // because `reqwest::Body::wrap_stream()` is not implemented for WASM.
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(seekable_stream) => req
                 .body(::reqwest::Body::wrap_stream(seekable_stream))
                 .build(),
@@ -58,10 +53,21 @@ impl HttpClient for ::reqwest::Client {
             "performing request {method} '{}' with `reqwest`",
             url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS)
         );
-        let rsp = self
-            .execute(reqwest_request)
-            .await
-            .with_context(ErrorKind::Io, "failed to execute `reqwest` request")?;
+        let rsp = match self.execute(reqwest_request).await {
+            Ok(rsp) => rsp,
+            Err(err) => {
+                let kind = if err.is_connect() {
+                    ErrorKind::Connection
+                } else {
+                    ErrorKind::Io
+                };
+                return Err(Error::with_error(
+                    kind,
+                    err,
+                    "failed to execute `reqwest` request",
+                ));
+            }
+        };
 
         let status = rsp.status();
         let headers = to_headers(rsp.headers());

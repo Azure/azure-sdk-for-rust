@@ -281,12 +281,14 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
-        let cosmos_request = CosmosRequest::builder(OperationType::Create, self.items_link.clone())
-            .request_headers(&options)
-            .json(&item)
-            .partition_key(partition_key.into())
-            .excluded_regions(options.excluded_regions)
-            .build()?;
+        let excluded_regions = options.excluded_regions.clone();
+        let mut cosmos_request =
+            CosmosRequest::builder(OperationType::Create, self.items_link.clone())
+                .json(&item)
+                .partition_key(partition_key.into())
+                .excluded_regions(excluded_regions)
+                .build()?;
+        options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
             .send(cosmos_request, options.method_options.context)
@@ -365,12 +367,13 @@ impl ContainerClient {
     ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-        let cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
-            .request_headers(&options)
+        let excluded_regions = options.excluded_regions.clone();
+        let mut cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
             .json(&item)
             .partition_key(partition_key.into())
-            .excluded_regions(options.excluded_regions)
+            .excluded_regions(excluded_regions)
             .build()?;
+        options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
             .send(cosmos_request, options.method_options.context)
@@ -450,12 +453,14 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
-        let cosmos_request = CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
-            .request_headers(&options)
-            .json(&item)
-            .partition_key(partition_key.into())
-            .excluded_regions(options.excluded_regions)
-            .build()?;
+        let excluded_regions = options.excluded_regions.clone();
+        let mut cosmos_request =
+            CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
+                .json(&item)
+                .partition_key(partition_key.into())
+                .excluded_regions(excluded_regions)
+                .build()?;
+        options.apply_headers(&mut cosmos_request.headers);
 
         return self
             .container_connection
@@ -506,11 +511,12 @@ impl ContainerClient {
         options.content_response_on_write_enabled = true;
 
         let link = self.items_link.item(item_id);
-        let cosmos_request = CosmosRequest::builder(OperationType::Read, link)
+        let excluded_regions = options.excluded_regions.clone();
+        let mut cosmos_request = CosmosRequest::builder(OperationType::Read, link)
             .partition_key(partition_key.into())
-            .request_headers(&options)
-            .excluded_regions(options.excluded_regions)
+            .excluded_regions(excluded_regions)
             .build()?;
+        options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
             .send(cosmos_request, options.method_options.context)
@@ -546,11 +552,12 @@ impl ContainerClient {
     ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-        let cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
+        let excluded_regions = options.excluded_regions.clone();
+        let mut cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
-            .request_headers(&options)
-            .excluded_regions(options.excluded_regions)
+            .excluded_regions(excluded_regions)
             .build()?;
+        options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
             .send(cosmos_request, options.method_options.context)
@@ -619,12 +626,13 @@ impl ContainerClient {
     ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let cosmos_request = CosmosRequest::builder(OperationType::Patch, link)
+        let excluded_regions = options.excluded_regions.clone();
+        let mut cosmos_request = CosmosRequest::builder(OperationType::Patch, link)
             .partition_key(partition_key.into())
-            .request_headers(&options)
             .json(&patch)
-            .excluded_regions(options.excluded_regions)
+            .excluded_regions(excluded_regions)
             .build()?;
+        options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
             .send(cosmos_request, options.method_options.context)
@@ -703,13 +711,11 @@ impl ContainerClient {
 
         let mut headers = azure_core::http::headers::Headers::new();
 
-        // Use AsHeaders trait to convert PartitionKey and options into headers
+        // Convert PartitionKey and query options into headers.
         for (name, value) in partition_key.as_headers()? {
             headers.insert(name, value);
         }
-        for (name, value) in options.as_headers()? {
-            headers.insert(name, value);
-        }
+        options.apply_headers(&mut headers);
 
         crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),

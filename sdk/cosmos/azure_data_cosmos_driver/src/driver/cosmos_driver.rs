@@ -6,17 +6,20 @@
 use crate::{
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
+        CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
         DatabaseReference,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
     },
 };
-use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
-use azure_core::http::Request;
+use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_core::http::{Context, Request};
 
-use super::CosmosDriverRuntime;
+use super::{
+    transport::{uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus},
+    CosmosDriverRuntime,
+};
 
 /// Cosmos DB driver instance.
 ///
@@ -36,6 +39,15 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    fn should_retry_transport_failure(
+        attempt: usize,
+        max_transport_retries: usize,
+        is_idempotent: bool,
+        request_sent: RequestSentStatus,
+    ) -> bool {
+        attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
+    }
+
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
@@ -135,7 +147,10 @@ impl CosmosDriver {
     ///
     /// # Errors
     ///
-    /// This implementation currently returns an unsupported-operation error.
+    /// Returns an error if:
+    /// - The account has no authentication configured
+    /// - The resource reference cannot produce a valid path
+    /// - The HTTP request fails
     ///
     /// # Example
     ///
@@ -181,7 +196,7 @@ impl CosmosDriver {
 
         // Step 4: Get authentication (guaranteed to be present by AccountReference)
         let account = operation.resource_reference().account();
-        let _auth = account.auth();
+        let auth = account.auth();
 
         // Account-level metadata resolution is currently a direct fallback value.
         let _account_write_region = Region::new("Unknown");
@@ -197,49 +212,104 @@ impl CosmosDriver {
 
         // Step 7: Determine HTTP method
         let operation_type = operation.operation_type();
-        let _resource_type = operation.resource_type();
+        let resource_type = operation.resource_type();
         let method = operation_type.http_method();
 
-        // Step 8: Exercise authorization-signing inputs
+        // Step 8: Create authorization context
         // Strip leading slash from resource link for signing
         let signing_link = resource_link.trim_start_matches('/');
-        let _auth_signing_link = signing_link;
+        let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
 
-        let mut request = Request::new(url, method);
-        if let Some(body) = operation.body() {
-            request.set_body(body.to_vec());
-        }
-        operation
-            .request_headers()
-            .write_to_headers(request.headers_mut());
-        if operation.request_headers().activity_id.is_none() {
-            request.insert_header(
-                HeaderName::from_static("x-ms-activity-id"),
-                HeaderValue::from(activity_id.as_str().to_owned()),
-            );
-        }
-        if let Some(pk) = operation.partition_key() {
-            let _partition_key_definition = operation
-                .container()
-                .map(|container| container.partition_key_definition());
+        // Step 9: Select and create appropriate pipeline
+        let transport = self.runtime.transport();
+        let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
+        let pipeline = if is_dataplane {
+            transport.create_dataplane_pipeline(&endpoint, auth)
+        } else {
+            transport.create_metadata_pipeline(&endpoint, auth)
+        };
 
-            use azure_core::http::headers::AsHeaders;
-            for (name, value) in pk.as_headers()? {
-                request.insert_header(name, value);
+        // Step 10: Execute with a slim transport retry wrapper.
+        //
+        // Retry only once, and only when it is safe:
+        // - operation is idempotent, OR
+        // - operation may be non-idempotent but transport failure happened before bytes were sent
+        const MAX_TRANSPORT_RETRIES: usize = 1;
+        let mut attempt = 0usize;
+
+        loop {
+            let mut request = Request::new(url.clone(), method);
+
+            if let Some(body) = operation.body() {
+                request.set_body(body.to_vec());
+            }
+
+            operation
+                .request_headers()
+                .write_to_headers(request.headers_mut());
+
+            if operation.request_headers().activity_id.is_none() {
+                request.insert_header(
+                    HeaderName::from_static("x-ms-activity-id"),
+                    HeaderValue::from(activity_id.as_str().to_owned()),
+                );
+            }
+
+            if let Some(pk) = operation.partition_key() {
+                let _partition_key_definition = operation
+                    .container()
+                    .map(|container| container.partition_key_definition());
+
+                use azure_core::http::headers::AsHeaders;
+                let pk_headers = match pk.as_headers() {
+                    Ok(headers) => headers,
+                    Err(e) => return Err(e),
+                };
+
+                for (name, value) in pk_headers {
+                    request.insert_header(name, value);
+                }
+            }
+
+            let mut ctx = Context::default();
+            ctx.insert(auth_context.clone());
+
+            let result = pipeline.send(&ctx, &mut request).await;
+
+            match result {
+                Ok(response) => {
+                    let status_code = response.status();
+                    let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
+                    let sub_status = cosmos_headers.substatus;
+
+                    let body = response.into_body();
+                    let status = CosmosStatus::from_parts(status_code, sub_status);
+
+                    return Ok(CosmosResponse::new(
+                        body.as_ref().to_vec(),
+                        cosmos_headers,
+                        status,
+                    ));
+                }
+                Err(e) => {
+                    let request_sent = e.request_sent_status();
+
+                    let should_retry = Self::should_retry_transport_failure(
+                        attempt,
+                        MAX_TRANSPORT_RETRIES,
+                        operation.is_idempotent(),
+                        request_sent,
+                    );
+
+                    if should_retry {
+                        attempt += 1;
+                        continue;
+                    }
+
+                    return Err(e);
+                }
             }
         }
-
-        let response_headers = CosmosResponseHeaders::from_headers(&Headers::new());
-        let _dummy_result = crate::models::CosmosResponse::new(
-            Vec::new(),
-            response_headers,
-            CosmosStatus::from_parts(azure_core::http::StatusCode::Ok, None),
-        );
-
-        Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "execute_operation is not implemented in this transport-free driver build",
-        ))
     }
     /// Resolves a container by database and container name.
     ///
@@ -613,5 +683,51 @@ mod tests {
             effective.content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
         );
+    }
+
+    #[test]
+    fn retry_gate_allows_only_idempotent_not_sent_with_budget() {
+        assert!(CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            true,
+            RequestSentStatus::NotSent
+        ));
+    }
+
+    #[test]
+    fn retry_gate_blocks_non_idempotent_when_request_may_have_been_sent() {
+        assert!(!CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            false,
+            RequestSentStatus::Unknown
+        ));
+        assert!(!CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            false,
+            RequestSentStatus::Sent
+        ));
+    }
+
+    #[test]
+    fn retry_gate_allows_non_idempotent_when_not_sent() {
+        assert!(CosmosDriver::should_retry_transport_failure(
+            0,
+            1,
+            false,
+            RequestSentStatus::NotSent
+        ));
+    }
+
+    #[test]
+    fn retry_gate_blocks_when_budget_exhausted() {
+        assert!(!CosmosDriver::should_retry_transport_failure(
+            1,
+            1,
+            true,
+            RequestSentStatus::NotSent
+        ));
     }
 }
