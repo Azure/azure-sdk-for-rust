@@ -51,4 +51,5 @@ features = [
   "key_auth",
   "hmac_rust",
   "hmac_openssl",
+  "fault_injection",
 ]
