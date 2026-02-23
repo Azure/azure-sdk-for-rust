@@ -50,9 +50,11 @@ pub(crate) use finite_f64::FiniteF64;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
+#[cfg(test)]
 use crate::options::Region;
 
 /// Account metadata properties used for account-level routing decisions.
+#[cfg(test)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub(crate) struct AccountProperties {
@@ -63,6 +65,7 @@ pub(crate) struct AccountProperties {
     pub readable_regions: Vec<Region>,
 }
 
+#[cfg(test)]
 impl AccountProperties {
     /// Creates account properties from write/read region metadata.
     pub(crate) fn new(write_region: Region, readable_regions: Vec<Region>) -> Self {

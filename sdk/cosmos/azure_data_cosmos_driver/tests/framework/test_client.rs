@@ -63,9 +63,15 @@ impl DriverTestClient {
         let account = AccountReference::with_master_key(endpoint, key);
 
         // Build runtime with emulator certificate handling
-        let connection_pool = ConnectionPoolOptions::builder()
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DANGEROUS_DISABLED)
-            .build()?;
+        let mut connection_pool_builder = ConnectionPoolOptions::builder();
+
+        if connection_string.to_lowercase() == EMULATOR_CONNECTION_STRING {
+            connection_pool_builder = connection_pool_builder.with_emulator_server_cert_validation(
+                EmulatorServerCertValidation::DangerousDisabled,
+            );
+        }
+
+        let connection_pool = connection_pool_builder.build()?;
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(connection_pool)
@@ -128,12 +134,6 @@ impl DriverTestRunContext {
             run_id: Uuid::new_v4().to_string()[..8].to_string(),
         }
     }
-
-    /// Returns the account reference for this context.
-    pub fn account(&self) -> &AccountReference {
-        &self.client.account
-    }
-
     /// Generates a unique database name for this test run.
     pub fn unique_database_name(&self) -> String {
         format!("test-db-{}", self.run_id)
@@ -216,7 +216,7 @@ impl DriverTestRunContext {
             .await?;
 
         let body = format!(
-            r#"{{"id": "{}", "partitionKey": {{"paths": ["{}"], "kind": "Hash"}}}}"#,
+            r#"{{"id": "{}", "partitionKey": {{"paths": ["{}"], "kind": "Hash", "version": 2}}}}"#,
             container_name, partition_key_path
         );
         let operation =
@@ -231,11 +231,13 @@ impl DriverTestRunContext {
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create container, status: {:?}", status).into());
         }
-
-        Ok(ContainerReference::from_database(
-            database,
-            container_name.to_string(),
-        ))
+        let db_name = database
+            .name()
+            .ok_or_else(|| "database reference must be name-based".to_string())?;
+        let container = driver
+            .resolve_container_by_name(db_name, container_name)
+            .await?;
+        Ok(container)
     }
 
     /// Creates an item using the driver.
@@ -294,10 +296,10 @@ impl DriverTestRunContext {
         expected_status: u16,
     ) {
         // Check status code
-        let status = diagnostics.status_code();
+        let status = diagnostics.status();
         assert!(status.is_some(), "Diagnostics should have a status code");
         assert_eq!(
-            u16::from(status.unwrap()),
+            u16::from(status.unwrap().status_code()),
             expected_status,
             "Status code should match expected"
         );
@@ -339,34 +341,6 @@ impl DriverTestRunContext {
         assert!(
             first_request.request_charge().value() >= 0.0,
             "Request charge should be non-negative"
-        );
-    }
-
-    /// Validates diagnostics for a successful control plane operation.
-    pub fn validate_control_plane_diagnostics(
-        &self,
-        diagnostics: &DiagnosticsContext,
-        expected_status: u16,
-    ) {
-        // Check status code
-        let status = diagnostics.status_code();
-        assert!(status.is_some(), "Diagnostics should have a status code");
-        assert_eq!(
-            u16::from(status.unwrap()),
-            expected_status,
-            "Status code should match expected"
-        );
-
-        // Check requests
-        let requests = diagnostics.requests();
-        assert!(!requests.is_empty(), "Should have at least one request");
-
-        // Check first request has correct pipeline type
-        let first_request = &requests[0];
-        assert_eq!(
-            first_request.pipeline_type(),
-            PipelineType::Metadata,
-            "Should use metadata pipeline for control plane operations"
         );
     }
 }

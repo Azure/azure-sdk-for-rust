@@ -292,7 +292,10 @@ impl RequestDiagnostics {
     /// Since we received a response, the request was definitely sent.
     pub(crate) fn complete(&mut self, status_code: StatusCode, sub_status: Option<SubStatusCode>) {
         self.completed_at = Some(Instant::now());
-        self.status = CosmosStatus::from_parts(status_code, sub_status);
+        self.status = CosmosStatus::new(status_code);
+        if let Some(sub_status) = sub_status {
+            self.with_sub_status(sub_status);
+        }
         self.request_sent = RequestSentStatus::Sent;
         self.duration_ms = self
             .completed_at
@@ -310,9 +313,9 @@ impl RequestDiagnostics {
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
         self.timed_out = true;
-        self.status = CosmosStatus::new_with_sub_status(
+        self.status = CosmosStatus::from_parts(
             StatusCode::RequestTimeout,
-            SubStatusCode::CLIENT_OPERATION_TIMEOUT.value(),
+            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
         );
         self.duration_ms = self
             .completed_at
@@ -335,7 +338,7 @@ impl RequestDiagnostics {
     /// - `Unknown`: Treat as potentially sent (conservative)
     pub(crate) fn fail(&mut self, error: impl Into<String>, request_sent: RequestSentStatus) {
         self.completed_at = Some(Instant::now());
-        self.error = Some(error.into());
+        self.with_error(error);
         self.request_sent = request_sent;
         self.duration_ms = self
             .completed_at

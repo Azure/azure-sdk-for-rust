@@ -135,7 +135,6 @@ impl ContainerCache {
     /// On a cache miss, calls `fetch_fn` to resolve the container from the
     /// service. The resolved reference is then cross-populated into the
     /// by-name cache. Concurrent requests for the same RID share one fetch.
-    #[cfg(test)]
     pub(crate) async fn get_or_fetch_by_rid<F, Fut>(
         &self,
         account_endpoint: &str,
@@ -194,7 +193,6 @@ impl ContainerCache {
     }
 
     /// Returns a cached container looked up by RID, or `None` if not cached.
-    #[cfg(test)]
     pub(crate) async fn get_by_rid(
         &self,
         account_endpoint: &str,
@@ -225,14 +223,6 @@ impl ContainerCache {
         self.by_rid
             .get_or_insert_with(rid_key, || async { Ok(container_for_rid) })
             .await;
-    }
-
-    /// Invalidates a container from both caches.
-    pub(crate) async fn invalidate(&self, container: &ContainerReference) {
-        let name_key = ContainerNameKey::from_container(container);
-        let rid_key = ContainerRidKey::from_container(container);
-        self.by_name.invalidate(&name_key).await;
-        self.by_rid.invalidate(&rid_key).await;
     }
 
     /// Clears all cached container metadata from both indices.
@@ -464,34 +454,6 @@ mod tests {
             .get_by_rid(ACCOUNT_ENDPOINT, "unknown_rid")
             .await
             .is_none());
-    }
-
-    // --- invalidation ---
-
-    #[tokio::test]
-    async fn invalidate_removes_from_both_caches() {
-        let cache = ContainerCache::new();
-        let container = test_container("mydb", "mycoll");
-        let rid = container.rid().to_owned();
-
-        cache.put(container.clone()).await;
-
-        // Verify present in both
-        assert!(cache
-            .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
-            .await
-            .is_some());
-        assert!(cache.get_by_rid(ACCOUNT_ENDPOINT, &rid).await.is_some());
-
-        // Invalidate
-        cache.invalidate(&container).await;
-
-        // Both should be gone
-        assert!(cache
-            .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
-            .await
-            .is_none());
-        assert!(cache.get_by_rid(ACCOUNT_ENDPOINT, &rid).await.is_none());
     }
 
     // --- clear ---

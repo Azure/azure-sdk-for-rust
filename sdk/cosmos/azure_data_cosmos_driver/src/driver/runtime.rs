@@ -10,24 +10,16 @@ use std::{
 };
 
 use crate::{
-    models::{
-        AccountEndpoint, AccountProperties, AccountReference, ContainerReference,
-        ThroughputControlGroupName, UserAgent,
-    },
+    models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
-        ConnectionPoolOptions, CorrelationId, DiagnosticsOptions, DriverOptions, RuntimeOptions,
-        SharedRuntimeOptions, ThroughputControlGroupOptions,
-        ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry, UserAgentSuffix,
-        WorkloadId,
+        ConnectionPoolOptions, CorrelationId, DriverOptions, RuntimeOptions, SharedRuntimeOptions,
+        ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
+        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
-    system::{AzureVmMetadata, CpuMemoryHistory, CpuMemoryMonitor, VmMetadataService},
 };
 
-use super::{
-    cache::{AccountMetadataCache, ContainerCache},
-    transport::CosmosTransport,
-    CosmosDriver,
-};
+use super::cache::ContainerCache;
+use super::{transport::CosmosTransport, CosmosDriver};
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -52,7 +44,7 @@ use super::{
 ///
 /// # async fn example() -> azure_core::Result<()> {
 /// let runtime = RuntimeOptions::builder()
-///     .with_content_response_on_write(ContentResponseOnWrite::DISABLED)
+///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
 ///     .build();
 ///
 /// let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
@@ -69,7 +61,7 @@ use super::{
 /// let driver = cosmos_runtime.get_or_create_driver(account, None).await?;
 ///
 /// // Later, modify defaults at runtime
-/// cosmos_runtime.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::ENABLED));
+/// cosmos_runtime.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
 /// # Ok(())
 /// # }
 /// ```
@@ -87,9 +79,6 @@ pub struct CosmosDriverRuntime {
     /// Manages separate pools for metadata and data plane operations,
     /// with lazy initialization of emulator-specific pools.
     transport: Arc<CosmosTransport>,
-
-    /// Diagnostics configuration for output verbosity and size limits.
-    diagnostics_options: Arc<DiagnosticsOptions>,
 
     /// Thread-safe runtime options for operation options.
     runtime_options: SharedRuntimeOptions,
@@ -116,18 +105,6 @@ pub struct CosmosDriverRuntime {
     /// is more strict for this field.
     user_agent_suffix: Option<UserAgentSuffix>,
 
-    /// Process-wide CPU and memory monitor singleton.
-    ///
-    /// Provides access to historical CPU/memory snapshots for client telemetry.
-    /// The monitor runs in a background thread and samples every 5 seconds.
-    cpu_memory_monitor: CpuMemoryMonitor,
-
-    /// Process-wide Azure VM metadata service singleton.
-    ///
-    /// Provides access to VM metadata from the Instance Metadata Service (IMDS).
-    /// Metadata is fetched once on first access and cached for the process lifetime.
-    vm_metadata_service: VmMetadataService,
-
     /// Registry of throughput control groups.
     ///
     /// Groups are registered during builder construction and are immutable after
@@ -139,16 +116,7 @@ pub struct CosmosDriverRuntime {
     /// Ensures singleton driver per account reference.
     driver_registry: Arc<RwLock<HashMap<String, Arc<CosmosDriver>>>>,
 
-    /// Cache for account metadata (regions, capabilities).
-    ///
-    /// Entries are populated on first access to an account and used for routing.
-    /// Wrapped in `Arc` for cheap cloning.
-    account_metadata_cache: Arc<AccountMetadataCache>,
-
-    /// Cache for container metadata (partition key definition, indexing policy).
-    ///
-    /// Entries are populated on first access to a container and used for
-    /// partition key extraction and routing. Wrapped in `Arc` for cheap cloning.
+    /// Shared container metadata cache used by drivers in this runtime.
     container_cache: Arc<ContainerCache>,
 }
 
@@ -176,11 +144,9 @@ impl CosmosDriverRuntime {
         &self.transport
     }
 
-    /// Returns the diagnostics options.
-    ///
-    /// Use this to access verbosity and size settings for diagnostic output.
-    pub fn diagnostics_options(&self) -> &Arc<DiagnosticsOptions> {
-        &self.diagnostics_options
+    /// Returns the shared container cache.
+    pub(crate) fn container_cache(&self) -> &Arc<ContainerCache> {
+        &self.container_cache
     }
 
     /// Returns the thread-safe runtime options.
@@ -224,95 +190,12 @@ impl CosmosDriverRuntime {
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
     }
 
-    /// Returns a snapshot of the current CPU and memory usage history.
-    ///
-    /// The history contains the most recent CPU load and memory usage samples,
-    /// typically covering the last 30 seconds (6 samples at 5-second intervals).
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    ///
-    /// # async fn example() -> azure_core::Result<()> {
-    /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let history = runtime.cpu_memory_snapshot();
-    ///
-    /// if let Some(cpu) = history.latest_cpu() {
-    ///     println!("Latest CPU: {:.1}%", cpu.value());
-    /// }
-    ///
-    /// if history.is_cpu_overloaded() {
-    ///     println!("Warning: CPU is overloaded");
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn cpu_memory_snapshot(&self) -> CpuMemoryHistory {
-        self.cpu_memory_monitor.snapshot()
-    }
-
-    /// Returns the cached Azure VM metadata, if available.
-    ///
-    /// Returns `None` if:
-    /// - Not running on an Azure VM
-    /// - The `COSMOS_DISABLE_IMDS` environment variable is set
-    /// - The IMDS endpoint is unreachable
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    ///
-    /// # async fn example() -> azure_core::Result<()> {
-    /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// if let Some(metadata) = runtime.vm_metadata() {
-    ///     println!("VM ID: {}", metadata.vm_id());
-    ///     println!("Location: {}", metadata.location());
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn vm_metadata(&self) -> Option<&AzureVmMetadata> {
-        self.vm_metadata_service.metadata()
-    }
-
-    /// Returns the unique machine ID.
-    ///
-    /// This is always available:
-    /// - On Azure VMs: "vmId_{vm-id}" from IMDS
-    /// - Off Azure: "uuid_{generated-uuid}" (stable for process lifetime)
-    pub fn machine_id(&self) -> &str {
-        self.vm_metadata_service.machine_id()
-    }
-
-    /// Returns `true` if running on an Azure VM with accessible IMDS.
-    pub fn is_on_azure(&self) -> bool {
-        self.vm_metadata_service.is_on_azure()
-    }
-
     /// Returns the throughput control group registry.
     ///
     /// The registry contains all groups registered during runtime construction.
     /// Groups are identified by the combination of container reference and group name.
     pub fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
         &self.throughput_control_groups
-    }
-
-    /// Returns cached account properties for the given account, fetching on cache miss.
-    pub(crate) async fn get_or_fetch_account_properties<F, Fut>(
-        &self,
-        account: &AccountReference,
-        fetch_fn: F,
-    ) -> Arc<AccountProperties>
-    where
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = AccountProperties>,
-    {
-        let endpoint = AccountEndpoint::from(account);
-        self.account_metadata_cache
-            .get_or_fetch(endpoint, fetch_fn)
-            .await
     }
 
     /// Returns a throughput control group by container and name.
@@ -336,64 +219,6 @@ impl CosmosDriverRuntime {
     ) -> Option<&Arc<ThroughputControlGroupOptions>> {
         self.throughput_control_groups
             .get_default_for_container(container)
-    }
-
-    // ===== Cache Access Methods =====
-
-    /// Resolves a container by name, fetching and caching if not already cached.
-    ///
-    /// The `fetch_fn` is only called if the container is not in the cache.
-    /// On a cache miss the resolved reference is populated into both
-    /// by-name and by-RID caches.
-    pub(crate) async fn resolve_container_by_name<F, Fut>(
-        &self,
-        account_endpoint: &str,
-        db_name: &str,
-        container_name: &str,
-        fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
-    where
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
-    {
-        self.container_cache
-            .get_or_fetch_by_name(account_endpoint, db_name, container_name, fetch_fn)
-            .await
-    }
-
-    /// Invalidates the cached container reference from both name and RID caches.
-    ///
-    /// Call this when container properties may have changed (e.g., after
-    /// updating indexing policy) or when a container has been deleted/recreated.
-    pub(crate) async fn invalidate_container_cache(&self, container: &ContainerReference) {
-        self.container_cache.invalidate(container).await;
-    }
-
-    /// Invalidates cached account metadata.
-    ///
-    /// Call this when account configuration may have changed (e.g., after
-    /// adding/removing regions).
-    pub(crate) async fn invalidate_account_cache(&self, account: &AccountReference) {
-        let endpoint = AccountEndpoint::from(account);
-        self.account_metadata_cache.invalidate(&endpoint).await;
-    }
-
-    /// Clears all caches.
-    ///
-    /// This is primarily useful for testing or when the connection needs
-    /// to be fully refreshed.
-    pub(crate) async fn clear_all_caches(
-        &self,
-        account: Option<&AccountReference>,
-        container: Option<&ContainerReference>,
-    ) {
-        if let Some(account) = account {
-            self.invalidate_account_cache(account).await;
-        }
-
-        if let Some(container) = container {
-            self.invalidate_container_cache(container).await;
-        }
     }
 
     /// Gets or creates a driver for the specified account.
@@ -494,7 +319,6 @@ impl CosmosDriverRuntime {
 pub struct CosmosDriverRuntimeBuilder {
     client_options: Option<ClientOptions>,
     connection_pool: Option<ConnectionPoolOptions>,
-    diagnostics_options: Option<DiagnosticsOptions>,
     runtime_options: Option<RuntimeOptions>,
     workload_id: Option<WorkloadId>,
     correlation_id: Option<CorrelationId>,
@@ -517,14 +341,6 @@ impl CosmosDriverRuntimeBuilder {
     /// Sets the connection pool options.
     pub fn with_connection_pool(mut self, options: ConnectionPoolOptions) -> Self {
         self.connection_pool = Some(options);
-        self
-    }
-
-    /// Sets the diagnostics options.
-    ///
-    /// Controls verbosity and size limits for diagnostic output.
-    pub fn with_diagnostics_options(mut self, options: DiagnosticsOptions) -> Self {
-        self.diagnostics_options = Some(options);
         self
     }
 
@@ -635,9 +451,6 @@ impl CosmosDriverRuntimeBuilder {
 
     /// Builds the [`CosmosDriverRuntime`].
     ///
-    /// This automatically initializes the process-wide CPU/memory monitor and
-    /// VM metadata service singletons if they haven't been initialized already.
-    ///
     /// The user agent is computed from (in priority order):
     /// 1. `user_agent_suffix` if set
     /// 2. `workload_id` if set (formatted as `w{id}`)
@@ -649,10 +462,6 @@ impl CosmosDriverRuntimeBuilder {
     /// Returns an error if the HTTP transport cannot be created (e.g., TLS
     /// configuration failure).
     ///
-    /// # Note
-    ///
-    /// This method is async because it may need to fetch Azure VM metadata from
-    /// the Instance Metadata Service (IMDS) on first initialization.
     pub async fn build(self) -> azure_core::Result<CosmosDriverRuntime> {
         // Compute user agent from suffix/workloadId/correlationId (in priority order)
         let user_agent = if let Some(ref suffix) = self.user_agent_suffix {
@@ -675,7 +484,6 @@ impl CosmosDriverRuntimeBuilder {
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
             transport,
-            diagnostics_options: Arc::new(self.diagnostics_options.unwrap_or_default()),
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),
@@ -683,11 +491,8 @@ impl CosmosDriverRuntimeBuilder {
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
-            cpu_memory_monitor: CpuMemoryMonitor::get_or_init(),
-            vm_metadata_service: VmMetadataService::get_or_init().await,
             throughput_control_groups: self.throughput_control_groups,
             driver_registry: Arc::new(RwLock::new(HashMap::new())),
-            account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             container_cache: Arc::new(ContainerCache::new()),
         })
     }

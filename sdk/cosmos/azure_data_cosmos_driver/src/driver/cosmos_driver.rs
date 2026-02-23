@@ -4,7 +4,10 @@
 //! Cosmos DB driver instance.
 
 use crate::{
-    diagnostics::DiagnosticsContextBuilder,
+    diagnostics::{
+        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestEvent,
+        RequestSentStatus as DiagnosticsRequestSentStatus, TransportSecurity,
+    },
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
@@ -17,11 +20,66 @@ use crate::{
 };
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
+use std::sync::{Arc, Mutex};
 
 use super::{
-    transport::{uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus},
+    transport::{
+        is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
+        RequestAttemptTelemetryContext, RequestAttemptTelemetrySink, RequestSentExt,
+        RequestSentStatus as TransportRequestSentStatus,
+    },
     CosmosDriverRuntime,
 };
+
+#[derive(Clone, Debug, Default)]
+struct RequestAttemptTelemetry {
+    request_reached_transport: bool,
+    request_sent_status: Option<TransportRequestSentStatus>,
+    events: Vec<RequestEvent>,
+}
+
+#[derive(Debug, Default)]
+struct RequestAttemptTelemetryHandle(Mutex<RequestAttemptTelemetry>);
+
+impl RequestAttemptTelemetryHandle {
+    fn new() -> Self {
+        Self(Mutex::new(RequestAttemptTelemetry::default()))
+    }
+
+    fn reset_attempt(&self) {
+        if let Ok(mut telemetry) = self.0.lock() {
+            *telemetry = RequestAttemptTelemetry::default();
+        }
+    }
+
+    fn take_attempt(&self) -> RequestAttemptTelemetry {
+        if let Ok(mut telemetry) = self.0.lock() {
+            std::mem::take(&mut *telemetry)
+        } else {
+            RequestAttemptTelemetry::default()
+        }
+    }
+}
+
+impl RequestAttemptTelemetrySink for RequestAttemptTelemetryHandle {
+    fn mark_reached_transport(&self) {
+        if let Ok(mut telemetry) = self.0.lock() {
+            telemetry.request_reached_transport = true;
+        }
+    }
+
+    fn set_request_sent_status(&self, request_sent_status: TransportRequestSentStatus) {
+        if let Ok(mut telemetry) = self.0.lock() {
+            telemetry.request_sent_status = Some(request_sent_status);
+        }
+    }
+
+    fn record_event(&self, event: RequestEvent) {
+        if let Ok(mut telemetry) = self.0.lock() {
+            telemetry.events.push(event);
+        }
+    }
+}
 
 /// Cosmos DB driver instance.
 ///
@@ -41,13 +99,121 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    async fn fetch_container_by_name(
+        &self,
+        db_name: &str,
+        container_name: &str,
+    ) -> azure_core::Result<ContainerReference> {
+        let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
+        let options = OperationOptions::new();
+
+        let db_result = self
+            .execute_operation(
+                CosmosOperation::read_database(db_ref.clone()),
+                options.clone(),
+            )
+            .await?;
+        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let db_rid = db_props.system_properties.rid.ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "database response missing _rid",
+            )
+        })?;
+
+        let container_result = self
+            .execute_operation(
+                CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
+                options,
+            )
+            .await?;
+        let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let container_rid = container_props
+            .system_properties
+            .rid
+            .clone()
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "container response missing _rid",
+                )
+            })?;
+
+        Ok(ContainerReference::new(
+            self.account().clone(),
+            db_props.id.into_owned(),
+            db_rid,
+            container_props.id.clone().into_owned(),
+            container_rid,
+            &container_props,
+        ))
+    }
+
+    async fn fetch_container_by_rid(
+        &self,
+        db_rid: &str,
+        container_rid: &str,
+    ) -> azure_core::Result<ContainerReference> {
+        let db_ref = DatabaseReference::from_rid(self.account().clone(), db_rid.to_owned());
+        let options = OperationOptions::new();
+
+        let db_result = self
+            .execute_operation(
+                CosmosOperation::read_database(db_ref.clone()),
+                options.clone(),
+            )
+            .await?;
+        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let resolved_db_rid = db_props
+            .system_properties
+            .rid
+            .clone()
+            .unwrap_or_else(|| db_rid.to_owned());
+
+        let container_result = self
+            .execute_operation(
+                CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
+                options,
+            )
+            .await?;
+        let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let resolved_container_rid = container_props
+            .system_properties
+            .rid
+            .clone()
+            .unwrap_or_else(|| container_rid.to_owned());
+
+        Ok(ContainerReference::new(
+            self.account().clone(),
+            db_props.id.into_owned(),
+            resolved_db_rid,
+            container_props.id.clone().into_owned(),
+            resolved_container_rid,
+            &container_props,
+        ))
+    }
+
     fn should_retry_transport_failure(
         attempt: usize,
         max_transport_retries: usize,
         is_idempotent: bool,
-        request_sent: RequestSentStatus,
+        request_sent: TransportRequestSentStatus,
     ) -> bool {
         attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
+    }
+
+    fn map_request_sent_status(
+        request_sent: TransportRequestSentStatus,
+    ) -> DiagnosticsRequestSentStatus {
+        match request_sent {
+            TransportRequestSentStatus::Sent => DiagnosticsRequestSentStatus::Sent,
+            TransportRequestSentStatus::NotSent => DiagnosticsRequestSentStatus::NotSent,
+            TransportRequestSentStatus::Unknown => DiagnosticsRequestSentStatus::Unknown,
+        }
     }
 
     /// Creates a new driver instance.
@@ -238,8 +404,46 @@ impl CosmosDriver {
         // - operation may be non-idempotent but transport failure happened before bytes were sent
         const MAX_TRANSPORT_RETRIES: usize = 1;
         let mut attempt = 0usize;
+        let mut diagnostics_builder = DiagnosticsContextBuilder::new(
+            activity_id.clone(),
+            std::sync::Arc::new(DiagnosticsOptions::default()),
+        );
+        debug_assert_eq!(diagnostics_builder.activity_id(), &activity_id);
+
+        let pipeline_type = if is_dataplane {
+            PipelineType::DataPlane
+        } else {
+            PipelineType::Metadata
+        };
+        let transport_security = if bool::from(
+            self.runtime
+                .connection_pool()
+                .emulator_server_cert_validation(),
+        ) && is_emulator_host(&endpoint)
+        {
+            TransportSecurity::EmulatorWithInsecureCertificates
+        } else {
+            TransportSecurity::Secure
+        };
+        let endpoint_string = endpoint.url().as_str().to_owned();
+        let region = Region::new("Unknown");
+        let attempt_telemetry = Arc::new(RequestAttemptTelemetryHandle::new());
 
         loop {
+            let execution_context = if attempt == 0 {
+                ExecutionContext::Initial
+            } else {
+                ExecutionContext::Retry
+            };
+            let request_handle = diagnostics_builder.start_request(
+                execution_context,
+                pipeline_type,
+                transport_security,
+                region.clone(),
+                endpoint_string.clone(),
+            );
+            debug_assert!(diagnostics_builder.request_count() > 0);
+
             let mut request = Request::new(url.clone(), method);
 
             if let Some(body) = operation.body() {
@@ -275,8 +479,19 @@ impl CosmosDriver {
 
             let mut ctx = Context::default();
             ctx.insert(auth_context.clone());
+            attempt_telemetry.reset_attempt();
+            ctx.insert(RequestAttemptTelemetryContext::new(
+                attempt_telemetry.clone() as Arc<dyn RequestAttemptTelemetrySink>,
+            ));
 
             let result = pipeline.send(&ctx, &mut request).await;
+            let telemetry = attempt_telemetry.take_attempt();
+            let request_reached_transport = telemetry.request_reached_transport;
+            let request_sent_from_transport = telemetry.request_sent_status;
+
+            for event in telemetry.events {
+                diagnostics_builder.add_event(request_handle, event);
+            }
 
             match result {
                 Ok(response) => {
@@ -284,13 +499,22 @@ impl CosmosDriver {
                     let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
                     let sub_status = cosmos_headers.substatus;
 
+                    diagnostics_builder.update_request(request_handle, |request| {
+                        if let Some(charge) = cosmos_headers.request_charge {
+                            request.with_charge(charge);
+                        }
+                        if let Some(activity_id) = cosmos_headers.activity_id.clone() {
+                            request.with_activity_id(activity_id);
+                        }
+                        if let Some(token) = cosmos_headers.session_token.clone() {
+                            request.with_session_token(token.to_string());
+                        }
+                    });
+                    diagnostics_builder.complete_request(request_handle, status_code, sub_status);
+                    diagnostics_builder.set_operation_status(status_code, sub_status);
+
                     let body = response.into_body();
                     let status = CosmosStatus::from_parts(status_code, sub_status);
-                    let mut diagnostics_builder = DiagnosticsContextBuilder::new(
-                        activity_id.clone(),
-                        std::sync::Arc::new(DiagnosticsOptions::default()),
-                    );
-                    diagnostics_builder.set_operation_status(status_code, sub_status);
                     let diagnostics = std::sync::Arc::new(diagnostics_builder.complete());
 
                     return Ok(CosmosResponse::new(
@@ -301,7 +525,16 @@ impl CosmosDriver {
                     ));
                 }
                 Err(e) => {
-                    let request_sent = e.request_sent_status();
+                    let request_sent = if request_reached_transport {
+                        request_sent_from_transport.unwrap_or_else(|| e.request_sent_status())
+                    } else {
+                        TransportRequestSentStatus::NotSent
+                    };
+                    diagnostics_builder.fail_request(
+                        request_handle,
+                        e.to_string(),
+                        Self::map_request_sent_status(request_sent),
+                    );
 
                     let should_retry = Self::should_retry_transport_failure(
                         attempt,
@@ -365,51 +598,58 @@ impl CosmosDriver {
         db_name: &str,
         container_name: &str,
     ) -> azure_core::Result<ContainerReference> {
-        let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
-        let options = OperationOptions::new();
+        self.resolve_container_by_name(db_name, container_name)
+            .await
+    }
 
-        let db_result = self
-            .execute_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
+    /// Resolves a container by database name and container name.
+    ///
+    /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
+    /// metadata from the service and populates the cache.
+    pub async fn resolve_container_by_name(
+        &self,
+        db_name: &str,
+        container_name: &str,
+    ) -> azure_core::Result<ContainerReference> {
+        let endpoint = self.account().endpoint().as_str().to_owned();
+        let db_name_owned = db_name.to_owned();
+        let container_name_owned = container_name.to_owned();
+
+        let resolved = self
+            .runtime
+            .container_cache()
+            .get_or_fetch_by_name(&endpoint, db_name, container_name, || async move {
+                self.fetch_container_by_name(&db_name_owned, &container_name_owned)
+                    .await
+            })
             .await?;
-        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
-        let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "database response missing _rid",
-            )
-        })?;
 
-        let container_result = self
-            .execute_operation(
-                CosmosOperation::read_container_by_name(db_ref.clone(), container_name.to_owned()),
-                options,
-            )
+        Ok(resolved.as_ref().clone())
+    }
+
+    /// Resolves a container by database RID and container RID.
+    ///
+    /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
+    /// metadata from the service and populates the cache.
+    pub async fn resolve_container_by_rid(
+        &self,
+        db_rid: &str,
+        container_rid: &str,
+    ) -> azure_core::Result<ContainerReference> {
+        let endpoint = self.account().endpoint().as_str().to_owned();
+        let db_rid_owned = db_rid.to_owned();
+        let container_rid_owned = container_rid.to_owned();
+
+        let resolved = self
+            .runtime
+            .container_cache()
+            .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
+                self.fetch_container_by_rid(&db_rid_owned, &container_rid_owned)
+                    .await
+            })
             .await?;
-        let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
-        let container_rid = container_props
-            .system_properties
-            .rid
-            .clone()
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "container response missing _rid",
-                )
-            })?;
 
-        Ok(ContainerReference::new(
-            db_ref.into_account(),
-            db_props.id.into_owned(),
-            db_rid,
-            container_props.id.clone().into_owned(),
-            container_rid,
-            &container_props,
-        ))
+        Ok(resolved.as_ref().clone())
     }
 }
 
@@ -700,7 +940,7 @@ mod tests {
             0,
             1,
             true,
-            RequestSentStatus::NotSent
+            TransportRequestSentStatus::NotSent
         ));
     }
 
@@ -710,13 +950,13 @@ mod tests {
             0,
             1,
             false,
-            RequestSentStatus::Unknown
+            TransportRequestSentStatus::Unknown
         ));
         assert!(!CosmosDriver::should_retry_transport_failure(
             0,
             1,
             false,
-            RequestSentStatus::Sent
+            TransportRequestSentStatus::Sent
         ));
     }
 
@@ -726,7 +966,7 @@ mod tests {
             0,
             1,
             false,
-            RequestSentStatus::NotSent
+            TransportRequestSentStatus::NotSent
         ));
     }
 
@@ -736,7 +976,7 @@ mod tests {
             1,
             1,
             true,
-            RequestSentStatus::NotSent
+            TransportRequestSentStatus::NotSent
         ));
     }
 }

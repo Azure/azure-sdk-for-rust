@@ -10,6 +10,7 @@
 //! - [`AccountMetadataCache`] - Cache for account metadata (regions, capabilities)
 //! - [`ContainerCache`] - Cache for container metadata (partition key, indexing)
 
+#[cfg(test)]
 mod account_metadata_cache;
 mod async_cache;
 mod async_lazy;
@@ -17,3 +18,4 @@ mod container_cache;
 
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
+pub(crate) use container_cache::ContainerCache;

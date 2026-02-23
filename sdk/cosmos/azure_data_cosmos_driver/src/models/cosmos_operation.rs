@@ -405,6 +405,17 @@ impl CosmosOperation {
         Self::new(OperationType::Read, resource_ref)
     }
 
+    /// Reads a container's properties by database RID and container RID.
+    pub fn read_container_by_rid(
+        database: DatabaseReference,
+        container_rid: impl Into<std::borrow::Cow<'static, str>>,
+    ) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(database)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid(container_rid.into());
+        Self::new(OperationType::Read, resource_ref)
+    }
+
     // ===== Data Plane Factory Methods =====
 
     /// Creates an item (document) in a container.

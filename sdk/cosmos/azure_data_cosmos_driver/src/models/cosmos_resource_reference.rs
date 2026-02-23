@@ -88,6 +88,12 @@ impl CosmosResourceReference {
         self
     }
 
+    /// Sets the resource RID.
+    pub(crate) fn with_rid(mut self, rid: impl Into<Cow<'static, str>>) -> Self {
+        self.id = Some(ResourceIdentifier::by_rid(rid.into().into_owned()));
+        self
+    }
+
     /// Overrides the resource type while preserving account/database/container scope.
     pub(crate) fn with_resource_type(mut self, resource_type: ResourceType) -> Self {
         self.resource_type = resource_type;
