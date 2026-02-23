@@ -125,7 +125,7 @@ impl BlockBlobClient {
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlockBlob.managedUpload")]
-    pub(crate) async fn managed_upload(
+    pub async fn managed_upload(
         &self,
         content: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientManagedUploadOptions<'_>>,
