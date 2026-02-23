@@ -377,7 +377,6 @@ dependencies = [
  "azure_identity",
  "clap",
  "futures",
- "getrandom 0.4.1",
  "hdrhistogram",
  "rand 0.10.0",
  "serde",
