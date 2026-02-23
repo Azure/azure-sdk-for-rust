@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
+- Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.
 
 ### Bugs Fixed
 

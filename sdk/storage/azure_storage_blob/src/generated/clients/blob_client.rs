@@ -19,9 +19,10 @@ use crate::generated::models::{
 use azure_core::{
     base64,
     error::CheckSuccessOptions,
+    fmt::SafeDebug,
     http::{
-        AsyncResponse, Method, NoFormat, Pipeline, PipelineSendOptions, PipelineStreamOptions,
-        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        AsyncResponse, ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions,
+        PipelineStreamOptions, Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::{to_rfc7231, OffsetDateTime},
     tracing, Result,
@@ -33,6 +34,15 @@ pub struct BlobClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
+}
+
+/// Options used when creating a `BlobClient`
+#[derive(Clone, SafeDebug)]
+pub struct BlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
 }
 
 impl BlobClient {
@@ -80,7 +90,7 @@ impl BlobClient {
     /// * [`lease_id`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobClientAcquireLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Blob.acquireLease")]
+    #[tracing::function("Storage.Blob.BlobClient.acquireLease")]
     pub async fn acquire_lease(
         &self,
         duration: i32,
@@ -170,7 +180,7 @@ impl BlobClient {
     /// * [`lease_time`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::lease_time) - x-ms-lease-time
     ///
     /// [`BlobClientBreakLeaseResultHeaders`]: crate::generated::models::BlobClientBreakLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Blob.breakLease")]
+    #[tracing::function("Storage.Blob.BlobClient.breakLease")]
     pub async fn break_lease(
         &self,
         options: Option<BlobClientBreakLeaseOptions<'_>>,
@@ -185,7 +195,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -261,7 +270,7 @@ impl BlobClient {
     /// * [`lease_id`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobClientChangeLeaseResultHeaders`]: crate::generated::models::BlobClientChangeLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Blob.changeLease")]
+    #[tracing::function("Storage.Blob.BlobClient.changeLease")]
     pub async fn change_lease(
         &self,
         lease_id: String,
@@ -278,7 +287,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -352,7 +360,7 @@ impl BlobClient {
     /// * [`version_id`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientCreateSnapshotResultHeaders`]: crate::generated::models::BlobClientCreateSnapshotResultHeaders
-    #[tracing::function("Storage.Blob.Blob.createSnapshot")]
+    #[tracing::function("Storage.Blob.BlobClient.createSnapshot")]
     pub async fn create_snapshot(
         &self,
         options: Option<BlobClientCreateSnapshotOptions<'_>>,
@@ -367,7 +375,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -436,7 +443,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.delete")]
+    #[tracing::function("Storage.Blob.BlobClient.delete")]
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
@@ -459,7 +466,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -515,7 +521,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.deleteImmutabilityPolicy")]
+    #[tracing::function("Storage.Blob.BlobClient.deleteImmutabilityPolicy")]
     pub async fn delete_immutability_policy(
         &self,
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
@@ -536,7 +542,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -626,7 +631,7 @@ impl BlobClient {
     /// * [`version_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientDownloadInternalResultHeaders`]: crate::generated::models::BlobClientDownloadInternalResultHeaders
-    #[tracing::function("Storage.Blob.Blob.download")]
+    #[tracing::function("Storage.Blob.BlobClient.download")]
     pub async fn download_internal(
         &self,
         options: Option<BlobClientDownloadInternalOptions<'_>>,
@@ -748,7 +753,7 @@ impl BlobClient {
     /// * [`sku_name`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
     ///
     /// [`BlobClientGetAccountInfoResultHeaders`]: crate::generated::models::BlobClientGetAccountInfoResultHeaders
-    #[tracing::function("Storage.Blob.Blob.getAccountInfo")]
+    #[tracing::function("Storage.Blob.BlobClient.getAccountInfo")]
     pub async fn get_account_info(
         &self,
         options: Option<BlobClientGetAccountInfoOptions<'_>>,
@@ -765,7 +770,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -860,7 +864,7 @@ impl BlobClient {
     /// * [`version_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
-    #[tracing::function("Storage.Blob.Blob.getProperties")]
+    #[tracing::function("Storage.Blob.BlobClient.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
@@ -932,7 +936,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.getTags")]
+    #[tracing::function("Storage.Blob.BlobClient.getTags")]
     pub async fn get_tags(
         &self,
         options: Option<BlobClientGetTagsOptions<'_>>,
@@ -954,7 +958,6 @@ impl BlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("x-ms-blob-if-match", if_match);
         }
@@ -1031,7 +1034,7 @@ impl BlobClient {
     /// * [`last_modified`()](crate::generated::models::BlobClientReleaseLeaseResultHeaders::last_modified) - last-modified
     ///
     /// [`BlobClientReleaseLeaseResultHeaders`]: crate::generated::models::BlobClientReleaseLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Blob.releaseLease")]
+    #[tracing::function("Storage.Blob.BlobClient.releaseLease")]
     pub async fn release_lease(
         &self,
         lease_id: String,
@@ -1047,7 +1050,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -1120,7 +1122,7 @@ impl BlobClient {
     /// * [`lease_id`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobClientRenewLeaseResultHeaders`]: crate::generated::models::BlobClientRenewLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Blob.renewLease")]
+    #[tracing::function("Storage.Blob.BlobClient.renewLease")]
     pub async fn renew_lease(
         &self,
         lease_id: String,
@@ -1136,7 +1138,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -1177,7 +1178,7 @@ impl BlobClient {
     ///
     /// * `expiry` - Specifies the date time when the blobs immutability policy is set to expire.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.setImmutabilityPolicy")]
+    #[tracing::function("Storage.Blob.BlobClient.setImmutabilityPolicy")]
     pub async fn set_immutability_policy(
         &self,
         expiry: &OffsetDateTime,
@@ -1199,7 +1200,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
@@ -1233,7 +1233,7 @@ impl BlobClient {
     ///
     /// * `legal_hold` - Required. Specifies the legal hold status to set on the blob.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.setLegalHold")]
+    #[tracing::function("Storage.Blob.BlobClient.setLegalHold")]
     pub async fn set_legal_hold(
         &self,
         legal_hold: bool,
@@ -1255,7 +1255,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-legal-hold", legal_hold.to_string());
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -1280,7 +1279,7 @@ impl BlobClient {
     ///
     /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.setMetadata")]
+    #[tracing::function("Storage.Blob.BlobClient.setMetadata")]
     pub async fn set_metadata(
         &self,
         metadata: &HashMap<String, String>,
@@ -1296,7 +1295,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -1355,7 +1353,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.setProperties")]
+    #[tracing::function("Storage.Blob.BlobClient.setProperties")]
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
@@ -1370,7 +1368,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match);
         }
@@ -1430,7 +1427,7 @@ impl BlobClient {
     ///
     /// * `tags` - The blob tags.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.setTags")]
+    #[tracing::function("Storage.Blob.BlobClient.setTags")]
     pub async fn set_tags(
         &self,
         tags: RequestContent<BlobTags, XmlFormat>,
@@ -1509,7 +1506,7 @@ impl BlobClient {
     ///
     /// * `tier` - Indicates the tier to be set on the blob.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.setTier")]
+    #[tracing::function("Storage.Blob.BlobClient.setTier")]
     pub async fn set_tier(
         &self,
         tier: AccessTier,
@@ -1531,7 +1528,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-access-tier", tier.to_string());
         if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
@@ -1564,7 +1560,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Blob.undelete")]
+    #[tracing::function("Storage.Blob.BlobClient.undelete")]
     pub async fn undelete(
         &self,
         options: Option<BlobClientUndeleteOptions<'_>>,
@@ -1579,7 +1575,6 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1595,5 +1590,14 @@ impl BlobClient {
             )
             .await?;
         Ok(rsp.into())
+    }
+}
+
+impl Default for BlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
     }
 }

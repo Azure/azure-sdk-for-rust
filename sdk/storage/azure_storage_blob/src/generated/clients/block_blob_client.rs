@@ -14,9 +14,10 @@ use crate::generated::models::{
 use azure_core::{
     base64,
     error::CheckSuccessOptions,
+    fmt::SafeDebug,
     http::{
-        Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent, Response, Url,
-        UrlExt, XmlFormat,
+        ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
+        Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
@@ -27,6 +28,15 @@ pub struct BlockBlobClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
+}
+
+/// Options used when creating a `BlockBlobClient`
+#[derive(Clone, SafeDebug)]
+pub struct BlockBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
 }
 
 impl BlockBlobClient {
@@ -82,7 +92,7 @@ impl BlockBlobClient {
     /// * [`version_id`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlockBlobClientCommitBlockListResultHeaders`]: crate::generated::models::BlockBlobClientCommitBlockListResultHeaders
-    #[tracing::function("Storage.Blob.BlockBlob.commitBlockList")]
+    #[tracing::function("Storage.Blob.BlockBlobClient.commitBlockList")]
     pub async fn commit_block_list(
         &self,
         blocks: RequestContent<BlockLookupList, XmlFormat>,
@@ -241,7 +251,7 @@ impl BlockBlobClient {
     /// * [`blob_content_length`()](crate::generated::models::BlockListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`BlockListHeaders`]: crate::generated::models::BlockListHeaders
-    #[tracing::function("Storage.Blob.BlockBlob.getBlockList")]
+    #[tracing::function("Storage.Blob.BlockBlobClient.getBlockList")]
     pub async fn get_block_list(
         &self,
         list_type: BlockListType,
@@ -262,7 +272,6 @@ impl BlockBlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         if let Some(if_tags) = options.if_tags.as_ref() {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -329,7 +338,7 @@ impl BlockBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`BlockBlobClientStageBlockResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockResultHeaders
-    #[tracing::function("Storage.Blob.BlockBlob.stageBlock")]
+    #[tracing::function("Storage.Blob.BlockBlobClient.stageBlock")]
     pub async fn stage_block(
         &self,
         block_id: &[u8],
@@ -448,7 +457,7 @@ impl BlockBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`BlockBlobClientStageBlockFromUrlResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.BlockBlob.stageBlockFromUrl")]
+    #[tracing::function("Storage.Blob.BlockBlobClient.stageBlockFromUrl")]
     pub async fn stage_block_from_url(
         &self,
         block_id: &[u8],
@@ -468,7 +477,6 @@ impl BlockBlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-copy-source", source_url);
         if let Some(copy_source_authorization) = options.copy_source_authorization.as_ref() {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
@@ -605,7 +613,7 @@ impl BlockBlobClient {
     /// * [`version_id`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlockBlobClientUploadBlobFromUrlResultHeaders`]: crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.BlockBlob.uploadBlobFromUrl")]
+    #[tracing::function("Storage.Blob.BlockBlobClient.uploadBlobFromUrl")]
     pub async fn upload_blob_from_url(
         &self,
         copy_source: String,
@@ -807,7 +815,7 @@ impl BlockBlobClient {
     /// * [`version_id`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlockBlobClientUploadInternalResultHeaders`]: crate::generated::models::BlockBlobClientUploadInternalResultHeaders
-    #[tracing::function("Storage.Blob.BlockBlob.upload")]
+    #[tracing::function("Storage.Blob.BlockBlobClient.upload")]
     pub async fn upload_internal(
         &self,
         body: RequestContent<Bytes, NoFormat>,
@@ -937,5 +945,14 @@ impl BlockBlobClient {
             )
             .await?;
         Ok(rsp.into())
+    }
+}
+
+impl Default for BlockBlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
     }
 }
