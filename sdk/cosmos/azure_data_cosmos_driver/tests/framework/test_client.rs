@@ -7,7 +7,7 @@ use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
     driver::CosmosDriverRuntime,
     models::{
-        AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResult,
+        AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
@@ -245,7 +245,7 @@ impl DriverTestRunContext {
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
-    ) -> Result<CosmosResult, Box<dyn Error>> {
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -269,7 +269,7 @@ impl DriverTestRunContext {
         container: &ContainerReference,
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
-    ) -> Result<CosmosResult, Box<dyn Error>> {
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime

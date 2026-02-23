@@ -15,7 +15,5 @@ mod async_cache;
 mod async_lazy;
 mod container_cache;
 
-pub(crate) use account_metadata_cache::AccountMetadataCache;
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
-pub(crate) use container_cache::ContainerCache;

@@ -15,25 +15,26 @@ mod connection_string;
 mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
-mod cosmos_result;
+mod cosmos_response;
 mod cosmos_status;
 mod etag;
+mod finite_f64;
 mod partition_key;
 mod request_charge;
 mod resource_id;
 mod resource_reference;
 mod user_agent;
 
-pub use account_reference::{AccountReference, AccountReferenceBuilder, AuthOptions};
+pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
 pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
-pub use cosmos_result::CosmosResult;
+pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
-pub use etag::{ETag, ETagCondition};
+pub use etag::{ETag, Precondition};
 pub use partition_key::PartitionKey;
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
@@ -44,32 +45,30 @@ pub use resource_reference::{
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
+pub(crate) use finite_f64::FiniteF64;
 
-use crate::options::Region;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
-/// Properties of a Cosmos DB account.
-///
-/// Contains metadata about a Cosmos DB account including its regions and capabilities.
-/// Used internally by the driver for routing and caching.
+use crate::options::Region;
+
+/// Account metadata properties used for account-level routing decisions.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub(crate) struct AccountProperties {
-    /// The account's primary (write) region.
+    /// Current write region for the account.
     pub write_region: Region,
-    /// All readable regions for this account (ordered by preference).
-    pub read_regions: Vec<Region>,
-    /// The system-assigned resource ID for the account.
-    pub rid: Option<String>,
+
+    /// Regions currently readable by the account.
+    pub readable_regions: Vec<Region>,
 }
 
 impl AccountProperties {
-    /// Creates new account properties.
-    pub fn new(write_region: Region, read_regions: Vec<Region>) -> Self {
+    /// Creates account properties from write/read region metadata.
+    pub(crate) fn new(write_region: Region, readable_regions: Vec<Region>) -> Self {
         Self {
             write_region,
-            read_regions,
-            rid: None,
+            readable_regions,
         }
     }
 }
@@ -122,26 +121,6 @@ impl ContainerProperties {
             partition_key,
             system_properties: SystemProperties::default(),
         }
-    }
-}
-
-/// Immutable container properties that never change after creation.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct ImmutableContainerProperties {
-    partition_key: PartitionKeyDefinition,
-}
-
-impl ImmutableContainerProperties {
-    /// Creates immutable container properties from a full `ContainerProperties`.
-    pub(crate) fn from_container_properties(props: &ContainerProperties) -> Self {
-        Self {
-            partition_key: props.partition_key.clone(),
-        }
-    }
-
-    /// Returns the partition key definition.
-    pub(crate) fn partition_key(&self) -> &PartitionKeyDefinition {
-        &self.partition_key
     }
 }
 
@@ -265,8 +244,6 @@ pub(crate) struct SystemProperties {
     #[serde(rename = "_etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-
-// ── ResourceType & OperationType (moved from resource_types.rs) ─────────────
 
 /// The type of resource being operated on.
 ///
@@ -435,8 +412,6 @@ impl OperationType {
     }
 }
 
-// ── SessionToken (moved from session.rs) ────────────────────────────────────
-
 /// A session token for maintaining session consistency.
 ///
 /// Session tokens track the logical sequence number of operations, enabling
@@ -467,8 +442,6 @@ impl std::fmt::Display for SessionToken {
         f.write_str(&self.0)
     }
 }
-
-// ── TriggerInvocation (moved from triggers.rs) ──────────────────────────────
 
 /// Represents a trigger to be invoked before or after an operation.
 ///
@@ -502,8 +475,6 @@ impl From<String> for TriggerInvocation {
         Self::new(name)
     }
 }
-
-// ── ThroughputControlGroupName (moved from throughput_control.rs) ───────────
 
 /// Unique name identifying a throughput control group.
 ///

@@ -3,7 +3,9 @@
 
 //! Cosmos DB operation result types.
 
+use crate::diagnostics::DiagnosticsContext;
 use crate::models::{CosmosResponseHeaders, CosmosStatus};
+use std::sync::Arc;
 
 /// Result of a Cosmos DB operation.
 ///
@@ -40,17 +42,26 @@ pub struct CosmosResponse {
 
     /// Operation status including HTTP status code and optional sub-status.
     status: CosmosStatus,
+
+    /// Full diagnostics context for this operation.
+    diagnostics: Arc<DiagnosticsContext>,
 }
 
 impl CosmosResponse {
     /// Creates a new `CosmosResponse`.
     ///
     /// This is typically called by the driver after completing an operation.
-    pub(crate) fn new(body: Vec<u8>, headers: CosmosResponseHeaders, status: CosmosStatus) -> Self {
+    pub(crate) fn new(
+        body: Vec<u8>,
+        headers: CosmosResponseHeaders,
+        status: CosmosStatus,
+        diagnostics: Arc<DiagnosticsContext>,
+    ) -> Self {
         Self {
             body,
             headers,
             status,
+            diagnostics,
         }
     }
 
@@ -76,19 +87,41 @@ impl CosmosResponse {
     pub fn status(&self) -> CosmosStatus {
         self.status
     }
+
+    /// Returns diagnostics captured for this operation.
+    pub fn diagnostics(&self) -> &Arc<DiagnosticsContext> {
+        &self.diagnostics
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::diagnostics::DiagnosticsContextBuilder;
     use crate::models::{ActivityId, CosmosResponseHeaders, RequestCharge, SubStatusCode};
+    use crate::options::DiagnosticsOptions;
     use azure_core::http::StatusCode;
+    use std::sync::Arc;
 
     fn make_status(
         status_code: Option<StatusCode>,
         sub_status_code: Option<SubStatusCode>,
     ) -> CosmosStatus {
         CosmosStatus::from_parts(status_code.unwrap_or(StatusCode::Ok), sub_status_code)
+    }
+
+    fn make_diagnostics(
+        status_code: Option<StatusCode>,
+        sub_status_code: Option<SubStatusCode>,
+    ) -> Arc<DiagnosticsContext> {
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::new_uuid(),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        if let Some(status) = status_code {
+            builder.set_operation_status(status, sub_status_code);
+        }
+        Arc::new(builder.complete())
     }
 
     #[test]
@@ -103,6 +136,7 @@ mod tests {
             b"{\"id\": \"test\"}".to_vec(),
             headers,
             make_status(Some(StatusCode::Ok), None),
+            make_diagnostics(Some(StatusCode::Ok), None),
         );
 
         let status = result.status();
@@ -125,6 +159,10 @@ mod tests {
                 Some(StatusCode::TooManyRequests),
                 Some(SubStatusCode::new(3200)),
             ),
+            make_diagnostics(
+                Some(StatusCode::TooManyRequests),
+                Some(SubStatusCode::new(3200)),
+            ),
         );
 
         let status = result.status();
@@ -143,6 +181,7 @@ mod tests {
             b"body".to_vec(),
             headers,
             make_status(Some(StatusCode::Created), None),
+            make_diagnostics(Some(StatusCode::Created), None),
         );
 
         assert_eq!(result.body(), b"body");
@@ -163,10 +202,20 @@ mod tests {
             Some(StatusCode::NotFound),
             Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
         );
-        let result = CosmosResponse::new(b"{}".to_vec(), CosmosResponseHeaders::new(), status);
+        let result = CosmosResponse::new(
+            b"{}".to_vec(),
+            CosmosResponseHeaders::new(),
+            status,
+            make_diagnostics(
+                Some(StatusCode::NotFound),
+                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            ),
+        );
 
         let result_status = result.status();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);
         assert!(result_status.is_read_session_not_available());
+        let diagnostics_status = result.diagnostics().status().unwrap();
+        assert_eq!(diagnostics_status.status_code(), StatusCode::NotFound);
     }
 }

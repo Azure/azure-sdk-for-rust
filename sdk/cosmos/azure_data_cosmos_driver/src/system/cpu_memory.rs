@@ -508,33 +508,38 @@ fn read_cpu_usage_linux() -> Option<f64> {
 #[cfg(target_os = "windows")]
 fn read_cpu_usage_windows() -> Option<f64> {
     use std::sync::atomic::{AtomicU64, Ordering};
-    use windows_sys::Win32::System::Threading::GetSystemTimes;
+    use windows::Win32::Foundation::FILETIME;
+    use windows::Win32::System::Threading::GetSystemTimes;
 
     static PREV_IDLE: AtomicU64 = AtomicU64::new(0);
     static PREV_KERNEL: AtomicU64 = AtomicU64::new(0);
     static PREV_USER: AtomicU64 = AtomicU64::new(0);
 
-    let mut idle_time = 0i64;
-    let mut kernel_time = 0i64;
-    let mut user_time = 0i64;
+    fn filetime_to_u64(file_time: FILETIME) -> u64 {
+        (u64::from(file_time.dwHighDateTime) << 32) | u64::from(file_time.dwLowDateTime)
+    }
+
+    let mut idle_time = FILETIME::default();
+    let mut kernel_time = FILETIME::default();
+    let mut user_time = FILETIME::default();
 
     // SAFETY: GetSystemTimes writes into the provided pointers.
     // The pointers are valid stack-allocated i64 values (FILETIME-sized).
     let ok = unsafe {
         GetSystemTimes(
-            &mut idle_time as *mut i64 as *mut _,
-            &mut kernel_time as *mut i64 as *mut _,
-            &mut user_time as *mut i64 as *mut _,
+            Some(&mut idle_time as *mut FILETIME),
+            Some(&mut kernel_time as *mut FILETIME),
+            Some(&mut user_time as *mut FILETIME),
         )
     };
 
-    if ok == 0 {
+    if ok.is_err() {
         return None;
     }
 
-    let idle = idle_time as u64;
-    let kernel = kernel_time as u64;
-    let user = user_time as u64;
+    let idle = filetime_to_u64(idle_time);
+    let kernel = filetime_to_u64(kernel_time);
+    let user = filetime_to_u64(user_time);
 
     let prev_idle = PREV_IDLE.swap(idle, Ordering::Relaxed);
     let prev_kernel = PREV_KERNEL.swap(kernel, Ordering::Relaxed);
@@ -599,7 +604,7 @@ fn read_available_memory_linux() -> u64 {
 
 #[cfg(target_os = "windows")]
 fn read_available_memory_windows() -> u64 {
-    use windows_sys::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
+    use windows::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
 
     let mut mem_info = MEMORYSTATUSEX {
         dwLength: std::mem::size_of::<MEMORYSTATUSEX>() as u32,
@@ -617,7 +622,7 @@ fn read_available_memory_windows() -> u64 {
     // with `dwLength` set. The function writes into it.
     let ok = unsafe { GlobalMemoryStatusEx(&mut mem_info) };
 
-    if ok == 0 {
+    if ok.is_err() {
         return 0;
     }
 
