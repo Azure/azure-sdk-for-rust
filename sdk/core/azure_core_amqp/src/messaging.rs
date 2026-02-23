@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 use crate::fe2o3::error::Fe2o3SerializationError;
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 use crate::AmqpError;
 #[cfg(feature = "ffi")]
 use crate::Deserializable;
@@ -15,10 +15,10 @@ use crate::{
 use azure_core::{time::Duration, Uuid};
 use typespec_macros::SafeDebug;
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 type DeliveryImplementation = super::fe2o3::messaging::messaging_types::Fe2o3AmqpDelivery;
 
-#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 type DeliveryImplementation = super::noop::NoopAmqpDelivery;
 
 /// Durability of the terminus (source or target).
@@ -113,7 +113,7 @@ impl From<&AmqpSymbol> for DistributionMode {
 pub struct AmqpDelivery(pub(crate) DeliveryImplementation);
 
 impl AmqpDelivery {
-    #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+    #[cfg(feature = "fe2o3_amqp")]
     pub(crate) fn new(delivery: DeliveryImplementation) -> AmqpDelivery {
         AmqpDelivery(delivery)
     }
@@ -1280,12 +1280,8 @@ impl AmqpMessage {
     }
 
     /// Serialize the AMQP message to a vector of bytes.
-    #[cfg_attr(
-        any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"),
-        allow(unused_variables)
-    )]
     pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
-        #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+        #[cfg(feature = "fe2o3_amqp")]
         {
             let amqp_message: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -1296,7 +1292,7 @@ impl AmqpMessage {
             .map_err(|e| AmqpError::from(Fe2o3SerializationError(e)))?;
             Ok(res)
         }
-        #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+        #[cfg(not(feature = "fe2o3_amqp"))]
         {
             unimplemented!();
         }
@@ -1406,7 +1402,7 @@ impl From<AmqpList> for AmqpMessage {
 #[cfg(feature = "ffi")]
 impl Deserializable<AmqpMessage> for AmqpMessage {
     fn decode(data: &[u8]) -> Result<AmqpMessage> {
-        #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+        #[cfg(feature = "fe2o3_amqp")]
         {
             let value = serde_amqp::de::from_slice::<
                 fe2o3_amqp_types::messaging::message::__private::Deserializable<
@@ -1936,7 +1932,7 @@ mod tests {
             let message = AmqpMessage::builder().build();
             let serialized = AmqpMessage::serialize(&message).unwrap();
             assert_eq!(serialized, vec![0, 0x53, 0x77, 0x40]);
-            #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+            #[cfg(feature = "fe2o3_amqp")]
             {
                 // Verify that the serialization of an AmqpMessage with no body matches
                 // the fe2o3_amqp serialization.
@@ -2151,7 +2147,7 @@ mod tests {
             ]
         );
 
-        #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+        #[cfg(feature = "fe2o3_amqp")]
         {
             let amqp_message = fe2o3_amqp_types::messaging::message::Builder::new()
                 .header(

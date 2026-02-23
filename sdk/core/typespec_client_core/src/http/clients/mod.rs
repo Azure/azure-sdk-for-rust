@@ -31,8 +31,7 @@ pub fn new_http_client() -> Arc<dyn HttpClient> {
 }
 
 /// An HTTP client which can send requests.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// Send a request to the service.
     ///

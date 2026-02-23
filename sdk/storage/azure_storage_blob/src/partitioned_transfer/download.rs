@@ -11,12 +11,11 @@ use azure_core::{
 use bytes::Bytes;
 use futures::{stream::FuturesOrdered, StreamExt};
 
-use crate::{conditional_send::ConditionalSend, models::http_ranges::ContentRange};
+use crate::models::http_ranges::ContentRange;
 
 use super::*;
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 pub(crate) trait PartitionedDownloadBehavior {
     async fn transfer_range(&self, range: Option<Range<usize>>) -> AzureResult<AsyncRawResponse>;
 }
@@ -120,8 +119,8 @@ async fn download_range_to_bytes(
     response.into_body().collect().await
 }
 
-trait DownloadRangeFuture: Future + ConditionalSend {}
-impl<T: Future + ConditionalSend> DownloadRangeFuture for T {}
+trait DownloadRangeFuture: Future + Send {}
+impl<T: Future + Send> DownloadRangeFuture for T {}
 
 #[cfg(test)]
 mod tests {

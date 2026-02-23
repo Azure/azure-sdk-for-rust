@@ -101,9 +101,5 @@ typespec_macros
 ureq
 url
 uuid
-wasm_bindgen_futures
-wasm_bindgen_test
-wasm-bindgen-futures
-wasm-bindgen-test
 zerofrom
 zip
