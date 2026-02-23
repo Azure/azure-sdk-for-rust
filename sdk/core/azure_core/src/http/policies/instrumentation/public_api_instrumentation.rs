@@ -160,8 +160,7 @@ pub fn create_public_api_span(
     Some(tracer.start_span(info.api_name, SpanKind::Internal, span_attributes))
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl Policy for PublicApiInstrumentationPolicy {
     async fn send(
         &self,

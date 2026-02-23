@@ -7,6 +7,8 @@
 ### Breaking Changes
 
 - Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
+- Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 
 ### Bugs Fixed
 

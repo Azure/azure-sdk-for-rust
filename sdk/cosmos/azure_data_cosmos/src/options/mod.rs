@@ -9,6 +9,10 @@ use azure_core::http::{headers, Etag};
 use azure_core::time::Duration;
 use std::collections::HashMap;
 use std::convert::Infallible;
+use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
+use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
+use azure_core::time::Duration;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::Display;
 
@@ -72,18 +76,12 @@ impl CosmosClientOptions {
         self.custom_headers = custom_headers;
         self
     }
-}
-
-impl AsHeaders for CosmosClientOptions {
-    type Error = Infallible;
-    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
-
-    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
-        let mut headers = Vec::new();
+    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
+        let mut option_headers = Headers::new();
 
         // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
-            headers.push((header_name.clone(), header_value.clone()));
+            option_headers.insert(header_name.clone(), header_value.clone());
         }
 
         Ok(headers.into_iter())
@@ -325,43 +323,35 @@ impl AsHeaders for ItemOptions {
 
         // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
-            headers.push((header_name.clone(), header_value.clone()));
+            headers.insert(header_name.clone(), header_value.clone());
         }
 
         if let Some(pre_triggers) = &self.pre_triggers {
-            headers.push((
-                constants::PRE_TRIGGER_INCLUDE,
-                pre_triggers.join(",").into(),
-            ));
+            headers.insert(constants::PRE_TRIGGER_INCLUDE, pre_triggers.join(","));
         }
 
         if let Some(post_triggers) = &self.post_triggers {
-            headers.push((
-                constants::POST_TRIGGER_INCLUDE,
-                post_triggers.join(",").into(),
-            ));
+            headers.insert(constants::POST_TRIGGER_INCLUDE, post_triggers.join(","));
         }
 
         if let Some(session_token) = &self.session_token {
-            headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
+            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
 
         if let Some(indexing_directive) = &self.indexing_directive {
-            headers.push((
+            headers.insert(
                 constants::INDEXING_DIRECTIVE,
-                indexing_directive.to_string().into(),
-            ));
+                indexing_directive.to_string(),
+            );
         }
 
         if let Some(etag) = &self.if_match_etag {
-            headers.push((headers::IF_MATCH, etag.to_string().into()));
+            headers.insert(headers::IF_MATCH, etag.to_string());
         }
 
         if !self.content_response_on_write_enabled {
-            headers.push((headers::PREFER, constants::PREFER_MINIMAL));
+            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
         }
-
-        Ok(headers.into_iter())
     }
 }
 
@@ -417,11 +407,11 @@ impl AsHeaders for QueryOptions {
 
         // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
-            headers.push((header_name.clone(), header_value.clone()));
+            headers.insert(header_name.clone(), header_value.clone());
         }
 
         if let Some(session_token) = &self.session_token {
-            headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
+            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
 
         Ok(headers.into_iter())
@@ -447,7 +437,10 @@ pub struct ThroughputOptions;
 mod tests {
     use super::*;
 
-    fn headers_to_map(headers: Vec<(HeaderName, HeaderValue)>) -> HashMap<HeaderName, HeaderValue> {
+    fn headers_to_map<I>(headers: I) -> HashMap<HeaderName, HeaderValue>
+    where
+        I: IntoIterator<Item = (HeaderName, HeaderValue)>,
+    {
         headers.into_iter().collect()
     }
 
@@ -467,8 +460,8 @@ mod tests {
             .with_if_match_etag(Etag::from("etag_value"))
             .with_custom_headers(custom_headers);
 
-        let headers_result: Vec<(HeaderName, HeaderValue)> =
-            item_options.as_headers().unwrap().collect();
+        let mut headers_result = Headers::new();
+        item_options.apply_headers(&mut headers_result);
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             (
@@ -504,8 +497,8 @@ mod tests {
             .with_session_token("RealSessionToken".to_string().into())
             .with_custom_headers(custom_headers);
 
-        let headers_result: Vec<(HeaderName, HeaderValue)> =
-            item_options.as_headers().unwrap().collect();
+        let mut headers_result = Headers::new();
+        item_options.apply_headers(&mut headers_result);
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             (constants::SESSION_TOKEN, "RealSessionToken".into()),
@@ -528,8 +521,8 @@ mod tests {
 
         let client_options = CosmosClientOptions::default().with_custom_headers(custom_headers);
 
-        let headers_result: Vec<(HeaderName, HeaderValue)> =
-            client_options.as_headers().unwrap().collect();
+        let mut headers_result = Headers::new();
+        client_options.apply_headers(&mut headers_result);
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> =
             vec![("x-custom-header".into(), "custom_value".into())];
@@ -552,8 +545,8 @@ mod tests {
             .with_session_token("QuerySessionToken".to_string().into())
             .with_custom_headers(custom_headers);
 
-        let headers_result: Vec<(HeaderName, HeaderValue)> =
-            query_options.as_headers().unwrap().collect();
+        let mut headers_result = Headers::new();
+        query_options.apply_headers(&mut headers_result);
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             ("x-custom-header".into(), "custom_value".into()),
@@ -570,8 +563,9 @@ mod tests {
     fn item_options_empty_as_headers_with_content_response() {
         let item_options = ItemOptions::default();
 
-        let headers_result: Vec<(HeaderName, HeaderValue)> =
-            item_options.as_headers().unwrap().collect();
+        let mut headers_result = Headers::new();
+        item_options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> =
             vec![(headers::PREFER, constants::PREFER_MINIMAL)];
@@ -583,8 +577,9 @@ mod tests {
     fn item_options_empty_as_headers() {
         let item_options = ItemOptions::default().with_content_response_on_write_enabled(true);
 
-        let headers_result: Vec<(HeaderName, HeaderValue)> =
-            item_options.as_headers().unwrap().collect();
+        let mut headers_result = Headers::new();
+        item_options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
 

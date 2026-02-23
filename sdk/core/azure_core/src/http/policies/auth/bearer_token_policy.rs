@@ -59,8 +59,7 @@ impl BearerTokenAuthorizationPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Policy for BearerTokenAuthorizationPolicy {
     async fn send(
         &self,
@@ -102,8 +101,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
 }
 
 /// Callback [`BearerTokenAuthorizationPolicy`] invokes when it receives a 401 Unauthorized response with an authentication challenge (WWW-Authenticate header).
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait OnChallenge: std::fmt::Debug + Send + Sync {
     /// Called when [`BearerTokenAuthorizationPolicy`] receives a 401 Unauthorized response with a challenge.
     ///
@@ -129,8 +127,7 @@ pub trait OnChallenge: std::fmt::Debug + Send + Sync {
 }
 
 /// Callback [`BearerTokenAuthorizationPolicy`] invokes on every request it receives, before sending the request.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait OnRequest: std::fmt::Debug + Send + Sync {
     /// Invoked once on every [`BearerTokenAuthorizationPolicy::send`] invocation, before the policy sends the request.
     ///
@@ -152,8 +149,7 @@ pub trait OnRequest: std::fmt::Debug + Send + Sync {
 
 /// Helper trait used by [`OnChallenge`] and [`OnRequest`] to authorize requests. This trait is sealed and cannot
 /// be implemented outside of this module.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait Authorizer: crate::private::Sealed + std::fmt::Debug + Send + Sync {
     /// Acquire an access token for the provided scopes and options, and set the request's authorization header.
     async fn authorize(
@@ -186,8 +182,7 @@ impl BearerTokenAuthorizer {
 
 impl crate::private::Sealed for BearerTokenAuthorizer {}
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Authorizer for BearerTokenAuthorizer {
     async fn authorize(
         &self,
@@ -263,8 +258,7 @@ struct DefaultOnRequest {
     scopes: Vec<String>,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl OnRequest for DefaultOnRequest {
     async fn on_request(
         &self,
@@ -339,8 +333,7 @@ mod tests {
         }
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    #[async_trait]
     impl TokenCredential for MockCredential {
         async fn get_token(
             &self,
@@ -764,7 +757,7 @@ mod tests {
         assert_eq!(1, calls.load(Ordering::SeqCst));
     }
 
-    #[cfg_attr(not(target_arch = "wasm32"), tokio::test)]
+    #[tokio::test]
     async fn resets_stream_for_retry_after_challenge() {
         use crate::{http::Body, stream::BytesStream};
         use futures::StreamExt;

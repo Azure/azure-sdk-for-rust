@@ -4,7 +4,6 @@
 #[repr(C)]
 pub struct ClientOptions {
     /// If true, disables certificate validation. Use only for testing.
-    #[cfg(not(target_family = "wasm"))]
     danger_allow_invalid_certificates: bool,
 }
 

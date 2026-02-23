@@ -124,6 +124,12 @@ pub enum FaultInjectionErrorType {
     WriteForbidden,
     /// 403-1008 Forbidden from server.
     DatabaseAccountNotFound,
+    /// Simulates a connection failure (e.g., connection refused, DNS failure).
+    /// Produces an `ErrorKind::Io` error, not an HTTP response error.
+    ConnectionError,
+    /// Simulates a response timeout (request sent but no response received).
+    /// Produces an `ErrorKind::Io` error, not an HTTP response error.
+    ResponseTimeout,
 }
 
 /// The type of operation to which the fault injection applies.
