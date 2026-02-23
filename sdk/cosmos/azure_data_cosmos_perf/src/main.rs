@@ -16,8 +16,6 @@ mod seed;
 mod setup;
 #[cfg(not(target_family = "wasm"))]
 mod stats;
-#[cfg(not(target_family = "wasm"))]
-mod transport;
 
 #[cfg(not(target_family = "wasm"))]
 #[tokio::main]
@@ -54,11 +52,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    // Build custom HTTP transport with driver-matching connection pool settings
-    let custom_transport = crate::transport::create_transport()?;
-
     // Build client options
-    let mut options = CosmosClientOptions::default()
+    let options = CosmosClientOptions::default()
         .with_preferred_regions(
             config
                 .preferred_regions
@@ -73,7 +68,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|r| r.clone().into())
                 .collect(),
         );
-    options.client_options.transport = Some(custom_transport);
 
     // Create the Cosmos client
     let client = match &config.auth {
