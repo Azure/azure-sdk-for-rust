@@ -77,8 +77,7 @@ impl TrackedTransportPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl Policy for TrackedTransportPolicy {
     async fn send(
         &self,
@@ -109,8 +108,7 @@ mod tests {
         response_status: u16,
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for MockTransport {
         async fn send(
             &self,
@@ -134,8 +132,7 @@ mod tests {
         name: &'static str,
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for RecordingPolicy {
         async fn send(
             &self,

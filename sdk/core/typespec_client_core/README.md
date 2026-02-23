@@ -14,7 +14,6 @@ This is the runtime for [TypeSpec](https://typespec.io)-generated clients.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
 - `tokio`: enables and sets `tokio` as the default async runtime.
-- `wasm_bindgen`: enables the async runtime for WASM.
 - `xml`: enables XML support.
 
 ## Troubleshooting
@@ -67,7 +66,6 @@ use typespec_client_core::http::{HttpClient, ClientOptions, Transport};
 
 let client = Arc::new(
     ::reqwest::ClientBuilder::new()
-        // Note that reqwest does not support `pool_max_idle_per_host` on WASM.
         .pool_max_idle_per_host(0)
         .build()
         .expect("failed to build `reqwest` client"),

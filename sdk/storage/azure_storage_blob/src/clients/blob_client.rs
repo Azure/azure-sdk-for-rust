@@ -313,8 +313,7 @@ impl<'a> BlobClientDownloadBehavior<'a> {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
     async fn transfer_range(&self, range: Option<Range<usize>>) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();

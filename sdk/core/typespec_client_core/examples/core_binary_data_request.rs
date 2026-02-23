@@ -22,16 +22,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client::put_binary_data(body).await?;
 
     // Asynchronously stream the file with the service client request.
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let file = fs::File::open(file!()).await?;
-        let file = FileStreamBuilder::new(file)
-            // Simulate a slow, chunky request.
-            .buffer_size(512usize)
-            .build()
-            .await?;
-        client::put_binary_data(file.into()).await?;
-    }
+    let file = fs::File::open(file!()).await?;
+    let file = FileStreamBuilder::new(file)
+        // Simulate a slow, chunky request.
+        .buffer_size(512usize)
+        .build()
+        .await?;
+    client::put_binary_data(file.into()).await?;
 
     Ok(())
 }

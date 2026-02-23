@@ -73,8 +73,7 @@ impl CosmosHeadersPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl Policy for CosmosHeadersPolicy {
     async fn send(
         &self,
@@ -122,8 +121,7 @@ mod tests {
     #[derive(Debug)]
     struct MockTransport;
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for MockTransport {
         async fn send(
             &self,

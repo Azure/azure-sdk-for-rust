@@ -40,8 +40,7 @@ pub struct ClientAssertionCredentialOptions {
     pub client_options: ClientOptions,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 /// Represents an entity capable of supplying a client assertion.
 pub trait ClientAssertion: Send + Sync + Debug {
     /// Supply the client assertion secret.
@@ -150,8 +149,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
     async fn get_token(
         &self,
@@ -232,8 +230,7 @@ pub(crate) mod tests {
     #[derive(Debug)]
     struct MockAssertion {}
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl ClientAssertion for MockAssertion {
         async fn secret(&self, _: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
             Ok(FAKE_ASSERTION.to_string())
