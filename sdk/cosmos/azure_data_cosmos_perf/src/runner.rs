@@ -10,7 +10,6 @@ use std::time::{Duration, Instant};
 use tokio::task::JoinSet;
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
-#[cfg(not(target_arch = "wasm32"))]
 fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
     let mut sources = Vec::new();
     let mut current = error.source();
@@ -23,12 +22,6 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
     } else {
         Some(sources.join(" → "))
     }
-}
-
-/// On wasm targets there is no reqwest error chain to walk.
-#[cfg(target_arch = "wasm32")]
-fn error_source_chain(_error: &dyn std::error::Error) -> Option<String> {
-    None
 }
 
 use azure_data_cosmos::clients::ContainerClient;
