@@ -7,8 +7,10 @@ use crate::constants::{
     DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
 };
 use crate::cosmos_request::CosmosRequest;
+use crate::models::AccountProperties;
 use crate::operation_context::OperationType;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
     clients::DatabaseClient,
     models::{CosmosResponse, DatabaseProperties},
@@ -22,8 +24,6 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 use azure_core::{credentials::TokenCredential, http::Url};
 use serde::Serialize;
 use std::sync::Arc;
-
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
