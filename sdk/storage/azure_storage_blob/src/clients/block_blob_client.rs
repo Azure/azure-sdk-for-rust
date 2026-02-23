@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Re-export the generated BlockBlobClient as the public type.
-pub use crate::generated::clients::BlockBlobClient;
+pub use crate::generated::clients::{BlockBlobClient, BlockBlobClientOptions};
 
 use crate::{
     logging::apply_storage_logging_defaults,
@@ -16,33 +15,14 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, ClientOptions, NoFormat, Pipeline, RequestContent, Url,
+        Body, NoFormat, Pipeline, RequestContent, Url,
     },
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
-
-/// Options used when creating a [`BlockBlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct BlockBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for BlockBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl BlockBlobClient {
     /// Creates a new BlockBlobClient, using Entra ID authentication.
@@ -145,7 +125,7 @@ impl BlockBlobClient {
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlockBlob.managedUpload")]
-    pub(crate) async fn managed_upload(
+    pub async fn managed_upload(
         &self,
         content: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientManagedUploadOptions<'_>>,

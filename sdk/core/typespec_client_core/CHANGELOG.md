@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added `ErrorKind::Connection` for connection errors.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
 ### Breaking Changes
 
 ### Bugs Fixed

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `ErrorKind::Connection` for connection errors.
+
 ### Breaking Changes
 
 ### Bugs Fixed

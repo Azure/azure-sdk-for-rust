@@ -18,6 +18,7 @@ pub struct FaultInjectionCondition {
 }
 
 /// Builder for creating a FaultInjectionCondition.
+#[derive(Default)]
 pub struct FaultInjectionConditionBuilder {
     operation_type: Option<FaultOperationType>,
     region: Option<RegionName>,
@@ -59,12 +60,6 @@ impl FaultInjectionConditionBuilder {
             region: self.region,
             container_id: self.container_id,
         }
-    }
-}
-
-impl Default for FaultInjectionConditionBuilder {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

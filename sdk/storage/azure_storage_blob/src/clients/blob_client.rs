@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::BlobClient;
+pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     logging::apply_storage_logging_defaults,
     models::{
-        method_options::BlobClientManagedDownloadOptions, BlobClientDownloadOptions,
-        BlobClientDownloadResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
-        StorageErrorCode,
+        http_ranges::IntoRangeHeader, method_options::BlobClientManagedDownloadOptions,
+        BlobClientDownloadOptions, BlobClientDownloadResult, BlockBlobClientUploadOptions,
+        BlockBlobClientUploadResult, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -19,35 +19,15 @@ use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, ClientOptions, NoFormat, Pipeline, RequestContent, Response, StatusCode,
-        Url, UrlExt,
+        AsyncRawResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
 use std::sync::Arc;
 use std::{num::NonZero, ops::Range};
-
-/// Options used when creating a [`BlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct BlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for BlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl BlobClient {
     /// Creates a new BlobClient, using Entra ID authentication.
@@ -140,7 +120,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    pub(crate) async fn managed_download(
+    pub async fn managed_download(
         &self,
         options: Option<BlobClientManagedDownloadOptions<'_>>,
     ) -> Result<PinnedStream> {
@@ -177,7 +157,8 @@ impl BlobClient {
         };
         let client = BlobClientDownloadBehavior::new(client, get_range_options);
 
-        partitioned_transfer::download(parallel, partition_size, Arc::new(client)).await
+        partitioned_transfer::download(options.range, parallel, partition_size, Arc::new(client))
+            .await
     }
 
     /// Returns a new instance of AppendBlobClient.
@@ -335,9 +316,9 @@ impl<'a> BlobClientDownloadBehavior<'a> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
-    async fn transfer_range(&self, range: Range<u64>) -> Result<AsyncRawResponse> {
+    async fn transfer_range(&self, range: Option<Range<usize>>) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
-        opt.range = Some(format!("bytes={}-{}", range.start, range.end - 1));
+        opt.range = range.map(|r| r.as_range_header());
         self.client
             .download_internal(Some(opt))
             .await
