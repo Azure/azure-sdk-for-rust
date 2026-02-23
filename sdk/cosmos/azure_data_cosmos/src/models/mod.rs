@@ -11,7 +11,6 @@ mod container_properties;
 mod cosmos_response;
 mod indexing_policy;
 mod partition_key_definition;
-mod patch_operations;
 mod throughput_properties;
 
 pub use account_properties::*;
@@ -19,7 +18,6 @@ pub use container_properties::*;
 pub use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;
 pub use partition_key_definition::*;
-pub use patch_operations::*;
 pub use throughput_properties::*;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
