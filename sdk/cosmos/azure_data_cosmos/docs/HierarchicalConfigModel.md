@@ -82,7 +82,10 @@ regardless of which explicit layers are listed in `layers()`. For example, a
 `ConnectionOptions` group with `#[options(layers(runtime, account))]` and at least one
 `#[option(env)]` field will still have its values resolved from environment variables and its
 `View` will include an `env` field.
+
 #### Example: `RequestOptions`
+
+(This example is intended to illustrate functionality, not to present a concrete proposal for a 'RequestOptions' type)
 
 ```rust
 /// Options controlling per-request behavior. Applicable at runtime, account,
@@ -115,7 +118,7 @@ struct appears in `CosmosRuntimeOptions`, `CosmosClientOptions`, and in operatio
 like `ItemOptions`. Adding a new field to `RequestOptions` automatically makes it available
 at every applicable layer.
 
-### Complete Option Groups
+### Sample Option Groups
 
 #### `ConnectionOptions` — layers: runtime, account
 
@@ -213,67 +216,93 @@ pub struct CosmosAccountOptions {
 }
 ```
 
-#### `ItemWriteOptions` — layers: operation
-
-Options that are only meaningful per-individual-request for item writes:
-
-```rust
-#[derive(CosmosOptions)]
-#[options(layers(operation))]
-pub struct ItemWriteOptions {
-    pub indexing_directive: Option<IndexingDirective>,
-    pub session_token: Option<SessionToken>,
-    pub if_match_etag: Option<Etag>,
-    pub content_response_on_write: Option<bool>,
-    pub pre_triggers: Option<Vec<String>>,
-    pub post_triggers: Option<Vec<String>>,
-}
-```
-
 ### Layer Structs
 
 Layer structs are hand-written composites that aggregate the relevant option groups for a
-given layer.
+given layer. Each option group within a layer is stored behind its own `Arc`, so that
+individual groups can be replaced atomically without affecting sibling groups or in-flight
+operations that hold a snapshot of the previous value.
 
 ```rust
 /// Runtime-level options (application-global defaults).
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosRuntimeOptions {
-    pub connection: ConnectionOptions,
-    pub regions: RegionOptions,
-    pub retry: RetryOptions,
-    pub request: RequestOptions,
-    pub account: CosmosAccountOptions,
+    pub connection: Arc<ConnectionOptions>,
+    pub regions: Arc<RegionOptions>,
+    pub retry: Arc<RetryOptions>,
+    pub request: Arc<RequestOptions>,
+    pub account: Arc<CosmosAccountOptions>,
 }
 
 /// Account-level options (per CosmosClient instance).
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
-    pub connection: ConnectionOptions,
-    pub regions: RegionOptions,
-    pub retry: RetryOptions,
-    pub request: RequestOptions,
-    pub account: CosmosAccountOptions,
+    pub connection: Arc<ConnectionOptions>,
+    pub regions: Arc<RegionOptions>,
+    pub retry: Arc<RetryOptions>,
+    pub request: Arc<RequestOptions>,
+    pub account: Arc<CosmosAccountOptions>,
 }
 ```
+
+Storing `Arc`s at the option-group level rather than the layer level means a user can
+replace a single group (e.g., `RequestOptions`) without touching unrelated groups (e.g.,
+`ConnectionOptions`). Cloning a layer struct is cheap — it increments one `Arc` refcount
+per group.
+
+See [Snapshot-Based Resolution](#snapshot-based-resolution) for how these `Arc`s are used.
 
 ### Operation-Level Types
 
 Operation types compose the operation-layer option groups relevant to that operation.
+Options that are **only meaningful at the operation level** (e.g., ETags, session tokens,
+triggers) live directly on the operation struct as plain fields rather than in a separate
+option group. This keeps the most commonly-adjusted per-request settings immediately
+visible and avoids the indirection of a sub-group for options that will never participate
+in cross-layer resolution.
+
+For operation-only fields, **duplication across operation structs is preferred** over
+grouping them. Option groups exist to solve the cross-layer resolution problem; for
+single-layer options the extra abstraction adds noise without value.
 
 #### Data-plane operations
 
+Item operations are split into `ItemReadOptions` and `ItemWriteOptions` because read and
+write operations have different per-request concerns:
+
 ```rust
-/// Options for item CRUD operations (create, read, replace, upsert, delete, patch).
+/// Options for item read operations (read_item, read_all_items).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ItemOptions<'a> {
+pub struct ItemReadOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
+
+    // Layered option group — participates in cross-layer resolution
     pub request: RequestOptions,
-    pub write: ItemWriteOptions,
+
+    // Operation-only fields — no cross-layer resolution needed
+    pub session_token: Option<SessionToken>,
+}
+
+/// Options for item write operations (create, replace, upsert, delete, patch).
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct ItemWriteOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+
+    // Layered option group
+    pub request: RequestOptions,
+
+    // Operation-only fields
+    pub session_token: Option<SessionToken>,
+    pub if_match_etag: Option<Etag>,
+    pub content_response_on_write: Option<bool>,
+    pub indexing_directive: Option<IndexingDirective>,
+    pub pre_triggers: Option<Vec<String>>,
+    pub post_triggers: Option<Vec<String>>,
 }
 
 /// Options for query operations.
@@ -281,9 +310,18 @@ pub struct ItemOptions<'a> {
 #[non_exhaustive]
 pub struct QueryOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
+
+    // Layered option group
     pub request: RequestOptions,
+
+    // Operation-only fields
+    pub session_token: Option<SessionToken>,
 }
 ```
+
+Note that `session_token` appears on all three structs. This is intentional — duplication
+at the operation level is preferable to a shared group, because these fields are what
+customers interact with most directly and grouping them would add unnecessary nesting.
 
 #### Metadata/management operations
 
@@ -356,28 +394,46 @@ pub struct ThroughputOptions<'a> {
 Because all operation types are `#[non_exhaustive]`, option groups can be added to metadata
 operations in the future without a breaking change.
 
-### Resolution
+### Snapshot-Based Resolution
 
-Resolution happens lazily at read time. The proc macro generates a **View** struct for
-each option group. The View holds a reference to the group instance at each layer and
-provides accessor methods that walk from highest to lowest priority.
+Each option group at the environment, runtime, and account layers is stored behind its own
+`Arc`. When an operation begins, it clones the relevant `Arc`s — one per option group it
+needs — creating a cheap snapshot of the configuration in effect at that moment. If the
+user later replaces an option group (e.g., swaps the `Arc<RequestOptions>` on the account
+layer), in-flight operations continue using the old snapshot. Once all in-flight operations
+complete, the old `Arc` is dropped automatically.
 
-#### View struct
+This approach:
+
+- **Avoids locks on the hot path** — `Arc::clone()` is an atomic increment, not a mutex.
+- **Guarantees consistency within an operation** — a single request always sees a coherent
+  set of options per group, even if the user mutates the client concurrently.
+- **Enables fine-grained replacement** — replacing one option group (e.g., `RequestOptions`)
+  does not disturb snapshots of other groups (e.g., `ConnectionOptions`).
+- **Makes replacement explicit** — users create a new options struct and replace the `Arc`;
+  there is no interior mutability on the options themselves.
+
+#### Resolution View
+
+The proc macro generates a **View** struct for each option group. The View holds an `Arc`
+to the group instance at each applicable layer and provides accessor methods that walk from
+highest to lowest priority.
 
 ```rust
-pub struct RequestOptionsView<'a> {
-    env: &'a RequestOptions,
-    runtime: &'a RequestOptions,
-    account: &'a RequestOptions,
-    operation: &'a RequestOptions,
+/// Snapshot view across all layers for RequestOptions.
+pub struct RequestOptionsView {
+    env: Arc<RequestOptions>,
+    runtime: Arc<RequestOptions>,
+    account: Arc<RequestOptions>,
+    operation: RequestOptions,  // Owned, not Arc — operation layer is per-request
 }
 
-impl<'a> RequestOptionsView<'a> {
+impl RequestOptionsView {
     pub fn new(
-        env: &'a RequestOptions,
-        runtime: &'a RequestOptions,
-        account: &'a RequestOptions,
-        operation: &'a RequestOptions,
+        env: Arc<RequestOptions>,
+        runtime: Arc<RequestOptions>,
+        account: Arc<RequestOptions>,
+        operation: RequestOptions,
     ) -> Self {
         Self { env, runtime, account, operation }
     }
@@ -423,6 +479,10 @@ impl<'a> RequestOptionsView<'a> {
 }
 ```
 
+The operation layer is **owned** (not `Arc`), because it is constructed per-request and
+does not need to be shared. The env, runtime, and account layers are `Arc` clones taken
+at the start of the operation.
+
 #### Accessor rules
 
 The macro generates two kinds of accessors:
@@ -432,23 +492,46 @@ The macro generates two kinds of accessors:
 - **Merge (`#[option(merge = "extend")]`)**: Returns an owned merged collection. Layers are
   merged from lowest to highest priority, so higher layers overwrite per-key.
 
-#### Usage in the pipeline
+#### Constructing the snapshot
+
+When an operation starts, the pipeline clones the `Arc`s for the groups it needs:
 
 ```rust
+// At the start of an operation (e.g., in container_client.create_item())
 let request_view = RequestOptionsView::new(
-    &self.env_defaults.request,
-    &self.runtime_options.request,
-    &self.account_options.request,
-    &operation_options.request,
+    self.env.request.clone(),       // env layer's RequestOptions
+    self.runtime.request.clone(),   // runtime layer's RequestOptions
+    self.account.request.clone(),   // account layer's RequestOptions
+    operation_options.request,      // Moved from the caller's operation options
 );
 
+// The View is self-contained — it owns or shares all the data it needs.
+// No lifetime parameters, no borrowing issues across await points.
 if let Some(consistency) = request_view.consistency_level() {
     // Use resolved value
 }
 ```
 
-For operation-only groups like `ItemWriteOptions`, no View is needed. The struct is used
-directly since there is only one layer.
+#### Replacing an option group at runtime
+
+When a user wants to change a single option group (e.g., to add an excluded region to
+account-level request options), they assign a new `Arc` to the relevant field on the
+client's options. Since the layer structs expose their `Arc` fields as `pub`, replacement
+is a direct field assignment:
+
+```rust
+// User creates a new RequestOptions via the builder
+let new_request_opts = RequestOptionsBuilder::new()
+    .excluded_regions(vec!["West US".into()])
+    .build();
+
+// Direct field assignment replaces just the Arc<RequestOptions>
+client.options.request = Arc::new(new_request_opts);
+
+// In-flight operations that cloned the old Arc<RequestOptions> are unaffected.
+// Other groups (ConnectionOptions, RetryOptions, etc.) are untouched.
+// New operations will pick up the new RequestOptions.
+```
 
 ### Nested Option Groups
 
@@ -456,18 +539,28 @@ The `#[option(nested)]` attribute signals that a field's type is itself a `Cosmo
 group. The parent View delegates resolution into a child View:
 
 ```rust
-impl<'a> ConnectionOptionsView<'a> {
+impl ConnectionOptionsView {
     pub fn request_timeout(&self) -> Option<&Duration> {
         self.account.request_timeout.as_ref()
             .or(self.runtime.request_timeout.as_ref())
             .or(self.env.request_timeout.as_ref())
     }
 
-    pub fn connection_pool(&self) -> ConnectionPoolOptionsView<'a> {
+    pub fn connection_pool(&self) -> ConnectionPoolOptionsView {
+        // For nested groups, extract the inner group from each layer's Arc,
+        // wrapping in a new Arc. Layers that don't set the nested group
+        // fall back to Default (all-None) so inner resolution continues.
+        let default = Arc::new(ConnectionPoolOptions::default());
         ConnectionPoolOptionsView::new(
-            self.env.connection_pool.as_ref().unwrap_or(&DEFAULT),
-            self.runtime.connection_pool.as_ref().unwrap_or(&DEFAULT),
-            self.account.connection_pool.as_ref().unwrap_or(&DEFAULT),
+            self.env.connection_pool.as_ref()
+                .map(|cp| Arc::new(cp.clone()))
+                .unwrap_or_else(|| Arc::clone(&default)),
+            self.runtime.connection_pool.as_ref()
+                .map(|cp| Arc::new(cp.clone()))
+                .unwrap_or_else(|| Arc::clone(&default)),
+            self.account.connection_pool.as_ref()
+                .map(|cp| Arc::new(cp.clone()))
+                .unwrap_or_else(|| Arc::clone(&default)),
         )
     }
 }
@@ -523,9 +616,18 @@ A new proc-macro crate at `sdk/cosmos/azure_data_cosmos_macros/` provides
 - **Field-level** `#[option(merge = "extend")]` — additive merge instead of shadow.
 - **Field-level** `#[option(nested)]` — delegates resolution to a child View.
 
-The macro also generates `with_*()` builder methods for each field, and a `Default`
-implementation for option groups whose fields are all `Option<T>` (all fields default
-to `None`), enabling patterns like `..Default::default()`.
+The macro also generates a `RequestOptionsBuilder` type for each option group, and a
+`Default` implementation for groups whose fields are all `Option<T>` (all fields default to
+`None`), enabling patterns like `..Default::default()`.
+
+Builder types provide a fluent API for constructing option groups:
+
+```rust
+let request = RequestOptionsBuilder::new()
+    .consistency_level(ConsistencyLevel::Session)
+    .priority(PriorityLevel::High)
+    .build();
+```
 
 ### Crate structure
 
@@ -537,7 +639,7 @@ sdk/cosmos/azure_data_cosmos_macros/
     ├── parse.rs       # Attribute parsing
     ├── view.rs        # View struct + accessor generation
     ├── env.rs         # from_env() generation
-    └── builder.rs     # with_*() method generation
+    └── builder.rs     # XxxOptionsBuilder generation
 ```
 
 ## Module Structure
@@ -550,9 +652,8 @@ sdk/cosmos/azure_data_cosmos/src/options/
 ├── retry_options.rs         # RetryOptions, SessionRetryOptions
 ├── request_options.rs       # RequestOptions
 ├── account_options.rs       # CosmosAccountOptions
-├── write_options.rs         # ItemWriteOptions
 ├── layers.rs                # CosmosRuntimeOptions, CosmosClientOptions
-└── operations.rs            # ItemOptions, QueryOptions, metadata operation types
+└── operations.rs            # ItemReadOptions, ItemWriteOptions, QueryOptions, metadata types
 ```
 
 ## Migration
@@ -562,8 +663,8 @@ The new system replaces all existing option structs in a single migration:
 | Current Type | New Type | Change |
 |---|---|---|
 | `CosmosClientOptions` | `CosmosClientOptions` | Fields redistributed across option groups |
-| `ItemOptions` | `ItemOptions` | Composes `RequestOptions` + `ItemWriteOptions` |
-| `QueryOptions` | `QueryOptions` | Composes `RequestOptions` |
+| `ItemOptions` | `ItemReadOptions` / `ItemWriteOptions` | Split by read vs. write; layered fields in `RequestOptions` group, operation-only fields inline |
+| `QueryOptions` | `QueryOptions` | Layered fields in `RequestOptions`, operation-only fields inline |
 | `CreateContainerOptions` | `CreateContainerOptions` | Unchanged |
 | `ReplaceContainerOptions` | `ReplaceContainerOptions` | Unchanged |
 | `DeleteContainerOptions` | `DeleteContainerOptions` | Unchanged |
@@ -584,49 +685,64 @@ The new system replaces all existing option structs in a single migration:
 
 ```rust
 use azure_data_cosmos::options::*;
+use std::sync::Arc;
 
-// Runtime layer — application-global defaults
+// Runtime layer — application-global defaults (each group wrapped in Arc)
 let runtime = CosmosRuntimeOptions {
-    request: RequestOptions {
-        consistency_level: Some(ConsistencyLevel::Session),
-        priority: Some(PriorityLevel::High),
-        ..Default::default()
-    },
+    request: Arc::new(
+        RequestOptionsBuilder::new()
+            .consistency_level(ConsistencyLevel::Session)
+            .priority(PriorityLevel::High)
+            .build()
+    ),
     ..Default::default()
 };
 
 // Account layer — same RequestOptions struct, different instance
 let client_options = CosmosClientOptions {
-    request: RequestOptions {
-        throughput_bucket: Some(5),
-        ..Default::default()
-    },
-    regions: RegionOptions {
+    request: Arc::new(
+        RequestOptionsBuilder::new()
+            .throughput_bucket(5)
+            .build()
+    ),
+    regions: Arc::new(RegionOptions {
         preferred_regions: Some(vec!["West US".into(), "East US".into()]),
         ..Default::default()
-    },
+    }),
     ..Default::default()
 };
 
 let client = CosmosClient::new(endpoint, credential, Some(client_options))?;
 
-// Operation layer — same RequestOptions struct again
-let item_opts = ItemOptions {
-    request: RequestOptions {
-        priority: Some(PriorityLevel::Low), // overrides runtime High
-        ..Default::default()
-    },
-    write: ItemWriteOptions {
-        if_match_etag: Some(etag),
-        content_response_on_write: Some(true),
-        ..Default::default()
-    },
+// Operation layer — plain structs (no Arc), operation-only fields inline
+let write_opts = ItemWriteOptions {
+    request: RequestOptionsBuilder::new()
+        .priority(PriorityLevel::Low) // overrides runtime High
+        .build(),
+    if_match_etag: Some(etag),
+    content_response_on_write: Some(true),
     ..Default::default()
 };
 
 // Resolved: priority=Low (operation), consistency=Session (runtime), throughput=5 (account)
 client.database("db").container("coll")
-    .create_item("pk", item, Some(item_opts)).await?;
+    .create_item("pk", item, Some(write_opts)).await?;
+
+// Replace just the account-level RequestOptions — other groups untouched
+client.options.request = Arc::new(
+    RequestOptionsBuilder::new()
+        .excluded_regions(vec!["West US".into()])
+        .build()
+);
+
+// Item read with minimal options
+let read_opts = ItemReadOptions {
+    session_token: Some(session_token),
+    ..Default::default()
+};
+
+client.database("db").container("coll")
+    .read_item("pk", "item-id", Some(read_opts)).await?;
 
 // Metadata operations — simple, no layered groups
 let create_opts = CreateContainerOptions {
@@ -635,6 +751,32 @@ let create_opts = CreateContainerOptions {
 };
 client.database("db").create_container(props, Some(create_opts)).await?;
 ```
+
+## Design Decisions
+
+The following items were considered during design and are now resolved:
+
+1. **Default values** — Resolution returns `Option<T>`. Callers apply their own defaults
+   when `None` is returned. There is no macro-level `#[option(default = ...)]` attribute.
+
+2. **`Vec` and `HashMap` merge semantics** — The `#[option(merge = "extend")]` attribute
+   works uniformly for both `HashMap` and `Vec` fields: lower layers contribute first,
+   higher layers extend (for `Vec`, appending; for `HashMap`, overwriting per-key). Fields
+   without `merge = "extend"` use shadow semantics (higher layer replaces lower entirely).
+
+3. **Environment variable immutability** — Environment variables are assumed immutable after
+   process startup. The environment-level config structs are captured once via `from_env()`
+   during SDK initialization and never re-read.
+
+4. **Builder APIs for option groups** — The proc macro generates a builder type for each
+   option group (e.g., `RequestOptionsBuilder`). Builders provide a fluent API and produce
+   the `Option<T>`-field struct on `.build()`.
+
+5. **Option group replacement via `pub` fields** — Layer structs expose their `Arc<T>`
+   fields as `pub`. Replacing an option group is a direct field assignment
+   (`client.options.request = Arc::new(...)`) which drops the old `Arc`. In-flight
+   operations that cloned the old `Arc` are unaffected. No special setter API or `ArcSwap`
+   is needed.
 
 ## Open Questions
 
@@ -646,12 +788,11 @@ client.database("db").create_container(props, Some(create_opts)).await?;
    priority). If env vars should override code-specified values for operational flexibility,
    they would move to the top.
 
-3. **Default values** — Resolution returns `Option`; callers apply defaults. A future
-   `#[option(default = ...)]` attribute could encode well-known defaults in the macro.
-
-4. **`Vec` merge semantics** — `excluded_regions` and similar `Vec` fields use shadow
-   semantics (higher layer replaces lower). This matches the current behavior. Additive
-   merge could be supported with `#[option(merge = "extend")]` if needed.
-
-5. **Environment variable caching** — `from_env()` is called once at construction and
-   cached. Env var changes after construction are not picked up.
+3. **Thread-safe option group replacement** — Replacing an `Arc<T>` field on a layer struct
+   requires `&mut` access, meaning the caller needs an exclusive handle to the component
+   that owns the layer options. This is fine for single-threaded or task-local usage, but
+   concurrent replacement from multiple threads would require the user to wrap the client
+   (or the layer struct) in an `RwLock` or similar. Should the SDK provide a built-in
+   thread-safe mutation mechanism (e.g., using `ArcSwap` or an internal `RwLock` around
+   each `Arc` field), or leave this as a user responsibility? The current design favors
+   simplicity — users who need concurrent replacement can add their own synchronization.
