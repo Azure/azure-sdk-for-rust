@@ -872,7 +872,7 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_as(self.headers(), &LEASE_STATUS)
     }
 
-    /// Specifies the legal hold status to set on the blob.
+    /// Indicates whether the blob has a legal hold.
     fn legal_hold(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &LEGAL_HOLD)
     }
@@ -1253,7 +1253,7 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &LEASE_STATUS)
     }
 
-    /// Specifies the legal hold status to set on the blob.
+    /// Indicates whether the blob has a legal hold.
     fn legal_hold(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &LEGAL_HOLD)
     }

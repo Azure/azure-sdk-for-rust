@@ -486,3 +486,445 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
     )
     .await
 }
+
+/// Test write failover on connection error — inject ConnectionError on hub for CreateItem.
+/// The retry policy retries 3 times on the same endpoint, then fails over to satellite.
+/// hit_limit(4) ensures the fault fires for all local retries plus the one that triggers failover.
+#[tokio::test]
+pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box<dyn Error>> {
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::CreateItem)
+        .with_region(HUB_REGION)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("write-conn-error-hub", result)
+        .with_condition(condition)
+        .with_hit_limit(4)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
+    let fault_options = fault_builder.inject(client_options);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+
+            let response = fault_container_client
+                .create_item(&pk, &item, None)
+                .await
+                .expect("write should succeed via failover to satellite");
+
+            let request_url = response.request_url().to_string();
+            assert!(
+                request_url.contains(SATELLITE_REGION.as_str()),
+                "request should have failed over to satellite region, got: {request_url}"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test read failover on connection error — inject ConnectionError on hub for ReadItem.
+/// Same 3-local-retry-then-failover path as writes, but for a read operation.
+#[tokio::test]
+pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<dyn Error>> {
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(HUB_REGION)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("read-conn-error-hub", result)
+        .with_condition(condition)
+        .with_hit_limit(4)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
+    let fault_options = fault_builder.inject(client_options);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            // Create item with the normal client
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // Ensure replication to satellite before reading with fault client
+            let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
+            let _ = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
+                .await;
+
+            let response = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .await
+                .expect("read should succeed via failover to satellite");
+
+            let request_url = response.request_url().to_string();
+            assert!(
+                request_url.contains(SATELLITE_REGION.as_str()),
+                "request should have failed over to satellite region, got: {request_url}"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test that writes are NOT retried on response timeout.
+/// ResponseTimeout has Unknown sent-status — the request may have been sent, so
+/// write retries are unsafe. The write must fail.
+#[tokio::test]
+pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(), Box<dyn Error>> {
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ResponseTimeout)
+        .build();
+
+    // No region filter — fault applies to all regions so failover won't help.
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::CreateItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("write-timeout-all-regions", result)
+        .with_condition(condition)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
+    let fault_options = fault_builder.inject(client_options);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+
+            let result = fault_container_client.create_item(&pk, &item, None).await;
+
+            assert!(
+                result.is_err(),
+                "write should fail on response timeout — unsafe to retry"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test that reads ARE retried on response timeout and fail over to satellite.
+/// ResponseTimeout has Unknown sent-status — reads are safe to retry.
+#[tokio::test]
+pub async fn fault_injection_read_response_timeout_retries_to_satellite(
+) -> Result<(), Box<dyn Error>> {
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ResponseTimeout)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(HUB_REGION)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("read-timeout-hub", result)
+        .with_condition(condition)
+        .with_hit_limit(1)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
+    let fault_options = fault_builder.inject(client_options);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // Ensure replication to satellite
+            let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
+            let _ = run_context
+                .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
+                .await;
+
+            let response = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .await
+                .expect("read should succeed via failover after response timeout on hub");
+
+            let request_url = response.request_url().to_string();
+            assert!(
+                request_url.contains(SATELLITE_REGION.as_str()),
+                "request should have failed over to satellite region, got: {request_url}"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test connection error reverse failover — inject on satellite, preferred [SATELLITE, HUB].
+/// Verifies failover works in the opposite direction (satellite → hub).
+#[tokio::test]
+pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), Box<dyn Error>> {
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::CreateItem)
+        .with_region(SATELLITE_REGION)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("write-conn-error-satellite", result)
+        .with_condition(condition)
+        .with_hit_limit(4)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]);
+    let fault_options = fault_builder.inject(client_options);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+
+            let response = fault_container_client
+                .create_item(&pk, &item, None)
+                .await
+                .expect("write should succeed via reverse failover to hub");
+
+            let request_url = response.request_url().to_string();
+            assert!(
+                request_url.contains(HUB_REGION.as_str()),
+                "request should have failed over to hub region, got: {request_url}"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}
+
+/// Test that a transient connection error clears before failover is needed.
+/// With hit_limit(2), the fault fires twice then stops. Since MAX_RETRY_COUNT is 3,
+/// the third local retry succeeds on the same hub endpoint — no failover occurs.
+#[tokio::test]
+pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(), Box<dyn Error>> {
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(HUB_REGION)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("transient-conn-error-hub", result)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let client_options =
+        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
+    let fault_options = fault_builder.inject(client_options);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id);
+
+            let response = run_context
+                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .await
+                .expect("read should succeed on hub after transient fault clears");
+
+            let request_url = response.request_url().to_string();
+            // The fault cleared before MAX_RETRY_COUNT, so no failover — still on hub.
+            assert!(
+                request_url.contains(HUB_REGION.as_str()),
+                "request should have succeeded on hub without failover, got: {request_url}"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_client_options(fault_options)),
+    )
+    .await
+}

@@ -13,6 +13,7 @@ members = [
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
+  "sdk/cosmos/azure_data_cosmos_driver",
   "sdk/cosmos/azure_data_cosmos_native",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
@@ -115,6 +116,7 @@ opentelemetry = { version = "0.31", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.31" }
 opentelemetry-stdout = { version = "0.31" }
 opentelemetry_sdk = "0.31"
+percent-encoding = "2.3"
 pin-project = "1.1"
 proc-macro2 = "1.0.106"
 quick-xml = { version = "0.39.0", features = ["serialize", "serde-types"] }

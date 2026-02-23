@@ -149,7 +149,21 @@ impl FaultClient {
             None => return None, // No error type set, pass through
         };
 
+        // Connection-level faults return simple errors with the appropriate ErrorKind.
+        // HTTP-level faults produce synthetic error responses.
         let (status_code, sub_status, message) = match error_type {
+            FaultInjectionErrorType::ConnectionError => {
+                return Some(Err(azure_core::Error::with_message(
+                    ErrorKind::Connection,
+                    "Injected fault: connection error",
+                )));
+            }
+            FaultInjectionErrorType::ResponseTimeout => {
+                return Some(Err(azure_core::Error::with_message(
+                    ErrorKind::Io,
+                    "Injected fault: response timeout",
+                )));
+            }
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
                 None,
@@ -285,6 +299,7 @@ mod tests {
     };
     use crate::regions;
     use async_trait::async_trait;
+    use azure_core::error::ErrorKind;
     use azure_core::http::{AsyncRawResponse, HttpClient, Method, Request, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
@@ -652,5 +667,53 @@ mod tests {
                 panic!("{:?} should produce an HttpResponse error kind", error_type);
             }
         }
+    }
+
+    #[tokio::test]
+    async fn connection_error_produces_connection_error_kind() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ConnectionError)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let result = fault_client.execute_request(&request).await;
+        assert!(result.is_err(), "should produce an error");
+
+        let err = result.unwrap_err();
+        assert_eq!(
+            err.kind(),
+            &ErrorKind::Connection,
+            "connection error should have Connection ErrorKind"
+        );
+        assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_produces_io_error_kind() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeout)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let result = fault_client.execute_request(&request).await;
+        assert!(result.is_err(), "should produce an error");
+
+        let err = result.unwrap_err();
+        assert_eq!(
+            err.kind(),
+            &ErrorKind::Io,
+            "response timeout should have Io ErrorKind"
+        );
+        assert_eq!(mock_client.call_count(), 0);
     }
 }
