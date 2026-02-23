@@ -15,35 +15,30 @@ use std::sync::Arc;
 ///
 /// This type bundles together the account endpoint and the credential needed to
 /// authenticate with it. Use convenience constructors [`with_credential()`](Self::with_credential)
-/// or [`with_master_key()`](Self::with_master_key) to create instances, or build one manually
-/// with [`CosmosAccountReferenceBuilder`].
+/// or [`with_master_key()`](Self::with_master_key) to create instances.
 ///
 /// # Examples
 ///
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::CosmosAccountReference;
+/// use azure_data_cosmos::{CosmosAccountReference, CosmosAccountEndpoint};
 /// use std::sync::Arc;
 ///
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-/// let account = CosmosAccountReference::with_credential(
-///     "https://myaccount.documents.azure.com/",
-///     credential,
-/// ).unwrap();
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// ```
 ///
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::CosmosAccountReference;
+/// use azure_data_cosmos::{CosmosAccountReference, CosmosAccountEndpoint};
 /// use azure_core::credentials::Secret;
 ///
-/// let account = CosmosAccountReference::with_master_key(
-///     "https://myaccount.documents.azure.com/",
-///     Secret::from("my_account_key"),
-/// ).unwrap();
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
 /// ```
 #[derive(Clone, Debug)]
 #[non_exhaustive]
@@ -57,40 +52,30 @@ impl CosmosAccountReference {
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The Cosmos DB account endpoint URL (e.g. `"https://myaccount.documents.azure.com/"`).
+    /// * `endpoint` - The Cosmos DB account endpoint.
     /// * `credential` - An Entra ID token credential.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the endpoint URL cannot be parsed.
     pub fn with_credential(
-        endpoint: impl AsRef<str>,
+        endpoint: CosmosAccountEndpoint,
         credential: Arc<dyn TokenCredential>,
-    ) -> azure_core::Result<Self> {
-        let endpoint: CosmosAccountEndpoint = endpoint.as_ref().parse()?;
-        Ok(Self {
+    ) -> Self {
+        Self {
             endpoint,
             credential: CosmosCredential::from(credential),
-        })
+        }
     }
 
     /// Creates a new account reference with a master key.
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The Cosmos DB account endpoint URL (e.g. `"https://myaccount.documents.azure.com/"`).
+    /// * `endpoint` - The Cosmos DB account endpoint.
     /// * `key` - The primary or secondary account key.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the endpoint URL cannot be parsed.
     #[cfg(feature = "key_auth")]
-    pub fn with_master_key(endpoint: impl AsRef<str>, key: Secret) -> azure_core::Result<Self> {
-        let endpoint: CosmosAccountEndpoint = endpoint.as_ref().parse()?;
-        Ok(Self {
+    pub fn with_master_key(endpoint: CosmosAccountEndpoint, key: Secret) -> Self {
+        Self {
             endpoint,
             credential: CosmosCredential::from(key),
-        })
+        }
     }
 
     /// Returns the endpoint and credential as a tuple.
@@ -101,62 +86,7 @@ impl CosmosAccountReference {
     }
 }
 
-/// Builder for creating [`CosmosAccountReference`] instances.
-///
-/// # Examples
-///
-/// ```rust,no_run
-/// use azure_data_cosmos::CosmosAccountReferenceBuilder;
-/// use azure_data_cosmos::CosmosCredential;
-/// use std::sync::Arc;
-///
-/// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
-///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-/// let account = CosmosAccountReferenceBuilder::new(
-///     "https://myaccount.documents.azure.com/",
-///     credential,
-/// ).unwrap()
-///     .build();
-/// ```
-#[derive(Clone, Debug)]
-#[non_exhaustive]
-pub struct CosmosAccountReferenceBuilder {
-    endpoint: CosmosAccountEndpoint,
-    credential: CosmosCredential,
-}
-
-impl CosmosAccountReferenceBuilder {
-    /// Creates a new builder with the given endpoint and credential.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The Cosmos DB account endpoint URL.
-    /// * `credential` - The authentication credential.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the endpoint URL cannot be parsed.
-    pub fn new(
-        endpoint: impl AsRef<str>,
-        credential: impl Into<CosmosCredential>,
-    ) -> azure_core::Result<Self> {
-        let endpoint: CosmosAccountEndpoint = endpoint.as_ref().parse()?;
-        Ok(Self {
-            endpoint,
-            credential: credential.into(),
-        })
-    }
-
-    /// Builds the [`CosmosAccountReference`].
-    pub fn build(self) -> CosmosAccountReference {
-        CosmosAccountReference {
-            endpoint: self.endpoint,
-            credential: self.credential,
-        }
-    }
-}
-
-// Conversion from (endpoint_str, credential) tuples for ergonomic use.
+// Conversion from (endpoint, credential) tuples for ergonomic use.
 
 impl<C: Into<CosmosCredential>> From<(CosmosAccountEndpoint, C)> for CosmosAccountReference {
     fn from((endpoint, credential): (CosmosAccountEndpoint, C)) -> Self {

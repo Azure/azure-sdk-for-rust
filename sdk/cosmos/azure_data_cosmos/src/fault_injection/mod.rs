@@ -75,9 +75,9 @@
 //! let client = CosmosClientBuilder::new()
 //!     .with_fault_injection(fault_builder)
 //!     .build(CosmosAccountReference::with_master_key(
-//!         "https://myaccount.documents.azure.com/",
+//!         "https://myaccount.documents.azure.com/".parse().unwrap(),
 //!         Secret::new("my_account_key"),
-//!     ).unwrap())
+//!     ))
 //!     .unwrap();
 //! ```
 //!

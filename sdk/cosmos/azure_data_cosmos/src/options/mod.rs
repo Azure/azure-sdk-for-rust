@@ -4,15 +4,9 @@
 use crate::constants;
 use crate::models::ThroughputProperties;
 use crate::regions::RegionName;
-use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use azure_core::http::{headers, Etag};
-use azure_core::time::Duration;
-use std::collections::HashMap;
-use std::convert::Infallible;
 use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
-use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
-use azure_core::time::Duration;
-use std::collections::{HashMap, HashSet};
+use azure_core::http::{headers, Etag};
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Display;
 
@@ -44,15 +38,6 @@ pub struct CosmosClientOptions {
     pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
     pub(crate) application_preferred_regions: Vec<RegionName>,
-    pub(crate) session_retry_options: SessionRetryOptions,
-    /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
-    /// The following are some example headers that can be added using this api.
-    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
-    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    ///
-    /// Custom headers will not override headers that are already set by the SDK.
     pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
@@ -77,64 +62,12 @@ impl CosmosClientOptions {
         self
     }
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        let mut option_headers = Headers::new();
-
-        // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
-            option_headers.insert(header_name.clone(), header_value.clone());
+            // Only insert if not already set — request-level headers take priority.
+            if !headers.iter().any(|(n, _)| n == header_name) {
+                headers.insert(header_name.clone(), header_value.clone());
+            }
         }
-
-        Ok(headers.into_iter())
-    }
-}
-
-/// SessionRetryOptions is used to configure retry behavior for session consistency scenarios.
-#[derive(Clone, Debug, Default)]
-#[non_exhaustive]
-pub struct SessionRetryOptions {
-    /// Minimum retry time for 404/1002 retries within each region for read and write operations.
-    /// The minimum value is 100ms. Default is 500ms.
-    min_in_region_retry_time: Duration,
-    /// Maximum number of retries within each region for read and write operations. Minimum is 1.
-    max_in_region_retry_count: usize,
-    /// Hints to SDK-internal retry policies on how early to switch retries to a different region.
-    /// If true, will retry all replicas once and add a minimum delay before switching to the next region.
-    /// If false, will retry in the local region up to 5s.
-    remote_region_preferred: bool,
-}
-
-impl SessionRetryOptions {
-    /// Gets the minimum retry time for 404/1002 retries within each region.
-    pub fn min_in_region_retry_time(&self) -> Duration {
-        self.min_in_region_retry_time
-    }
-
-    /// Gets the maximum number of retries within each region.
-    pub fn max_in_region_retry_count(&self) -> usize {
-        self.max_in_region_retry_count
-    }
-
-    /// Gets whether remote region is preferred for session retries.
-    pub fn remote_region_preferred(&self) -> bool {
-        self.remote_region_preferred
-    }
-
-    /// Sets the minimum retry time for 404/1002 retries within each region.
-    pub fn with_min_in_region_retry_time(mut self, time: Duration) -> Self {
-        self.min_in_region_retry_time = time;
-        self
-    }
-
-    /// Sets the maximum number of retries within each region.
-    pub fn with_max_in_region_retry_count(mut self, count: usize) -> Self {
-        self.max_in_region_retry_count = count;
-        self
-    }
-
-    /// Sets whether remote region is preferred for session retries.
-    pub fn with_remote_region_preferred(mut self, preferred: bool) -> Self {
-        self.remote_region_preferred = preferred;
-        self
     }
 }
 
@@ -206,45 +139,16 @@ impl Display for ConsistencyLevel {
     }
 }
 
-/// Specifies indexing directives that can be used when working with Cosmos APIs.
-#[derive(Clone)]
-pub enum IndexingDirective {
-    Default,
-    Include,
-    Exclude,
-}
-
-impl Display for IndexingDirective {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value = match self {
-            IndexingDirective::Default => "Default",
-            IndexingDirective::Include => "Include",
-            IndexingDirective::Exclude => "Exclude",
-        };
-        write!(f, "{}", value)
-    }
-}
-
 /// Options to be passed to APIs that manipulate items.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct ItemOptions {
-    /// Triggers executed before the operation.
-    ///
-    /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    pre_triggers: Option<Vec<String>>,
-    /// Triggers executed after the operation.
-    ///
-    /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    post_triggers: Option<Vec<String>>,
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
     ///
     /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
     session_token: Option<SessionToken>,
-    /// Sets indexing directive for the operation.
-    indexing_directive: Option<IndexingDirective>,
     /// If specified, the operation will only be performed if the item matches the provided Etag.
     ///
     /// See [Optimistic Concurrency Control](https://learn.microsoft.com/azure/cosmos-db/nosql/database-transactions-optimistic-concurrency#optimistic-concurrency-control) for more.
@@ -270,23 +174,8 @@ pub struct ItemOptions {
 }
 
 impl ItemOptions {
-    pub fn with_pre_triggers(mut self, pre_triggers: Vec<String>) -> Self {
-        self.pre_triggers = Some(pre_triggers);
-        self
-    }
-
-    pub fn with_post_triggers(mut self, post_triggers: Vec<String>) -> Self {
-        self.post_triggers = Some(post_triggers);
-        self
-    }
-
     pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
         self.session_token = Some(session_token);
-        self
-    }
-
-    pub fn with_indexing_directive(mut self, indexing_directive: IndexingDirective) -> Self {
-        self.indexing_directive = Some(indexing_directive);
         self
     }
 
@@ -314,35 +203,15 @@ impl ItemOptions {
     }
 }
 
-impl AsHeaders for ItemOptions {
-    type Error = Infallible;
-    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
-
-    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
-        let mut headers = Vec::new();
-
+impl ItemOptions {
+    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
         // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
             headers.insert(header_name.clone(), header_value.clone());
         }
 
-        if let Some(pre_triggers) = &self.pre_triggers {
-            headers.insert(constants::PRE_TRIGGER_INCLUDE, pre_triggers.join(","));
-        }
-
-        if let Some(post_triggers) = &self.post_triggers {
-            headers.insert(constants::POST_TRIGGER_INCLUDE, post_triggers.join(","));
-        }
-
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-
-        if let Some(indexing_directive) = &self.indexing_directive {
-            headers.insert(
-                constants::INDEXING_DIRECTIVE,
-                indexing_directive.to_string(),
-            );
         }
 
         if let Some(etag) = &self.if_match_etag {
@@ -398,13 +267,8 @@ impl QueryOptions {
     }
 }
 
-impl AsHeaders for QueryOptions {
-    type Error = Infallible;
-    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
-
-    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
-        let mut headers = Vec::new();
-
+impl QueryOptions {
+    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
         // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
             headers.insert(header_name.clone(), header_value.clone());
@@ -413,8 +277,6 @@ impl AsHeaders for QueryOptions {
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
-
-        Ok(headers.into_iter())
     }
 }
 
@@ -453,10 +315,7 @@ mod tests {
         );
 
         let item_options = ItemOptions::default()
-            .with_pre_triggers(vec!["PreTrigger1".to_string(), "PreTrigger2".to_string()])
-            .with_post_triggers(vec!["PostTrigger1".to_string(), "PostTrigger2".to_string()])
             .with_session_token("SessionToken".to_string().into())
-            .with_indexing_directive(IndexingDirective::Include)
             .with_if_match_etag(Etag::from("etag_value"))
             .with_custom_headers(custom_headers);
 
@@ -464,17 +323,8 @@ mod tests {
         item_options.apply_headers(&mut headers_result);
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            (
-                constants::PRE_TRIGGER_INCLUDE,
-                "PreTrigger1,PreTrigger2".into(),
-            ),
-            (
-                constants::POST_TRIGGER_INCLUDE,
-                "PostTrigger1,PostTrigger2".into(),
-            ),
             ("x-custom-header".into(), "custom_value".into()),
             (constants::SESSION_TOKEN, "SessionToken".into()),
-            (constants::INDEXING_DIRECTIVE, "Include".into()),
             (headers::IF_MATCH, "etag_value".into()),
             (headers::PREFER, constants::PREFER_MINIMAL),
         ];

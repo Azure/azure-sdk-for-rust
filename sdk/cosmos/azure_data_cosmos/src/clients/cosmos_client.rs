@@ -1,19 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::constants::COSMOS_ALLOWED_HEADERS;
 #[cfg(feature = "reqwest")]
 use crate::constants::{
     DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
 };
-use crate::cosmos_request::CosmosRequest;
-use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
     clients::DatabaseClient,
+    cosmos_request::CosmosRequest,
     models::{CosmosResponse, DatabaseProperties},
+    operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::ResourceLink,
+    routing::{
+        global_endpoint_manager::GlobalEndpointManager,
+        global_partition_endpoint_manager::GlobalPartitionEndpointManager,
+    },
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::{Context, Url};
@@ -21,17 +23,6 @@ use serde::Serialize;
 use std::sync::Arc;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
-use crate::cosmos_request::CosmosRequest;
-use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-#[cfg(feature = "key_auth")]
-use azure_core::credentials::Secret;
-use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
-use azure_core::{credentials::TokenCredential, http::Url};
-use serde::Serialize;
-use std::sync::Arc;
-
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 
 /// Client for Azure Cosmos DB.
 ///
@@ -42,15 +33,15 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
 /// use std::sync::Arc;
 ///
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-/// let account = CosmosAccountReference::with_credential(
-///     "https://myaccount.documents.azure.com/",
-///     credential,
-/// ).unwrap();
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+///     .parse()
+///     .unwrap();
+/// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClient::builder()
 ///     .build(account)
 ///     .unwrap();
@@ -59,13 +50,16 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
 /// use azure_core::credentials::Secret;
 ///
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+///     .parse()
+///     .unwrap();
 /// let account = CosmosAccountReference::with_master_key(
-///     "https://myaccount.documents.azure.com/",
+///     endpoint,
 ///     Secret::from("my_account_key"),
-/// ).unwrap();
+/// );
 /// let client = CosmosClient::builder()
 ///     .build(account)
 ///     .unwrap();
@@ -84,14 +78,14 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
+    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
     ///
     /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
     ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-    /// let account = CosmosAccountReference::with_credential(
-    ///     "https://myaccount.documents.azure.com/",
-    ///     credential,
-    /// ).unwrap();
+    /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+    ///     .parse()
+    ///     .unwrap();
+    /// let account = CosmosAccountReference::with_credential(endpoint, credential);
     /// let client = CosmosClient::builder()
     ///     .build(account)
     ///     .unwrap();

@@ -26,7 +26,7 @@ pub use clients::CosmosClient;
 pub use clients::CosmosClientBuilder;
 
 pub use account_endpoint::CosmosAccountEndpoint;
-pub use account_reference::{CosmosAccountReference, CosmosAccountReferenceBuilder};
+pub use account_reference::CosmosAccountReference;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::CosmosResponse;

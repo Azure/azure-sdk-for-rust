@@ -4,7 +4,7 @@
 //! Builder for creating [`CosmosClient`] instances.
 
 use crate::{
-    pipeline::{AuthorizationPolicy, GatewayPipeline},
+    pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
     regions::RegionName,
     resource_context::{ResourceLink, ResourceType},
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential,
@@ -31,15 +31,13 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference};
+/// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint};
 /// use std::sync::Arc;
 ///
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-/// let account = CosmosAccountReference::with_credential(
-///     "https://myaccount.documents.azure.com/",
-///     credential,
-/// ).unwrap();
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClientBuilder::new()
 ///     .build(account)
 ///     .unwrap();
@@ -48,13 +46,11 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference};
+/// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint};
 /// use azure_core::credentials::Secret;
 ///
-/// let account = CosmosAccountReference::with_master_key(
-///     "https://myaccount.documents.azure.com/",
-///     Secret::from("my_account_key"),
-/// ).unwrap();
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
 /// let client = CosmosClientBuilder::new()
 ///     .build(account)
 ///     .unwrap();
@@ -62,9 +58,9 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 #[derive(Default)]
 pub struct CosmosClientBuilder {
     options: CosmosClientOptions,
-    /// Whether to accept invalid TLS certificates (e.g., for emulator testing)
+    /// Whether to accept invalid TLS certificates when connecting to the emulator.
     #[cfg(feature = "allow_invalid_certificates")]
-    allow_invalid_certificates: bool,
+    allow_emulator_invalid_certificates: bool,
     /// Fault injection builder for testing error handling
     #[cfg(feature = "fault_injection")]
     fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
@@ -132,39 +128,26 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets the session retry options.
+    /// Configures the client to accept invalid TLS certificates when connecting
+    /// to the Azure Cosmos DB emulator.
+    ///
+    /// This setting only applies when connecting to the local emulator
+    /// (e.g., `https://localhost:8081/`). It should not be used for production endpoints.
     ///
     /// # Arguments
     ///
-    /// * `options` - The session retry configuration.
-    pub fn with_session_retry_options(
-        mut self,
-        options: crate::options::SessionRetryOptions,
-    ) -> Self {
-        self.options.session_retry_options = options;
-        self
-    }
-
-    /// Configures the client to accept invalid TLS certificates.
-    ///
-    /// This is intended for testing with the Azure Cosmos DB emulator,
-    /// which uses a self-signed certificate.
-    ///
-    /// # Arguments
-    ///
-    /// * `allow` - Whether to accept invalid certificates.
+    /// * `allow` - Whether to accept invalid certificates for emulator connections.
     #[doc(hidden)]
     #[cfg(feature = "allow_invalid_certificates")]
-    pub fn with_allow_invalid_certificates(mut self, allow: bool) -> Self {
-        self.allow_invalid_certificates = allow;
+    pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
+        self.allow_emulator_invalid_certificates = allow;
         self
     }
 
     /// Builds the [`CosmosClient`] with the specified account reference.
     ///
     /// The account reference bundles an endpoint and credential. You can create one using
-    /// [`CosmosAccountReference::with_credential()`], [`CosmosAccountReference::with_master_key()`],
-    /// or [`CosmosAccountReferenceBuilder`](crate::CosmosAccountReferenceBuilder).
+    /// [`CosmosAccountReference::with_credential()`] or [`CosmosAccountReference::with_master_key()`].
     ///
     /// You can also pass a tuple of `(CosmosAccountEndpoint, credential)` or `(Url, credential)`,
     /// where `credential` is any type that implements `Into<CosmosCredential>`.
@@ -192,7 +175,7 @@ impl CosmosClientBuilder {
         // Build custom transport if needed
         #[cfg(feature = "allow_invalid_certificates")]
         let base_client: Option<Arc<dyn azure_core::http::HttpClient>> =
-            if self.allow_invalid_certificates {
+            if self.allow_emulator_invalid_certificates {
                 let client = reqwest::ClientBuilder::new()
                     .danger_accept_invalid_certs(true)
                     .pool_max_idle_per_host(0)
@@ -242,11 +225,18 @@ impl CosmosClientBuilder {
             CosmosCredential::MasterKey(key) => Arc::new(AuthorizationPolicy::from_shared_key(key)),
         };
 
+        // Create Cosmos headers policy to override User-Agent with Cosmos-specific value.
+        // This runs as a per-call policy after azure_core's UserAgentPolicy.
+        let crate_version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
+        let cosmos_headers_policy: Arc<dyn azure_core::http::policies::Policy> = Arc::new(
+            CosmosHeadersPolicy::new(crate_version, self.options.user_agent_suffix.as_deref()),
+        );
+
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             client_options,
-            Vec::new(),
+            vec![cosmos_headers_policy],
             vec![auth_policy],
             None,
         );

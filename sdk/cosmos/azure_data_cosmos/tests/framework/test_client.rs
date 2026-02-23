@@ -276,7 +276,7 @@ impl TestClient {
         // Configure invalid certificate acceptance (e.g., for emulator)
         #[cfg(feature = "allow_invalid_certificates")]
         if allow_invalid_certificates {
-            builder = builder.with_allow_invalid_certificates(true);
+            builder = builder.with_allow_emulator_invalid_certificates(true);
         }
         #[cfg(not(feature = "allow_invalid_certificates"))]
         if allow_invalid_certificates {
@@ -297,11 +297,11 @@ impl TestClient {
             builder = builder.with_application_preferred_regions(fault_client_preferred_regions);
         }
 
-        let cosmos_client =
-            builder.build(azure_data_cosmos::CosmosAccountReference::with_master_key(
-                &connection_string.account_endpoint,
-                credential,
-            )?)?;
+        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
+            connection_string.account_endpoint.parse()?;
+        let cosmos_client = builder.build(
+            azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+        )?;
 
         Ok(TestClient {
             cosmos_client: Some(cosmos_client),
@@ -790,12 +790,19 @@ impl TestRunContext {
             )
         })?;
 
+        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
+            parsed.account_endpoint.parse().map_err(|e| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    format!("Failed to parse account endpoint: {}", e),
+                )
+            })?;
         CosmosClient::builder()
             .with_application_preferred_regions(vec![region])
             .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
-                &parsed.account_endpoint,
+                endpoint,
                 parsed.account_key.clone(),
-            )?)
+            ))
     }
 
     /// Cleans up test resources.

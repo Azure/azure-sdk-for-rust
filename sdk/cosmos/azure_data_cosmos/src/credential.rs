@@ -36,6 +36,7 @@ use azure_core::credentials::Secret;
 /// let credential: CosmosCredential = Secret::from("my_account_key").into();
 /// ```
 #[derive(Clone)]
+#[non_exhaustive]
 pub enum CosmosCredential {
     /// Entra ID (Azure AD) token credential.
     TokenCredential(Arc<dyn TokenCredential>),

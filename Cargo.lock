@@ -359,8 +359,6 @@ dependencies = [
  "azure_data_cosmos",
  "cbindgen",
  "futures",
- "getrandom 0.4.1",
- "reqwest",
  "serde_json",
  "tokio",
  "tracing",
