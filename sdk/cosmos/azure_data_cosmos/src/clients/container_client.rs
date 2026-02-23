@@ -168,6 +168,10 @@ impl ContainerClient {
 
     /// Replaces the container throughput properties.
     ///
+    /// Note that throughput changes may not take effect immediately.
+    /// The service processes the change asynchronously, so you may need to poll
+    /// [`ContainerClient::read_throughput()`] to confirm the new throughput is in effect.
+    ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.

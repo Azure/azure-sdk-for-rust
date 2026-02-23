@@ -100,9 +100,6 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `suffix` - The suffix to append to the User-Agent header.
-    // TODO: User-Agent construction must be reworked per central team patterns
-    // (prefixes instead of suffixes). See driver PR for implementation sample.
-    // Document cardinality limits when reworking.
     pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
         self.options.user_agent_suffix = Some(suffix.into());
         self
