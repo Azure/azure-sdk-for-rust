@@ -8,10 +8,10 @@ use crate::{
 use azure_core::{http::Url, time::Duration};
 use std::fmt::Debug;
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 
-#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
 /// Options for configuring an AMQP connection.
@@ -42,8 +42,7 @@ pub struct AmqpConnectionOptions {
 impl AmqpConnectionOptions {}
 
 /// Trait defining the asynchronous APIs for AMQP connection operations.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait AmqpConnectionApis {
     /// Asynchronously opens an AMQP connection.
     ///
@@ -81,8 +80,7 @@ pub struct AmqpConnection {
     pub(crate) implementation: ConnectionImplementation,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl AmqpConnectionApis for AmqpConnection {
     async fn open(
         &self,

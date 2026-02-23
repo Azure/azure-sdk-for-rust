@@ -15,8 +15,7 @@ use models::{Checkpoint, Ownership};
 /// and ownerships in an Event Hub.
 /// It allows for claiming ownership of partitions, listing checkpoints,
 /// listing ownerships, and updating checkpoints.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait CheckpointStore: Send + Sync {
     /// Claims ownership of the specified partitions.
     ///

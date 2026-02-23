@@ -6,7 +6,6 @@ use azure_data_cosmos::CosmosClientOptions;
 #[repr(C)]
 pub struct ClientOptions {
     /// If true, disables certificate validation. Use only for testing.
-    #[cfg(not(target_family = "wasm"))]
     danger_allow_invalid_certificates: bool,
 }
 
@@ -14,12 +13,7 @@ pub struct ClientOptions {
 impl TryFrom<&ClientOptions> for CosmosClientOptions {
     type Error = azure_core::Error;
 
-    #[cfg_attr(
-        target_family = "wasm",
-        allow(unused_variables, reason = "used in other targets")
-    )]
     fn try_from(value: &ClientOptions) -> Result<Self, Self::Error> {
-        #[cfg(not(target_family = "wasm"))]
         if value.danger_allow_invalid_certificates {
             #[cfg(feature = "reqwest")]
             let client = reqwest::ClientBuilder::new()
@@ -42,9 +36,6 @@ impl TryFrom<&ClientOptions> for CosmosClientOptions {
         } else {
             Ok(Default::default())
         }
-
-        #[cfg(target_family = "wasm")]
-        Ok(Default::default())
     }
 }
 

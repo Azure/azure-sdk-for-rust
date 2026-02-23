@@ -180,10 +180,6 @@ mod tests {
         let partition_manager =
             GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
         (
-            #[allow(
-                clippy::arc_with_non_send_sync,
-                reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
-            )]
             Arc::new(GatewayPipeline::new(
                 endpoint,
                 pipeline_core,
@@ -267,10 +263,6 @@ mod tests {
         let partition_manager =
             GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
 
-        #[allow(
-            clippy::arc_with_non_send_sync,
-            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
-        )]
         let gateway_pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline,

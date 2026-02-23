@@ -220,6 +220,8 @@ typedef struct cosmos_runtime_options {
 
 
 
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

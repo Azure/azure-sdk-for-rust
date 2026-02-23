@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::constants::COSMOS_ALLOWED_HEADERS;
+#[cfg(feature = "reqwest")]
+use crate::constants::{
+    DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
+};
+use crate::cosmos_request::CosmosRequest;
+use crate::operation_context::OperationType;
+use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::{
     clients::DatabaseClient,
     models::{CosmosResponse, DatabaseProperties},
@@ -8,19 +16,14 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
+#[cfg(feature = "key_auth")]
+use azure_core::credentials::Secret;
+use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 use azure_core::{credentials::TokenCredential, http::Url};
 use serde::Serialize;
 use std::sync::Arc;
 
-use crate::constants::COSMOS_ALLOWED_HEADERS;
-use crate::cosmos_request::CosmosRequest;
-use crate::models::AccountProperties;
-use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
-#[cfg(feature = "key_auth")]
-use azure_core::credentials::Secret;
-use azure_core::http::{LoggingOptions, RetryOptions};
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -32,6 +35,45 @@ pub struct CosmosClient {
 }
 
 impl CosmosClient {
+    /// Configures `ClientOptions` with Cosmos-specific defaults.
+    ///
+    /// When no custom transport is provided, builds a `reqwest::Client` with default
+    /// connection and request timeouts and injects it as the transport.
+    fn configure_client_options(
+        options: &CosmosClientOptions,
+    ) -> azure_core::Result<ClientOptions> {
+        let mut client_options = options.client_options.clone();
+        client_options.retry = RetryOptions::none();
+        client_options.logging = LoggingOptions {
+            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
+                .iter()
+                .map(|h| std::borrow::Cow::Borrowed(h.as_str()))
+                .collect(),
+            additional_allowed_query_params: vec![],
+        };
+
+        #[cfg(feature = "reqwest")]
+        if client_options.transport.is_none() {
+            // There is also a read timeout but this is addressed by the total timeout
+            let http_client = reqwest::ClientBuilder::new()
+                .http1_only()
+                .pool_max_idle_per_host(DEFAULT_MAX_CONNECTION_POOL_SIZE)
+                .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
+                .timeout(DEFAULT_REQUEST_TIMEOUT)
+                .build()
+                .map_err(|e| {
+                    azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        format!("failed to build reqwest client: {e}"),
+                    )
+                })?;
+            client_options.transport =
+                Some(azure_core::http::Transport::new(Arc::new(http_client)));
+        }
+
+        Ok(client_options)
+    }
+
     /// Creates a new CosmosClient, using Entra ID authentication.
     ///
     /// # Arguments
@@ -56,15 +98,7 @@ impl CosmosClient {
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
         let endpoint: Url = endpoint.parse()?;
-        let mut client_options = options.client_options.clone();
-        client_options.retry = RetryOptions::none();
-        client_options.logging = LoggingOptions {
-            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
-                .iter()
-                .map(|h| std::borrow::Cow::Borrowed(h.as_str()))
-                .collect(),
-            additional_allowed_query_params: vec![],
-        };
+        let client_options = Self::configure_client_options(&options)?;
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -95,11 +129,6 @@ impl CosmosClient {
             options.enable_partition_level_circuit_breaker,
         );
 
-        #[allow(
-            clippy::arc_with_non_send_sync,
-            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
-        )]
-        // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
@@ -159,15 +188,7 @@ impl CosmosClient {
         let options = options.unwrap_or_default();
         let endpoint: Url = endpoint.parse()?;
 
-        let mut client_options = options.client_options.clone();
-        client_options.retry = RetryOptions::none();
-        client_options.logging = LoggingOptions {
-            additional_allowed_header_names: COSMOS_ALLOWED_HEADERS
-                .iter()
-                .map(|h| std::borrow::Cow::Borrowed(h.as_str()))
-                .collect(),
-            additional_allowed_query_params: vec![],
-        };
+        let client_options = Self::configure_client_options(&options)?;
 
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
@@ -203,11 +224,6 @@ impl CosmosClient {
             options.enable_partition_level_circuit_breaker,
         );
 
-        #[allow(
-            clippy::arc_with_non_send_sync,
-            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
-        )]
-        // On wasm32 SpawnedTask is !Send; Arc is still correct.
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,

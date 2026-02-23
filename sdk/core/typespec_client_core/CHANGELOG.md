@@ -4,7 +4,12 @@
 
 ### Features Added
 
+- Added `ErrorKind::Connection` for connection errors.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
 ### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 
 ### Bugs Fixed
 

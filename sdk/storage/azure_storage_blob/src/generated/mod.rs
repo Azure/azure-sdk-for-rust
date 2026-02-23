@@ -8,6 +8,7 @@ pub mod clients;
 /// Contains all the data structures and types used by the client library.
 pub mod models;
 pub use clients::{
-    AppendBlobClient, BlobClient, BlobContainerClient, BlobServiceClient, BlockBlobClient,
-    PageBlobClient,
+    AppendBlobClient, AppendBlobClientOptions, BlobClient, BlobClientOptions, BlobContainerClient,
+    BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions, BlockBlobClient,
+    BlockBlobClientOptions, PageBlobClient, PageBlobClientOptions,
 };

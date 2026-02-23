@@ -3,6 +3,7 @@
 ## 0.31.0 (Unreleased)
 
 ### Features Added
+
 - Added `excluded_regions` to `CosmosClientOptions` and `ItemOptions` for additional regional routing options. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
 - Added `effective_preferred_regions` to the client, ensuring multi-region accounts use all regions without supplying `application_preferred_regions` to their client. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
 
@@ -14,10 +15,14 @@
 
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Changed return type of query methods from `FeedPager<T>` (an alias for `ItemIterator<FeedPage<T>, String>`) to `FeedItemIterator<T>`, which implements `Stream<Item = Result<T>>` and provides `into_pages()` for page-level access. ([#3515](https://github.com/Azure/azure-sdk-for-rust/pull/3515))
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- Added default HTTP client timeouts and added retries for connection errors. ([#3752](https://github.com/Azure/azure-sdk-for-rust/pull/3752))
+- Retry policies now retry reads on all non-whitelisted status codes and retry service unavailable errors across all applicable endpoints. ([#3728](https://github.com/Azure/azure-sdk-for-rust/pull/3728))
 
 ## 0.30.0 (2026-01-21)
 
@@ -33,6 +38,7 @@
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
 ### Other Changes
+
 - Added `ALLOWED_COSMOS_HEADERS` for use in default logging policy. ([#3554](https://github.com/Azure/azure-sdk-for-rust/pull/3554))
 
 ## 0.29.0 (2025-11-10)
