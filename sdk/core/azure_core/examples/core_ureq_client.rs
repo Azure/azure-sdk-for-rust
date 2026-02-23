@@ -32,8 +32,7 @@ impl Default for Agent {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl HttpClient for Agent {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         let request = into_request(request)?;

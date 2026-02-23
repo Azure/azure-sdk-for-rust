@@ -30,8 +30,7 @@ impl TransportPolicy {
 /// When present in [`Context`], signals to the `TransportPolicy` to buffer the entire [`AsyncRawResponse`](crate::http::AsyncRawResponse).
 pub(crate) struct Buffer;
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Policy for TransportPolicy {
     async fn send(
         &self,
@@ -75,7 +74,7 @@ impl Header for EmptyContentLength {
     }
 }
 
-#[cfg(all(test, not(target_family = "wasm")))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::http::{headers::Headers, AsyncRawResponse, StatusCode};

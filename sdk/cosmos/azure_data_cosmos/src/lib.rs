@@ -40,37 +40,3 @@ mod request_context;
 mod retry_policies;
 mod routing;
 mod serde;
-
-#[cfg(not(target_arch = "wasm32"))]
-mod conditional_send {
-    /// Conditionally implements [`Send`] based on the `target_arch`.
-    ///
-    /// This implementation requires `Send`.
-    pub trait ConditionalSend: Send {}
-
-    impl<T> ConditionalSend for T where T: Send {}
-
-    /// Conditionally implements [`Sync`] based on the `target_arch`.
-    ///
-    /// This implementation requires `Sync`.
-    pub trait ConditionalSync: Sync {}
-
-    impl<T> ConditionalSync for T where T: Sync {}
-}
-
-#[cfg(target_arch = "wasm32")]
-mod conditional_send {
-    /// Conditionally implements [`Send`] based on the `target_arch`.
-    ///
-    /// This implementation does not require `Send`.
-    pub trait ConditionalSend {}
-
-    impl<T> ConditionalSend for T {}
-
-    /// Conditionally implements [`Sync`] based on the `target_arch`.
-    ///
-    /// This implementation does not require `Sync`.
-    pub trait ConditionalSync {}
-
-    impl<T> ConditionalSync for T {}
-}
