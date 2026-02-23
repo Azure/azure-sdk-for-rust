@@ -3,21 +3,16 @@
 
 //! Latency tracking and periodic summary reporting.
 //!
-//! Uses reservoir sampling (Algorithm R) and per-operation sharded mutexes to
-//! keep memory bounded and lock contention low regardless of throughput.
+//! Uses [`hdrhistogram`] for percentile estimation with fixed memory and
+//! per-operation sharded mutexes to keep lock contention low regardless of
+//! throughput.
 
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
-use rand::RngExt;
+use hdrhistogram::Histogram;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-
-/// Maximum number of latency samples retained per operation per interval.
-///
-/// Reservoir sampling guarantees a uniform random subset of all observations,
-/// giving accurate percentile estimates with O(1) memory.
-const RESERVOIR_SIZE: usize = 10_000;
 
 /// Collects per-operation latency measurements and error counts.
 ///
@@ -29,13 +24,13 @@ pub struct Stats {
 
 /// Latency data for a single operation type within a reporting window.
 ///
-/// Instead of storing every latency, we use reservoir sampling (Algorithm R)
-/// to keep at most [`RESERVOIR_SIZE`] samples. Exact count, min, max, and sum
-/// are tracked separately so mean is always precise.
+/// Uses an [`hdrhistogram::Histogram`] for percentile estimation with constant
+/// memory. Exact count, min, max, and sum are tracked separately so the mean
+/// is always precise.
 struct OperationStats {
-    /// Fixed-size sample reservoir for percentile estimation.
-    reservoir: Vec<Duration>,
-    /// Total number of successful operations observed (may exceed reservoir size).
+    /// HdrHistogram for percentile estimation (values in microseconds).
+    histogram: Histogram<u64>,
+    /// Total number of successful operations observed.
     count: u64,
     /// Running minimum latency.
     min: Duration,
@@ -47,10 +42,15 @@ struct OperationStats {
     errors: u64,
 }
 
+/// Upper bound for the histogram: 1 hour in microseconds.
+const MAX_LATENCY_US: u64 = 3_600_000_000;
+
 impl Default for OperationStats {
     fn default() -> Self {
         Self {
-            reservoir: Vec::with_capacity(RESERVOIR_SIZE),
+            // 1µs–1h range, 3 significant figures of precision.
+            histogram: Histogram::new_with_bounds(1, MAX_LATENCY_US, 3)
+                .expect("valid histogram bounds"),
             count: 0,
             min: Duration::MAX,
             max: Duration::ZERO,
@@ -61,7 +61,7 @@ impl Default for OperationStats {
 }
 
 impl OperationStats {
-    /// Records a latency sample using reservoir sampling (Algorithm R).
+    /// Records a latency sample into the histogram.
     fn record(&mut self, latency: Duration) {
         self.count += 1;
         self.sum += latency;
@@ -72,15 +72,10 @@ impl OperationStats {
             self.max = latency;
         }
 
-        if self.reservoir.len() < RESERVOIR_SIZE {
-            self.reservoir.push(latency);
-        } else {
-            // Algorithm R: replace a random element with probability RESERVOIR_SIZE / count
-            let j = rand::rng().random_range(0..self.count as usize);
-            if j < RESERVOIR_SIZE {
-                self.reservoir[j] = latency;
-            }
-        }
+        let micros = latency.as_micros() as u64;
+        // Clamp to histogram bounds; values above MAX_LATENCY_US are recorded
+        // at the max and still counted.
+        let _ = self.histogram.record(micros.clamp(1, MAX_LATENCY_US));
     }
 
     /// Resets all counters and returns a fresh default instance.
@@ -150,7 +145,7 @@ impl Stats {
     }
 }
 
-fn compute_summary(name: String, mut stats: OperationStats) -> Summary {
+fn compute_summary(name: String, stats: OperationStats) -> Summary {
     let errors = stats.errors;
 
     if stats.count == 0 {
@@ -167,11 +162,10 @@ fn compute_summary(name: String, mut stats: OperationStats) -> Summary {
         };
     }
 
-    stats.reservoir.sort();
     let mean = stats.sum / stats.count as u32;
-    let p50 = percentile(&stats.reservoir, 50.0);
-    let p90 = percentile(&stats.reservoir, 90.0);
-    let p99 = percentile(&stats.reservoir, 99.0);
+    let p50 = Duration::from_micros(stats.histogram.value_at_quantile(0.50));
+    let p90 = Duration::from_micros(stats.histogram.value_at_quantile(0.90));
+    let p99 = Duration::from_micros(stats.histogram.value_at_quantile(0.99));
 
     Summary {
         name,
@@ -184,14 +178,6 @@ fn compute_summary(name: String, mut stats: OperationStats) -> Summary {
         p90,
         p99,
     }
-}
-
-fn percentile(sorted: &[Duration], pct: f64) -> Duration {
-    if sorted.is_empty() {
-        return Duration::ZERO;
-    }
-    let idx = ((pct / 100.0) * (sorted.len() as f64 - 1.0)).round() as usize;
-    sorted[idx.min(sorted.len() - 1)]
 }
 
 /// Prints a formatted table of operation summaries to stdout.
@@ -334,9 +320,30 @@ mod tests {
     }
 
     #[test]
-    fn reservoir_caps_memory() {
+    fn percentile_accuracy() {
         let stats = Stats::new(&["write"]);
-        // Record more samples than RESERVOIR_SIZE
+        // Record 1ms through 100ms — p50 ≈ 50ms, p99 ≈ 99ms
+        for i in 1..=100u64 {
+            stats.record_latency("write", Duration::from_millis(i));
+        }
+        let summaries = stats.drain_summaries();
+        assert_eq!(summaries.len(), 1);
+        let s = &summaries[0];
+        assert_eq!(s.count, 100);
+        assert_eq!(s.min, Duration::from_millis(1));
+        assert_eq!(s.max, Duration::from_millis(100));
+
+        // hdrhistogram values are within ±0.1% of the true value at 3
+        // significant figures, so allow a small tolerance.
+        let p50_ms = s.p50.as_millis();
+        assert!((49..=51).contains(&p50_ms), "p50 was {p50_ms}ms");
+        let p99_ms = s.p99.as_millis();
+        assert!((98..=100).contains(&p99_ms), "p99 was {p99_ms}ms");
+    }
+
+    #[test]
+    fn high_volume_recording() {
+        let stats = Stats::new(&["write"]);
         for i in 0..20_000u64 {
             stats.record_latency("write", Duration::from_micros(i));
         }

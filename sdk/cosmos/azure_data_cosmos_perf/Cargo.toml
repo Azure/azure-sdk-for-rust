@@ -21,6 +21,7 @@ azure_core = { workspace = true, features = ["reqwest"] }
 azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
 azure_identity = { path = "../../../sdk/identity/azure_identity" }
 clap = { version = "4.5.45", features = ["derive", "env"] }
+hdrhistogram = "7.5"
 reqwest = { workspace = true, features = ["http2"] }
 sysinfo = "0.33"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "signal"] }
