@@ -99,20 +99,6 @@ where
         write_guard.clear();
     }
 
-    /// Returns the number of entries in the cache (including those still initializing).
-    #[cfg(test)]
-    async fn len(&self) -> usize {
-        let read_guard = self.map.read().await;
-        read_guard.len()
-    }
-
-    /// Returns `true` if the cache is empty.
-    #[cfg(test)]
-    async fn is_empty(&self) -> bool {
-        let read_guard = self.map.read().await;
-        read_guard.is_empty()
-    }
-
     /// Gets a value, optionally forcing a refresh based on a predicate.
     ///
     /// This method enables conditional cache refresh without losing the current value
@@ -242,6 +228,27 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use tokio::time::{sleep, Duration};
 
+    async fn cache_len<K, V>(cache: &AsyncCache<K, V>) -> usize
+    where
+        K: Eq + Hash + Clone,
+    {
+        cache.map.read().await.len()
+    }
+
+    async fn cache_is_empty<K, V>(cache: &AsyncCache<K, V>) -> bool
+    where
+        K: Eq + Hash + Clone,
+    {
+        cache.map.read().await.is_empty()
+    }
+
+    async fn cache_clear<K, V>(cache: &AsyncCache<K, V>)
+    where
+        K: Eq + Hash + Clone,
+    {
+        cache.map.write().await.clear();
+    }
+
     #[tokio::test]
     async fn get_or_insert_caches_value() {
         let cache: AsyncCache<String, i32> = AsyncCache::new();
@@ -284,7 +291,7 @@ mod tests {
 
         assert_eq!(*v1, 1);
         assert_eq!(*v2, 2);
-        assert_eq!(cache.len().await, 2);
+        assert_eq!(cache_len(&cache).await, 2);
     }
 
     #[tokio::test]
@@ -342,7 +349,7 @@ mod tests {
         let removed = cache.invalidate(&"key".to_string()).await;
         assert_eq!(*removed.unwrap(), 42);
         assert!(cache.get(&"key".to_string()).await.is_none());
-        assert!(cache.is_empty().await);
+        assert!(cache_is_empty(&cache).await);
     }
 
     #[tokio::test]
@@ -355,9 +362,9 @@ mod tests {
             .get_or_insert_with("key2".to_string(), || async { 2 })
             .await;
 
-        assert_eq!(cache.len().await, 2);
-        cache.clear().await;
-        assert!(cache.is_empty().await);
+        assert_eq!(cache_len(&cache).await, 2);
+        cache_clear(&cache).await;
+        assert!(cache_is_empty(&cache).await);
     }
 
     #[tokio::test]
@@ -407,7 +414,7 @@ mod tests {
 
         assert!(result.is_none());
         assert_eq!(counter.load(Ordering::SeqCst), 0);
-        assert!(cache.is_empty().await);
+        assert!(cache_is_empty(&cache).await);
     }
 
     #[tokio::test]
