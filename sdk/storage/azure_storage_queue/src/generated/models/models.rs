@@ -113,15 +113,6 @@ pub struct ListOfSentMessage {
     pub items: Option<Vec<SentMessage>>,
 }
 
-/// Represents an array of signed identifiers
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[serde(rename = "SignedIdentifiers")]
-pub struct ListOfSignedIdentifier {
-    /// The list of signed identifiers.
-    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<SignedIdentifier>>,
-}
-
 /// The list queue segment response
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -413,4 +404,13 @@ pub struct SignedIdentifier {
     /// The unique ID for the signed identifier.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+
+/// Represents an array of signed identifiers
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "SignedIdentifiers")]
+pub struct SignedIdentifiers {
+    /// The list of signed identifiers.
+    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SignedIdentifier>>,
 }
