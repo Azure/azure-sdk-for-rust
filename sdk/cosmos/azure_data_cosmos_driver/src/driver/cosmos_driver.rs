@@ -11,7 +11,7 @@ use crate::{
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
-        DatabaseReference,
+        DatabaseReference, SubStatusCode,
     },
     options::{
         DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
@@ -19,8 +19,9 @@ use crate::{
     },
 };
 use azure_core::http::headers::{HeaderName, HeaderValue};
-use azure_core::http::{Context, Request};
+use azure_core::http::{Context, Request, StatusCode};
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use super::{
     cache::AccountRegion,
@@ -248,6 +249,33 @@ impl CosmosDriver {
         request_sent: TransportRequestSentStatus,
     ) -> bool {
         attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
+    }
+
+    /// Checks whether the end-to-end deadline has been exceeded and, if so,
+    /// records the timeout in diagnostics and returns an error.
+    ///
+    /// Returns `Some(Error)` when the deadline has passed, `None` otherwise.
+    fn check_e2e_deadline(
+        deadline: Option<Instant>,
+        timeout_duration: std::time::Duration,
+        diagnostics_builder: &mut DiagnosticsContextBuilder,
+        request_handle: Option<crate::diagnostics::RequestHandle>,
+    ) -> Option<azure_core::Error> {
+        let deadline = deadline?;
+        if Instant::now() < deadline {
+            return None;
+        }
+        if let Some(handle) = request_handle {
+            diagnostics_builder.timeout_request(handle);
+        }
+        diagnostics_builder.set_operation_status(
+            StatusCode::RequestTimeout,
+            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        );
+        Some(azure_core::Error::new(
+            azure_core::error::ErrorKind::Other,
+            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
+        ))
     }
 
     fn map_request_sent_status(
@@ -478,8 +506,29 @@ impl CosmosDriver {
         };
         let endpoint_string = endpoint.url().as_str().to_owned();
         let attempt_telemetry = Arc::new(RequestAttemptTelemetryHandle::new());
+        let deadline = effective_options
+            .end_to_end_latency_policy
+            .as_ref()
+            .map(|p| Instant::now() + p.timeout());
+
+        let e2e_timeout_duration = effective_options
+            .end_to_end_latency_policy
+            .as_ref()
+            .map(|p| p.timeout())
+            .unwrap_or_default();
 
         loop {
+            // Check if the end-to-end deadline has already been exceeded before
+            // starting the next attempt.
+            if let Some(e) = Self::check_e2e_deadline(
+                deadline,
+                e2e_timeout_duration,
+                &mut diagnostics_builder,
+                None,
+            ) {
+                return Err(e);
+            }
+
             let execution_context = if attempt == 0 {
                 ExecutionContext::Initial
             } else {
@@ -595,6 +644,16 @@ impl CosmosDriver {
                     );
 
                     if should_retry {
+                        // If the e2e deadline has already been exceeded, do not
+                        // retry: record the timeout and return immediately.
+                        if let Some(e) = Self::check_e2e_deadline(
+                            deadline,
+                            e2e_timeout_duration,
+                            &mut diagnostics_builder,
+                            Some(request_handle),
+                        ) {
+                            return Err(e);
+                        }
                         attempt += 1;
                         continue;
                     }
