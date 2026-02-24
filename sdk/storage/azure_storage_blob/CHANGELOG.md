@@ -12,6 +12,8 @@
 
 ### Bugs Fixed
 
+- Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Blob Storage client.
+
 ### Other Changes
 
 ## 0.9.0 (2026-02-11)
