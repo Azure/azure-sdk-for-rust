@@ -70,10 +70,7 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
                 .create_item(&item2)?
                 .read_item("item1", None);
 
-            let options = BatchOptions {
-                enable_content_response_on_write: true,
-                ..Default::default()
-            };
+            let options = BatchOptions::default().with_content_response_on_write_enabled(true);
 
             let response = container_client
                 .execute_transactional_batch(batch, Some(options))

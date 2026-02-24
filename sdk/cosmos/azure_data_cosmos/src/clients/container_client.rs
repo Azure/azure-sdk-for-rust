@@ -3,10 +3,8 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, CosmosResponse, PatchDocument, ThroughputProperties},
-    options::{BatchOptions, QueryOptions, ReadContainerOptions},
     models::{ContainerProperties, CosmosResponse, ThroughputProperties},
-    options::{QueryOptions, ReadContainerOptions},
+    options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::{TransactionalBatch, TransactionalBatchResponse},
@@ -730,19 +728,20 @@ impl ContainerClient {
     pub async fn execute_transactional_batch(
         &self,
         batch: TransactionalBatch,
-        options: Option<BatchOptions<'_>>,
+        options: Option<BatchOptions>,
     ) -> azure_core::Result<CosmosResponse<TransactionalBatchResponse>> {
         let options = options.unwrap_or_default();
         let partition_key = batch.partition_key().clone();
 
-        let cosmos_request = CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
-            .request_headers(&options)
-            .partition_key(partition_key)
-            .json(batch.operations())
-            .build()?;
+        let mut cosmos_request =
+            CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
+                .partition_key(partition_key)
+                .json(batch.operations())
+                .build()?;
+        options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await
     }
 }

@@ -229,42 +229,35 @@ impl ItemOptions {
 /// This is similar to [`ItemOptions`] but excludes ETag-based conditional options,
 /// since those are specified per-operation within the batch itself.
 #[derive(Clone, Default)]
-pub struct BatchOptions<'a> {
-    pub method_options: ClientMethodOptions<'a>,
+#[non_exhaustive]
+pub struct BatchOptions {
     /// Triggers executed before the operation.
     ///
     /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    pub pre_triggers: Option<Vec<String>>,
+    pre_triggers: Option<Vec<String>>,
     /// Triggers executed after the operation.
     ///
     /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    pub post_triggers: Option<Vec<String>>,
+    post_triggers: Option<Vec<String>>,
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
     ///
     /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    pub session_token: Option<SessionToken>,
+    session_token: Option<SessionToken>,
     /// Used to specify the consistency level for the operation.
     ///
     /// The default value is the consistency level set on the Cosmos DB account.
     /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-    pub consistency_level: Option<ConsistencyLevel>,
-    /// Sets indexing directive for the operation.
-    pub indexing_directive: Option<IndexingDirective>,
+    consistency_level: Option<ConsistencyLevel>,
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
-    pub enable_content_response_on_write: bool,
+    content_response_on_write_enabled: bool,
     /// The desired throughput bucket for this request
     ///
     /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    pub throughput_bucket: Option<usize>,
-    /// Priority based execution allows users to set a priority for each request. Once the user has reached their provisioned throughput, low priority requests are throttled
-    /// before high priority requests start getting throttled. Feature must first be enabled at the account level.
-    ///
-    /// See [Priority based-execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution) for more.
-    pub priority: Option<PriorityLevel>,
+    throughput_bucket: Option<usize>,
     /// Additional headers to be included in the batch request. This allows for custom headers beyond those natively supported.
     /// The following are some example headers that can be added using this api.
     /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
@@ -273,69 +266,79 @@ pub struct BatchOptions<'a> {
     /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
     ///
     /// Custom headers will not override headers that are already set by the SDK.
-    pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
-impl AsHeaders for BatchOptions<'_> {
-    type Error = Infallible;
-    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
+impl BatchOptions {
+    pub fn with_pre_triggers(mut self, pre_triggers: Vec<String>) -> Self {
+        self.pre_triggers = Some(pre_triggers);
+        self
+    }
 
-    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
-        let mut headers = Vec::new();
+    pub fn with_post_triggers(mut self, post_triggers: Vec<String>) -> Self {
+        self.post_triggers = Some(post_triggers);
+        self
+    }
 
+    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
+        self.session_token = Some(session_token);
+        self
+    }
+
+    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    pub fn with_content_response_on_write_enabled(
+        mut self,
+        content_response_on_write_enabled: bool,
+    ) -> Self {
+        self.content_response_on_write_enabled = content_response_on_write_enabled;
+        self
+    }
+
+    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
+        self.throughput_bucket = Some(throughput_bucket);
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
+}
+
+impl BatchOptions {
+    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
         // custom headers should be added first so that they don't override SDK-set headers
         for (header_name, header_value) in &self.custom_headers {
-            headers.push((header_name.clone(), header_value.clone()));
+            headers.insert(header_name.clone(), header_value.clone());
         }
 
         if let Some(pre_triggers) = &self.pre_triggers {
-            headers.push((
-                constants::PRE_TRIGGER_INCLUDE,
-                pre_triggers.join(",").into(),
-            ));
+            headers.insert(constants::PRE_TRIGGER_INCLUDE, pre_triggers.join(","));
         }
 
         if let Some(post_triggers) = &self.post_triggers {
-            headers.push((
-                constants::POST_TRIGGER_INCLUDE,
-                post_triggers.join(",").into(),
-            ));
+            headers.insert(constants::POST_TRIGGER_INCLUDE, post_triggers.join(","));
         }
 
         if let Some(session_token) = &self.session_token {
-            headers.push((constants::SESSION_TOKEN, session_token.to_string().into()));
+            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
 
         if let Some(consistency_level) = &self.consistency_level {
-            headers.push((
-                constants::CONSISTENCY_LEVEL,
-                consistency_level.to_string().into(),
-            ));
-        }
-
-        if let Some(indexing_directive) = &self.indexing_directive {
-            headers.push((
-                constants::INDEXING_DIRECTIVE,
-                indexing_directive.to_string().into(),
-            ));
-        }
-
-        if let Some(priority) = &self.priority {
-            headers.push((constants::PRIORITY_LEVEL, priority.to_string().into()));
+            headers.insert(constants::CONSISTENCY_LEVEL, consistency_level.to_string());
         }
 
         if let Some(throughput_bucket) = &self.throughput_bucket {
-            headers.push((
-                constants::THROUGHPUT_BUCKET,
-                throughput_bucket.to_string().into(),
-            ));
+            headers.insert(constants::THROUGHPUT_BUCKET, throughput_bucket.to_string());
         }
 
-        if !self.enable_content_response_on_write {
-            headers.push((headers::PREFER, constants::PREFER_MINIMAL));
+        if !self.content_response_on_write_enabled {
+            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
         }
-
-        Ok(headers.into_iter())
     }
 }
 

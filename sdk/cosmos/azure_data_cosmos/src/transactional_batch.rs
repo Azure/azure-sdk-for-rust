@@ -3,7 +3,7 @@
 
 //! Types for working with transactional batch operations in Cosmos DB.
 //!
-//! Transactional batches allow you to group multiple operations (create, read, upsert, replace, delete, patch)
+//! Transactional batches allow you to group multiple operations (create, read, upsert, replace, delete)
 //! within the same partition key as a single atomic transaction.
 //!
 //! # Examples
