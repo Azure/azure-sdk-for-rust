@@ -1,4 +1,4 @@
 directory: specification/storage/Microsoft.BlobStorage
-commit: 9135fb02c7294430885e9b4f38e939a4a0c12a9f
+commit: e60dbe5a3130a87144bacf796c469b1c8642a5e7
 repo: Azure/azure-rest-api-specs
 additionalDirectories: 
