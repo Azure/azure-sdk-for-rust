@@ -216,11 +216,9 @@ pub struct RequestDiagnostics {
     pub(crate) request_charge: RequestCharge,
 
     /// Activity ID from response headers.
-    #[serde(skip_serializing_if = "Option::is_none")]
     activity_id: Option<ActivityId>,
 
     /// Session token from response (for session consistency).
-    #[serde(skip_serializing_if = "Option::is_none")]
     session_token: Option<String>,
 
     /// When this request was started.
@@ -235,11 +233,9 @@ pub struct RequestDiagnostics {
     duration_ms: u64,
 
     /// Pipeline events during this request.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     events: Vec<RequestEvent>,
 
     /// Whether this request timed out.
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub(crate) timed_out: bool,
 
     /// Whether the request was sent on the wire.
@@ -248,11 +244,9 @@ pub struct RequestDiagnostics {
     /// - `Sent`: Request was transmitted; don't retry non-idempotent operations.
     /// - `NotSent`: Safe to retry any operation.
     /// - `Unknown`: Treat as potentially sent for safety.
-    #[serde(skip_serializing_if = "RequestSentStatus::definitely_not_sent")]
     request_sent: RequestSentStatus,
 
     /// Error message if the request failed.
-    #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
 }
 
@@ -571,11 +565,9 @@ pub struct RequestEvent {
     timestamp: Instant,
 
     /// Duration of this stage, if applicable.
-    #[serde(skip_serializing_if = "Option::is_none")]
     duration_ms: Option<u64>,
 
     /// Additional context for this event.
-    #[serde(skip_serializing_if = "Option::is_none")]
     details: Option<String>,
 }
 
@@ -659,11 +651,8 @@ struct RegionSummary {
     region: String,
     request_count: usize,
     total_request_charge: RequestCharge,
-    #[serde(skip_serializing_if = "Option::is_none")]
     first: Option<RequestSummary>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     last: Option<RequestSummary>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     deduplicated_groups: Vec<DeduplicatedGroup>,
 }
 
@@ -676,7 +665,6 @@ struct RequestSummary {
     status: CosmosStatus,
     request_charge: RequestCharge,
     duration_ms: u64,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
     timed_out: bool,
 }
 
