@@ -203,7 +203,7 @@ pub struct RequestDiagnostics {
     transport_security: TransportSecurity,
 
     /// Region this request was sent to.
-    region: Region,
+    region: Option<Region>,
 
     /// Endpoint URI contacted.
     endpoint: String,
@@ -256,7 +256,7 @@ impl RequestDiagnostics {
         execution_context: ExecutionContext,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
-        region: Region,
+        region: Option<Region>,
         endpoint: String,
     ) -> Self {
         Self {
@@ -394,8 +394,8 @@ impl RequestDiagnostics {
     }
 
     /// Returns the region this request was sent to.
-    pub fn region(&self) -> &Region {
-        &self.region
+    pub fn region(&self) -> Option<&Region> {
+        self.region.as_ref()
     }
 
     /// Returns the endpoint URI contacted.
@@ -776,7 +776,7 @@ impl DiagnosticsContextBuilder {
         execution_context: ExecutionContext,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
-        region: Region,
+        region: Option<Region>,
         endpoint: String,
     ) -> RequestHandle {
         let request = RequestDiagnostics::new(
@@ -977,7 +977,7 @@ impl DiagnosticsContext {
 
     /// Returns all regions contacted during this operation.
     pub fn regions_contacted(&self) -> Vec<Region> {
-        let mut regions: Vec<Region> = self.requests.iter().map(|r| r.region.clone()).collect();
+        let mut regions: Vec<Region> = self.requests.iter().filter_map(|r| r.region.clone()).collect();
         regions.sort();
         regions.dedup();
         regions
@@ -1048,7 +1048,7 @@ impl DiagnosticsContext {
         let total_duration_ms = self.duration.as_millis() as u64;
 
         // Group requests by region
-        let mut region_groups = HashMap::<Region, Vec<&RequestDiagnostics>>::new();
+        let mut region_groups = HashMap::<Option<Region>, Vec<&RequestDiagnostics>>::new();
         for req in self.requests.iter() {
             region_groups
                 .entry(req.region.clone())
@@ -1135,7 +1135,7 @@ impl PartialEq for DiagnosticsContext {
 impl Eq for DiagnosticsContext {}
 
 /// Builds a summary for requests in a single region.
-fn build_region_summary(region: Region, requests: Vec<&RequestDiagnostics>) -> RegionSummary {
+fn build_region_summary(region: Option<Region>, requests: Vec<&RequestDiagnostics>) -> RegionSummary {
     let count = requests.len();
     let total_charge: RequestCharge = requests.iter().map(|r| r.request_charge).sum();
 
@@ -1157,7 +1157,7 @@ fn build_region_summary(region: Region, requests: Vec<&RequestDiagnostics>) -> R
     let deduped_groups = deduplicate_requests(middle_requests);
 
     RegionSummary {
-        region: region.to_string(),
+        region: region.as_ref().map(|r| r.to_string()).unwrap_or_default(),
         request_count: count,
         total_request_charge: total_charge,
         first,
@@ -1244,7 +1244,7 @@ mod tests {
         fn start_test_request(
             &mut self,
             execution_context: ExecutionContext,
-            region: Region,
+            region: Option<Region>,
             endpoint: String,
         ) -> RequestHandle;
     }
@@ -1253,7 +1253,7 @@ mod tests {
         fn start_test_request(
             &mut self,
             execution_context: ExecutionContext,
-            region: Region,
+            region: Option<Region>,
             endpoint: String,
         ) -> RequestHandle {
             self.start_request(
@@ -1278,7 +1278,7 @@ mod tests {
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
 
@@ -1298,7 +1298,7 @@ mod tests {
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
             builder.timeout_request(handle);
@@ -1313,7 +1313,7 @@ mod tests {
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
             builder.update_request(handle, |req| {
@@ -1329,14 +1329,14 @@ mod tests {
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             let h1 = builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
             builder.update_request(h1, |req| req.request_charge = RequestCharge::new(3.0));
 
             let h2 = builder.start_test_request(
                 ExecutionContext::Retry,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
             builder.update_request(h2, |req| req.request_charge = RequestCharge::new(2.5));
@@ -1350,17 +1350,17 @@ mod tests {
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com".to_string(),
             );
             builder.start_test_request(
                 ExecutionContext::Retry,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com".to_string(),
             );
             builder.start_test_request(
                 ExecutionContext::RegionFailover,
-                Region::EAST_US_2,
+                Some(Region::EAST_US_2),
                 "https://test.eastus2.documents.azure.com".to_string(),
             );
         });
@@ -1374,7 +1374,7 @@ mod tests {
         let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
             builder.update_request(handle, |req| req.request_charge = RequestCharge::new(1.0));
@@ -1393,7 +1393,7 @@ mod tests {
             for i in 0..5 {
                 let handle = builder.start_test_request(
                     ExecutionContext::Retry,
-                    Region::WEST_US_2,
+                    Some(Region::WEST_US_2),
                     "https://test.documents.azure.com".to_string(),
                 );
                 builder.update_request(handle, |req| {
@@ -1415,7 +1415,7 @@ mod tests {
             |builder| {
                 let handle = builder.start_test_request(
                     ExecutionContext::Initial,
-                    Region::WEST_US_2,
+                    Some(Region::WEST_US_2),
                     "https://test.documents.azure.com".to_string(),
                 );
                 builder.complete_request(handle, StatusCode::Ok, None);
@@ -1437,7 +1437,7 @@ mod tests {
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
         });
@@ -1455,7 +1455,7 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_millis(10));
             builder.start_test_request(
                 ExecutionContext::Initial,
-                Region::WEST_US_2,
+                Some(Region::WEST_US_2),
                 "https://test.documents.azure.com".to_string(),
             );
         });
@@ -1491,7 +1491,7 @@ mod tests {
         let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
         let handle = builder.start_test_request(
             ExecutionContext::Initial,
-            Region::WEST_US_2,
+            Some(Region::WEST_US_2),
             "https://test.documents.azure.com".to_string(),
         );
 
@@ -1513,7 +1513,7 @@ mod tests {
         let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
         let handle = builder.start_test_request(
             ExecutionContext::Initial,
-            Region::WEST_US_2,
+            Some(Region::WEST_US_2),
             "https://test.documents.azure.com".to_string(),
         );
 
