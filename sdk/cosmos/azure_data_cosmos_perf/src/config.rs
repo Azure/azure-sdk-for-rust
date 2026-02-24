@@ -33,6 +33,18 @@ pub struct Config {
     #[arg(long, value_delimiter = ',')]
     pub preferred_regions: Vec<String>,
 
+    /// Comma-separated list of regions to exclude from routing.
+    ///
+    /// When set, the specified regions are skipped for the operations
+    /// indicated by `--exclude-regions-for`. Region names must match
+    /// Azure region display names (e.g. "West US", "East US 2").
+    #[arg(long, value_delimiter = ',')]
+    pub excluded_regions: Vec<String>,
+
+    /// Which operation types the excluded regions apply to.
+    #[arg(long, value_enum, default_value_t = ExcludeRegionsScope::Both)]
+    pub exclude_regions_for: ExcludeRegionsScope,
+
     /// Disable point read operations.
     #[arg(long, default_value_t = false)]
     pub no_reads: bool,
@@ -123,4 +135,15 @@ pub enum AuthMethod {
     Key,
     /// Microsoft Entra ID (AAD) authentication using DeveloperToolsCredential.
     Aad,
+}
+
+/// Selects which operation types excluded regions apply to.
+#[derive(clap::ValueEnum, Clone, Debug, PartialEq, Eq)]
+pub enum ExcludeRegionsScope {
+    /// Exclude regions only for read operations (point reads).
+    Reads,
+    /// Exclude regions only for write operations (creates, upserts).
+    Writes,
+    /// Exclude regions for both reads and writes.
+    Both,
 }

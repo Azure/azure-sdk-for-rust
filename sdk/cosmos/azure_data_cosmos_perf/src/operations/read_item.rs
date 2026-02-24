@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::options::ItemOptions;
 
 use super::Operation;
 use crate::seed::SharedItems;
@@ -14,12 +15,13 @@ use crate::seed::SharedItems;
 /// Reads a random seeded item by ID and partition key.
 pub struct ReadItemOperation {
     items: Arc<SharedItems>,
+    options: Option<ItemOptions>,
 }
 
 impl ReadItemOperation {
     /// Creates a new read operation targeting the given seeded items.
-    pub fn new(items: Arc<SharedItems>) -> Self {
-        Self { items }
+    pub fn new(items: Arc<SharedItems>, options: Option<ItemOptions>) -> Self {
+        Self { items, options }
     }
 }
 
@@ -33,7 +35,7 @@ impl Operation for ReadItemOperation {
         let item = self.items.random();
 
         container
-            .read_item::<serde_json::Value>(&item.partition_key, &item.id, None)
+            .read_item::<serde_json::Value>(&item.partition_key, &item.id, self.options.clone())
             .await?;
         Ok(())
     }

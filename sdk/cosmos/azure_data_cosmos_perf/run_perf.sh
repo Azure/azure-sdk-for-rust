@@ -7,6 +7,13 @@
 # Usage:
 #   ./run_perf.sh --processes 4 --endpoint https://... --auth key --key <key> [other perf args...]
 #
+# Example with excluded regions for writes only:
+#   ./run_perf.sh --processes 40 \
+#       --endpoint "https://myaccount.documents.azure.com" \
+#       --auth aad \
+#       --excluded-regions "Central US EUAP" \
+#       --exclude-regions-for writes
+#
 # The --processes flag (default: 1) controls how many OS processes are spawned.
 # All other arguments are forwarded directly to each perf binary instance.
 
@@ -38,7 +45,18 @@ while [[ $# -gt 0 ]]; do
             echo "  --processes N   Number of OS processes to spawn (default: 1)"
             echo ""
             echo "All other arguments are forwarded to each perf binary instance."
-            echo "Run 'cargo run -p azure_data_cosmos_perf -- --help' to see perf tool options."
+            echo ""
+            echo "Common perf tool arguments:"
+            echo "  --endpoint URL                  Cosmos DB account endpoint"
+            echo "  --auth key|aad                  Authentication method"
+            echo "  --key KEY                       Account key (when --auth=key)"
+            echo "  --preferred-regions R1,R2       Comma-separated preferred regions"
+            echo "  --excluded-regions R1,R2        Comma-separated regions to exclude"
+            echo "  --exclude-regions-for TYPE      reads, writes, or both (default: both)"
+            echo "  --results-endpoint URL          Separate endpoint for results storage"
+            echo "  --results-auth key|aad          Auth method for results account"
+            echo ""
+            echo "Run 'cargo run -p azure_data_cosmos_perf -- --help' for full options."
             exit 0
             ;;
         *)

@@ -14,9 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::time::Duration;
 
     use azure_core::credentials::Secret;
-    use azure_data_cosmos::{
-        CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder,
-    };
+    use azure_data_cosmos::{CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder};
     use clap::Parser;
 
     use crate::config::{AuthMethod, Config};

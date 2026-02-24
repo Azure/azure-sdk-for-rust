@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::options::ItemOptions;
 use rand::RngExt;
 use uuid::Uuid;
 
@@ -19,12 +20,13 @@ use crate::seed::{SeededItem, SharedItems};
 /// becomes available to subsequent read, query, and upsert operations.
 pub struct CreateItemOperation {
     items: Arc<SharedItems>,
+    options: Option<ItemOptions>,
 }
 
 impl CreateItemOperation {
     /// Creates a new create operation backed by the shared items list.
-    pub fn new(items: Arc<SharedItems>) -> Self {
-        Self { items }
+    pub fn new(items: Arc<SharedItems>, options: Option<ItemOptions>) -> Self {
+        Self { items, options }
     }
 }
 
@@ -47,7 +49,7 @@ impl Operation for CreateItemOperation {
         };
 
         container
-            .create_item(&item.partition_key, &item, None)
+            .create_item(&item.partition_key, &item, self.options.clone())
             .await?;
 
         self.items.push(SeededItem { id, partition_key });
