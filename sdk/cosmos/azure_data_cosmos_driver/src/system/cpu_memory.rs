@@ -283,8 +283,10 @@ impl std::fmt::Display for CpuMemoryHistory {
 
 /// Handle to the CPU/memory monitor singleton.
 ///
-/// This handle keeps the monitor alive. When all handles are dropped,
-/// the background monitoring thread will stop.
+/// The background monitoring thread lives for the lifetime of the process
+/// because the singleton is held in a global `OnceLock<Arc<...>>`. When all
+/// handles are dropped the thread continues to run but idles (skipping
+/// sample collection) until a new handle is created via [`CpuMemoryMonitor::get_or_init`].
 #[derive(Clone, Debug)]
 pub struct CpuMemoryMonitor {
     inner: Arc<CpuMemoryMonitorInner>,
@@ -293,9 +295,11 @@ pub struct CpuMemoryMonitor {
 impl CpuMemoryMonitor {
     /// Gets or creates the global CPU/memory monitor singleton.
     ///
-    /// The monitor starts a background thread that periodically samples
-    /// CPU and memory usage. The thread runs as long as at least one
-    /// `CpuMemoryMonitor` handle exists.
+    /// On first call this starts a background thread that periodically
+    /// samples CPU and memory usage. The thread persists for the lifetime
+    /// of the process. When no `CpuMemoryMonitor` handles exist the thread
+    /// idles without collecting samples; it resumes collection as soon as a
+    /// new handle is created.
     pub fn get_or_init() -> Self {
         let inner = CPU_MEMORY_MONITOR
             .get_or_init(|| {
@@ -398,7 +402,7 @@ impl CpuMemoryMonitorInner {
             };
 
             if !inner.has_listeners() {
-                // No listeners, but keep the thread alive in case new ones register
+                // No listeners — idle until new handles are created.
                 continue;
             }
 
