@@ -238,6 +238,7 @@ mod tests {
     use super::*;
     use crate::models::{
         AccountReference, ContainerProperties, ContainerReference, PartitionKeyDefinition,
+        SystemProperties,
     };
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
@@ -252,8 +253,16 @@ mod tests {
 
     const ACCOUNT_ENDPOINT: &str = "https://myaccount.documents.azure.com/";
 
+    fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {
+        serde_json::from_str(&format!(r#"{{"paths":["{path}"]}}"#)).unwrap()
+    }
+
     fn test_container_props() -> ContainerProperties {
-        ContainerProperties::new("testcontainer", PartitionKeyDefinition::new(["/pk"]))
+        ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: test_partition_key_definition("/pk"),
+            system_properties: SystemProperties::default(),
+        }
     }
 
     fn test_container(db: &str, container: &str) -> ContainerReference {

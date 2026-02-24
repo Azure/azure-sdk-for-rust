@@ -4,8 +4,30 @@
 //! Account metadata cache for Cosmos DB driver.
 
 use super::AsyncCache;
-use crate::models::{AccountEndpoint, AccountProperties};
+use crate::models::AccountEndpoint;
+use crate::options::Region;
 use std::sync::Arc;
+
+/// Account metadata properties used for account-level routing decisions.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub(crate) struct AccountProperties {
+    /// Current write region for the account.
+    pub write_region: Region,
+
+    /// Regions currently readable by the account.
+    pub readable_regions: Vec<Region>,
+}
+
+impl AccountProperties {
+    /// Creates account properties from write/read region metadata.
+    pub(crate) fn new(write_region: Region, readable_regions: Vec<Region>) -> Self {
+        Self {
+            write_region,
+            readable_regions,
+        }
+    }
+}
 
 /// Cache for Cosmos DB account metadata.
 ///
@@ -34,16 +56,6 @@ impl AccountMetadataCache {
         Fut: std::future::Future<Output = AccountProperties>,
     {
         self.cache.get_or_insert_with(endpoint, fetch_fn).await
-    }
-
-    /// Invalidates the cached properties for an account.
-    ///
-    /// Returns the previously cached value if it existed.
-    pub(crate) async fn invalidate(
-        &self,
-        endpoint: &AccountEndpoint,
-    ) -> Option<Arc<AccountProperties>> {
-        self.cache.invalidate(endpoint).await
     }
 
 }
@@ -142,7 +154,7 @@ mod tests {
             .get_or_fetch(endpoint.clone(), || async { test_properties("westus") })
             .await;
 
-        let removed = cache.invalidate(&endpoint).await;
+        let removed = cache.cache.invalidate(&endpoint).await;
         assert!(removed.is_some());
         assert_eq!(removed.unwrap().write_region.as_str(), "westus");
         assert!(cache.cache.get(&endpoint).await.is_none());

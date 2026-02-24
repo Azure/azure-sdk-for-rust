@@ -644,16 +644,24 @@ impl PartitionKeyRangeReference {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ContainerProperties, PartitionKeyDefinition};
+    use crate::models::{ContainerProperties, PartitionKeyDefinition, SystemProperties};
     use url::Url;
+
+    fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {
+        serde_json::from_str(&format!(r#"{{"paths":["{path}"]}}"#)).unwrap()
+    }
 
     fn make_container_reference() -> ContainerReference {
         let account = AccountReference::with_master_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "test-key",
         );
-        let partition_key = PartitionKeyDefinition::new(["/tenantId"]);
-        let container_properties = ContainerProperties::new("my-container", partition_key);
+        let partition_key = test_partition_key_definition("/tenantId");
+        let container_properties = ContainerProperties {
+            id: "my-container".into(),
+            partition_key,
+            system_properties: SystemProperties::default(),
+        };
 
         ContainerReference::new(
             account,

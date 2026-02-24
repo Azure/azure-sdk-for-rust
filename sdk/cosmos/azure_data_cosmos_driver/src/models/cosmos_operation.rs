@@ -537,7 +537,10 @@ impl CosmosOperation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AccountReference, ContainerReference, PartitionKeyDefinition};
+    use crate::models::{
+        AccountReference, ContainerProperties, ContainerReference, PartitionKeyDefinition,
+        SystemProperties,
+    };
 
     use url::Url;
 
@@ -548,11 +551,16 @@ mod tests {
         )
     }
 
-    fn test_container_props() -> crate::models::ContainerProperties {
-        crate::models::ContainerProperties::new(
-            "testcontainer",
-            PartitionKeyDefinition::new(["/pk"]),
-        )
+    fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {
+        serde_json::from_str(&format!(r#"{{"paths":["{path}"]}}"#)).unwrap()
+    }
+
+    fn test_container_props() -> ContainerProperties {
+        ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: test_partition_key_definition("/pk"),
+            system_properties: SystemProperties::default(),
+        }
     }
 
     fn test_container() -> ContainerReference {

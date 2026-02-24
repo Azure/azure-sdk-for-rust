@@ -20,6 +20,7 @@ use crate::{
 };
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
+use serde::Deserialize;
 use std::sync::{Arc, Mutex};
 
 use super::{
@@ -99,6 +100,114 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    fn parse_account_properties_payload(
+        payload: &[u8],
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        #[derive(Deserialize)]
+        struct Location {
+            name: Option<String>,
+        }
+
+        #[derive(Deserialize)]
+        struct AccountMetadataPayload {
+            #[serde(rename = "writableLocations", default)]
+            writable_locations: Vec<Location>,
+            #[serde(rename = "readableLocations", default)]
+            readable_locations: Vec<Location>,
+        }
+
+        let payload: AccountMetadataPayload = serde_json::from_slice(payload)
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+
+        let mut readable_regions = payload
+            .readable_locations
+            .into_iter()
+            .filter_map(|location| {
+                location
+                    .name
+                    .filter(|name| !name.trim().is_empty())
+                    .map(Region::new)
+            })
+            .collect::<Vec<_>>();
+
+        let write_region = payload
+            .writable_locations
+            .into_iter()
+            .find_map(|location| {
+                location
+                    .name
+                    .filter(|name| !name.trim().is_empty())
+                    .map(Region::new)
+            })
+            .unwrap_or_else(|| Region::new("unknown"));
+
+        if readable_regions.is_empty() {
+            readable_regions.push(write_region.clone());
+        }
+
+        Ok(super::cache::AccountProperties::new(
+            write_region,
+            readable_regions,
+        ))
+    }
+
+    fn default_account_properties() -> super::cache::AccountProperties {
+        super::cache::AccountProperties::new(Region::new("unknown"), Vec::new())
+    }
+
+    fn endpoint_for_write_region(account: &AccountReference, write_region: &Region) -> AccountEndpoint {
+        if write_region.as_str() == "unknown" {
+            return AccountEndpoint::from(account);
+        }
+
+        let base = account.endpoint();
+        let Some(host) = base.host_str() else {
+            return AccountEndpoint::from(account);
+        };
+
+        let Some(dot_index) = host.find('.') else {
+            return AccountEndpoint::from(account);
+        };
+
+        let account_name = &host[..dot_index];
+        let host_suffix = &host[dot_index + 1..];
+        let region_segment = write_region.as_str();
+
+        if account_name.is_empty() || host_suffix.is_empty() || region_segment.is_empty() {
+            return AccountEndpoint::from(account);
+        }
+
+        let regional_host = format!("{account_name}-{region_segment}.{host_suffix}");
+        let mut url = base.clone();
+
+        if url.set_host(Some(&regional_host)).is_ok() {
+            AccountEndpoint::from(url)
+        } else {
+            AccountEndpoint::from(account)
+        }
+    }
+
+    async fn fetch_account_properties(
+        &self,
+        account: &AccountReference,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let endpoint = AccountEndpoint::from(account);
+        let transport = self.runtime.transport();
+        let pipeline = transport.create_metadata_pipeline(&endpoint, account.auth());
+        let auth_context = AuthorizationContext::new(
+            azure_core::http::Method::Get,
+            crate::models::ResourceType::DatabaseAccount,
+            "",
+        );
+
+        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
+        let mut context = Context::default();
+        context.insert(auth_context);
+
+        let response = pipeline.send(&context, &mut request).await?;
+        Self::parse_account_properties_payload(response.into_body().as_ref())
+    }
+
     async fn fetch_container_by_name(
         &self,
         db_name: &str,
@@ -366,8 +475,19 @@ impl CosmosDriver {
         let account = operation.resource_reference().account();
         let auth = account.auth();
 
-        // Account-level metadata resolution is currently a direct fallback value.
-        let _account_write_region = Region::new("Unknown");
+        // Step 4.1: Resolve account metadata and select write-region endpoint.
+        let account_endpoint = AccountEndpoint::from(account);
+        let account_properties = self
+            .runtime
+            .account_metadata_cache()
+            .get_or_fetch(account_endpoint, || async {
+                match self.fetch_account_properties(account).await {
+                    Ok(properties) => properties,
+                    Err(_) => Self::default_account_properties(),
+                }
+            })
+            .await;
+        let region = account_properties.write_region.clone();
 
         // Step 5: Build resource link for authorization
         let resource_ref = operation.resource_reference();
@@ -375,7 +495,7 @@ impl CosmosDriver {
 
         // Step 6: Build request URL
         let request_path = resource_ref.request_path();
-        let endpoint = AccountEndpoint::from(account);
+        let endpoint = Self::endpoint_for_write_region(account, &region);
         let url = endpoint.join_path(&request_path);
 
         // Step 7: Determine HTTP method
@@ -426,7 +546,6 @@ impl CosmosDriver {
             TransportSecurity::Secure
         };
         let endpoint_string = endpoint.url().as_str().to_owned();
-        let region = Region::new("Unknown");
         let attempt_telemetry = Arc::new(RequestAttemptTelemetryHandle::new());
 
         loop {
@@ -978,5 +1097,74 @@ mod tests {
             true,
             TransportRequestSentStatus::NotSent
         ));
+    }
+
+    #[test]
+    fn endpoint_for_write_region_builds_regional_host() {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
+            "test-key",
+        );
+
+        let endpoint = CosmosDriver::endpoint_for_write_region(&account, &Region::new("West US"));
+        assert_eq!(endpoint.url().host_str(), Some("myaccount-westus.documents.azure.com"));
+        assert_eq!(endpoint.url().port_or_known_default(), Some(443));
+    }
+
+    #[test]
+    fn endpoint_for_write_region_falls_back_for_unknown_region() {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
+            "test-key",
+        );
+
+        let endpoint = CosmosDriver::endpoint_for_write_region(&account, &Region::new("unknown"));
+        assert_eq!(endpoint.url().as_str(), account.endpoint().as_str());
+    }
+
+    #[test]
+    fn endpoint_for_write_region_falls_back_for_nonstandard_host() {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://localhost:8081/").unwrap(),
+            "test-key",
+        );
+
+        let endpoint = CosmosDriver::endpoint_for_write_region(&account, &Region::new("westus"));
+        assert_eq!(endpoint.url().as_str(), account.endpoint().as_str());
+    }
+
+    #[test]
+    fn parse_account_properties_uses_first_writable_and_readable_regions() {
+        let payload = br#"{
+            "writableLocations": [
+                { "name": "West US 2" },
+                { "name": "East US" }
+            ],
+            "readableLocations": [
+                { "name": "West US 2" },
+                { "name": " East US " }
+            ]
+        }"#;
+
+        let properties = CosmosDriver::parse_account_properties_payload(payload).unwrap();
+
+        assert_eq!(properties.write_region.as_str(), "westus2");
+        assert_eq!(properties.readable_regions.len(), 2);
+        assert_eq!(properties.readable_regions[0].as_str(), "westus2");
+        assert_eq!(properties.readable_regions[1].as_str(), "eastus");
+    }
+
+    #[test]
+    fn parse_account_properties_falls_back_when_locations_missing() {
+        let payload = br#"{
+            "writableLocations": [{ "name": "" }],
+            "readableLocations": []
+        }"#;
+
+        let properties = CosmosDriver::parse_account_properties_payload(payload).unwrap();
+
+        assert_eq!(properties.write_region.as_str(), "unknown");
+        assert_eq!(properties.readable_regions.len(), 1);
+        assert_eq!(properties.readable_regions[0].as_str(), "unknown");
     }
 }

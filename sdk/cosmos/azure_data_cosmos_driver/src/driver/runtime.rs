@@ -18,7 +18,7 @@ use crate::{
     },
 };
 
-use super::cache::ContainerCache;
+use super::cache::{AccountMetadataCache, ContainerCache};
 use super::{transport::CosmosTransport, CosmosDriver};
 
 /// The Cosmos DB driver runtime environment.
@@ -118,6 +118,9 @@ pub struct CosmosDriverRuntime {
 
     /// Shared container metadata cache used by drivers in this runtime.
     container_cache: Arc<ContainerCache>,
+
+    /// Shared account metadata cache used by drivers in this runtime.
+    account_metadata_cache: Arc<AccountMetadataCache>,
 }
 
 impl CosmosDriverRuntime {
@@ -147,6 +150,11 @@ impl CosmosDriverRuntime {
     /// Returns the shared container cache.
     pub(crate) fn container_cache(&self) -> &Arc<ContainerCache> {
         &self.container_cache
+    }
+
+    /// Returns the shared account metadata cache.
+    pub(crate) fn account_metadata_cache(&self) -> &Arc<AccountMetadataCache> {
+        &self.account_metadata_cache
     }
 
     /// Returns the thread-safe runtime options.
@@ -494,6 +502,7 @@ impl CosmosDriverRuntimeBuilder {
             throughput_control_groups: self.throughput_control_groups,
             driver_registry: Arc::new(RwLock::new(HashMap::new())),
             container_cache: Arc::new(ContainerCache::new()),
+            account_metadata_cache: Arc::new(AccountMetadataCache::new()),
         })
     }
 }

@@ -50,32 +50,6 @@ pub(crate) use finite_f64::FiniteF64;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
-#[cfg(test)]
-use crate::options::Region;
-
-/// Account metadata properties used for account-level routing decisions.
-#[cfg(test)]
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[non_exhaustive]
-pub(crate) struct AccountProperties {
-    /// Current write region for the account.
-    pub write_region: Region,
-
-    /// Regions currently readable by the account.
-    pub readable_regions: Vec<Region>,
-}
-
-#[cfg(test)]
-impl AccountProperties {
-    /// Creates account properties from write/read region metadata.
-    pub(crate) fn new(write_region: Region, readable_regions: Vec<Region>) -> Self {
-        Self {
-            write_region,
-            readable_regions,
-        }
-    }
-}
-
 /// Properties of a Cosmos DB database.
 ///
 /// Returned by database read/query operations and used when creating databases.
@@ -109,23 +83,7 @@ pub(crate) struct ContainerProperties {
     pub system_properties: SystemProperties,
 }
 
-impl ContainerProperties {
-    /// Creates new container properties with the given identifier and partition key.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `id` is empty.
-    #[cfg(test)]
-    pub fn new(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self {
-        let id = id.into();
-        assert!(!id.is_empty(), "container id must not be empty");
-        Self {
-            id,
-            partition_key,
-            system_properties: SystemProperties::default(),
-        }
-    }
-}
+impl ContainerProperties {}
 
 /// Partition key definition for a container.
 ///
@@ -161,17 +119,6 @@ impl PartitionKeyDefinition {
         self.kind
     }
 
-    /// Creates a new partition key definition with the given paths.
-    ///
-    /// Uses version 2 and `Hash` kind by default.
-    #[cfg(test)]
-    pub(crate) fn new(paths: impl IntoIterator<Item = impl Into<Cow<'static, str>>>) -> Self {
-        Self {
-            paths: paths.into_iter().map(Into::into).collect(),
-            version: PartitionKeyVersion::V2,
-            kind: PartitionKeyKind::Hash,
-        }
-    }
 }
 
 fn default_pk_version() -> PartitionKeyVersion {
