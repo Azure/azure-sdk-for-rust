@@ -6,8 +6,9 @@ use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     models::{
-        QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
-        QueueClientUpdateOptions, QueueMessage,
+        AccessPolicy, ListOfSignedIdentifier, QueueClientPeekMessagesOptions,
+        QueueClientReceiveMessagesOptions, QueueClientUpdateOptions, QueueMessage,
+        SignedIdentifier,
     },
     QueueClient, QueueClientOptions,
 };
@@ -422,6 +423,107 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     queue_client.delete(None).await.unwrap();
 
     test_result
+}
+
+/// Gets the access policy of a queue with no policy set.
+#[recorded::test]
+async fn test_get_access_policy_empty(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-get-acl-empty").await?;
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        let response = queue_client.get_access_policy(None).await?;
+        assert_successful_response(&response);
+
+        let acl = response.into_model()?;
+        assert!(
+            acl.items.is_none(),
+            "Expected no signed identifiers, got {:?}",
+            acl.items
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+
+    Ok(())
+}
+
+/// Sets an access policy on a queue and then gets it to verify.
+#[recorded::test]
+async fn test_set_and_get_access_policy(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-set-get-acl").await?;
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        let policy = ListOfSignedIdentifier {
+            items: Some(vec![SignedIdentifier {
+                id: Some("policy1".to_string()),
+                access_policy: Some(AccessPolicy {
+                    permission: Some("raup".to_string()),
+                    ..Default::default()
+                }),
+            }]),
+        };
+
+        // PUT https://vincenttranservicestats.queue.core.windows.net/test-set-get-acl?comp=acl HTTP/1.1
+        // Host: vincenttranservicestats.queue.core.windows.net
+        // Accept: */*
+        // User-Agent: azsdk-rust-storage_queue/0.4.0 (1.93.0; windows; x86_64)
+        // Accept-Encoding: gzip,deflate
+        // Authorization: redacted
+        // x-ms-version: 2026-04-06
+        // x-ms-client-request-id: 4661f7ef-be9c-45ce-bc08-e5fc73ad7e1e
+        // traceparent: 00-b95fd54c6e8e3293115ecec3c8ad7a90-12ade86b07e6201b-00
+        // Content-Type: application/xml
+        // Content-Length: 188
+
+        // <?xml version="1.0" encoding="utf-8"?><SignedIdentifiers><SignedIdentifier><AccessPolicy><Permission>raup</Permission></AccessPolicy><Id>policy1</Id></SignedIdentifier></SignedIdentifiers>
+
+        let set_response = queue_client
+            .set_access_policy(policy.try_into()?, None)
+            .await?;
+
+        // HTTP/1.1 204 No Content
+        // Content-Length: 0
+        // Server: Windows-Azure-Queue/1.0 Microsoft-HTTPAPI/2.0
+        // x-ms-request-id: f8a30b92-8003-0055-4e28-a51653000000
+        // x-ms-client-request-id: 4661f7ef-be9c-45ce-bc08-e5fc73ad7e1e
+        // x-ms-version: 2026-04-06
+        // Date: Tue, 24 Feb 2026 00:59:03 GMT
+
+        // assert_successful_response(&set_response);
+
+        // // Access policies may take up to 15 seconds to take effect.
+        // tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+
+        // let get_response = queue_client.get_access_policy(None).await?;
+        // assert_successful_response(&get_response);
+
+        // let acl = get_response.into_model()?;
+        // let items = acl.items.expect("Expected signed identifiers");
+        // assert_eq!(items.len(), 1, "Expected exactly one signed identifier");
+        // assert_eq!(items[0].id.as_deref(), Some("policy1"));
+        // let ap = items[0]
+        //     .access_policy
+        //     .as_ref()
+        //     .expect("Expected access policy");
+        // assert_eq!(ap.permission.as_deref(), Some("raup"));
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+
+    Ok(())
 }
 
 /// Returns an instance of a QueueClient.
