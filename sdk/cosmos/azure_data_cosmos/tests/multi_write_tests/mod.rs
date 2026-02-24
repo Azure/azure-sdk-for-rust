@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 mod cosmos_multi_write;
 mod cosmos_multi_write_fault_injection;
+mod cosmos_multi_write_retry_policies;
 
 #[path = "../framework/mod.rs"]
 mod framework;

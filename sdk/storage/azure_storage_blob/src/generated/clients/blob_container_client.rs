@@ -18,10 +18,11 @@ use crate::generated::models::{
 };
 use azure_core::{
     error::CheckSuccessOptions,
+    fmt::SafeDebug,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse, Request,
-        RequestContent, Response, Url, UrlExt, XmlFormat,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
+        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -33,6 +34,15 @@ pub struct BlobContainerClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
+}
+
+/// Options used when creating a `BlobContainerClient`
+#[derive(Clone, SafeDebug)]
+pub struct BlobContainerClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
+    pub version: String,
 }
 
 impl BlobContainerClient {
@@ -80,7 +90,7 @@ impl BlobContainerClient {
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobContainerClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Container.acquireLease")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.acquireLease")]
     pub async fn acquire_lease(
         &self,
         duration: i32,
@@ -163,7 +173,7 @@ impl BlobContainerClient {
     /// * [`lease_time`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::lease_time) - x-ms-lease-time
     ///
     /// [`BlobContainerClientBreakLeaseResultHeaders`]: crate::generated::models::BlobContainerClientBreakLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Container.breakLease")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.breakLease")]
     pub async fn break_lease(
         &self,
         options: Option<BlobContainerClientBreakLeaseOptions<'_>>,
@@ -180,7 +190,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -247,7 +256,7 @@ impl BlobContainerClient {
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobContainerClientChangeLeaseResultHeaders`]: crate::generated::models::BlobContainerClientChangeLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Container.changeLease")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.changeLease")]
     pub async fn change_lease(
         &self,
         lease_id: String,
@@ -266,7 +275,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -299,7 +307,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.create")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.create")]
     pub async fn create(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
@@ -314,7 +322,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(access) = options.access.as_ref() {
             request.insert_header("x-ms-blob-public-access", access.to_string());
         }
@@ -355,7 +362,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.delete")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.delete")]
     pub async fn delete(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
@@ -370,7 +377,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -404,7 +410,7 @@ impl BlobContainerClient {
     ///
     /// * `filter_expression` - Filters the results to return only to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.findBlobsByTags")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.findBlobsByTags")]
     pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
@@ -440,7 +446,6 @@ impl BlobContainerClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -494,7 +499,7 @@ impl BlobContainerClient {
     /// * [`access`()](crate::generated::models::SignedIdentifiersHeaders::access) - x-ms-blob-public-access
     ///
     /// [`SignedIdentifiersHeaders`]: crate::generated::models::SignedIdentifiersHeaders
-    #[tracing::function("Storage.Blob.Container.getAccessPolicy")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.getAccessPolicy")]
     pub async fn get_access_policy(
         &self,
         options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
@@ -512,7 +517,6 @@ impl BlobContainerClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
@@ -569,7 +573,7 @@ impl BlobContainerClient {
     /// * [`sku_name`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
     ///
     /// [`BlobContainerClientGetAccountInfoResultHeaders`]: crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders
-    #[tracing::function("Storage.Blob.Container.getAccountInfo")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.getAccountInfo")]
     pub async fn get_account_info(
         &self,
         options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
@@ -586,7 +590,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -650,7 +653,7 @@ impl BlobContainerClient {
     /// * [`metadata`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::metadata) - x-ms-meta
     ///
     /// [`BlobContainerClientGetPropertiesResultHeaders`]: crate::generated::models::BlobContainerClientGetPropertiesResultHeaders
-    #[tracing::function("Storage.Blob.Container.getProperties")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
@@ -665,7 +668,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("content-type", "application/xml");
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
@@ -691,7 +693,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.listBlobs")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
@@ -740,7 +742,6 @@ impl BlobContainerClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
-                request.insert_header("content-type", "application/xml");
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -807,7 +808,7 @@ impl BlobContainerClient {
     /// * [`last_modified`()](crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders::last_modified) - last-modified
     ///
     /// [`BlobContainerClientReleaseLeaseResultHeaders`]: crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Container.releaseLease")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.releaseLease")]
     pub async fn release_lease(
         &self,
         lease_id: String,
@@ -825,7 +826,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -889,7 +889,7 @@ impl BlobContainerClient {
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::lease_id) - x-ms-lease-id
     ///
     /// [`BlobContainerClientRenewLeaseResultHeaders`]: crate::generated::models::BlobContainerClientRenewLeaseResultHeaders
-    #[tracing::function("Storage.Blob.Container.renewLease")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.renewLease")]
     pub async fn renew_lease(
         &self,
         lease_id: String,
@@ -907,7 +907,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -940,7 +939,7 @@ impl BlobContainerClient {
     ///
     /// * `container_acl` - The access control list for the container.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.setAccessPolicy")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
         container_acl: RequestContent<SignedIdentifiers, XmlFormat>,
@@ -995,7 +994,7 @@ impl BlobContainerClient {
     ///
     /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.setMetadata")]
+    #[tracing::function("Storage.Blob.BlobContainerClient.setMetadata")]
     pub async fn set_metadata(
         &self,
         metadata: &HashMap<String, String>,
@@ -1013,7 +1012,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -1038,5 +1036,14 @@ impl BlobContainerClient {
             )
             .await?;
         Ok(rsp.into())
+    }
+}
+
+impl Default for BlobContainerClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            version: String::from("2026-04-06"),
+        }
     }
 }

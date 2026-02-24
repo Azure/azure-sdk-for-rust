@@ -58,11 +58,16 @@ Instantiate a `DeveloperToolsCredential` to pass to the client. The same instanc
 
 ```rust
 use azure_identity::DeveloperToolsCredential;
-use azure_data_cosmos::CosmosClient;
+use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
 
 async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DeveloperToolsCredential::new(None)?;
-    let cosmos_client = CosmosClient::new("myAccountEndpointURL", credential.clone(), None)?;
+    let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
+        DeveloperToolsCredential::new(None)?;
+    let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+        .parse()?;
+    let account = CosmosAccountReference::with_credential(endpoint, credential);
+    let cosmos_client = CosmosClient::builder()
+        .build(account)?;
     Ok(())
 }
 ```
@@ -81,7 +86,7 @@ For more information, see the [API reference documentation].
 
 ```rust
 use serde::{Serialize, Deserialize};
-use azure_data_cosmos::{CosmosClient, models::PatchDocument};
+use azure_data_cosmos::CosmosClient;
 
 #[derive(Serialize, Deserialize)]
 struct Item {
@@ -110,13 +115,6 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
     // Replace an item
     container.replace_item("partition1", "1", item, None).await?;
-
-    // Patch an item
-    let patch = PatchDocument::default()
-        .with_add("/newField", "newValue")?
-        .with_remove("/oldFieldToRemove")?;
-
-    container.patch_item("partition1", "1", patch, None).await?;
 
     // Delete an item
     container.delete_item("partition1", "1", None).await?;

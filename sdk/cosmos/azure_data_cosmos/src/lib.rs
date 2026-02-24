@@ -4,9 +4,12 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+mod account_endpoint;
+mod account_reference;
 pub mod clients;
 mod connection_string;
 pub mod constants;
+mod credential;
 mod feed;
 pub mod options;
 mod partition_key;
@@ -19,8 +22,13 @@ pub mod models;
 
 #[doc(inline)]
 pub use clients::CosmosClient;
+#[doc(inline)]
+pub use clients::CosmosClientBuilder;
 
+pub use account_endpoint::CosmosAccountEndpoint;
+pub use account_reference::CosmosAccountReference;
 pub use connection_string::*;
+pub use credential::CosmosCredential;
 pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
@@ -40,37 +48,3 @@ mod request_context;
 mod retry_policies;
 mod routing;
 mod serde;
-
-#[cfg(not(target_arch = "wasm32"))]
-mod conditional_send {
-    /// Conditionally implements [`Send`] based on the `target_arch`.
-    ///
-    /// This implementation requires `Send`.
-    pub trait ConditionalSend: Send {}
-
-    impl<T> ConditionalSend for T where T: Send {}
-
-    /// Conditionally implements [`Sync`] based on the `target_arch`.
-    ///
-    /// This implementation requires `Sync`.
-    pub trait ConditionalSync: Sync {}
-
-    impl<T> ConditionalSync for T where T: Sync {}
-}
-
-#[cfg(target_arch = "wasm32")]
-mod conditional_send {
-    /// Conditionally implements [`Send`] based on the `target_arch`.
-    ///
-    /// This implementation does not require `Send`.
-    pub trait ConditionalSend {}
-
-    impl<T> ConditionalSend for T {}
-
-    /// Conditionally implements [`Sync`] based on the `target_arch`.
-    ///
-    /// This implementation does not require `Sync`.
-    pub trait ConditionalSync {}
-
-    impl<T> ConditionalSync for T {}
-}

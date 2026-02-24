@@ -143,8 +143,7 @@ impl BlobCheckpointStore {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl CheckpointStore for BlobCheckpointStore {
     /// Claims ownership of the specified partitions.
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>> {
@@ -238,23 +237,21 @@ impl CheckpointStore for BlobCheckpointStore {
             debug!("Blob body: {blob:?}");
             let mut checkpoint = checkpoint.clone();
             if let Some(name) = &blob.name {
-                if let Some(name) = &name.content {
-                    checkpoint.partition_id = name
-                        .rfind('/')
-                        .map(|pos| &name[pos + 1..])
-                        .unwrap_or_default()
-                        .to_string();
-                    if let Some(additional_properties) = blob
-                        .metadata
-                        .as_ref()
-                        .and_then(|m| m.additional_properties.as_ref())
-                    {
-                        if let Some(sequence_number) = additional_properties.get(SEQUENCE_NUMBER) {
-                            checkpoint.sequence_number = Some(sequence_number.parse()?);
-                        }
-                        if let Some(offset) = additional_properties.get(OFFSET) {
-                            checkpoint.offset = Some(offset.clone());
-                        }
+                checkpoint.partition_id = name
+                    .rfind('/')
+                    .map(|pos| &name[pos + 1..])
+                    .unwrap_or_default()
+                    .to_string();
+                if let Some(additional_properties) = blob
+                    .metadata
+                    .as_ref()
+                    .and_then(|m| m.additional_properties.as_ref())
+                {
+                    if let Some(sequence_number) = additional_properties.get(SEQUENCE_NUMBER) {
+                        checkpoint.sequence_number = Some(sequence_number.parse()?);
+                    }
+                    if let Some(offset) = additional_properties.get(OFFSET) {
+                        checkpoint.offset = Some(offset.clone());
                     }
                 }
             }
@@ -302,18 +299,16 @@ impl CheckpointStore for BlobCheckpointStore {
             debug!("Blob body: {blob:?}");
             let mut ownership = ownership.clone();
             if let Some(name) = &blob.name {
-                if let Some(name) = &name.content {
-                    ownership.partition_id = name
-                        .rfind('/')
-                        .map(|pos| &name[pos + 1..])
-                        .unwrap_or_default()
-                        .to_string();
-                    ownership.owner_id = blob
-                        .metadata
-                        .as_ref()
-                        .and_then(|m| m.additional_properties.as_ref())
-                        .and_then(|ap| ap.get(OWNER_ID).cloned());
-                }
+                ownership.partition_id = name
+                    .rfind('/')
+                    .map(|pos| &name[pos + 1..])
+                    .unwrap_or_default()
+                    .to_string();
+                ownership.owner_id = blob
+                    .metadata
+                    .as_ref()
+                    .and_then(|m| m.additional_properties.as_ref())
+                    .and_then(|ap| ap.get(OWNER_ID).cloned());
             }
             if let Some(properties) = &blob.properties {
                 ownership.etag = properties.etag.as_ref().map(|s| Etag::from(s.clone()));

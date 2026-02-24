@@ -9,8 +9,7 @@ use crate::regions::RegionName;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::location_cache::{LocationCache, RequestOperation};
-use crate::ReadDatabaseOptions;
-use azure_core::http::{Pipeline, Response};
+use azure_core::http::{Context, Pipeline, Response};
 use azure_core::Error;
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -147,24 +146,6 @@ impl GlobalEndpointManager {
             .unwrap()
             .write_endpoints()
             .to_vec()
-    }
-
-    /// Returns the count of preferred locations configured for routing.
-    ///
-    /// # Summary
-    /// Retrieves the number of preferred Azure regions that were specified during
-    /// initialization. This count is used by retry policies to determine failover
-    /// behavior and calculate maximum retry attempts across regions.
-    ///
-    /// # Returns
-    /// The number of preferred locations as usize
-    pub fn preferred_location_count(&self) -> usize {
-        self.location_cache
-            .lock()
-            .unwrap()
-            .locations_info
-            .preferred_locations
-            .len()
     }
 
     /// Resolves the appropriate service endpoint URL for a given request.
@@ -385,9 +366,6 @@ impl GlobalEndpointManager {
     /// # Returns
     /// `Ok(Response<AccountProperties>)` with account metadata, or `Err` if request failed
     pub async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
-        let options = ReadDatabaseOptions {
-            ..Default::default()
-        };
         let resource_link = ResourceLink::root(ResourceType::DatabaseAccount);
         let builder = CosmosRequest::builder(OperationType::Read, resource_link.clone());
         let mut cosmos_request = builder.build()?;
@@ -397,11 +375,7 @@ impl GlobalEndpointManager {
             .unwrap()
             .resolve_service_endpoint(&cosmos_request);
         cosmos_request.request_context.location_endpoint_to_route = Some(endpoint);
-        let ctx_owned = options
-            .method_options
-            .context
-            .with_value(resource_link)
-            .into_owned();
+        let ctx_owned = Context::default().with_value(resource_link);
         self.pipeline
             .send(&ctx_owned, &mut cosmos_request.into_raw_request(), None)
             .await
@@ -471,7 +445,6 @@ mod tests {
             manager.hub_uri(),
             &Url::parse("https://test.documents.azure.com/").unwrap()
         );
-        assert_eq!(manager.preferred_location_count(), 2);
     }
 
     #[test]
@@ -482,32 +455,6 @@ mod tests {
             hub_uri,
             &Url::parse("https://test.documents.azure.com/").unwrap()
         );
-    }
-
-    #[test]
-    fn test_preferred_location_count() {
-        let manager = GlobalEndpointManager::new(
-            "https://test.documents.azure.com/".parse().unwrap(),
-            vec![
-                RegionName::from("West US"),
-                RegionName::from("East US"),
-                RegionName::from("North Europe"),
-            ],
-            vec![],
-            create_test_pipeline(),
-        );
-        assert_eq!(manager.preferred_location_count(), 3);
-    }
-
-    #[test]
-    fn test_preferred_location_count_empty() {
-        let manager = GlobalEndpointManager::new(
-            "https://test.documents.azure.com".parse().unwrap(),
-            vec![],
-            vec![],
-            create_test_pipeline(),
-        );
-        assert_eq!(manager.preferred_location_count(), 0);
     }
 
     #[test]

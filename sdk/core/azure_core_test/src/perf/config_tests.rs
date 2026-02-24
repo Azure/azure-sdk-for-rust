@@ -561,8 +561,7 @@ fn test_perf_runner_with_multiple_tests_and_subcommands() {
 
 struct ComplexTest {}
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl PerfTest for ComplexTest {
     async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         println!("Setting up ComplexTest...");

@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::CosmosResponse;
+use crate::models::{ContainerProperties, CosmosResponse};
 use crate::pipeline::GatewayPipeline;
 use crate::resource_context::ResourceType;
 use crate::routing::container_cache::ContainerCache;
@@ -41,6 +41,17 @@ impl ContainerConnection {
             pk_range_cache,
             global_partition_endpoint_manager,
         }
+    }
+
+    /// Populates the container cache with the given properties.
+    pub(crate) async fn populate_container_cache(
+        &self,
+        container_id: String,
+        properties: ContainerProperties,
+    ) {
+        self.container_cache
+            .populate(container_id, properties)
+            .await;
     }
 
     pub async fn send<T>(
@@ -185,10 +196,6 @@ mod tests {
         let partition_manager =
             GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
         (
-            #[allow(
-                clippy::arc_with_non_send_sync,
-                reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
-            )]
             Arc::new(GatewayPipeline::new(
                 endpoint,
                 pipeline_core,
@@ -272,10 +279,6 @@ mod tests {
         let partition_manager =
             GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
 
-        #[allow(
-            clippy::arc_with_non_send_sync,
-            reason = "Wasm32 doesn't include Send, but it's also single-threaded so it's fine"
-        )]
         let gateway_pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline,

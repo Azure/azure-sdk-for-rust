@@ -19,6 +19,7 @@ async-trait.workspace = true
 azure_core.workspace = true
 futures.workspace = true
 pin-project.workspace = true
+reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
@@ -37,16 +38,19 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 workspace = true
 
 [features]
-default = ["hmac_rust"]
+default = ["hmac_rust", "reqwest"]
+reqwest = ["dep:reqwest", "azure_core/reqwest"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [] # Enables support for fault injection testing
+allow_invalid_certificates = ["reqwest", "reqwest/native-tls"] # Enables accepting invalid TLS certificates (e.g., for emulator testing)
 
 [package.metadata.docs.rs]
 features = [
   "key_auth",
   "hmac_rust",
   "hmac_openssl",
+  "allow_invalid_certificates",
 ]

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 mod authorization_policy;
+mod cosmos_headers_policy;
 mod signature_target;
 
 use crate::cosmos_request::CosmosRequest;
@@ -14,6 +15,7 @@ use crate::CosmosClientOptions;
 pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{response::Response, Context, PipelineSendOptions, RawResponse};
+pub(crate) use cosmos_headers_policy::CosmosHeadersPolicy;
 use std::sync::Arc;
 use url::Url;
 
@@ -75,7 +77,7 @@ impl GatewayPipeline {
         mut cosmos_request: CosmosRequest,
         context: Context<'_>,
     ) -> azure_core::Result<CosmosResponse<T>> {
-        cosmos_request.client_headers(&self.options);
+        self.options.apply_headers(&mut cosmos_request.headers);
         // Prepare a callback delegate to invoke the http request.
         let sender = |req: &mut CosmosRequest| {
             let pipeline = self.pipeline.clone();
