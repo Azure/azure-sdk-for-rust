@@ -9,16 +9,8 @@ pub struct ClientOptions {
 
 impl ClientOptions {
     /// Returns whether to allow invalid TLS certificates.
-    /// Only applicable on non-WASM targets.
-    #[cfg(not(target_family = "wasm"))]
     pub fn allow_invalid_certificates(&self) -> bool {
         self.danger_allow_invalid_certificates
-    }
-
-    /// Returns false on WASM targets since TLS certificate validation is not applicable.
-    #[cfg(target_family = "wasm")]
-    pub fn allow_invalid_certificates(&self) -> bool {
-        false
     }
 }
 

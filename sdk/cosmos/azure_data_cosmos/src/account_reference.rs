@@ -33,7 +33,7 @@ use std::sync::Arc;
 ///
 /// Using key authentication (requires `key_auth` feature):
 ///
-/// ```rust,no_run,ignore
+/// ```rust,ignore
 /// use azure_data_cosmos::{CosmosAccountReference, CosmosAccountEndpoint};
 /// use azure_core::credentials::Secret;
 ///

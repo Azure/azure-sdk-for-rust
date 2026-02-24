@@ -17,23 +17,30 @@ use super::rule::FaultInjectionRule;
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use azure_data_cosmos::{CosmosClientBuilder, fault_injection::{FaultInjectionClientBuilder, FaultInjectionRule}};
+/// ```rust,no_run
+/// use azure_data_cosmos::{
+///     CosmosClientBuilder, CosmosAccountEndpoint,
+///     fault_injection::{
+///         FaultInjectionClientBuilder, FaultInjectionErrorType,
+///         FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+///     },
+/// };
+/// use azure_core::credentials::Secret;
 /// use std::sync::Arc;
 ///
-/// let rule = Arc::new(FaultInjectionRule::builder()
-///     // configure rule...
-///     .build());
+/// let result = FaultInjectionResultBuilder::new()
+///     .with_error(FaultInjectionErrorType::ServiceUnavailable)
+///     .build();
+///
+/// let rule = Arc::new(FaultInjectionRuleBuilder::new("my-rule", result).build());
 ///
 /// let fault_builder = FaultInjectionClientBuilder::new()
 ///     .with_rule(rule);
 ///
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let client = CosmosClientBuilder::new()
 ///     .with_fault_injection(fault_builder)
-///     .build(CosmosAccountReference::with_credential(
-///         "https://myaccount.documents.azure.com/",
-///         credential,
-///     ).unwrap())
+///     .build((endpoint, Secret::from("my_account_key")))
 ///     .unwrap();
 /// ```
 pub struct FaultInjectionClientBuilder {
