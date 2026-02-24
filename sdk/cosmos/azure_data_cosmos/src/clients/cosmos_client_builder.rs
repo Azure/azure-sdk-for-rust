@@ -13,6 +13,10 @@ use crate::{
 use std::sync::Arc;
 
 use crate::constants::COSMOS_ALLOWED_HEADERS;
+#[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
+use crate::constants::{
+    DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
+};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
@@ -172,20 +176,32 @@ impl CosmosClientBuilder {
         #[cfg(not(feature = "fault_injection"))]
         let fault_injection_enabled = false;
 
-        // Build custom transport if needed
-        #[cfg(feature = "allow_invalid_certificates")]
-        let base_client: Option<Arc<dyn azure_core::http::HttpClient>> =
-            if self.allow_emulator_invalid_certificates {
-                let client = reqwest::ClientBuilder::new()
-                    .danger_accept_invalid_certs(true)
-                    .pool_max_idle_per_host(0)
-                    .build()
-                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
-                Some(Arc::new(client))
-            } else {
-                None
-            };
-        #[cfg(not(feature = "allow_invalid_certificates"))]
+        // Build custom transport with default timeouts.
+        // When no custom transport is provided, we create a reqwest client with
+        // connection and request timeouts per Cosmos DB design principles.
+        #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
+        let base_client: Option<Arc<dyn azure_core::http::HttpClient>> = {
+            #[cfg(feature = "allow_invalid_certificates")]
+            let accept_invalid_certs = self.allow_emulator_invalid_certificates;
+            #[cfg(not(feature = "allow_invalid_certificates"))]
+            let accept_invalid_certs = false;
+
+            let mut builder = reqwest::ClientBuilder::new()
+                .http1_only()
+                .pool_max_idle_per_host(DEFAULT_MAX_CONNECTION_POOL_SIZE)
+                .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
+                .timeout(DEFAULT_REQUEST_TIMEOUT);
+
+            if accept_invalid_certs {
+                builder = builder.danger_accept_invalid_certs(true);
+            }
+
+            let client = builder
+                .build()
+                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+            Some(Arc::new(client))
+        };
+        #[cfg(not(all(not(target_arch = "wasm32"), feature = "reqwest")))]
         let base_client: Option<Arc<dyn azure_core::http::HttpClient>> = None;
 
         #[cfg(feature = "fault_injection")]
