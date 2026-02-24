@@ -486,7 +486,7 @@ impl QueueClient {
                 &mut request,
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
-                        success_codes: &[200],
+                        success_codes: &[204],
                     },
                     ..Default::default()
                 }),

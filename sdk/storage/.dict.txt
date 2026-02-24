@@ -21,6 +21,7 @@ policyid
 prevsnapshot
 RAGRS
 RAGZRS
+raup
 restype
 rscc
 rscd
