@@ -89,7 +89,7 @@ impl CosmosResponse {
     }
 
     /// Returns diagnostics captured for this operation.
-    pub fn diagnostics(&self) -> &Arc<DiagnosticsContext> {
+    pub fn diagnostics(&self) -> &DiagnosticsContext {
         &self.diagnostics
     }
 }
