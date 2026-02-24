@@ -163,3 +163,25 @@ When enabled (the default), the `CreateItem` operation generates new items with
 unique IDs and partition keys. Successfully created items are added to the
 shared item pool so they become targets for subsequent read, query, and upsert
 operations.
+
+### Multi-Process Launcher
+
+The `run_perf.sh` script launches multiple OS processes of the perf tool in
+parallel. This is useful for saturating a Cosmos DB account beyond what a single
+process can achieve.
+
+```bash
+# Launch 4 parallel processes, each with 50 concurrent tasks
+./run_perf.sh --processes 4 \
+  --endpoint https://myaccount.documents.azure.com:443 \
+  --auth key --key "$AZURE_COSMOS_KEY" \
+  --concurrency 50 --duration 600
+
+# All standard perf tool flags are passed through to each process
+./run_perf.sh --processes 8 \
+  --endpoint https://myaccount.documents.azure.com:443 \
+  --auth aad --no-queries --no-creates
+```
+
+The script builds the crate in release mode, spawns the requested number of
+processes, and forwards `Ctrl+C` to all children for graceful shutdown.
