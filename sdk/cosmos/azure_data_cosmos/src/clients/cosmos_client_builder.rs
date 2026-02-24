@@ -181,18 +181,15 @@ impl CosmosClientBuilder {
         // connection and request timeouts per Cosmos DB design principles.
         #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
         let base_client: Option<Arc<dyn azure_core::http::HttpClient>> = {
-            #[cfg(feature = "allow_invalid_certificates")]
-            let accept_invalid_certs = self.allow_emulator_invalid_certificates;
-            #[cfg(not(feature = "allow_invalid_certificates"))]
-            let accept_invalid_certs = false;
-
+            #[allow(unused_mut)]
             let mut builder = reqwest::ClientBuilder::new()
                 .http1_only()
                 .pool_max_idle_per_host(DEFAULT_MAX_CONNECTION_POOL_SIZE)
                 .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
                 .timeout(DEFAULT_REQUEST_TIMEOUT);
 
-            if accept_invalid_certs {
+            #[cfg(feature = "allow_invalid_certificates")]
+            if self.allow_emulator_invalid_certificates {
                 builder = builder.danger_accept_invalid_certs(true);
             }
 
