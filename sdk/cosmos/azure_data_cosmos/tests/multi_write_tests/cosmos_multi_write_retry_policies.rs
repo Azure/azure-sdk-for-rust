@@ -21,7 +21,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::{CosmosClientOptions, Query};
+use azure_data_cosmos::Query;
 use framework::{TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -63,9 +63,6 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -121,7 +118,11 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -145,9 +146,6 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -191,7 +189,11 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -215,9 +217,6 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -261,7 +260,11 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -288,9 +291,6 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -338,7 +338,11 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -365,9 +369,6 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -422,7 +423,11 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -446,9 +451,6 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -509,7 +511,11 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -533,9 +539,6 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -585,7 +588,11 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }

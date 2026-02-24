@@ -292,9 +292,7 @@ mod tests {
     use super::*;
     use crate::operation_context::OperationType;
     use crate::resource_context::ResourceType;
-    use crate::{
-        constants, ConsistencyLevel, CosmosClientOptions, ItemOptions, PartitionKey, PriorityLevel,
-    };
+    use crate::{constants, CosmosClientOptions, ItemOptions, PartitionKey};
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
         let req = CosmosRequest::builder(op, ResourceLink::root(ResourceType::Documents))
@@ -409,13 +407,9 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let item_options = ItemOptions {
-            consistency_level: Some(ConsistencyLevel::Session),
-            throughput_bucket: Some(1),
-            priority: Some(PriorityLevel::Low),
-            custom_headers: request_custom_headers,
-            ..Default::default()
-        };
+        let item_options = ItemOptions::default()
+            .with_session_token("RequestSession".to_string().into())
+            .with_custom_headers(request_custom_headers);
         let mut req = CosmosRequest::builder(
             OperationType::Create,
             ResourceLink::root(ResourceType::Documents),
@@ -424,10 +418,8 @@ mod tests {
         .unwrap();
         item_options.apply_headers(&mut req.headers);
 
-        let mut req_with_client_headers = req;
-        req_with_client_headers
-            .request_context
-            .location_endpoint_to_route = Some("https://example.com/".parse().unwrap());
+        req.request_context.location_endpoint_to_route =
+            Some("https://example.com/".parse().unwrap());
 
         let mut client_custom_headers = std::collections::HashMap::new();
         client_custom_headers.insert(
@@ -435,16 +427,11 @@ mod tests {
             HeaderValue::from_static("custom_value-2"),
         );
 
-        let client_options = CosmosClientOptions {
-            consistency_level: Some(ConsistencyLevel::Strong),
-            throughput_bucket: Some(5),
-            priority: Some(PriorityLevel::High),
-            custom_headers: client_custom_headers,
-            ..Default::default()
-        };
-        client_options.apply_headers(&mut req_with_client_headers.headers);
+        let client_options =
+            CosmosClientOptions::default().with_custom_headers(client_custom_headers);
+        client_options.apply_headers(&mut req.headers);
 
-        let raw = req_with_client_headers.into_raw_request();
+        let raw = req.into_raw_request();
         let get_header = |name: &HeaderName| {
             raw.headers()
                 .iter()
@@ -453,9 +440,7 @@ mod tests {
                 .unwrap()
         };
 
-        assert_eq!(get_header(&constants::THROUGHPUT_BUCKET), "1");
-        assert_eq!(get_header(&constants::PRIORITY_LEVEL), "Low");
-        assert_eq!(get_header(&constants::CONSISTENCY_LEVEL), "Session");
+        assert_eq!(get_header(&constants::SESSION_TOKEN), "RequestSession");
         assert_eq!(
             get_header(&HeaderName::from_static("x-custom-header")),
             "custom_value"

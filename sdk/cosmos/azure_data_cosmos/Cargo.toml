@@ -45,10 +45,12 @@ key_auth = [
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [] # Enables support for fault injection testing
+allow_invalid_certificates = ["reqwest", "reqwest/native-tls"] # Enables accepting invalid TLS certificates (e.g., for emulator testing)
 
 [package.metadata.docs.rs]
 features = [
   "key_auth",
   "hmac_rust",
   "hmac_openssl",
+  "allow_invalid_certificates",
 ]
