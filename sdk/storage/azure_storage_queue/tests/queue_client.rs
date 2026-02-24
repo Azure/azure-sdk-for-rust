@@ -6,9 +6,8 @@ use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext, TestMode};
 use azure_storage_queue::{
     models::{
-        AccessPolicy, ListOfSignedIdentifier, QueueClientPeekMessagesOptions,
-        QueueClientReceiveMessagesOptions, QueueClientUpdateOptions, QueueMessage,
-        SignedIdentifier,
+        AccessPolicy, QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
+        QueueClientUpdateOptions, QueueMessage, SignedIdentifier, SignedIdentifiers,
     },
     QueueClient, QueueClientOptions,
 };
@@ -444,7 +443,7 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
             acl.items
         );
 
-        let policy = ListOfSignedIdentifier {
+        let policy = SignedIdentifiers {
             items: Some(vec![SignedIdentifier {
                 id: Some("policy1".to_string()),
                 access_policy: Some(AccessPolicy {
