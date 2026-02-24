@@ -5,6 +5,7 @@
 ### Features Added
 
 - Default Azure Storage logging configuration (allowed headers and query parameters) is now automatically applied to all Queue clients.
+- Added support for `set_access_policy` and `get_access_policy` to `QueueClient`.
 
 ### Breaking Changes
 

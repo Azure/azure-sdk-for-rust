@@ -234,7 +234,7 @@ impl TestClient {
                     application_region,
                     true,
                     fault_builder,
-                    None,
+                    Vec::new(),
                 )
             }
             _ => Self::from_connection_string(
