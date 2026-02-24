@@ -505,9 +505,6 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -551,7 +548,11 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -575,9 +576,6 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -631,7 +629,11 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -655,9 +657,6 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -697,7 +696,11 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -722,9 +725,6 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -777,7 +777,11 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -801,9 +805,6 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -847,7 +848,11 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]),
+        ),
     )
     .await
 }
@@ -872,9 +877,6 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -922,7 +924,11 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
