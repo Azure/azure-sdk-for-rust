@@ -55,8 +55,8 @@ where
             if let Some(lazy) = read_guard.get(&key) {
                 let lazy_clone = lazy.clone();
                 drop(read_guard); // Release read lock before awaiting
-                // Use get_or_init rather than get() to avoid a panic if
-                // the entry was just inserted but not yet initialized.
+                                  // Use get_or_init rather than get() to avoid a panic if
+                                  // the entry was just inserted but not yet initialized.
                 return lazy_clone.get_or_init(factory).await;
             }
         }

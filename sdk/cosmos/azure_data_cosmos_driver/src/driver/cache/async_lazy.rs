@@ -231,11 +231,8 @@ mod tests {
         tokio::task::yield_now().await;
 
         // Now start initialization
-        let init_handle = tokio::spawn(async move {
-            lazy_for_init
-                .get_or_init(|| async { 99 })
-                .await
-        });
+        let init_handle =
+            tokio::spawn(async move { lazy_for_init.get_or_init(|| async { 99 }).await });
 
         let get_result = get_handle.await.unwrap();
         let init_result = init_handle.await.unwrap();
