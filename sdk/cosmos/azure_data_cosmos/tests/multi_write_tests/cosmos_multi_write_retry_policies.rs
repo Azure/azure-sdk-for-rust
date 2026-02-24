@@ -121,7 +121,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -192,7 +192,7 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -263,7 +263,7 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -341,7 +341,7 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -426,7 +426,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -514,7 +514,7 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -591,7 +591,7 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await

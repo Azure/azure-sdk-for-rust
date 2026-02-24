@@ -313,7 +313,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -389,7 +389,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -479,7 +479,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]),
+                .with_fault_client_application_region(SATELLITE_REGION),
         ),
     )
     .await
@@ -551,7 +551,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -632,7 +632,7 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -699,7 +699,7 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -780,7 +780,7 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -851,7 +851,7 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]),
+                .with_fault_client_application_region(SATELLITE_REGION),
         ),
     )
     .await
@@ -927,7 +927,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await

@@ -79,22 +79,6 @@ impl CosmosClientBuilder {
         Self::default()
     }
 
-    /// Sets the preferred regions for the client.
-    ///
-    /// The client will prefer to connect to regions in the order specified.
-    /// This is useful for geo-distributed applications that want to minimize latency.
-    ///
-    /// # Arguments
-    ///
-    /// * `regions` - The regions to prefer, in order of preference.
-    pub fn with_application_preferred_regions(
-        mut self,
-        regions: impl Into<Vec<RegionName>>,
-    ) -> Self {
-        self.options.application_preferred_regions = regions.into();
-        self
-    }
-
     /// Sets a suffix to append to the User-Agent header for telemetry.
     ///
     /// # Arguments
@@ -105,7 +89,17 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets the application region for telemetry.
+    /// Sets the application region for routing.
+    ///
+    /// When set, the SDK generates a list of preferred regions sorted by
+    /// geographic proximity (round-trip time) from the given region.
+    /// This allows the client to prefer connecting to regions closest
+    /// to where the application is running.
+    ///
+    /// If not set, the SDK uses the account's configured regions
+    /// in the order returned by the service.
+    ///
+    /// Unknown region names will cause [`build()`](Self::build) to return an error.
     ///
     /// # Arguments
     ///
@@ -254,7 +248,16 @@ impl CosmosClientBuilder {
             None,
         );
 
-        let preferred_regions = self.options.application_preferred_regions.clone();
+        let preferred_regions = if let Some(ref region) = self.options.application_region {
+            crate::region_proximity::generate_preferred_region_list(region).ok_or_else(|| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    format!("unknown application region: {region}"),
+                )
+            })?
+        } else {
+            Vec::new()
+        };
 
         let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
             endpoint.clone(),
@@ -281,5 +284,45 @@ impl CosmosClientBuilder {
             global_endpoint_manager,
             global_partition_endpoint_manager,
         })
+    }
+}
+
+#[cfg(all(test, feature = "key_auth"))]
+mod tests {
+    use crate::{regions, CosmosAccountReference, CosmosClient};
+    use azure_core::credentials::Secret;
+
+    fn test_account() -> CosmosAccountReference {
+        let endpoint = "https://test.documents.azure.com/".parse().unwrap();
+        CosmosAccountReference::with_master_key(endpoint, Secret::from("dGVzdA=="))
+    }
+
+    #[test]
+    fn build_with_known_region_succeeds() {
+        let result = CosmosClient::builder()
+            .with_application_region(regions::EAST_US)
+            .build(test_account());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn build_with_unknown_region_returns_error() {
+        let unknown = regions::RegionName::from("nonexistentregion");
+        let result = CosmosClient::builder()
+            .with_application_region(unknown)
+            .build(test_account());
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.to_string().contains("unknown application region"),
+            "Expected error about unknown region, got: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn build_without_application_region_succeeds() {
+        let result = CosmosClient::builder().build(test_account());
+        assert!(result.is_ok());
     }
 }
