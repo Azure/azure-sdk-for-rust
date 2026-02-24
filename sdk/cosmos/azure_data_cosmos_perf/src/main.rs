@@ -14,7 +14,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::time::Duration;
 
     use azure_core::credentials::Secret;
-    use azure_data_cosmos::{CosmosClient, CosmosClientOptions};
+    use azure_data_cosmos::{
+        CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder,
+    };
     use clap::Parser;
 
     use crate::config::{AuthMethod, Config};
@@ -42,38 +44,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    // Build client options
-    let options = CosmosClientOptions::default()
-        .with_preferred_regions(
-            config
-                .preferred_regions
-                .iter()
-                .map(|r| r.clone().into())
-                .collect(),
-        )
-        .with_excluded_regions(
-            config
-                .excluded_regions
-                .iter()
-                .map(|r| r.clone().into())
-                .collect(),
-        );
+    // Build the Cosmos client using the builder pattern
+    let preferred_regions: Vec<_> = config
+        .preferred_regions
+        .iter()
+        .map(|r| r.clone().into())
+        .collect();
 
-    // Create the Cosmos client
+    let builder =
+        CosmosClientBuilder::new().with_application_preferred_regions(preferred_regions.clone());
+
+    let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
         AuthMethod::Key => {
             let key = config.key.as_deref().ok_or(
                 "Account key is required for key auth. Use --key or set AZURE_COSMOS_KEY env var.",
             )?;
-            CosmosClient::with_key(
-                &config.endpoint,
-                Secret::from(key.to_string()),
-                Some(options),
-            )?
+            let account =
+                CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
+            builder.build(account)?
         }
         AuthMethod::Aad => {
-            let credential = azure_identity::ManagedIdentityCredential::new(None)?;
-            CosmosClient::new(&config.endpoint, credential, Some(options))?
+            let credential: Arc<dyn azure_core::credentials::TokenCredential> =
+                azure_identity::ManagedIdentityCredential::new(None)?;
+            let account = CosmosAccountReference::with_credential(endpoint, credential);
+            builder.build(account)?
         }
     };
 
@@ -126,16 +121,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set up results container — either on the same account or a separate one
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
+        let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
+        let results_builder =
+            CosmosClientBuilder::new().with_application_preferred_regions(preferred_regions);
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(
                     "Results account key is required. Use --results-key or set AZURE_COSMOS_RESULTS_KEY.",
                 )?;
-                CosmosClient::with_key(results_endpoint, Secret::from(key.to_string()), None)?
+                let account = CosmosAccountReference::with_master_key(
+                    results_ep,
+                    Secret::from(key.to_string()),
+                );
+                results_builder.build(account)?
             }
             AuthMethod::Aad => {
-                let credential = azure_identity::ManagedIdentityCredential::new(None)?;
-                CosmosClient::new(results_endpoint, credential, None)?
+                let credential: Arc<dyn azure_core::credentials::TokenCredential> =
+                    azure_identity::ManagedIdentityCredential::new(None)?;
+                let account = CosmosAccountReference::with_credential(results_ep, credential);
+                results_builder.build(account)?
             }
         };
         setup::ensure_database(&results_client, &config.results_database).await?;

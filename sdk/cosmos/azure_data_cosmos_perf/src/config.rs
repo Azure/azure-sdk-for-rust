@@ -33,10 +33,6 @@ pub struct Config {
     #[arg(long, value_delimiter = ',')]
     pub preferred_regions: Vec<String>,
 
-    /// Comma-separated list of excluded regions.
-    #[arg(long, value_delimiter = ',')]
-    pub excluded_regions: Vec<String>,
-
     /// Disable point read operations.
     #[arg(long, default_value_t = false)]
     pub no_reads: bool,
