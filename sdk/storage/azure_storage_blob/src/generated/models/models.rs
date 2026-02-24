@@ -138,7 +138,7 @@ pub struct BlobFlatListSegment {
 #[serde(rename = "Blob")]
 pub struct BlobItem {
     /// The tags of the blob.
-    #[serde(rename = "BlobTags", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Tags", skip_serializing_if = "Option::is_none")]
     pub blob_tags: Option<BlobTags>,
 
     /// Whether the blob is deleted.
@@ -159,7 +159,7 @@ pub struct BlobItem {
 
     /// The name of the blob.
     #[serde(
-        deserialize_with = "crate::models::deserialize_blob_name",
+        deserialize_with = "crate::models::blob_name::option::deserialize",
         rename = "Name",
         skip_serializing_if = "Option::is_none"
     )]
@@ -672,7 +672,7 @@ pub struct ContainerProperties {
     pub deleted_time: Option<OffsetDateTime>,
 
     /// The ETag of the container.
-    #[serde(rename = "ETag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 
     /// Whether it has an immutability policy.
@@ -777,7 +777,7 @@ pub struct FilterBlobItem {
     pub name: Option<String>,
 
     /// The metadata of the blob.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Tags", skip_serializing_if = "Option::is_none")]
     pub tags: Option<BlobTags>,
 
     /// The version ID of the blob.
