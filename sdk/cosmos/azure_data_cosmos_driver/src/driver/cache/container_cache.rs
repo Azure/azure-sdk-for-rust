@@ -224,7 +224,6 @@ impl ContainerCache {
             .get_or_insert_with(rid_key, || async { Ok(container_for_rid) })
             .await;
     }
-
 }
 
 impl Default for ContainerCache {

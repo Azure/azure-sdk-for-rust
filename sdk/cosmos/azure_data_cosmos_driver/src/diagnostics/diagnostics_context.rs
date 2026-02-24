@@ -1660,4 +1660,3 @@ mod tests {
         assert_eq!(event.duration_ms, Some(50));
     }
 }
-

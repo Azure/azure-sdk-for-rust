@@ -118,7 +118,6 @@ impl PartitionKeyDefinition {
     pub fn kind(&self) -> PartitionKeyKind {
         self.kind
     }
-
 }
 
 fn default_pk_version() -> PartitionKeyVersion {

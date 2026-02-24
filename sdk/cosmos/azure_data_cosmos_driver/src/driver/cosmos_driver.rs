@@ -155,7 +155,10 @@ impl CosmosDriver {
         super::cache::AccountProperties::new(Region::new("unknown"), Vec::new())
     }
 
-    fn endpoint_for_write_region(account: &AccountReference, write_region: &Region) -> AccountEndpoint {
+    fn endpoint_for_write_region(
+        account: &AccountReference,
+        write_region: &Region,
+    ) -> AccountEndpoint {
         if write_region.as_str() == "unknown" {
             return AccountEndpoint::from(account);
         }
@@ -1107,7 +1110,10 @@ mod tests {
         );
 
         let endpoint = CosmosDriver::endpoint_for_write_region(&account, &Region::new("West US"));
-        assert_eq!(endpoint.url().host_str(), Some("myaccount-westus.documents.azure.com"));
+        assert_eq!(
+            endpoint.url().host_str(),
+            Some("myaccount-westus.documents.azure.com")
+        );
         assert_eq!(endpoint.url().port_or_known_default(), Some(443));
     }
 

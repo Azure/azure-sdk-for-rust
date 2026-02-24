@@ -57,7 +57,6 @@ impl AccountMetadataCache {
     {
         self.cache.get_or_insert_with(endpoint, fetch_fn).await
     }
-
 }
 
 impl Default for AccountMetadataCache {

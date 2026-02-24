@@ -70,7 +70,6 @@ impl<T> AsyncLazy<T> {
             .expect("value should be initialized")
             .clone()
     }
-
 }
 
 impl<T> Default for AsyncLazy<T> {
