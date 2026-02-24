@@ -14,6 +14,7 @@ use crate::{
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
+use azure_core::http::Context;
 use std::sync::Arc;
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -86,15 +87,15 @@ impl DatabaseClient {
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
-        options: Option<ReadDatabaseOptions<'_>>,
+        options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
-        let options = options.unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
         self.pipeline
-            .send(cosmos_request?, options.method_options.context)
+            .send(cosmos_request?, Context::default())
             .await
     }
 
@@ -122,17 +123,16 @@ impl DatabaseClient {
     ///
     /// See [`Query`] for more information on how to specify a query.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub fn query_containers(
         &self,
         query: impl Into<Query>,
-        options: Option<QueryContainersOptions<'_>>,
+        options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
-        let options = options.unwrap_or_default();
-
         crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),
             self.containers_link.clone(),
-            options.method_options.context.into_owned(),
+            Context::default(),
             query.into(),
             azure_core::http::headers::Headers::new(),
         )
@@ -147,10 +147,11 @@ impl DatabaseClient {
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn create_container(
         &self,
         properties: ContainerProperties,
-        options: Option<CreateContainerOptions<'_>>,
+        options: Option<CreateContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
@@ -159,9 +160,7 @@ impl DatabaseClient {
                 .json(&properties)
                 .build()?;
 
-        self.pipeline
-            .send(cosmos_request, options.method_options.context)
-            .await
+        self.pipeline.send(cosmos_request, Context::default()).await
     }
 
     /// Deletes this database.
@@ -171,15 +170,15 @@ impl DatabaseClient {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
-        options: Option<DeleteDatabaseOptions<'_>>,
+        options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
-        let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
         self.pipeline
-            .send(cosmos_request?, options.method_options.context)
+            .send(cosmos_request?, Context::default())
             .await
     }
 
@@ -190,12 +189,11 @@ impl DatabaseClient {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read_throughput(
         &self,
-        options: Option<ThroughputOptions<'_>>,
+        options: Option<ThroughputOptions>,
     ) -> azure_core::Result<Option<ThroughputProperties>> {
-        let options = options.unwrap_or_default();
-
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -204,22 +202,25 @@ impl DatabaseClient {
             .expect("service should always return a '_rid' for a database");
 
         let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.read(options.method_options.context).await
+        offers_client.read(Context::default()).await
     }
 
     /// Replaces the database throughput properties.
+    ///
+    /// Note that throughput changes may not take effect immediately.
+    /// The service processes the change asynchronously, so you may need to poll
+    /// [`DatabaseClient::read_throughput()`] to confirm the new throughput is in effect.
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
     #[tracing::instrument(skip_all, fields(id = self.database_id))]
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
-        options: Option<ThroughputOptions<'_>>,
+        options: Option<ThroughputOptions>,
     ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
-        let options = options.unwrap_or_default();
-
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -228,8 +229,6 @@ impl DatabaseClient {
             .expect("service should always return a '_rid' for a database");
 
         let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client
-            .replace(options.method_options.context, throughput)
-            .await
+        offers_client.replace(Context::default(), throughput).await
     }
 }

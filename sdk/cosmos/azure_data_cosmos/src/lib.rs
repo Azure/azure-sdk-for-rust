@@ -4,9 +4,12 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+mod account_endpoint;
+mod account_reference;
 pub mod clients;
 mod connection_string;
 pub mod constants;
+mod credential;
 mod feed;
 pub mod options;
 mod partition_key;
@@ -19,8 +22,13 @@ pub mod models;
 
 #[doc(inline)]
 pub use clients::CosmosClient;
+#[doc(inline)]
+pub use clients::CosmosClientBuilder;
 
+pub use account_endpoint::CosmosAccountEndpoint;
+pub use account_reference::CosmosAccountReference;
 pub use connection_string::*;
+pub use credential::CosmosCredential;
 pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
