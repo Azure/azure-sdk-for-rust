@@ -1052,7 +1052,8 @@ impl DiagnosticsContext {
             request_count: self.requests.len(),
             requests: &self.requests,
         };
-        serde_json::to_string(&output).unwrap_or_else(|e| format!("{{\"error\": \"{}\"}}", e))
+        serde_json::to_string(&output)
+            .unwrap_or_else(|e| serde_json::json!({"error": e.to_string()}).to_string())
     }
 
     fn compute_json_summary(&self, max_size: usize) -> String {
@@ -1084,8 +1085,8 @@ impl DiagnosticsContext {
             regions: region_summaries,
         };
 
-        let json =
-            serde_json::to_string(&output).unwrap_or_else(|e| format!("{{\"error\": \"{}\"}}", e));
+        let json = serde_json::to_string(&output)
+            .unwrap_or_else(|e| serde_json::json!({"error": e.to_string()}).to_string());
 
         // Truncate if needed
         if json.len() <= max_size {
@@ -1101,7 +1102,7 @@ impl DiagnosticsContext {
                     "Output truncated to fit size limit. Use Detailed verbosity for full diagnostics.",
             };
             serde_json::to_string(&truncated)
-                .unwrap_or_else(|e| format!("{{\"error\": \"{}\"}}", e))
+                .unwrap_or_else(|e| serde_json::json!({"error": e.to_string()}).to_string())
         }
     }
 }
