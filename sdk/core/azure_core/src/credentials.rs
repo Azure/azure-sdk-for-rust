@@ -94,8 +94,7 @@ pub struct TokenRequestOptions<'a> {
 }
 
 /// Represents a credential capable of providing an OAuth token.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync + Debug {
     /// Gets an [`AccessToken`] for the specified scopes
     async fn get_token(

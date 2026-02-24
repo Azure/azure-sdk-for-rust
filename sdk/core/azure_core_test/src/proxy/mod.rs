@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 //! Wrappers for the [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service.
-#[cfg(not(target_arch = "wasm32"))]
 mod bootstrap;
 pub(crate) mod client;
 pub(crate) mod matchers;
@@ -10,7 +9,6 @@ pub(crate) mod models;
 pub(crate) mod policy;
 pub(crate) mod sanitizers;
 
-#[cfg(not(target_arch = "wasm32"))]
 use self::{
     bootstrap::*, matchers::CustomDefaultMatcher, models::SanitizerList,
     sanitizers::DEFAULT_SANITIZERS_TO_REMOVE,
@@ -25,10 +23,8 @@ use azure_core::{
 };
 use client::Client;
 use serde::Serializer;
-#[cfg(not(target_arch = "wasm32"))]
 use std::process::ExitStatus;
 use std::{fmt, str::FromStr, sync::Arc};
-#[cfg(not(target_arch = "wasm32"))]
 use tokio::{io::Lines, process::Child};
 
 const ABSTRACTION_IDENTIFIER: HeaderName = HeaderName::from_static("x-abstraction-identifier");
@@ -37,19 +33,16 @@ const RECORDING_MODE: HeaderName = HeaderName::from_static("x-recording-mode");
 const RECORDING_UPSTREAM_BASE_URI: HeaderName =
     HeaderName::from_static("x-recording-upstream-base-uri");
 
-#[cfg(not(target_arch = "wasm32"))]
 pub use bootstrap::start;
 
 /// Represents the running `test-proxy` service.
 #[derive(Debug, Default)]
 pub struct Proxy {
-    #[cfg(not(target_arch = "wasm32"))]
     command: Option<Child>,
     endpoint: Option<Url>,
     client: Option<Client>,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Proxy {
     async fn start<I: Iterator<Item = String>>(
         &mut self,
@@ -191,7 +184,6 @@ impl Proxy {
     pub fn existing() -> Result<Self> {
         let endpoint: Url = "http://localhost:5000".parse()?;
         Ok(Self {
-            #[cfg(not(target_arch = "wasm32"))]
             command: None,
             endpoint: Some(endpoint.clone()),
             client: Some(Client::new(endpoint)?),
@@ -207,7 +199,6 @@ impl Proxy {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Drop for Proxy {
     /// Attempts to stop the service.
     ///
@@ -248,7 +239,6 @@ pub struct ProxyOptions {
     pub auto_shutdown_in_seconds: u32,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl ProxyOptions {
     fn copy_to(&self, args: &mut Vec<String>) {
         if self.insecure {
@@ -312,7 +302,6 @@ impl FromStr for RecordingId {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 #[derive(Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 struct Version {
     major: i32,

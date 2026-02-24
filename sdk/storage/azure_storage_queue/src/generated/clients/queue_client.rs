@@ -8,22 +8,20 @@ use crate::generated::models::{
     QueueClientClearOptions, QueueClientCreateOptions, QueueClientDeleteMessageOptions,
     QueueClientDeleteOptions, QueueClientGetAccessPolicyOptions, QueueClientGetMetadataOptions,
     QueueClientGetMetadataResult, QueueClientPeekMessagesOptions,
-    QueueClientReceiveMessagesOptions, QueueClientSendMessageOptions,
+    QueueClientReceiveMessagesOptions, QueueClientSendMessageInternalOptions,
     QueueClientSetAccessPolicyOptions, QueueClientSetMetadataOptions, QueueClientUpdateOptions,
     QueueMessage,
 };
 use azure_core::{
-    credentials::TokenCredential,
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
         Response, Url, UrlExt, XmlFormat,
     },
     tracing, Result,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 #[tracing::client]
 pub struct QueueClient {
@@ -42,46 +40,6 @@ pub struct QueueClientOptions {
 }
 
 impl QueueClient {
-    /// Creates a new QueueClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Queues.Queue")]
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<QueueClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
-            ));
-        }
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-                None,
-            ),
-        })
-    }
-
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -92,7 +50,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.clear")]
+    #[tracing::function("Storage.Queues.QueueClient.clear")]
     pub async fn clear(
         &self,
         options: Option<QueueClientClearOptions<'_>>,
@@ -129,7 +87,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.create")]
+    #[tracing::function("Storage.Queues.QueueClient.create")]
     pub async fn create(
         &self,
         options: Option<QueueClientCreateOptions<'_>>,
@@ -170,7 +128,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.delete")]
+    #[tracing::function("Storage.Queues.QueueClient.delete")]
     pub async fn delete(
         &self,
         options: Option<QueueClientDeleteOptions<'_>>,
@@ -209,7 +167,7 @@ impl QueueClient {
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
     ///   Update Message operation.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.deleteMessage")]
+    #[tracing::function("Storage.Queues.QueueClient.deleteMessage")]
     pub async fn delete_message(
         &self,
         message_id: &str,
@@ -229,7 +187,7 @@ impl QueueClient {
         path = path.replace("{messageId}", message_id);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
-        query_builder.set_pair("popReceipt", pop_receipt);
+        query_builder.set_pair("popreceipt", pop_receipt);
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -257,7 +215,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.getAccessPolicy")]
+    #[tracing::function("Storage.Queues.QueueClient.getAccessPolicy")]
     pub async fn get_access_policy(
         &self,
         options: Option<QueueClientGetAccessPolicyOptions<'_>>,
@@ -321,7 +279,7 @@ impl QueueClient {
     /// * [`metadata`()](crate::generated::models::QueueClientGetMetadataResultHeaders::metadata) - x-ms-meta
     ///
     /// [`QueueClientGetMetadataResultHeaders`]: crate::generated::models::QueueClientGetMetadataResultHeaders
-    #[tracing::function("Storage.Queues.Queue.getMetadata")]
+    #[tracing::function("Storage.Queues.QueueClient.getMetadata")]
     pub async fn get_metadata(
         &self,
         options: Option<QueueClientGetMetadataOptions<'_>>,
@@ -359,7 +317,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.peekMessages")]
+    #[tracing::function("Storage.Queues.QueueClient.peekMessages")]
     pub async fn peek_messages(
         &self,
         options: Option<QueueClientPeekMessagesOptions<'_>>,
@@ -403,7 +361,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.receiveMessages")]
+    #[tracing::function("Storage.Queues.QueueClient.receiveMessages")]
     pub async fn receive_messages(
         &self,
         options: Option<QueueClientReceiveMessagesOptions<'_>>,
@@ -420,7 +378,7 @@ impl QueueClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(visibility_timeout) = options.visibility_timeout {
-            query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
+            query_builder.set_pair("visibilitytimeout", visibility_timeout.to_string());
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
@@ -454,11 +412,11 @@ impl QueueClient {
     ///
     /// * `queue_message` - A Message object which can be stored in a Queue
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.sendMessage")]
-    pub async fn send_message(
+    #[tracing::function("Storage.Queues.QueueClient.sendMessage")]
+    pub async fn send_message_internal(
         &self,
         queue_message: RequestContent<QueueMessage, XmlFormat>,
-        options: Option<QueueClientSendMessageOptions<'_>>,
+        options: Option<QueueClientSendMessageInternalOptions<'_>>,
     ) -> Result<Response<ListOfSentMessage, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
@@ -466,13 +424,13 @@ impl QueueClient {
         url.append_path("/messages");
         let mut query_builder = url.query_builder();
         if let Some(message_time_to_live) = options.message_time_to_live {
-            query_builder.set_pair("messageTtl", message_time_to_live.to_string());
+            query_builder.set_pair("messagettl", message_time_to_live.to_string());
         }
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(visibility_timeout) = options.visibility_timeout {
-            query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
+            query_builder.set_pair("visibilitytimeout", visibility_timeout.to_string());
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Post);
@@ -502,7 +460,7 @@ impl QueueClient {
     ///
     /// * `queue_acl` - The access control list for the queue.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.setAccessPolicy")]
+    #[tracing::function("Storage.Queues.QueueClient.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
         queue_acl: RequestContent<ListOfSignedIdentifier, XmlFormat>,
@@ -543,7 +501,7 @@ impl QueueClient {
     ///
     /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.setMetadata")]
+    #[tracing::function("Storage.Queues.QueueClient.setMetadata")]
     pub async fn set_metadata(
         &self,
         metadata: &HashMap<String, String>,
@@ -595,7 +553,7 @@ impl QueueClient {
     ///   larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be
     ///   set to a value later than the expiry time.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.Queue.update")]
+    #[tracing::function("Storage.Queues.QueueClient.update")]
     pub async fn update(
         &self,
         message_id: &str,
@@ -616,11 +574,11 @@ impl QueueClient {
         path = path.replace("{messageId}", message_id);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
-        query_builder.set_pair("popReceipt", pop_receipt);
+        query_builder.set_pair("popreceipt", pop_receipt);
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
-        query_builder.set_pair("visibilityTimeout", visibility_timeout.to_string());
+        query_builder.set_pair("visibilitytimeout", visibility_timeout.to_string());
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");

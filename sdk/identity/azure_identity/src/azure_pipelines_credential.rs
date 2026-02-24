@@ -126,8 +126,7 @@ impl AzurePipelinesCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for AzurePipelinesCredential {
     async fn get_token(
         &self,
@@ -145,8 +144,7 @@ struct Client {
     system_access_token: Secret,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl ClientAssertion for Client {
     async fn secret(&self, options: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);

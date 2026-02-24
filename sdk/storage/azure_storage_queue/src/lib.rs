@@ -6,6 +6,8 @@
 #[allow(unused_imports)]
 mod generated;
 
+mod logging;
+
 /// Data models and types used by the Azure Storage Queue service.
 ///
 /// This module contains all the request and response models, enums, and other data types

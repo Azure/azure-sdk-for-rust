@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
-
 use azure_core::{
     http::{Method, StatusCode},
     Result,
