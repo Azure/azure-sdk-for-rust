@@ -32,7 +32,8 @@ use std::sync::{Arc, OnceLock};
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
 pub(crate) use tracked_transport::{
-    RequestAttemptTelemetryContext, RequestAttemptTelemetrySink, RequestSentExt, RequestSentStatus,
+    infer_request_sent_status, RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
+    RequestSentStatus,
 };
 
 /// Determines whether the dataplane pipeline should be used for a given operation.

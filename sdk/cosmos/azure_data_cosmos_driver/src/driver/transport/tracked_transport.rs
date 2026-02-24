@@ -26,34 +26,29 @@ impl RequestSentStatus {
     }
 }
 
-pub(crate) trait RequestSentExt {
-    fn request_sent_status(&self) -> RequestSentStatus;
-}
+/// Infers from the error whether the request was definitely sent, not sent, or unknown.
+pub(crate) fn infer_request_sent_status(error: &azure_core::Error) -> RequestSentStatus {
+    use azure_core::error::ErrorKind;
 
-impl RequestSentExt for azure_core::Error {
-    fn request_sent_status(&self) -> RequestSentStatus {
-        use azure_core::error::ErrorKind;
-
-        match self.kind() {
-            ErrorKind::Io => {
-                let msg = self.to_string().to_lowercase();
-                if msg.contains("dns")
-                    || msg.contains("resolve")
-                    || msg.contains("connection refused")
-                    || msg.contains("no route to host")
-                    || msg.contains("network unreachable")
-                    || msg.contains("connection reset")
-                        && (msg.contains("before") || msg.contains("establish"))
-                {
-                    return RequestSentStatus::NotSent;
-                }
-                RequestSentStatus::Unknown
+    match error.kind() {
+        ErrorKind::Io => {
+            let msg = error.to_string().to_lowercase();
+            if msg.contains("dns")
+                || msg.contains("resolve")
+                || msg.contains("connection refused")
+                || msg.contains("no route to host")
+                || msg.contains("network unreachable")
+                || msg.contains("connection reset")
+                    && (msg.contains("before") || msg.contains("establish"))
+            {
+                return RequestSentStatus::NotSent;
             }
-            ErrorKind::Credential => RequestSentStatus::NotSent,
-            ErrorKind::DataConversion => RequestSentStatus::NotSent,
-            ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
-            _ => RequestSentStatus::Unknown,
+            RequestSentStatus::Unknown
         }
+        ErrorKind::Credential => RequestSentStatus::NotSent,
+        ErrorKind::DataConversion => RequestSentStatus::NotSent,
+        ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
+        _ => RequestSentStatus::Unknown,
     }
 }
 
@@ -121,7 +116,7 @@ impl Policy for TrackedTransportPolicy {
                 Ok(response)
             }
             Err(error) => {
-                let sent_status = error.request_sent_status();
+                let sent_status = infer_request_sent_status(&error);
                 if let Some(telemetry) = ctx.value::<RequestAttemptTelemetryContext>() {
                     telemetry.sink().set_request_sent_status(sent_status);
                     telemetry.sink().record_event(
@@ -143,36 +138,36 @@ mod tests {
     #[test]
     fn dns_error_not_sent() {
         let err = azure_core::Error::new(ErrorKind::Io, "dns resolution failed");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]
     fn connection_refused_not_sent() {
         let err = azure_core::Error::new(ErrorKind::Io, "connection refused");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]
     fn timeout_is_unknown() {
         let err = azure_core::Error::new(ErrorKind::Io, "operation timed out");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 
     #[test]
     fn credential_error_not_sent() {
         let err = azure_core::Error::new(ErrorKind::Credential, "invalid token");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]
     fn data_conversion_error_not_sent() {
         let err = azure_core::Error::new(ErrorKind::DataConversion, "serialization failed");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]
     fn unknown_error_is_unknown() {
         let err = azure_core::Error::new(ErrorKind::Other, "something went wrong");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 }

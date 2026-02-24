@@ -25,8 +25,8 @@ use std::sync::{Arc, Mutex};
 use super::{
     cache::AccountRegion,
     transport::{
-        is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
-        RequestAttemptTelemetryContext, RequestAttemptTelemetrySink, RequestSentExt,
+        infer_request_sent_status, is_emulator_host, uses_dataplane_pipeline,
+        AuthorizationContext, RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
         RequestSentStatus as TransportRequestSentStatus,
     },
     CosmosDriverRuntime,
@@ -576,7 +576,8 @@ impl CosmosDriver {
                 }
                 Err(e) => {
                     let request_sent = if request_reached_transport {
-                        request_sent_from_transport.unwrap_or_else(|| e.request_sent_status())
+                        request_sent_from_transport
+                            .unwrap_or_else(|| infer_request_sent_status(&e))
                     } else {
                         TransportRequestSentStatus::NotSent
                     };
