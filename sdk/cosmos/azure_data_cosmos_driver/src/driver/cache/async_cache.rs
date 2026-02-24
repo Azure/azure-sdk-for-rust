@@ -55,7 +55,9 @@ where
             if let Some(lazy) = read_guard.get(&key) {
                 let lazy_clone = lazy.clone();
                 drop(read_guard); // Release read lock before awaiting
-                return lazy_clone.get().await;
+                // Use get_or_init rather than get() to avoid a panic if
+                // the entry was just inserted but not yet initialized.
+                return lazy_clone.get_or_init(factory).await;
             }
         }
 
@@ -557,5 +559,38 @@ mod tests {
 
         let value = cache.get(&"key".to_string()).await.unwrap();
         assert_eq!(*value, 3);
+    }
+
+    #[tokio::test]
+    async fn fast_path_does_not_panic_on_uninitialized_lazy() {
+        // Regression test: a concurrent reader could hit the fast path and find
+        // an AsyncLazy that was just inserted but not yet initialized.
+        // The fast path must not panic — it should wait or initialize.
+        let cache = Arc::new(AsyncCache::<String, String>::new());
+
+        let mut handles = vec![];
+        for i in 0..20 {
+            let cache_clone = cache.clone();
+            handles.push(tokio::spawn(async move {
+                cache_clone
+                    .get_or_insert_with("race_key".to_string(), || async move {
+                        // Simulate slow initialization
+                        sleep(Duration::from_millis(10)).await;
+                        format!("value-{}", i)
+                    })
+                    .await
+            }));
+        }
+
+        let mut results = Vec::new();
+        for handle in handles {
+            results.push(handle.await.unwrap());
+        }
+
+        // All tasks should get the same value (single-init semantics)
+        let first = &*results[0];
+        for result in &results {
+            assert_eq!(&**result, first);
+        }
     }
 }

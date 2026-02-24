@@ -6,6 +6,12 @@
 use async_lock::Mutex;
 use std::{future::Future, sync::Arc};
 
+#[cfg(test)]
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
+
 /// A lazily initialized value that is computed asynchronously.
 ///
 /// The first caller to request the value runs the initialization future.
@@ -59,16 +65,44 @@ impl<T> AsyncLazy<T> {
 
     /// Gets the value, waiting for initialization to complete.
     ///
-    /// # Panics
-    ///
-    /// Panics if called before initialization has started.
+    /// If the value is not yet initialized (another task is about to call
+    /// [`get_or_init`](Self::get_or_init)), this method yields and retries
+    /// until the value becomes available. It will not panic.
+    #[cfg(test)]
     pub(crate) async fn get(&self) -> Arc<T> {
-        self.value
-            .lock()
-            .await
-            .as_ref()
-            .expect("value should be initialized")
-            .clone()
+        loop {
+            {
+                let guard = self.value.lock().await;
+                if let Some(ref value) = *guard {
+                    return value.clone();
+                }
+            }
+            // Value not yet initialized — yield and retry so the initializing
+            // task can make progress and set the value.
+            YieldOnce(false).await;
+        }
+    }
+}
+
+/// Future that yields execution once to the async runtime, then completes.
+///
+/// This is runtime-agnostic: it returns [`Poll::Pending`] once (scheduling a
+/// wake-up via the waker) and [`Poll::Ready`] on the subsequent poll.
+#[cfg(test)]
+struct YieldOnce(bool);
+
+#[cfg(test)]
+impl Future for YieldOnce {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        if self.0 {
+            Poll::Ready(())
+        } else {
+            self.0 = true;
+            cx.waker().wake_by_ref();
+            Poll::Pending
+        }
     }
 }
 
@@ -180,5 +214,32 @@ mod tests {
         assert_eq!(*value, 42);
 
         handle.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn get_waits_when_called_before_init_starts() {
+        // Reproduces the race: get() is called before get_or_init() has even started.
+        // Previously this would panic; now get() should yield and wait.
+        let lazy = Arc::new(AsyncLazy::new());
+        let lazy_for_get = lazy.clone();
+        let lazy_for_init = lazy.clone();
+
+        // Spawn get() first — it should not panic
+        let get_handle = tokio::spawn(async move { lazy_for_get.get().await });
+
+        // Yield to let the get() task run and observe None
+        tokio::task::yield_now().await;
+
+        // Now start initialization
+        let init_handle = tokio::spawn(async move {
+            lazy_for_init
+                .get_or_init(|| async { 99 })
+                .await
+        });
+
+        let get_result = get_handle.await.unwrap();
+        let init_result = init_handle.await.unwrap();
+        assert_eq!(*get_result, 99);
+        assert_eq!(*init_result, 99);
     }
 }
