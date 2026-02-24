@@ -6,8 +6,8 @@ use std::os::raw::c_char;
 
 use azure_core::credentials::Secret;
 use azure_data_cosmos::{
-    clients::DatabaseClient, query::Query, ConnectionString, CosmosAccountReference, CosmosClient,
-    CosmosClientBuilder, QueryOptions,
+    clients::DatabaseClient, query::Query, ConnectionString, CosmosAccountEndpoint,
+    CosmosAccountReference, CosmosClient, CosmosClientBuilder, QueryOptions,
 };
 use futures::TryStreamExt;
 
@@ -39,17 +39,18 @@ pub extern "C" fn cosmos_client_create_with_key(
     out_client: *mut *mut CosmosClient,
 ) -> CosmosErrorCode {
     context!(ctx).run_sync_with_output(out_client, || {
-        let endpoint = parse_cstr(endpoint, error::messages::INVALID_ENDPOINT)?;
+        let endpoint: CosmosAccountEndpoint =
+            parse_cstr(endpoint, error::messages::INVALID_ENDPOINT)?.parse()?;
         let key = parse_cstr(key, error::messages::INVALID_KEY)?.to_string();
 
-        let account = CosmosAccountReference::with_master_key(endpoint, Secret::new(key))?;
+        let account = CosmosAccountReference::with_master_key(endpoint, Secret::new(key));
         let mut builder = CosmosClientBuilder::new();
 
         // Apply options from C options if provided
         if !options.is_null() {
             let c_options = unsafe { &*options };
             if c_options.allow_invalid_certificates() {
-                builder = builder.with_allow_invalid_certificates(true);
+                builder = builder.with_allow_emulator_invalid_certificates(true);
             }
         }
 
@@ -88,15 +89,15 @@ pub extern "C" fn cosmos_client_create_with_connection_string(
         )?;
 
         let conn: ConnectionString = connection_string_str.parse()?;
-        let account =
-            CosmosAccountReference::with_master_key(&conn.account_endpoint, conn.account_key)?;
+        let endpoint: CosmosAccountEndpoint = conn.account_endpoint.parse()?;
+        let account = CosmosAccountReference::with_master_key(endpoint, conn.account_key);
         let mut builder = CosmosClientBuilder::new();
 
         // Apply options from C options if provided
         if !options.is_null() {
             let c_options = unsafe { &*options };
             if c_options.allow_invalid_certificates() {
-                builder = builder.with_allow_invalid_certificates(true);
+                builder = builder.with_allow_emulator_invalid_certificates(true);
             }
         }
 
