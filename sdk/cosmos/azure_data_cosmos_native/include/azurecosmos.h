@@ -70,15 +70,15 @@ typedef struct cosmos_container_client cosmos_container_client;
  * Using Entra ID authentication:
  *
  * ```rust,no_run
- * use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
  * use std::sync::Arc;
  *
  * let credential: Arc<dyn azure_core::credentials::TokenCredential> =
  *     azure_identity::DeveloperToolsCredential::new(None).unwrap();
- * let account = CosmosAccountReference::with_credential(
- *     "https://myaccount.documents.azure.com/",
- *     credential,
- * ).unwrap();
+ * let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+ *     .parse()
+ *     .unwrap();
+ * let account = CosmosAccountReference::with_credential(endpoint, credential);
  * let client = CosmosClient::builder()
  *     .build(account)
  *     .unwrap();
@@ -87,13 +87,16 @@ typedef struct cosmos_container_client cosmos_container_client;
  * Using key authentication (requires `key_auth` feature):
  *
  * ```rust,no_run,ignore
- * use azure_data_cosmos::{CosmosClient, CosmosAccountReference};
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
  * use azure_core::credentials::Secret;
  *
+ * let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+ *     .parse()
+ *     .unwrap();
  * let account = CosmosAccountReference::with_master_key(
- *     "https://myaccount.documents.azure.com/",
+ *     endpoint,
  *     Secret::from("my_account_key"),
- * ).unwrap();
+ * );
  * let client = CosmosClient::builder()
  *     .build(account)
  *     .unwrap();
