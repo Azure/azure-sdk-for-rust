@@ -343,8 +343,6 @@ struct CpuMemoryMonitorInner {
     memory_buffer: RwLock<VecDeque<MemoryUsage>>,
     /// Number of active listeners (handles).
     listener_count: RwLock<usize>,
-    /// Weak reference to self for the background thread.
-    self_ref: RwLock<Option<Weak<CpuMemoryMonitorInner>>>,
     /// The refresh interval.
     refresh_interval: Duration,
 }
@@ -356,15 +354,11 @@ impl CpuMemoryMonitorInner {
             cpu_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
             memory_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
             listener_count: RwLock::new(0),
-            self_ref: RwLock::new(None),
             refresh_interval: DEFAULT_REFRESH_INTERVAL,
         }
     }
 
     fn start(self: &Arc<Self>) {
-        // Store weak reference for the background thread
-        *self.self_ref.write().unwrap() = Some(Arc::downgrade(self));
-
         let weak = Arc::downgrade(self);
         thread::Builder::new()
             .name("cosmos-cpu-monitor".into())
