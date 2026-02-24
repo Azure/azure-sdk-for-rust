@@ -8,6 +8,9 @@ use async_lock::RwLock;
 use std::{collections::HashMap, future::Future, hash::Hash, sync::Arc};
 
 /// A concurrent async cache with single-pending-I/O semantics per key.
+/// Not meant to be used ass a general purpose cache - but to cache
+/// certain metadata like Containers or account properties in combination
+/// with retry policies to reach eventual consistent state.
 ///
 /// When multiple callers request the same key simultaneously, only one
 /// initialization future runs. Other callers wait for and share that result.

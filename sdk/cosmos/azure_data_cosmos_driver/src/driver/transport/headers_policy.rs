@@ -14,14 +14,16 @@ use azure_core::http::{
 };
 use std::sync::Arc;
 
+/// Default Content-Type for Cosmos DB requests.
+const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
+
+/// x-ms-version header name.
+const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 /// Cosmos DB REST API version.
 ///
 /// This must match the version supported by the service. The value `2020-07-15`
 /// is the same as used by the Java SDK for compatibility.
 pub(crate) const COSMOS_API_VERSION: &str = "2020-07-15";
-
-/// x-ms-version header name.
-const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 
 /// x-ms-cosmos-sdk-supportedcapabilities header name.
 ///
@@ -39,9 +41,6 @@ const SUPPORTED_CAPABILITIES_VALUE: &str = "0";
 
 /// Cache-Control header name.
 const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
-
-/// Default Content-Type for Cosmos DB requests.
-const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
 
 /// Default Cache-Control value.
 const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
