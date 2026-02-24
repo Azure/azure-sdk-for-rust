@@ -2,9 +2,7 @@
 // Licensed under the MIT License.
 
 mod queue_client;
-pub use queue_client::QueueClient;
+pub use queue_client::{QueueClient, QueueClientOptions};
 
 mod queue_service_client;
-pub use queue_service_client::QueueServiceClient;
-
-pub use crate::generated::clients::{QueueClientOptions, QueueServiceClientOptions};
+pub use queue_service_client::{QueueServiceClient, QueueServiceClientOptions};

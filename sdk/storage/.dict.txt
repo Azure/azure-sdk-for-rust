@@ -41,3 +41,6 @@ uncommittedblobs
 Undeletes
 westus
 yourtagname
+messagettl
+popreceipt
+visibilitytimeout

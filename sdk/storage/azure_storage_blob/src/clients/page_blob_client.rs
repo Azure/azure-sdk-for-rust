@@ -68,7 +68,7 @@ impl PageBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let per_retry_policies = if let Some(token_credential) = credential {
+        if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -79,17 +79,15 @@ impl PageBlobClient {
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            vec![auth_policy]
-        } else {
-            Vec::default()
-        };
+            options.client_options.per_try_policies.push(auth_policy);
+        }
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            per_retry_policies,
+            Vec::default(),
             None,
         );
 
