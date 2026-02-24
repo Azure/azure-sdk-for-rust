@@ -1,37 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::AppendBlobClient;
+pub use crate::generated::clients::{AppendBlobClient, AppendBlobClientOptions};
 
 use crate::{logging::apply_storage_logging_defaults, pipeline::StorageHeadersPolicy};
 use azure_core::{
     credentials::TokenCredential,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Pipeline, Url,
+        Pipeline, Url,
     },
     tracing, Result,
 };
 use std::sync::Arc;
-
-/// Options used when creating an [`AppendBlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct AppendBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for AppendBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl AppendBlobClient {
     /// Creates a new AppendBlobClient, using Entra ID authentication.
@@ -87,7 +68,7 @@ impl AppendBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let per_retry_policies = if let Some(token_credential) = credential {
+        if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -98,17 +79,15 @@ impl AppendBlobClient {
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            vec![auth_policy]
-        } else {
-            Vec::default()
-        };
+            options.client_options.per_try_policies.push(auth_policy);
+        }
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            per_retry_policies,
+            Vec::default(),
             None,
         );
 

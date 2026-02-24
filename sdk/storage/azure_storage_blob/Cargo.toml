@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_blob"
-keywords = ["sdk", "azure", "storage", "blob", "blobs"]
+keywords = ["sdk", "cloud", "blobs"]
 categories = ["api-bindings"]
 
 [features]
@@ -21,12 +21,11 @@ async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 bytes.workspace = true
 futures.workspace = true
+percent-encoding.workspace = true
 pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
-url.workspace = true
-uuid.workspace = true
 
 [lints]
 workspace = true
@@ -39,6 +38,7 @@ azure_core_test = { workspace = true, features = [
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
 futures.workspace = true
+opentelemetry.workspace = true
 opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true
 rand.workspace = true

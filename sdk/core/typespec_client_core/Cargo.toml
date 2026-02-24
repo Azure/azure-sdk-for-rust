@@ -1,6 +1,6 @@
 [package]
 name = "typespec_client_core"
-version = "0.11.0"
+version = "0.12.0"
 authors.workspace = true
 edition.workspace = true
 description = "Client runtime for TypeSpec-generated libraries."
@@ -8,7 +8,7 @@ homepage = "https://typespec.io"
 repository.workspace = true
 license.workspace = true
 categories = ["compilers", "development-tools"]
-keywords = ["typespec"]
+keywords = []
 
 [dependencies]
 async-trait.workspace = true
@@ -23,34 +23,22 @@ rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
 serde_json = { workspace = true, optional = true }
 time.workspace = true
-tokio = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true, features = [
+  "macros",
+  "rt-multi-thread",
+  "time",
+] }
 tracing.workspace = true
 typespec = { workspace = true, default-features = false }
 typespec_macros = { workspace = true, optional = true }
 url.workspace = true
 uuid.workspace = true
-wasm-bindgen-futures = { workspace = true, optional = true }
-
-[target.'cfg(not(target_family = "wasm"))'.dependencies]
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
-
-[target.'cfg(target_family = "wasm")'.dependencies]
-getrandom.workspace = true
-tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["fs"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 typespec_macros.path = "../typespec_macros"
-
-[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
-tokio = { workspace = true, features = ["fs"] }
-
-[target.'cfg(target_family = "wasm")'.dev-dependencies]
-tokio.workspace = true
-getrandom = { workspace = true, features = ["wasm_js"] }
-uuid = { workspace = true, features = ["v4", "js"] }
-wasm-bindgen-test.workspace = true
 
 [features]
 default = [
@@ -72,7 +60,6 @@ reqwest_gzip = ["reqwest", "reqwest/gzip"]
 reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
-wasm_bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
 xml = [
   "dep:serde_json",
   "typespec/xml",
@@ -98,7 +85,6 @@ features = [
   "reqwest_gzip",
   "reqwest_native_tls",
   "tokio",
-  "wasm_bindgen",
   "xml",
 ]
 

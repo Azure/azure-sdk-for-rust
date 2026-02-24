@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::BlobContainerClient;
+pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
 use crate::{
     logging::apply_storage_logging_defaults, models::StorageErrorCode,
@@ -10,32 +10,13 @@ use crate::{
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Pipeline, StatusCode, Url,
+        Pipeline, StatusCode, Url,
     },
     tracing, Result,
 };
 use std::sync::Arc;
-
-/// Options used when creating a [`BlobContainerClient`].
-#[derive(Clone, SafeDebug)]
-pub struct BlobContainerClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for BlobContainerClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl BlobContainerClient {
     /// Creates a new BlobContainerClient, using Entra ID authentication.
@@ -89,7 +70,7 @@ impl BlobContainerClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let per_retry_policies = if let Some(token_credential) = credential {
+        if let Some(token_credential) = credential {
             if !container_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -100,17 +81,15 @@ impl BlobContainerClient {
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            vec![auth_policy]
-        } else {
-            Vec::default()
-        };
+            options.client_options.per_try_policies.push(auth_policy);
+        }
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            per_retry_policies,
+            Vec::default(),
             None,
         );
 

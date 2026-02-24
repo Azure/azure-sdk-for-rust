@@ -77,10 +77,8 @@ impl ReplaceCommand {
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let options = ItemOptions {
-                    enable_content_response_on_write: show_updated,
-                    ..Default::default()
-                };
+                let options =
+                    ItemOptions::default().with_content_response_on_write_enabled(show_updated);
 
                 let response = container_client
                     .replace_item(pk, &item_id, item, Some(options))

@@ -26,7 +26,7 @@ pub enum AuthorizationTokenType {
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PartitionKeyRangeIdentity {
+pub(crate) struct PartitionKeyRangeIdentity {
     pub collection_rid: String,
     pub partition_key_range_id: String,
 }
@@ -37,15 +37,13 @@ pub struct PartitionKeyRangeIdentity {
 /// It collects operation intent (create/read/query/etc.), resource routing
 /// information, partition key, optional item-level options and flags that
 /// influence retry or gateway behaviors.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
-pub struct CosmosRequest {
+pub(crate) struct CosmosRequest {
     pub operation_type: OperationType,
     pub resource_type: ResourceType,
     pub resource_link: ResourceLink,
     pub resource_id: Option<String>,
-    pub database_name: Option<String>,
-    pub collection_name: Option<String>,
     pub document_name: Option<String>,
     pub partition_key: Option<PartitionKey>,
     pub is_feed: bool,
@@ -72,8 +70,6 @@ impl CosmosRequest {
             resource_type,
             resource_link,
             resource_id: None,
-            database_name: None,
-            collection_name: None,
             document_name: None,
             partition_key: Some(PartitionKey::EMPTY),
             is_feed: false,
@@ -105,16 +101,9 @@ impl CosmosRequest {
         self.operation_type.is_read_only()
     }
 
-    pub fn client_headers<T: AsHeaders>(&mut self, headers: &T) {
-        // Collect all headers exposed by the `AsHeaders` implementation for client options
-        // always prioritize existing headers in the request over client-level headers.
-        if let Ok(iter) = headers.as_headers() {
-            for (name, value) in iter {
-                if self.headers.get_optional_str(&name).is_none() {
-                    self.headers.insert(name, value);
-                }
-            }
-        }
+    /// Returns the container ID extracted from the request's resource link, if present.
+    pub fn container_id(&self) -> Option<String> {
+        self.resource_link.container_id()
     }
 
     /// Gets the corresponding http method for the given `OperationType`.
@@ -187,7 +176,7 @@ impl CosmosRequest {
 /// the original `new` constructor for backward compatibility.
 #[derive(Clone)]
 #[allow(dead_code)]
-pub struct CosmosRequestBuilder {
+pub(crate) struct CosmosRequestBuilder {
     operation_type: OperationType,
     resource_link: ResourceLink,
     partition_key: PartitionKey,
@@ -308,9 +297,7 @@ mod tests {
     use super::*;
     use crate::operation_context::OperationType;
     use crate::resource_context::ResourceType;
-    use crate::{
-        constants, ConsistencyLevel, CosmosClientOptions, ItemOptions, PartitionKey, PriorityLevel,
-    };
+    use crate::{constants, CosmosClientOptions, ItemOptions, PartitionKey};
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
         let req = CosmosRequest::builder(op, ResourceLink::root(ResourceType::Documents))
@@ -425,25 +412,19 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let item_options = ItemOptions {
-            consistency_level: Some(ConsistencyLevel::Session),
-            throughput_bucket: Some(1),
-            priority: Some(PriorityLevel::Low),
-            custom_headers: request_custom_headers,
-            ..Default::default()
-        };
-        let req = CosmosRequest::builder(
+        let item_options = ItemOptions::default()
+            .with_session_token("RequestSession".to_string().into())
+            .with_custom_headers(request_custom_headers);
+        let mut req = CosmosRequest::builder(
             OperationType::Create,
             ResourceLink::root(ResourceType::Documents),
         )
-        .request_headers(&item_options)
         .build()
         .unwrap();
+        item_options.apply_headers(&mut req.headers);
 
-        let mut req_with_client_headers = req.clone();
-        req_with_client_headers
-            .request_context
-            .location_endpoint_to_route = Some("https://example.com/".parse().unwrap());
+        req.request_context.location_endpoint_to_route =
+            Some("https://example.com/".parse().unwrap());
 
         let mut client_custom_headers = std::collections::HashMap::new();
         client_custom_headers.insert(
@@ -451,16 +432,11 @@ mod tests {
             HeaderValue::from_static("custom_value-2"),
         );
 
-        let client_options = CosmosClientOptions {
-            consistency_level: Some(ConsistencyLevel::Strong),
-            throughput_bucket: Some(5),
-            priority: Some(PriorityLevel::High),
-            custom_headers: client_custom_headers,
-            ..Default::default()
-        };
-        req_with_client_headers.client_headers(&client_options);
+        let client_options =
+            CosmosClientOptions::default().with_custom_headers(client_custom_headers);
+        client_options.apply_headers(&mut req.headers);
 
-        let raw = req_with_client_headers.into_raw_request();
+        let raw = req.into_raw_request();
         let get_header = |name: &HeaderName| {
             raw.headers()
                 .iter()
@@ -469,9 +445,7 @@ mod tests {
                 .unwrap()
         };
 
-        assert_eq!(get_header(&constants::THROUGHPUT_BUCKET), "1");
-        assert_eq!(get_header(&constants::PRIORITY_LEVEL), "Low");
-        assert_eq!(get_header(&constants::CONSISTENCY_LEVEL), "Session");
+        assert_eq!(get_header(&constants::SESSION_TOKEN), "RequestSession");
         assert_eq!(
             get_header(&HeaderName::from_static("x-custom-header")),
             "custom_value"

@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_security_keyvault_keys"
-keywords = ["sdk", "azure", "keyvault", "security", "keys"]
+keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
 
 [features]
@@ -34,7 +34,6 @@ criterion.workspace = true
 include-file.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
-reqwest.workspace = true
 sha2.workspace = true
 tokio.workspace = true
 tracing.workspace = true

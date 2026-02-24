@@ -73,7 +73,7 @@ impl PerfTest for ListBlobTest {
 
         let recording = context.recording();
         let credential = recording.credential();
-        let container_name = format!("perf-container-{}", uuid::Uuid::new_v4());
+        let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
         let endpoint = match &self.endpoint {
             Some(e) => e.clone(),
             None => format!(

@@ -10,6 +10,7 @@ use crate::{
     models::ContainerProperties, resource_context::ResourceLink, CosmosResponse,
     ReadContainerOptions,
 };
+use azure_core::http::Context;
 use azure_core::Error;
 use std::sync::Arc;
 
@@ -21,7 +22,7 @@ use std::sync::Arc;
 /// to balance freshness with performance. Integrates with retry handler for resilient metadata fetching
 /// across regional endpoints.
 #[derive(Clone, Debug)]
-pub struct ContainerCache {
+pub(crate) struct ContainerCache {
     pipeline: Arc<GatewayPipeline>,
     container_link: ResourceLink,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
@@ -76,7 +77,7 @@ impl ContainerCache {
     pub async fn resolve_by_id(
         &self,
         container_id: String,
-        options: Option<ReadContainerOptions<'_>>,
+        options: Option<ReadContainerOptions>,
         force_refresh: bool,
     ) -> Result<ContainerProperties, Error> {
         self.container_properties_cache
@@ -109,6 +110,16 @@ impl ContainerCache {
             .await;
     }
 
+    /// Inserts container properties directly into the cache.
+    ///
+    /// Used to populate the cache from a container read response without
+    /// requiring a separate metadata fetch.
+    pub async fn populate(&self, container_id: String, properties: ContainerProperties) {
+        self.container_properties_cache
+            .insert(container_id, properties)
+            .await;
+    }
+
     /// Fetches container properties directly from the Cosmos DB service.
     ///
     /// # Summary
@@ -126,9 +137,8 @@ impl ContainerCache {
     async fn read_container_properties_by_id(
         &self,
         container_link: ResourceLink,
-        options: Option<ReadContainerOptions<'_>>,
+        _options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
-        let options = options.unwrap_or_default();
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
 
@@ -139,11 +149,7 @@ impl ContainerCache {
             .request_context
             .route_to_location_endpoint(cosmos_request.resource_link.url(&location_endpoint));
 
-        let ctx_owned = options
-            .method_options
-            .context
-            .with_value(container_link)
-            .into_owned();
+        let ctx_owned = Context::default().with_value(container_link);
 
         self.pipeline.send(cosmos_request, ctx_owned).await
     }
@@ -154,6 +160,7 @@ mod tests {
     use super::*;
     use crate::regions::RegionName;
     use crate::resource_context::ResourceType;
+    use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
     use url::Url;
@@ -171,10 +178,13 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
+        let partition_manager =
+            GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
         Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
             endpoint_manager,
+            partition_manager,
             CosmosClientOptions::default(),
             false,
         ))

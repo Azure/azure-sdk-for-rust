@@ -5,16 +5,18 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
-use azure_core::http::{Etag, StatusCode};
+use azure_core::{
+    http::{Etag, StatusCode},
+    Uuid,
+};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
-use azure_data_cosmos::{models::PatchDocument, ItemOptions, PartitionKey};
+use azure_data_cosmos::{ItemOptions, PartitionKey};
 use framework::get_effective_hub_endpoint;
 use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {
@@ -57,13 +59,7 @@ fn assert_response<T>(
     }
 
     assert_eq!(
-        response
-            .request()
-            .clone()
-            .into_raw_request()
-            .url()
-            .host_str()
-            .unwrap(),
+        response.request_url().host_str().unwrap(),
         expected_endpoint,
         "unexpected endpoint"
     );
@@ -79,11 +75,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     run_context
         .create_container(
             &db_client,
-            ContainerProperties {
-                id: container_id.clone().into(),
-                partition_key: "/partition_key".into(),
-                ..Default::default()
-            },
+            ContainerProperties::new(container_id.clone(), "/partition_key".into()),
             None,
         )
         .await?;
@@ -160,10 +152,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions {
-                        enable_content_response_on_write: true,
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
                 )
                 .await?;
             assert_response(
@@ -351,10 +340,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions {
-                        enable_content_response_on_write: true,
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
                 )
                 .await?;
             assert_response(
@@ -365,88 +351,6 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
             );
             let updated_item: TestItem = upsert_response.into_body().json()?;
             assert_eq!(item, updated_item);
-
-            Ok(())
-        },
-        None,
-    )
-    .await
-}
-
-#[tokio::test]
-pub async fn item_patch() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_shared_db(
-        async |run_context, _db_client| {
-            let container_client = create_container(run_context).await?;
-            let unique_id = Uuid::new_v4().to_string();
-
-            let item = TestItem {
-                id: format!("Item3-{}", unique_id).into(),
-                partition_key: Some(format!("Partition1-{}", unique_id).into()),
-                value: 42,
-                nested: NestedItem {
-                    nested_value: "Nested".into(),
-                },
-                bool_value: true,
-            };
-
-            let pk = format!("Partition1-{}", unique_id);
-            let item_id = format!("Item3-{}", unique_id);
-
-            let create_response = container_client.create_item(&pk, &item, None).await?;
-            assert_response(
-                &create_response,
-                StatusCode::Created,
-                &get_effective_hub_endpoint(),
-                false,
-            );
-
-            let patch = PatchDocument::default()
-                .with_replace("/nested/nested_value", "Patched")?
-                .with_increment("/value", 10)?;
-            let patch_response = container_client
-                .patch_item(&pk, &item_id, patch, None)
-                .await?;
-            assert_response(
-                &patch_response,
-                StatusCode::Ok,
-                &get_effective_hub_endpoint(),
-                false,
-            );
-
-            let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
-                .await?;
-            assert_response(
-                &read_response,
-                StatusCode::Ok,
-                &get_effective_hub_endpoint(),
-                true,
-            );
-            let patched_item: TestItem = read_response.into_model()?;
-            assert_eq!("Patched", patched_item.nested.nested_value);
-            assert_eq!(52, patched_item.value);
-
-            let patch = PatchDocument::default().with_replace("/bool_value", false)?;
-            let patch_response = container_client
-                .patch_item(
-                    &pk,
-                    &item_id,
-                    patch,
-                    Some(ItemOptions {
-                        enable_content_response_on_write: true,
-                        ..Default::default()
-                    }),
-                )
-                .await?;
-            assert_response(
-                &patch_response,
-                StatusCode::Ok,
-                &get_effective_hub_endpoint(),
-                false,
-            );
-            let response_item: TestItem = patch_response.into_body().json()?;
-            assert!(!response_item.bool_value);
 
             Ok(())
         },
@@ -508,33 +412,6 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             );
             let read_item: TestItem = read_response.into_model()?;
             assert_eq!(item, read_item);
-
-            let patch_response = container_client
-                .patch_item(
-                    PartitionKey::NULL,
-                    &item_id,
-                    PatchDocument::default().with_set("/value", 10)?,
-                    None,
-                )
-                .await?;
-            assert_response(
-                &patch_response,
-                StatusCode::Ok,
-                &get_effective_hub_endpoint(),
-                false,
-            );
-
-            let read_response = run_context
-                .read_item::<TestItem>(&container_client, PartitionKey::NULL, &item_id, None)
-                .await?;
-            assert_response(
-                &read_response,
-                StatusCode::Ok,
-                &get_effective_hub_endpoint(),
-                true,
-            );
-            let read_item: TestItem = read_response.into_model()?;
-            assert_eq!(10, read_item.value);
 
             let delete_response = container_client
                 .delete_item(PartitionKey::NULL, &item_id, None)
@@ -618,10 +495,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag(etag)),
                 )
                 .await?;
             assert_response(
@@ -640,10 +514,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
                 )
                 .await;
 
@@ -704,10 +575,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag(etag)),
                 )
                 .await?;
             assert_response(
@@ -725,10 +593,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
                 )
                 .await;
 
@@ -787,10 +652,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag(etag)),
                 )
                 .await?;
             assert_response(
@@ -814,10 +676,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
+                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
                 )
                 .await;
 
@@ -835,28 +694,38 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     .await
 }
 
+/// An item type without a partition key property, for testing undefined partition keys.
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct UndefinedPkItem {
+    id: Cow<'static, str>,
+    value: usize,
+}
+
+/// An item type with an explicit partition key property.
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct ExplicitPkItem {
+    id: Cow<'static, str>,
+    partition_key: Cow<'static, str>,
+    value: usize,
+}
+
 #[tokio::test]
-pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
+pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
             let container_client = create_container(run_context).await?;
             let unique_id = Uuid::new_v4().to_string();
 
-            //Create an item
-            let item = TestItem {
-                id: format!("Item1-{}", unique_id).into(),
-                partition_key: Some(format!("Partition1-{}", unique_id).into()),
-                value: 42,
-                nested: NestedItem {
-                    nested_value: "Nested".into(),
-                },
-                bool_value: true,
+            // Create an item WITHOUT the partition_key property (undefined PK).
+            let item_no_pk = UndefinedPkItem {
+                id: format!("Item-NoPK-{}", unique_id).into(),
+                value: 100,
             };
+            let item_no_pk_id = format!("Item-NoPK-{}", unique_id);
 
-            let pk = format!("Partition1-{}", unique_id);
-            let item_id = format!("Item1-{}", unique_id);
-
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(PartitionKey::UNDEFINED, &item_no_pk, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -864,38 +733,55 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            //Store Etag from response
-            let etag: Etag = response
-                .headers()
-                .get_str(&azure_core::http::headers::ETAG)
-                .expect("expected the etag to be returned")
-                .into();
+            // Create an item WITH a null partition_key property.
+            let item_null_pk = TestItem {
+                id: format!("Item-NullPK-{}", unique_id).into(),
+                partition_key: None,
+                value: 200,
+                nested: NestedItem {
+                    nested_value: "NullPK".into(),
+                },
+                bool_value: false,
+            };
+            let item_null_pk_id = format!("Item-NullPK-{}", unique_id);
 
-            //Patch item with correct Etag
-            let patch = PatchDocument::default()
-                .with_replace("/nested/nested_value", "Patched")?
-                .with_increment("/value", 10)?;
-
-            let patch_response = container_client
-                .patch_item(
-                    &pk,
-                    &item_id,
-                    patch,
-                    Some(ItemOptions {
-                        if_match_etag: Some(etag),
-                        ..Default::default()
-                    }),
-                )
+            let response = container_client
+                .create_item(PartitionKey::NULL, &item_null_pk, None)
                 .await?;
             assert_response(
-                &patch_response,
-                StatusCode::Ok,
+                &response,
+                StatusCode::Created,
                 &get_effective_hub_endpoint(),
                 false,
             );
 
+            // Create an item WITH an explicit partition_key value.
+            let pk_value = format!("PK-{}", unique_id);
+            let item_with_pk = ExplicitPkItem {
+                id: format!("Item-WithPK-{}", unique_id).into(),
+                partition_key: pk_value.clone().into(),
+                value: 300,
+            };
+            let item_with_pk_id = format!("Item-WithPK-{}", unique_id);
+
+            let response = container_client
+                .create_item(&pk_value, &item_with_pk, None)
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Read the undefined-PK item using UNDEFINED - should succeed.
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item::<UndefinedPkItem>(
+                    &container_client,
+                    PartitionKey::UNDEFINED,
+                    &item_no_pk_id,
+                    None,
+                )
                 .await?;
             assert_response(
                 &read_response,
@@ -903,34 +789,62 @@ pub async fn item_patch_if_match_etag() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 true,
             );
-            let patched_item: TestItem = read_response.into_model()?;
+            let read_item: UndefinedPkItem = read_response.into_model()?;
+            assert_eq!(item_no_pk, read_item);
 
-            assert_eq!("Patched", patched_item.nested.nested_value);
-            assert_eq!(52, patched_item.value);
-
-            //Patch item with incorrect Etag
-            let patch = PatchDocument::default()
-                .with_replace("/nested/nested_value", "PatchedIncorrect")?
-                .with_increment("/value", 15)?;
-
-            let response = container_client
-                .patch_item(
-                    &pk,
-                    &item_id,
-                    patch,
-                    Some(ItemOptions {
-                        if_match_etag: Some("incorrectEtag".into()),
-                        ..Default::default()
-                    }),
-                )
+            // Reading the undefined-PK item with NULL should fail (wrong partition).
+            let result = container_client
+                .read_item::<serde_json::Value>(PartitionKey::NULL, &item_no_pk_id, None)
                 .await;
-
             assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
-                response
-                    .expect_err("expected the server to return an error")
+                Some(azure_core::http::StatusCode::NotFound),
+                result
+                    .expect_err("expected a 404 for undefined-PK item read with NULL")
                     .http_status()
             );
+
+            // Read the null-PK item using NULL - should succeed.
+            let read_response = run_context
+                .read_item::<TestItem>(
+                    &container_client,
+                    PartitionKey::NULL,
+                    &item_null_pk_id,
+                    None,
+                )
+                .await?;
+            assert_response(
+                &read_response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: TestItem = read_response.into_model()?;
+            assert_eq!(item_null_pk, read_item);
+
+            // Reading the null-PK item with UNDEFINED should fail (wrong partition).
+            let result = container_client
+                .read_item::<serde_json::Value>(PartitionKey::UNDEFINED, &item_null_pk_id, None)
+                .await;
+            assert_eq!(
+                Some(azure_core::http::StatusCode::NotFound),
+                result
+                    .expect_err("expected a 404 for null-PK item read with UNDEFINED")
+                    .http_status()
+            );
+
+            // Delete the undefined-PK item using UNDEFINED.
+            let response = container_client
+                .delete_item(PartitionKey::UNDEFINED, &item_no_pk_id, None)
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::NoContent,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Suppress unused variable warning
+            let _ = item_with_pk_id;
 
             Ok(())
         },

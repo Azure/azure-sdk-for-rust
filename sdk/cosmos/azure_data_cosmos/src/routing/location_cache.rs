@@ -56,7 +56,7 @@ impl RequestOperation {
 
 /// Contains location and endpoint information for a Cosmos DB account.
 #[derive(Clone, Default, Debug)]
-pub struct DatabaseAccountLocationsInfo {
+pub(crate) struct DatabaseAccountLocationsInfo {
     /// User-specified preferred Azure regions for request routing
     pub preferred_locations: Vec<RegionName>,
     /// List of regions where write operations are supported
@@ -75,7 +75,7 @@ pub struct DatabaseAccountLocationsInfo {
 
 /// Tracks when an endpoint was marked unavailable and for which operations.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct LocationUnavailabilityInfo {
+pub(crate) struct LocationUnavailabilityInfo {
     /// Timestamp when the endpoint was last marked unavailable
     pub last_check_time: SystemTime,
     /// Type of operation(s) for which the endpoint is unavailable
@@ -88,7 +88,7 @@ pub struct LocationUnavailabilityInfo {
 /// handles preferred location ordering, and resolves service endpoints based on request
 /// characteristics and regional preferences.
 #[derive(Debug)]
-pub struct LocationCache {
+pub(crate) struct LocationCache {
     /// The primary default endpoint URL for the Cosmos DB account
     pub default_endpoint: Url,
     /// Location and endpoint information including preferred regions and available endpoints
@@ -324,7 +324,7 @@ impl LocationCache {
     /// The resolved endpoint URL as a String
     pub fn resolve_service_endpoint(&self, request: &CosmosRequest) -> Url {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
-        let location_index = request.request_context.location_index_to_route.unwrap_or(0) as usize;
+        let location_index = request.request_context.location_index_to_route.unwrap_or(0);
         let mut location_endpoint_to_route = None;
         if !request
             .request_context

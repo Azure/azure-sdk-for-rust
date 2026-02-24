@@ -1,38 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Re-export the generated PageBlobClient as the public type.
-pub use crate::generated::clients::PageBlobClient;
+pub use crate::generated::clients::{PageBlobClient, PageBlobClientOptions};
 
 use crate::{logging::apply_storage_logging_defaults, pipeline::StorageHeadersPolicy};
 use azure_core::{
     credentials::TokenCredential,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientOptions, Pipeline, Url,
+        Pipeline, Url,
     },
     tracing, Result,
 };
 use std::sync::Arc;
-
-/// Options used when creating a [`PageBlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct PageBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
-
-impl Default for PageBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
-        }
-    }
-}
 
 impl PageBlobClient {
     /// Creates a new PageBlobClient, using Entra ID authentication.
@@ -88,7 +68,7 @@ impl PageBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let per_retry_policies = if let Some(token_credential) = credential {
+        if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -99,17 +79,15 @@ impl PageBlobClient {
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            vec![auth_policy]
-        } else {
-            Vec::default()
-        };
+            options.client_options.per_try_policies.push(auth_policy);
+        }
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            per_retry_policies,
+            Vec::default(),
             None,
         );
 

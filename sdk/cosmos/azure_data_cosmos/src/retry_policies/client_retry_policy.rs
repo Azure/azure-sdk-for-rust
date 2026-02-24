@@ -2,33 +2,38 @@
 // Licensed under the MIT License.
 
 use super::{
-    get_substatus_code_from_error, get_substatus_code_from_response,
-    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryResult,
+    get_substatus_code_from_error, get_substatus_code_from_response, is_non_retryable_status_code,
+    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RequestSentExt, RequestSentStatus,
+    RetryResult,
 };
 use crate::constants::{self, SubStatusCode};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::regions::RegionName;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
+use azure_core::error::ErrorKind;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::sync::Arc;
+use tracing::error;
 use url::Url;
 
 /// An integer indicating the default retry intervals between two retry attempts.
 const RETRY_INTERVAL_MS: i64 = 1000;
 
 /// An integer indicating the maximum retry count on endpoint failures.
-const MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE: i32 = 120;
+const MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE: usize = 120;
 
-/// An integer indicating the maximum retry count on service available errors.
-const MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE: i32 = 1;
+/// An integer indicating the maximum retry count on connection failures before marking
+/// the endpoint unavailable.
+const MAX_RETRY_COUNT_ON_CONNECTION_FAILURE: usize = 3;
 
 /// Context information for routing retry attempts to specific endpoints.
 #[derive(Clone, Debug)]
 struct RetryContext {
     /// Index of the location to route the retry request to
-    retry_location_index: i32,
+    retry_location_index: usize,
 
     /// Whether to retry on preferred locations only (true) or all available locations (false)
     retry_request_on_preferred_locations: bool,
@@ -39,24 +44,34 @@ struct RetryContext {
 
 /// Retry policy for handling data plane request failures.
 #[derive(Debug)]
-pub struct ClientRetryPolicy {
+pub(crate) struct ClientRetryPolicy {
     /// Manages multi-region endpoint routing and failover logic
     global_endpoint_manager: Arc<GlobalEndpointManager>,
+
+    /// An instance of GlobalPartitionEndpointManager that manages partition key range to endpoint mapping
+    partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
 
     /// Whether automatic endpoint discovery is enabled for failover scenarios
     enable_endpoint_discovery: bool,
 
     /// Counter tracking the number of endpoint failover retry attempts
-    failover_retry_count: i32,
+    failover_retry_count: usize,
 
     /// Counter tracking the number of session token unavailability retry attempts
-    session_token_retry_count: i32,
+    session_token_retry_count: usize,
 
     /// Counter tracking the number of service unavailable (503) retry attempts
-    service_unavailable_retry_count: i32,
+    service_unavailable_retry_count: usize,
+
+    /// Counter tracking the number of consecutive connection failure retry attempts
+    /// on the current endpoint before marking it unavailable.
+    connection_retry_count: usize,
 
     /// Whether the current request is a read operation (true) or write operation (false)
     operation_type: Option<OperationType>,
+
+    /// The Cosmos request being processed by the retry policy.
+    request: Option<CosmosRequest>,
 
     /// Whether the account supports writing to multiple locations simultaneously
     can_use_multiple_write_locations: bool,
@@ -91,21 +106,33 @@ impl ClientRetryPolicy {
     /// A new `ClientRetryPolicy` instance configured with default retry limits and throttling behavior
     pub fn new(
         global_endpoint_manager: Arc<GlobalEndpointManager>,
+        partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
         excluded_regions: Option<Vec<RegionName>>,
     ) -> Self {
         Self {
             global_endpoint_manager,
+            partition_key_range_location_cache,
             enable_endpoint_discovery: true,
             failover_retry_count: 0,
             session_token_retry_count: 0,
             service_unavailable_retry_count: 0,
+            connection_retry_count: 0,
             operation_type: None,
+            request: None,
             can_use_multiple_write_locations: false,
             location_endpoint: None,
             retry_context: None,
             excluded_regions,
             throttling_retry: ResourceThrottleRetryPolicy::new(5, 200, 10),
         }
+    }
+
+    /// Returns whether the current operation is read-only.
+    ///
+    /// Defaults to `true` if the operation type has not been set, which is the
+    /// conservative choice: reads are always safe to retry.
+    fn is_read_only(&self) -> bool {
+        self.operation_type.is_none_or(|op| op.is_read_only())
     }
 
     /// Prepares a request before it is sent, configuring routing and endpoint selection.
@@ -179,6 +206,17 @@ impl ClientRetryPolicy {
                 .request_context
                 .route_to_location_endpoint(endpoint.clone());
         }
+
+        if self
+            .partition_key_range_location_cache
+            .partition_level_failover_enabled()
+            && request.resource_type.is_partitioned()
+        {
+            self.partition_key_range_location_cache
+                .try_add_partition_level_location_override(request);
+        }
+
+        self.request = Some(request.clone());
     }
 
     /// Determines whether a Data Plane request should be retried based on the response or error
@@ -235,10 +273,11 @@ impl ClientRetryPolicy {
         }
 
         if self.can_use_multiple_write_locations {
-            let endpoints = self
-                .global_endpoint_manager
-                .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
-            if self.session_token_retry_count > endpoints.len() as i32 {
+            let endpoints = self.global_endpoint_manager.applicable_endpoints(
+                self.operation_type.unwrap_or(OperationType::Read),
+                self.excluded_regions.as_ref(),
+            );
+            if self.session_token_retry_count > endpoints.len() {
                 // When use multiple write locations is true and the request has been tried on all locations, then don't retry the request.
                 RetryResult::DoNotRetry
             } else {
@@ -266,6 +305,57 @@ impl ClientRetryPolicy {
             RetryResult::Retry {
                 after: Duration::ZERO,
             }
+        }
+    }
+
+    /// Determines if a request should be retried after a connection failure.
+    ///
+    /// Connection failures mean the request was never sent to the server, so both
+    /// reads and writes are safe to retry. The strategy is:
+    ///
+    /// 1. Retry up to [`MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`] times on the same
+    ///    endpoint with a delay — the failure may be transient.
+    /// 2. After exhausting local retries, mark the endpoint unavailable for both
+    ///    reads and writes, refresh the location cache, and fail over to the next
+    ///    available endpoint.
+    async fn should_retry_on_connection_failure(&mut self) -> RetryResult {
+        self.connection_retry_count += 1;
+
+        if self.connection_retry_count <= MAX_RETRY_COUNT_ON_CONNECTION_FAILURE {
+            // Retry on the same endpoint — the connection failure may be transient.
+            return RetryResult::Retry {
+                after: Duration::milliseconds(RETRY_INTERVAL_MS),
+            };
+        }
+
+        // Exhausted local retries — mark endpoint unavailable and fail over.
+        if let Some(ref endpoint) = self.location_endpoint {
+            self.global_endpoint_manager
+                .mark_endpoint_unavailable_for_read(endpoint);
+            self.global_endpoint_manager
+                .mark_endpoint_unavailable_for_write(endpoint);
+        }
+
+        self.failover_retry_count += 1;
+        if self.failover_retry_count > MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE
+            || !self.enable_endpoint_discovery
+        {
+            return RetryResult::DoNotRetry;
+        }
+
+        _ = self.global_endpoint_manager.refresh_location(true).await;
+
+        // Reset connection retry counter for the new endpoint.
+        self.connection_retry_count = 0;
+
+        self.retry_context = Some(RetryContext {
+            retry_location_index: 0,
+            retry_request_on_preferred_locations: true,
+            route_to_hub: false,
+        });
+
+        RetryResult::Retry {
+            after: Duration::ZERO,
         }
     }
 
@@ -358,29 +448,41 @@ impl ClientRetryPolicy {
     ///
     /// # Summary
     /// Handles 503 (ServiceUnavailable), 500 (InternalServerError for reads), and 410 with
-    /// LeaseNotFound errors by attempting retry on alternative preferred locations. Limited
-    /// to one retry attempt for service unavailable scenarios. Requires multiple preferred
-    /// locations to be available and multi-write support for write operations. Configures
-    /// retry context to route to the next preferred location.
+    /// LeaseNotFound errors by attempting retry on all applicable endpoints (all regions minus
+    /// excluded regions, in preference of preferred regions). Requires multi-write support for
+    /// write operations. Configures retry context to route to the next preferred location.
     ///
     /// # Returns
     /// A `RetryResult`:
     /// - `Retry { after: Duration::ZERO }` if retry conditions are met
-    /// - `DoNotRetry` if max retries exceeded, insufficient locations, or write without multi-write support
+    /// - `DoNotRetry` if all endpoints tried or write without multi-write support
     fn should_retry_on_unavailable_endpoint_status_codes(&mut self) -> RetryResult {
         self.service_unavailable_retry_count += 1;
 
-        if self.service_unavailable_retry_count > MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE {
+        if !self.can_use_multiple_write_locations
+            && !self
+                .operation_type
+                .as_ref()
+                .is_some_and(|op| op.is_read_only())
+        {
             return RetryResult::DoNotRetry;
         }
 
         // automatic failover support needed to be plugged in.
-        if !self.can_use_multiple_write_locations && !self.operation_type.unwrap().is_read_only() {
+        if !self.can_use_multiple_write_locations
+            && !self.is_read_only()
+            && !self
+                .partition_key_range_location_cache
+                .partition_level_automatic_failover_enabled()
+        {
             return RetryResult::DoNotRetry;
         }
 
-        let available_preferred_locations = self.global_endpoint_manager.preferred_location_count();
-        if available_preferred_locations <= 1 {
+        let endpoints = self
+            .global_endpoint_manager
+            .applicable_endpoints(self.operation_type.unwrap(), self.excluded_regions.as_ref());
+
+        if self.service_unavailable_retry_count > endpoints.len() {
             return RetryResult::DoNotRetry;
         }
 
@@ -402,8 +504,11 @@ impl ClientRetryPolicy {
     /// the appropriate retry strategy. Handles specific scenarios: 403.3 (WriteForbidden)
     /// triggers endpoint failover with cache refresh, 404.1022 (READ_SESSION_NOT_AVAILABLE)
     /// retries on different endpoints, 503 (ServiceUnavailable) attempts preferred location
-    /// failover, and 500/410 with LeaseNotFound retry on alternative endpoints for reads.
-    /// Returns None for status codes that should be handled by the throttling policy.
+    /// failover, and 500/408/410 with LeaseNotFound retry on alternative endpoints for reads.
+    ///
+    /// For read operations, any status code that is not considered non-retryable by
+    /// [`is_non_retryable_status_code`] is retried on an alternative endpoint. For write
+    /// operations, unhandled status codes are delegated to the throttling policy.
     ///
     /// # Arguments
     /// * `status_code` - The HTTP status code from the response
@@ -422,6 +527,21 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::Forbidden
             && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
+            if self
+                .partition_key_range_location_cache
+                .partition_level_failover_enabled()
+                && self.request.is_some()
+                && self
+                    .partition_key_range_location_cache
+                    .try_mark_endpoint_unavailable_for_partition_key_range(
+                        self.request.as_ref().unwrap(),
+                    )
+            {
+                return Some(RetryResult::Retry {
+                    after: Duration::ZERO,
+                });
+            }
+
             // automatic failover support needed to be plugged in here.
             return Some(
                 self.should_retry_on_endpoint_failure(false, false, true, false, false)
@@ -436,31 +556,121 @@ impl ClientRetryPolicy {
             return Some(self.should_retry_on_session_not_available());
         }
 
+        if self.should_mark_endpoint_unavailable_on_system_resource_unavailable_for_write(
+            Some(status_code),
+            sub_status_code,
+        ) {
+            error!(
+                "Operation will NOT be retried on local region. \
+                     Treating SystemResourceUnavailable (429/3092) as ServiceUnavailable (503). \
+                     Status code: 429, sub status code: 3092"
+            );
+
+            return Some(
+                self.try_mark_endpoint_unavailable_for_pk_range_and_retry_on_service_unavailable(
+                    true,
+                ),
+            );
+        }
+
         // Service unavailable (503)
         if status_code == StatusCode::ServiceUnavailable {
+            return Some(
+                self.try_mark_endpoint_unavailable_for_pk_range_and_retry_on_service_unavailable(
+                    false,
+                ),
+            );
+        }
+
+        // Gone - Lease not found (410.1022) applies to both reads and writes
+        if status_code == StatusCode::Gone
+            && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND)
+        {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
 
-        // Internal server error (500) or Gone - Lease not found (410)
-        if (status_code == StatusCode::InternalServerError
-            && self.operation_type.unwrap().is_read_only())
-            || (status_code == StatusCode::Gone
-                && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND))
-        {
+        // For read operations, retry on any status code that is not explicitly non-retryable.
+        // This ensures transient server errors are retried on alternative endpoints.
+        if self.is_read_only() && !is_non_retryable_status_code(status_code, sub_status_code) {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
         }
 
         None
     }
 
+    /// Marks endpoint unavailable for partition key range and retries on service unavailable.
+    fn try_mark_endpoint_unavailable_for_pk_range_and_retry_on_service_unavailable(
+        &mut self,
+        is_system_resource_unavailable_for_write: bool,
+    ) -> RetryResult {
+        self.try_mark_endpoint_unavailable_for_pk_range(is_system_resource_unavailable_for_write);
+        self.should_retry_on_unavailable_endpoint_status_codes()
+    }
+
+    /// Attempts to mark the endpoint unavailable for the partition key range.
+    fn try_mark_endpoint_unavailable_for_pk_range(
+        &self,
+        is_system_resource_unavailable_for_write: bool,
+    ) -> bool {
+        if let Some(request) = self.request.as_ref() {
+            if is_system_resource_unavailable_for_write
+                || self.is_request_eligible_for_per_partition_automatic_failover()
+                || self.is_request_eligible_for_partition_level_circuit_breaker()
+            {
+                return self
+                    .partition_key_range_location_cache
+                    .try_mark_endpoint_unavailable_for_partition_key_range(request);
+            }
+        }
+        false
+    }
+
+    /// Checks if endpoint should be marked unavailable on system resource unavailable for write.
+    fn should_mark_endpoint_unavailable_on_system_resource_unavailable_for_write(
+        &self,
+        status_code: Option<StatusCode>,
+        sub_status_code: Option<SubStatusCode>,
+    ) -> bool {
+        self.can_use_multiple_write_locations
+            && status_code == Some(StatusCode::TooManyRequests)
+            && sub_status_code == Some(SubStatusCode::SYSTEM_RESOURCE_NOT_AVAILABLE)
+    }
+
+    /// Checks if request is eligible for per-partition automatic failover.
+    fn is_request_eligible_for_per_partition_automatic_failover(&self) -> bool {
+        if let Some(request) = self.request.as_ref() {
+            return self
+                .partition_key_range_location_cache
+                .is_request_eligible_for_per_partition_automatic_failover(request);
+        }
+        false
+    }
+
+    /// Checks if request is eligible for partition-level circuit breaker.
+    fn is_request_eligible_for_partition_level_circuit_breaker(&self) -> bool {
+        if let Some(request) = self.request.as_ref() {
+            return self
+                .partition_key_range_location_cache
+                .is_request_eligible_for_partition_level_circuit_breaker(request)
+                && self
+                    .partition_key_range_location_cache
+                    .increment_request_failure_counter_and_check_if_partition_can_failover(
+                        request,
+                    );
+        }
+        false
+    }
+
     /// Evaluates an error to determine if the request should be retried.
     ///
     /// # Summary
-    /// Extracts HTTP status code and sub-status code from the error and delegates to
-    /// `should_retry_on_http_status` for scenario-specific retry logic. If the error
-    /// doesn't match any special retry cases (403.3, 404.1022, 503, 500, 410), falls
-    /// back to the throttling retry policy which handles 429 (TooManyRequests) errors
-    /// with exponential backoff.
+    /// First checks the [`RequestSentStatus`] to handle transport-level errors:
+    /// - `NotSent`: retries reads and writes (request never reached server).
+    /// - `Sent`/`Unknown` with transport errors (`Timeout`, `Io`): retries reads only.
+    ///
+    /// For HTTP-level errors, delegates to `should_retry_on_http_status` for
+    /// scenario-specific retry logic (403.3, 404.1022, 503, 500, 410), then falls
+    /// back to the throttling retry policy for 429 (TooManyRequests).
     ///
     /// # Arguments
     /// * `err` - The error that occurred during the request
@@ -468,6 +678,24 @@ impl ClientRetryPolicy {
     /// # Returns
     /// A `RetryResult` indicating whether to retry and with what delay
     async fn should_retry_error(&mut self, err: &azure_core::Error) -> RetryResult {
+        // Determine whether the request was actually sent to the server.
+        // This drives the retry decision for transport-level errors:
+        // - NotSent: safe to retry reads and writes (request never reached server)
+        // - Sent/Unknown: only retry reads (write may have been applied)
+        match err.request_sent_status() {
+            RequestSentStatus::NotSent => {
+                return self.should_retry_on_connection_failure().await;
+            }
+            RequestSentStatus::Sent | RequestSentStatus::Unknown => {
+                if matches!(err.kind(), ErrorKind::Io | ErrorKind::Connection) {
+                    if self.is_read_only() {
+                        return self.should_retry_on_unavailable_endpoint_status_codes();
+                    }
+                    return RetryResult::DoNotRetry;
+                }
+            }
+        }
+
         let status_code = err.http_status().unwrap_or(StatusCode::UnknownValue(0));
         let sub_status_code = get_substatus_code_from_error(err);
 
@@ -584,17 +812,20 @@ mod tests {
 
     fn create_test_policy() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager();
-        ClientRetryPolicy::new(manager, None)
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, false);
+        ClientRetryPolicy::new(manager, partition_manager, None)
     }
 
     fn create_test_policy_no_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_no_locations();
-        ClientRetryPolicy::new(manager, None)
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, false);
+        ClientRetryPolicy::new(manager, partition_manager, None)
     }
 
     fn create_test_policy_with_preferred_locations() -> ClientRetryPolicy {
         let manager = create_test_endpoint_manager_with_preferred_locations();
-        ClientRetryPolicy::new(manager, None)
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, false);
+        ClientRetryPolicy::new(manager, partition_manager, None)
     }
 
     fn create_test_request() -> CosmosRequest {
@@ -686,7 +917,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_should_not_retry_service_unavailable_without_preferred_locations() {
+    async fn test_should_retry_service_unavailable_without_preferred_locations() {
+        // Even with no preferred locations, applicable_endpoints returns the default endpoint
         let mut policy = create_test_policy_no_locations();
         policy.operation_type = Some(OperationType::Read);
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
@@ -694,9 +926,19 @@ mod tests {
         let result = policy.should_retry_error(&error).await;
 
         match result {
-            RetryResult::DoNotRetry => {}
-            _ => panic!("Expected DoNotRetry for ServiceUnavailable without preferred locations"),
+            RetryResult::Retry { after } => {
+                assert_eq!(after, Duration::ZERO);
+                assert_eq!(policy.service_unavailable_retry_count, 1);
+            }
+            _ => panic!("Expected retry for ServiceUnavailable (default endpoint available)"),
         }
+
+        // Second attempt should stop — only the default endpoint was available
+        let result = policy.should_retry_error(&error).await;
+        assert!(
+            !result.is_retry(),
+            "Expected DoNotRetry after exhausting the single default endpoint"
+        );
     }
 
     #[tokio::test]
@@ -747,6 +989,27 @@ mod tests {
                 assert_eq!(policy.service_unavailable_retry_count, 1);
             }
             _ => panic!("Expected retry for Gone with LeaseNotFound"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_retry_gone_with_lease_not_found_for_write() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Create);
+        policy.can_use_multiple_write_locations = true;
+        let error = create_error_with_substatus(
+            StatusCode::Gone,
+            SubStatusCode::LEASE_NOT_FOUND.value() as u32,
+        );
+
+        let result = policy.should_retry_error(&error).await;
+
+        match result {
+            RetryResult::Retry { after } => {
+                assert_eq!(after, Duration::ZERO);
+                assert_eq!(policy.service_unavailable_retry_count, 1);
+            }
+            _ => panic!("Expected retry for Gone with LeaseNotFound on write"),
         }
     }
 
@@ -814,11 +1077,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_should_not_retry_session_not_available_after_second_attempt() {
+    async fn test_should_not_retry_session_not_available_after_all_endpoints_tried() {
         let mut policy = create_test_policy();
         policy.enable_endpoint_discovery = true;
         policy.can_use_multiple_write_locations = false;
-        policy.session_token_retry_count = 1;
+        policy.operation_type = Some(OperationType::Read);
+        // create_test_policy has 2 preferred locations, so set count to 2
+        // to simulate all endpoints already tried
+        policy.session_token_retry_count = 2;
 
         let error = create_error_with_substatus(
             StatusCode::NotFound,
@@ -828,17 +1094,19 @@ mod tests {
         let result = policy.should_retry_error(&error).await;
         match result {
             RetryResult::DoNotRetry => {
-                assert_eq!(policy.session_token_retry_count, 2);
+                assert_eq!(policy.session_token_retry_count, 3);
             }
-            _ => panic!("Expected DoNotRetry after second session token retry"),
+            _ => panic!("Expected DoNotRetry after all endpoints tried"),
         }
     }
 
     #[tokio::test]
-    async fn test_should_not_retry_service_unavailable_after_max_retries() {
+    async fn test_should_not_retry_service_unavailable_after_all_endpoints_tried() {
         let mut policy = create_test_policy_with_preferred_locations();
         policy.operation_type = Some(OperationType::Read);
-        policy.service_unavailable_retry_count = MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE;
+        // applicable_endpoints returns 1 (default endpoint) in test setup,
+        // so set count to 1 to simulate exhaustion
+        policy.service_unavailable_retry_count = 1;
 
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
 
@@ -846,12 +1114,9 @@ mod tests {
 
         match result {
             RetryResult::DoNotRetry => {
-                assert_eq!(
-                    policy.service_unavailable_retry_count,
-                    MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE + 1
-                );
+                assert_eq!(policy.service_unavailable_retry_count, 2);
             }
-            _ => panic!("Expected DoNotRetry after max service unavailable retries"),
+            _ => panic!("Expected DoNotRetry after all endpoints tried"),
         }
     }
 
@@ -1137,6 +1402,237 @@ mod tests {
     fn test_constants_values() {
         assert_eq!(RETRY_INTERVAL_MS, 1000);
         assert_eq!(MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE, 120);
-        assert_eq!(MAX_RETRY_COUNT_ON_SERVICE_UNAVAILABLE, 1);
+    }
+
+    #[tokio::test]
+    async fn read_retries_on_unknown_server_error() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Read);
+
+        // A non-specific server error (e.g., 502 BadGateway) should be retried for reads
+        let error = create_error_with_status(StatusCode::BadGateway);
+        let result = policy.should_retry_error(&error).await;
+
+        assert!(
+            result.is_retry(),
+            "Expected retry for BadGateway on read request"
+        );
+    }
+
+    #[tokio::test]
+    async fn read_does_not_retry_non_retryable_status_codes() {
+        for status in [
+            StatusCode::BadRequest,
+            StatusCode::Unauthorized,
+            StatusCode::NotFound,
+            StatusCode::MethodNotAllowed,
+            StatusCode::Conflict,
+            StatusCode::PreconditionFailed,
+            StatusCode::PayloadTooLarge,
+            StatusCode::Locked,
+            constants::RETRY_WITH,
+        ] {
+            let mut policy = create_test_policy_with_preferred_locations();
+            policy.operation_type = Some(OperationType::Read);
+
+            let error = create_error_with_status(status);
+            let result = policy.should_retry_error(&error).await;
+
+            assert!(
+                !result.is_retry(),
+                "Expected DoNotRetry for {status:?} on read request"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn write_does_not_retry_unknown_server_error() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Create);
+
+        // A non-specific server error should NOT be retried for writes
+        let error = create_error_with_status(StatusCode::BadGateway);
+        let result = policy.should_retry_error(&error).await;
+
+        assert!(
+            !result.is_retry(),
+            "Expected DoNotRetry for BadGateway on write request"
+        );
+    }
+
+    #[tokio::test]
+    async fn read_retries_on_forbidden_without_write_forbidden_substatus() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Read);
+
+        // Forbidden without WRITE_FORBIDDEN substatus should be retried for reads
+        let error = create_error_with_status(StatusCode::Forbidden);
+        let result = policy.should_retry_error(&error).await;
+
+        assert!(
+            result.is_retry(),
+            "Expected retry for Forbidden (no substatus) on read request"
+        );
+    }
+
+    fn create_connection_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Connection,
+            message.to_string(),
+        )
+    }
+
+    fn create_timeout_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
+    }
+
+    fn create_io_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_read() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_connection_error("connection refused");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "connection error should retry read requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_write() {
+        let mut policy = create_test_policy();
+        let mut request = create_write_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_connection_error("connection refused");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "connection error should retry write requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn response_timeout_retries_read() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_timeout_error("response timeout");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "response timeout should retry read requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn response_timeout_does_not_retry_write() {
+        let mut policy = create_test_policy();
+        let mut request = create_write_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_timeout_error("response timeout");
+        let result = policy.should_retry(&Err(err)).await;
+        assert_eq!(
+            result,
+            RetryResult::DoNotRetry,
+            "response timeout should NOT retry write requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_on_same_endpoint() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        // First 3 connection errors should retry on the same endpoint.
+        for i in 1..=3 {
+            let err = create_connection_error("connection refused");
+            let result = policy.should_retry(&Err(err)).await;
+            assert!(result.is_retry(), "connection attempt {i} should retry");
+            assert_eq!(policy.connection_retry_count, i);
+            assert_eq!(
+                policy.failover_retry_count, 0,
+                "should not failover during local retries"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn connection_error_fails_over_after_max_retries() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        // Exhaust local retries.
+        for _ in 0..3 {
+            let err = create_connection_error("connection refused");
+            policy.should_retry(&Err(err)).await;
+        }
+
+        // Next connection error should trigger failover.
+        let err = create_connection_error("connection refused");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(result.is_retry(), "should failover to next endpoint");
+        assert_eq!(
+            policy.failover_retry_count, 1,
+            "failover_retry_count should increment after local retries exhausted"
+        );
+        assert_eq!(
+            policy.connection_retry_count, 0,
+            "connection_retry_count should reset for new endpoint"
+        );
+    }
+
+    #[tokio::test]
+    async fn response_timeout_read_uses_service_unavailable_counter() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_timeout_error("response timeout");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(result.is_retry());
+        assert_eq!(
+            policy.service_unavailable_retry_count, 1,
+            "service_unavailable_retry_count should increment on response timeout for reads"
+        );
+    }
+
+    #[tokio::test]
+    async fn unknown_io_error_retries_read() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("some unrelated IO error");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "unknown IO errors should retry read requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn unknown_io_error_does_not_retry_write() {
+        let mut policy = create_test_policy();
+        let mut request = create_write_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_io_error("some unrelated IO error");
+        let result = policy.should_retry(&Err(err)).await;
+        assert_eq!(
+            result,
+            RetryResult::DoNotRetry,
+            "unknown IO errors should not retry write requests"
+        );
     }
 }

@@ -9,22 +9,18 @@
 
 use super::framework;
 
-use azure_core::http::StatusCode;
+use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
     FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::CosmosClientOptions;
-use framework::{
-    get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
-};
+use framework::{get_effective_hub_endpoint, TestClient, TestOptions};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct NestedItem {
@@ -70,7 +66,6 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -78,11 +73,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -97,7 +88,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // With probability 0.0, all reads should succeed
@@ -115,7 +106,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -137,7 +128,6 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -145,11 +135,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -164,7 +150,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // With probability 1.0, all reads should fail
@@ -184,7 +170,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -208,23 +194,13 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: vec![HUB_REGION, SATELLITE_REGION],
-        ..Default::default()
-    };
-    let fault_options = fault_builder.inject(client_options);
-
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -239,7 +215,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // First request - should succeed after retries
@@ -256,19 +232,13 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
             assert_eq!(
-                response
-                    .request()
-                    .clone()
-                    .into_raw_request()
-                    .url()
-                    .host_str()
-                    .unwrap(),
+                response.request_url().host_str().unwrap(),
                 get_effective_hub_endpoint()
             );
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -289,7 +259,6 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -297,11 +266,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -317,7 +282,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Read should succeed
@@ -355,7 +320,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -378,7 +343,6 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -387,11 +351,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -406,7 +366,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Read should succeed since container name doesn't match "FaultyContainer"
@@ -425,18 +385,14 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: faulty_container_id.into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(faulty_container_id, "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
 
             // Now try to read using the fault client - should fail because container name contains "FaultyContainer"
             let faulty_fault_container_client =
-                fault_db_client.container_client(&faulty_container_id);
+                fault_db_client.container_client(faulty_container_id);
             let faulty_result = faulty_fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
@@ -451,7 +407,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -484,7 +440,6 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
     let fault_builder = FaultInjectionClientBuilder::new()
         .with_rule(Arc::new(rule1))
         .with_rule(Arc::new(rule2));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -492,11 +447,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -511,7 +462,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             let result = fault_container_client
@@ -528,7 +479,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -563,7 +514,6 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
     let fault_builder = FaultInjectionClientBuilder::new()
         .with_rule(Arc::new(rule1))
         .with_rule(Arc::new(rule2));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -571,11 +521,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -590,7 +536,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             let result = fault_container_client
@@ -607,7 +553,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -642,7 +588,6 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
     let fault_builder = FaultInjectionClientBuilder::new()
         .with_rule(Arc::new(rule1))
         .with_rule(Arc::new(rule2));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -650,11 +595,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -669,7 +610,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Small delay to ensure duration has passed
@@ -689,7 +630,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -707,11 +648,10 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
     let rule = FaultInjectionRuleBuilder::new("hit-limit-test", server_error)
         .with_condition(condition)
-        .with_hit_limit(3)
+        .with_hit_limit(4)
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -719,11 +659,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -738,11 +674,11 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
-            // First 3 requests should fail
-            for i in 1..=3 {
+            // First 2 requests should fail with one in region retry
+            for i in 1..=2 {
                 let result = fault_container_client
                     .read_item::<TestItem>(&pk, &item_id, None)
                     .await;
@@ -769,7 +705,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -778,7 +714,6 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 #[tokio::test]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
     let fault_builder = FaultInjectionClientBuilder::new();
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -786,11 +721,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -805,7 +736,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Read should succeed with no fault rules
@@ -821,7 +752,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -838,24 +769,30 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
         .with_operation_type(FaultOperationType::MetadataReadContainer)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("metadata-fails", server_error)
-        .with_condition(condition)
-        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("metadata-fails", server_error)
+            .with_condition(condition)
+            .build(),
+    );
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
+    // Start the rule disabled so we can warm the container cache first.
+    // With partition-level circuit breaker enabled by default, item operations
+    // trigger metadata reads (MetadataReadContainer) to resolve container
+    // properties on a cold cache. We disable the rule during the warmup call
+    // so the cache populates, then enable it to verify that subsequent item
+    // operations succeed even when metadata reads are faulted.
+    rule.disable();
+
+    let rule_handle = Arc::clone(&rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
 
     TestClient::run_with_unique_db(
-        async |run_context, db_client| {
+        async move |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
             run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -863,8 +800,22 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // Cache warmup: read the container with the rule disabled so that
+            // ContainerClient::read() populates the internal container cache.
+            // Subsequent item operations (which resolve container properties
+            // for partition-level routing) will find the cache warm.
+            let warmup_result = fault_container_client.read(None).await;
+            assert!(
+                warmup_result.is_ok(),
+                "warmup container read should succeed: {:?}",
+                warmup_result.err()
+            );
+
+            // Enable the metadata fault rule now that the cache is warm.
+            rule_handle.enable();
 
             // Create item should succeed
             let unique_id = Uuid::new_v4().to_string();
@@ -903,7 +854,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -932,7 +883,6 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     let rule_handle = Arc::clone(&rule);
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async move |run_context, db_client| {
@@ -940,11 +890,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             let container_client = run_context
                 .create_container_with_throughput(
                     db_client,
-                    ContainerProperties {
-                        id: container_id.clone().into(),
-                        partition_key: "/partition_key".into(),
-                        ..Default::default()
-                    },
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
                 .await?;
@@ -959,7 +905,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
 
             // Rule is enabled — read should fail
@@ -994,7 +940,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }

@@ -124,7 +124,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let list_blob_segment_response = page.unwrap().into_model()?;
     let blob_list = list_blob_segment_response.segment.blob_items;
     for blob in blob_list {
-        let blob_name = blob.name.unwrap().content.unwrap();
+        let blob_name = blob.name.unwrap();
         let properties = blob.properties.unwrap();
         let blob_type = properties.blob_type.unwrap();
         let etag = properties.etag;
@@ -190,7 +190,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     let blob_list = list_blob_segment_response.segment.blob_items;
     assert_eq!(2, blob_list.len());
     for blob in blob_list {
-        let blob_name = blob.name.unwrap().content.unwrap();
+        let blob_name = blob.name.unwrap();
         let blob_type = blob.properties.unwrap().blob_type.unwrap();
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
@@ -207,7 +207,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     let blob_list = list_blob_segment_response.segment.blob_items;
     assert_eq!(2, blob_list.len());
     for blob in blob_list {
-        let blob_name = blob.name.unwrap().content.unwrap();
+        let blob_name = blob.name.unwrap();
         let blob_type = blob.properties.unwrap().blob_type.unwrap();
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
@@ -228,7 +228,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
                 assert_eq!(2, blob_list.len());
 
                 for blob in blob_list {
-                    let blob_name = blob.name.unwrap().content.unwrap();
+                    let blob_name = blob.name.unwrap();
                     let blob_type = blob.properties.unwrap().blob_type.unwrap();
                     assert!(blob_names.contains(&blob_name));
                     assert_eq!(BlobType::BlockBlob, blob_type);
@@ -239,7 +239,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
                 assert_eq!(2, blob_list.len());
 
                 for blob in blob_list {
-                    let blob_name = blob.name.unwrap().content.unwrap();
+                    let blob_name = blob.name.unwrap();
                     let blob_type = blob.properties.unwrap().blob_type.unwrap();
                     assert!(blob_names.contains(&blob_name));
                     assert_eq!(BlobType::BlockBlob, blob_type);

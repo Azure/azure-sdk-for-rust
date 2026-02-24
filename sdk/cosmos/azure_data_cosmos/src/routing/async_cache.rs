@@ -30,7 +30,7 @@ impl<V> CacheEntry<V> {
 ///
 /// When created with `new()`, entries expire after the specified TTL.
 #[derive(Clone)]
-pub struct AsyncCache<K, V>
+pub(crate) struct AsyncCache<K, V>
 where
     K: Eq + Hash + Clone,
     V: Clone,
@@ -122,6 +122,13 @@ where
         store.insert(key, entry);
 
         Ok(value)
+    }
+
+    /// Inserts a value directly into the cache.
+    pub async fn insert(&self, key: K, value: V) {
+        let mut store = self.store.write().await;
+        let entry = CacheEntry::new(value, self.ttl);
+        store.insert(key, entry);
     }
 
     /// Removes a value from the cache

@@ -3,7 +3,7 @@
 # AMQP Stack for consumption by packages in the Azure SDK.
 [package]
 name = "azure_core_amqp"
-version = "0.11.0"
+version = "0.12.0"
 description = "Rust client library for the AMQP protocol"
 readme = "README.md"
 authors.workspace = true
@@ -12,14 +12,14 @@ repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust/sdk/core/azure_core_amqp"
 documentation = "https://docs.rs/azure_core_amqp"
 
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["api-bindings"]
 
 edition.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { path = "../azure_core", version = "0.32.0", default-features = false }
+azure_core = { path = "../azure_core", version = "0.33.0", default-features = false }
 fe2o3-amqp = { workspace = true, optional = true }
 fe2o3-amqp-cbs = { workspace = true, optional = true }
 fe2o3-amqp-ext = { workspace = true, optional = true }
@@ -49,11 +49,8 @@ fe2o3_amqp = [
   "fe2o3-amqp-cbs",
   "serde_amqp",
   "serde_bytes",
+  "azure_core/tokio",
 ]
-
-# Note that this is strictly excessive - the tokio runtime dependency is only required when the `fe2o3_amqp` feature is enabled - for other AMQP stacks, different dependencies can be chosen.
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-azure_core = { workspace = true, features = ["tokio"] }
 
 [lints]
 workspace = true

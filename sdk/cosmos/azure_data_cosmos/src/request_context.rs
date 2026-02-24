@@ -2,17 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::regions::RegionName;
+use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::PartitionKey;
 use azure_core::http::RawResponse;
 use std::collections::HashMap;
 use url::Url;
-
-/// Placeholder for a resolved physical partition key range.
-///
-/// In a fuller implementation this would include identifiers and possibly
-/// the min/max effective partition key values that define the range.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct PartitionKeyRange;
 
 /// Carries per-request routing, partition resolution, retry and regional state.
 ///
@@ -22,7 +16,7 @@ pub struct PartitionKeyRange;
 /// various internal flags influencing retries and cache refresh behavior.
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct RequestContext {
+pub(crate) struct RequestContext {
     pub force_refresh_address_cache: bool,
     pub original_request_consistency_level: Option<String>, // Use enum if available
     pub quorum_selected_lsn: i64,
@@ -40,7 +34,7 @@ pub struct RequestContext {
     pub is_partition_failover_retry: bool,
     pub failed_endpoints: HashMap<Url, bool>,
     pub use_preferred_locations: Option<bool>,
-    pub location_index_to_route: Option<i32>,
+    pub location_index_to_route: Option<usize>,
     pub location_endpoint_to_route: Option<Url>,
 }
 
@@ -59,7 +53,11 @@ impl RequestContext {
 
     /// Routes the request to a region by its index within the preferred
     /// locations list. Clears any explicit endpoint routing state.
-    pub fn route_to_location_index(&mut self, location_index: i32, use_preferred_locations: bool) {
+    pub fn route_to_location_index(
+        &mut self,
+        location_index: usize,
+        use_preferred_locations: bool,
+    ) {
         self.location_index_to_route = Some(location_index);
         self.use_preferred_locations = Some(use_preferred_locations);
         self.location_endpoint_to_route = None;

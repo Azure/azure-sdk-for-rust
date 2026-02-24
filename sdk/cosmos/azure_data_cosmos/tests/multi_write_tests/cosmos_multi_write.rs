@@ -13,7 +13,6 @@ use azure_data_cosmos::regions::RegionName;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
-    CosmosClientOptions,
 };
 use framework::{TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION};
 use tracing_subscriber::layer::SubscriberExt;
@@ -68,11 +67,7 @@ fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
 
 // Helper to avoid duplicating the same preferred-locations setup.
 fn options_with_preferred_locations(locations: Vec<RegionName>) -> TestOptions {
-    let client_options = CosmosClientOptions {
-        application_preferred_regions: locations,
-        ..Default::default()
-    };
-    TestOptions::new().with_client_options(client_options)
+    TestOptions::new().with_client_preferred_regions(locations)
 }
 
 async fn create_container_and_write_item(
@@ -81,11 +76,7 @@ async fn create_container_and_write_item(
     container_id: &str,
     _expected_region: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let properties = ContainerProperties {
-        id: Cow::Owned(String::from(container_id)),
-        partition_key: "/id".into(),
-        ..Default::default()
-    };
+    let properties = ContainerProperties::new(Cow::Owned(String::from(container_id)), "/id".into());
 
     let throughput = ThroughputProperties::manual(400);
 

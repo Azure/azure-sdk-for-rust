@@ -14,9 +14,7 @@ pub(crate) fn new_noop_client() -> std::sync::Arc<dyn super::HttpClient> {
     std::sync::Arc::new(NoopClient)
 }
 
-// TODO: We probably don't want to limit this to wasm32 since there will be wasm environments with threads. This should be a feature flag.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl super::HttpClient for NoopClient {
     #[allow(clippy::diverging_sub_expression)]
     async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {

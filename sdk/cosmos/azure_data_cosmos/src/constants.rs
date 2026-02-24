@@ -9,6 +9,7 @@
 use azure_core::http::{
     headers::{HeaderName, HeaderValue},
     request::options::ContentType,
+    StatusCode,
 };
 
 /// Macro to define Cosmos DB header constants and the allowed headers list in one place.
@@ -203,6 +204,38 @@ pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
+/// The Cosmos DB-specific 449 Retry With status code.
+///
+/// This status code indicates the client must retry with modified request parameters.
+/// It is non-retryable because automatic retry without parameter changes will not succeed.
+pub(crate) const RETRY_WITH: StatusCode = StatusCode::UnknownValue(449);
+
+// Default HTTP client timeouts.
+// See `next_generation_sdks_design_principles.md` for design rationale.
+
+/// Default TCP connection timeout (1s).
+/// After 1 second it times out locally.
+///
+/// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
+#[cfg(feature = "reqwest")]
+pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
+    std::time::Duration::from_secs(1);
+
+/// Default overall request timeout (65s).
+///
+/// Chosen to balance fast failure with allowing multiple retry attempts and to
+/// remain just above typical 60s service timeouts.
+/// See `next_generation_sdks_design_principles.md` for detailed rationale.
+#[cfg(feature = "reqwest")]
+pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
+
+/// Default maximum idle connections per host (1000).
+///
+/// Limits connection pool growth to prevent resource exhaustion under high
+/// concurrency while still allowing ample connection reuse.
+#[cfg(feature = "reqwest")]
+pub(crate) const DEFAULT_MAX_CONNECTION_POOL_SIZE: usize = 1000;
+
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
 /// Sub-status codes provide additional context for HTTP error responses from Cosmos DB.
@@ -395,6 +428,8 @@ impl SubStatusCode {
     pub(crate) const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);
     #[allow(dead_code)]
     pub(crate) const STORED_PROCEDURE_CONCURRENCY: SubStatusCode = SubStatusCode(3084);
+    #[allow(dead_code)]
+    pub(crate) const SYSTEM_RESOURCE_NOT_AVAILABLE: SubStatusCode = SubStatusCode(3092);
 
     // Additional aliases for backwards compatibility (internal use only)
     #[allow(dead_code)]
@@ -406,6 +441,7 @@ impl SubStatusCode {
         Self::CONFIGURATION_PROPERTY_NOT_FOUND;
     #[allow(dead_code)]
     pub(crate) const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = Self::COMPLETING_SPLIT;
+    #[allow(dead_code)]
     pub(crate) const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode =
         Self::COMPLETING_PARTITION_MIGRATION;
 }
