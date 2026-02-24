@@ -3,7 +3,7 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, CosmosResponse, PatchDocument, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -567,6 +567,7 @@ impl ContainerClient {
             .await
     }
 
+<<<<<<< builder_options
     /// Patches an item in the container.
     ///
     /// # Arguments
@@ -642,6 +643,8 @@ impl ContainerClient {
             .await
     }
 
+=======
+>>>>>>> main
     /// Executes a single-partition query against items in the container.
     ///
     /// The resulting document will be deserialized into the type provided as `T`.

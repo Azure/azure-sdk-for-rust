@@ -10,7 +10,6 @@ use std::sync::Arc;
 mod create;
 mod delete;
 mod metadata;
-mod patch;
 mod query;
 mod read;
 mod replace;
@@ -49,7 +48,6 @@ enum Subcommands {
     Read(read::ReadCommand),
     Replace(replace::ReplaceCommand),
     Upsert(upsert::UpsertCommand),
-    Patch(patch::PatchCommand),
 }
 
 #[tokio::main]
@@ -75,7 +73,6 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         Subcommands::Read(cmd) => cmd.run(client).await,
         Subcommands::Replace(cmd) => cmd.run(client).await,
         Subcommands::Upsert(cmd) => cmd.run(client).await,
-        Subcommands::Patch(cmd) => cmd.run(client).await,
     }
 }
 
