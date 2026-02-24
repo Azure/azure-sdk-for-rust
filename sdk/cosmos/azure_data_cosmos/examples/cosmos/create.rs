@@ -80,7 +80,7 @@ impl CreateCommand {
                 show_updated,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container);
+                let container_client = db_client.container_client(&container).await;
 
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;

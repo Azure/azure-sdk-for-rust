@@ -50,7 +50,7 @@ impl QueryCommand {
                 partition_key,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container);
+                let container_client = db_client.container_client(&container).await;
 
                 let pk = match partition_key {
                     Some(pk) => PartitionKey::from(pk),
