@@ -83,8 +83,6 @@ pub(crate) struct ContainerProperties {
     pub system_properties: SystemProperties,
 }
 
-impl ContainerProperties {}
-
 /// Partition key definition for a container.
 ///
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
