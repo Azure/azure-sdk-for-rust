@@ -850,10 +850,11 @@ impl DiagnosticsContextBuilder {
     ///
     /// Panics if the request has already been completed via [`complete_request`](Self::complete_request).
     /// In release builds, the update is silently ignored.
-    pub(crate) fn update_request<F>(&mut self, handle: RequestHandle, f: F)
-    where
-        F: FnOnce(&mut RequestDiagnostics),
-    {
+    pub(crate) fn update_request(
+        &mut self,
+        handle: RequestHandle,
+        f: impl FnOnce(&mut RequestDiagnostics),
+    ) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             debug_assert!(
                 !request.is_completed(),
