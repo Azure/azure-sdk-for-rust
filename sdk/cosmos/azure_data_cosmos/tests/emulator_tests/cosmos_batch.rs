@@ -6,6 +6,7 @@
 use super::framework;
 
 use azure_core::http::StatusCode;
+use azure_core::Uuid;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::BatchOptions;
@@ -14,7 +15,6 @@ use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 struct BatchTestItem {
@@ -30,11 +30,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     run_context
         .create_container(
             &db_client,
-            ContainerProperties {
-                id: container_id.clone().into(),
-                partition_key: "/partition_key".into(),
-                ..Default::default()
-            },
+            ContainerProperties::new(container_id.clone(), "/partition_key".into()),
             None,
         )
         .await?;
