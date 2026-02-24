@@ -3,14 +3,24 @@
 
 //! Azure VM metadata from the Instance Metadata Service (IMDS).
 
-use azure_core::http::{new_http_client, Method, Request};
+use async_lock::Mutex;
 use serde::Deserialize;
-use std::sync::{Arc, OnceLock, RwLock};
-use url::Url;
+use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 use uuid::Uuid;
 
 /// Azure Instance Metadata Service endpoint.
 const IMDS_ENDPOINT: &str = "http://169.254.169.254/metadata/instance?api-version=2020-06-01";
+
+/// Timeout for connecting to the IMDS endpoint.
+///
+/// IMDS is a link-local address that responds in sub-millisecond time on Azure
+/// VMs. A 2-second connect timeout is generous enough for slow hosts while still
+/// keeping non-Azure environments from blocking callers.
+const IMDS_CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
+
+/// Overall request timeout for the IMDS fetch (connect + response).
+const IMDS_REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Prefix for VM ID in machine identifiers.
 pub const VM_ID_PREFIX: &str = "vmId_";
@@ -120,26 +130,24 @@ impl VmMetadataService {
     ///
     /// On first call, this will attempt to fetch metadata from IMDS.
     /// This is an async operation since it uses azure_core's HTTP client.
+    /// The fetch is protected by a single-flight mutex so that only one
+    /// network call is ever made, even under concurrent access.
     ///
     /// This method never fails - if IMDS is unreachable, the service will
     /// still be available with a generated UUID as the machine ID.
     pub async fn get_or_init() -> Self {
-        // Use OnceLock to ensure we only fetch once
         let inner = VM_METADATA.get_or_init(|| Arc::new(VmMetadataServiceInner::new()));
 
-        // Check if we need to fetch metadata
-        if !inner.is_fetch_complete() {
-            // Fetch metadata (this will be a no-op if already fetched by another task)
-            inner.fetch_metadata().await;
-        }
-
-        // Extract the cached metadata and machine ID
-        let metadata = inner.get_metadata();
-        let machine_id = inner.get_machine_id();
+        // Single-flight: the mutex ensures only one task runs the fetch.
+        // Other callers block on the lock and find the completed state.
+        let state = inner.ensure_initialized().await;
 
         Self {
-            metadata,
-            machine_id,
+            metadata: state.metadata.clone(),
+            machine_id: state
+                .machine_id
+                .clone()
+                .expect("machine_id is always set after initialization"),
         }
     }
 
@@ -172,97 +180,104 @@ impl VmMetadataService {
 /// Internal state for the VM metadata service (used for async initialization).
 #[derive(Debug)]
 struct VmMetadataServiceInner {
-    /// Cached metadata.
-    metadata: RwLock<Option<Arc<AzureVmMetadata>>>,
-    /// Machine ID (VM ID or generated UUID).
-    machine_id: RwLock<Option<Arc<String>>>,
+    /// Mutex-protected state. The mutex provides single-flight semantics:
+    /// the first task to acquire it runs the IMDS fetch, and all other tasks
+    /// wait on the lock and observe the completed result.
+    state: Mutex<VmMetadataState>,
+}
+
+/// Mutable state behind the single-flight mutex.
+#[derive(Debug, Clone)]
+struct VmMetadataState {
+    /// Cached metadata (None if fetch failed or not on Azure).
+    metadata: Option<Arc<AzureVmMetadata>>,
+    /// Machine ID (VM ID or generated UUID). None only before first fetch.
+    machine_id: Option<Arc<String>>,
     /// Whether fetch has completed (success or failure).
-    fetch_complete: RwLock<bool>,
+    fetch_complete: bool,
 }
 
 impl VmMetadataServiceInner {
     fn new() -> Self {
         Self {
-            metadata: RwLock::new(None),
-            machine_id: RwLock::new(None),
-            fetch_complete: RwLock::new(false),
+            state: Mutex::new(VmMetadataState {
+                metadata: None,
+                machine_id: None,
+                fetch_complete: false,
+            }),
         }
     }
 
-    fn is_fetch_complete(&self) -> bool {
-        *self.fetch_complete.read().unwrap()
-    }
+    /// Ensures the IMDS fetch has completed exactly once, then returns a
+    /// snapshot of the state. Concurrent callers wait on the mutex.
+    async fn ensure_initialized(&self) -> VmMetadataState {
+        let mut state = self.state.lock().await;
 
-    fn get_metadata(&self) -> Option<Arc<AzureVmMetadata>> {
-        self.metadata.read().unwrap().clone()
-    }
-
-    fn get_machine_id(&self) -> Arc<String> {
-        self.machine_id
-            .read()
-            .unwrap()
-            .clone()
-            .expect("machine_id should be set after fetch completes")
-    }
-
-    async fn fetch_metadata(&self) {
-        // Check if already fetched (race condition protection)
-        {
-            let complete = self.fetch_complete.read().unwrap();
-            if *complete {
-                return;
-            }
+        if state.fetch_complete {
+            return state.clone();
         }
 
-        // Check if IMDS access is disabled via environment variable
+        // We hold the lock — we are the single task that runs the fetch.
+        Self::do_init(&mut state).await;
+        state.clone()
+    }
+
+    /// Runs the actual metadata fetch or sets a fallback. Called exactly once
+    /// under the mutex.
+    async fn do_init(state: &mut VmMetadataState) {
         if std::env::var("COSMOS_DISABLE_IMDS").is_ok() {
             tracing::info!("IMDS access disabled via COSMOS_DISABLE_IMDS");
-            self.set_fallback_machine_id();
-            *self.fetch_complete.write().unwrap() = true;
+            state.machine_id = Some(Arc::new(Self::generate_fallback_machine_id()));
+            state.fetch_complete = true;
             return;
         }
 
-        let result = Self::do_fetch().await;
-
-        match result {
+        match Self::do_fetch().await {
             Ok(metadata) => {
                 tracing::debug!("Fetched Azure VM metadata: {:?}", metadata);
                 let vm_id = metadata.vm_id();
                 let machine_id = if vm_id.is_empty() {
-                    // VM ID is empty, use fallback
-                    self.generate_fallback_machine_id()
+                    Self::generate_fallback_machine_id()
                 } else {
                     format!("{}{}", VM_ID_PREFIX, vm_id)
                 };
-                *self.machine_id.write().unwrap() = Some(Arc::new(machine_id));
-                *self.metadata.write().unwrap() = Some(Arc::new(metadata));
+                state.machine_id = Some(Arc::new(machine_id));
+                state.metadata = Some(Arc::new(metadata));
             }
             Err(e) => {
                 tracing::debug!("Failed to fetch Azure VM metadata (not on Azure?): {}", e);
-                self.set_fallback_machine_id();
+                state.machine_id = Some(Arc::new(Self::generate_fallback_machine_id()));
             }
         }
 
-        *self.fetch_complete.write().unwrap() = true;
+        state.fetch_complete = true;
     }
 
-    fn set_fallback_machine_id(&self) {
-        let machine_id = self.generate_fallback_machine_id();
-        *self.machine_id.write().unwrap() = Some(Arc::new(machine_id));
-    }
-
-    fn generate_fallback_machine_id(&self) -> String {
+    fn generate_fallback_machine_id() -> String {
         format!("{}{}", UUID_PREFIX, Uuid::new_v4())
     }
 
     async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
-        let url: Url = IMDS_ENDPOINT.parse().expect("valid IMDS URL");
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("metadata", "true");
+        // Build a dedicated client with short timeouts so non-Azure hosts
+        // fail fast instead of blocking callers for a full TCP timeout.
+        let http_client = reqwest::Client::builder()
+            .connect_timeout(IMDS_CONNECT_TIMEOUT)
+            .timeout(IMDS_REQUEST_TIMEOUT)
+            .build()
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
 
-        let http_client = new_http_client();
-        let response = http_client.execute_request(&request).await?;
-        let body = response.into_body().collect_string().await?;
+        let response = http_client
+            .get(IMDS_ENDPOINT)
+            .header("metadata", "true")
+            .send()
+            .await
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
+
+        let body = response
+            .text()
+            .await
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
+
         let metadata: AzureVmMetadata = serde_json::from_str(&body)?;
         Ok(metadata)
     }
