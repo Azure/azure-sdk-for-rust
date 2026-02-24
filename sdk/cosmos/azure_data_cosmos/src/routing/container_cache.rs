@@ -110,6 +110,16 @@ impl ContainerCache {
             .await;
     }
 
+    /// Inserts container properties directly into the cache.
+    ///
+    /// Used to populate the cache from a container read response without
+    /// requiring a separate metadata fetch.
+    pub async fn populate(&self, container_id: String, properties: ContainerProperties) {
+        self.container_properties_cache
+            .insert(container_id, properties)
+            .await;
+    }
+
     /// Fetches container properties directly from the Cosmos DB service.
     ///
     /// # Summary

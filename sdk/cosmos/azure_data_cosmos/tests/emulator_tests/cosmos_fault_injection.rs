@@ -769,14 +769,25 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
         .with_operation_type(FaultOperationType::MetadataReadContainer)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("metadata-fails", server_error)
-        .with_condition(condition)
-        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("metadata-fails", server_error)
+            .with_condition(condition)
+            .build(),
+    );
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    // Start the rule disabled so we can warm the container cache first.
+    // With partition-level circuit breaker enabled by default, item operations
+    // trigger metadata reads (MetadataReadContainer) to resolve container
+    // properties on a cold cache. We disable the rule during the warmup call
+    // so the cache populates, then enable it to verify that subsequent item
+    // operations succeed even when metadata reads are faulted.
+    rule.disable();
+
+    let rule_handle = Arc::clone(&rule);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
 
     TestClient::run_with_unique_db(
-        async |run_context, db_client| {
+        async move |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
             run_context
                 .create_container_with_throughput(
@@ -791,6 +802,20 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id);
+
+            // Cache warmup: read the container with the rule disabled so that
+            // ContainerClient::read() populates the internal container cache.
+            // Subsequent item operations (which resolve container properties
+            // for partition-level routing) will find the cache warm.
+            let warmup_result = fault_container_client.read(None).await;
+            assert!(
+                warmup_result.is_ok(),
+                "warmup container read should succeed: {:?}",
+                warmup_result.err()
+            );
+
+            // Enable the metadata fault rule now that the cache is warm.
+            rule_handle.enable();
 
             // Create item should succeed
             let unique_id = Uuid::new_v4().to_string();

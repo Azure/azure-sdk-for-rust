@@ -99,9 +99,21 @@ impl ContainerClient {
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
-        self.container_connection
+        let response: CosmosResponse<ContainerProperties> = self
+            .container_connection
             .send(cosmos_request, Context::default())
-            .await
+            .await?;
+
+        // Populate the container cache so that subsequent item operations
+        // (which resolve container properties for partition-level routing)
+        // find them already cached and avoid an extra metadata fetch.
+        if let Ok(properties) = response.deserialize_body::<ContainerProperties>() {
+            self.container_connection
+                .populate_container_cache(self.container_id.clone(), properties)
+                .await;
+        }
+
+        Ok(response)
     }
 
     /// Updates the indexing policy of the container.

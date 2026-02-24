@@ -86,6 +86,16 @@ impl<T> CosmosResponse<T> {
     pub fn etag(&self) -> Option<&str> {
         self.get_optional_header_str(&azure_core::http::headers::ETAG)
     }
+
+    /// Deserializes the response body without consuming the response.
+    ///
+    /// This is used internally to extract a copy of the response model (e.g.,
+    /// to populate a cache) while still returning the original response to the
+    /// caller. The underlying `Bytes` body is reference-counted so the clone
+    /// is cheap.
+    pub(crate) fn deserialize_body<U: DeserializeOwned>(&self) -> azure_core::Result<U> {
+        self.response.body().json()
+    }
 }
 
 impl<T: DeserializeOwned> CosmosResponse<T> {
