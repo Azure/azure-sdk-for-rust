@@ -399,9 +399,9 @@ mod tests {
         // Verify read endpoints are in proximity order from East US:
         // East US 2 (closest), West US, West Europe (farthest)
         let read_endpoints = client.global_endpoint_manager.read_endpoints();
-        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoint_strs,
+            endpoint_strings,
             vec![
                 "https://test-eastus2.documents.azure.com/",
                 "https://test-westus.documents.azure.com/",
@@ -452,9 +452,9 @@ mod tests {
         let endpoints = client
             .global_endpoint_manager
             .applicable_endpoints(OperationType::Read, None);
-        let strs: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
+        let strings: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            strs,
+            strings,
             vec![
                 "https://test-eastus2.documents.azure.com/",
                 "https://test-westus.documents.azure.com/",
@@ -467,9 +467,9 @@ mod tests {
         let endpoints = client
             .global_endpoint_manager
             .applicable_endpoints(OperationType::Read, Some(&excluded));
-        let strs: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
+        let strings: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            strs,
+            strings,
             vec![
                 "https://test-westus.documents.azure.com/",
                 "https://test-westeurope.documents.azure.com/",
@@ -482,9 +482,9 @@ mod tests {
         let endpoints = client
             .global_endpoint_manager
             .applicable_endpoints(OperationType::Read, Some(&excluded));
-        let strs: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
+        let strings: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            strs,
+            strings,
             vec!["https://test.documents.azure.com/"],
             "should fall back to default endpoint"
         );
