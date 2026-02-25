@@ -31,22 +31,15 @@ pub(crate) fn infer_request_sent_status(error: &azure_core::Error) -> RequestSen
     use azure_core::error::ErrorKind;
 
     match error.kind() {
-        ErrorKind::Io => {
-            let msg = error.to_string().to_lowercase();
-            if msg.contains("dns")
-                || msg.contains("resolve")
-                || msg.contains("connection refused")
-                || msg.contains("no route to host")
-                || msg.contains("network unreachable")
-                || msg.contains("connection reset")
-                    && (msg.contains("before") || msg.contains("establish"))
-            {
-                return RequestSentStatus::NotSent;
-            }
-            RequestSentStatus::Unknown
-        }
-        ErrorKind::Credential => RequestSentStatus::NotSent,
-        ErrorKind::DataConversion => RequestSentStatus::NotSent,
+        // ErrorKind::Connection means the transport could not establish a
+        // connection at all (DNS failure, connection refused, etc.).  The
+        // request was never sent, so it is unconditionally safe to retry.
+        // The reqwest transport maps `reqwest::Error::is_connect()` to this
+        // variant, so no brittle string matching on Io messages is needed.
+        ErrorKind::Connection | ErrorKind::Credential => RequestSentStatus::NotSent,
+        // DataConversion could originate from request serialization (not sent)
+        // or response deserialization (sent), so it is ambiguous.
+        ErrorKind::DataConversion => RequestSentStatus::Unknown,
         ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
         _ => RequestSentStatus::Unknown,
     }
@@ -136,21 +129,9 @@ mod tests {
     use azure_core::error::ErrorKind;
 
     #[test]
-    fn dns_error_not_sent() {
-        let err = azure_core::Error::new(ErrorKind::Io, "dns resolution failed");
+    fn connection_error_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Connection, "connection refused");
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
-    }
-
-    #[test]
-    fn connection_refused_not_sent() {
-        let err = azure_core::Error::new(ErrorKind::Io, "connection refused");
-        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
-    }
-
-    #[test]
-    fn timeout_is_unknown() {
-        let err = azure_core::Error::new(ErrorKind::Io, "operation timed out");
-        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 
     #[test]
@@ -160,9 +141,22 @@ mod tests {
     }
 
     #[test]
-    fn data_conversion_error_not_sent() {
+    fn data_conversion_error_is_unknown() {
+        // DataConversion can happen during request serialization (not sent)
+        // or response deserialization (sent), so the status is ambiguous.
         let err = azure_core::Error::new(ErrorKind::DataConversion, "serialization failed");
-        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
+        assert_eq!(
+            infer_request_sent_status(&err),
+            RequestSentStatus::Unknown
+        );
+    }
+
+    #[test]
+    fn io_error_is_unknown() {
+        // With reqwest, connection failures use ErrorKind::Connection, not Io.
+        // A generic Io error has ambiguous send status.
+        let err = azure_core::Error::new(ErrorKind::Io, "operation timed out");
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 
     #[test]
