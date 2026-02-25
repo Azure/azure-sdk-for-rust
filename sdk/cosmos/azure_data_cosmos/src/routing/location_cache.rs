@@ -1489,7 +1489,8 @@ mod tests {
     fn preferred_regions_filtered_to_account_regions_in_proximity_order() {
         // Simulate application_region = EAST_US → generates ~96 proximity-sorted regions
         let proximity_list = generate_preferred_region_list(&regions::EAST_US)
-            .expect("EAST_US should be a known region");
+            .expect("EAST_US should be a known region")
+            .to_vec();
 
         // Account only has these 3 regions (subset of the 96)
         let account_regions = vec![
@@ -1527,29 +1528,17 @@ mod tests {
 
         let read_endpoints = cache.read_endpoints();
 
-        // Only the 3 account-present regions should appear in the read endpoints
+        // Only the 3 account-present regions should appear in the read endpoints,
+        // in proximity order: from EAST_US, East US 2 is closest, then West US, then West Europe.
+        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            read_endpoints.len(),
-            3,
-            "expected exactly 3 endpoints matching account regions"
-        );
-
-        // Verify proximity order: from EAST_US, East US 2 is closer than West US,
-        // and West US is closer than West Europe.
-        assert_eq!(
-            read_endpoints[0].as_str(),
-            "https://test-eastus2.documents.azure.com/",
-            "East US 2 should be first (closest to East US)"
-        );
-        assert_eq!(
-            read_endpoints[1].as_str(),
-            "https://test-westus.documents.azure.com/",
-            "West US should be second"
-        );
-        assert_eq!(
-            read_endpoints[2].as_str(),
-            "https://test-westeurope.documents.azure.com/",
-            "West Europe should be third (farthest)"
+            endpoint_strs,
+            vec![
+                "https://test-eastus2.documents.azure.com/",
+                "https://test-westus.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
+            "endpoints should be in proximity order from East US"
         );
     }
 
@@ -1558,7 +1547,8 @@ mod tests {
     #[test]
     fn write_endpoints_respect_proximity_order() {
         let proximity_list = generate_preferred_region_list(&regions::WEST_EUROPE)
-            .expect("WEST_EUROPE should be a known region");
+            .expect("WEST_EUROPE should be a known region")
+            .to_vec();
 
         // Account has 2 write regions
         let write_regions = vec![
@@ -1583,18 +1573,16 @@ mod tests {
         cache.update(write_regions, read_regions).unwrap();
 
         let write_endpoints = cache.write_endpoints();
-        assert_eq!(write_endpoints.len(), 2);
 
         // From West Europe, North Europe is much closer than East US
+        let endpoint_strs: Vec<&str> = write_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            write_endpoints[0].as_str(),
-            "https://test-northeurope.documents.azure.com/",
-            "North Europe should be first (closer to West Europe)"
-        );
-        assert_eq!(
-            write_endpoints[1].as_str(),
-            "https://test-eastus.documents.azure.com/",
-            "East US should be second (farther from West Europe)"
+            endpoint_strs,
+            vec![
+                "https://test-northeurope.documents.azure.com/",
+                "https://test-eastus.documents.azure.com/",
+            ],
+            "write endpoints should be in proximity order from West Europe"
         );
     }
 
@@ -1607,7 +1595,8 @@ mod tests {
         client_excluded: Vec<RegionName>,
     ) -> LocationCache {
         let proximity_list = generate_preferred_region_list(&regions::EAST_US)
-            .expect("EAST_US should be a known region");
+            .expect("EAST_US should be a known region")
+            .to_vec();
         let default_endpoint: Url = "https://test.documents.azure.com/".parse().unwrap();
 
         let mut cache = LocationCache::new(default_endpoint, proximity_list, client_excluded);
@@ -1649,16 +1638,14 @@ mod tests {
         );
 
         let read_endpoints = cache.read_endpoints();
-        assert_eq!(read_endpoints.len(), 2);
+        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            read_endpoints[0].as_str(),
-            "https://test-westus.documents.azure.com/",
+            endpoint_strs,
+            vec![
+                "https://test-westus.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
             "West US should be first after East US 2 is excluded"
-        );
-        assert_eq!(
-            read_endpoints[1].as_str(),
-            "https://test-westeurope.documents.azure.com/",
-            "West Europe should be second"
         );
     }
 
@@ -1679,18 +1666,16 @@ mod tests {
         );
 
         let read_endpoints = cache.read_endpoints();
-        assert_eq!(read_endpoints.len(), 2);
 
         // From EAST_US, North Europe (76ms) is closer than West Europe (81ms)
+        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            read_endpoints[0].as_str(),
-            "https://test-northeurope.documents.azure.com/",
-            "North Europe should be first among remaining (76ms from East US)"
-        );
-        assert_eq!(
-            read_endpoints[1].as_str(),
-            "https://test-westeurope.documents.azure.com/",
-            "West Europe should be second among remaining (81ms from East US)"
+            endpoint_strs,
+            vec![
+                "https://test-northeurope.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
+            "remaining regions should preserve proximity order from East US"
         );
     }
 
@@ -1746,10 +1731,10 @@ mod tests {
         );
 
         let read_endpoints = cache.read_endpoints();
-        assert_eq!(read_endpoints.len(), 1);
+        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            read_endpoints[0].as_str(),
-            "https://test.documents.azure.com/",
+            endpoint_strs,
+            vec!["https://test.documents.azure.com/"],
             "should fall back to default endpoint when all regions excluded"
         );
     }
@@ -1778,16 +1763,14 @@ mod tests {
         );
 
         let read_endpoints = cache.read_endpoints();
-        assert_eq!(read_endpoints.len(), 2);
+        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            read_endpoints[0].as_str(),
-            "https://test-eastus2.documents.azure.com/",
-            "East US 2 should still be first (Australia East exclusion is irrelevant)"
-        );
-        assert_eq!(
-            read_endpoints[1].as_str(),
-            "https://test-westus.documents.azure.com/",
-            "West US should still be second"
+            endpoint_strs,
+            vec![
+                "https://test-eastus2.documents.azure.com/",
+                "https://test-westus.documents.azure.com/",
+            ],
+            "excluding a non-account region should have no effect"
         );
     }
 }

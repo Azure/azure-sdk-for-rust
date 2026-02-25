@@ -255,12 +255,14 @@ impl CosmosClientBuilder {
         );
 
         let preferred_regions = if let Some(ref region) = self.options.application_region {
-            crate::region_proximity::generate_preferred_region_list(region).ok_or_else(|| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    format!("unknown application region: {region}"),
-                )
-            })?
+            crate::region_proximity::generate_preferred_region_list(region)
+                .ok_or_else(|| {
+                    azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        format!("unknown application region: {region}"),
+                    )
+                })?
+                .to_vec()
         } else {
             Vec::new()
         };
@@ -293,30 +295,50 @@ impl CosmosClientBuilder {
     }
 }
 
-#[cfg(all(test, feature = "key_auth"))]
+#[cfg(test)]
 mod tests {
     use crate::{regions, CosmosAccountReference, CosmosClient};
-    use azure_core::credentials::Secret;
+    use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
+    use std::sync::Arc;
+
+    #[derive(Debug)]
+    struct MockCredential;
+
+    #[async_trait::async_trait]
+    impl TokenCredential for MockCredential {
+        async fn get_token(
+            &self,
+            _scopes: &[&str],
+            _options: Option<TokenRequestOptions<'_>>,
+        ) -> azure_core::Result<AccessToken> {
+            Ok(AccessToken::new(
+                "mock_token",
+                azure_core::time::OffsetDateTime::now_utc(),
+            ))
+        }
+    }
 
     fn test_account() -> CosmosAccountReference {
         let endpoint = "https://test.documents.azure.com/".parse().unwrap();
-        CosmosAccountReference::with_master_key(endpoint, Secret::from("dGVzdA=="))
+        CosmosAccountReference::with_credential(endpoint, Arc::new(MockCredential))
     }
 
-    #[test]
-    fn build_with_known_region_succeeds() {
+    #[tokio::test]
+    async fn build_with_known_region_succeeds() {
         let result = CosmosClient::builder()
             .with_application_region(regions::EAST_US)
-            .build(test_account());
+            .build(test_account())
+            .await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn build_with_unknown_region_returns_error() {
+    #[tokio::test]
+    async fn build_with_unknown_region_returns_error() {
         let unknown = regions::RegionName::from("unknown");
         let result = CosmosClient::builder()
             .with_application_region(unknown)
-            .build(test_account());
+            .build(test_account())
+            .await;
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(
@@ -326,9 +348,9 @@ mod tests {
         );
     }
 
-    #[test]
-    fn build_without_application_region_succeeds() {
-        let result = CosmosClient::builder().build(test_account());
+    #[tokio::test]
+    async fn build_without_application_region_succeeds() {
+        let result = CosmosClient::builder().build(test_account()).await;
         assert!(result.is_ok());
     }
 
@@ -337,13 +359,14 @@ mod tests {
     ///
     /// Passing in East US should produce a proximity-ordered list of regions with East US 2 first,
     /// then West US, then West Europe.
-    #[test]
-    fn application_region_produces_proximity_ordered_endpoints() {
+    #[tokio::test]
+    async fn application_region_produces_proximity_ordered_endpoints() {
         use crate::models::AccountRegion;
 
         let client = CosmosClient::builder()
             .with_application_region(regions::EAST_US)
             .build(test_account())
+            .await
             .expect("build should succeed with known region");
 
         // Simulate receiving account properties with 3 regions
@@ -376,34 +399,29 @@ mod tests {
         // Verify read endpoints are in proximity order from East US:
         // East US 2 (closest), West US, West Europe (farthest)
         let read_endpoints = client.global_endpoint_manager.read_endpoints();
-        assert_eq!(read_endpoints.len(), 3);
+        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            read_endpoints[0].as_str(),
-            "https://test-eastus2.documents.azure.com/",
-            "East US 2 should be first (closest to East US)"
-        );
-        assert_eq!(
-            read_endpoints[1].as_str(),
-            "https://test-westus.documents.azure.com/",
-            "West US should be second"
-        );
-        assert_eq!(
-            read_endpoints[2].as_str(),
-            "https://test-westeurope.documents.azure.com/",
-            "West Europe should be third (farthest)"
+            endpoint_strs,
+            vec![
+                "https://test-eastus2.documents.azure.com/",
+                "https://test-westus.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
+            "endpoints should be in proximity order from East US"
         );
     }
 
     /// Verifies that request-level excluded regions interact correctly with
     /// proximity-ordered preferred regions through the full builder flow.
-    #[test]
-    fn application_region_with_excluded_regions() {
+    #[tokio::test]
+    async fn application_region_with_excluded_regions() {
         use crate::models::AccountRegion;
         use crate::operation_context::OperationType;
 
         let client = CosmosClient::builder()
             .with_application_region(regions::EAST_US)
             .build(test_account())
+            .await
             .expect("build should succeed");
 
         let regions_list = vec![
@@ -434,10 +452,14 @@ mod tests {
         let endpoints = client
             .global_endpoint_manager
             .applicable_endpoints(OperationType::Read, None);
-        assert_eq!(endpoints.len(), 3);
+        let strs: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoints[0].as_str(),
-            "https://test-eastus2.documents.azure.com/"
+            strs,
+            vec![
+                "https://test-eastus2.documents.azure.com/",
+                "https://test-westus.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
         );
 
         // Exclude the closest region (East US 2): falls back to next closest
@@ -445,16 +467,14 @@ mod tests {
         let endpoints = client
             .global_endpoint_manager
             .applicable_endpoints(OperationType::Read, Some(&excluded));
-        assert_eq!(endpoints.len(), 2);
+        let strs: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoints[0].as_str(),
-            "https://test-westus.documents.azure.com/",
+            strs,
+            vec![
+                "https://test-westus.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
             "West US should be first after excluding East US 2"
-        );
-        assert_eq!(
-            endpoints[1].as_str(),
-            "https://test-westeurope.documents.azure.com/",
-            "West Europe should be second"
         );
 
         // Exclude all account regions: falls back to default
@@ -462,10 +482,10 @@ mod tests {
         let endpoints = client
             .global_endpoint_manager
             .applicable_endpoints(OperationType::Read, Some(&excluded));
-        assert_eq!(endpoints.len(), 1);
+        let strs: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoints[0].as_str(),
-            "https://test.documents.azure.com/",
+            strs,
+            vec!["https://test.documents.azure.com/"],
             "should fall back to default endpoint"
         );
     }
