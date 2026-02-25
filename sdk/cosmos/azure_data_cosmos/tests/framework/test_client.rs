@@ -6,27 +6,19 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 #![cfg(feature = "fault_injection")]
 
-use azure_core::{
-    http::{HttpClient, StatusCode, Transport},
-    Uuid,
-};
+use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
 use azure_data_cosmos::models::{CosmosResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CosmosClientOptions,
-    CreateContainerOptions, PartitionKey, Query,
+    clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
+    Query,
 };
 use futures::TryStreamExt;
-use reqwest::ClientBuilder;
-
 use std::time::Duration;
-use std::{
-    str::FromStr,
-    sync::{Arc, OnceLock},
-};
+use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
 
 /// Represents a Cosmos DB client connected to a test account.
@@ -55,16 +47,16 @@ pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 /// Options for configuring test execution.
 #[derive(Default)]
 pub struct TestOptions {
-    /// CosmosClient options to use for the normal (non-fault) client.
-    pub client_options: Option<CosmosClientOptions>,
+    /// Preferred regions for the normal (non-fault) client.
+    pub client_preferred_regions: Vec<RegionName>,
     /// Fault injection builder for the fault injection client.
     /// If provided, a separate client will be created with fault injection capabilities.
     /// The builder is applied after transport setup (e.g., invalid certificate acceptance)
     /// so that the FaultClient wraps the correct inner HTTP client.
     pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
-    /// Optional CosmosClient options for the fault injection client (e.g., preferred regions).
+    /// Preferred regions for the fault injection client.
     /// Used in combination with `fault_injection_builder`.
-    pub fault_client_options: Option<CosmosClientOptions>,
+    pub fault_client_preferred_regions: Vec<RegionName>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
 }
@@ -75,9 +67,9 @@ impl TestOptions {
         Self::default()
     }
 
-    /// Sets the client options for the normal (non-fault) client.
-    pub fn with_client_options(mut self, options: CosmosClientOptions) -> Self {
-        self.client_options = Some(options);
+    /// Sets the preferred regions for the normal (non-fault) client.
+    pub fn with_client_preferred_regions(mut self, regions: Vec<RegionName>) -> Self {
+        self.client_preferred_regions = regions;
         self
     }
 
@@ -89,10 +81,9 @@ impl TestOptions {
         self
     }
 
-    /// Sets custom CosmosClient options for the fault injection client.
-    /// Use this to configure preferred regions or other client settings for the fault client.
-    pub fn with_fault_client_options(mut self, options: CosmosClientOptions) -> Self {
-        self.fault_client_options = Some(options);
+    /// Sets the preferred regions for the fault injection client.
+    pub fn with_fault_client_preferred_regions(mut self, regions: Vec<RegionName>) -> Self {
+        self.fault_client_preferred_regions = regions;
         self
     }
 
@@ -193,23 +184,23 @@ fn is_azure_pipelines() -> bool {
 }
 
 impl TestClient {
-    pub fn from_env_with_fault_options(
-        fault_client_options: Option<CosmosClientOptions>,
+    pub async fn from_env_with_fault_options(
+        fault_client_preferred_regions: Vec<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, None, fault_client_options)
+        Self::from_env_inner(Vec::new(), None, fault_client_preferred_regions).await
     }
 
-    pub fn from_env(
-        options: Option<CosmosClientOptions>,
+    pub async fn from_env(
+        preferred_regions: Vec<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(options, None, None)
+        Self::from_env_inner(preferred_regions, None, Vec::new()).await
     }
 
-    pub fn from_env_with_fault_builder(
+    pub async fn from_env_with_fault_builder(
         fault_builder: FaultInjectionClientBuilder,
-        cosmos_options: Option<CosmosClientOptions>,
+        preferred_regions: Vec<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(cosmos_options, Some(fault_builder), None)
+        Self::from_env_inner(preferred_regions, Some(fault_builder), Vec::new()).await
     }
 
     /// Creates a new [`TestClient`] from local environment variables.
@@ -217,10 +208,10 @@ impl TestClient {
     /// If the environment variables are not set, this client will contain no underlying [`CosmosClient`].
     /// Calling `run` on such a client will skip running the closure (thus skipping the test), except when
     /// running on Azure Pipelines, when it will panic instead.
-    fn from_env_inner(
-        options: Option<CosmosClientOptions>,
+    async fn from_env_inner(
+        preferred_regions: Vec<RegionName>,
         fault_builder: Option<FaultInjectionClientBuilder>,
-        fault_client_options: Option<CosmosClientOptions>,
+        fault_client_preferred_regions: Vec<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -231,37 +222,41 @@ impl TestClient {
 
         match env_var.as_ref() {
             "emulator" => {
-                if fault_client_options.is_some() {
+                if !fault_client_preferred_regions.is_empty() {
                     eprintln!(
-                        "warning: fault_client_options are ignored for emulator connections; \
+                        "warning: fault_client_preferred_regions are ignored for emulator connections; \
                          the emulator always uses its own transport with invalid-cert acceptance"
                     );
                 }
                 // Ignore that the test mode says playback, if the user explicitly asked for emulator, we use it.
                 Self::from_connection_string(
                     EMULATOR_CONNECTION_STRING,
-                    options,
+                    preferred_regions,
                     true,
                     fault_builder,
-                    None,
+                    Vec::new(),
                 )
+                .await
             }
-            _ => Self::from_connection_string(
-                &env_var,
-                options,
-                false,
-                fault_builder,
-                fault_client_options,
-            ),
+            _ => {
+                Self::from_connection_string(
+                    &env_var,
+                    preferred_regions,
+                    false,
+                    fault_builder,
+                    fault_client_preferred_regions,
+                )
+                .await
+            }
         }
     }
 
-    fn from_connection_string(
+    async fn from_connection_string(
         connection_string: &str,
-        options: Option<CosmosClientOptions>,
+        preferred_regions: Vec<RegionName>,
         mut allow_invalid_certificates: bool,
         fault_builder: Option<FaultInjectionClientBuilder>,
-        fault_client_options: Option<CosmosClientOptions>,
+        fault_client_preferred_regions: Vec<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -274,44 +269,45 @@ impl TestClient {
             }
         }
 
-        if fault_builder.is_some() && fault_client_options.is_some() {
+        let credential = connection_string.account_key.clone();
+        let mut builder = azure_data_cosmos::CosmosClient::builder();
+
+        // Apply preferred regions for the client
+        if !preferred_regions.is_empty() {
+            builder = builder.with_application_preferred_regions(preferred_regions);
+        }
+
+        // Configure invalid certificate acceptance (e.g., for emulator)
+        #[cfg(feature = "allow_invalid_certificates")]
+        if allow_invalid_certificates {
+            builder = builder.with_allow_emulator_invalid_certificates(true);
+        }
+        #[cfg(not(feature = "allow_invalid_certificates"))]
+        if allow_invalid_certificates {
             return Err(
-                "cannot use fault_injection_builder and fault_client_options together; \
-                 use fault_injection_builder for emulator tests (wraps transport with \
-                 invalid-cert acceptance) or fault_client_options for standalone options"
+                "The 'allow_invalid_certificates' feature must be enabled to accept invalid certificates. \
+                 Add `allow_invalid_certificates` to the features list."
                     .into(),
             );
         }
 
-        let mut options = if let Some(opts) = fault_client_options {
-            opts
-        } else {
-            options.unwrap_or_default()
-        };
-
-        if allow_invalid_certificates {
-            let client = ClientBuilder::new()
-                .danger_accept_invalid_certs(true)
-                .pool_max_idle_per_host(0)
-                .build()?;
-
-            if let Some(builder) = fault_builder {
-                // Wrap the invalid-certs client with the FaultClient so fault injection
-                // intercepts requests before they reach the real transport.
-                let http_client: Arc<dyn HttpClient> = Arc::new(client);
-                options = builder.inject_with_http_client(http_client, options);
-            } else {
-                options.client_options.transport = Some(Transport::new(Arc::new(client)));
-            }
-        } else if let Some(builder) = fault_builder {
-            options = builder.inject(options);
+        // Configure fault injection if builder provided
+        if let Some(fault_builder) = fault_builder {
+            builder = builder.with_fault_injection(fault_builder);
         }
 
-        let cosmos_client = azure_data_cosmos::CosmosClient::with_key(
-            &connection_string.account_endpoint,
-            connection_string.account_key.clone(),
-            Some(options),
-        )?;
+        // Apply fault client preferred regions
+        if !fault_client_preferred_regions.is_empty() {
+            builder = builder.with_application_preferred_regions(fault_client_preferred_regions);
+        }
+
+        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
+            connection_string.account_endpoint.parse()?;
+        let cosmos_client = builder
+            .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
+                endpoint, credential,
+            ))
+            .await?;
 
         Ok(TestClient {
             cosmos_client: Some(cosmos_client),
@@ -331,11 +327,11 @@ impl TestClient {
     /// This method supports:
     /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
     /// - Custom CosmosClient options for the normal client
-    /// - Custom CosmosClient options for the fault injection client
+    /// - Preferred regions for the fault injection client
     ///
     /// The test function receives a [`TestRunContext`] which provides access to both:
     /// - A normal client via `client()` and `shared_db_client()`
-    /// - A fault injection client via `fault_client()` and `fault_db_client()` (if fault_client_options was set)
+    /// - A fault injection client via `fault_client()` and `fault_db_client()` (if fault injection was configured)
     pub async fn run_with_options<F>(
         mut test: F,
         options: TestOptions,
@@ -368,18 +364,22 @@ impl TestClient {
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        let test_client = Self::from_env(options.client_options.clone())?;
+        let test_client = Self::from_env(options.client_preferred_regions.clone()).await?;
 
-        // Create fault injection client if builder or options were provided
+        // Create fault injection client if builder or preferred regions were provided
         // builder should be passed in for emulator tests to ensure the FaultClient
         // wraps the HTTP client with invalid cert acceptance,
         // which is required for emulator connectivity
         let fault_client = if let Some(builder) = options.fault_injection_builder {
-            Some(Self::from_env_with_fault_builder(builder, None)?)
-        } else if options.fault_client_options.is_some() {
-            Some(Self::from_env_with_fault_options(
-                options.fault_client_options,
-            )?)
+            Some(
+                Self::from_env_with_fault_builder(
+                    builder,
+                    options.fault_client_preferred_regions.clone(),
+                )
+                .await?,
+            )
+        } else if !options.fault_client_preferred_regions.is_empty() {
+            Some(Self::from_env_with_fault_options(options.fault_client_preferred_regions).await?)
         } else {
             None
         };
@@ -486,7 +486,7 @@ impl TestClient {
 /// The normal client is always available via `client()` and `shared_db_client()`.
 /// The fault injection client is available via `fault_client()` and `fault_db_client()`
 /// if `TestOptions::with_fault_injection_builder()` was called
-/// or if `TestOptions::with_fault_client_options()` was called.
+/// or if `TestOptions::with_fault_client_preferred_regions()` was called.
 pub struct TestRunContext {
     run_id: String,
     /// The normal (non-fault) Cosmos client.
@@ -520,7 +520,7 @@ impl TestRunContext {
     /// Gets the fault injection [`CosmosClient`], if configured.
     ///
     /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_builder()` or
-    /// if `TestOptions::with_fault_client_options()` was called,
+    /// if `TestOptions::with_fault_client_preferred_regions()` was called,
     /// otherwise returns `None`.
     pub fn fault_client(&self) -> Option<&CosmosClient> {
         self.fault_client.as_ref()
@@ -534,7 +534,7 @@ impl TestRunContext {
     /// Gets the shared database client using the fault injection client.
     ///
     /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_builder()` or
-    /// if `TestOptions::with_fault_client_options()` was called,
+    /// if `TestOptions::with_fault_client_preferred_regions()` was called,
     /// otherwise returns `None`.
     pub fn fault_db_client(&self) -> Option<DatabaseClient> {
         self.fault_client()
@@ -576,7 +576,7 @@ impl TestRunContext {
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions<'_>>,
+        options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<T>>
     where
         T: serde::de::DeserializeOwned,
@@ -665,7 +665,7 @@ impl TestRunContext {
         &self,
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
-        options: Option<azure_data_cosmos::CreateContainerOptions<'_>>,
+        options: Option<azure_data_cosmos::CreateContainerOptions>,
     ) -> azure_core::Result<ContainerClient> {
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
@@ -677,7 +677,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id));
+                    return Ok(db_client.container_client(&created.id).await);
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                     println!(
@@ -689,7 +689,7 @@ impl TestRunContext {
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client.container_client(&properties.id);
+                    let container_client = db_client.container_client(&properties.id).await;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -697,7 +697,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id));
+                    return Ok(db_client.container_client(&created.id).await);
                 }
                 Err(e) => return Err(e),
             }
@@ -729,8 +729,8 @@ impl TestRunContext {
             .into_model()?;
 
         // Create two clients with different preferred regions to ensure container is available in both
-        let hub_client = Self::create_client_with_preferred_region(HUB_REGION)?;
-        let satellite_client = Self::create_client_with_preferred_region(SATELLITE_REGION)?;
+        let hub_client = Self::create_client_with_preferred_region(HUB_REGION).await?;
+        let satellite_client = Self::create_client_with_preferred_region(SATELLITE_REGION).await?;
 
         let container_id = &created_properties.id;
 
@@ -739,6 +739,7 @@ impl TestRunContext {
             match hub_client
                 .database_client(db_client.id())
                 .container_client(container_id)
+                .await
                 .read(None)
                 .await
             {
@@ -759,6 +760,7 @@ impl TestRunContext {
             match satellite_client
                 .database_client(db_client.id())
                 .container_client(container_id)
+                .await
                 .read(None)
                 .await
             {
@@ -774,11 +776,11 @@ impl TestRunContext {
             }
         }
 
-        Ok(db_client.container_client(container_id))
+        Ok(db_client.container_client(container_id).await)
     }
 
     /// Creates a CosmosClient with a specific preferred region.
-    fn create_client_with_preferred_region(
+    async fn create_client_with_preferred_region(
         region: RegionName,
     ) -> Result<CosmosClient, azure_core::Error> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
@@ -797,13 +799,20 @@ impl TestRunContext {
             )
         })?;
 
-        let options = CosmosClientOptions::default().with_preferred_regions(vec![region]);
-
-        CosmosClient::with_key(
-            &parsed.account_endpoint,
-            parsed.account_key.clone(),
-            Some(options),
-        )
+        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
+            parsed.account_endpoint.parse().map_err(|e| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    format!("Failed to parse account endpoint: {}", e),
+                )
+            })?;
+        CosmosClient::builder()
+            .with_application_preferred_regions(vec![region])
+            .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
+                endpoint,
+                parsed.account_key.clone(),
+            ))
+            .await
     }
 
     /// Cleans up test resources.

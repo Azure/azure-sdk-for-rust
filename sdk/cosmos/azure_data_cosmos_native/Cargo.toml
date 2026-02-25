@@ -15,9 +15,8 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 azure_core.workspace = true
-azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth", "allow_invalid_certificates"] }
 futures.workspace = true
-reqwest = { workspace = true, optional = true }
 serde_json = { workspace = true, features = ["raw_value"] }
 tokio = { workspace = true, optional = true, features = [
   "rt-multi-thread",
@@ -32,7 +31,7 @@ tracing-subscriber = { workspace = true, optional = true, features = [
 [features]
 default = ["tokio", "reqwest", "reqwest_native_tls", "tracing"]
 tokio = ["dep:tokio"]
-reqwest = ["dep:reqwest", "azure_core/reqwest"]
+reqwest = ["azure_core/reqwest"]
 reqwest_native_tls = ["azure_core/reqwest_native_tls"]
 tracing = ["dep:tracing-subscriber"]
 

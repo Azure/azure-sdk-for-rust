@@ -80,7 +80,7 @@ impl CreateCommand {
                 show_updated,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container);
+                let container_client = db_client.container_client(&container).await;
 
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
@@ -108,11 +108,8 @@ impl CreateCommand {
             } => {
                 let throughput_properties: Option<ThroughputProperties> =
                     throughput_options.try_into()?;
-                let options = throughput_properties.map(|p| {
-                    let mut options = CreateDatabaseOptions::default();
-                    options.throughput = Some(p);
-                    options
-                });
+                let options = throughput_properties
+                    .map(|p| CreateDatabaseOptions::default().with_throughput(p));
 
                 let db = client.create_database(&id, options).await?.into_model()?;
                 println!("Created database:");
@@ -129,11 +126,8 @@ impl CreateCommand {
             } => {
                 let throughput_properties: Option<ThroughputProperties> =
                     throughput_options.try_into()?;
-                let options = throughput_properties.map(|p| {
-                    let mut options = CreateContainerOptions::default();
-                    options.throughput = Some(p);
-                    options
-                });
+                let options = throughput_properties
+                    .map(|p| CreateContainerOptions::default().with_throughput(p));
 
                 let properties = match json {
                     Some(j) => serde_json::from_str(&j).unwrap(),

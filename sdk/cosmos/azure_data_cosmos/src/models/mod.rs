@@ -13,7 +13,7 @@ mod indexing_policy;
 mod partition_key_definition;
 mod throughput_properties;
 
-pub use account_properties::*;
+pub(crate) use account_properties::*;
 pub use container_properties::*;
 pub use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;

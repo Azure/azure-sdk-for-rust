@@ -14,9 +14,9 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 use crate::routing::service_identity::ServiceIdentity;
-use crate::{CosmosResponse, ReadDatabaseOptions};
+use crate::CosmosResponse;
 use azure_core::http::headers::HeaderName;
-use azure_core::http::StatusCode;
+use azure_core::http::{Context, StatusCode};
 use azure_core::Error;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -257,9 +257,6 @@ impl PartitionKeyRangeCache {
         resource_link: ResourceLink,
         if_none_match: Option<String>,
     ) -> azure_core::Result<CosmosResponse<()>> {
-        let options = ReadDatabaseOptions {
-            ..Default::default()
-        };
         let builder = CosmosRequest::builder(OperationType::ReadFeed, resource_link.clone());
         let mut cosmos_request = builder
             .resource_id(collection_rid.to_string())
@@ -283,11 +280,7 @@ impl PartitionKeyRangeCache {
         let pk_endpoint = resource_link.url(&endpoint);
 
         cosmos_request.request_context.location_endpoint_to_route = Some(pk_endpoint);
-        let ctx_owned = options
-            .method_options
-            .context
-            .with_value(resource_link)
-            .into_owned();
+        let ctx_owned = Context::default().with_value(resource_link);
 
         self.pipeline.send(cosmos_request, ctx_owned).await
     }

@@ -4,11 +4,17 @@
 
 ### Features Added
 
+- Default Azure Storage logging configuration (allowed headers and query parameters) is now automatically applied to all Queue clients.
+- Added support for `set_access_policy` and `get_access_policy` to `QueueClient`.
+
 ### Breaking Changes
 
+- Changed `QueueClient::set_metadata()` `metadata` parameter from owned `HashMap<String, String>` to `&HashMap<String, String>`.
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 
 ### Bugs Fixed
+
+- Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Queue Storage client.
 
 ### Other Changes
 

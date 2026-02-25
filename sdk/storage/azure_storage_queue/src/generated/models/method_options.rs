@@ -111,9 +111,9 @@ pub struct QueueClientReceiveMessagesOptions<'a> {
     pub visibility_timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueClient::send_message()`
+/// Options to be passed to `QueueClient::send_message_internal()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueClientSendMessageOptions<'a> {
+pub struct QueueClientSendMessageInternalOptions<'a> {
     /// Optional. Specifies the time-to-live interval for the message, in seconds.
     /// Prior to version 2017-07-29, the maximum time-to-live allowed is 7 days. For
     /// version 2017-07-29 or later, the maximum time-to-live can be any positive
@@ -180,16 +180,6 @@ pub struct QueueServiceClientGetPropertiesOptions<'a> {
 /// Options to be passed to `QueueServiceClient::get_statistics()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientGetStatisticsOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `QueueServiceClient::get_user_delegation_key()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct QueueServiceClientGetUserDelegationKeyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 

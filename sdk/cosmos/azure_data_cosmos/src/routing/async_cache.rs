@@ -125,6 +125,13 @@ where
         Ok(value)
     }
 
+    /// Inserts a value directly into the cache.
+    pub async fn insert(&self, key: K, value: V) {
+        let mut store = self.store.write().await;
+        let entry = CacheEntry::new(value, self.ttl);
+        store.insert(key, entry);
+    }
+
     /// Removes a value from the cache
     /// Returns the removed value if it existed and wasn't expired
     pub async fn remove(&self, key: &K) -> Option<V> {

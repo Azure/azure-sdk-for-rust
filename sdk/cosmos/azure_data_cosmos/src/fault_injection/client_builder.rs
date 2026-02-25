@@ -7,46 +7,60 @@ use std::sync::Arc;
 
 use azure_core::http::Transport;
 
-use crate::options::CosmosClientOptions;
-
 use super::http_client::FaultClient;
 use super::rule::FaultInjectionRule;
 
 /// Builder for creating a fault injection client.
+///
+/// This builder creates a [`Transport`] that can be used with [`CosmosClientBuilder`](crate::CosmosClientBuilder)
+/// to inject faults for testing purposes.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use azure_data_cosmos::{
+///     CosmosClientBuilder, CosmosAccountEndpoint,
+///     fault_injection::{
+///         FaultInjectionClientBuilder, FaultInjectionErrorType,
+///         FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+///     },
+/// };
+/// use azure_core::credentials::Secret;
+/// use std::sync::Arc;
+///
+/// # async fn doc() {
+/// let result = FaultInjectionResultBuilder::new()
+///     .with_error(FaultInjectionErrorType::ServiceUnavailable)
+///     .build();
+///
+/// let rule = Arc::new(FaultInjectionRuleBuilder::new("my-rule", result).build());
+///
+/// let fault_builder = FaultInjectionClientBuilder::new()
+///     .with_rule(rule);
+///
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let client = CosmosClientBuilder::new()
+///     .with_fault_injection(fault_builder)
+///     .build((endpoint, Secret::from("my_account_key")))
+///     .await
+///     .unwrap();
+/// # }
+/// ```
 pub struct FaultInjectionClientBuilder {
     /// The fault injection rules to apply.
     /// First valid rule will be applied.
     rules: Vec<Arc<FaultInjectionRule>>,
+    /// Optional custom inner HTTP client (for testing with custom transports).
+    inner_client: Option<Arc<dyn azure_core::http::HttpClient>>,
 }
 
 impl FaultInjectionClientBuilder {
     /// Creates a new FaultInjectionClientBuilder.
     pub fn new() -> Self {
-        Self { rules: Vec::new() }
-    }
-
-    /// Injects the fault injection client into the CosmosClientOptions using the default HTTP client.
-    ///
-    /// This wraps a default HTTP client with the fault injection client and sets it as the transport.
-    pub fn inject(self, options: CosmosClientOptions) -> CosmosClientOptions {
-        self.inject_with_http_client(azure_core::http::new_http_client(), options)
-    }
-
-    /// Injects the fault injection client into the CosmosClientOptions using a custom HTTP client.
-    ///
-    /// This wraps the provided `inner_client` with the fault injection client and sets it as the
-    /// transport. Use this when the inner HTTP client needs custom configuration (e.g., accepting
-    /// invalid certificates for emulator tests).
-    pub fn inject_with_http_client(
-        self,
-        inner_client: Arc<dyn azure_core::http::HttpClient>,
-        mut options: CosmosClientOptions,
-    ) -> CosmosClientOptions {
-        let fault_client = FaultClient::new(inner_client, self.rules);
-        options.client_options.transport = Some(Transport::new(Arc::new(fault_client)));
-        options.fault_injection_enabled = true;
-
-        options
+        Self {
+            rules: Vec::new(),
+            inner_client: None,
+        }
     }
 
     /// Adds a fault injection rule to the builder.
@@ -57,6 +71,33 @@ impl FaultInjectionClientBuilder {
     pub fn with_rule(mut self, rule: Arc<FaultInjectionRule>) -> Self {
         self.rules.push(rule);
         self
+    }
+
+    /// Sets a custom inner HTTP client to wrap with fault injection.
+    ///
+    /// This is useful when you need fault injection combined with other transport
+    /// customizations, such as accepting invalid certificates for emulator testing.
+    ///
+    /// If not set, a default HTTP client will be created.
+    pub fn with_inner_client(mut self, client: Arc<dyn azure_core::http::HttpClient>) -> Self {
+        self.inner_client = Some(client);
+        self
+    }
+
+    /// Builds the fault injection transport.
+    ///
+    /// Returns a [`Transport`] that wraps the inner HTTP client with fault injection capabilities.
+    ///
+    /// Note: When using [`CosmosClientBuilder::with_fault_injection()`](crate::CosmosClientBuilder::with_fault_injection()),
+    /// this method is called internally. You only need to call `build()` directly if constructing
+    /// the transport for use outside of `CosmosClientBuilder`.
+    pub fn build(self) -> Transport {
+        let inner_client = self
+            .inner_client
+            .unwrap_or_else(|| azure_core::http::new_http_client());
+
+        let fault_client = FaultClient::new(inner_client, self.rules);
+        Transport::new(Arc::new(fault_client))
     }
 }
 
@@ -69,14 +110,11 @@ impl Default for FaultInjectionClientBuilder {
 #[cfg(test)]
 mod tests {
     use super::FaultInjectionClientBuilder;
-    use crate::options::CosmosClientOptions;
 
     #[test]
     fn builder_default() {
         let builder = FaultInjectionClientBuilder::default();
-        let options = builder.inject(CosmosClientOptions::default());
-
-        assert!(options.fault_injection_enabled);
-        assert!(options.client_options.transport.is_some());
+        let _transport = builder.build();
+        // Transport is created successfully - that's all we can verify without more setup
     }
 }

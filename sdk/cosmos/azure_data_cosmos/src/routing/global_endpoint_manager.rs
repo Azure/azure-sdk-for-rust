@@ -10,8 +10,8 @@ use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::location_cache::{LocationCache, RequestOperation};
 use crate::ReadDatabaseOptions;
-use azure_core::http::{Pipeline, Response};
 use azure_core::time::Duration;
+use azure_core::http::{Context, Pipeline, Response};
 use azure_core::Error;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -440,9 +440,6 @@ impl GlobalEndpointManager {
     /// # Returns
     /// `Ok(Response<AccountProperties>)` with account metadata, or `Err` if request failed
     pub async fn get_database_account(&self) -> azure_core::Result<Response<AccountProperties>> {
-        let options = ReadDatabaseOptions {
-            ..Default::default()
-        };
         let resource_link = ResourceLink::root(ResourceType::DatabaseAccount);
         let builder = CosmosRequest::builder(OperationType::Read, resource_link.clone());
         let mut cosmos_request = builder.build()?;
@@ -452,11 +449,7 @@ impl GlobalEndpointManager {
             .unwrap()
             .resolve_service_endpoint(&cosmos_request);
         cosmos_request.request_context.location_endpoint_to_route = Some(endpoint);
-        let ctx_owned = options
-            .method_options
-            .context
-            .with_value(resource_link)
-            .into_owned();
+        let ctx_owned = Context::default().with_value(resource_link);
         self.pipeline
             .send(&ctx_owned, &mut cosmos_request.into_raw_request(), None)
             .await

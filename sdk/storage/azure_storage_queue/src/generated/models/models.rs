@@ -83,32 +83,6 @@ pub struct GeoReplication {
     pub status: Option<GeoReplicationStatusType>,
 }
 
-/// Key information for user delegation key
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-pub struct KeyInfo {
-    /// The delegated user tenant id in Azure AD
-    #[serde(rename = "DelegatedUserTid", skip_serializing_if = "Option::is_none")]
-    pub delegated_user_tid: Option<String>,
-
-    /// The date-time the key expires in ISO 8601 UTC time
-    #[serde(
-        default,
-        rename = "Expiry",
-        skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
-    )]
-    pub expiry: Option<OffsetDateTime>,
-
-    /// The date-time the key is active in ISO 8601 UTC time
-    #[serde(
-        default,
-        rename = "Start",
-        skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
-    )]
-    pub start: Option<OffsetDateTime>,
-}
-
 /// List wrapper for PeekedMessageItem array
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -137,15 +111,6 @@ pub struct ListOfSentMessage {
     /// The list of enqueued messages.
     #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<SentMessage>>,
-}
-
-/// Represents an array of signed identifiers
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[serde(rename = "SignedIdentifiers")]
-pub struct ListOfSignedIdentifier {
-    /// The list of signed identifiers.
-    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<SignedIdentifier>>,
 }
 
 /// The list queue segment response
@@ -441,52 +406,11 @@ pub struct SignedIdentifier {
     pub id: Option<String>,
 }
 
-/// A user delegation key
+/// Represents an array of signed identifiers
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct UserDelegationKey {
-    /// The delegated user tenant id in Azure AD. Return if DelegatedUserTid is specified.
-    #[serde(
-        rename = "SignedDelegatedUserTid",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub signed_delegated_user_tid: Option<String>,
-
-    /// The date-time the key expires
-    #[serde(
-        default,
-        rename = "SignedExpiry",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub signed_expiry: Option<OffsetDateTime>,
-
-    /// The Azure Active Directory object ID in GUID format.
-    #[serde(rename = "SignedOid", skip_serializing_if = "Option::is_none")]
-    pub signed_oid: Option<String>,
-
-    /// The service that created the key
-    #[serde(rename = "SignedService", skip_serializing_if = "Option::is_none")]
-    pub signed_service: Option<String>,
-
-    /// The date-time the key is active
-    #[serde(
-        default,
-        rename = "SignedStart",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub signed_start: Option<OffsetDateTime>,
-
-    /// The Azure Active Directory tenant ID in GUID format
-    #[serde(rename = "SignedTid", skip_serializing_if = "Option::is_none")]
-    pub signed_tid: Option<String>,
-
-    /// The version of the service that created the key
-    #[serde(rename = "SignedVersion", skip_serializing_if = "Option::is_none")]
-    pub signed_version: Option<String>,
-
-    /// The key as a base64 string
-    #[serde(rename = "Value", skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
+#[serde(rename = "SignedIdentifiers")]
+pub struct SignedIdentifiers {
+    /// The list of signed identifiers.
+    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SignedIdentifier>>,
 }

@@ -21,6 +21,7 @@ policyid
 prevsnapshot
 RAGRS
 RAGZRS
+raup
 restype
 rscc
 rscd
@@ -41,3 +42,6 @@ uncommittedblobs
 Undeletes
 westus
 yourtagname
+messagettl
+popreceipt
+visibilitytimeout

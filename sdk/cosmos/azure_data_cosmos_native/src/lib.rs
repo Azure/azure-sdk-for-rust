@@ -48,32 +48,6 @@ pub fn unwrap_required_ptr<'a, T>(
     }
 }
 
-/// Reads a `*const` pointer to a C struct, which implements `TryInto` some other Rust struct and produces an `Option<T>`.
-///
-/// If the pointer is null, returns `Ok(None)`. If non-null, attempts to convert the pointed-to value into `T` using `TryFrom`.
-///
-/// # Arguments
-/// * `ptr` - The pointer to read and convert.
-///
-/// # Returns
-/// * `Ok(Some(T))` if the pointer is non-null and conversion succeeded.
-/// * `Ok(None)` if the pointer is null.
-/// * `Err(E)` if the pointer is non-null but conversion failed.
-fn convert_optional_ptr<'a, C, T>(
-    ptr: *const C,
-) -> Result<Option<T>, <T as std::convert::TryFrom<&'a C>>::Error>
-where
-    T: TryFrom<&'a C>,
-{
-    if ptr.is_null() {
-        Ok(None)
-    } else {
-        let val = unsafe { &*ptr };
-        let converted: T = T::try_from(val)?;
-        Ok(Some(converted))
-    }
-}
-
 // We just want this value to be present as a string in the compiled binary.
 // But in order to prevent the compiler from optimizing it away, we expose it as a non-mangled static variable.
 /// cbindgen:ignore

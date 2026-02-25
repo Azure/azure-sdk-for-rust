@@ -11,7 +11,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::{CosmosClientOptions, ItemOptions};
+use azure_data_cosmos::ItemOptions;
 use framework::{
     get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
@@ -53,7 +53,6 @@ async fn verify_read_fails_with_injected_error(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -87,7 +86,7 @@ async fn verify_read_fails_with_injected_error(
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let result = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
@@ -107,7 +106,7 @@ async fn verify_read_fails_with_injected_error(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -180,9 +179,6 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
-    // Inject the fault into client options for the fault client
-    let fault_options = fault_builder.inject(CosmosClientOptions::default());
-
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             // Create a container using the normal client
@@ -217,7 +213,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Read the item using the fault client - this should succeed because the fault only targets CreateItem
             let result = run_context
@@ -240,7 +236,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
     )
     .await
 }
@@ -264,9 +260,6 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -299,7 +292,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Read should succeed on satellite region after primary returns 503
             let result = run_context
@@ -317,7 +310,11 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -341,10 +338,6 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
 
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
-
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
@@ -360,7 +353,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let unique_id = Uuid::new_v4().to_string();
             let item = TestItem {
@@ -393,7 +386,11 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -418,9 +415,6 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -453,7 +447,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Make sure the write has been replicated on both regions
             let _ = run_context
@@ -482,7 +476,11 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]),
+        ),
     )
     .await
 }
@@ -507,9 +505,6 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -526,7 +521,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let unique_id = Uuid::new_v4().to_string();
             let item = TestItem {
@@ -553,7 +548,11 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -577,9 +576,6 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -612,7 +608,7 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Ensure replication to satellite before reading with fault client
             let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
@@ -633,7 +629,11 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -657,9 +657,6 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -676,7 +673,7 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let unique_id = Uuid::new_v4().to_string();
             let item = TestItem {
@@ -699,7 +696,11 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -724,9 +725,6 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -758,7 +756,7 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Ensure replication to satellite
             let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
@@ -779,7 +777,11 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }
@@ -803,9 +805,6 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -822,7 +821,7 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let unique_id = Uuid::new_v4().to_string();
             let item = TestItem {
@@ -849,7 +848,11 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![SATELLITE_REGION, HUB_REGION]),
+        ),
     )
     .await
 }
@@ -874,9 +877,6 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
-    let client_options =
-        CosmosClientOptions::default().with_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]);
-    let fault_options = fault_builder.inject(client_options);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -908,7 +908,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
@@ -924,7 +924,11 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_client_options(fault_options)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_preferred_regions(vec![HUB_REGION, SATELLITE_REGION]),
+        ),
     )
     .await
 }

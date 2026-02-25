@@ -1,102 +1,70 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+pub use crate::generated::clients::{QueueServiceClient, QueueServiceClientOptions};
+
 use crate::{
     clients::QueueClient,
-    generated::{
-        clients::{
-            QueueClient as GeneratedQueueClient, QueueServiceClient as GeneratedQueueServiceClient,
-            QueueServiceClientOptions,
-        },
-        models::*,
-    },
+    generated::models::{QueueClientCreateOptions, QueueClientDeleteOptions},
+    logging::apply_storage_logging_defaults,
 };
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pager, Pipeline, RequestContent, Response, Url, XmlFormat,
+        NoFormat, Pipeline, Response, Url,
     },
     tracing, Result,
 };
 use std::sync::Arc;
 
-/// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
-pub struct QueueServiceClient {
-    pub(super) client: GeneratedQueueServiceClient,
-}
-
-impl GeneratedQueueServiceClient {
-    /// Creates a new GeneratedQueueServiceClient from a service URL.
+impl QueueServiceClient {
+    /// Creates a new QueueServiceClient, using Entra ID authentication.
     ///
     /// # Arguments
     ///
-    /// * `service_url` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication. If None, the URL must contain authentication information (e.g., SAS token).
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication.
+    ///   If None, the URL must contain authentication information (e.g., SAS token).
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Service")]
-    pub fn from_url(
-        service_url: Url,
+    pub fn new(
+        endpoint: &str,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
-        let options = options.unwrap_or_default();
+        let endpoint = Url::parse(endpoint)?;
+        let mut options = options.unwrap_or_default();
+        apply_storage_logging_defaults(&mut options.client_options);
 
-        let per_retry_policies = if let Some(token_credential) = credential.clone() {
-            if !service_url.scheme().starts_with("https") {
+        if let Some(token_credential) = credential {
+            if !endpoint.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{service_url} must use https"),
+                    format!("{endpoint} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            vec![auth_policy]
-        } else {
-            Vec::default()
-        };
+            options.client_options.per_try_policies.push(auth_policy);
+        }
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            per_retry_policies,
+            Vec::default(),
             None,
         );
 
         Ok(Self {
-            endpoint: service_url,
+            endpoint,
             version: options.version,
             pipeline,
         })
-    }
-}
-
-impl QueueServiceClient {
-    /// Creates a new QueueServiceClient using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication. If None, the URL must contain authentication information (e.g., SAS token).
-    /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<QueueServiceClientOptions>,
-    ) -> Result<Self> {
-        let url = Url::parse(endpoint)?;
-        let client =
-            GeneratedQueueServiceClient::from_url(url, credential.clone(), options.clone())?;
-        Ok(Self { client })
-    }
-
-    /// Returns the endpoint URL of the Azure storage account this client is associated with.
-    pub fn endpoint(&self) -> &Url {
-        self.client.endpoint()
     }
 
     /// Returns a new instance of QueueClient.
@@ -116,12 +84,10 @@ impl QueueServiceClient {
             })?
             .push(queue_name);
         Ok(QueueClient {
-            client: GeneratedQueueClient {
-                endpoint: queue_url,
-                pipeline: self.client.pipeline.clone(),
-                version: self.client.version.clone(),
-                tracer: self.client.tracer.clone(),
-            },
+            endpoint: queue_url,
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
         })
     }
 
@@ -129,8 +95,8 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
     /// * `queue_name` - The name of the queue to create.
+    /// * `options` - Optional configuration for the request.
     pub async fn create_queue(
         &self,
         queue_name: &str,
@@ -143,67 +109,13 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional configuration for the request.
     /// * `queue_name` - The name of the queue to delete.
+    /// * `options` - Optional configuration for the request.
     pub async fn delete_queue(
         &self,
         queue_name: &str,
         options: Option<QueueClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.queue_client(queue_name)?.delete(options).await
-    }
-
-    /// Retrieves the properties for the entire queue service.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional configuration for the request.
-    pub async fn get_properties(
-        &self,
-        options: Option<QueueServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<QueueServiceProperties, XmlFormat>> {
-        self.client.get_properties(options).await
-    }
-
-    /// Sets the properties of the queue service.
-    ///
-    /// # Arguments
-    ///
-    /// * `storage_service_properties` - The properties to set for the queue service.
-    /// * `content_type` - The content type of the request body, typically "application/xml"
-    /// * `options` - Optional configuration for the request.
-    pub async fn set_properties(
-        &self,
-        queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>,
-        options: Option<QueueServiceClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.client
-            .set_properties(queue_service_properties, options)
-            .await
-    }
-
-    /// Lists queues in the storage account, returning a segment of results.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional configuration for the request.
-    pub fn list_queues(
-        &self,
-        options: Option<QueueServiceClientListQueuesOptions<'_>>,
-    ) -> Result<Pager<ListQueuesResponse, XmlFormat>> {
-        self.client.list_queues(options)
-    }
-
-    /// Retrieves statistics related to replication for the Queue service. Note: Queue statistics are only available on
-    /// the secondary location endpoint when read-access geo-redundant replication is enabled for the Storage account.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional configuration for the request.
-    pub async fn get_statistics(
-        &self,
-        options: Option<QueueServiceClientGetStatisticsOptions<'_>>,
-    ) -> Result<Response<QueueServiceStats, XmlFormat>> {
-        self.client.get_statistics(options).await
     }
 }

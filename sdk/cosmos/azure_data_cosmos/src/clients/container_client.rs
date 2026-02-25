@@ -20,6 +20,7 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
+use azure_core::http::Context;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -35,7 +36,7 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         pipeline: Arc<GatewayPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
@@ -93,14 +94,29 @@ impl ContainerClient {
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read(
         &self,
-        options: Option<ReadContainerOptions<'_>>,
+        #[allow(
+            unused_variables,
+            reason = "The 'options' parameter may be used in the future"
+        )]
+        options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
-        let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
-        self.container_connection
-            .send(cosmos_request, options.method_options.context)
-            .await
+        let response: CosmosResponse<ContainerProperties> = self
+            .container_connection
+            .send(cosmos_request, Context::default())
+            .await?;
+
+        // Populate the container cache so that subsequent item operations
+        // (which resolve container properties for partition-level routing)
+        // find them already cached and avoid an extra metadata fetch.
+        if let Ok(properties) = response.deserialize_body::<ContainerProperties>() {
+            self.container_connection
+                .populate_container_cache(self.container_id.clone(), properties)
+                .await;
+        }
+
+        Ok(response)
     }
 
     /// Updates the indexing policy of the container.
@@ -131,14 +147,17 @@ impl ContainerClient {
     pub async fn replace(
         &self,
         properties: ContainerProperties,
-        options: Option<ReplaceContainerOptions<'_>>,
+        #[allow(
+            unused_variables,
+            reason = "The 'options' parameter may be used in the future"
+        )]
+        options: Option<ReplaceContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
-        let options = options.unwrap_or_default();
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
             .json(&properties)
             .build()?;
         self.container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await
     }
 
@@ -151,10 +170,12 @@ impl ContainerClient {
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_throughput(
         &self,
-        options: Option<ThroughputOptions<'_>>,
+        #[allow(
+            unused_variables,
+            reason = "The 'options' parameter may be used in the future"
+        )]
+        options: Option<ThroughputOptions>,
     ) -> azure_core::Result<Option<ThroughputProperties>> {
-        let options = options.unwrap_or_default();
-
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -163,10 +184,14 @@ impl ContainerClient {
             .expect("service should always return a '_rid' for a container");
 
         let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.read(options.method_options.context).await
+        offers_client.read(Context::default()).await
     }
 
     /// Replaces the container throughput properties.
+    ///
+    /// Note that throughput changes may not take effect immediately.
+    /// The service processes the change asynchronously, so you may need to poll
+    /// [`ContainerClient::read_throughput()`] to confirm the new throughput is in effect.
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
@@ -175,8 +200,12 @@ impl ContainerClient {
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
-        options: Option<ThroughputOptions<'_>>,
+        options: Option<ThroughputOptions>,
     ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+        #[allow(
+            unused_variables,
+            reason = "The 'options' variable may be used in the future"
+        )]
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
@@ -187,9 +216,7 @@ impl ContainerClient {
             .expect("service should always return a '_rid' for a container");
 
         let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client
-            .replace(options.method_options.context, throughput)
-            .await
+        offers_client.replace(Context::default(), throughput).await
     }
 
     /// Deletes this container.
@@ -201,13 +228,16 @@ impl ContainerClient {
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete(
         &self,
-        options: Option<DeleteContainerOptions<'_>>,
+        #[allow(
+            unused_variables,
+            reason = "The 'options' parameter may be used in the future"
+        )]
+        options: Option<DeleteContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
-        let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
         self.container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await
     }
 
@@ -245,7 +275,7 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
-    /// If you want the new item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
+    /// If you want the new item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
     /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
@@ -278,7 +308,7 @@ impl ContainerClient {
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
-        options: Option<ItemOptions<'_>>,
+        options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let excluded_regions = options.excluded_regions.clone();
@@ -291,7 +321,7 @@ impl ContainerClient {
         options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await
     }
 
@@ -330,7 +360,7 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
-    /// If you want the replaced item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
+    /// If you want the replaced item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
     /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
@@ -363,7 +393,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         item: T,
-        options: Option<ItemOptions<'_>>,
+        options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
@@ -376,7 +406,7 @@ impl ContainerClient {
         options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await
     }
 
@@ -418,7 +448,7 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
-    /// If you want the created/replaced item to be returned, set the [`ItemOptions::content_response_on_write_enabled`] option to `true`.
+    /// If you want the created/replaced item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
     /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
@@ -450,7 +480,7 @@ impl ContainerClient {
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
-        options: Option<ItemOptions<'_>>,
+        options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let excluded_regions = options.excluded_regions.clone();
@@ -464,7 +494,7 @@ impl ContainerClient {
 
         return self
             .container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await;
     }
 
@@ -475,7 +505,7 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to read.
     /// * `options` - Optional parameters for the request
     ///
-    /// NOTE: The read item is always returned, so the [`ItemOptions::content_response_on_write_enabled`] option is ignored.
+    /// NOTE: The read item is always returned, so the [`ItemOptions::with_content_response_on_write_enabled()`] option is ignored.
     ///
     /// # Examples
     ///
@@ -503,12 +533,12 @@ impl ContainerClient {
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions<'_>>,
+        options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<T>> {
         let mut options = options.unwrap_or_default();
 
         // Read APIs should always return the item, ignoring whatever the user set.
-        options.content_response_on_write_enabled = true;
+        options = options.with_content_response_on_write_enabled(true);
 
         let link = self.items_link.item(item_id);
         let excluded_regions = options.excluded_regions.clone();
@@ -519,7 +549,7 @@ impl ContainerClient {
         options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await
     }
 
@@ -530,7 +560,7 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to delete.
     /// * `options` - Optional parameters for the request
     ///
-    /// NOTE: The deleted item is never returned by the Cosmos API, so the [`ItemOptions::content_response_on_write_enabled`] option is ignored.
+    /// NOTE: The deleted item is never returned by the Cosmos API, so the [`ItemOptions::with_content_response_on_write_enabled()`] option is ignored.
     ///
     /// # Examples
     ///
@@ -548,7 +578,7 @@ impl ContainerClient {
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions<'_>>,
+        options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
@@ -560,7 +590,7 @@ impl ContainerClient {
         options.apply_headers(&mut cosmos_request.headers);
 
         self.container_connection
-            .send(cosmos_request, options.method_options.context)
+            .send(cosmos_request, Context::default())
             .await
     }
 
@@ -628,7 +658,7 @@ impl ContainerClient {
         &self,
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
-        options: Option<QueryOptions<'_>>,
+        options: Option<QueryOptions>,
     ) -> azure_core::Result<FeedItemIterator<T>> {
         let options = options.unwrap_or_default();
         let partition_key = partition_key.into();
@@ -645,7 +675,7 @@ impl ContainerClient {
         crate::query::executor::QueryExecutor::new(
             self.pipeline.clone(),
             self.items_link.clone(),
-            options.method_options.context.into_owned(),
+            Context::default(),
             query,
             headers,
         )

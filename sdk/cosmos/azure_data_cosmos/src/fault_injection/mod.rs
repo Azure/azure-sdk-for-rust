@@ -23,9 +23,9 @@
 //!
 //! # Core Components
 //!
-//! - [`FaultInjectionClientBuilder`] — Entry point for configuring fault injection. Wraps the
-//!   default HTTP transport with a fault-injecting HTTP client and sets
-//!   `fault_injection_enabled` on [`CosmosClientOptions`](crate::CosmosClientOptions).
+//! - [`FaultInjectionClientBuilder`] — Entry point for configuring fault injection. Pass the
+//!   configured builder to [`CosmosClientBuilder::with_fault_injection()`](crate::CosmosClientBuilder::with_fault_injection)
+//!   to enable fault injection and wrap the HTTP transport with a fault-injecting client.
 //! - [`FaultInjectionCondition`] — Defines when a fault should be applied, filtering by
 //!   operation type, region, or container ID.
 //! - [`FaultInjectionResult`] — Defines what error to inject, including error type, delay,
@@ -41,10 +41,13 @@
 //!     FaultInjectionErrorType, FaultInjectionResultBuilder,
 //!     FaultInjectionRuleBuilder, FaultOperationType,
 //! };
-//! use azure_data_cosmos::CosmosClientOptions;
+//! use azure_data_cosmos::CosmosClientBuilder;
+//! use azure_data_cosmos::CosmosAccountReference;
+//! use azure_core::credentials::Secret;
 //! use std::sync::Arc;
 //! use std::time::{Duration, Instant};
 //!
+//! # async fn doc() {
 //! // 1. Define what error to inject
 //! let result = FaultInjectionResultBuilder::new()
 //!     .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -65,10 +68,20 @@
 //!     .with_end_time(Instant::now() + Duration::from_secs(30))
 //!     .build());
 //!
-//! // 4. Inject into client options
-//! let options = FaultInjectionClientBuilder::new()
-//!     .with_rule(rule)
-//!     .inject(CosmosClientOptions::default());
+//! // 4. Create the fault injection builder
+//! let fault_builder = FaultInjectionClientBuilder::new()
+//!     .with_rule(rule);
+//!
+//! // 5. Create the client with fault injection
+//! let client = CosmosClientBuilder::new()
+//!     .with_fault_injection(fault_builder)
+//!     .build(CosmosAccountReference::with_master_key(
+//!         "https://myaccount.documents.azure.com/".parse().unwrap(),
+//!         Secret::new("my_account_key"),
+//!     ))
+//!     .await
+//!     .unwrap();
+//! # }
 //! ```
 //!
 //! # Rule Evaluation

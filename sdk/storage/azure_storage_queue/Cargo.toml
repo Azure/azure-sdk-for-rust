@@ -25,8 +25,12 @@ serde = { workspace = true }
 workspace = true
 
 [dev-dependencies]
+azure_core_opentelemetry.workspace = true
 azure_core_test.workspace = true
 azure_identity.workspace = true
 futures.workspace = true
+opentelemetry-stdout.workspace = true
+opentelemetry_sdk.workspace = true
 rand.workspace = true
 tokio = { workspace = true, features = ["macros"] }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
