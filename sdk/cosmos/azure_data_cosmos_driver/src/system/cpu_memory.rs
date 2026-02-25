@@ -324,20 +324,25 @@ impl CpuMemoryMonitorInner {
     }
 
     fn register(&self) {
+        // Poisoning cannot occur: the critical section only increments a counter.
         let mut count = self.listener_count.write().unwrap();
         *count += 1;
     }
 
     fn unregister(&self) {
+        // Poisoning cannot occur: the critical section only decrements a counter.
         let mut count = self.listener_count.write().unwrap();
         *count = count.saturating_sub(1);
     }
 
     fn has_listeners(&self) -> bool {
+        // Poisoning cannot occur: see register/unregister.
         *self.listener_count.read().unwrap() > 0
     }
 
     fn snapshot(&self) -> CpuMemoryHistory {
+        // Poisoning cannot occur: the write side (refresh) only does
+        // infallible VecDeque push/pop operations.
         let samples: Vec<SystemSample> =
             self.buffer.read().unwrap().iter().copied().collect();
 
@@ -376,6 +381,7 @@ impl CpuMemoryMonitorInner {
             available_mb,
         };
 
+        // Poisoning cannot occur: push_back/pop_front are infallible.
         let mut buffer = self.buffer.write().unwrap();
         if buffer.len() >= HISTORY_LENGTH {
             buffer.pop_front();

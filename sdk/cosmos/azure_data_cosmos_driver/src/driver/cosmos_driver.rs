@@ -254,16 +254,19 @@ impl CosmosDriver {
     /// Checks whether the end-to-end deadline has been exceeded and, if so,
     /// records the timeout in diagnostics and returns an error.
     ///
-    /// Returns `Some(Error)` when the deadline has passed, `None` otherwise.
+    /// Returns `Ok(())` when no deadline is set or it has not yet expired.
     fn check_e2e_deadline(
         deadline: Option<Instant>,
         timeout_duration: std::time::Duration,
         diagnostics_builder: &mut DiagnosticsContextBuilder,
         request_handle: Option<crate::diagnostics::RequestHandle>,
-    ) -> Option<azure_core::Error> {
-        let deadline = deadline?;
+    ) -> azure_core::Result<()> {
+        let deadline = match deadline {
+            Some(d) => d,
+            None => return Ok(()),
+        };
         if Instant::now() < deadline {
-            return None;
+            return Ok(());
         }
         if let Some(handle) = request_handle {
             diagnostics_builder.timeout_request(handle);
@@ -272,7 +275,7 @@ impl CosmosDriver {
             StatusCode::RequestTimeout,
             Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
         );
-        Some(azure_core::Error::new(
+        Err(azure_core::Error::new(
             azure_core::error::ErrorKind::Other,
             format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
         ))
@@ -522,14 +525,12 @@ impl CosmosDriver {
         loop {
             // Check if the end-to-end deadline has already been exceeded before
             // starting the next attempt.
-            if let Some(e) = Self::check_e2e_deadline(
+            Self::check_e2e_deadline(
                 deadline,
                 e2e_timeout_duration,
                 &mut diagnostics_builder,
                 None,
-            ) {
-                return Err(e);
-            }
+            )?;
 
             let execution_context = if attempt == 0 {
                 ExecutionContext::Initial
@@ -648,14 +649,12 @@ impl CosmosDriver {
                     if should_retry {
                         // If the e2e deadline has already been exceeded, do not
                         // retry: record the timeout and return immediately.
-                        if let Some(e) = Self::check_e2e_deadline(
+                        Self::check_e2e_deadline(
                             deadline,
                             e2e_timeout_duration,
                             &mut diagnostics_builder,
                             Some(request_handle),
-                        ) {
-                            return Err(e);
-                        }
+                        )?;
                         attempt += 1;
                         continue;
                     }
