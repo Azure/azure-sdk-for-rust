@@ -1530,9 +1530,9 @@ mod tests {
 
         // Only the 3 account-present regions should appear in the read endpoints,
         // in proximity order: from EAST_US, East US 2 is closest, then West US, then West Europe.
-        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoint_strs,
+            endpoint_strings,
             vec![
                 "https://test-eastus2.documents.azure.com/",
                 "https://test-westus.documents.azure.com/",
@@ -1575,9 +1575,9 @@ mod tests {
         let write_endpoints = cache.write_endpoints();
 
         // From West Europe, North Europe is much closer than East US
-        let endpoint_strs: Vec<&str> = write_endpoints.iter().map(|u| u.as_str()).collect();
+        let endpoint_strings: Vec<&str> = write_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoint_strs,
+            endpoint_strings,
             vec![
                 "https://test-northeurope.documents.azure.com/",
                 "https://test-eastus.documents.azure.com/",
@@ -1638,9 +1638,9 @@ mod tests {
         );
 
         let read_endpoints = cache.read_endpoints();
-        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoint_strs,
+            endpoint_strings,
             vec![
                 "https://test-westus.documents.azure.com/",
                 "https://test-westeurope.documents.azure.com/",
@@ -1668,9 +1668,9 @@ mod tests {
         let read_endpoints = cache.read_endpoints();
 
         // From EAST_US, North Europe (76ms) is closer than West Europe (81ms)
-        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoint_strs,
+            endpoint_strings,
             vec![
                 "https://test-northeurope.documents.azure.com/",
                 "https://test-westeurope.documents.azure.com/",
@@ -1731,9 +1731,9 @@ mod tests {
         );
 
         let read_endpoints = cache.read_endpoints();
-        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoint_strs,
+            endpoint_strings,
             vec!["https://test.documents.azure.com/"],
             "should fall back to default endpoint when all regions excluded"
         );
@@ -1763,9 +1763,9 @@ mod tests {
         );
 
         let read_endpoints = cache.read_endpoints();
-        let endpoint_strs: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
         assert_eq!(
-            endpoint_strs,
+            endpoint_strings,
             vec![
                 "https://test-eastus2.documents.azure.com/",
                 "https://test-westus.documents.azure.com/",
