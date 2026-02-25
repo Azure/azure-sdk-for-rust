@@ -339,8 +339,6 @@ impl Drop for CpuMemoryMonitor {
 /// Internal state for the CPU/memory monitor.
 #[derive(Debug)]
 struct CpuMemoryMonitorInner {
-    /// Current history, protected by a read-write lock.
-    history: RwLock<CpuMemoryHistory>,
     /// Circular buffer for CPU samples.
     cpu_buffer: RwLock<VecDeque<CpuLoad>>,
     /// Circular buffer for memory samples.
@@ -354,7 +352,6 @@ struct CpuMemoryMonitorInner {
 impl CpuMemoryMonitorInner {
     fn new(refresh_interval: Duration) -> Self {
         Self {
-            history: RwLock::new(CpuMemoryHistory::default()),
             cpu_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
             memory_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
             listener_count: RwLock::new(0),
@@ -388,7 +385,15 @@ impl CpuMemoryMonitorInner {
     }
 
     fn snapshot(&self) -> CpuMemoryHistory {
-        self.history.read().unwrap().clone()
+        let cpu_samples: Vec<CpuLoad> = self.cpu_buffer.read().unwrap().iter().copied().collect();
+        let memory_samples: Vec<MemoryUsage> =
+            self.memory_buffer.read().unwrap().iter().copied().collect();
+
+        CpuMemoryHistory {
+            cpu_samples,
+            memory_samples,
+            refresh_interval: self.refresh_interval,
+        }
     }
 
     fn monitor_loop(weak: Weak<CpuMemoryMonitorInner>, refresh_interval: Duration) {
@@ -434,19 +439,6 @@ impl CpuMemoryMonitorInner {
                 available_mb: memory_mb,
             });
         }
-
-        // Update the history snapshot
-        let cpu_samples: Vec<CpuLoad> = self.cpu_buffer.read().unwrap().iter().copied().collect();
-        let memory_samples: Vec<MemoryUsage> =
-            self.memory_buffer.read().unwrap().iter().copied().collect();
-
-        let new_history = CpuMemoryHistory {
-            cpu_samples,
-            memory_samples,
-            refresh_interval: self.refresh_interval,
-        };
-
-        *self.history.write().unwrap() = new_history;
     }
 }
 
