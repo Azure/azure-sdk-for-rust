@@ -269,7 +269,7 @@ impl CpuMemoryMonitor {
             })
             .clone();
 
-        // Register this as a listener to keep the monitor alive
+        // Register as a listener so the background thread collects samples.
         inner.register();
 
         Self { inner }

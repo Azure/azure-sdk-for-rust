@@ -723,6 +723,7 @@ struct TruncatedOutput<'a> {
 /// - `"cpu"` – Recent CPU load history (e.g. `"(45.3%), (50.1%), ..."`)
 /// - `"memory_available_mb"` – Most recent available memory in MB
 /// - `"processor_count"` – Number of logical CPUs available to the process
+/// - `"cpu_overloaded"` – Whether the CPU is considered overloaded
 #[derive(Clone, Debug, Serialize)]
 struct SystemUsageSnapshot {
     /// Recent CPU load history formatted as a human-readable string.
@@ -732,6 +733,8 @@ struct SystemUsageSnapshot {
     memory_available_mb: Option<u64>,
     /// Number of logical CPUs available to the process.
     processor_count: usize,
+    /// Whether the CPU is considered overloaded (any sample > 90% or scheduling delays).
+    cpu_overloaded: bool,
 }
 
 impl SystemUsageSnapshot {
@@ -744,6 +747,7 @@ impl SystemUsageSnapshot {
             processor_count: std::thread::available_parallelism()
                 .map(|n| n.get())
                 .unwrap_or(1),
+            cpu_overloaded: history.is_cpu_overloaded(),
         }
     }
 }
@@ -1794,6 +1798,10 @@ mod tests {
         assert!(
             json.contains("\"cpu\""),
             "Expected cpu field in system_usage, got: {json}"
+        );
+        assert!(
+            json.contains("\"cpu_overloaded\""),
+            "Expected cpu_overloaded field in system_usage, got: {json}"
         );
     }
 
