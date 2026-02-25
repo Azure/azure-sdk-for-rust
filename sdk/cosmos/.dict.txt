@@ -94,6 +94,7 @@ Pkrange
 PKRANGE
 
 # Test values (used in doc tests and unit tests)
+Replicaset
 myaccount
 mydb
 mycoll
