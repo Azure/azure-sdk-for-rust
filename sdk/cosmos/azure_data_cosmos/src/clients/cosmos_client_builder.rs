@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn build_with_unknown_region_returns_error() {
-        let unknown = regions::RegionName::from("nonexistentregion");
+        let unknown = regions::RegionName::from("unknown");
         let result = CosmosClient::builder()
             .with_application_region(unknown)
             .build(test_account());

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:disable
+
 //! Region Names relevant to Azure Cosmos DB APIs.
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
