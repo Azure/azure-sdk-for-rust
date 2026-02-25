@@ -67,7 +67,7 @@ async fn example() -> Result<(), Box<dyn std::error::Error>> {
         .parse()?;
     let account = CosmosAccountReference::with_credential(endpoint, credential);
     let cosmos_client = CosmosClient::builder()
-        .build(account)?;
+        .build(account).await?;
     Ok(())
 }
 ```
@@ -102,7 +102,7 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
         value: "2".into(),
     };
 
-    let container = cosmos_client.database_client("myDatabase").container_client("myContainer");
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await;
 
     // Create an item
     container.create_item("partition1", item, None).await?;

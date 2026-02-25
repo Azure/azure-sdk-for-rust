@@ -79,7 +79,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id);
+    let container_client = db_client.container_client(&container_id).await;
 
     Ok(container_client)
 }

@@ -47,6 +47,7 @@
 //! use std::sync::Arc;
 //! use std::time::{Duration, Instant};
 //!
+//! # async fn doc() {
 //! // 1. Define what error to inject
 //! let result = FaultInjectionResultBuilder::new()
 //!     .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -78,7 +79,9 @@
 //!         "https://myaccount.documents.azure.com/".parse().unwrap(),
 //!         Secret::new("my_account_key"),
 //!     ))
+//!     .await
 //!     .unwrap();
+//! # }
 //! ```
 //!
 //! # Rule Evaluation
