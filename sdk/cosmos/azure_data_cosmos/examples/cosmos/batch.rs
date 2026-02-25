@@ -76,14 +76,14 @@ impl BatchCommand {
         let batch_response = response.into_model()?;
 
         println!("Batch executed successfully!");
-        println!("Total operations: {}", batch_response.results.len());
+        println!("Total operations: {}", batch_response.results().len());
 
-        for (i, result) in batch_response.results.iter().enumerate() {
-            println!("\nOperation {}: Status {}", i + 1, result.status_code);
-            if let Some(body) = &result.resource_body {
+        for (i, result) in batch_response.results().iter().enumerate() {
+            println!("\nOperation {}: Status {}", i + 1, result.status_code());
+            if let Some(body) = result.resource_body() {
                 println!("  Body: {}", serde_json::to_string_pretty(body)?);
             }
-            if let Some(charge) = result.request_charge {
+            if let Some(charge) = result.request_charge() {
                 println!("  Request charge: {}", charge);
             }
         }
