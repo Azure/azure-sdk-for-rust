@@ -38,13 +38,16 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint};
 /// use std::sync::Arc;
 ///
+/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClientBuilder::new()
 ///     .build(account)
-///     .unwrap();
+///     .await?;
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// Using key authentication (requires `key_auth` feature):
@@ -53,11 +56,14 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// use azure_data_cosmos::{CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint};
 /// use azure_core::credentials::Secret;
 ///
+/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
 /// let client = CosmosClientBuilder::new()
 ///     .build(account)
-///     .unwrap();
+///     .await?;
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Default)]
 pub struct CosmosClientBuilder {
@@ -157,7 +163,7 @@ impl CosmosClientBuilder {
     /// # Errors
     ///
     /// Returns an error if the client cannot be constructed.
-    pub fn build(
+    pub async fn build(
         self,
         account: impl Into<CosmosAccountReference>,
     ) -> azure_core::Result<CosmosClient> {

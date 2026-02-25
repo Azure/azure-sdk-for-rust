@@ -42,10 +42,10 @@ pub extern "C" fn cosmos_database_container_client(
     container_id: *const c_char,
     out_container: *mut *mut ContainerClient,
 ) -> CosmosErrorCode {
-    context!(ctx).run_sync_with_output(out_container, || {
+    context!(ctx).run_async_with_output(out_container, async {
         let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
         let container_id = parse_cstr(container_id, error::messages::INVALID_CONTAINER_ID)?;
-        let container_client = database.container_client(container_id);
+        let container_client = database.container_client(container_id).await;
         Ok(Box::new(container_client))
     })
 }
@@ -136,7 +136,7 @@ pub extern "C" fn cosmos_database_create_container(
 
         database.create_container(properties, None).await?;
 
-        let container_client = database.container_client(&container_id);
+        let container_client = database.container_client(&container_id).await;
 
         Ok(Box::new(container_client))
     })
