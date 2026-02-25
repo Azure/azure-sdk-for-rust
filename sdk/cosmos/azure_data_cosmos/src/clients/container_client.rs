@@ -36,7 +36,7 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         pipeline: Arc<GatewayPipeline>,
         database_link: &ResourceLink,
         container_id: &str,

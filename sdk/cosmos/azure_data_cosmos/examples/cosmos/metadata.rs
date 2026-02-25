@@ -21,7 +21,7 @@ impl MetadataCommand {
     pub async fn run(self, client: CosmosClient) -> Result<(), Box<dyn Error>> {
         let db_client = client.database_client(&self.database);
         if let Some(container_name) = &self.container {
-            let container_client = db_client.container_client(container_name);
+            let container_client = db_client.container_client(container_name).await;
             let response = container_client.read(None).await?.into_model()?;
             println!("{:#?}", response);
             return Ok(());
