@@ -23,7 +23,6 @@ mod virtual_machine_managed_identity_credential;
 mod workload_identity_credential;
 
 pub use azure_cli_credential::*;
-pub use azure_core::credentials::SecretBytes;
 pub use azure_developer_cli_credential::*;
 pub use azure_pipelines_credential::*;
 pub use client_assertion_credential::*;

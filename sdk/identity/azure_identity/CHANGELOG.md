@@ -2,10 +2,6 @@
 
 ## 0.33.0 (Unreleased)
 
-### Features Added
-
-- Added `SecretBytes` to `azure_core::credentials` for securely passing certificate bytes without printing them in `Debug` or `Display` output.
-
 ### Breaking Changes
 
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
