@@ -138,59 +138,17 @@ impl From<CpuUsage> for f64 {
     }
 }
 
-/// A single CPU load measurement at a point in time.
+/// A single combined CPU and memory measurement at a point in time.
 ///
-/// Pairs a [`CpuUsage`] percentage with the [`Instant`] when the sample was
-/// taken.
-///
-/// # Panics
-///
-/// [`CpuLoad::new`] panics if the **normalized** value is outside the range `0.0..=100.0`
-/// (see [`CpuUsage::new`]).
-#[non_exhaustive]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct CpuLoad {
-    /// When this measurement was taken.
-    timestamp: Instant,
-    /// CPU usage percentage.
-    value: CpuUsage,
-}
-
-impl CpuLoad {
-    /// Creates a new CPU load measurement.
-    ///
-    /// The `value` is wrapped in [`CpuUsage`], which normalizes NaN and
-    /// negative zero to `0.0` and panics if the result is outside `0.0..=100.0`.
-    pub(crate) fn new(timestamp: Instant, value: f64) -> Self {
-        Self {
-            timestamp,
-            value: CpuUsage::new(value),
-        }
-    }
-
-    /// Returns when this measurement was taken.
-    pub(crate) fn timestamp(&self) -> Instant {
-        self.timestamp
-    }
-
-    /// Returns the CPU usage percentage.
-    pub(crate) fn value(&self) -> CpuUsage {
-        self.value
-    }
-}
-
-impl fmt::Display for CpuLoad {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({})", self.value)
-    }
-}
-
-/// A single memory measurement at a point in time.
+/// Both readings are taken at the same [`Instant`] in each refresh tick.
+/// CPU may be `None` on the first reading or if the platform API fails.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct MemoryUsage {
+pub(crate) struct SystemSample {
     /// When this measurement was taken.
     pub(crate) timestamp: Instant,
+    /// CPU usage percentage, if available.
+    pub(crate) cpu: Option<CpuUsage>,
     /// Available memory in megabytes.
     pub(crate) available_mb: u64,
 }
@@ -199,23 +157,16 @@ pub(crate) struct MemoryUsage {
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub(crate) struct CpuMemoryHistory {
-    /// Historical CPU load samples (oldest first).
-    cpu_samples: Vec<CpuLoad>,
-    /// Historical memory samples (oldest first).
-    memory_samples: Vec<MemoryUsage>,
+    /// Historical samples (oldest first).
+    samples: Vec<SystemSample>,
     /// The interval between samples.
     refresh_interval: Duration,
 }
 
 impl CpuMemoryHistory {
-    /// Returns the CPU load samples.
-    pub(crate) fn cpu_samples(&self) -> &[CpuLoad] {
-        &self.cpu_samples
-    }
-
-    /// Returns the memory usage samples.
-    pub(crate) fn memory_samples(&self) -> &[MemoryUsage] {
-        &self.memory_samples
+    /// Returns all historical samples.
+    pub(crate) fn samples(&self) -> &[SystemSample] {
+        &self.samples
     }
 
     /// Returns the refresh interval between samples.
@@ -233,24 +184,26 @@ impl CpuMemoryHistory {
 
     /// Returns `true` if any CPU sample exceeds the given threshold.
     pub(crate) fn is_cpu_over_threshold(&self, threshold: CpuUsage) -> bool {
-        self.cpu_samples.iter().any(|s| s.value > threshold)
+        self.samples
+            .iter()
+            .any(|s| s.cpu.is_some_and(|cpu| cpu > threshold))
     }
 
-    /// Returns the most recent CPU load, if available.
-    pub(crate) fn latest_cpu(&self) -> Option<CpuLoad> {
-        self.cpu_samples.last().copied()
+    /// Returns the most recent CPU usage, if available.
+    pub(crate) fn latest_cpu(&self) -> Option<CpuUsage> {
+        self.samples.last().and_then(|s| s.cpu)
     }
 
-    /// Returns the most recent memory usage, if available.
-    pub(crate) fn latest_memory(&self) -> Option<MemoryUsage> {
-        self.memory_samples.last().copied()
+    /// Returns the most recent available memory in megabytes, if any sample exists.
+    pub(crate) fn latest_memory_mb(&self) -> Option<u64> {
+        self.samples.last().map(|s| s.available_mb)
     }
 
     /// Returns `true` if there appears to be scheduling delays.
     fn has_scheduling_delay(&self) -> bool {
         // Check if there are gaps between consecutive samples larger than 1.5x the interval
         let threshold = self.refresh_interval.as_millis() * 3 / 2;
-        for window in self.cpu_samples.windows(2) {
+        for window in self.samples.windows(2) {
             let gap = window[1].timestamp.duration_since(window[0].timestamp);
             if gap.as_millis() > threshold {
                 return true;
@@ -263,8 +216,7 @@ impl CpuMemoryHistory {
 impl Default for CpuMemoryHistory {
     fn default() -> Self {
         Self {
-            cpu_samples: Vec::new(),
-            memory_samples: Vec::new(),
+            samples: Vec::new(),
             refresh_interval: DEFAULT_REFRESH_INTERVAL,
         }
     }
@@ -272,11 +224,15 @@ impl Default for CpuMemoryHistory {
 
 impl std::fmt::Display for CpuMemoryHistory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.cpu_samples.is_empty() {
+        let cpu_entries: Vec<String> = self
+            .samples
+            .iter()
+            .filter_map(|s| s.cpu.map(|cpu| format!("({cpu})")))
+            .collect();
+        if cpu_entries.is_empty() {
             write!(f, "empty")
         } else {
-            let samples: Vec<String> = self.cpu_samples.iter().map(|s| s.to_string()).collect();
-            write!(f, "{}", samples.join(", "))
+            write!(f, "{}", cpu_entries.join(", "))
         }
     }
 }
@@ -339,10 +295,8 @@ impl Drop for CpuMemoryMonitor {
 /// Internal state for the CPU/memory monitor.
 #[derive(Debug)]
 struct CpuMemoryMonitorInner {
-    /// Circular buffer for CPU samples.
-    cpu_buffer: RwLock<VecDeque<CpuLoad>>,
-    /// Circular buffer for memory samples.
-    memory_buffer: RwLock<VecDeque<MemoryUsage>>,
+    /// Circular buffer for combined CPU+memory samples.
+    buffer: RwLock<VecDeque<SystemSample>>,
     /// Number of active listeners (handles).
     listener_count: RwLock<usize>,
     /// The refresh interval.
@@ -352,8 +306,7 @@ struct CpuMemoryMonitorInner {
 impl CpuMemoryMonitorInner {
     fn new(refresh_interval: Duration) -> Self {
         Self {
-            cpu_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
-            memory_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
+            buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
             listener_count: RwLock::new(0),
             refresh_interval,
         }
@@ -385,13 +338,11 @@ impl CpuMemoryMonitorInner {
     }
 
     fn snapshot(&self) -> CpuMemoryHistory {
-        let cpu_samples: Vec<CpuLoad> = self.cpu_buffer.read().unwrap().iter().copied().collect();
-        let memory_samples: Vec<MemoryUsage> =
-            self.memory_buffer.read().unwrap().iter().copied().collect();
+        let samples: Vec<SystemSample> =
+            self.buffer.read().unwrap().iter().copied().collect();
 
         CpuMemoryHistory {
-            cpu_samples,
-            memory_samples,
+            samples,
             refresh_interval: self.refresh_interval,
         }
     }
@@ -416,29 +367,20 @@ impl CpuMemoryMonitorInner {
 
     fn refresh(&self) {
         let now = Instant::now();
+        let cpu = read_cpu_usage().map(CpuUsage::new);
+        let available_mb = read_available_memory_mb();
 
-        // Read CPU usage
-        let cpu_value = read_cpu_usage();
-        if let Some(cpu) = cpu_value {
-            let mut cpu_buffer = self.cpu_buffer.write().unwrap();
-            if cpu_buffer.len() >= HISTORY_LENGTH {
-                cpu_buffer.pop_front();
-            }
-            cpu_buffer.push_back(CpuLoad::new(now, cpu));
-        }
+        let sample = SystemSample {
+            timestamp: now,
+            cpu,
+            available_mb,
+        };
 
-        // Read memory usage
-        let memory_mb = read_available_memory_mb();
-        {
-            let mut memory_buffer = self.memory_buffer.write().unwrap();
-            if memory_buffer.len() >= HISTORY_LENGTH {
-                memory_buffer.pop_front();
-            }
-            memory_buffer.push_back(MemoryUsage {
-                timestamp: now,
-                available_mb: memory_mb,
-            });
+        let mut buffer = self.buffer.write().unwrap();
+        if buffer.len() >= HISTORY_LENGTH {
+            buffer.pop_front();
         }
+        buffer.push_back(sample);
     }
 }
 
@@ -683,28 +625,16 @@ mod tests {
     }
 
     #[test]
-    fn cpu_load_wraps_cpu_usage() {
-        let load = CpuLoad::new(Instant::now(), 50.0);
-        assert_eq!(load.value(), CpuUsage::new(50.0));
-    }
-
-    #[test]
-    fn cpu_load_eq() {
+    fn system_sample_eq() {
         let t = Instant::now();
-        let a = CpuLoad::new(t, 42.5);
-        let b = CpuLoad::new(t, 42.5);
-        assert_eq!(a, b);
-    }
-
-    #[test]
-    fn memory_usage_eq() {
-        let t = Instant::now();
-        let a = MemoryUsage {
+        let a = SystemSample {
             timestamp: t,
+            cpu: Some(CpuUsage::new(42.5)),
             available_mb: 1024,
         };
-        let b = MemoryUsage {
+        let b = SystemSample {
             timestamp: t,
+            cpu: Some(CpuUsage::new(42.5)),
             available_mb: 1024,
         };
         assert_eq!(a, b);
@@ -713,16 +643,18 @@ mod tests {
     #[test]
     fn cpu_memory_history_empty() {
         let history = CpuMemoryHistory::default();
-        assert!(history.cpu_samples().is_empty());
-        assert!(history.memory_samples().is_empty());
+        assert!(history.samples().is_empty());
         assert!(!history.is_cpu_overloaded());
     }
 
     #[test]
     fn cpu_memory_history_overload_detection() {
         let history = CpuMemoryHistory {
-            cpu_samples: vec![CpuLoad::new(Instant::now(), 95.0)],
-            memory_samples: vec![],
+            samples: vec![SystemSample {
+                timestamp: Instant::now(),
+                cpu: Some(CpuUsage::new(95.0)),
+                available_mb: 1024,
+            }],
             refresh_interval: DEFAULT_REFRESH_INTERVAL,
         };
         assert!(history.is_cpu_overloaded());

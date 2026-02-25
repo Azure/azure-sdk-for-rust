@@ -740,7 +740,7 @@ impl SystemUsageSnapshot {
         let history = monitor.snapshot();
         Self {
             cpu: history.to_string(),
-            memory_available_mb: history.latest_memory().map(|m| m.available_mb),
+            memory_available_mb: history.latest_memory_mb(),
             processor_count: std::thread::available_parallelism()
                 .map(|n| n.get())
                 .unwrap_or(1),
