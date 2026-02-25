@@ -17,7 +17,7 @@ impl SecretBytes {
     }
 
     /// Get the secret bytes.
-    pub fn secret(&self) -> &[u8] {
+    pub fn bytes(&self) -> &[u8] {
         &self.0
     }
 }
@@ -26,17 +26,14 @@ impl SecretBytes {
 // optimize this in unexpected ways.
 impl PartialEq for SecretBytes {
     fn eq(&self, other: &Self) -> bool {
-        let a = self.secret();
-        let b = other.secret();
+        let a = self.bytes();
+        let b = other.bytes();
 
         if a.len() != b.len() {
             return false;
         }
 
-        a.iter()
-            .zip(b.iter())
-            .fold(0, |acc, (a, b)| acc | (a ^ b))
-            == 0
+        a.iter().zip(b.iter()).fold(0, |acc, (a, b)| acc | (a ^ b)) == 0
     }
 }
 
@@ -111,19 +108,19 @@ mod tests {
     fn from_bytes_type() {
         let bytes = Bytes::from_static(b"data");
         let secret = SecretBytes::from(bytes);
-        assert_eq!(b"data", secret.secret());
+        assert_eq!(b"data", secret.bytes());
     }
 
     #[test]
     fn from_slice() {
         let data: &[u8] = b"data";
         let secret = SecretBytes::from(data);
-        assert_eq!(b"data", secret.secret());
+        assert_eq!(b"data", secret.bytes());
     }
 
     #[test]
     fn from_vec() {
         let secret = SecretBytes::from(b"data".to_vec());
-        assert_eq!(b"data", secret.secret());
+        assert_eq!(b"data", secret.bytes());
     }
 }

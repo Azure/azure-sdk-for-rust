@@ -78,7 +78,8 @@ impl ClientCertificateCredential {
 
         let options = options.unwrap_or_default();
 
-        let (key, cert, ca_chain) = parse_certificate(certificate.secret(), options.password.as_ref())?;
+        let (key, cert, ca_chain) =
+            parse_certificate(certificate.bytes(), options.password.as_ref())?;
         let thumbprint = cert
             .digest(MessageDigest::sha1())
             .with_context(ErrorKind::Credential, "failed to compute thumbprint")?
@@ -282,7 +283,9 @@ impl TokenCredential for ClientCertificateCredential {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{client_assertion_credential::tests::is_valid_request, secret_bytes::SecretBytes, tests::*};
+    use crate::{
+        client_assertion_credential::tests::is_valid_request, secret_bytes::SecretBytes, tests::*,
+    };
     use azure_core::{
         http::{
             headers::Headers,
@@ -515,10 +518,7 @@ mod tests {
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
-                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(
-                        &TEST_CERT,
-                        false,
-                    ))],
+                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(&TEST_CERT, false))],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -599,10 +599,7 @@ mod tests {
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
-                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(
-                        &TEST_CERT,
-                        true,
-                    ))],
+                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(&TEST_CERT, true))],
                     ..Default::default()
                 },
                 env: Some(Env::from(
