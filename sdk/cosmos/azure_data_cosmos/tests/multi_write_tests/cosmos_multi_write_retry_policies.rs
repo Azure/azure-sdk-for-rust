@@ -95,7 +95,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Read should succeed via cross-region retry after hub returns 408
             let result = run_context
@@ -162,7 +162,7 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let unique_id = Uuid::new_v4().to_string();
             let item = TestItem {
@@ -233,7 +233,7 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let unique_id = Uuid::new_v4().to_string();
             let item = TestItem {
@@ -321,7 +321,7 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let query = Query::from(format!("SELECT * FROM c WHERE c.partition_key = '{}'", pk));
 
@@ -400,7 +400,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Read should succeed via cross-region retry after hub returns 500
             let result = run_context
@@ -483,7 +483,7 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             let updated_item = TestItem {
                 id: item_id.clone().into(),
@@ -571,7 +571,7 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(&db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id);
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
 
             // Delete should fail with 408 — no cross-region retry for writes
             let result = fault_container_client

@@ -62,7 +62,7 @@ pub async fn create_container_with_items(
         }
     }
 
-    let container_client = db.container_client("TestContainer");
+    let container_client = db.container_client("TestContainer").await;
 
     for item in items {
         container_client

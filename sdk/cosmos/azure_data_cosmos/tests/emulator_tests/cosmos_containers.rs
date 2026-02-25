@@ -81,7 +81,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             }
             assert_eq!(vec![properties.id.clone()], ids);
 
-            let container_client = db_client.container_client(&properties.id);
+            let container_client = db_client.container_client(&properties.id).await;
             let mut updated_indexing_policy = IndexingPolicy::default();
             updated_indexing_policy.automatic = false;
             updated_indexing_policy.indexing_mode = Some(IndexingMode::None);
