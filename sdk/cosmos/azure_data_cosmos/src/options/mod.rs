@@ -218,6 +218,66 @@ impl ItemOptions {
     }
 }
 
+/// Options to be passed to [`ContainerClient::execute_transactional_batch()`](crate::clients::ContainerClient::execute_transactional_batch()).
+///
+/// This is similar to [`ItemOptions`] but excludes ETag-based conditional options,
+/// since those are specified per-operation within the batch itself.
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct BatchOptions {
+    /// Applies when working with Session consistency.
+    /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
+    /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
+    ///
+    /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
+    session_token: Option<SessionToken>,
+    /// When this value is true, write operations will respond with the new value of the resource being written.
+    ///
+    /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
+    content_response_on_write_enabled: bool,
+    /// Additional headers to be included in the batch request. This allows for custom headers beyond those natively supported.
+    ///
+    /// Custom headers will not override headers that are already set by the SDK.
+    custom_headers: HashMap<HeaderName, HeaderValue>,
+}
+
+impl BatchOptions {
+    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
+        self.session_token = Some(session_token);
+        self
+    }
+
+    pub fn with_content_response_on_write_enabled(
+        mut self,
+        content_response_on_write_enabled: bool,
+    ) -> Self {
+        self.content_response_on_write_enabled = content_response_on_write_enabled;
+        self
+    }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
+}
+
+impl BatchOptions {
+    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
+        // custom headers should be added first so that they don't override SDK-set headers
+        for (header_name, header_value) in &self.custom_headers {
+            headers.insert(header_name.clone(), header_value.clone());
+        }
+
+        if let Some(session_token) = &self.session_token {
+            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
+        }
+
+        if !self.content_response_on_write_enabled {
+            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
+        }
+    }
+}
+
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -423,6 +483,86 @@ mod tests {
 
         let mut headers_result = Headers::new();
         item_options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
+
+        assert_eq!(headers_result, headers_expected);
+    }
+
+    #[test]
+    fn batch_options_as_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value"),
+        );
+
+        let batch_options = BatchOptions::default()
+            .with_session_token("BatchSessionToken".to_string().into())
+            .with_content_response_on_write_enabled(true)
+            .with_custom_headers(custom_headers);
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
+            ("x-custom-header".into(), "custom_value".into()),
+            (constants::SESSION_TOKEN, "BatchSessionToken".into()),
+        ];
+
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
+    }
+
+    #[test]
+    fn batch_options_custom_headers_should_not_override_sdk_set_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            constants::SESSION_TOKEN,
+            HeaderValue::from_static("CustomSession"),
+        );
+
+        let batch_options = BatchOptions::default()
+            .with_session_token("RealSessionToken".to_string().into())
+            .with_custom_headers(custom_headers);
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
+            (constants::SESSION_TOKEN, "RealSessionToken".into()),
+            (headers::PREFER, constants::PREFER_MINIMAL),
+        ];
+
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
+    }
+
+    #[test]
+    fn batch_options_default_as_headers() {
+        let batch_options = BatchOptions::default();
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> =
+            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
+
+        assert_eq!(headers_result, headers_expected);
+    }
+
+    #[test]
+    fn batch_options_with_content_response_enabled() {
+        let batch_options = BatchOptions::default().with_content_response_on_write_enabled(true);
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
         let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
