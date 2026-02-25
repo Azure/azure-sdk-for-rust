@@ -1,5 +1,4 @@
 //! Concrete (yet unimplemented) GlobalEndpointManager.
-//! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
 use crate::background_task_manager::BackgroundTaskManager;
 use crate::constants::ACCOUNT_PROPERTIES_KEY;
@@ -24,9 +23,8 @@ use url::Url;
 /// Type alias for the account refresh callback function.
 pub type OnAccountRefreshCallback = Arc<dyn Fn(&AccountProperties) + Send + Sync>;
 
-/// Default interval (in seconds) at which the background failback loop runs to check
-/// whether previously failed partitions can be restored to healthy status.
-const BACKGROUND_ACCOUNT_REFRESH_INTERVAL_SECS: i64 = 10;
+/// Default interval (in seconds) at which the background account refresh loop runs.
+const BACKGROUND_ACCOUNT_REFRESH_INTERVAL_SECS: i64 = 600;
 
 /// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
 ///
@@ -56,7 +54,7 @@ pub(crate) struct GlobalEndpointManager {
     /// Manages background tasks and signals them to stop when dropped.
     background_task_manager: BackgroundTaskManager,
 
-    /// Partition failback refresh interval in seconds. Default is 5 minutes.
+    /// Background account refresh interval in seconds. Default is 10 minutes.
     background_account_refresh_interval_secs: i64,
 }
 
@@ -353,7 +351,14 @@ impl GlobalEndpointManager {
         // Invoke the registered callback if an HTTP call was made
         let was_http_call_made = http_call_made.load(Ordering::SeqCst);
         if was_http_call_made {
-            if let Some(callback) = self.on_account_refresh.lock().unwrap().as_ref() {
+            // Clone the callback out of the mutex, then drop the lock before invoking it
+            // to avoid holding the mutex during arbitrary user code (prevents potential deadlocks).
+            let callback = {
+                let guard = self.on_account_refresh.lock().unwrap();
+                guard.as_ref().map(Arc::clone)
+            };
+
+            if let Some(callback) = callback {
                 callback(&account_properties);
             }
         }

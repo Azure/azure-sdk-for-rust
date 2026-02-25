@@ -808,23 +808,35 @@ impl GlobalPartitionEndpointManager {
     }
 
     /// Sets whether per partition automatic failover is enabled.
+    ///
+    /// Only logs when the value actually changes to avoid noisy repeated logs
+    /// during periodic account refresh.
     pub fn configure_partition_level_automatic_failover(&self, is_enabled: bool) {
-        info!(
-            "Setting per partition automatic failover enablement flag: {}",
-            is_enabled
-        );
-        self.partition_level_automatic_failover_enabled
-            .store(is_enabled, Ordering::SeqCst);
+        let previous = self
+            .partition_level_automatic_failover_enabled
+            .swap(is_enabled, Ordering::SeqCst);
+        if previous != is_enabled {
+            info!(
+                "Per partition automatic failover enablement flag changed: {} -> {}",
+                previous, is_enabled
+            );
+        }
     }
 
     /// Sets whether per partition circuit breaker is enabled.
+    ///
+    /// Only logs when the value actually changes to avoid noisy repeated logs
+    /// during periodic account refresh.
     pub fn configure_per_partition_circuit_breaker(&self, is_enabled: bool) {
-        info!(
-            "Setting per partition circuit breaker enablement flag: {}",
-            is_enabled
-        );
-        self.partition_level_circuit_breaker_enabled
-            .store(is_enabled, Ordering::SeqCst);
+        let previous = self
+            .partition_level_circuit_breaker_enabled
+            .swap(is_enabled, Ordering::SeqCst);
+        if previous != is_enabled {
+            info!(
+                "Per partition circuit breaker enablement flag changed: {} -> {}",
+                previous, is_enabled
+            );
+        }
     }
 }
 
@@ -2440,5 +2452,58 @@ mod tests {
                 .as_str(),
             "https://test-eastus.documents.azure.com/"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Dynamic configure_* method tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_configure_partition_level_automatic_failover_toggles_flag() {
+        let gem = create_single_region_manager();
+        let manager = GlobalPartitionEndpointManager::new(gem, false, false);
+
+        // Initially disabled
+        assert!(!manager.partition_level_automatic_failover_enabled());
+
+        // Enable it
+        manager.configure_partition_level_automatic_failover(true);
+        assert!(manager.partition_level_automatic_failover_enabled());
+
+        // Disable it again
+        manager.configure_partition_level_automatic_failover(false);
+        assert!(!manager.partition_level_automatic_failover_enabled());
+    }
+
+    #[test]
+    fn test_configure_per_partition_circuit_breaker_toggles_flag() {
+        let gem = create_single_region_manager();
+        let manager = GlobalPartitionEndpointManager::new(gem, false, false);
+
+        // Initially disabled
+        assert!(!manager.partition_level_circuit_breaker_enabled());
+
+        // Enable it
+        manager.configure_per_partition_circuit_breaker(true);
+        assert!(manager.partition_level_circuit_breaker_enabled());
+
+        // Disable it again
+        manager.configure_per_partition_circuit_breaker(false);
+        assert!(!manager.partition_level_circuit_breaker_enabled());
+    }
+
+    #[test]
+    fn test_configure_idempotent_same_value() {
+        let gem = create_single_region_manager();
+        let manager = GlobalPartitionEndpointManager::new(gem, true, true);
+
+        // Setting the same value should not panic or change the flag
+        assert!(manager.partition_level_automatic_failover_enabled());
+        manager.configure_partition_level_automatic_failover(true);
+        assert!(manager.partition_level_automatic_failover_enabled());
+
+        assert!(manager.partition_level_circuit_breaker_enabled());
+        manager.configure_per_partition_circuit_breaker(true);
+        assert!(manager.partition_level_circuit_breaker_enabled());
     }
 }
