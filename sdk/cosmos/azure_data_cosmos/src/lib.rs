@@ -48,6 +48,7 @@ mod handler;
 mod hash;
 mod murmur_hash;
 mod operation_context;
+mod region_proximity;
 pub mod regions;
 mod request_context;
 mod retry_policies;

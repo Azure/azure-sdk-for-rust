@@ -37,7 +37,6 @@ impl Display for SessionToken {
 pub struct CosmosClientOptions {
     pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
-    pub(crate) application_preferred_regions: Vec<RegionName>,
     pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
@@ -49,11 +48,6 @@ impl CosmosClientOptions {
 
     pub fn with_application_region(mut self, application_region: impl Into<RegionName>) -> Self {
         self.application_region = Some(application_region.into());
-        self
-    }
-
-    pub fn with_preferred_regions(mut self, regions: Vec<RegionName>) -> Self {
-        self.application_preferred_regions = regions;
         self
     }
 

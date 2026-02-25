@@ -5,13 +5,32 @@
 
 use std::time::Duration;
 
+use azure_core::http::{headers::Headers, StatusCode};
+
 use super::FaultInjectionErrorType;
+
+/// A synthetic response to return when a fault injection rule matches.
+///
+/// Instead of injecting an error, this returns a successful response with
+/// the specified status code, headers, and body. Useful for mocking service
+/// responses such as `GetDatabaseAccount` in tests.
+#[derive(Clone, Debug)]
+pub struct CustomResponse {
+    /// The HTTP status code for the synthetic response.
+    pub status_code: StatusCode,
+    /// The headers for the synthetic response.
+    pub headers: Headers,
+    /// The body for the synthetic response.
+    pub body: Vec<u8>,
+}
 
 /// Represents a server error to be injected.
 #[derive(Clone, Debug)]
 pub struct FaultInjectionResult {
     /// The type of server error to inject.
     pub error_type: Option<FaultInjectionErrorType>,
+    /// A custom response to return instead of injecting an error.
+    pub custom_response: Option<CustomResponse>,
     /// Delay before injecting the error.
     pub delay: Duration,
     /// Probability of injecting the error (0.0 to 1.0).
@@ -28,6 +47,7 @@ impl FaultInjectionResult {
 /// Builder for creating a FaultInjectionResult.
 pub struct FaultInjectionResultBuilder {
     error_type: Option<FaultInjectionErrorType>,
+    custom_response: Option<CustomResponse>,
     delay: Duration,
     probability: f32,
 }
@@ -37,6 +57,7 @@ impl FaultInjectionResultBuilder {
     pub fn new() -> Self {
         Self {
             error_type: None,
+            custom_response: None,
             delay: Duration::ZERO,
             probability: 1.0,
         }
@@ -45,6 +66,16 @@ impl FaultInjectionResultBuilder {
     /// Sets the error type to inject.
     pub fn with_error(mut self, error_type: FaultInjectionErrorType) -> Self {
         self.error_type = Some(error_type);
+        self
+    }
+
+    /// Sets a custom response to return instead of injecting an error.
+    ///
+    /// When set, the fault injection rule returns this synthetic response
+    /// rather than forwarding the request to the real service. This takes
+    /// precedence over `error_type` if both are set.
+    pub fn with_custom_response(mut self, response: CustomResponse) -> Self {
+        self.custom_response = Some(response);
         self
     }
 
@@ -65,6 +96,7 @@ impl FaultInjectionResultBuilder {
     pub fn build(self) -> FaultInjectionResult {
         FaultInjectionResult {
             error_type: self.error_type,
+            custom_response: self.custom_response,
             delay: self.delay,
             probability: self.probability,
         }
@@ -79,8 +111,9 @@ impl Default for FaultInjectionResultBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::FaultInjectionResultBuilder;
+    use super::{CustomResponse, FaultInjectionResultBuilder};
     use crate::fault_injection::FaultInjectionErrorType;
+    use azure_core::http::{headers::Headers, StatusCode};
     use std::time::Duration;
 
     #[test]
@@ -112,5 +145,22 @@ mod tests {
             .build();
 
         assert!(error.probability().abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn builder_with_custom_response() {
+        let body = b"{\"test\": true}".to_vec();
+        let result = FaultInjectionResultBuilder::new()
+            .with_custom_response(CustomResponse {
+                status_code: StatusCode::Ok,
+                headers: Headers::new(),
+                body: body.clone(),
+            })
+            .build();
+
+        assert!(result.error_type.is_none());
+        let custom = result.custom_response.unwrap();
+        assert_eq!(custom.status_code, StatusCode::Ok);
+        assert_eq!(custom.body, body);
     }
 }
