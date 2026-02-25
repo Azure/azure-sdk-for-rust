@@ -3,7 +3,7 @@
 
 //! Single-value lazy initialization with async support.
 
-use async_lock::Mutex;
+use async_lock::RwLock;
 use std::{future::Future, sync::Arc};
 
 #[cfg(test)]
@@ -18,33 +18,43 @@ use std::{
 /// Subsequent callers wait for that same future to complete and share the result.
 /// This ensures single-pending-I/O semantics: only one initialization runs at a time.
 ///
-/// Uses `async_lock::Mutex` instead of tokio to remain async-runtime agnostic.
+/// Uses `async_lock::RwLock` instead of tokio to remain async-runtime agnostic.
+/// After initialization, concurrent readers share a read lock with no contention.
 #[derive(Debug)]
 pub(crate) struct AsyncLazy<T> {
-    /// The lazily initialized value, protected by an async mutex.
-    value: Mutex<Option<Arc<T>>>,
+    /// The lazily initialized value, protected by an async read-write lock.
+    value: RwLock<Option<Arc<T>>>,
 }
 
 impl<T> AsyncLazy<T> {
     /// Creates a new uninitialized `AsyncLazy`.
     pub(crate) fn new() -> Self {
         Self {
-            value: Mutex::new(None),
+            value: RwLock::new(None),
         }
     }
 
     /// Gets the value, initializing it with the provided future if necessary.
     ///
-    /// If the value is already initialized, returns it immediately.
-    /// If not, runs the initialization future. Only one future runs at a time;
-    /// other callers wait for the same result.
+    /// Uses double-checked locking: the fast path acquires only a read lock.
+    /// If the value is not yet initialized, a write lock is acquired and the
+    /// value is checked again before running the initialization future.
+    /// This ensures minimal contention on the common (already-initialized) path.
     pub(crate) async fn get_or_init<F, Fut>(&self, init: F) -> Arc<T>
     where
         F: FnOnce() -> Fut,
         Fut: Future<Output = T>,
     {
-        let mut guard = self.value.lock().await;
+        // Fast path: read lock only
+        {
+            let guard = self.value.read().await;
+            if let Some(ref value) = *guard {
+                return value.clone();
+            }
+        }
 
+        // Slow path: acquire write lock and double-check
+        let mut guard = self.value.write().await;
         if let Some(ref value) = *guard {
             return value.clone();
         }
@@ -59,8 +69,8 @@ impl<T> AsyncLazy<T> {
     ///
     /// Returns `None` if initialization has not completed or is in progress.
     pub(crate) fn try_get(&self) -> Option<Arc<T>> {
-        // Use try_lock to avoid blocking - if locked, initialization may be in progress
-        self.value.try_lock().and_then(|guard| guard.clone())
+        // Use try_read to avoid blocking - if write-locked, initialization may be in progress
+        self.value.try_read().and_then(|guard| guard.clone())
     }
 
     /// Gets the value, waiting for initialization to complete.
@@ -72,7 +82,7 @@ impl<T> AsyncLazy<T> {
     pub(crate) async fn get(&self) -> Arc<T> {
         loop {
             {
-                let guard = self.value.lock().await;
+                let guard = self.value.read().await;
                 if let Some(ref value) = *guard {
                     return value.clone();
                 }
