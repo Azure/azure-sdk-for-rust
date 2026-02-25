@@ -38,6 +38,7 @@ pub struct CosmosClientOptions {
     pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
     pub(crate) application_preferred_regions: Vec<RegionName>,
+    pub(crate) partition_level_circuit_breaker: bool,
     pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
@@ -54,6 +55,14 @@ impl CosmosClientOptions {
 
     pub fn with_preferred_regions(mut self, regions: Vec<RegionName>) -> Self {
         self.application_preferred_regions = regions;
+        self
+    }
+
+    pub fn with_partition_level_circuit_breaker(
+        mut self,
+        partition_level_circuit_breaker: bool,
+    ) -> Self {
+        self.partition_level_circuit_breaker = partition_level_circuit_breaker;
         self
     }
 

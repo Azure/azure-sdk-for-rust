@@ -17,6 +17,7 @@ use crate::constants::COSMOS_ALLOWED_HEADERS;
 use crate::constants::{
     DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
 };
+use crate::models::AccountProperties;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
@@ -262,15 +263,32 @@ impl CosmosClientBuilder {
 
         let preferred_regions = self.options.application_preferred_regions.clone();
 
-        let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
+        let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
             Vec::new(),
             pipeline_core.clone(),
-        ));
+        );
 
         let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
             GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), false, true);
+
+        // Register the callback for account refresh to update partition-level failover config
+        let partition_manager_clone = Arc::clone(&global_partition_endpoint_manager);
+        let enable_partition_level_circuit_breaker = self.options.partition_level_circuit_breaker;
+
+        global_endpoint_manager.set_on_account_refresh_callback(Arc::new(
+            move |account_props: &AccountProperties| {
+                partition_manager_clone.configure_partition_level_automatic_failover(
+                    account_props.enable_per_partition_failover_behavior,
+                );
+
+                partition_manager_clone.configure_per_partition_circuit_breaker(
+                    account_props.enable_per_partition_failover_behavior
+                        || enable_partition_level_circuit_breaker,
+                );
+            },
+        ));
 
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,

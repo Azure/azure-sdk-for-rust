@@ -33,6 +33,9 @@ pub(crate) struct AccountProperties {
 
     /// Regions from which the account can be read (includes writable regions plus any read regions).
     pub readable_locations: Vec<AccountRegion>,
+
+    /// Allows failover at a per-partition granularity instead of full-region only.
+    pub enable_per_partition_failover_behavior: bool,
 }
 
 #[cfg(test)]
