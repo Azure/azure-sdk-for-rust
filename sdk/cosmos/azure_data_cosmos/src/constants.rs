@@ -214,12 +214,12 @@ pub(crate) const RETRY_WITH: StatusCode = StatusCode::UnknownValue(449);
 // See `next_generation_sdks_design_principles.md` for design rationale.
 
 /// Default TCP connection timeout (1s).
-/// After 1 second it times out locally.
+/// After 5 second it times out locally.
 ///
 /// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
 #[cfg(feature = "reqwest")]
 pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
-    std::time::Duration::from_secs(1);
+    std::time::Duration::from_secs(5);
 
 /// Default overall request timeout (65s).
 ///
