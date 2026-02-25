@@ -28,7 +28,7 @@ pub struct BatchCommand {
 impl BatchCommand {
     pub async fn run(&self, client: &CosmosClient) -> Result<(), Box<dyn Error>> {
         let db_client = client.database_client(&self.database);
-        let container_client = db_client.container_client(&self.container);
+        let container_client = db_client.container_client(&self.container).await;
 
         // Parse the operations JSON
         let operations: Vec<Value> = serde_json::from_str(&self.operations)?;
