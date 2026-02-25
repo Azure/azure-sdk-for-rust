@@ -121,6 +121,11 @@
       "noSuggest": true
     },
     {
+      "name": "azure_core",
+      "path": "../sdk/core/azure_core/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "azure_core_amqp",
       "path": "../sdk/core/azure_core_amqp/.dict.txt",
       "noSuggest": true
@@ -188,6 +193,14 @@
         "crates",
         "rust-custom",
         "azure_core_amqp"
+      ]
+    },
+    {
+      "filename": "sdk/core/azure_core/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "azure_core"
       ]
     },
     {
