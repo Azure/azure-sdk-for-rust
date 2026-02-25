@@ -387,4 +387,80 @@ mod tests {
             "West Europe should be third (farthest)"
         );
     }
+
+    /// Verifies that request-level excluded regions interact correctly with
+    /// proximity-ordered preferred regions through the full builder flow.
+    #[test]
+    fn application_region_with_excluded_regions() {
+        use crate::models::AccountRegion;
+        use crate::operation_context::OperationType;
+
+        let client = CosmosClient::builder()
+            .with_application_region(regions::EAST_US)
+            .build(test_account())
+            .expect("build should succeed");
+
+        let regions_list = vec![
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_EUROPE.clone(),
+                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+        client
+            .global_endpoint_manager
+            .update_location_cache(regions_list.clone(), regions_list);
+
+        // Without excluded regions: full proximity order
+        let endpoints = client
+            .global_endpoint_manager
+            .applicable_endpoints(OperationType::Read, None);
+        assert_eq!(endpoints.len(), 3);
+        assert_eq!(
+            endpoints[0].as_str(),
+            "https://test-eastus2.documents.azure.com/"
+        );
+
+        // Exclude the closest region (East US 2): falls back to next closest
+        let excluded = vec![regions::EAST_US_2];
+        let endpoints = client
+            .global_endpoint_manager
+            .applicable_endpoints(OperationType::Read, Some(&excluded));
+        assert_eq!(endpoints.len(), 2);
+        assert_eq!(
+            endpoints[0].as_str(),
+            "https://test-westus.documents.azure.com/",
+            "West US should be first after excluding East US 2"
+        );
+        assert_eq!(
+            endpoints[1].as_str(),
+            "https://test-westeurope.documents.azure.com/",
+            "West Europe should be second"
+        );
+
+        // Exclude all account regions: falls back to default
+        let excluded = vec![regions::EAST_US_2, regions::WEST_US, regions::WEST_EUROPE];
+        let endpoints = client
+            .global_endpoint_manager
+            .applicable_endpoints(OperationType::Read, Some(&excluded));
+        assert_eq!(endpoints.len(), 1);
+        assert_eq!(
+            endpoints[0].as_str(),
+            "https://test.documents.azure.com/",
+            "should fall back to default endpoint"
+        );
+    }
 }

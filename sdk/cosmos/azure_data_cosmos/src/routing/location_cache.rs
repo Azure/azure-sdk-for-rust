@@ -594,6 +594,8 @@ impl LocationCache {
 mod tests {
     use super::*;
     use crate::operation_context::OperationType;
+    use crate::region_proximity::generate_preferred_region_list;
+    use crate::regions;
     use crate::resource_context::{ResourceLink, ResourceType};
     use std::{collections::HashSet, vec};
 
@@ -1485,9 +1487,6 @@ mod tests {
     /// preserving the proximity ordering.
     #[test]
     fn preferred_regions_filtered_to_account_regions_in_proximity_order() {
-        use crate::region_proximity::generate_preferred_region_list;
-        use crate::regions;
-
         // Simulate application_region = EAST_US → generates ~96 proximity-sorted regions
         let proximity_list = generate_preferred_region_list(&regions::EAST_US)
             .expect("EAST_US should be a known region");
@@ -1558,9 +1557,6 @@ mod tests {
     /// the preferred regions list.
     #[test]
     fn write_endpoints_respect_proximity_order() {
-        use crate::region_proximity::generate_preferred_region_list;
-        use crate::regions;
-
         let proximity_list = generate_preferred_region_list(&regions::WEST_EUROPE)
             .expect("WEST_EUROPE should be a known region");
 
@@ -1599,6 +1595,199 @@ mod tests {
             write_endpoints[1].as_str(),
             "https://test-eastus.documents.azure.com/",
             "East US should be second (farther from West Europe)"
+        );
+    }
+
+    // --- Proximity + excluded regions interaction tests ---
+
+    /// Helper: creates a LocationCache with EAST_US proximity-sorted preferred regions,
+    /// the given account regions, and client-level excluded regions.
+    fn create_proximity_cache_with_exclusions(
+        account_regions: &[AccountRegion],
+        client_excluded: Vec<RegionName>,
+    ) -> LocationCache {
+        let proximity_list = generate_preferred_region_list(&regions::EAST_US)
+            .expect("EAST_US should be a known region");
+        let default_endpoint: Url = "https://test.documents.azure.com/".parse().unwrap();
+
+        let mut cache = LocationCache::new(default_endpoint, proximity_list, client_excluded);
+        cache
+            .update(account_regions.to_vec(), account_regions.to_vec())
+            .unwrap();
+        cache
+    }
+
+    fn east_us_account_regions() -> Vec<AccountRegion> {
+        vec![
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_EUROPE.clone(),
+                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ]
+    }
+
+    /// Excluding the closest proximity region routes to the next-closest.
+    #[test]
+    fn proximity_with_closest_region_excluded() {
+        let cache = create_proximity_cache_with_exclusions(
+            &east_us_account_regions(),
+            vec![regions::EAST_US_2],
+        );
+
+        let read_endpoints = cache.read_endpoints();
+        assert_eq!(read_endpoints.len(), 2);
+        assert_eq!(
+            read_endpoints[0].as_str(),
+            "https://test-westus.documents.azure.com/",
+            "West US should be first after East US 2 is excluded"
+        );
+        assert_eq!(
+            read_endpoints[1].as_str(),
+            "https://test-westeurope.documents.azure.com/",
+            "West Europe should be second"
+        );
+    }
+
+    /// Excluding multiple regions preserves proximity order among the remaining.
+    #[test]
+    fn proximity_with_multiple_regions_excluded() {
+        let mut regions_list = east_us_account_regions();
+        regions_list.push(AccountRegion {
+            name: regions::NORTH_EUROPE.clone(),
+            database_account_endpoint: "https://test-northeurope.documents.azure.com/"
+                .parse()
+                .unwrap(),
+        });
+
+        let cache = create_proximity_cache_with_exclusions(
+            &regions_list,
+            vec![regions::EAST_US_2, regions::WEST_US],
+        );
+
+        let read_endpoints = cache.read_endpoints();
+        assert_eq!(read_endpoints.len(), 2);
+
+        // From EAST_US, North Europe (76ms) is closer than West Europe (81ms)
+        assert_eq!(
+            read_endpoints[0].as_str(),
+            "https://test-northeurope.documents.azure.com/",
+            "North Europe should be first among remaining (76ms from East US)"
+        );
+        assert_eq!(
+            read_endpoints[1].as_str(),
+            "https://test-westeurope.documents.azure.com/",
+            "West Europe should be second among remaining (81ms from East US)"
+        );
+    }
+
+    /// Request-level excluded regions override client-level, restoring proximity order.
+    #[test]
+    fn proximity_request_excluded_overrides_client_excluded() {
+        // Client excludes East US 2 (closest)
+        let cache = create_proximity_cache_with_exclusions(
+            &east_us_account_regions(),
+            vec![regions::EAST_US_2],
+        );
+
+        // Request excludes West Europe instead — overrides client exclusion,
+        // so East US 2 is back and West Europe is removed.
+        let request = CosmosRequest::builder(
+            OperationType::Read,
+            ResourceLink::root(ResourceType::Documents),
+        )
+        .excluded_regions(Some(vec![regions::WEST_EUROPE]))
+        .build()
+        .ok()
+        .unwrap();
+
+        let endpoint = cache.resolve_service_endpoint(&request);
+        assert_eq!(
+            endpoint.as_str(),
+            "https://test-eastus2.documents.azure.com/",
+            "East US 2 should be routed to (request overrides client exclusion)"
+        );
+    }
+
+    /// Excluding all account regions falls back to the default endpoint.
+    #[test]
+    fn proximity_exclude_all_falls_back_to_default() {
+        let account = vec![
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        let cache = create_proximity_cache_with_exclusions(
+            &account,
+            vec![regions::EAST_US_2, regions::WEST_US],
+        );
+
+        let read_endpoints = cache.read_endpoints();
+        assert_eq!(read_endpoints.len(), 1);
+        assert_eq!(
+            read_endpoints[0].as_str(),
+            "https://test.documents.azure.com/",
+            "should fall back to default endpoint when all regions excluded"
+        );
+    }
+
+    /// Excluding a region not present in the account has no effect on proximity ordering.
+    #[test]
+    fn proximity_exclude_non_account_region_is_noop() {
+        let account = vec![
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        let cache = create_proximity_cache_with_exclusions(
+            &account,
+            vec![regions::AUSTRALIA_EAST], // not in the account
+        );
+
+        let read_endpoints = cache.read_endpoints();
+        assert_eq!(read_endpoints.len(), 2);
+        assert_eq!(
+            read_endpoints[0].as_str(),
+            "https://test-eastus2.documents.azure.com/",
+            "East US 2 should still be first (Australia East exclusion is irrelevant)"
+        );
+        assert_eq!(
+            read_endpoints[1].as_str(),
+            "https://test-westus.documents.azure.com/",
+            "West US should still be second"
         );
     }
 }

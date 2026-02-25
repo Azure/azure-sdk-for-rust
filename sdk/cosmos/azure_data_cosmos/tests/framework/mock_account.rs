@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 //! Helpers for building mock `GetDatabaseAccount` responses in fault injection tests.
+// cSpell: disable
 
 use azure_core::http::{headers::Headers, StatusCode};
 use azure_data_cosmos::fault_injection::CustomResponse;
