@@ -231,14 +231,6 @@ impl ItemOptions {
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct BatchOptions {
-    /// Triggers executed before the operation.
-    ///
-    /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    pre_triggers: Option<Vec<String>>,
-    /// Triggers executed after the operation.
-    ///
-    /// See [Triggers](https://learn.microsoft.com/rest/api/cosmos-db/triggers) for more.
-    post_triggers: Option<Vec<String>>,
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
@@ -252,16 +244,6 @@ pub struct BatchOptions {
 }
 
 impl BatchOptions {
-    pub fn with_pre_triggers(mut self, pre_triggers: Vec<String>) -> Self {
-        self.pre_triggers = Some(pre_triggers);
-        self
-    }
-
-    pub fn with_post_triggers(mut self, post_triggers: Vec<String>) -> Self {
-        self.post_triggers = Some(post_triggers);
-        self
-    }
-
     pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
         self.session_token = Some(session_token);
         self
@@ -278,14 +260,6 @@ impl BatchOptions {
 
 impl BatchOptions {
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(pre_triggers) = &self.pre_triggers {
-            headers.insert(constants::PRE_TRIGGER_INCLUDE, pre_triggers.join(","));
-        }
-
-        if let Some(post_triggers) = &self.post_triggers {
-            headers.insert(constants::POST_TRIGGER_INCLUDE, post_triggers.join(","));
-        }
-
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
