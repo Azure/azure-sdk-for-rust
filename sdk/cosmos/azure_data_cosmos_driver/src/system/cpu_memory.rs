@@ -48,7 +48,7 @@ static CPU_MEMORY_MONITOR: OnceLock<Arc<CpuMemoryMonitorInner>> = OnceLock::new(
 /// let nan = CpuUsage::new(f64::NAN);
 /// assert_eq!(nan.value(), 0.0);
 /// ```
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) struct CpuUsage(f64);
 
 impl CpuUsage {
@@ -96,12 +96,6 @@ impl CpuUsage {
 impl fmt::Display for CpuUsage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:.1}%", self.0)
-    }
-}
-
-impl PartialEq for CpuUsage {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
     }
 }
 
@@ -257,9 +251,10 @@ impl CpuMemoryMonitor {
     /// idles without collecting samples; it resumes collection as soon as a
     /// new handle is created.
     ///
-    /// The `refresh_interval` is only used on the first call to create the
-    /// singleton; subsequent calls reuse the existing monitor regardless of
-    /// the interval passed.
+    /// # Panics
+    ///
+    /// Debug-panics if called with a `refresh_interval` that differs from the
+    /// one used to create the singleton on the first call.
     pub(crate) fn get_or_init(refresh_interval: Duration) -> Self {
         let inner = CPU_MEMORY_MONITOR
             .get_or_init(|| {
@@ -268,6 +263,12 @@ impl CpuMemoryMonitor {
                 inner
             })
             .clone();
+
+        debug_assert_eq!(
+            inner.refresh_interval, refresh_interval,
+            "CpuMemoryMonitor singleton already created with {:?}, cannot change to {:?}",
+            inner.refresh_interval, refresh_interval,
+        );
 
         // Register as a listener so the background thread collects samples.
         inner.register();
