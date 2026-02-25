@@ -256,13 +256,14 @@ impl CosmosClientBuilder {
 
         let preferred_regions = if let Some(ref region) = self.options.application_region {
             crate::region_proximity::generate_preferred_region_list(region)
-                .ok_or_else(|| {
-                    azure_core::Error::new(
-                        azure_core::error::ErrorKind::Other,
-                        format!("unknown application region: {region}"),
-                    )
-                })?
-                .to_vec()
+                .map(|s| s.to_vec())
+                .unwrap_or_else(|| {
+                    tracing::warn!(
+                        region = %region,
+                        "unrecognized application region; falling back to account-defined region order"
+                    );
+                    Vec::new()
+                })
         } else {
             Vec::new()
         };
@@ -333,18 +334,60 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_with_unknown_region_returns_error() {
+    async fn build_with_unknown_region_succeeds() {
         let unknown = regions::RegionName::from("unknown");
         let result = CosmosClient::builder()
             .with_application_region(unknown)
             .build(test_account())
             .await;
-        assert!(result.is_err());
-        let err = result.unwrap_err();
         assert!(
-            err.to_string().contains("unknown application region"),
-            "Expected error about unknown region, got: {}",
-            err
+            result.is_ok(),
+            "unknown region should fall back gracefully, not fail"
+        );
+    }
+
+    /// When an unknown region is passed, the SDK cannot generate proximity ordering
+    /// so it falls back to account-order (same as no application_region set).
+    #[tokio::test]
+    async fn build_with_unknown_region_uses_account_order() {
+        use crate::models::AccountRegion;
+
+        let unknown = regions::RegionName::from("unknown");
+        let client = CosmosClient::builder()
+            .with_application_region(unknown)
+            .build(test_account())
+            .await
+            .expect("build should succeed");
+
+        // Account regions in a specific order
+        let regions_list = vec![
+            AccountRegion {
+                name: regions::WEST_EUROPE.clone(),
+                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+        client
+            .global_endpoint_manager
+            .update_location_cache(regions_list.clone(), regions_list);
+
+        // Endpoints should reflect account order (no proximity reordering)
+        let read_endpoints = client.global_endpoint_manager.read_endpoints();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        assert_eq!(
+            endpoint_strings,
+            vec![
+                "https://test-westeurope.documents.azure.com/",
+                "https://test-eastus2.documents.azure.com/",
+            ],
+            "unknown region should not reorder — account order preserved"
         );
     }
 
