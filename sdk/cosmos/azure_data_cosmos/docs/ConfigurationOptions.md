@@ -43,7 +43,7 @@ Configuration values resolve from highest to lowest priority:
 
 An **option group** is a `#[non_exhaustive]` struct whose fields are all `Option<T>`. The same struct type is reused at every explicit layer (runtime, account, operation) it participates in. Resolution walks from the highest-priority layer downward, returning the first `Some` value.
 
-Option groups follow the [Cosmos SDK Struct Design Rules](../../.github/skills/cosmos-design-struct/SKILL.md):
+Option groups follow the Cosmos SDK Struct Design Rules:
 - All fields `pub`, all `Option<T>` → `#[non_exhaustive]`, `Default`, fluent `with_*` setters.
 - Prefer enums for closed value sets and newtypes with construction-time validation for constrained values.
 - Proc-macro `#[derive(CosmosOptions)]` generates `View` structs, `from_env()`, and builders.
@@ -568,6 +568,3 @@ The Cosmos SDK manages its own transport, retry, and telemetry pipeline internal
 | `excluded_regions` | `ItemOptions` | `RequestOptions.excluded_regions` | Consolidated into layered group |
 | `ItemOptions` (unified) | — | `ItemReadOptions` / `ItemWriteOptions` | **Split** into separate read and write types |
 
----
-
-*This specification is a design document. It defines the target type surface; implementation follows the [Hierarchical Configuration Model](HierarchicalConfigModel.md) and [Cosmos SDK Struct Design Rules](../../.github/skills/cosmos-design-struct/SKILL.md).*
