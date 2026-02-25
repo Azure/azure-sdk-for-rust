@@ -85,7 +85,7 @@ fn regions_to_json(account_name: &str, regions: &[RegionName]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_data_cosmos::{models::AccountProperties, regions};
+    use azure_data_cosmos::regions;
 
     #[test]
     fn mock_account_deserializes() {
@@ -95,14 +95,19 @@ mod tests {
             false,
         );
 
-        let props: AccountProperties =
+        let value: serde_json::Value =
             serde_json::from_slice(&response.body).expect("should deserialize");
 
-        assert_eq!(props.writable_locations.len(), 2);
-        assert_eq!(props.readable_locations.len(), 2);
-        assert_eq!(props.writable_locations[0].name, regions::EAST_US_2);
-        assert_eq!(props.writable_locations[1].name, regions::WEST_US);
-        assert!(!props.enable_multiple_write_locations);
+        let writable = value["writableLocations"].as_array().unwrap();
+        let readable = value["readableLocations"].as_array().unwrap();
+        assert_eq!(writable.len(), 2);
+        assert_eq!(readable.len(), 2);
+        assert_eq!(writable[0]["name"].as_str().unwrap(), "eastus2");
+        assert_eq!(writable[1]["name"].as_str().unwrap(), "westus");
+        assert_eq!(
+            value["enableMultipleWriteLocations"].as_bool().unwrap(),
+            false
+        );
     }
 
     #[test]
@@ -113,9 +118,9 @@ mod tests {
             true,
         );
 
-        let props: AccountProperties =
+        let value: serde_json::Value =
             serde_json::from_slice(&response.body).expect("should deserialize");
 
-        assert!(props.enable_multiple_write_locations);
+        assert!(value["enableMultipleWriteLocations"].as_bool().unwrap());
     }
 }

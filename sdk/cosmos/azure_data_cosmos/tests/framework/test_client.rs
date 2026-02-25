@@ -185,22 +185,22 @@ fn is_azure_pipelines() -> bool {
 
 impl TestClient {
     pub async fn from_env_with_fault_options(
-        fault_client_preferred_regions: Vec<RegionName>,
+        fault_client_application_region: Option<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(Vec::new(), None, fault_client_preferred_regions).await
+        Self::from_env_inner(None, None, fault_client_application_region).await
     }
 
     pub async fn from_env(
-        preferred_regions: Vec<RegionName>,
+        application_region: Option<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(preferred_regions, None, Vec::new()).await
+        Self::from_env_inner(application_region, None, None).await
     }
 
     pub async fn from_env_with_fault_builder(
         fault_builder: FaultInjectionClientBuilder,
         application_region: Option<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(preferred_regions, Some(fault_builder), Vec::new()).await
+        Self::from_env_inner(None, Some(fault_builder), application_region).await
     }
 
     /// Creates a new [`TestClient`] from local environment variables.
@@ -208,7 +208,7 @@ impl TestClient {
     /// If the environment variables are not set, this client will contain no underlying [`CosmosClient`].
     /// Calling `run` on such a client will skip running the closure (thus skipping the test), except when
     /// running on Azure Pipelines, when it will panic instead.
-    fn from_env_inner(
+    async fn from_env_inner(
         application_region: Option<RegionName>,
         fault_builder: Option<FaultInjectionClientBuilder>,
         fault_client_application_region: Option<RegionName>,
@@ -241,20 +241,13 @@ impl TestClient {
             _ => {
                 Self::from_connection_string(
                     &env_var,
-                    preferred_regions,
+                    application_region,
                     false,
                     fault_builder,
-                    fault_client_preferred_regions,
+                    fault_client_application_region,
                 )
                 .await
             }
-            _ => Self::from_connection_string(
-                &env_var,
-                application_region,
-                false,
-                fault_builder,
-                fault_client_application_region,
-            ),
         }
     }
 
@@ -366,7 +359,7 @@ impl TestClient {
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        let test_client = Self::from_env(options.client_preferred_regions.clone()).await?;
+        let test_client = Self::from_env(options.client_application_region.clone()).await?;
 
         // Create fault injection client if builder or application region were provided
         // builder should be passed in for emulator tests to ensure the FaultClient
@@ -380,7 +373,7 @@ impl TestClient {
                 )
                 .await?,
             )
-        } else if !options.fault_client_preferred_regions.is_empty() {
+        } else if options.fault_client_application_region.is_some() {
             Some(Self::from_env_with_fault_options(options.fault_client_application_region).await?)
         } else {
             None
