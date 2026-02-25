@@ -8,6 +8,7 @@ Btext
 copyid
 deletedwithversions
 deletetype
+Fblob
 fffe
 FFFE
 FFFF
