@@ -38,6 +38,7 @@ testblob2
 testblob3
 testblob4
 testcontainer
+testscope
 uncommittedblobs
 Undeletes
 westus
