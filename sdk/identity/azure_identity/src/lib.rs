@@ -19,11 +19,11 @@ mod env;
 mod imds_managed_identity_credential;
 mod managed_identity_credential;
 mod process;
-mod secret_bytes;
 mod virtual_machine_managed_identity_credential;
 mod workload_identity_credential;
 
 pub use azure_cli_credential::*;
+pub use azure_core::credentials::SecretBytes;
 pub use azure_developer_cli_credential::*;
 pub use azure_pipelines_credential::*;
 pub use client_assertion_credential::*;
@@ -33,7 +33,6 @@ pub use client_secret_credential::*;
 pub use developer_tools_credential::*;
 pub use managed_identity_credential::*;
 pub use process::{new_executor, Executor};
-pub use secret_bytes::SecretBytes;
 pub use workload_identity_credential::*;
 
 pub(crate) use app_service_managed_identity_credential::*;

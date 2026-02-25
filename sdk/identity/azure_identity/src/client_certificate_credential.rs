@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{
-    authentication_error, env::Env, get_authority_host, secret_bytes::SecretBytes,
-    validate_not_empty, validate_tenant_id, TokenCache,
+    authentication_error, env::Env, get_authority_host, validate_not_empty, validate_tenant_id,
+    TokenCache,
 };
 use azure_core::{
     base64,
-    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
+    credentials::{AccessToken, Secret, SecretBytes, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
@@ -283,10 +283,9 @@ impl TokenCredential for ClientCertificateCredential {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        client_assertion_credential::tests::is_valid_request, secret_bytes::SecretBytes, tests::*,
-    };
+    use crate::{client_assertion_credential::tests::is_valid_request, tests::*};
     use azure_core::{
+        credentials::SecretBytes,
         http::{
             headers::Headers,
             policies::{Policy, PolicyResult},

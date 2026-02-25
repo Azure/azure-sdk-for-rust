@@ -6,6 +6,7 @@
 
 - Added `ErrorKind::Connection` for connection errors.
 - The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+- Added `SecretBytes` to `azure_core::credentials` for securely passing byte secrets without printing them in `Debug` or `Display` output.
 
 ### Breaking Changes
 

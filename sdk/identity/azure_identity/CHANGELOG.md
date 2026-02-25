@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `SecretBytes` for securely passing certificate bytes without printing them in `Debug` or `Display` output.
+- Added `SecretBytes` from `azure_core::credentials`, re-exported from `azure_identity`, for securely passing certificate bytes without printing them in `Debug` or `Display` output.
 
 ### Breaking Changes
 
