@@ -5,7 +5,7 @@
 
 use crate::Bytes;
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, fmt, fmt::Debug};
+use std::{borrow::Cow, fmt};
 use typespec_client_core::{fmt::SafeDebug, http::ClientMethodOptions, time::OffsetDateTime};
 
 /// Represents a secret.
@@ -59,7 +59,7 @@ impl From<&'static str> for Secret {
     }
 }
 
-impl Debug for Secret {
+impl fmt::Debug for Secret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("Secret")
     }
@@ -67,7 +67,7 @@ impl Debug for Secret {
 
 /// Represents secret bytes, e.g., certificate data.
 ///
-/// Neither the [`Debug`] nor the [`fmt::Display`] implementation will print the bytes.
+/// Neither the [`Debug`](fmt::Debug) nor the [`Display`](fmt::Display) implementation will print the bytes.
 #[derive(Clone, Eq)]
 pub struct SecretBytes(Vec<u8>);
 
@@ -217,7 +217,7 @@ pub struct TokenRequestOptions<'a> {
 
 /// Represents a credential capable of providing an OAuth token.
 #[async_trait::async_trait]
-pub trait TokenCredential: Send + Sync + Debug {
+pub trait TokenCredential: Send + Sync + fmt::Debug {
     /// Gets an [`AccessToken`] for the specified scopes
     async fn get_token(
         &self,
