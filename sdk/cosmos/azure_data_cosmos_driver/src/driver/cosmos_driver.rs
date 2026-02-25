@@ -26,8 +26,8 @@ use std::time::Instant;
 use super::{
     cache::AccountRegion,
     transport::{
-        infer_request_sent_status, is_emulator_host, uses_dataplane_pipeline,
-        AuthorizationContext, RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
+        infer_request_sent_status, is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
+        RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
         RequestSentStatus as TransportRequestSentStatus,
     },
     CosmosDriverRuntime,
@@ -113,7 +113,9 @@ impl CosmosDriver {
         write_region: Option<&AccountRegion>,
     ) -> AccountEndpoint {
         if let Some(region) = write_region {
-            if let Ok(endpoint) = AccountEndpoint::try_from(region.database_account_endpoint.as_str()) {
+            if let Ok(endpoint) =
+                AccountEndpoint::try_from(region.database_account_endpoint.as_str())
+            {
                 return endpoint;
             }
         }
@@ -628,8 +630,7 @@ impl CosmosDriver {
                 }
                 Err(e) => {
                     let request_sent = if request_reached_transport {
-                        request_sent_from_transport
-                            .unwrap_or_else(|| infer_request_sent_status(&e))
+                        request_sent_from_transport.unwrap_or_else(|| infer_request_sent_status(&e))
                     } else {
                         TransportRequestSentStatus::NotSent
                     };

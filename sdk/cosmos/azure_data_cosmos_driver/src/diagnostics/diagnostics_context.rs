@@ -630,13 +630,9 @@ impl RequestEvent {
 #[serde(untagged)]
 enum DiagnosticsPayload<'a> {
     /// Detailed payload containing all individual requests.
-    Requests {
-        requests: &'a [RequestDiagnostics],
-    },
+    Requests { requests: &'a [RequestDiagnostics] },
     /// Summary payload containing region-level summaries.
-    Summary {
-        regions: Vec<RegionSummary>,
-    },
+    Summary { regions: Vec<RegionSummary> },
 }
 
 /// Diagnostics output structure for JSON serialization.
@@ -1050,7 +1046,11 @@ impl DiagnosticsContext {
 
     /// Returns all regions contacted during this operation.
     pub fn regions_contacted(&self) -> Vec<Region> {
-        let mut regions: Vec<Region> = self.requests.iter().filter_map(|r| r.region.clone()).collect();
+        let mut regions: Vec<Region> = self
+            .requests
+            .iter()
+            .filter_map(|r| r.region.clone())
+            .collect();
         regions.sort();
         regions.dedup();
         regions
@@ -1227,7 +1227,10 @@ impl PartialEq for DiagnosticsContext {
 impl Eq for DiagnosticsContext {}
 
 /// Builds a summary for requests in a single region.
-fn build_region_summary(region: Option<Region>, requests: Vec<&RequestDiagnostics>) -> RegionSummary {
+fn build_region_summary(
+    region: Option<Region>,
+    requests: Vec<&RequestDiagnostics>,
+) -> RegionSummary {
     let count = requests.len();
     let total_charge: RequestCharge = requests.iter().map(|r| r.request_charge).sum();
 
@@ -1752,8 +1755,14 @@ mod tests {
             builder.set_operation_status(StatusCode::Ok, None);
         });
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-        assert!(!json.contains("system_usage"), "Expected no system_usage when monitor is not set");
-        assert!(!json.contains("machine_id"), "Expected no machine_id when not set");
+        assert!(
+            !json.contains("system_usage"),
+            "Expected no system_usage when monitor is not set"
+        );
+        assert!(
+            !json.contains("machine_id"),
+            "Expected no machine_id when not set"
+        );
     }
 
     #[test]

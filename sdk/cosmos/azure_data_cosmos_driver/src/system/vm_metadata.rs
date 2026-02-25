@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 //! Azure VM metadata from the Instance Metadata Service (IMDS).
+#![allow(dead_code)]
 
 use async_lock::Mutex;
 use serde::Deserialize;

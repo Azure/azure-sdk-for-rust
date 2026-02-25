@@ -13,10 +13,10 @@ use std::{
 use crate::{
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
-        ConnectionPoolOptions, CorrelationId, DriverOptions, RuntimeOptions, SharedRuntimeOptions,
-        ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
-        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
-        parse_duration_millis_from_env,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
+        RuntimeOptions, SharedRuntimeOptions, ThroughputControlGroupOptions,
+        ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry, UserAgentSuffix,
+        WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };

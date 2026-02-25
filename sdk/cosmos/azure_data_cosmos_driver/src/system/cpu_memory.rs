@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 //! CPU and memory monitoring with historical snapshots.
+#![allow(dead_code)]
 
 use std::{
     cmp::Ordering,
@@ -335,8 +336,7 @@ impl CpuMemoryMonitorInner {
     fn snapshot(&self) -> CpuMemoryHistory {
         // Poisoning cannot occur: the write side (refresh) only does
         // infallible VecDeque push/pop operations.
-        let samples: Vec<SystemSample> =
-            self.buffer.read().unwrap().iter().copied().collect();
+        let samples: Vec<SystemSample> = self.buffer.read().unwrap().iter().copied().collect();
 
         CpuMemoryHistory {
             samples,
@@ -671,5 +671,4 @@ mod tests {
         // Both should point to the same inner
         assert!(Arc::ptr_eq(&monitor1.inner, &monitor2.inner));
     }
-
 }
