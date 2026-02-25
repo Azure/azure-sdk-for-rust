@@ -624,24 +624,29 @@ impl RequestEvent {
 // JSON Serialization Structures
 // =============================================================================
 
-/// Detailed diagnostics output structure.
+/// Payload for diagnostics output, varying by verbosity level.
 #[derive(Serialize)]
-struct DetailedDiagnosticsOutput<'a> {
-    activity_id: &'a ActivityId,
-    total_duration_ms: u64,
-    total_request_charge: RequestCharge,
-    request_count: usize,
-    requests: &'a [RequestDiagnostics],
+#[serde(untagged)]
+enum DiagnosticsPayload<'a> {
+    /// Detailed payload containing all individual requests.
+    Requests {
+        requests: &'a [RequestDiagnostics],
+    },
+    /// Summary payload containing region-level summaries.
+    Summary {
+        regions: Vec<RegionSummary>,
+    },
 }
 
-/// Summary diagnostics output structure.
+/// Diagnostics output structure for JSON serialization.
 #[derive(Serialize)]
-struct SummaryDiagnosticsOutput<'a> {
+struct DiagnosticsOutput<'a> {
     activity_id: &'a ActivityId,
     total_duration_ms: u64,
     total_request_charge: RequestCharge,
     request_count: usize,
-    regions: Vec<RegionSummary>,
+    #[serde(flatten)]
+    payload: DiagnosticsPayload<'a>,
 }
 
 /// Summary of requests in a single region.
@@ -1032,12 +1037,14 @@ impl DiagnosticsContext {
 
     fn compute_json_detailed(&self) -> String {
         let total_duration_ms = self.duration.as_millis() as u64;
-        let output = DetailedDiagnosticsOutput {
+        let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
-            requests: &self.requests,
+            payload: DiagnosticsPayload::Requests {
+                requests: &self.requests,
+            },
         };
         serde_json::to_string(&output)
             .unwrap_or_else(|e| serde_json::json!({"error": e.to_string()}).to_string())
@@ -1064,12 +1071,14 @@ impl DiagnosticsContext {
         // Sort by region name for deterministic output
         region_summaries.sort_by(|a, b| a.region.cmp(&b.region));
 
-        let output = SummaryDiagnosticsOutput {
+        let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
-            regions: region_summaries,
+            payload: DiagnosticsPayload::Summary {
+                regions: region_summaries,
+            },
         };
 
         let json = serde_json::to_string(&output)
