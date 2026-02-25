@@ -207,15 +207,6 @@ impl CpuMemoryHistory {
     }
 }
 
-impl Default for CpuMemoryHistory {
-    fn default() -> Self {
-        Self {
-            samples: Vec::new(),
-            refresh_interval: DEFAULT_REFRESH_INTERVAL,
-        }
-    }
-}
-
 impl std::fmt::Display for CpuMemoryHistory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let cpu_entries: Vec<String> = self
@@ -649,7 +640,10 @@ mod tests {
 
     #[test]
     fn cpu_memory_history_empty() {
-        let history = CpuMemoryHistory::default();
+        let history = CpuMemoryHistory {
+            samples: Vec::new(),
+            refresh_interval: DEFAULT_REFRESH_INTERVAL,
+        };
         assert!(history.samples().is_empty());
         assert!(!history.is_cpu_overloaded());
     }

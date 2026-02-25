@@ -97,7 +97,6 @@ impl AzureVmMetadata {
 struct ComputeMetadata {
     location: String,
     sku: String,
-    #[serde(rename = "azEnvironment")]
     az_environment: String,
     os_type: String,
     vm_size: String,
