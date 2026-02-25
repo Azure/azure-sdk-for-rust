@@ -487,6 +487,8 @@ impl CosmosDriver {
             activity_id.clone(),
             std::sync::Arc::new(DiagnosticsOptions::default()),
         );
+        diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
+        diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
         debug_assert_eq!(diagnostics_builder.activity_id(), &activity_id);
 
         let pipeline_type = if is_dataplane {

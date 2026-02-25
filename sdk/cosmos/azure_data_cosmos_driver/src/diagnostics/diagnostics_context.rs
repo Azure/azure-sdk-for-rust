@@ -10,6 +10,7 @@
 use crate::{
     models::{ActivityId, CosmosStatus, RequestCharge, SubStatusCode},
     options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
+    system::CpuMemoryMonitor,
 };
 use azure_core::http::StatusCode;
 use serde::Serialize;
@@ -645,6 +646,10 @@ struct DiagnosticsOutput<'a> {
     total_duration_ms: u64,
     total_request_charge: RequestCharge,
     request_count: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    system_usage: Option<SystemUsageSnapshot>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    machine_id: Option<&'a str>,
     #[serde(flatten)]
     payload: DiagnosticsPayload<'a>,
 }
@@ -709,6 +714,40 @@ struct TruncatedOutput<'a> {
     message: &'static str,
 }
 
+/// Snapshot of system CPU and memory usage at a point in time.
+///
+/// Captured lazily on first serialization of a [`DiagnosticsContext`] and
+/// included in the JSON output under `"system_usage"`.
+///
+/// Field names mirror the Java SDK's `CosmosDiagnosticsSystemUsageSnapshot`:
+/// - `"cpu"` – Recent CPU load history (e.g. `"(45.3%), (50.1%), ..."`)
+/// - `"memory_available_mb"` – Most recent available memory in MB
+/// - `"processor_count"` – Number of logical CPUs available to the process
+#[derive(Clone, Debug, Serialize)]
+struct SystemUsageSnapshot {
+    /// Recent CPU load history formatted as a human-readable string.
+    cpu: String,
+    /// Available memory in megabytes (most recent sample).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    memory_available_mb: Option<u64>,
+    /// Number of logical CPUs available to the process.
+    processor_count: usize,
+}
+
+impl SystemUsageSnapshot {
+    /// Captures a snapshot from the given CPU/memory monitor.
+    fn capture(monitor: &CpuMemoryMonitor) -> Self {
+        let history = monitor.snapshot();
+        Self {
+            cpu: history.to_string(),
+            memory_available_mb: history.latest_memory().map(|m| m.available_mb),
+            processor_count: std::thread::available_parallelism()
+                .map(|n| n.get())
+                .unwrap_or(1),
+        }
+    }
+}
+
 /// Internal mutable builder for constructing a [`DiagnosticsContext`].
 ///
 /// This type is used during operation execution to collect diagnostic data.
@@ -735,6 +774,12 @@ pub(crate) struct DiagnosticsContextBuilder {
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
+
+    /// CPU/memory monitor for capturing system usage snapshots.
+    cpu_monitor: Option<CpuMemoryMonitor>,
+
+    /// Machine identifier (VM ID on Azure, generated UUID otherwise).
+    machine_id: Option<Arc<String>>,
 }
 
 impl DiagnosticsContextBuilder {
@@ -746,7 +791,19 @@ impl DiagnosticsContextBuilder {
             requests: Vec::with_capacity(4), // Expect 1-4 requests in most cases
             status: None,
             options,
+            cpu_monitor: None,
+            machine_id: None,
         }
+    }
+
+    /// Sets the CPU/memory monitor for system usage snapshots.
+    pub(crate) fn set_cpu_monitor(&mut self, monitor: CpuMemoryMonitor) {
+        self.cpu_monitor = Some(monitor);
+    }
+
+    /// Sets the machine identifier (from [`VmMetadataService`](crate::system::VmMetadataService)).
+    pub(crate) fn set_machine_id(&mut self, machine_id: Arc<String>) {
+        self.machine_id = Some(machine_id);
     }
 
     /// Returns the operation-level activity ID.
@@ -889,6 +946,8 @@ impl DiagnosticsContextBuilder {
             requests: Arc::new(self.requests),
             status: self.status,
             options: self.options,
+            cpu_monitor: self.cpu_monitor,
+            machine_id: self.machine_id,
             cached_json_detailed: OnceLock::new(),
             cached_json_summary: OnceLock::new(),
         }
@@ -941,6 +1000,12 @@ pub struct DiagnosticsContext {
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
+
+    /// CPU/memory monitor for capturing system usage snapshots on first serialization.
+    cpu_monitor: Option<CpuMemoryMonitor>,
+
+    /// Machine identifier (VM ID on Azure, generated UUID otherwise).
+    machine_id: Option<Arc<String>>,
 
     /// Cached JSON string for detailed verbosity.
     cached_json_detailed: OnceLock<String>,
@@ -1006,6 +1071,14 @@ impl DiagnosticsContext {
         Arc::clone(&self.requests)
     }
 
+    /// Returns the machine identifier, if available.
+    ///
+    /// On Azure VMs this is `"vmId_{vm-id}"` from IMDS; off Azure it is
+    /// `"uuid_{generated-uuid}"` (stable for process lifetime).
+    pub fn machine_id(&self) -> Option<&str> {
+        self.machine_id.as_ref().map(|s| s.as_str())
+    }
+
     /// Serializes diagnostics to a JSON string.
     ///
     /// The result is lazily cached - the first call computes the JSON,
@@ -1037,11 +1110,14 @@ impl DiagnosticsContext {
 
     fn compute_json_detailed(&self) -> String {
         let total_duration_ms = self.duration.as_millis() as u64;
+        let system_usage = self.cpu_monitor.as_ref().map(SystemUsageSnapshot::capture);
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
+            system_usage,
+            machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
             payload: DiagnosticsPayload::Requests {
                 requests: &self.requests,
             },
@@ -1076,6 +1152,8 @@ impl DiagnosticsContext {
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
+            system_usage: self.cpu_monitor.as_ref().map(SystemUsageSnapshot::capture),
+            machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
             payload: DiagnosticsPayload::Summary {
                 regions: region_summaries,
             },
@@ -1111,6 +1189,8 @@ impl Clone for DiagnosticsContext {
             requests: Arc::clone(&self.requests),
             status: self.status,
             options: Arc::clone(&self.options),
+            cpu_monitor: self.cpu_monitor.clone(),
+            machine_id: self.machine_id.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
             // value into a fresh lock.
             cached_json_detailed: self
@@ -1655,5 +1735,81 @@ mod tests {
             Duration::from_millis(50),
         );
         assert_eq!(event.duration_ms, Some(50));
+    }
+
+    // =========================================================================
+    // System Usage / Machine ID integration tests
+    // =========================================================================
+
+    #[test]
+    fn json_without_system_info_omits_fields() {
+        // When no cpu_monitor or machine_id is set, the JSON should not contain those keys.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.set_operation_status(StatusCode::Ok, None);
+        });
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(!json.contains("system_usage"), "Expected no system_usage when monitor is not set");
+        assert!(!json.contains("machine_id"), "Expected no machine_id when not set");
+    }
+
+    #[test]
+    fn json_with_machine_id() {
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        builder.set_operation_status(StatusCode::Ok, None);
+        builder.set_machine_id(Arc::new("vmId_test-vm-123".to_string()));
+        let ctx = builder.complete();
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(
+            json.contains("\"machine_id\":\"vmId_test-vm-123\""),
+            "Expected machine_id in JSON, got: {json}"
+        );
+
+        // Also in summary mode
+        let json_summary = ctx.to_json_string(Some(DiagnosticsVerbosity::Summary));
+        assert!(
+            json_summary.contains("\"machine_id\":\"vmId_test-vm-123\""),
+            "Expected machine_id in summary JSON, got: {json_summary}"
+        );
+    }
+
+    #[test]
+    fn json_with_system_usage() {
+        use crate::system::CpuMemoryMonitor;
+
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        builder.set_operation_status(StatusCode::Ok, None);
+        builder.set_cpu_monitor(CpuMemoryMonitor::get_or_init(Duration::from_secs(5)));
+        let ctx = builder.complete();
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(
+            json.contains("\"system_usage\""),
+            "Expected system_usage in JSON, got: {json}"
+        );
+        assert!(
+            json.contains("\"processor_count\""),
+            "Expected processor_count in system_usage, got: {json}"
+        );
+        assert!(
+            json.contains("\"cpu\""),
+            "Expected cpu field in system_usage, got: {json}"
+        );
+    }
+
+    #[test]
+    fn machine_id_getter() {
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        builder.set_machine_id(Arc::new("uuid_abc-123".to_string()));
+        let ctx = builder.complete();
+
+        assert_eq!(ctx.machine_id(), Some("uuid_abc-123"));
+    }
+
+    #[test]
+    fn machine_id_none_when_not_set() {
+        let builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        let ctx = builder.complete();
+        assert_eq!(ctx.machine_id(), None);
     }
 }

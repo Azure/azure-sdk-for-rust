@@ -10,5 +10,5 @@
 mod cpu_memory;
 mod vm_metadata;
 
-pub use cpu_memory::{CpuLoad, CpuMemoryHistory, CpuMemoryMonitor, CpuUsage, MemoryUsage};
-pub use vm_metadata::{AzureVmMetadata, VmMetadataService};
+pub(crate) use cpu_memory::CpuMemoryMonitor;
+pub(crate) use vm_metadata::VmMetadataService;

@@ -23,10 +23,10 @@ const IMDS_CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 const IMDS_REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Prefix for VM ID in machine identifiers.
-pub const VM_ID_PREFIX: &str = "vmId_";
+pub(crate) const VM_ID_PREFIX: &str = "vmId_";
 
 /// Prefix for generated UUID in machine identifiers (when not on Azure VM).
-pub const UUID_PREFIX: &str = "uuid_";
+pub(crate) const UUID_PREFIX: &str = "uuid_";
 
 /// Global singleton for Azure VM metadata.
 static VM_METADATA: OnceLock<Arc<VmMetadataServiceInner>> = OnceLock::new();
@@ -34,44 +34,44 @@ static VM_METADATA: OnceLock<Arc<VmMetadataServiceInner>> = OnceLock::new();
 /// Azure VM metadata retrieved from IMDS.
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default)]
-pub struct AzureVmMetadata {
+pub(crate) struct AzureVmMetadata {
     /// Compute metadata.
     compute: ComputeMetadata,
 }
 
 impl AzureVmMetadata {
     /// Returns the Azure region/location.
-    pub fn location(&self) -> &str {
+    pub(crate) fn location(&self) -> &str {
         &self.compute.location
     }
 
     /// Returns the VM SKU.
-    pub fn sku(&self) -> &str {
+    pub(crate) fn sku(&self) -> &str {
         &self.compute.sku
     }
 
     /// Returns the Azure environment (e.g., "AzurePublicCloud").
-    pub fn az_environment(&self) -> &str {
+    pub(crate) fn az_environment(&self) -> &str {
         &self.compute.az_environment
     }
 
     /// Returns the OS type (e.g., "Linux", "Windows").
-    pub fn os_type(&self) -> &str {
+    pub(crate) fn os_type(&self) -> &str {
         &self.compute.os_type
     }
 
     /// Returns the VM size (e.g., "Standard_D2s_v3").
-    pub fn vm_size(&self) -> &str {
+    pub(crate) fn vm_size(&self) -> &str {
         &self.compute.vm_size
     }
 
     /// Returns the VM ID.
-    pub fn vm_id(&self) -> &str {
+    pub(crate) fn vm_id(&self) -> &str {
         &self.compute.vm_id
     }
 
     /// Returns the machine ID with the VM ID prefix.
-    pub fn machine_id(&self) -> String {
+    pub(crate) fn machine_id(&self) -> String {
         if self.compute.vm_id.is_empty() {
             String::new()
         } else {
@@ -80,7 +80,7 @@ impl AzureVmMetadata {
     }
 
     /// Returns the host environment info string.
-    pub fn host_env_info(&self) -> String {
+    pub(crate) fn host_env_info(&self) -> String {
         format!(
             "{}|{}|{}|{}",
             self.os_type(),
@@ -118,7 +118,7 @@ struct ComputeMetadata {
 /// This ensures that client telemetry always has a stable machine identifier.
 #[non_exhaustive]
 #[derive(Clone, Debug)]
-pub struct VmMetadataService {
+pub(crate) struct VmMetadataService {
     /// Cached metadata (None if fetch failed or not on Azure).
     metadata: Option<Arc<AzureVmMetadata>>,
     /// Machine ID - always available (VM ID or generated UUID).
@@ -135,7 +135,7 @@ impl VmMetadataService {
     ///
     /// This method never fails - if IMDS is unreachable, the service will
     /// still be available with a generated UUID as the machine ID.
-    pub async fn get_or_init() -> Self {
+    pub(crate) async fn get_or_init() -> Self {
         let inner = VM_METADATA.get_or_init(|| Arc::new(VmMetadataServiceInner::new()));
 
         // Single-flight: the mutex ensures only one task runs the fetch.
@@ -156,7 +156,7 @@ impl VmMetadataService {
     /// Returns `None` if:
     /// - The fetch failed (not running on Azure)
     /// - IMDS access is disabled
-    pub fn metadata(&self) -> Option<&AzureVmMetadata> {
+    pub(crate) fn metadata(&self) -> Option<&AzureVmMetadata> {
         self.metadata.as_deref()
     }
 
@@ -165,14 +165,14 @@ impl VmMetadataService {
     /// This is always available:
     /// - On Azure VMs: "vmId_{vm-id}" from IMDS
     /// - Off Azure: "uuid_{generated-uuid}" (stable for process lifetime)
-    pub fn machine_id(&self) -> &str {
+    pub(crate) fn machine_id(&self) -> &str {
         &self.machine_id
     }
 
     /// Returns `true` if Azure VM metadata has been fetched successfully.
     ///
     /// Note: Even if this returns `false`, `machine_id()` is still available.
-    pub fn is_on_azure(&self) -> bool {
+    pub(crate) fn is_on_azure(&self) -> bool {
         self.metadata.is_some()
     }
 }

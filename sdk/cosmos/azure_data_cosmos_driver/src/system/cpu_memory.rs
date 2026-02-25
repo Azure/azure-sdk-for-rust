@@ -16,7 +16,7 @@ use std::{
 #[cfg(target_os = "linux")]
 use std::fs;
 
-/// Default interval between CPU/memory samples.
+/// Default interval between CPU/memory samples (5 seconds).
 const DEFAULT_REFRESH_INTERVAL: Duration = Duration::from_secs(5);
 
 /// Number of historical samples to retain.
@@ -49,7 +49,7 @@ static CPU_MEMORY_MONITOR: OnceLock<Arc<CpuMemoryMonitorInner>> = OnceLock::new(
 /// assert_eq!(nan.value(), 0.0);
 /// ```
 #[derive(Clone, Copy, Debug, Default)]
-pub struct CpuUsage(f64);
+pub(crate) struct CpuUsage(f64);
 
 impl CpuUsage {
     /// Creates a new `CpuUsage` from a raw `f64` percentage.
@@ -60,7 +60,7 @@ impl CpuUsage {
     /// # Panics
     ///
     /// Panics if the normalized value is not between 0.0 and 100.0.
-    pub fn new(value: f64) -> Self {
+    pub(crate) fn new(value: f64) -> Self {
         let normalized = Self::normalize(value);
         assert!(
             (0.0..=100.0).contains(&normalized),
@@ -71,7 +71,7 @@ impl CpuUsage {
     }
 
     /// Returns the raw `f64` percentage.
-    pub const fn value(self) -> f64 {
+    pub(crate) const fn value(self) -> f64 {
         self.0
     }
 
@@ -149,7 +149,7 @@ impl From<CpuUsage> for f64 {
 /// (see [`CpuUsage::new`]).
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct CpuLoad {
+pub(crate) struct CpuLoad {
     /// When this measurement was taken.
     timestamp: Instant,
     /// CPU usage percentage.
@@ -161,7 +161,7 @@ impl CpuLoad {
     ///
     /// The `value` is wrapped in [`CpuUsage`], which normalizes NaN and
     /// negative zero to `0.0` and panics if the result is outside `0.0..=100.0`.
-    pub fn new(timestamp: Instant, value: f64) -> Self {
+    pub(crate) fn new(timestamp: Instant, value: f64) -> Self {
         Self {
             timestamp,
             value: CpuUsage::new(value),
@@ -169,12 +169,12 @@ impl CpuLoad {
     }
 
     /// Returns when this measurement was taken.
-    pub fn timestamp(&self) -> Instant {
+    pub(crate) fn timestamp(&self) -> Instant {
         self.timestamp
     }
 
     /// Returns the CPU usage percentage.
-    pub fn value(&self) -> CpuUsage {
+    pub(crate) fn value(&self) -> CpuUsage {
         self.value
     }
 }
@@ -188,17 +188,17 @@ impl fmt::Display for CpuLoad {
 /// A single memory measurement at a point in time.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct MemoryUsage {
+pub(crate) struct MemoryUsage {
     /// When this measurement was taken.
-    pub timestamp: Instant,
+    pub(crate) timestamp: Instant,
     /// Available memory in megabytes.
-    pub available_mb: u64,
+    pub(crate) available_mb: u64,
 }
 
 /// Historical CPU and memory usage data.
 #[non_exhaustive]
 #[derive(Clone, Debug)]
-pub struct CpuMemoryHistory {
+pub(crate) struct CpuMemoryHistory {
     /// Historical CPU load samples (oldest first).
     cpu_samples: Vec<CpuLoad>,
     /// Historical memory samples (oldest first).
@@ -209,17 +209,17 @@ pub struct CpuMemoryHistory {
 
 impl CpuMemoryHistory {
     /// Returns the CPU load samples.
-    pub fn cpu_samples(&self) -> &[CpuLoad] {
+    pub(crate) fn cpu_samples(&self) -> &[CpuLoad] {
         &self.cpu_samples
     }
 
     /// Returns the memory usage samples.
-    pub fn memory_samples(&self) -> &[MemoryUsage] {
+    pub(crate) fn memory_samples(&self) -> &[MemoryUsage] {
         &self.memory_samples
     }
 
     /// Returns the refresh interval between samples.
-    pub fn refresh_interval(&self) -> Duration {
+    pub(crate) fn refresh_interval(&self) -> Duration {
         self.refresh_interval
     }
 
@@ -227,22 +227,22 @@ impl CpuMemoryHistory {
     ///
     /// The CPU is considered overloaded if any recent sample exceeds 90%
     /// or if there are significant delays in thread scheduling.
-    pub fn is_cpu_overloaded(&self) -> bool {
+    pub(crate) fn is_cpu_overloaded(&self) -> bool {
         self.is_cpu_over_threshold(CPU_OVERLOAD_THRESHOLD) || self.has_scheduling_delay()
     }
 
     /// Returns `true` if any CPU sample exceeds the given threshold.
-    pub fn is_cpu_over_threshold(&self, threshold: CpuUsage) -> bool {
+    pub(crate) fn is_cpu_over_threshold(&self, threshold: CpuUsage) -> bool {
         self.cpu_samples.iter().any(|s| s.value > threshold)
     }
 
     /// Returns the most recent CPU load, if available.
-    pub fn latest_cpu(&self) -> Option<CpuLoad> {
+    pub(crate) fn latest_cpu(&self) -> Option<CpuLoad> {
         self.cpu_samples.last().copied()
     }
 
     /// Returns the most recent memory usage, if available.
-    pub fn latest_memory(&self) -> Option<MemoryUsage> {
+    pub(crate) fn latest_memory(&self) -> Option<MemoryUsage> {
         self.memory_samples.last().copied()
     }
 
@@ -288,7 +288,7 @@ impl std::fmt::Display for CpuMemoryHistory {
 /// handles are dropped the thread continues to run but idles (skipping
 /// sample collection) until a new handle is created via [`CpuMemoryMonitor::get_or_init`].
 #[derive(Clone, Debug)]
-pub struct CpuMemoryMonitor {
+pub(crate) struct CpuMemoryMonitor {
     inner: Arc<CpuMemoryMonitorInner>,
 }
 
@@ -300,10 +300,14 @@ impl CpuMemoryMonitor {
     /// of the process. When no `CpuMemoryMonitor` handles exist the thread
     /// idles without collecting samples; it resumes collection as soon as a
     /// new handle is created.
-    pub fn get_or_init() -> Self {
+    ///
+    /// The `refresh_interval` is only used on the first call to create the
+    /// singleton; subsequent calls reuse the existing monitor regardless of
+    /// the interval passed.
+    pub(crate) fn get_or_init(refresh_interval: Duration) -> Self {
         let inner = CPU_MEMORY_MONITOR
             .get_or_init(|| {
-                let inner = Arc::new(CpuMemoryMonitorInner::new());
+                let inner = Arc::new(CpuMemoryMonitorInner::new(refresh_interval));
                 inner.start();
                 inner
             })
@@ -316,12 +320,12 @@ impl CpuMemoryMonitor {
     }
 
     /// Returns a snapshot of the current CPU and memory history.
-    pub fn snapshot(&self) -> CpuMemoryHistory {
+    pub(crate) fn snapshot(&self) -> CpuMemoryHistory {
         self.inner.snapshot()
     }
 
     /// Returns `true` if the CPU appears to be overloaded.
-    pub fn is_cpu_overloaded(&self) -> bool {
+    pub(crate) fn is_cpu_overloaded(&self) -> bool {
         self.snapshot().is_cpu_overloaded()
     }
 }
@@ -348,22 +352,23 @@ struct CpuMemoryMonitorInner {
 }
 
 impl CpuMemoryMonitorInner {
-    fn new() -> Self {
+    fn new(refresh_interval: Duration) -> Self {
         Self {
             history: RwLock::new(CpuMemoryHistory::default()),
             cpu_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
             memory_buffer: RwLock::new(VecDeque::with_capacity(HISTORY_LENGTH)),
             listener_count: RwLock::new(0),
-            refresh_interval: DEFAULT_REFRESH_INTERVAL,
+            refresh_interval,
         }
     }
 
     fn start(self: &Arc<Self>) {
         let weak = Arc::downgrade(self);
+        let refresh_interval = self.refresh_interval;
         thread::Builder::new()
             .name("cosmos-cpu-monitor".into())
             .spawn(move || {
-                Self::monitor_loop(weak);
+                Self::monitor_loop(weak, refresh_interval);
             })
             .expect("failed to spawn CPU monitor thread");
     }
@@ -386,9 +391,9 @@ impl CpuMemoryMonitorInner {
         self.history.read().unwrap().clone()
     }
 
-    fn monitor_loop(weak: Weak<CpuMemoryMonitorInner>) {
+    fn monitor_loop(weak: Weak<CpuMemoryMonitorInner>, refresh_interval: Duration) {
         loop {
-            thread::sleep(DEFAULT_REFRESH_INTERVAL);
+            thread::sleep(refresh_interval);
 
             let Some(inner) = weak.upgrade() else {
                 // Monitor was dropped, exit the thread
@@ -735,10 +740,11 @@ mod tests {
 
     #[test]
     fn cpu_memory_monitor_singleton() {
-        let monitor1 = CpuMemoryMonitor::get_or_init();
-        let monitor2 = CpuMemoryMonitor::get_or_init();
+        let monitor1 = CpuMemoryMonitor::get_or_init(DEFAULT_REFRESH_INTERVAL);
+        let monitor2 = CpuMemoryMonitor::get_or_init(DEFAULT_REFRESH_INTERVAL);
 
         // Both should point to the same inner
         assert!(Arc::ptr_eq(&monitor1.inner, &monitor2.inner));
     }
+
 }

@@ -120,7 +120,7 @@ where
 }
 
 /// Parses a duration from an environment variable (in milliseconds) with validation.
-pub(super) fn parse_duration_millis_from_env(
+pub(crate) fn parse_duration_millis_from_env(
     builder_value: Option<Duration>,
     env_var_name: &str,
     default_millis: u64,
