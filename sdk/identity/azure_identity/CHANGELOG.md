@@ -4,9 +4,12 @@
 
 ### Features Added
 
+- Added `SecretBytes` for securely passing certificate bytes without printing them in `Debug` or `Display` output.
+
 ### Breaking Changes
 
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- `ClientCertificateCredential::new()` now takes `SecretBytes` instead of `Secret` for the `certificate` parameter. Pass the raw PKCS12 bytes wrapped in `SecretBytes` instead of a base64-encoded string wrapped in `Secret`.
 
 ### Bugs Fixed
 
