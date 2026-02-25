@@ -44,11 +44,26 @@ use std::borrow::Cow;
 ///
 /// Upsert supports both conditional options for optimistic concurrency control.
 #[derive(Clone, Debug, Default)]
+#[non_exhaustive]
 pub struct BatchUpsertOptions {
     /// Only perform the operation if the item's ETag matches this value.
-    pub if_match: Option<String>,
+    if_match: Option<String>,
     /// Only perform the operation if the item's ETag does not match this value.
-    pub if_none_match: Option<String>,
+    if_none_match: Option<String>,
+}
+
+impl BatchUpsertOptions {
+    /// Sets the `if_match` condition for optimistic concurrency control.
+    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
+        self.if_match = Some(etag.into());
+        self
+    }
+
+    /// Sets the `if_none_match` condition for optimistic concurrency control.
+    pub fn with_if_none_match(mut self, etag: impl Into<String>) -> Self {
+        self.if_none_match = Some(etag.into());
+        self
+    }
 }
 
 /// Options for batch replace operations.
@@ -56,20 +71,44 @@ pub struct BatchUpsertOptions {
 /// Replace only supports `if_match` for optimistic concurrency control,
 /// since the item must exist to be replaced.
 #[derive(Clone, Debug, Default)]
+#[non_exhaustive]
 pub struct BatchReplaceOptions {
     /// Only replace if the item's current ETag matches this value.
-    pub if_match: Option<String>,
+    if_match: Option<String>,
+}
+
+impl BatchReplaceOptions {
+    /// Sets the `if_match` condition for optimistic concurrency control.
+    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
+        self.if_match = Some(etag.into());
+        self
+    }
 }
 
 /// Options for batch read operations.
 ///
 /// Read supports both conditional options, commonly used for cache validation.
 #[derive(Clone, Debug, Default)]
+#[non_exhaustive]
 pub struct BatchReadOptions {
     /// Only return the item if its ETag matches this value.
-    pub if_match: Option<String>,
+    if_match: Option<String>,
     /// Only return the item if its ETag does not match (useful for caching).
-    pub if_none_match: Option<String>,
+    if_none_match: Option<String>,
+}
+
+impl BatchReadOptions {
+    /// Sets the `if_match` condition.
+    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
+        self.if_match = Some(etag.into());
+        self
+    }
+
+    /// Sets the `if_none_match` condition (useful for caching).
+    pub fn with_if_none_match(mut self, etag: impl Into<String>) -> Self {
+        self.if_none_match = Some(etag.into());
+        self
+    }
 }
 
 /// Options for batch delete operations.
@@ -77,9 +116,18 @@ pub struct BatchReadOptions {
 /// Delete only supports `if_match` for optimistic concurrency control,
 /// since the item must exist to be deleted.
 #[derive(Clone, Debug, Default)]
+#[non_exhaustive]
 pub struct BatchDeleteOptions {
     /// Only delete if the item's current ETag matches this value.
-    pub if_match: Option<String>,
+    if_match: Option<String>,
+}
+
+impl BatchDeleteOptions {
+    /// Sets the `if_match` condition for optimistic concurrency control.
+    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
+        self.if_match = Some(etag.into());
+        self
+    }
 }
 
 /// Represents a transactional batch of operations to be executed atomically.
@@ -311,9 +359,17 @@ pub(crate) enum TransactionalBatchOperation {
 /// so we implement a custom deserializer to handle this format.
 #[derive(Clone, SafeDebug)]
 #[safe(true)]
+#[non_exhaustive]
 pub struct TransactionalBatchResponse {
     /// The results of each operation in the batch.
-    pub results: Vec<TransactionalBatchOperationResult>,
+    results: Vec<TransactionalBatchOperationResult>,
+}
+
+impl TransactionalBatchResponse {
+    /// Returns the results of each operation in the batch.
+    pub fn results(&self) -> &[TransactionalBatchOperationResult] {
+        &self.results
+    }
 }
 
 impl<'de> Deserialize<'de> for TransactionalBatchResponse {
@@ -330,34 +386,65 @@ impl<'de> Deserialize<'de> for TransactionalBatchResponse {
 /// Result of a single operation within a transactional batch.
 #[derive(Clone, SafeDebug, Deserialize)]
 #[safe(true)]
+#[non_exhaustive]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionalBatchOperationResult {
     /// HTTP status code for this operation.
-    pub status_code: u16,
+    status_code: u16,
 
     /// The resource body returned by the operation, if any.
     #[serde(default)]
-    pub resource_body: Option<serde_json::Value>,
+    resource_body: Option<serde_json::Value>,
 
     /// ETag of the resource after the operation.
     #[serde(rename = "eTag")]
     #[serde(default)]
-    pub etag: Option<String>,
+    etag: Option<String>,
 
     /// Request charge for this operation.
     #[serde(default)]
-    pub request_charge: Option<f64>,
+    request_charge: Option<f64>,
 
     /// Retry after duration in milliseconds, if applicable.
     #[serde(default)]
-    pub retry_after_milliseconds: Option<u64>,
+    retry_after_milliseconds: Option<u64>,
 
     /// Substatus code for this operation, if applicable.
     #[serde(default)]
-    pub substatus_code: Option<u32>,
+    substatus_code: Option<u32>,
 }
 
 impl TransactionalBatchOperationResult {
+    /// Returns the HTTP status code for this operation.
+    pub fn status_code(&self) -> u16 {
+        self.status_code
+    }
+
+    /// Returns the resource body returned by the operation, if any.
+    pub fn resource_body(&self) -> Option<&serde_json::Value> {
+        self.resource_body.as_ref()
+    }
+
+    /// Returns the ETag of the resource after the operation, if any.
+    pub fn etag(&self) -> Option<&str> {
+        self.etag.as_deref()
+    }
+
+    /// Returns the request charge for this operation, if any.
+    pub fn request_charge(&self) -> Option<f64> {
+        self.request_charge
+    }
+
+    /// Returns the retry after duration in milliseconds, if applicable.
+    pub fn retry_after_milliseconds(&self) -> Option<u64> {
+        self.retry_after_milliseconds
+    }
+
+    /// Returns the substatus code for this operation, if applicable.
+    pub fn substatus_code(&self) -> Option<u32> {
+        self.substatus_code
+    }
+
     /// Deserializes the resource body as the specified type.
     ///
     /// Returns `None` if there is no resource body.
@@ -405,9 +492,7 @@ mod tests {
             value: 42,
         };
 
-        let replace_options = BatchReplaceOptions {
-            if_match: Some("some-etag".to_string()),
-        };
+        let replace_options = BatchReplaceOptions::default().with_if_match("some-etag");
 
         let batch = TransactionalBatch::new("test_partition")
             .create_item(&item)?

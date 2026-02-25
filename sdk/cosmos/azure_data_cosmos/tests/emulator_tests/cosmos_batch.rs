@@ -78,14 +78,14 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
 
             // Verify status codes: two creates (201) and one read (200)
             let status_codes: Vec<u16> = batch_response
-                .results
+                .results()
                 .iter()
-                .map(|r| r.status_code)
+                .map(|r| r.status_code())
                 .collect();
             assert_eq!(status_codes, vec![201, 201, 200]);
 
             // Verify the read operation returned the correct item
-            let read_item: BatchTestItem = batch_response.results[2]
+            let read_item: BatchTestItem = batch_response.results()[2]
                 .deserialize_body()?
                 .expect("Read operation should return an item");
             assert_eq!(read_item.id, "item1");
@@ -157,9 +157,9 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
 
             // Verify all operations succeeded: replace (200), create (201), delete (204)
             let status_codes: Vec<u16> = batch_response
-                .results
+                .results()
                 .iter()
-                .map(|r| r.status_code)
+                .map(|r| r.status_code())
                 .collect();
             assert!(
                 status_codes.iter().all(|&c| c >= 200 && c < 300),
@@ -218,9 +218,9 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
             // First operation (create item2) gets 424 Failed Dependency because a subsequent operation failed
             // Second operation (delete nonexistent) gets 404 Not Found
             let status_codes: Vec<u16> = batch_response
-                .results
+                .results()
                 .iter()
-                .map(|r| r.status_code)
+                .map(|r| r.status_code())
                 .collect();
             assert_eq!(status_codes, vec![424, 404]);
 

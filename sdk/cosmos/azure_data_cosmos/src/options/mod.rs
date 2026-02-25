@@ -245,28 +245,10 @@ pub struct BatchOptions {
     ///
     /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
     session_token: Option<SessionToken>,
-    /// Used to specify the consistency level for the operation.
-    ///
-    /// The default value is the consistency level set on the Cosmos DB account.
-    /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
-    consistency_level: Option<ConsistencyLevel>,
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
     content_response_on_write_enabled: bool,
-    /// The desired throughput bucket for this request
-    ///
-    /// See [Throughput Control in Azure Cosmos DB](https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets) for more.
-    throughput_bucket: Option<usize>,
-    /// Additional headers to be included in the batch request. This allows for custom headers beyond those natively supported.
-    /// The following are some example headers that can be added using this api.
-    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
-    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    ///
-    /// Custom headers will not override headers that are already set by the SDK.
-    custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl BatchOptions {
@@ -285,11 +267,6 @@ impl BatchOptions {
         self
     }
 
-    pub fn with_consistency_level(mut self, consistency_level: ConsistencyLevel) -> Self {
-        self.consistency_level = Some(consistency_level);
-        self
-    }
-
     pub fn with_content_response_on_write_enabled(
         mut self,
         content_response_on_write_enabled: bool,
@@ -297,25 +274,10 @@ impl BatchOptions {
         self.content_response_on_write_enabled = content_response_on_write_enabled;
         self
     }
-
-    pub fn with_throughput_bucket(mut self, throughput_bucket: usize) -> Self {
-        self.throughput_bucket = Some(throughput_bucket);
-        self
-    }
-
-    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
-        self.custom_headers = custom_headers;
-        self
-    }
 }
 
 impl BatchOptions {
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        // custom headers should be added first so that they don't override SDK-set headers
-        for (header_name, header_value) in &self.custom_headers {
-            headers.insert(header_name.clone(), header_value.clone());
-        }
-
         if let Some(pre_triggers) = &self.pre_triggers {
             headers.insert(constants::PRE_TRIGGER_INCLUDE, pre_triggers.join(","));
         }
@@ -326,14 +288,6 @@ impl BatchOptions {
 
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-
-        if let Some(consistency_level) = &self.consistency_level {
-            headers.insert(constants::CONSISTENCY_LEVEL, consistency_level.to_string());
-        }
-
-        if let Some(throughput_bucket) = &self.throughput_bucket {
-            headers.insert(constants::THROUGHPUT_BUCKET, throughput_bucket.to_string());
         }
 
         if !self.content_response_on_write_enabled {
