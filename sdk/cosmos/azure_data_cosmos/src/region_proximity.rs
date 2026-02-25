@@ -6,7 +6,7 @@
 
 use crate::regions::RegionName;
 
-//cSpell: disable
+// cSpell:disable
 
 /// Generates a list of preferred regions sorted by geographic proximity (RTT)
 /// from the given source region.
