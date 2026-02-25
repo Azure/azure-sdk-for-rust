@@ -235,7 +235,7 @@ pub struct RetryOptions { /* fields below */ }
 | Option | Type | Env Var | Notes |
 |---|---|---|---|
 | `session_retry` | `Option<SessionRetryOptions>` | — | Nested group for session-consistency retry behavior on 404/1002 errors. Marked `#[option(nested)]`. |
-| `enable_partition_level_circuit_breaker` | `Option<bool>` | `AZURE_COSMOS_ENABLE_PARTITION_CIRCUIT_BREAKER` | Enable partition-level circuit breaker for transient failure isolation. |
+| `enable_partition_level_circuit_breaker` | `Option<bool>` | `AZURE_COSMOS_ENABLE_PARTITION_LEVEL_CIRCUIT_BREAKER` | Enable partition-level circuit breaker for transient failure isolation. |
 | `disable_partition_level_failover` | `Option<bool>` | `AZURE_COSMOS_DISABLE_PARTITION_LEVEL_FAILOVER` | Disable automatic partition-level failover to other replicas. |
 
 ### 3.6 `SessionRetryOptions`
@@ -468,9 +468,7 @@ let batch = TransactionalBatch::new(partition_key)
     );
 
 let batch_opts = TransactionalBatchOptions {
-    request: RequestOptionsBuilder::new()
-        .priority(PriorityLevel::Low)
-        .build(),
+    request: RequestOptions::default().with_priority(PriorityLevel::Low),
     ..Default::default()
 };
 
@@ -512,7 +510,7 @@ The explicit preferred-region list is replaced by `RegionOptions.application_reg
 
 **Removed from:** `CosmosClientOptions`, `ItemOptions`, `QueryOptions`
 
-Replaced by `RequestOptions.read_consistency_strategy` (type `ReadConsistencyStrategy`), which aligns with the newer strategy-based approach pioneered in the Java SDK. The new enum includes traditional weakening levels (`Eventual`, `ConsistentPrefix`, `Session`, `BoundedStaleness`) plus new strategies (`LatestCommitted`, `GlobalStrong`).
+Replaced by `RequestOptions.read_consistency_strategy` (type `ReadConsistencyStrategy`), which aligns with the newer strategy-based approach pioneered in the Java SDK. The new enum includes traditional weakening levels (`Eventual`, `Session`) plus new strategies (`LatestCommitted`, `GlobalStrong`).
 
 The `ConsistencyLevel` enum itself is **retained** as a model type for account-level consistency properties returned by the service. It is no longer used in any options struct.
 
@@ -546,7 +544,7 @@ The Cosmos SDK manages its own transport, retry, and telemetry pipeline internal
 
 | Current Field | Current Location | New Location | Change |
 |---|---|---|---|
-| `application_name` | `CosmosClientOptions` | `CosmosAccountOptions.user_agent_suffix` | Moved to option group; renamed |
+| `user_agent_suffix` | `CosmosClientOptions` | `CosmosAccountOptions.user_agent_suffix` | Moved to option group |
 | `application_region` | `CosmosClientOptions` | `RegionOptions.application_region` | Moved to option group |
 | `application_preferred_regions` | `CosmosClientOptions` | — | **Removed** |
 | `excluded_regions` | `CosmosClientOptions` | `RequestOptions.excluded_regions` | Moved; now `Option<Vec<_>>` for layered resolution |
