@@ -1479,4 +1479,126 @@ mod tests {
             Url::parse("https://location1.documents.example.com").unwrap()
         );
     }
+
+    /// Verifies that when preferred regions come from the proximity table (many regions),
+    /// the LocationCache correctly filters them to only account-present regions while
+    /// preserving the proximity ordering.
+    #[test]
+    fn preferred_regions_filtered_to_account_regions_in_proximity_order() {
+        use crate::region_proximity::generate_preferred_region_list;
+        use crate::regions;
+
+        // Simulate application_region = EAST_US → generates ~96 proximity-sorted regions
+        let proximity_list = generate_preferred_region_list(&regions::EAST_US)
+            .expect("EAST_US should be a known region");
+
+        // Account only has these 3 regions (subset of the 96)
+        let account_regions = vec![
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_EUROPE.clone(),
+                database_account_endpoint: "https://test-westeurope.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        let default_endpoint: Url = "https://test.documents.azure.com:443/".parse().unwrap();
+
+        let mut cache = LocationCache::new(
+            default_endpoint.clone(),
+            proximity_list,
+            vec![], // no excluded regions
+        );
+        // Feed account properties (writable = readable for simplicity)
+        cache
+            .update(account_regions.clone(), account_regions)
+            .unwrap();
+
+        let read_endpoints = cache.read_endpoints();
+
+        // Only the 3 account-present regions should appear in the read endpoints
+        assert_eq!(
+            read_endpoints.len(),
+            3,
+            "expected exactly 3 endpoints matching account regions"
+        );
+
+        // Verify proximity order: from EAST_US, East US 2 is closer than West US,
+        // and West US is closer than West Europe.
+        assert_eq!(
+            read_endpoints[0].as_str(),
+            "https://test-eastus2.documents.azure.com/",
+            "East US 2 should be first (closest to East US)"
+        );
+        assert_eq!(
+            read_endpoints[1].as_str(),
+            "https://test-westus.documents.azure.com/",
+            "West US should be second"
+        );
+        assert_eq!(
+            read_endpoints[2].as_str(),
+            "https://test-westeurope.documents.azure.com/",
+            "West Europe should be third (farthest)"
+        );
+    }
+
+    /// Verifies that write endpoints also respect proximity ordering from
+    /// the preferred regions list.
+    #[test]
+    fn write_endpoints_respect_proximity_order() {
+        use crate::region_proximity::generate_preferred_region_list;
+        use crate::regions;
+
+        let proximity_list = generate_preferred_region_list(&regions::WEST_EUROPE)
+            .expect("WEST_EUROPE should be a known region");
+
+        // Account has 2 write regions
+        let write_regions = vec![
+            AccountRegion {
+                name: regions::EAST_US.clone(),
+                database_account_endpoint: "https://test-eastus.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::NORTH_EUROPE.clone(),
+                database_account_endpoint: "https://test-northeurope.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+        let read_regions = write_regions.clone();
+
+        let default_endpoint: Url = "https://test.documents.azure.com:443/".parse().unwrap();
+
+        let mut cache = LocationCache::new(default_endpoint, proximity_list, vec![]);
+        cache.update(write_regions, read_regions).unwrap();
+
+        let write_endpoints = cache.write_endpoints();
+        assert_eq!(write_endpoints.len(), 2);
+
+        // From West Europe, North Europe is much closer than East US
+        assert_eq!(
+            write_endpoints[0].as_str(),
+            "https://test-northeurope.documents.azure.com/",
+            "North Europe should be first (closer to West Europe)"
+        );
+        assert_eq!(
+            write_endpoints[1].as_str(),
+            "https://test-eastus.documents.azure.com/",
+            "East US should be second (farther from West Europe)"
+        );
+    }
 }

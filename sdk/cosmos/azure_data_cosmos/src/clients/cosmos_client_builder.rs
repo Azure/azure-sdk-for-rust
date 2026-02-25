@@ -325,4 +325,66 @@ mod tests {
         let result = CosmosClient::builder().build(test_account());
         assert!(result.is_ok());
     }
+
+    /// Verifies the full flow: builder with application_region → proximity list →
+    /// GlobalEndpointManager → LocationCache → correctly ordered endpoints.
+    ///
+    /// Passing in East US should produce a proximity-ordered list of regions with East US 2 first,
+    /// then West US, then West Europe.
+    #[test]
+    fn application_region_produces_proximity_ordered_endpoints() {
+        use crate::models::AccountRegion;
+
+        let client = CosmosClient::builder()
+            .with_application_region(regions::EAST_US)
+            .build(test_account())
+            .expect("build should succeed with known region");
+
+        // Simulate receiving account properties with 3 regions
+        let regions_list = vec![
+            AccountRegion {
+                name: regions::WEST_EUROPE.clone(),
+                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        // Feed the account regions into the location cache
+        client
+            .global_endpoint_manager
+            .update_location_cache(regions_list.clone(), regions_list);
+
+        // Verify read endpoints are in proximity order from East US:
+        // East US 2 (closest), West US, West Europe (farthest)
+        let read_endpoints = client.global_endpoint_manager.read_endpoints();
+        assert_eq!(read_endpoints.len(), 3);
+        assert_eq!(
+            read_endpoints[0].as_str(),
+            "https://test-eastus2.documents.azure.com/",
+            "East US 2 should be first (closest to East US)"
+        );
+        assert_eq!(
+            read_endpoints[1].as_str(),
+            "https://test-westus.documents.azure.com/",
+            "West US should be second"
+        );
+        assert_eq!(
+            read_endpoints[2].as_str(),
+            "https://test-westeurope.documents.azure.com/",
+            "West Europe should be third (farthest)"
+        );
+    }
 }
