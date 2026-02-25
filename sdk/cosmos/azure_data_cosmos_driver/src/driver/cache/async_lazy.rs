@@ -126,7 +126,7 @@ impl<T> Default for AsyncLazy<T> {
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
-    use tokio::time::{sleep, Duration};
+    use tokio::sync::Notify;
 
     #[tokio::test]
     async fn initializes_once() {
@@ -161,22 +161,32 @@ mod tests {
     async fn concurrent_access_single_init() {
         let lazy = Arc::new(AsyncLazy::new());
         let counter = Arc::new(AtomicUsize::new(0));
+        // Gate that the initializer waits on, so we can ensure all tasks
+        // are competing for the lock before the init future completes.
+        let gate = Arc::new(Notify::new());
 
         let mut handles = vec![];
         for _ in 0..10 {
             let lazy_clone = lazy.clone();
             let counter_clone = counter.clone();
+            let gate_clone = gate.clone();
             handles.push(tokio::spawn(async move {
                 lazy_clone
                     .get_or_init(|| async move {
                         counter_clone.fetch_add(1, Ordering::SeqCst);
-                        // Simulate slow initialization
-                        sleep(Duration::from_millis(10)).await;
+                        // Wait for explicit signal instead of sleeping
+                        gate_clone.notified().await;
                         "initialized"
                     })
                     .await
             }));
         }
+
+        // Yield to let all tasks reach get_or_init
+        tokio::task::yield_now().await;
+
+        // Signal the initializer to complete
+        gate.notify_one();
 
         for handle in handles {
             let result = handle.await.unwrap();
@@ -205,24 +215,36 @@ mod tests {
     async fn get_waits_for_initialization() {
         let lazy = Arc::new(AsyncLazy::new());
         let lazy_clone = lazy.clone();
+        // Gate so we control exactly when init completes.
+        let gate = Arc::new(Notify::new());
+        let gate_clone = gate.clone();
 
-        // Start initialization in background
+        // Start initialization in background — it blocks on the gate
         let handle = tokio::spawn(async move {
             lazy_clone
-                .get_or_init(|| async {
-                    sleep(Duration::from_millis(50)).await;
+                .get_or_init(|| async move {
+                    gate_clone.notified().await;
                     42
                 })
                 .await
         });
 
-        // Give it time to start
-        sleep(Duration::from_millis(10)).await;
+        // Yield to let the init task acquire the write lock and start waiting
+        tokio::task::yield_now().await;
 
-        // get() should wait for initialization to complete
-        let value = lazy.get().await;
+        // Spawn get() — it will block on the read lock until init completes
+        let lazy_for_get = lazy.clone();
+        let get_handle = tokio::spawn(async move { lazy_for_get.get().await });
+
+        // Yield to let the get task start waiting
+        tokio::task::yield_now().await;
+
+        // Signal the initializer to complete
+        gate.notify_one();
+
+        // Both tasks should resolve with the initialized value
+        let value = get_handle.await.unwrap();
         assert_eq!(*value, 42);
-
         handle.await.unwrap();
     }
 
