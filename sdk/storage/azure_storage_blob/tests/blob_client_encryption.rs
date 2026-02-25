@@ -30,6 +30,13 @@ fn invalid_key_sha256() -> String {
     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".to_string()
 }
 
+fn assert_bad_request_or_conflict(status: Option<StatusCode>) {
+    assert!(matches!(
+        status,
+        Some(StatusCode::BadRequest | StatusCode::Conflict)
+    ));
+}
+
 #[recorded::test]
 async fn test_upload_blob_partial_cpk_options_fail(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -142,7 +149,8 @@ async fn test_upload_blob_encryption_options(ctx: TestContext) -> Result<(), Box
         .await;
 
     // Assert
-    assert!(result.is_err());
+    let status = result.unwrap_err().http_status();
+    assert_bad_request_or_conflict(status);
 
     container_client.delete(None).await?;
     Ok(())
@@ -200,7 +208,8 @@ async fn test_download_blob_encryption_options(ctx: TestContext) -> Result<(), B
     let error = blob_client.download(Some(invalid_download_options)).await;
 
     // Assert
-    assert!(error.is_err());
+    let status = error.unwrap_err().http_status();
+    assert_bad_request_or_conflict(status);
 
     container_client.delete(None).await?;
     Ok(())
@@ -261,7 +270,8 @@ async fn test_get_blob_properties_encryption_options(
     let error = blob_client.get_properties(Some(invalid_get_options)).await;
 
     // Assert
-    assert!(error.is_err());
+    let status = error.unwrap_err().http_status();
+    assert_bad_request_or_conflict(status);
 
     container_client.delete(None).await?;
     Ok(())
@@ -327,7 +337,8 @@ async fn test_set_blob_metadata_encryption_options(ctx: TestContext) -> Result<(
         .await;
 
     // Assert
-    assert!(result.is_err());
+    let status = result.unwrap_err().http_status();
+    assert_bad_request_or_conflict(status);
 
     container_client.delete(None).await?;
     Ok(())
@@ -396,9 +407,8 @@ async fn test_create_blob_snapshot_encryption_options(
         .await;
 
     // Assert
-    assert!(result.is_err());
     let status = result.unwrap_err().http_status();
-    assert!(status == Some(StatusCode::BadRequest) || status == Some(StatusCode::Conflict));
+    assert_bad_request_or_conflict(status);
 
     container_client.delete(None).await?;
     Ok(())
