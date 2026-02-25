@@ -97,37 +97,12 @@ impl ContainerCache {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
     {
-        if let Some(cached) = self
-            .get_by_name(account_endpoint, db_name, container_name)
-            .await
-        {
-            return Ok(cached);
-        }
-
-        let name_key = ContainerNameKey {
+        let key = ContainerNameKey {
             account_endpoint: account_endpoint.to_owned(),
             db_name: db_name.to_owned(),
             container_name: container_name.to_owned(),
         };
-
-        let resolved = self
-            .by_name
-            .get_or_insert_with(name_key.clone(), fetch_fn)
-            .await;
-
-        match resolved.as_ref() {
-            Ok(container) => {
-                self.put(container.clone()).await;
-                Ok(Arc::new(container.clone()))
-            }
-            Err(error) => {
-                self.by_name.invalidate(&name_key).await;
-                Err(azure_core::Error::with_message(
-                    error.kind().clone(),
-                    error.to_string(),
-                ))
-            }
-        }
+        self.get_or_fetch_impl(&self.by_name, key, fetch_fn).await
     }
 
     /// Looks up a container by RID, fetching if not cached.
@@ -145,33 +120,11 @@ impl ContainerCache {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
     {
-        if let Some(cached) = self.get_by_rid(account_endpoint, container_rid).await {
-            return Ok(cached);
-        }
-
-        let rid_key = ContainerRidKey {
+        let key = ContainerRidKey {
             account_endpoint: account_endpoint.to_owned(),
             container_rid: container_rid.to_owned(),
         };
-
-        let resolved = self
-            .by_rid
-            .get_or_insert_with(rid_key.clone(), fetch_fn)
-            .await;
-
-        match resolved.as_ref() {
-            Ok(container) => {
-                self.put(container.clone()).await;
-                Ok(Arc::new(container.clone()))
-            }
-            Err(error) => {
-                self.by_rid.invalidate(&rid_key).await;
-                Err(azure_core::Error::with_message(
-                    error.kind().clone(),
-                    error.to_string(),
-                ))
-            }
-        }
+        self.get_or_fetch_impl(&self.by_rid, key, fetch_fn).await
     }
 
     /// Returns a cached container looked up by name, or `None` if not cached.
@@ -181,15 +134,12 @@ impl ContainerCache {
         db_name: &str,
         container_name: &str,
     ) -> Option<Arc<ContainerReference>> {
-        let name_key = ContainerNameKey {
+        let key = ContainerNameKey {
             account_endpoint: account_endpoint.to_owned(),
             db_name: db_name.to_owned(),
             container_name: container_name.to_owned(),
         };
-        self.by_name
-            .get(&name_key)
-            .await
-            .and_then(|entry| entry.as_ref().as_ref().ok().map(|c| Arc::new(c.clone())))
+        self.get_from(&self.by_name, &key).await
     }
 
     /// Returns a cached container looked up by RID, or `None` if not cached.
@@ -198,12 +148,60 @@ impl ContainerCache {
         account_endpoint: &str,
         container_rid: &str,
     ) -> Option<Arc<ContainerReference>> {
-        let rid_key = ContainerRidKey {
+        let key = ContainerRidKey {
             account_endpoint: account_endpoint.to_owned(),
             container_rid: container_rid.to_owned(),
         };
-        self.by_rid
-            .get(&rid_key)
+        self.get_from(&self.by_rid, &key).await
+    }
+
+    /// Core fetch-or-lookup logic shared by both key variants.
+    ///
+    /// Checks the cache for an existing entry, calls the factory on a miss,
+    /// cross-populates on success, and invalidates on error.
+    async fn get_or_fetch_impl<K, F, Fut>(
+        &self,
+        cache: &AsyncCache<K, azure_core::Result<ContainerReference>>,
+        key: K,
+        fetch_fn: F,
+    ) -> azure_core::Result<Arc<ContainerReference>>
+    where
+        K: Eq + std::hash::Hash + Clone,
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
+    {
+        if let Some(cached) = self.get_from(cache, &key).await {
+            return Ok(cached);
+        }
+
+        let resolved = cache.get_or_insert_with(key.clone(), fetch_fn).await;
+
+        match resolved.as_ref() {
+            Ok(container) => {
+                self.put(container.clone()).await;
+                Ok(Arc::new(container.clone()))
+            }
+            Err(error) => {
+                cache.invalidate(&key).await;
+                Err(azure_core::Error::with_message(
+                    error.kind().clone(),
+                    error.to_string(),
+                ))
+            }
+        }
+    }
+
+    /// Reads a cached value from one of the underlying caches.
+    async fn get_from<K>(
+        &self,
+        cache: &AsyncCache<K, azure_core::Result<ContainerReference>>,
+        key: &K,
+    ) -> Option<Arc<ContainerReference>>
+    where
+        K: Eq + std::hash::Hash + Clone,
+    {
+        cache
+            .get(key)
             .await
             .and_then(|entry| entry.as_ref().as_ref().ok().map(|c| Arc::new(c.clone())))
     }
