@@ -35,6 +35,7 @@ pub(crate) struct AccountProperties {
     pub readable_locations: Vec<AccountRegion>,
 
     /// Allows failover at a per-partition granularity instead of full-region only.
+    #[serde(default)]
     pub enable_per_partition_failover_behavior: bool,
 }
 
@@ -48,7 +49,8 @@ mod tests {
       "id" : "test",
       "writableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://test-westus2.documents.azure.com:443/" } ],
       "readableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://test-westus2.documents.azure.com:443/" } ],
-      "enableMultipleWriteLocations" : false
+      "enableMultipleWriteLocations" : false,
+      "enable_per_partition_failover_behavior" : true
     }"#;
 
     #[test]
