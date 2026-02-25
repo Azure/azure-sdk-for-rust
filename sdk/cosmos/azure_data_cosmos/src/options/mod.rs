@@ -241,6 +241,10 @@ pub struct BatchOptions {
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
     content_response_on_write_enabled: bool,
+    /// Additional headers to be included in the batch request. This allows for custom headers beyond those natively supported.
+    ///
+    /// Custom headers will not override headers that are already set by the SDK.
+    custom_headers: HashMap<HeaderName, HeaderValue>,
 }
 
 impl BatchOptions {
@@ -256,10 +260,20 @@ impl BatchOptions {
         self.content_response_on_write_enabled = content_response_on_write_enabled;
         self
     }
+
+    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = custom_headers;
+        self
+    }
 }
 
 impl BatchOptions {
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
+        // custom headers should be added first so that they don't override SDK-set headers
+        for (header_name, header_value) in &self.custom_headers {
+            headers.insert(header_name.clone(), header_value.clone());
+        }
+
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
@@ -475,6 +489,86 @@ mod tests {
 
         let mut headers_result = Headers::new();
         item_options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
+
+        assert_eq!(headers_result, headers_expected);
+    }
+
+    #[test]
+    fn batch_options_as_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            HeaderName::from_static("x-custom-header"),
+            HeaderValue::from_static("custom_value"),
+        );
+
+        let batch_options = BatchOptions::default()
+            .with_session_token("BatchSessionToken".to_string().into())
+            .with_content_response_on_write_enabled(true)
+            .with_custom_headers(custom_headers);
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
+            ("x-custom-header".into(), "custom_value".into()),
+            (constants::SESSION_TOKEN, "BatchSessionToken".into()),
+        ];
+
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
+    }
+
+    #[test]
+    fn batch_options_custom_headers_should_not_override_sdk_set_headers() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            constants::SESSION_TOKEN,
+            HeaderValue::from_static("CustomSession"),
+        );
+
+        let batch_options = BatchOptions::default()
+            .with_session_token("RealSessionToken".to_string().into())
+            .with_custom_headers(custom_headers);
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
+            (constants::SESSION_TOKEN, "RealSessionToken".into()),
+            (headers::PREFER, constants::PREFER_MINIMAL),
+        ];
+
+        assert_eq!(
+            headers_to_map(headers_result),
+            headers_to_map(headers_expected)
+        );
+    }
+
+    #[test]
+    fn batch_options_default_as_headers() {
+        let batch_options = BatchOptions::default();
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> =
+            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
+
+        assert_eq!(headers_result, headers_expected);
+    }
+
+    #[test]
+    fn batch_options_with_content_response_enabled() {
+        let batch_options = BatchOptions::default().with_content_response_on_write_enabled(true);
+
+        let mut headers_result = Headers::new();
+        batch_options.apply_headers(&mut headers_result);
         let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
