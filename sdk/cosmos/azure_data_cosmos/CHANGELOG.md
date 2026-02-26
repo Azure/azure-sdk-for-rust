@@ -1,6 +1,6 @@
 # Release History
 
-## 0.31.0 (Unreleased)
+## 0.31.0 (2026-02-25)
 
 ### Features Added
 
@@ -20,8 +20,6 @@
 - Removed `with_application_preferred_regions` API. Use `with_application_region` to set the Azure region the app is executing in (or the closest region to the actual location you're running in); the SDK generates preferred regions by geographic proximity. ([#3796](https://github.com/Azure/azure-sdk-for-rust/pull/3796))
 - Made `CosmosClientBuilder::build()` and `DatabaseClient::container_client()` async to prepare for future cache population (account, collection, partition key range caches).
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
-
-### Bugs Fixed
 
 ### Other Changes
 
