@@ -687,7 +687,7 @@ impl ClientRetryPolicy {
                 return self.should_retry_on_connection_failure().await;
             }
             RequestSentStatus::Sent | RequestSentStatus::Unknown => {
-                if matches!(err.kind(), ErrorKind::Io | ErrorKind::Connection) {
+                if matches!(err.kind(), ErrorKind::Io) {
                     if self.is_read_only() {
                         return self.should_retry_on_unavailable_endpoint_status_codes();
                     }
@@ -1475,47 +1475,12 @@ mod tests {
         );
     }
 
-    fn create_connection_error(message: &str) -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Connection,
-            message.to_string(),
-        )
-    }
-
     fn create_timeout_error(message: &str) -> azure_core::Error {
         azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
     }
 
     fn create_io_error(message: &str) -> azure_core::Error {
         azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
-    }
-
-    #[tokio::test]
-    async fn connection_error_retries_read() {
-        let mut policy = create_test_policy();
-        let mut request = create_test_request();
-        policy.before_send_request(&mut request).await;
-
-        let err = create_connection_error("connection refused");
-        let result = policy.should_retry(&Err(err)).await;
-        assert!(
-            result.is_retry(),
-            "connection error should retry read requests"
-        );
-    }
-
-    #[tokio::test]
-    async fn connection_error_retries_write() {
-        let mut policy = create_test_policy();
-        let mut request = create_write_request();
-        policy.before_send_request(&mut request).await;
-
-        let err = create_connection_error("connection refused");
-        let result = policy.should_retry(&Err(err)).await;
-        assert!(
-            result.is_retry(),
-            "connection error should retry write requests"
-        );
     }
 
     #[tokio::test]
@@ -1544,51 +1509,6 @@ mod tests {
             result,
             RetryResult::DoNotRetry,
             "response timeout should NOT retry write requests"
-        );
-    }
-
-    #[tokio::test]
-    async fn connection_error_retries_on_same_endpoint() {
-        let mut policy = create_test_policy();
-        let mut request = create_test_request();
-        policy.before_send_request(&mut request).await;
-
-        // First 3 connection errors should retry on the same endpoint.
-        for i in 1..=3 {
-            let err = create_connection_error("connection refused");
-            let result = policy.should_retry(&Err(err)).await;
-            assert!(result.is_retry(), "connection attempt {i} should retry");
-            assert_eq!(policy.connection_retry_count, i);
-            assert_eq!(
-                policy.failover_retry_count, 0,
-                "should not failover during local retries"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn connection_error_fails_over_after_max_retries() {
-        let mut policy = create_test_policy();
-        let mut request = create_test_request();
-        policy.before_send_request(&mut request).await;
-
-        // Exhaust local retries.
-        for _ in 0..3 {
-            let err = create_connection_error("connection refused");
-            policy.should_retry(&Err(err)).await;
-        }
-
-        // Next connection error should trigger failover.
-        let err = create_connection_error("connection refused");
-        let result = policy.should_retry(&Err(err)).await;
-        assert!(result.is_retry(), "should failover to next endpoint");
-        assert_eq!(
-            policy.failover_retry_count, 1,
-            "failover_retry_count should increment after local retries exhausted"
-        );
-        assert_eq!(
-            policy.connection_retry_count, 0,
-            "connection_retry_count should reset for new endpoint"
         );
     }
 

@@ -14,7 +14,7 @@ name = "azurecosmos"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-azure_core.workspace = true
+azure_core = { version = "0.32.0", default-features = false }
 azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth", "allow_invalid_certificates"] }
 futures.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
