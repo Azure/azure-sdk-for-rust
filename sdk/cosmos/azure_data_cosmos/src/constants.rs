@@ -221,13 +221,11 @@ pub(crate) const RETRY_WITH: StatusCode = StatusCode::UnknownValue(449);
 pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
     std::time::Duration::from_secs(5);
 
-/// Default overall request timeout (65s).
+/// Default overall request timeout (6s).
 ///
-/// Chosen to balance fast failure with allowing multiple retry attempts and to
-/// remain just above typical 60s service timeouts.
-/// See `next_generation_sdks_design_principles.md` for detailed rationale.
+/// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
 #[cfg(feature = "reqwest")]
-pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
+pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(6);
 
 /// Default maximum idle connections per host (1000).
 ///
