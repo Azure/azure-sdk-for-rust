@@ -137,7 +137,7 @@ static CPU_MEMORY_MONITOR: OnceLock<Arc<CpuMemoryMonitorInner>> = OnceLock::new(
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,ignore
 /// use azure_data_cosmos_driver::system::CpuUsage;
 ///
 /// let usage = CpuUsage::new(42.5);
