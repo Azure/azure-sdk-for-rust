@@ -11,6 +11,7 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::{
+    http::StatusCode,
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
@@ -20,7 +21,7 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult},
+    models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult, EncryptionAlgorithmType},
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
@@ -30,6 +31,37 @@ use futures::{AsyncRead, AsyncReadExt};
 pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
 pub const GB: usize = MB * 1024;
+
+/// Returns a valid customer-provided key tuple used by blob encryption tests.
+pub fn get_cpk() -> (EncryptionAlgorithmType, String, String) {
+    (
+        EncryptionAlgorithmType::Aes256,
+        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=".to_string(),
+        "Yw3NKWbEM2aRElRIu7JbT/QSpJxzLbLIq8G4WBvXEN0=".to_string(),
+    )
+}
+
+/// Returns a second valid customer-provided key tuple for mismatch testing.
+pub fn get_cpk_2() -> (EncryptionAlgorithmType, String, String) {
+    (
+        EncryptionAlgorithmType::Aes256,
+        "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=".to_string(),
+        "riFsLvUkejeCwTXvonmj5M3GEJQnD10r5YxiBLemEsk=".to_string(),
+    )
+}
+
+/// Returns an encryption scope name that should not exist in test accounts.
+pub fn get_invalid_encryption_scope() -> String {
+    "invalid-encryption-scope-for-tests".to_string()
+}
+
+/// Asserts the error status for invalid encryption configuration requests.
+pub fn assert_bad_request_or_conflict(status: Option<StatusCode>) {
+    assert!(matches!(
+        status,
+        Some(StatusCode::BadRequest | StatusCode::Conflict)
+    ));
+}
 
 /// Specifies which storage account to use for testing.
 #[derive(Debug, Clone, Copy, PartialEq)]
