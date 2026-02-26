@@ -57,9 +57,9 @@ impl std::fmt::Display for ResourceName {
 /// They encode the resource hierarchy (account → database → container → document).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub(crate) struct ResourceRid(Cow<'static, str>);
+pub(crate) struct ResourceId(Cow<'static, str>);
 
-impl ResourceRid {
+impl ResourceId {
     /// Creates a new resource RID.
     pub fn new(rid: impl Into<Cow<'static, str>>) -> Self {
         Self(rid.into())
@@ -71,25 +71,25 @@ impl ResourceRid {
     }
 }
 
-impl From<&'static str> for ResourceRid {
+impl From<&'static str> for ResourceId {
     fn from(s: &'static str) -> Self {
         Self::new(s)
     }
 }
 
-impl From<String> for ResourceRid {
+impl From<String> for ResourceId {
     fn from(s: String) -> Self {
         Self::new(s)
     }
 }
 
-impl AsRef<str> for ResourceRid {
+impl AsRef<str> for ResourceId {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl std::fmt::Display for ResourceRid {
+impl std::fmt::Display for ResourceId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -109,7 +109,7 @@ pub(crate) enum ResourceIdentifierType {
     /// Reference by user-provided resource name.
     ByName(ResourceName),
     /// Reference by internal RID.
-    ByRid(ResourceRid),
+    ByRid(ResourceId),
 }
 
 impl ResourceIdentifierType {
@@ -119,7 +119,7 @@ impl ResourceIdentifierType {
     }
 
     /// Creates a resource identifier by RID.
-    pub(crate) fn by_rid(rid: impl Into<ResourceRid>) -> Self {
+    pub(crate) fn by_rid(rid: impl Into<ResourceId>) -> Self {
         Self::ByRid(rid.into())
     }
 
@@ -150,251 +150,195 @@ impl ResourceIdentifierType {
     }
 }
 
-// =============================================================================
-// ParsedResourceId (pub(crate))
-// =============================================================================
-
-/// Parsed components of a Cosmos DB RID.
-///
-/// RIDs encode the resource hierarchy. This struct extracts the individual
-/// components for validation and path construction.
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg(test)]
-pub(crate) struct ParsedResourceId {
-    /// The database RID component (if present).
-    database_rid: Option<ResourceRid>,
-    /// The container/collection RID component (if present).
-    container_rid: Option<ResourceRid>,
-    /// The document/item RID component (if present).
-    document_rid: Option<ResourceRid>,
-}
-
-#[cfg(test)]
-impl ParsedResourceId {
-    /// Creates an empty parsed resource ID.
-    pub(crate) fn empty() -> Self {
-        Self {
-            database_rid: None,
-            container_rid: None,
-            document_rid: None,
-        }
-    }
-
-    /// Creates a parsed resource ID for a database.
-    pub(crate) fn database(database_rid: ResourceRid) -> Self {
-        Self {
-            database_rid: Some(database_rid),
-            container_rid: None,
-            document_rid: None,
-        }
-    }
-
-    /// Creates a parsed resource ID for a container.
-    pub(crate) fn container(database_rid: ResourceRid, container_rid: ResourceRid) -> Self {
-        Self {
-            database_rid: Some(database_rid),
-            container_rid: Some(container_rid),
-            document_rid: None,
-        }
-    }
-
-    /// Creates a parsed resource ID for a document.
-    pub(crate) fn document(
-        database_rid: ResourceRid,
-        container_rid: ResourceRid,
-        document_rid: ResourceRid,
-    ) -> Self {
-        Self {
-            database_rid: Some(database_rid),
-            container_rid: Some(container_rid),
-            document_rid: Some(document_rid),
-        }
-    }
-
-    /// Returns the database RID component.
-    pub(crate) fn database_rid(&self) -> Option<&ResourceRid> {
-        self.database_rid.as_ref()
-    }
-
-    /// Returns the container RID component.
-    pub(crate) fn container_rid(&self) -> Option<&ResourceRid> {
-        self.container_rid.as_ref()
-    }
-
-    /// Returns the document RID component.
-    pub(crate) fn document_rid(&self) -> Option<&ResourceRid> {
-        self.document_rid.as_ref()
-    }
-}
-
-// =============================================================================
-// RID Parsing Utilities
-// =============================================================================
-
-/// Cosmos DB RID encoding/decoding utilities.
-///
-/// RIDs are encoded using standard Base64 with `=` padding, but with `/`
-/// replaced by `-` for transport safety. The binary representation uses
-/// big-endian byte ordering with a hierarchical structure:
-///
-/// | Offset | Size    | Field              |
-/// |--------|---------|--------------------|
-/// | 0–3    | 4 bytes | Database ID        |
-/// | 4–7    | 4 bytes | Collection ID      |
-/// | 8–15   | 8 bytes | Sub-resource ID    |
-/// | 16–19  | 4 bytes | Attachment ID      |
-///
-/// Valid RID byte lengths: 3 (offer), 4 (database), 8 (collection),
-/// 16 (document/SP/trigger/UDF/PKRange), 20 (attachment).
-#[cfg(test)]
-use base64::{engine::general_purpose::STANDARD, Engine as _};
-
-/// Decodes a Cosmos DB RID string into its raw bytes.
-///
-/// RIDs use standard Base64 with `-` substituted for `/`.
-#[cfg(test)]
-fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
-    if rid.is_empty() {
-        return Err(RidParseError::Empty);
-    }
-    if !rid.len().is_multiple_of(4) {
-        return Err(RidParseError::InvalidLength);
-    }
-    let b64 = rid.replace('-', "/");
-    STANDARD
-        .decode(&b64)
-        .map_err(|_| RidParseError::InvalidBase64)
-}
-
-/// Encodes raw bytes into a Cosmos DB RID string.
-///
-/// Uses standard Base64 with `/` replaced by `-`.
-#[cfg(test)]
-fn encode_rid(bytes: &[u8]) -> String {
-    STANDARD.encode(bytes).replace('/', "-")
-}
-
-/// Extracts the database RID string from a container (collection) RID string.
-///
-/// A container RID is 8 bytes: the first 4 bytes encode the parent database ID.
-/// This function extracts those 4 bytes and re-encodes them as a database RID.
-///
-/// # Errors
-///
-/// Returns `Err` if the input is not a valid container RID (must decode to
-/// exactly 8 bytes with `buffer.len() % 4 == 0`).
-///
-/// # Example
-///
-/// ```ignore
-/// let db_rid = extract_database_rid_from_container_rid("dbs-rid==").unwrap();
-/// ```
-#[cfg(test)]
-pub(crate) fn extract_database_rid_from_container_rid(
-    container_rid: &str,
-) -> Result<ResourceRid, RidParseError> {
-    let bytes = decode_rid(container_rid)?;
-    if bytes.len() < 8 || bytes.len() % 4 != 0 {
-        return Err(RidParseError::InvalidLength);
-    }
-    // First 4 bytes are the database ID
-    let db_bytes = &bytes[0..4];
-    Ok(ResourceRid::new(encode_rid(db_bytes)))
-}
-
-/// Extracts the container (collection) RID string from a document or sub-resource RID string.
-///
-/// A document RID is 16 bytes: the first 8 bytes encode the parent container
-/// (which itself encodes the database in its first 4 bytes).
-///
-/// # Errors
-///
-/// Returns `Err` if the input is not a valid document/sub-resource RID
-/// (must decode to at least 16 bytes with `buffer.len() % 4 == 0`).
-#[cfg(test)]
-pub(crate) fn extract_container_rid_from_document_rid(
-    document_rid: &str,
-) -> Result<ResourceRid, RidParseError> {
-    let bytes = decode_rid(document_rid)?;
-    if bytes.len() < 16 || bytes.len() % 4 != 0 {
-        return Err(RidParseError::InvalidLength);
-    }
-    // First 8 bytes are the container ID (which includes the database ID)
-    let container_bytes = &bytes[0..8];
-    Ok(ResourceRid::new(encode_rid(container_bytes)))
-}
-
-/// Parses a RID string into its hierarchical components.
-///
-/// Determines the resource level based on byte length and populates
-/// the appropriate fields of `ParsedResourceId`.
-///
-/// # Errors
-///
-/// Returns `Err` if the input is not a valid Cosmos DB RID.
-#[cfg(test)]
-pub(crate) fn parse_rid(rid: &str) -> Result<ParsedResourceId, RidParseError> {
-    let bytes = decode_rid(rid)?;
-    let len = bytes.len();
-
-    // Offer RIDs are 3 bytes — not relevant for our resource hierarchy
-    if len == 3 {
-        return Ok(ParsedResourceId::empty());
-    }
-
-    if len % 4 != 0 {
-        return Err(RidParseError::InvalidLength);
-    }
-
-    let mut parsed = ParsedResourceId::empty();
-
-    if len >= 4 {
-        let db_rid = encode_rid(&bytes[0..4]);
-        parsed.database_rid = Some(ResourceRid::new(db_rid));
-    }
-
-    if len >= 8 {
-        let container_rid = encode_rid(&bytes[0..8]);
-        parsed.container_rid = Some(ResourceRid::new(container_rid));
-    }
-
-    if len >= 16 {
-        let document_rid = encode_rid(&bytes[0..16]);
-        parsed.document_rid = Some(ResourceRid::new(document_rid));
-    }
-
-    Ok(parsed)
-}
-
-/// Errors that can occur when parsing a Cosmos DB RID.
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg(test)]
-pub(crate) enum RidParseError {
-    /// The RID string is empty.
-    Empty,
-    /// The RID string length is not a multiple of 4 (invalid Base64 padding).
-    InvalidLength,
-    /// The RID string contains invalid Base64 characters.
-    InvalidBase64,
-}
-
-#[cfg(test)]
-impl std::fmt::Display for RidParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Empty => write!(f, "RID string is empty"),
-            Self::InvalidLength => write!(f, "RID has invalid byte length"),
-            Self::InvalidBase64 => write!(f, "RID contains invalid Base64"),
-        }
-    }
-}
-
-#[cfg(test)]
-impl std::error::Error for RidParseError {}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::{engine::general_purpose::STANDARD, Engine as _};
+
+    // =========================================================================
+    // ParsedResourceId (test-only)
+    // =========================================================================
+
+    /// Parsed components of a Cosmos DB RID.
+    ///
+    /// RIDs encode the resource hierarchy. This struct extracts the individual
+    /// components for validation and path construction.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    struct ParsedResourceId {
+        /// The database RID component (if present).
+        database_rid: Option<ResourceId>,
+        /// The container/collection RID component (if present).
+        container_rid: Option<ResourceId>,
+        /// The document/item RID component (if present).
+        document_rid: Option<ResourceId>,
+    }
+
+    impl ParsedResourceId {
+        /// Creates an empty parsed resource ID.
+        fn empty() -> Self {
+            Self {
+                database_rid: None,
+                container_rid: None,
+                document_rid: None,
+            }
+        }
+
+        /// Creates a parsed resource ID for a database.
+        fn database(database_rid: ResourceId) -> Self {
+            Self {
+                database_rid: Some(database_rid),
+                container_rid: None,
+                document_rid: None,
+            }
+        }
+
+        /// Creates a parsed resource ID for a container.
+        fn container(database_rid: ResourceId, container_rid: ResourceId) -> Self {
+            Self {
+                database_rid: Some(database_rid),
+                container_rid: Some(container_rid),
+                document_rid: None,
+            }
+        }
+
+        /// Creates a parsed resource ID for a document.
+        fn document(
+            database_rid: ResourceId,
+            container_rid: ResourceId,
+            document_rid: ResourceId,
+        ) -> Self {
+            Self {
+                database_rid: Some(database_rid),
+                container_rid: Some(container_rid),
+                document_rid: Some(document_rid),
+            }
+        }
+
+        /// Returns the database RID component.
+        fn database_rid(&self) -> Option<&ResourceId> {
+            self.database_rid.as_ref()
+        }
+
+        /// Returns the container RID component.
+        fn container_rid(&self) -> Option<&ResourceId> {
+            self.container_rid.as_ref()
+        }
+
+        /// Returns the document RID component.
+        fn document_rid(&self) -> Option<&ResourceId> {
+            self.document_rid.as_ref()
+        }
+    }
+
+    // =========================================================================
+    // RID Parsing Utilities (test-only)
+    // =========================================================================
+
+    /// Errors that can occur when parsing a Cosmos DB RID.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    enum RidParseError {
+        /// The RID string is empty.
+        Empty,
+        /// The RID string length is not a multiple of 4 (invalid Base64 padding).
+        InvalidLength,
+        /// The RID string contains invalid Base64 characters.
+        InvalidBase64,
+    }
+
+    impl std::fmt::Display for RidParseError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Self::Empty => write!(f, "RID string is empty"),
+                Self::InvalidLength => write!(f, "RID has invalid byte length"),
+                Self::InvalidBase64 => write!(f, "RID contains invalid Base64"),
+            }
+        }
+    }
+
+    impl std::error::Error for RidParseError {}
+
+    /// Decodes a Cosmos DB RID string into its raw bytes.
+    ///
+    /// RIDs use standard Base64 with `-` substituted for `/`.
+    fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
+        if rid.is_empty() {
+            return Err(RidParseError::Empty);
+        }
+        if !rid.len().is_multiple_of(4) {
+            return Err(RidParseError::InvalidLength);
+        }
+        let b64 = rid.replace('-', "/");
+        STANDARD
+            .decode(&b64)
+            .map_err(|_| RidParseError::InvalidBase64)
+    }
+
+    /// Encodes raw bytes into a Cosmos DB RID string.
+    ///
+    /// Uses standard Base64 with `/` replaced by `-`.
+    fn encode_rid(bytes: &[u8]) -> String {
+        STANDARD.encode(bytes).replace('/', "-")
+    }
+
+    /// Extracts the database RID string from a container (collection) RID string.
+    fn extract_database_rid_from_container_rid(
+        container_rid: &str,
+    ) -> Result<ResourceId, RidParseError> {
+        let bytes = decode_rid(container_rid)?;
+        if bytes.len() < 8 || bytes.len() % 4 != 0 {
+            return Err(RidParseError::InvalidLength);
+        }
+        // First 4 bytes are the database ID
+        let db_bytes = &bytes[0..4];
+        Ok(ResourceId::new(encode_rid(db_bytes)))
+    }
+
+    /// Extracts the container (collection) RID string from a document or sub-resource RID string.
+    fn extract_container_rid_from_document_rid(
+        document_rid: &str,
+    ) -> Result<ResourceId, RidParseError> {
+        let bytes = decode_rid(document_rid)?;
+        if bytes.len() < 16 || bytes.len() % 4 != 0 {
+            return Err(RidParseError::InvalidLength);
+        }
+        // First 8 bytes are the container ID (which includes the database ID)
+        let container_bytes = &bytes[0..8];
+        Ok(ResourceId::new(encode_rid(container_bytes)))
+    }
+
+    /// Parses a RID string into its hierarchical components.
+    fn parse_rid(rid: &str) -> Result<ParsedResourceId, RidParseError> {
+        let bytes = decode_rid(rid)?;
+        let len = bytes.len();
+
+        // Offer RIDs are 3 bytes — not relevant for our resource hierarchy
+        if len == 3 {
+            return Ok(ParsedResourceId::empty());
+        }
+
+        if len % 4 != 0 {
+            return Err(RidParseError::InvalidLength);
+        }
+
+        let mut parsed = ParsedResourceId::empty();
+
+        if len >= 4 {
+            let db_rid = encode_rid(&bytes[0..4]);
+            parsed.database_rid = Some(ResourceId::new(db_rid));
+        }
+
+        if len >= 8 {
+            let container_rid = encode_rid(&bytes[0..8]);
+            parsed.container_rid = Some(ResourceId::new(container_rid));
+        }
+
+        if len >= 16 {
+            let document_rid = encode_rid(&bytes[0..16]);
+            parsed.document_rid = Some(ResourceId::new(document_rid));
+        }
+
+        Ok(parsed)
+    }
 
     #[test]
     fn resource_name_from_str() {
@@ -410,7 +354,7 @@ mod tests {
 
     #[test]
     fn resource_rid_from_str() {
-        let rid = ResourceRid::from("abc123");
+        let rid = ResourceId::from("abc123");
         assert_eq!(rid.as_str(), "abc123");
     }
 
@@ -423,14 +367,14 @@ mod tests {
 
     #[test]
     fn database_id_by_rid() {
-        let id = ResourceIdentifierType::ByRid(ResourceRid::from("abc123"));
+        let id = ResourceIdentifierType::ByRid(ResourceId::from("abc123"));
         assert_eq!(id.name(), None);
         assert_eq!(id.rid(), Some("abc123"));
     }
 
     #[test]
     fn parsed_resource_id_database() {
-        let parsed = ParsedResourceId::database(ResourceRid::from("db123"));
+        let parsed = ParsedResourceId::database(ResourceId::from("db123"));
         assert_eq!(parsed.database_rid().map(|r| r.as_str()), Some("db123"));
         assert!(parsed.container_rid().is_none());
         assert!(parsed.document_rid().is_none());
@@ -439,7 +383,7 @@ mod tests {
     #[test]
     fn parsed_resource_id_container() {
         let parsed =
-            ParsedResourceId::container(ResourceRid::from("db123"), ResourceRid::from("coll456"));
+            ParsedResourceId::container(ResourceId::from("db123"), ResourceId::from("coll456"));
         assert_eq!(parsed.database_rid().map(|r| r.as_str()), Some("db123"));
         assert_eq!(parsed.container_rid().map(|r| r.as_str()), Some("coll456"));
         assert!(parsed.document_rid().is_none());
@@ -448,9 +392,9 @@ mod tests {
     #[test]
     fn parsed_resource_id_document() {
         let parsed = ParsedResourceId::document(
-            ResourceRid::from("db123"),
-            ResourceRid::from("coll456"),
-            ResourceRid::from("doc789"),
+            ResourceId::from("db123"),
+            ResourceId::from("coll456"),
+            ResourceId::from("doc789"),
         );
         assert_eq!(parsed.database_rid().map(|r| r.as_str()), Some("db123"));
         assert_eq!(parsed.container_rid().map(|r| r.as_str()), Some("coll456"));
