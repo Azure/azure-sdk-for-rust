@@ -52,6 +52,7 @@ ctest
 cmake
 
 # Words used within the Cosmos perf tool (azure_data_cosmos_perf)
+hdrhistogram
 Kusto
 mycontainer
 mydb
@@ -59,6 +60,9 @@ perfcontainer
 perfdb
 perfresults
 sysinfo
+
+# Shell scripting terms
+PIDS
 
 # TCP/networking terms
 keepalive
