@@ -55,15 +55,16 @@ pub(crate) struct CpuUsage(f64);
 impl CpuUsage {
     /// Creates a new `CpuUsage` from a raw `f64` percentage.
     ///
-    /// NaN and negative zero are normalized to `0.0`. After normalization, the
-    /// value must be between `0.0` and `100.0` (inclusive).
+    /// NaN and negative zero are normalized to `0.0`. Values below `0.0` are
+    /// clamped to `0.0` and values above `100.0` are clamped to `100.0`.
     ///
-    /// # Panics
+    /// # Panics (debug builds only)
     ///
-    /// Panics if the normalized value is not between 0.0 and 100.0.
+    /// Debug-asserts if the value (before clamping) is outside `0.0..=100.0`
+    /// to catch callers passing unexpected data.
     pub(crate) fn new(value: f64) -> Self {
         let normalized = Self::normalize(value);
-        assert!(
+        debug_assert!(
             (0.0..=100.0).contains(&normalized),
             "CpuUsage must be between 0.0 and 100.0 after normalization, got {}",
             normalized
@@ -76,10 +77,17 @@ impl CpuUsage {
         self.0
     }
 
-    /// Normalizes an `f64` value: NaN becomes `0.0`, and `-0.0` becomes `+0.0`.
+    /// Normalizes an `f64` value.
+    ///
+    /// - NaN becomes `0.0`
+    /// - `-0.0` becomes `+0.0`
+    /// - Values below `0.0` are clamped to `0.0`
+    /// - Values above `100.0` are clamped to `100.0`
     fn normalize(value: f64) -> f64 {
-        if value.is_nan() || value == 0.0 {
+        if value.is_nan() || value <= 0.0 {
             0.0
+        } else if value > 100.0 {
+            100.0
         } else {
             value
         }
@@ -611,15 +619,49 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "CpuUsage must be between 0.0 and 100.0 after normalization")]
-    fn cpu_usage_invalid_negative() {
-        CpuUsage::new(-1.0);
+    fn cpu_usage_negative_clamped_to_zero() {
+        let usage = CpuUsage::new(-1.0);
+        assert_eq!(usage.value(), 0.0);
     }
 
     #[test]
-    #[should_panic(expected = "CpuUsage must be between 0.0 and 100.0 after normalization")]
-    fn cpu_usage_invalid_over_100() {
-        CpuUsage::new(101.0);
+    fn cpu_usage_large_negative_clamped_to_zero() {
+        let usage = CpuUsage::new(-999.0);
+        assert_eq!(usage.value(), 0.0);
+    }
+
+    #[test]
+    fn cpu_usage_over_100_clamped() {
+        let usage = CpuUsage::new(101.0);
+        assert_eq!(usage.value(), 100.0);
+    }
+
+    #[test]
+    fn cpu_usage_large_over_100_clamped() {
+        let usage = CpuUsage::new(500.0);
+        assert_eq!(usage.value(), 100.0);
+    }
+
+    #[test]
+    fn cpu_usage_infinity_clamped_to_100() {
+        let usage = CpuUsage::new(f64::INFINITY);
+        assert_eq!(usage.value(), 100.0);
+    }
+
+    #[test]
+    fn cpu_usage_neg_infinity_clamped_to_zero() {
+        let usage = CpuUsage::new(f64::NEG_INFINITY);
+        assert_eq!(usage.value(), 0.0);
+    }
+
+    #[test]
+    fn cpu_usage_boundary_zero() {
+        assert_eq!(CpuUsage::new(0.0).value(), 0.0);
+    }
+
+    #[test]
+    fn cpu_usage_boundary_100() {
+        assert_eq!(CpuUsage::new(100.0).value(), 100.0);
     }
 
     #[test]
