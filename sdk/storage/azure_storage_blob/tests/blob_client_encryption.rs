@@ -1,40 +1,24 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{RequestContent, StatusCode};
+use azure_core::http::RequestContent;
 use azure_core_test::recorded;
 use azure_core_test::TestContext;
 use azure_storage_blob::models::{
     BlobClientCreateSnapshotOptions, BlobClientCreateSnapshotResultHeaders,
     BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-    BlockBlobClientUploadOptions, EncryptionAlgorithmType,
+    BlockBlobClientUploadOptions,
 };
-use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
+use azure_storage_blob_test::{
+    assert_bad_request_or_conflict, get_blob_name, get_container_client, get_cpk,
+    get_invalid_encryption_scope, StorageAccount,
+};
 use std::{collections::HashMap, error::Error};
-
-fn customer_provided_key() -> (EncryptionAlgorithmType, String, String) {
-    (
-        EncryptionAlgorithmType::Aes256,
-        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=".to_string(),
-        "Yw3NKWbEM2aRElRIu7JbT/QSpJxzLbLIq8G4WBvXEN0=".to_string(),
-    )
-}
-
-fn invalid_encryption_scope() -> String {
-    "invalid-encryption-scope-for-tests".to_string()
-}
 
 fn invalid_key_sha256() -> String {
     // Valid base64, but intentionally not the hash of our test key.
     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".to_string()
-}
-
-fn assert_bad_request_or_conflict(status: Option<StatusCode>) {
-    assert!(matches!(
-        status,
-        Some(StatusCode::BadRequest | StatusCode::Conflict)
-    ));
 }
 
 #[recorded::test]
@@ -44,7 +28,7 @@ async fn test_upload_blob_partial_cpk_options_fail(ctx: TestContext) -> Result<(
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, _) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, _) = get_cpk();
 
     // Key Only Scenario
     let key_only_blob =
@@ -100,7 +84,7 @@ async fn test_upload_blob_encryption_options(ctx: TestContext) -> Result<(), Box
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_name = format!("{}-upload", get_blob_name(recording));
     let blob_client = container_client.blob_client(&blob_name);
 
@@ -136,7 +120,7 @@ async fn test_upload_blob_encryption_options(ctx: TestContext) -> Result<(), Box
     let invalid_scope_blob =
         container_client.blob_client(&format!("{}-bad-scope", get_blob_name(recording)));
     let invalid_scope_options = BlockBlobClientUploadOptions {
-        encryption_scope: Some(invalid_encryption_scope()),
+        encryption_scope: Some(get_invalid_encryption_scope()),
         ..Default::default()
     };
     let result = invalid_scope_blob
@@ -163,7 +147,7 @@ async fn test_download_blob_encryption_options(ctx: TestContext) -> Result<(), B
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client =
         container_client.blob_client(&format!("{}-download", get_blob_name(recording)));
 
@@ -224,7 +208,7 @@ async fn test_get_blob_properties_encryption_options(
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client =
         container_client.blob_client(&format!("{}-properties", get_blob_name(recording)));
 
@@ -284,7 +268,7 @@ async fn test_set_blob_metadata_encryption_options(ctx: TestContext) -> Result<(
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client =
         container_client.blob_client(&format!("{}-metadata", get_blob_name(recording)));
 
@@ -329,7 +313,7 @@ async fn test_set_blob_metadata_encryption_options(ctx: TestContext) -> Result<(
 
     // Invalid Encryption Scope Scenario
     let invalid_scope_metadata = BlobClientSetMetadataOptions {
-        encryption_scope: Some(invalid_encryption_scope()),
+        encryption_scope: Some(get_invalid_encryption_scope()),
         ..Default::default()
     };
     let result = blob_client
@@ -353,7 +337,7 @@ async fn test_create_blob_snapshot_encryption_options(
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client =
         container_client.blob_client(&format!("{}-snapshot", get_blob_name(recording)));
 
@@ -399,7 +383,7 @@ async fn test_create_blob_snapshot_encryption_options(
 
     // Invalid Encryption Scope Scenario
     let invalid_scope_snapshot = BlobClientCreateSnapshotOptions {
-        encryption_scope: Some(invalid_encryption_scope()),
+        encryption_scope: Some(get_invalid_encryption_scope()),
         ..Default::default()
     };
     let result = blob_client
@@ -423,7 +407,7 @@ async fn test_download_blob_snapshot_with_cpk_options(
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client =
         container_client.blob_client(&format!("{}-snapshot-cpk", get_blob_name(recording)));
 

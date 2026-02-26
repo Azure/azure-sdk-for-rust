@@ -1,38 +1,22 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{RequestContent, StatusCode};
+use azure_core::http::RequestContent;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     format_page_range,
     models::{
         BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResultHeaders, EncryptionAlgorithmType,
-        PageBlobClientClearPagesOptions, PageBlobClientCreateOptions, PageBlobClientResizeOptions,
+        BlobClientGetPropertiesResultHeaders, PageBlobClientClearPagesOptions,
+        PageBlobClientCreateOptions, PageBlobClientResizeOptions,
         PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesOptions,
     },
 };
-use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
+use azure_storage_blob_test::{
+    assert_bad_request_or_conflict, get_blob_name, get_container_client, get_cpk, get_cpk_2,
+    get_invalid_encryption_scope, StorageAccount,
+};
 use std::error::Error;
-
-fn customer_provided_key() -> (EncryptionAlgorithmType, String, String) {
-    (
-        EncryptionAlgorithmType::Aes256,
-        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=".to_string(),
-        "Yw3NKWbEM2aRElRIu7JbT/QSpJxzLbLIq8G4WBvXEN0=".to_string(),
-    )
-}
-
-fn invalid_encryption_scope() -> String {
-    "invalid-encryption-scope-for-tests".to_string()
-}
-
-fn assert_bad_request_or_conflict(status: Option<StatusCode>) {
-    assert!(matches!(
-        status,
-        Some(StatusCode::BadRequest | StatusCode::Conflict)
-    ));
-}
 
 #[recorded::test]
 async fn test_page_blob_partial_cpk_options_fail(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -41,7 +25,7 @@ async fn test_page_blob_partial_cpk_options_fail(ctx: TestContext) -> Result<(),
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, _) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, _) = get_cpk();
 
     // Key Only Create Scenario
     let key_only_blob =
@@ -97,7 +81,7 @@ async fn test_create_page_blob_encryption_options(ctx: TestContext) -> Result<()
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client = container_client.blob_client(&format!("{}-create", get_blob_name(recording)));
     let page_blob_client = blob_client.page_blob_client();
 
@@ -125,7 +109,7 @@ async fn test_create_page_blob_encryption_options(ctx: TestContext) -> Result<()
         container_client.blob_client(&format!("{}-create-bad-scope", get_blob_name(recording)));
     let invalid_page_blob_client = invalid_blob_client.page_blob_client();
     let invalid_options = PageBlobClientCreateOptions {
-        encryption_scope: Some(invalid_encryption_scope()),
+        encryption_scope: Some(get_invalid_encryption_scope()),
         ..Default::default()
     };
     let result = invalid_page_blob_client
@@ -147,7 +131,7 @@ async fn test_upload_pages_encryption_options(ctx: TestContext) -> Result<(), Bo
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client = container_client.blob_client(&format!("{}-upload", get_blob_name(recording)));
     let page_blob_client = blob_client.page_blob_client();
 
@@ -194,7 +178,7 @@ async fn test_upload_pages_encryption_options(ctx: TestContext) -> Result<(), Bo
     let invalid_page_blob_client = invalid_blob_client.page_blob_client();
     invalid_page_blob_client.create(512, None).await?;
     let invalid_options = PageBlobClientUploadPagesOptions {
-        encryption_scope: Some(invalid_encryption_scope()),
+        encryption_scope: Some(get_invalid_encryption_scope()),
         ..Default::default()
     };
     let result = invalid_page_blob_client
@@ -221,7 +205,7 @@ async fn test_clear_pages_encryption_options(ctx: TestContext) -> Result<(), Box
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client = container_client.blob_client(&format!("{}-clear", get_blob_name(recording)));
     let page_blob_client = blob_client.page_blob_client();
 
@@ -280,7 +264,7 @@ async fn test_clear_pages_encryption_options(ctx: TestContext) -> Result<(), Box
     let invalid_page_blob_client = invalid_blob_client.page_blob_client();
     invalid_page_blob_client.create(512, None).await?;
     let invalid_options = PageBlobClientClearPagesOptions {
-        encryption_scope: Some(invalid_encryption_scope()),
+        encryption_scope: Some(get_invalid_encryption_scope()),
         ..Default::default()
     };
     let result = invalid_page_blob_client
@@ -302,7 +286,7 @@ async fn test_resize_page_blob_encryption_options(ctx: TestContext) -> Result<()
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
     let blob_client = container_client.blob_client(&format!("{}-resize", get_blob_name(recording)));
     let page_blob_client = blob_client.page_blob_client();
 
@@ -352,7 +336,7 @@ async fn test_upload_pages_from_url_encryption_options(
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
-    let (encryption_algorithm, encryption_key, encryption_key_sha256) = customer_provided_key();
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
 
     // Setup Source CPK Page Blob Scenario
     let source_blob_client =
@@ -438,7 +422,7 @@ async fn test_upload_pages_from_url_encryption_options(
     let invalid_dest_page_blob_client = invalid_dest_blob_client.page_blob_client();
     invalid_dest_page_blob_client.create(512, None).await?;
     let invalid_options = PageBlobClientUploadPagesFromUrlOptions {
-        encryption_scope: Some(invalid_encryption_scope()),
+        encryption_scope: Some(get_invalid_encryption_scope()),
         ..Default::default()
     };
     let result = invalid_dest_page_blob_client
@@ -448,6 +432,143 @@ async fn test_upload_pages_from_url_encryption_options(
             512,
             format_page_range(0, 512)?,
             Some(invalid_options),
+        )
+        .await;
+
+    // Assert
+    let status = result.unwrap_err().http_status();
+    assert_bad_request_or_conflict(status);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_pages_from_url_source_cpk_mismatch_fails(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
+    let (_, wrong_key, wrong_key_sha256) = get_cpk_2();
+
+    // Source CPK Page Blob Scenario
+    let source_blob_client =
+        container_client.blob_client(&format!("{}-source-cpk-mismatch", get_blob_name(recording)));
+    let source_page_blob_client = source_blob_client.page_blob_client();
+    source_page_blob_client
+        .create(
+            512,
+            Some(PageBlobClientCreateOptions {
+                encryption_algorithm: Some(encryption_algorithm),
+                encryption_key: Some(encryption_key.clone()),
+                encryption_key_sha256: Some(encryption_key_sha256.clone()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    let source_content = vec![b'S'; 512];
+    source_page_blob_client
+        .upload_pages(
+            RequestContent::from(source_content),
+            512,
+            format_page_range(0, 512)?,
+            Some(PageBlobClientUploadPagesOptions {
+                encryption_algorithm: Some(encryption_algorithm),
+                encryption_key: Some(encryption_key),
+                encryption_key_sha256: Some(encryption_key_sha256),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    let dest_blob_client =
+        container_client.blob_client(&format!("{}-dest-cpk-mismatch", get_blob_name(recording)));
+    let dest_page_blob_client = dest_blob_client.page_blob_client();
+    dest_page_blob_client.create(512, None).await?;
+
+    // Source CPK Mismatch Scenario
+    let result = dest_page_blob_client
+        .upload_pages_from_url(
+            source_blob_client.url().as_str().into(),
+            format_page_range(0, 512)?,
+            512,
+            format_page_range(0, 512)?,
+            Some(PageBlobClientUploadPagesFromUrlOptions {
+                source_encryption_algorithm: Some(encryption_algorithm),
+                source_encryption_key: Some(wrong_key),
+                source_encryption_key_sha256: Some(wrong_key_sha256),
+                ..Default::default()
+            }),
+        )
+        .await;
+
+    // Assert
+    let status = result.unwrap_err().http_status();
+    assert_bad_request_or_conflict(status);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_pages_from_url_destination_cpk_mismatch_fails(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    let (encryption_algorithm, encryption_key, encryption_key_sha256) = get_cpk();
+    let (_, wrong_key, wrong_key_sha256) = get_cpk_2();
+
+    let source_blob_client = container_client.blob_client(&format!(
+        "{}-source-dest-mismatch",
+        get_blob_name(recording)
+    ));
+    let source_page_blob_client = source_blob_client.page_blob_client();
+    source_page_blob_client.create(512, None).await?;
+    source_page_blob_client
+        .upload_pages(
+            RequestContent::from(vec![b'T'; 512]),
+            512,
+            format_page_range(0, 512)?,
+            None,
+        )
+        .await?;
+
+    let dest_blob_client =
+        container_client.blob_client(&format!("{}-dest-dest-mismatch", get_blob_name(recording)));
+    let dest_page_blob_client = dest_blob_client.page_blob_client();
+    dest_page_blob_client
+        .create(
+            512,
+            Some(PageBlobClientCreateOptions {
+                encryption_algorithm: Some(encryption_algorithm),
+                encryption_key: Some(encryption_key),
+                encryption_key_sha256: Some(encryption_key_sha256),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Destination CPK Mismatch Scenario
+    let result = dest_page_blob_client
+        .upload_pages_from_url(
+            source_blob_client.url().as_str().into(),
+            format_page_range(0, 512)?,
+            512,
+            format_page_range(0, 512)?,
+            Some(PageBlobClientUploadPagesFromUrlOptions {
+                encryption_algorithm: Some(encryption_algorithm),
+                encryption_key: Some(wrong_key),
+                encryption_key_sha256: Some(wrong_key_sha256),
+                ..Default::default()
+            }),
         )
         .await;
 
