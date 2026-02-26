@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Clients used to communicate with the service.
 use crate::authorizer::KeyVaultAuthorizer;
-pub use crate::generated::KeyClient;
+pub use crate::generated::clients::*;
 use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
