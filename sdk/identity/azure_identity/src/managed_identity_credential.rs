@@ -22,7 +22,7 @@ pub enum UserAssignedId {
 }
 
 /// Authenticates a managed identity from Azure App Service or an Azure Virtual Machine.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ManagedIdentityCredential {
     credential: Arc<dyn TokenCredential>,
 }
