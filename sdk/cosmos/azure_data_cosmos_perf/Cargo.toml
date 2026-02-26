@@ -14,13 +14,13 @@ async-trait.workspace = true
 azure_core = { workspace = true, features = ["reqwest"] }
 azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
 azure_identity = { path = "../../../sdk/identity/azure_identity" }
-clap = { version = "4.5.45", features = ["derive", "env"] }
+clap = { workspace = true, features = ["derive", "env"] }
 futures.workspace = true
-hdrhistogram = "7.5"
+hdrhistogram.workspace = true
 rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-sysinfo = "0.33"
+sysinfo.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "signal"] }
 uuid.workspace = true
 

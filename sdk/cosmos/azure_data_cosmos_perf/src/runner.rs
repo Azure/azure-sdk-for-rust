@@ -7,7 +7,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use azure_data_cosmos::clients::ContainerClient;
+use rand::RngExt;
+use serde::Serialize;
+use sysinfo::System;
 use tokio::task::JoinSet;
+use uuid::Uuid;
+
+use crate::operations::Operation;
+use crate::stats::{self, Stats};
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
 fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
@@ -23,15 +31,6 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
         Some(sources.join(" → "))
     }
 }
-
-use azure_data_cosmos::clients::ContainerClient;
-use rand::RngExt;
-use serde::Serialize;
-use sysinfo::System;
-use uuid::Uuid;
-
-use crate::operations::Operation;
-use crate::stats::{self, Stats};
 
 /// Structured perf result document stored in Cosmos DB for long-term monitoring.
 #[derive(Debug, Serialize)]

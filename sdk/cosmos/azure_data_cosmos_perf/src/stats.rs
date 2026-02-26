@@ -162,7 +162,7 @@ fn compute_summary(name: String, stats: OperationStats) -> Summary {
         };
     }
 
-    let mean = stats.sum / stats.count as u32;
+    let mean = Duration::from_secs_f64(stats.sum.as_secs_f64() / stats.count as f64);
     let p50 = Duration::from_micros(stats.histogram.value_at_quantile(0.50));
     let p90 = Duration::from_micros(stats.histogram.value_at_quantile(0.90));
     let p99 = Duration::from_micros(stats.histogram.value_at_quantile(0.99));

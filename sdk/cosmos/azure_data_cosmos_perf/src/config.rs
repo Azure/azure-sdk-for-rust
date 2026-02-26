@@ -133,7 +133,7 @@ pub struct Config {
 pub enum AuthMethod {
     /// Key-based authentication using a primary or secondary account key.
     Key,
-    /// Microsoft Entra ID (AAD) authentication using DeveloperToolsCredential.
+    /// Microsoft Entra ID (AAD) authentication using ManagedIdentityCredential (managed identity).
     Aad,
 }
 

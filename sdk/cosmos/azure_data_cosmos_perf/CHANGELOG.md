@@ -8,11 +8,11 @@
 ### Features Added
 
 - Initial implementation of the Cosmos DB performance testing CLI tool.
-- Point read, single-partition query, and upsert operations with concurrent execution.
+- Point read, create item, single-partition query, and upsert operations with concurrent execution.
 - Key-based and AAD (Entra ID) authentication via `ManagedIdentityCredential`.
 - Configurable concurrency, run duration, seed count, and reporting interval.
 - Automatic container creation if it does not exist, with configurable throughput.
 - Preferred and excluded region configuration.
 - Periodic latency summary reporting (count, min, max, mean, p50, p90, p99, errors).
 - Process-level CPU and memory metrics in each report.
-- Automatic CSV report file generation with timestamped rows.
+

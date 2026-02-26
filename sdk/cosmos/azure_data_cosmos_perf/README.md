@@ -6,7 +6,7 @@ latency statistics at configurable intervals.
 
 ## Prerequisites
 
-- Rust toolchain (MSRV 1.85)
+- Rust toolchain (MSRV 1.88)
 - An Azure Cosmos DB account
   - The database, container, and results container will be created automatically if they don't exist (with `/partition_key` as the partition key path)
 - For key auth: a Cosmos DB account key
@@ -63,6 +63,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--key` | — | Account key (or set `AZURE_COSMOS_KEY` env var) |
 | `--preferred-regions` | — | Comma-separated preferred regions (e.g., `"West US,East US"`) |
 | `--excluded-regions` | — | Comma-separated excluded regions |
+| `--exclude-regions-for` | `both` | Scope for excluded regions: `reads`, `writes`, or `both` |
 | `--concurrency` | `50` | Number of concurrent operations |
 | `--duration` | indefinite | Run duration in seconds |
 | `--seed-count` | `1000` | Number of items to pre-seed |

@@ -108,7 +108,8 @@ echo "Launching $PROCESSES perf process(es)..."
 for i in $(seq 1 "$PROCESSES"); do
     "$BINARY" "${PERF_ARGS[@]}" &
     PIDS+=($!)
-    echo "  Process $i: PID ${PIDS[-1]}"
+    last_index=$(( ${#PIDS[@]} - 1 ))
+    echo "  Process $i: PID ${PIDS[$last_index]}"
 done
 
 echo ""

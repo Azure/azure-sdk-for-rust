@@ -73,10 +73,6 @@ pub async fn seed_container(
 ) -> azure_core::Result<Vec<SeededItem>> {
     println!("Seeding {count} items (concurrency: {concurrency})...");
 
-    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(concurrency));
-    let failed = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let completed = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
-
     let mut items = Vec::with_capacity(count);
     for _ in 0..count {
         let id = Uuid::new_v4().to_string();
@@ -84,59 +80,62 @@ pub async fn seed_container(
         items.push(SeededItem { id, partition_key });
     }
 
-    let mut handles: Vec<tokio::task::JoinHandle<Option<azure_core::Error>>> =
-        Vec::with_capacity(count);
+    let completed = Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let mut workers = tokio::task::JoinSet::new();
+    let mut next = 0;
 
-    for (i, seeded) in items.iter().enumerate() {
-        let container = container.clone();
-        let sem = semaphore.clone();
-        let failed = failed.clone();
-        let completed = completed.clone();
-        let id = seeded.id.clone();
-        let pk = seeded.partition_key.clone();
+    while next < count || !workers.is_empty() {
+        // Fill workers up to concurrency limit
+        while next < count && workers.len() < concurrency {
+            let container = container.clone();
+            let completed = completed.clone();
+            let id = items[next].id.clone();
+            let pk = items[next].partition_key.clone();
+            let idx = next;
+            let total = count;
 
-        handles.push(tokio::spawn(async move {
-            let _permit = sem.acquire().await.unwrap();
+            workers.spawn(async move {
+                let item = PerfItem {
+                    id,
+                    partition_key: pk.clone(),
+                    value: idx as u64,
+                    payload: "perf-test-seed-payload".to_string(),
+                };
 
-            if failed.load(std::sync::atomic::Ordering::Relaxed) {
-                return None;
-            }
+                let result = container
+                    .upsert_item(&item.partition_key, &item, None)
+                    .await;
 
-            let item = PerfItem {
-                id,
-                partition_key: pk.clone(),
-                value: i as u64,
-                payload: "perf-test-seed-payload".to_string(),
-            };
+                if result.is_ok() {
+                    let done = completed.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                    if done.is_multiple_of(200) || done as usize == total {
+                        println!("  Seeded {done}/{total} items");
+                    }
+                }
 
-            if let Err(e) = container
-                .upsert_item(&item.partition_key, &item, None)
-                .await
-            {
-                failed.store(true, std::sync::atomic::Ordering::Relaxed);
-                eprintln!("Seed error for item {i}: {e}");
-                return Some(e);
-            }
-
-            let done = completed.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-            if done.is_multiple_of(200) || done as usize == count {
-                println!("  Seeded {done}/{count} items");
-            }
-            None
-        }));
-    }
-
-    let mut first_error: Option<azure_core::Error> = None;
-    for handle in handles {
-        if let Some(e) = handle.await.unwrap() {
-            if first_error.is_none() {
-                first_error = Some(e);
-            }
+                (idx, result.err())
+            });
+            next += 1;
         }
-    }
 
-    if let Some(e) = first_error {
-        return Err(e);
+        // Wait for one task to complete; successful completions are consumed
+        // from the JoinSet implicitly, errors abort all remaining work.
+        match workers.join_next().await {
+            Some(Ok((idx, Some(e)))) => {
+                eprintln!("Seed error for item {idx}: {e}");
+                workers.abort_all();
+                return Err(e);
+            }
+            Some(Ok((_, None))) => {} // Task succeeded, continue
+            Some(Err(e)) => {
+                workers.abort_all();
+                return Err(azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    e,
+                ));
+            }
+            None => {} // No more tasks
+        }
     }
 
     println!("Seeding complete.");
