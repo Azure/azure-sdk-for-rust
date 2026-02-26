@@ -270,12 +270,24 @@ impl CosmosClientBuilder {
             pipeline_core.clone(),
         );
 
+        // Enable per-partition circuit breaker based on the
+        // `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment
+        // variable. When unset or not parseable, defaults to `true`.
+        let enable_partition_level_circuit_breaker =
+            std::env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
+                .ok()
+                .and_then(|v| v.parse::<bool>().ok())
+                .unwrap_or(true);
+
         let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
-            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), false, true);
+            GlobalPartitionEndpointManager::new(
+                global_endpoint_manager.clone(),
+                false,
+                enable_partition_level_circuit_breaker,
+            );
 
         // Register the callback for account refresh to update partition-level failover config
         let partition_manager_clone = Arc::clone(&global_partition_endpoint_manager);
-        let enable_partition_level_circuit_breaker = self.options.partition_level_circuit_breaker;
 
         global_endpoint_manager.set_on_account_refresh_callback(Arc::new(
             move |account_props: &AccountProperties| {

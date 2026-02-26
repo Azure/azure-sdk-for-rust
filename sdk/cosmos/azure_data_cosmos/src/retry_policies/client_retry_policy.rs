@@ -879,8 +879,8 @@ mod tests {
         )
     }
 
-    #[test]
-    fn test_new_policy_initialization() {
+    #[tokio::test]
+    async fn test_new_policy_initialization() {
         let policy = create_test_policy();
         assert!(policy.enable_endpoint_discovery);
         assert_eq!(policy.failover_retry_count, 0);
@@ -892,8 +892,8 @@ mod tests {
         assert!(policy.operation_type.is_none());
     }
 
-    #[test]
-    fn test_retry_context_none_initially() {
+    #[tokio::test]
+    async fn test_retry_context_none_initially() {
         let policy = create_test_policy();
         assert!(policy.retry_context.is_none());
     }

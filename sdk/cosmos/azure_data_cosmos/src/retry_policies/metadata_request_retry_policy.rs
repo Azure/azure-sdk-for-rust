@@ -378,15 +378,15 @@ mod tests {
         )
     }
 
-    #[test]
-    fn test_new_policy_initialization() {
+    #[tokio::test]
+    async fn test_new_policy_initialization() {
         let policy = create_test_policy_with_preferred_locations();
         assert_eq!(policy.unavailable_endpoint_retry_count, 0);
         assert!(policy.excluded_regions.is_none());
     }
 
-    #[test]
-    fn test_retry_context_none_initially() {
+    #[tokio::test]
+    async fn test_retry_context_none_initially() {
         let policy = create_test_policy();
         assert!(policy.retry_context.is_none());
     }
@@ -624,8 +624,8 @@ mod tests {
         assert!(request.request_context.location_endpoint_to_route.is_some());
     }
 
-    #[test]
-    fn test_policy_debug_format() {
+    #[tokio::test]
+    async fn test_policy_debug_format() {
         let policy = create_test_policy();
         let debug_str = format!("{:?}", policy);
         assert!(debug_str.contains("MetadataRequestRetryPolicy"));

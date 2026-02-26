@@ -54,7 +54,7 @@ pub(crate) struct GlobalEndpointManager {
     background_task_manager: BackgroundTaskManager,
 
     /// Background account refresh interval in seconds. Default is 10 minutes.
-    background_account_refresh_interval_secs: i64,
+    background_account_refresh_interval: Duration,
 }
 
 impl Debug for GlobalEndpointManager {
@@ -111,7 +111,9 @@ impl GlobalEndpointManager {
             on_account_refresh: Mutex::new(None),
             background_account_refresh_active: AtomicBool::new(false),
             background_task_manager: BackgroundTaskManager::new(),
-            background_account_refresh_interval_secs: BACKGROUND_ACCOUNT_REFRESH_INTERVAL_SECS,
+            background_account_refresh_interval: Duration::seconds(
+                BACKGROUND_ACCOUNT_REFRESH_INTERVAL_SECS,
+            ),
         });
         instance.initialize_and_start_background_account_refresh();
         instance
@@ -501,7 +503,7 @@ impl GlobalEndpointManager {
         // Briefly upgrade to read the interval, then release the strong ref
         // so it does not keep Self alive across the sleep.
         let interval = match weak_self.upgrade() {
-            Some(strong) => Duration::seconds(strong.background_account_refresh_interval_secs),
+            Some(strong) => strong.background_account_refresh_interval,
             None => return,
         };
 
@@ -587,8 +589,8 @@ mod tests {
         request
     }
 
-    #[test]
-    fn test_new_manager_initialization() {
+    #[tokio::test]
+    async fn test_new_manager_initialization() {
         let manager = create_test_manager();
         assert_eq!(
             manager.hub_uri(),
@@ -596,8 +598,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_hub_uri() {
+    #[tokio::test]
+    async fn test_hub_uri() {
         let manager = create_test_manager();
         let hub_uri = manager.hub_uri();
         assert_eq!(
@@ -606,8 +608,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_resolve_service_endpoint_returns_default() {
+    #[tokio::test]
+    async fn test_resolve_service_endpoint_returns_default() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Read);
         let endpoint = manager.resolve_service_endpoint(&request);
@@ -618,8 +620,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_read_endpoints_initial_state() {
+    #[tokio::test]
+    async fn test_read_endpoints_initial_state() {
         let manager = create_test_manager();
         let endpoints = manager.read_endpoints();
         // Initial state may be empty until account properties are loaded
@@ -627,8 +629,8 @@ mod tests {
         let _ = endpoints.len();
     }
 
-    #[test]
-    fn test_write_endpoints_initial_state() {
+    #[tokio::test]
+    async fn test_write_endpoints_initial_state() {
         let manager = create_test_manager();
         let endpoints = manager.write_endpoints();
         // Initial state may be empty until account properties are loaded
@@ -636,8 +638,8 @@ mod tests {
         let _ = endpoints.len();
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_for_read() {
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_for_read() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
         let account_region = AccountRegion {
@@ -659,8 +661,8 @@ mod tests {
         assert!(!read_endpoints.is_empty());
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_for_write() {
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_for_write() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
         let account_region = AccountRegion {
@@ -682,8 +684,8 @@ mod tests {
         assert!(!write_endpoints.is_empty());
     }
 
-    #[test]
-    fn test_can_use_multiple_write_locations_for_read_request() {
+    #[tokio::test]
+    async fn test_can_use_multiple_write_locations_for_read_request() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Read);
 
@@ -691,8 +693,8 @@ mod tests {
         assert!(!manager.can_use_multiple_write_locations(&request));
     }
 
-    #[test]
-    fn test_can_use_multiple_write_locations_for_write_request() {
+    #[tokio::test]
+    async fn test_can_use_multiple_write_locations_for_write_request() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Create);
 
@@ -701,8 +703,8 @@ mod tests {
         let _ = manager.can_use_multiple_write_locations(&request);
     }
 
-    #[test]
-    fn test_can_support_multiple_write_locations_for_documents() {
+    #[tokio::test]
+    async fn test_can_support_multiple_write_locations_for_documents() {
         let manager = create_test_manager();
 
         // Documents should potentially support multiple write locations
@@ -711,8 +713,8 @@ mod tests {
             .can_support_multiple_write_locations(ResourceType::Documents, OperationType::Create);
     }
 
-    #[test]
-    fn test_can_support_multiple_write_locations_for_stored_procedures() {
+    #[tokio::test]
+    async fn test_can_support_multiple_write_locations_for_stored_procedures() {
         let manager = create_test_manager();
 
         // Stored procedures with Execute operation should potentially support multiple write locations
@@ -722,8 +724,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_can_support_multiple_write_locations_for_databases() {
+    #[tokio::test]
+    async fn test_can_support_multiple_write_locations_for_databases() {
         let manager = create_test_manager();
 
         // Database operations should not support multiple write locations
@@ -734,15 +736,15 @@ mod tests {
         assert!(!result);
     }
 
-    #[test]
-    fn test_applicable_endpoints() {
+    #[tokio::test]
+    async fn test_applicable_endpoints() {
         let manager = create_test_manager();
         let endpoints = manager.applicable_endpoints(OperationType::Read, None);
         assert!(!endpoints.is_empty());
     }
 
-    #[test]
-    fn test_applicable_excluded_endpoints() {
+    #[tokio::test]
+    async fn test_applicable_excluded_endpoints() {
         let manager = create_test_manager();
         // Exclude all regions to test behavior - should still return default endpoint
         let excluded_regions: Vec<RegionName> =
@@ -754,8 +756,8 @@ mod tests {
         assert!(!endpoints.is_empty());
     }
 
-    #[test]
-    fn test_account_read_endpoints() {
+    #[tokio::test]
+    async fn test_account_read_endpoints() {
         let manager = create_test_manager();
         let endpoints = manager.account_read_endpoints();
 
@@ -763,8 +765,8 @@ mod tests {
         assert_eq!(endpoints, manager.read_endpoints());
     }
 
-    #[test]
-    fn test_available_write_endpoints_by_location() {
+    #[tokio::test]
+    async fn test_available_write_endpoints_by_location() {
         let manager = create_test_manager();
         let endpoints_map = manager.available_write_endpoints_by_location();
 
@@ -772,8 +774,8 @@ mod tests {
         let _ = endpoints_map.len();
     }
 
-    #[test]
-    fn test_available_read_endpoints_by_location() {
+    #[tokio::test]
+    async fn test_available_read_endpoints_by_location() {
         let manager = create_test_manager();
         let endpoints_map = manager.available_read_endpoints_by_location();
 
