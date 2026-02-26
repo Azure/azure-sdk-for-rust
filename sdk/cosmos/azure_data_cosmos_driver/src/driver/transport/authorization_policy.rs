@@ -7,7 +7,7 @@
 //! Unlike standard Azure services that use `Authorization: Bearer`, Cosmos DB
 //! uses a custom format as defined in the [official documentation](https://learn.microsoft.com/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
 
-use crate::models::{ResourceType};
+use crate::models::ResourceType;
 use azure_core::{
     credentials::{Secret, TokenCredential},
     http::{
