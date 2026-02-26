@@ -44,15 +44,28 @@ pub enum ExecutionContext {
     CircuitBreakerProbe,
 }
 
+impl ExecutionContext {
+    /// Returns the string representation of this execution context.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ExecutionContext::Initial => "initial",
+            ExecutionContext::Retry => "retry",
+            ExecutionContext::Hedging => "hedging",
+            ExecutionContext::RegionFailover => "region_failover",
+            ExecutionContext::CircuitBreakerProbe => "circuit_breaker_probe",
+        }
+    }
+}
+
+impl AsRef<str> for ExecutionContext {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl std::fmt::Display for ExecutionContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ExecutionContext::Initial => write!(f, "initial"),
-            ExecutionContext::Retry => write!(f, "retry"),
-            ExecutionContext::Hedging => write!(f, "hedging"),
-            ExecutionContext::RegionFailover => write!(f, "region_failover"),
-            ExecutionContext::CircuitBreakerProbe => write!(f, "circuit_breaker_probe"),
-        }
+        f.write_str(self.as_str())
     }
 }
 
@@ -84,6 +97,14 @@ pub enum PipelineType {
 }
 
 impl PipelineType {
+    /// Returns the string representation of this pipeline type.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            PipelineType::Metadata => "metadata",
+            PipelineType::DataPlane => "data_plane",
+        }
+    }
+
     /// Returns true if this is a metadata (control plane) pipeline.
     pub fn is_metadata(self) -> bool {
         matches!(self, PipelineType::Metadata)
@@ -92,6 +113,18 @@ impl PipelineType {
     /// Returns true if this is a data plane pipeline.
     pub fn is_data_plane(self) -> bool {
         matches!(self, PipelineType::DataPlane)
+    }
+}
+
+impl std::fmt::Display for PipelineType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for PipelineType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
@@ -117,6 +150,14 @@ pub enum TransportSecurity {
 }
 
 impl TransportSecurity {
+    /// Returns the string representation of this transport security mode.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            TransportSecurity::Secure => "secure",
+            TransportSecurity::EmulatorWithInsecureCertificates => "emulator_insecure",
+        }
+    }
+
     /// Returns true if this is a secure transport.
     pub fn is_secure(self) -> bool {
         matches!(self, TransportSecurity::Secure)
@@ -125,6 +166,18 @@ impl TransportSecurity {
     /// Returns true if this is an emulator transport with insecure certificates.
     pub fn is_emulator(self) -> bool {
         matches!(self, TransportSecurity::EmulatorWithInsecureCertificates)
+    }
+}
+
+impl std::fmt::Display for TransportSecurity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for TransportSecurity {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
@@ -177,6 +230,27 @@ impl RequestSentStatus {
     /// Returns `true` if we know for certain the request was NOT sent.
     pub fn definitely_not_sent(&self) -> bool {
         matches!(self, RequestSentStatus::NotSent)
+    }
+
+    /// Returns the string representation of this request sent status.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RequestSentStatus::Sent => "sent",
+            RequestSentStatus::NotSent => "not_sent",
+            RequestSentStatus::Unknown => "unknown",
+        }
+    }
+}
+
+impl std::fmt::Display for RequestSentStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for RequestSentStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
@@ -544,6 +618,18 @@ impl RequestEventType {
             self,
             Self::ResponseHeadersReceived | Self::TransportComplete
         )
+    }
+}
+
+impl std::fmt::Display for RequestEventType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for RequestEventType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 

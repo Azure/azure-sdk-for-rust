@@ -61,6 +61,12 @@ impl PartialEq for AccountEndpoint {
 
 impl Eq for AccountEndpoint {}
 
+impl std::fmt::Display for AccountEndpoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0.as_str())
+    }
+}
+
 impl Hash for AccountEndpoint {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.0.hash(state);

@@ -41,13 +41,26 @@ pub enum DiagnosticsVerbosity {
     Detailed,
 }
 
+impl DiagnosticsVerbosity {
+    /// Returns the string representation of this verbosity level.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DiagnosticsVerbosity::Default => "default",
+            DiagnosticsVerbosity::Summary => "summary",
+            DiagnosticsVerbosity::Detailed => "detailed",
+        }
+    }
+}
+
+impl AsRef<str> for DiagnosticsVerbosity {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl std::fmt::Display for DiagnosticsVerbosity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DiagnosticsVerbosity::Default => write!(f, "default"),
-            DiagnosticsVerbosity::Summary => write!(f, "summary"),
-            DiagnosticsVerbosity::Detailed => write!(f, "detailed"),
-        }
+        f.write_str(self.as_str())
     }
 }
 
