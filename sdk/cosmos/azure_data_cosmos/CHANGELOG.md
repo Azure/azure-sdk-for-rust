@@ -23,7 +23,7 @@
 
 ### Other Changes
 
-- Added default HTTP client timeouts (5s connection, 65s request) and added retries for connection errors. ([#3752](https://github.com/Azure/azure-sdk-for-rust/pull/3752))
+- Added default HTTP client timeouts and added retries for connection errors. ([#3752](https://github.com/Azure/azure-sdk-for-rust/pull/3752))
 - Retry policies now retry reads on all non-whitelisted status codes and retry service unavailable errors across all applicable endpoints. ([#3728](https://github.com/Azure/azure-sdk-for-rust/pull/3728))
 
 ## 0.30.0 (2026-01-21)
