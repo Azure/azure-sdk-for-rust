@@ -12,9 +12,9 @@ use crate::{
 
 use std::sync::Arc;
 
-use crate::constants::COSMOS_ALLOWED_HEADERS;
 #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
 use crate::constants::{
+    AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED, COSMOS_ALLOWED_HEADERS,
     DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
 };
 use crate::models::AccountProperties;
@@ -274,7 +274,7 @@ impl CosmosClientBuilder {
         // `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment
         // variable. When unset or not parseable, defaults to `true`.
         let enable_partition_level_circuit_breaker =
-            std::env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
+            std::env::var(AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED)
                 .ok()
                 .and_then(|v| v.parse::<bool>().ok())
                 .unwrap_or(true);

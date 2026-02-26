@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::time::Instant;
 
 use crate::background_task_manager::BackgroundTaskManager;
+use crate::constants;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::resource_context::ResourceType;
@@ -141,7 +142,7 @@ impl GlobalPartitionEndpointManager {
     /// Reads from the `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS`
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn allowed_partition_unavailability_duration_secs(default: i64) -> i64 {
-        std::env::var("AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS")
+        std::env::var(constants::AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS)
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(default)
@@ -155,7 +156,7 @@ impl GlobalPartitionEndpointManager {
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn stale_partition_unavailability_refresh_interval_secs(default: i64) -> i64 {
         std::env::var(
-            "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS",
+            constants::AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS,
         )
         .ok()
         .and_then(|v| v.parse().ok())
@@ -935,7 +936,7 @@ impl PartitionKeyRangeFailoverInfo {
     /// Reads from the `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS`
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn circuit_breaker_consecutive_failure_count_for_reads(default: i32) -> i32 {
-        std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS")
+        std::env::var(constants::AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS)
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(default)
@@ -946,7 +947,7 @@ impl PartitionKeyRangeFailoverInfo {
     /// Reads from the `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES`
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn circuit_breaker_consecutive_failure_count_for_writes(default: i32) -> i32 {
-        std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES")
+        std::env::var(constants::AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES)
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(default)
@@ -959,10 +960,12 @@ impl PartitionKeyRangeFailoverInfo {
     /// `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES`
     /// environment variable, falling back to `default` if unset or not parseable.
     fn circuit_breaker_timeout_counter_reset_window_mins(default: i64) -> i64 {
-        std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(default)
+        std::env::var(
+            constants::AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES,
+        )
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
     }
 
     /// Attempts to move this partition's routing to the next available location.
