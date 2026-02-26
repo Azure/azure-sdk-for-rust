@@ -154,7 +154,7 @@ client.update_secret_properties("secret-name", parameters.try_into()?, None).awa
 ```
 
 **NOTE:** Service models and other structs that can be created by the caller are not attributed with `#[non_exhaustive]` to allow struct initialization.
-To mitigate breaking changes should fields be added, we recommend the struct update syntax with `Default` even if you assign all fields.
+To mitigate breaking changes should fields be added, we recommend using the [struct update syntax](https://doc.rust-lang.org/book/ch05-01-defining-structs.html#creating-instances-with-struct-update-syntax) with `Default` even if you assign all fields.
 You can attribute the struct initialization, module, or crate to ignore `clippy::needless_update` as shown above.
 
 ### Accessing HTTP response details using `Response<T>`
