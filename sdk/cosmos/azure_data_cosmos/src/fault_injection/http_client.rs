@@ -693,7 +693,6 @@ mod tests {
         let result = fault_client.execute_request(&request).await;
         assert!(result.is_err(), "should produce an error");
 
-        let err = result.unwrap_err();
         assert_eq!(mock_client.call_count(), 0);
     }
 
