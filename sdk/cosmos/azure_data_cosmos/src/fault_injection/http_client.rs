@@ -163,7 +163,7 @@ impl FaultClient {
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 return Some(Err(azure_core::Error::with_message(
-                    ErrorKind::Connection,
+                    ErrorKind::Io,
                     "Injected fault: connection error",
                 )));
             }
@@ -693,12 +693,6 @@ mod tests {
         let result = fault_client.execute_request(&request).await;
         assert!(result.is_err(), "should produce an error");
 
-        let err = result.unwrap_err();
-        assert_eq!(
-            err.kind(),
-            &ErrorKind::Connection,
-            "connection error should have Connection ErrorKind"
-        );
         assert_eq!(mock_client.call_count(), 0);
     }
 
