@@ -98,14 +98,14 @@ impl From<&AccountReference> for AccountEndpoint {
 /// Either key-based authentication using a master key, or token-based
 /// authentication using an Azure credential (e.g., managed identity, service principal).
 #[derive(Clone)]
-pub enum AuthOptions {
+pub enum Credential {
     /// Key-based authentication using the account's primary or secondary master key.
     MasterKey(Secret),
     /// Token-based authentication using an Azure credential.
     TokenCredential(Arc<dyn TokenCredential>),
 }
 
-impl std::fmt::Debug for AuthOptions {
+impl std::fmt::Debug for Credential {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::MasterKey(_) => f.debug_tuple("MasterKey").field(&"***").finish(),
@@ -114,13 +114,13 @@ impl std::fmt::Debug for AuthOptions {
     }
 }
 
-impl From<Secret> for AuthOptions {
+impl From<Secret> for Credential {
     fn from(key: Secret) -> Self {
         Self::MasterKey(key)
     }
 }
 
-impl From<Arc<dyn TokenCredential>> for AuthOptions {
+impl From<Arc<dyn TokenCredential>> for Credential {
     fn from(credential: Arc<dyn TokenCredential>) -> Self {
         Self::TokenCredential(credential)
     }
@@ -157,7 +157,7 @@ pub struct AccountReference {
     /// The service endpoint URL (required).
     endpoint: AccountEndpoint,
     /// Authentication credentials (required).
-    auth: AuthOptions,
+    credential: Credential,
 }
 
 // Manual PartialEq implementation because AuthOptions contains Arc<dyn TokenCredential>
@@ -191,7 +191,7 @@ impl AccountReference {
     pub fn with_master_key(endpoint: Url, key: impl Into<Secret>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: AuthOptions::MasterKey(key.into()),
+            credential: Credential::MasterKey(key.into()),
         }
     }
 
@@ -201,7 +201,7 @@ impl AccountReference {
     pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: AuthOptions::TokenCredential(credential),
+            credential: Credential::TokenCredential(credential),
         }
     }
 
@@ -213,8 +213,8 @@ impl AccountReference {
     /// Returns the authentication options.
     ///
     /// Authentication is always present - it's required during construction.
-    pub fn auth(&self) -> &AuthOptions {
-        &self.auth
+    pub fn auth(&self) -> &Credential {
+        &self.credential
     }
 }
 
@@ -239,7 +239,7 @@ impl AccountReference {
 #[non_exhaustive]
 pub struct AccountReferenceBuilder {
     endpoint: AccountEndpoint,
-    auth: Option<AuthOptions>,
+    credential: Option<Credential>,
 }
 
 impl AccountReferenceBuilder {
@@ -247,7 +247,7 @@ impl AccountReferenceBuilder {
     pub fn new(endpoint: Url) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: None,
+            credential: None,
         }
     }
 
@@ -259,19 +259,19 @@ impl AccountReferenceBuilder {
 
     /// Sets master key authentication.
     pub fn master_key(mut self, key: impl Into<Secret>) -> Self {
-        self.auth = Some(AuthOptions::MasterKey(key.into()));
+        self.credential = Some(Credential::MasterKey(key.into()));
         self
     }
 
     /// Sets token credential authentication.
     pub fn credential(mut self, credential: Arc<dyn TokenCredential>) -> Self {
-        self.auth = Some(AuthOptions::TokenCredential(credential));
+        self.credential = Some(Credential::TokenCredential(credential));
         self
     }
 
     /// Sets authentication options directly.
-    pub fn auth(mut self, auth: AuthOptions) -> Self {
-        self.auth = Some(auth);
+    pub fn auth(mut self, credential: Credential) -> Self {
+        self.credential = Some(credential);
         self
     }
 
@@ -281,7 +281,7 @@ impl AccountReferenceBuilder {
     ///
     /// Returns an error if authentication has not been configured.
     pub fn build(self) -> azure_core::Result<AccountReference> {
-        let auth = self.auth.ok_or_else(|| {
+        let credential = self.credential.ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Credential,
                 "Authentication is required. Use master_key() or credential() to set credentials.",
@@ -290,7 +290,7 @@ impl AccountReferenceBuilder {
 
         Ok(AccountReference {
             endpoint: self.endpoint,
-            auth,
+            credential: auth,
         })
     }
 }
@@ -341,7 +341,7 @@ mod tests {
                 .unwrap();
 
         match account.auth() {
-            AuthOptions::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
+            Credential::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
             _ => panic!("Expected MasterKey auth"),
         }
     }
@@ -379,7 +379,7 @@ mod tests {
         );
 
         match account.auth() {
-            AuthOptions::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
+            Credential::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
             _ => panic!("Expected MasterKey auth"),
         }
     }
