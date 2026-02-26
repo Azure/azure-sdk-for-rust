@@ -78,7 +78,7 @@ impl std::fmt::Display for ETag {
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ETagCondition {
+pub enum Precondition {
     /// Operation succeeds only if the resource's current ETag matches.
     ///
     /// Used for "update if unchanged" semantics (optimistic concurrency).
@@ -90,7 +90,7 @@ pub enum ETagCondition {
     IfNoneMatch(ETag),
 }
 
-impl ETagCondition {
+impl Precondition {
     /// Creates an If-Match condition.
     ///
     /// The operation succeeds only if the resource's current ETag matches the given value.
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn if_match_accessors() {
         let etag = ETag::new("abc123");
-        let condition = ETagCondition::if_match(etag.clone());
+        let condition = Precondition::if_match(etag.clone());
 
         assert!(condition.is_if_match());
         assert!(!condition.is_if_none_match());
@@ -152,7 +152,7 @@ mod tests {
     #[test]
     fn if_none_match_accessors() {
         let etag = ETag::new("*");
-        let condition = ETagCondition::if_none_match(etag.clone());
+        let condition = Precondition::if_none_match(etag.clone());
 
         assert!(!condition.is_if_match());
         assert!(condition.is_if_none_match());
