@@ -26,7 +26,20 @@ if ($Deny) {
 }
 
 $cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
-Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
+$requiredVersion = $cargoAuditVersionParams[1]
+$installedVersion = $null
+$cargoAuditCmd = (Get-Command cargo-audit -ErrorAction SilentlyContinue)
+if ($cargoAuditCmd) {
+  $versionOutput = cargo audit --version 2>$null
+  if ($versionOutput -match '(\d+\.\d+\.\d+)') {
+    $installedVersion = $Matches[1]
+  }
+}
+if ($installedVersion -ne $requiredVersion) {
+  Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
+} else {
+  Write-Host "cargo-audit $requiredVersion is already installed, skipping install."
+}
 Invoke-LoggedCommand "cargo audit" -GroupOutput
 
 Invoke-LoggedCommand "cargo check --package azure_core --all-features --all-targets --keep-going" -GroupOutput
