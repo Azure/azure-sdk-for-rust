@@ -1181,7 +1181,7 @@ mod tests {
     fn serialization_roundtrip() {
         let status = CosmosStatus::new_with_sub_status(StatusCode::TooManyRequests, 3200);
         let json = serde_json::to_string(&status).unwrap();
-        assert!(json.contains("\"status\":\"429/3200 (RUBudgetExceeded)\""));
+        assert_eq!(json, r#"{"status":"429/3200 (RUBudgetExceeded)"}"#);
 
         let deserialized: CosmosStatus = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized, status);
@@ -1191,7 +1191,7 @@ mod tests {
     fn serialization_without_sub_status() {
         let status = CosmosStatus::new(StatusCode::Ok);
         let json = serde_json::to_string(&status).unwrap();
-        assert!(json.contains("\"status\":\"200\""));
+        assert_eq!(json, r#"{"status":"200"}"#);
     }
 
     #[test]

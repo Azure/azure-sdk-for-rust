@@ -832,6 +832,22 @@ impl SystemUsageSnapshot {
             cpu_overloaded: history.is_cpu_overloaded(),
         }
     }
+
+    /// Creates a snapshot with fixed, deterministic values for testing.
+    #[cfg(test)]
+    fn new_for_test(
+        cpu: String,
+        memory_available_mb: Option<u64>,
+        processor_count: usize,
+        cpu_overloaded: bool,
+    ) -> Self {
+        Self {
+            cpu,
+            memory_available_mb,
+            processor_count,
+            cpu_overloaded,
+        }
+    }
 }
 
 /// Internal mutable builder for constructing a [`DiagnosticsContext`].
@@ -866,6 +882,10 @@ pub(crate) struct DiagnosticsContextBuilder {
 
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
+
+    /// Test-only override for system usage snapshot, bypassing the CPU monitor.
+    #[cfg(test)]
+    test_system_usage: Option<SystemUsageSnapshot>,
 }
 
 impl DiagnosticsContextBuilder {
@@ -879,6 +899,8 @@ impl DiagnosticsContextBuilder {
             options,
             cpu_monitor: None,
             machine_id: None,
+            #[cfg(test)]
+            test_system_usage: None,
         }
     }
 
@@ -1034,9 +1056,20 @@ impl DiagnosticsContextBuilder {
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
+            #[cfg(test)]
+            test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
             cached_json_summary: OnceLock::new(),
         }
+    }
+
+    /// Sets a pre-built system usage snapshot, bypassing the CPU monitor.
+    ///
+    /// This enables deterministic JSON output in tests by providing
+    /// fixed system usage values instead of reading live OS metrics.
+    #[cfg(test)]
+    fn set_test_system_usage(&mut self, snapshot: SystemUsageSnapshot) {
+        self.test_system_usage = Some(snapshot);
     }
 }
 
@@ -1092,6 +1125,10 @@ pub struct DiagnosticsContext {
 
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
+
+    /// Test-only override for system usage snapshot, bypassing the CPU monitor.
+    #[cfg(test)]
+    test_system_usage: Option<SystemUsageSnapshot>,
 
     /// Cached JSON string for detailed verbosity.
     cached_json_detailed: OnceLock<String>,
@@ -1198,9 +1235,18 @@ impl DiagnosticsContext {
         }
     }
 
+    /// Returns the system usage snapshot: test override if set, else captured from the CPU monitor.
+    fn resolve_system_usage(&self) -> Option<SystemUsageSnapshot> {
+        #[cfg(test)]
+        if let Some(snapshot) = &self.test_system_usage {
+            return Some(snapshot.clone());
+        }
+        self.cpu_monitor.as_ref().map(SystemUsageSnapshot::capture)
+    }
+
     fn compute_json_detailed(&self) -> String {
         let total_duration_ms = self.duration.as_millis() as u64;
-        let system_usage = self.cpu_monitor.as_ref().map(SystemUsageSnapshot::capture);
+        let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
             total_duration_ms,
@@ -1242,7 +1288,7 @@ impl DiagnosticsContext {
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
-            system_usage: self.cpu_monitor.as_ref().map(SystemUsageSnapshot::capture),
+            system_usage: self.resolve_system_usage(),
             machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
             payload: DiagnosticsPayload::Summary {
                 regions: region_summaries,
@@ -1281,6 +1327,8 @@ impl Clone for DiagnosticsContext {
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            #[cfg(test)]
+            test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
             // value into a fresh lock.
             cached_json_detailed: self
@@ -1447,6 +1495,77 @@ mod tests {
         }
     }
 
+    /// Normalizes dynamic fields in diagnostics JSON for deterministic comparison.
+    ///
+    /// Replaces `total_duration_ms` and per-request `duration_ms` values with `0`
+    /// so that tests can compare the full JSON structure without being affected
+    /// by wall-clock timing variations.
+    fn normalize_diagnostics_json(json: &str) -> serde_json::Value {
+        let mut value: serde_json::Value = serde_json::from_str(json)
+            .unwrap_or_else(|e| panic!("Failed to parse diagnostics JSON: {e}\nJSON: {json}"));
+
+        // Normalize top-level total_duration_ms
+        if let Some(obj) = value.as_object_mut() {
+            if obj.contains_key("total_duration_ms") {
+                obj.insert(
+                    "total_duration_ms".to_string(),
+                    serde_json::Value::Number(0.into()),
+                );
+            }
+        }
+
+        // Normalize duration_ms in individual requests (detailed mode)
+        if let Some(requests) = value.get_mut("requests").and_then(|v| v.as_array_mut()) {
+            for req in requests {
+                if let Some(obj) = req.as_object_mut() {
+                    if obj.contains_key("duration_ms") {
+                        obj.insert(
+                            "duration_ms".to_string(),
+                            serde_json::Value::Number(0.into()),
+                        );
+                    }
+                }
+            }
+        }
+
+        // Normalize duration_ms in region summaries (summary mode)
+        if let Some(regions) = value.get_mut("regions").and_then(|v| v.as_array_mut()) {
+            for region in regions {
+                // Normalize first/last request summaries
+                for key in &["first", "last"] {
+                    if let Some(summary) = region.get_mut(*key).and_then(|v| v.as_object_mut()) {
+                        if summary.contains_key("duration_ms") {
+                            summary.insert(
+                                "duration_ms".to_string(),
+                                serde_json::Value::Number(0.into()),
+                            );
+                        }
+                    }
+                }
+                // Normalize deduplicated groups
+                if let Some(groups) = region
+                    .get_mut("deduplicated_groups")
+                    .and_then(|v| v.as_array_mut())
+                {
+                    for group in groups {
+                        if let Some(obj) = group.as_object_mut() {
+                            for key in &["min_duration_ms", "max_duration_ms", "p50_duration_ms"] {
+                                if obj.contains_key(*key) {
+                                    obj.insert(
+                                        key.to_string(),
+                                        serde_json::Value::Number(0.into()),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        value
+    }
+
     #[test]
     fn builder_new_context_has_activity_id() {
         let activity_id = ActivityId::new_uuid();
@@ -1563,8 +1682,30 @@ mod tests {
         });
 
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-        assert!(json.contains("test-id"));
-        assert!(json.contains("westus2")); // Region serializes to normalized name
+        let actual = normalize_diagnostics_json(json);
+        let expected: serde_json::Value = serde_json::json!({
+            "activity_id": "test-id",
+            "total_duration_ms": 0,
+            "total_request_charge": 1.0,
+            "request_count": 1,
+            "requests": [{
+                "execution_context": "initial",
+                "pipeline_type": "data_plane",
+                "transport_security": "secure",
+                "region": "westus2",
+                "endpoint": "https://test.documents.azure.com",
+                "status": "200",
+                "request_charge": 1.0,
+                "activity_id": null,
+                "session_token": null,
+                "duration_ms": 0,
+                "events": [],
+                "timed_out": false,
+                "request_sent": "sent",
+                "error": null
+            }]
+        });
+        assert_eq!(actual, expected, "Detailed JSON mismatch.\nActual:\n{json}");
     }
 
     #[test]
@@ -1585,8 +1726,45 @@ mod tests {
         });
 
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Summary));
-        assert!(json.contains("test-id"));
-        assert!(json.contains("request_count"));
+        let actual = normalize_diagnostics_json(json);
+        let expected: serde_json::Value = serde_json::json!({
+            "activity_id": "test-id",
+            "total_duration_ms": 0,
+            "total_request_charge": 10.0,
+            "request_count": 5,
+            "regions": [{
+                "region": "westus2",
+                "request_count": 5,
+                "total_request_charge": 10.0,
+                "first": {
+                    "execution_context": "retry",
+                    "endpoint": "https://test.documents.azure.com",
+                    "status": "429",
+                    "request_charge": 0.0,
+                    "duration_ms": 0,
+                    "timed_out": false
+                },
+                "last": {
+                    "execution_context": "retry",
+                    "endpoint": "https://test.documents.azure.com",
+                    "status": "429",
+                    "request_charge": 4.0,
+                    "duration_ms": 0,
+                    "timed_out": false
+                },
+                "deduplicated_groups": [{
+                    "endpoint": "https://test.documents.azure.com",
+                    "status": "429",
+                    "execution_context": "retry",
+                    "count": 3,
+                    "total_request_charge": 6.0,
+                    "min_duration_ms": 0,
+                    "max_duration_ms": 0,
+                    "p50_duration_ms": 0
+                }]
+            }]
+        });
+        assert_eq!(actual, expected, "Summary JSON mismatch.\nActual:\n{json}");
     }
 
     #[test]
@@ -1836,67 +2014,105 @@ mod tests {
 
     #[test]
     fn json_without_system_info_omits_fields() {
-        // When no cpu_monitor or machine_id is set, the JSON should not contain those keys.
-        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.set_operation_status(StatusCode::Ok, None);
-        });
-        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-        assert!(
-            !json.contains("system_usage"),
-            "Expected no system_usage when monitor is not set"
+        // When no cpu_monitor or machine_id is set, the JSON should not contain those keys
+        // (validated by skip_serializing_if on both optional fields).
+        let ctx = make_context_with(
+            ActivityId::from_string("test-no-system-info".to_string()),
+            |builder| {
+                builder.set_operation_status(StatusCode::Ok, None);
+            },
         );
-        assert!(
-            !json.contains("machine_id"),
-            "Expected no machine_id when not set"
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let actual = normalize_diagnostics_json(json);
+        let expected: serde_json::Value = serde_json::json!({
+            "activity_id": "test-no-system-info",
+            "total_duration_ms": 0,
+            "total_request_charge": 0.0,
+            "request_count": 0,
+            "requests": []
+        });
+        assert_eq!(
+            actual, expected,
+            "JSON without system info mismatch.\nActual:\n{json}"
         );
     }
 
     #[test]
     fn json_with_machine_id() {
-        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("test-machine-id".to_string()),
+            make_options(),
+        );
         builder.set_operation_status(StatusCode::Ok, None);
         builder.set_machine_id(Arc::new("vmId_test-vm-123".to_string()));
         let ctx = builder.complete();
 
+        // Detailed mode
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-        assert!(
-            json.contains("\"machine_id\":\"vmId_test-vm-123\""),
-            "Expected machine_id in JSON, got: {json}"
+        let actual = normalize_diagnostics_json(json);
+        let expected: serde_json::Value = serde_json::json!({
+            "activity_id": "test-machine-id",
+            "total_duration_ms": 0,
+            "total_request_charge": 0.0,
+            "request_count": 0,
+            "machine_id": "vmId_test-vm-123",
+            "requests": []
+        });
+        assert_eq!(
+            actual, expected,
+            "Detailed JSON with machine_id mismatch.\nActual:\n{json}"
         );
 
-        // Also in summary mode
+        // Summary mode
         let json_summary = ctx.to_json_string(Some(DiagnosticsVerbosity::Summary));
-        assert!(
-            json_summary.contains("\"machine_id\":\"vmId_test-vm-123\""),
-            "Expected machine_id in summary JSON, got: {json_summary}"
+        let actual_summary = normalize_diagnostics_json(json_summary);
+        let expected_summary: serde_json::Value = serde_json::json!({
+            "activity_id": "test-machine-id",
+            "total_duration_ms": 0,
+            "total_request_charge": 0.0,
+            "request_count": 0,
+            "machine_id": "vmId_test-vm-123",
+            "regions": []
+        });
+        assert_eq!(
+            actual_summary, expected_summary,
+            "Summary JSON with machine_id mismatch.\nActual:\n{json_summary}"
         );
     }
 
     #[test]
     fn json_with_system_usage() {
-        use crate::system::CpuMemoryMonitor;
-
-        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("test-system-usage".to_string()),
+            make_options(),
+        );
         builder.set_operation_status(StatusCode::Ok, None);
-        builder.set_cpu_monitor(CpuMemoryMonitor::get_or_init(Duration::from_secs(5)));
+        builder.set_test_system_usage(SystemUsageSnapshot::new_for_test(
+            "(50.0%), (60.0%)".to_string(),
+            Some(4096),
+            4,
+            false,
+        ));
         let ctx = builder.complete();
 
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-        assert!(
-            json.contains("\"system_usage\""),
-            "Expected system_usage in JSON, got: {json}"
-        );
-        assert!(
-            json.contains("\"processor_count\""),
-            "Expected processor_count in system_usage, got: {json}"
-        );
-        assert!(
-            json.contains("\"cpu\""),
-            "Expected cpu field in system_usage, got: {json}"
-        );
-        assert!(
-            json.contains("\"cpu_overloaded\""),
-            "Expected cpu_overloaded field in system_usage, got: {json}"
+        let actual = normalize_diagnostics_json(json);
+        let expected: serde_json::Value = serde_json::json!({
+            "activity_id": "test-system-usage",
+            "total_duration_ms": 0,
+            "total_request_charge": 0.0,
+            "request_count": 0,
+            "system_usage": {
+                "cpu": "(50.0%), (60.0%)",
+                "memory_available_mb": 4096,
+                "processor_count": 4,
+                "cpu_overloaded": false
+            },
+            "requests": []
+        });
+        assert_eq!(
+            actual, expected,
+            "JSON with system_usage mismatch.\nActual:\n{json}"
         );
     }
 

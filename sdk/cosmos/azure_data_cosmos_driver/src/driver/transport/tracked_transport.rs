@@ -145,10 +145,7 @@ mod tests {
         // DataConversion can happen during request serialization (not sent)
         // or response deserialization (sent), so the status is ambiguous.
         let err = azure_core::Error::new(ErrorKind::DataConversion, "serialization failed");
-        assert_eq!(
-            infer_request_sent_status(&err),
-            RequestSentStatus::Unknown
-        );
+        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 
     #[test]
