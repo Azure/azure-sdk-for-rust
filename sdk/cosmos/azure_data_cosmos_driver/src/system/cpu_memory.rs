@@ -982,4 +982,76 @@ mod tests {
         // Both should point to the same inner
         assert!(Arc::ptr_eq(&monitor1.inner, &monitor2.inner));
     }
+
+    // ---- Platform-specific tests exercising real OS APIs ----
+
+    #[test]
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+    fn read_available_memory_mb_platform_returns_value() {
+        let mb = read_available_memory_mb_platform();
+        assert!(
+            mb.is_some(),
+            "read_available_memory_mb_platform() should return Some on this OS"
+        );
+        assert!(
+            mb.unwrap() > 0,
+            "available memory should be greater than 0 MB"
+        );
+    }
+
+    #[test]
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+    fn read_cpu_usage_platform_returns_value_on_second_call() {
+        // First call primes the static tick counters and may return None.
+        let _ = read_cpu_usage_platform();
+
+        // Let OS tick counters advance.
+        std::thread::sleep(Duration::from_millis(200));
+
+        let cpu = read_cpu_usage_platform();
+        assert!(
+            cpu.is_some(),
+            "read_cpu_usage_platform() should return Some on the second call"
+        );
+        let pct = cpu.unwrap();
+        assert!(
+            (0.0..=100.0).contains(&pct),
+            "CPU usage should be in 0..=100, got {pct}"
+        );
+    }
+
+    #[test]
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+    fn read_available_memory_mb_wrapper_returns_value() {
+        let mb = read_available_memory_mb();
+        assert!(
+            mb.is_some(),
+            "read_available_memory_mb() wrapper should return Some on this OS"
+        );
+        assert!(
+            mb.unwrap() > 0,
+            "available memory should be greater than 0 MB"
+        );
+    }
+
+    #[test]
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+    fn read_cpu_usage_wrapper_returns_value_on_second_call() {
+        // First call primes the static tick counters and may return None.
+        let _ = read_cpu_usage();
+
+        // Let OS tick counters advance.
+        std::thread::sleep(Duration::from_millis(200));
+
+        let cpu = read_cpu_usage();
+        assert!(
+            cpu.is_some(),
+            "read_cpu_usage() wrapper should return Some on the second call"
+        );
+        let pct = cpu.unwrap();
+        assert!(
+            (0.0..=100.0).contains(&pct),
+            "CPU usage should be in 0..=100, got {pct}"
+        );
+    }
 }
