@@ -17,6 +17,104 @@ use std::{
 #[cfg(target_os = "linux")]
 use std::fs;
 
+/// Raw Mach kernel FFI bindings for macOS CPU and memory monitoring.
+///
+/// These declarations mirror the subset of `<mach/mach.h>` needed to call
+/// `host_statistics` (CPU load) and `host_statistics64` (VM stats). Using
+/// inline `extern "C"` avoids adding a crate dependency (e.g., `mach2`).
+#[cfg(target_os = "macos")]
+mod mach_ffi {
+    // Mach types used by the host_statistics family of calls.
+    pub type MachPort = u32;
+    pub type KernReturn = i32;
+    pub type HostFlavor = i32;
+    pub type MachMsgType = u32;
+    pub type NaturalT = u32;
+    pub type VmSize = usize;
+
+    /// Successful Mach kernel return code.
+    pub const KERN_SUCCESS: KernReturn = 0;
+
+    // host_statistics flavors.
+    pub const HOST_CPU_LOAD_INFO: HostFlavor = 3;
+    pub const HOST_VM_INFO64: HostFlavor = 4;
+
+    /// Number of `natural_t` values in [`HostCpuLoadInfo`].
+    pub const HOST_CPU_LOAD_INFO_COUNT: MachMsgType =
+        (std::mem::size_of::<HostCpuLoadInfo>() / std::mem::size_of::<NaturalT>()) as MachMsgType;
+
+    /// Number of `natural_t` values in [`VmStatistics64`].
+    pub const HOST_VM_INFO64_COUNT: MachMsgType =
+        (std::mem::size_of::<VmStatistics64>() / std::mem::size_of::<NaturalT>()) as MachMsgType;
+
+    /// Per-CPU-state tick counts returned by `HOST_CPU_LOAD_INFO`.
+    /// Indices: 0 = user, 1 = system, 2 = idle, 3 = nice.
+    #[repr(C)]
+    #[derive(Debug, Default, Clone, Copy)]
+    pub struct HostCpuLoadInfo {
+        pub cpu_ticks: [NaturalT; 4],
+    }
+
+    /// 64-bit virtual-memory statistics returned by `HOST_VM_INFO64`.
+    ///
+    /// Only the fields we need (`free_count`, `inactive_count`,
+    /// `purgeable_count`) are named; the rest are padding. The full
+    /// struct is 172 bytes on arm64 / 168 on x86_64; we declare it at
+    /// the maximum size to be safe.
+    #[repr(C)]
+    #[derive(Debug, Clone, Copy)]
+    pub struct VmStatistics64 {
+        pub free_count: NaturalT,
+        pub active_count: NaturalT,
+        pub inactive_count: NaturalT,
+        pub wire_count: NaturalT,
+        pub zero_fill_count: u64,
+        pub reactivations: u64,
+        pub pageins: u64,
+        pub pageouts: u64,
+        pub faults: u64,
+        pub cow_faults: u64,
+        pub lookups: u64,
+        pub hits: u64,
+        pub purges: u64,
+        pub purgeable_count: NaturalT,
+        // Remaining fields are unused; the struct is sized correctly by
+        // HOST_VM_INFO64_COUNT so the kernel writes the right amount.
+        _pad: [u8; 100],
+    }
+
+    impl Default for VmStatistics64 {
+        fn default() -> Self {
+            // SAFETY: All fields are integers or byte arrays; zeroed is valid.
+            unsafe { std::mem::zeroed() }
+        }
+    }
+
+    extern "C" {
+        /// Returns the host port for the current task.
+        pub fn mach_host_self() -> MachPort;
+
+        /// Retrieves 32-bit host statistics (used for CPU load info).
+        pub fn host_statistics(
+            host: MachPort,
+            flavor: HostFlavor,
+            info: *mut NaturalT,
+            count: *mut MachMsgType,
+        ) -> KernReturn;
+
+        /// Retrieves 64-bit host statistics (used for VM info).
+        pub fn host_statistics64(
+            host: MachPort,
+            flavor: HostFlavor,
+            info: *mut NaturalT,
+            count: *mut MachMsgType,
+        ) -> KernReturn;
+
+        /// Returns the VM page size.
+        pub fn vm_page_size() -> VmSize;
+    }
+}
+
 /// Default interval between CPU/memory samples (5 seconds).
 const DEFAULT_REFRESH_INTERVAL: Duration = Duration::from_secs(5);
 
@@ -152,8 +250,8 @@ pub(crate) struct SystemSample {
     pub(crate) timestamp: Instant,
     /// CPU usage percentage, if available.
     pub(crate) cpu: Option<CpuUsage>,
-    /// Available memory in megabytes.
-    pub(crate) available_mb: u64,
+    /// Available memory in megabytes, if available.
+    pub(crate) available_mb: Option<u64>,
 }
 
 /// Historical CPU and memory usage data.
@@ -199,7 +297,7 @@ impl CpuMemoryHistory {
 
     /// Returns the most recent available memory in megabytes, if any sample exists.
     pub(crate) fn latest_memory_mb(&self) -> Option<u64> {
-        self.samples.last().map(|s| s.available_mb)
+        self.samples.last().and_then(|s| s.available_mb)
     }
 
     /// Returns `true` if there appears to be scheduling delays.
@@ -390,8 +488,43 @@ impl CpuMemoryMonitorInner {
     }
 }
 
+/// Maximum consecutive CPU read failures before permanently disabling CPU monitoring.
+/// At the default 5-second refresh interval, 12 failures = 1 minute.
+const MAX_CONSECUTIVE_CPU_READ_FAILURES: u32 = 12;
+
+/// Tracks consecutive CPU read failures across all platforms.
+static CONSECUTIVE_CPU_READ_FAILURES: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(0);
+
 /// Reads the current system-wide CPU usage as a percentage (0.0 to 100.0).
+///
+/// Tracks consecutive failures and permanently stops attempting reads after
+/// [`MAX_CONSECUTIVE_CPU_READ_FAILURES`] consecutive failures (10 minutes
+/// at the default 5-second refresh interval). A successful read resets the
+/// failure counter.
 fn read_cpu_usage() -> Option<f64> {
+    use std::sync::atomic::Ordering;
+
+    if CONSECUTIVE_CPU_READ_FAILURES.load(Ordering::Relaxed) >= MAX_CONSECUTIVE_CPU_READ_FAILURES {
+        return None;
+    }
+
+    let result = read_cpu_usage_platform();
+
+    match result {
+        Some(_) => {
+            CONSECUTIVE_CPU_READ_FAILURES.store(0, Ordering::Relaxed);
+        }
+        None => {
+            CONSECUTIVE_CPU_READ_FAILURES.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    result
+}
+
+/// Platform-specific CPU usage reading dispatched by target OS.
+fn read_cpu_usage_platform() -> Option<f64> {
     #[cfg(target_os = "linux")]
     {
         read_cpu_usage_linux()
@@ -402,7 +535,12 @@ fn read_cpu_usage() -> Option<f64> {
         read_cpu_usage_windows()
     }
 
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    #[cfg(target_os = "macos")]
+    {
+        read_cpu_usage_macos()
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
     {
         None
     }
@@ -505,8 +643,102 @@ fn read_cpu_usage_windows() -> Option<f64> {
     Some(usage.clamp(0.0, 100.0))
 }
 
+/// Reads CPU usage on macOS via the Mach `host_statistics` API.
+///
+/// Computes the delta of per-state CPU ticks between successive calls
+/// (user + system + nice = busy, idle = idle) and returns the busy
+/// fraction as a percentage.
+#[cfg(target_os = "macos")]
+fn read_cpu_usage_macos() -> Option<f64> {
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static PREV_BUSY: AtomicU64 = AtomicU64::new(0);
+    static PREV_TOTAL: AtomicU64 = AtomicU64::new(0);
+
+    let mut info = mach_ffi::HostCpuLoadInfo::default();
+    let mut count = mach_ffi::HOST_CPU_LOAD_INFO_COUNT;
+
+    // SAFETY: `info` is a stack-allocated, correctly-sized HostCpuLoadInfo.
+    // `host_statistics` writes `count` natural_t values into the pointer.
+    let kr = unsafe {
+        mach_ffi::host_statistics(
+            mach_ffi::mach_host_self(),
+            mach_ffi::HOST_CPU_LOAD_INFO,
+            &mut info as *mut mach_ffi::HostCpuLoadInfo as *mut mach_ffi::NaturalT,
+            &mut count,
+        )
+    };
+
+    if kr != mach_ffi::KERN_SUCCESS {
+        return None;
+    }
+
+    let user = u64::from(info.cpu_ticks[0]);
+    let system = u64::from(info.cpu_ticks[1]);
+    let idle = u64::from(info.cpu_ticks[2]);
+    let nice = u64::from(info.cpu_ticks[3]);
+
+    let busy = user + system + nice;
+    let total = busy + idle;
+
+    let prev_busy = PREV_BUSY.swap(busy, Ordering::Relaxed);
+    let prev_total = PREV_TOTAL.swap(total, Ordering::Relaxed);
+
+    // First reading — no previous sample to compare against.
+    if prev_total == 0 {
+        return None;
+    }
+
+    let busy_delta = busy.saturating_sub(prev_busy);
+    let total_delta = total.saturating_sub(prev_total);
+
+    if total_delta == 0 {
+        return Some(0.0);
+    }
+
+    let usage = 100.0 * (busy_delta as f64 / total_delta as f64);
+    Some(usage.clamp(0.0, 100.0))
+}
+
+/// Maximum consecutive memory read failures before permanently disabling memory monitoring.
+/// At the default 5-second refresh interval, 12 failures = 1 minute.
+const MAX_CONSECUTIVE_MEMORY_READ_FAILURES: u32 = 12;
+
+/// Tracks consecutive memory read failures across all platforms.
+static CONSECUTIVE_MEMORY_READ_FAILURES: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(0);
+
 /// Reads the available system memory in megabytes.
-fn read_available_memory_mb() -> u64 {
+///
+/// Tracks consecutive failures and permanently stops attempting reads after
+/// [`MAX_CONSECUTIVE_MEMORY_READ_FAILURES`] consecutive failures (1 minute
+/// at the default 5-second refresh interval). A successful read resets the
+/// failure counter.
+fn read_available_memory_mb() -> Option<u64> {
+    use std::sync::atomic::Ordering;
+
+    if CONSECUTIVE_MEMORY_READ_FAILURES.load(Ordering::Relaxed)
+        >= MAX_CONSECUTIVE_MEMORY_READ_FAILURES
+    {
+        return None;
+    }
+
+    let result = read_available_memory_mb_platform();
+
+    match result {
+        Some(_) => {
+            CONSECUTIVE_MEMORY_READ_FAILURES.store(0, Ordering::Relaxed);
+        }
+        None => {
+            CONSECUTIVE_MEMORY_READ_FAILURES.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    result
+}
+
+/// Platform-specific memory reading dispatched by target OS.
+fn read_available_memory_mb_platform() -> Option<u64> {
     #[cfg(target_os = "linux")]
     {
         read_available_memory_linux()
@@ -517,36 +749,38 @@ fn read_available_memory_mb() -> u64 {
         read_available_memory_windows()
     }
 
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    #[cfg(target_os = "macos")]
     {
-        0
+        read_available_memory_macos()
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
+    {
+        None
     }
 }
 
 #[cfg(target_os = "linux")]
-fn read_available_memory_linux() -> u64 {
+fn read_available_memory_linux() -> Option<u64> {
     // Read /proc/meminfo for MemAvailable
-    let content = match fs::read_to_string("/proc/meminfo") {
-        Ok(c) => c,
-        Err(_) => return 0,
-    };
+    let content = fs::read_to_string("/proc/meminfo").ok()?;
 
     for line in content.lines() {
         if line.starts_with("MemAvailable:") {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if let Some(kb_str) = parts.get(1) {
                 if let Ok(kb) = kb_str.parse::<u64>() {
-                    return kb / 1024; // Convert KB to MB
+                    return Some(kb / 1024); // Convert KB to MB
                 }
             }
         }
     }
 
-    0
+    None
 }
 
 #[cfg(target_os = "windows")]
-fn read_available_memory_windows() -> u64 {
+fn read_available_memory_windows() -> Option<u64> {
     use windows::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
 
     let mut mem_info = MEMORYSTATUSEX {
@@ -566,10 +800,45 @@ fn read_available_memory_windows() -> u64 {
     let ok = unsafe { GlobalMemoryStatusEx(&mut mem_info) };
 
     if ok.is_err() {
-        return 0;
+        return None;
     }
 
-    mem_info.ullAvailPhys / (1024 * 1024)
+    Some(mem_info.ullAvailPhys / (1024 * 1024))
+}
+
+/// Reads available memory on macOS via the Mach `host_statistics64` API.
+///
+/// Computes available memory as `(free + inactive + purgeable) * page_size`,
+/// which matches what macOS Activity Monitor reports as "Memory Available".
+#[cfg(target_os = "macos")]
+fn read_available_memory_macos() -> Option<u64> {
+    let mut info = mach_ffi::VmStatistics64::default();
+    let mut count = mach_ffi::HOST_VM_INFO64_COUNT;
+
+    // SAFETY: `info` is a stack-allocated, correctly-sized VmStatistics64.
+    // `host_statistics64` writes `count` natural_t values into the pointer.
+    let kr = unsafe {
+        mach_ffi::host_statistics64(
+            mach_ffi::mach_host_self(),
+            mach_ffi::HOST_VM_INFO64,
+            &mut info as *mut mach_ffi::VmStatistics64 as *mut mach_ffi::NaturalT,
+            &mut count,
+        )
+    };
+
+    if kr != mach_ffi::KERN_SUCCESS {
+        return None;
+    }
+
+    // SAFETY: `vm_page_size` returns the kernel page size (always a valid usize).
+    let page_size = unsafe { mach_ffi::vm_page_size() } as u64;
+
+    let free = u64::from(info.free_count);
+    let inactive = u64::from(info.inactive_count);
+    let purgeable = u64::from(info.purgeable_count);
+
+    let available_bytes = (free + inactive + purgeable) * page_size;
+    Some(available_bytes / (1024 * 1024))
 }
 
 #[cfg(test)]
@@ -670,12 +939,12 @@ mod tests {
         let a = SystemSample {
             timestamp: t,
             cpu: Some(CpuUsage::new(42.5)),
-            available_mb: 1024,
+            available_mb: Some(1024),
         };
         let b = SystemSample {
             timestamp: t,
             cpu: Some(CpuUsage::new(42.5)),
-            available_mb: 1024,
+            available_mb: Some(1024),
         };
         assert_eq!(a, b);
     }
@@ -696,7 +965,7 @@ mod tests {
             samples: vec![SystemSample {
                 timestamp: Instant::now(),
                 cpu: Some(CpuUsage::new(95.0)),
-                available_mb: 1024,
+                available_mb: Some(1024),
             }],
             refresh_interval: DEFAULT_REFRESH_INTERVAL,
         };
