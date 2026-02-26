@@ -143,6 +143,15 @@ impl FaultClient {
             }
         }
 
+        // Check for custom response first (takes precedence over error injection)
+        if let Some(ref custom) = server_error.custom_response {
+            return Some(Ok(AsyncRawResponse::from_bytes(
+                custom.status_code,
+                custom.headers.clone(),
+                custom.body.clone(),
+            )));
+        }
+
         // Generate the appropriate error based on error type
         let error_type = match server_error.error_type {
             Some(et) => et,
@@ -294,13 +303,13 @@ mod tests {
     use super::FaultClient;
     use crate::constants::{SubStatusCode, SUB_STATUS};
     use crate::fault_injection::{
-        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
-        FaultInjectionRuleBuilder, FaultOperationType,
+        CustomResponse, FaultInjectionConditionBuilder, FaultInjectionErrorType,
+        FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::regions;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
-    use azure_core::http::{AsyncRawResponse, HttpClient, Method, Request, Url};
+    use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Method, Request, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
@@ -714,6 +723,32 @@ mod tests {
             &ErrorKind::Io,
             "response timeout should have Io ErrorKind"
         );
+        assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn execute_request_with_custom_response() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let body = b"{\"id\": \"test-account\"}".to_vec();
+        let result = FaultInjectionResultBuilder::new()
+            .with_custom_response(CustomResponse {
+                status_code: azure_core::http::StatusCode::Ok,
+                headers: Headers::new(),
+                body: body.clone(),
+            })
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let response = fault_client.execute_request(&request).await;
+        assert!(response.is_ok(), "custom response should succeed");
+
+        let raw = response.unwrap();
+        assert_eq!(raw.status(), azure_core::http::StatusCode::Ok);
+        // Request should NOT be forwarded to inner client
         assert_eq!(mock_client.call_count(), 0);
     }
 }

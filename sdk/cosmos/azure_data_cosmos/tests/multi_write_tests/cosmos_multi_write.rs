@@ -65,9 +65,9 @@ fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
         .collect()
 }
 
-// Helper to avoid duplicating the same preferred-locations setup.
-fn options_with_preferred_locations(locations: Vec<RegionName>) -> TestOptions {
-    TestOptions::new().with_client_preferred_regions(locations)
+// Helper to avoid duplicating the same application region setup.
+fn options_with_application_region(region: RegionName) -> TestOptions {
+    TestOptions::new().with_client_application_region(region)
 }
 
 async fn create_container_and_write_item(
@@ -128,10 +128,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
             )
             .await
         },
-        Some(options_with_preferred_locations(vec![
-            HUB_REGION.into(),
-            SATELLITE_REGION.into(),
-        ])),
+        Some(options_with_application_region(HUB_REGION)),
     )
     .await?;
 
@@ -173,10 +170,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
             )
             .await
         },
-        Some(options_with_preferred_locations(vec![
-            SATELLITE_REGION.into(),
-            HUB_REGION.into(),
-        ])),
+        Some(options_with_application_region(SATELLITE_REGION)),
     )
     .await?;
 

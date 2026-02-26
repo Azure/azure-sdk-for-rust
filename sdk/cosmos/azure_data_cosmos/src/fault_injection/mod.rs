@@ -105,7 +105,7 @@ use crate::resource_context::ResourceType;
 
 pub use client_builder::FaultInjectionClientBuilder;
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
-pub use result::{FaultInjectionResult, FaultInjectionResultBuilder};
+pub use result::{CustomResponse, FaultInjectionResult, FaultInjectionResultBuilder};
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
 /// Represents different server error types that can be injected for fault testing.
