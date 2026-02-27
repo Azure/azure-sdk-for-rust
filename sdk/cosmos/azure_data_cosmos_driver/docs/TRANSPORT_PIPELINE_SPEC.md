@@ -67,7 +67,7 @@ eventually live in `azure_data_cosmos_driver`. The goal is:
 │  │                          OPERATION PIPELINE                           │  │
 │  │                                                                       │  │
 │  │  Responsibilities:                                                    │  │
-│  │  ┌─ Region selection (GlobalEndpointManager)                          │  │
+│  │  ┌─ Region selection (AccountEndpointState + resolve_endpoint)        │  │
 │  │  ├─ Hedging (parallel speculative execution in secondary region)      │  │
 │  │  ├─ Cross-region failover (503/WriteForbidden/SessionNotAvailable)    │  │
 │  │  ├─ 403.3 recovery (refresh AccountMetadataCache, rate-limited)       │  │
@@ -310,11 +310,12 @@ Each stage is a function with an explicit, narrow signature:
 
 ```rust
 // SYSTEM: Resolve which endpoint to send this attempt to.
+// Pure function over immutable state snapshots — no manager references.
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
-    endpoint_manager: &GlobalEndpointManager,
-    partition_manager: &GlobalPartitionEndpointManager,
+    account_state: &AccountEndpointState,
+    partition_state: &PartitionEndpointState,
 ) -> RoutingDecision;
 
 // SYSTEM: Decide what to do after a transport attempt completes.
@@ -363,6 +364,8 @@ pub(crate) enum OperationAction {
     /// Mark partition unavailable and retry with partition-level override.
     PartitionFailover {
         new_state: OperationRetryState,
+        /// Identifies the partition + region to mark unavailable.
+        unavailable_partition: UnavailablePartition,
     },
     /// Start a hedged attempt in a secondary region.
     Hedge {
@@ -397,22 +400,30 @@ The operation pipeline orchestrates attempts across regions. It is the replaceme
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptions,
-    endpoint_manager: &GlobalEndpointManager,
-    partition_manager: &GlobalPartitionEndpointManager,
+    account_state_store: &AccountEndpointStateStore,
+    partition_state_store: &PartitionEndpointStateStore,
     transport: &TransportPipeline,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> Result<CosmosResponse> {
-    let mut retry_state = OperationRetryState::initial(operation, options, endpoint_manager);
+    let mut retry_state = OperationRetryState::initial(
+        operation, options, &account_state_store.snapshot(),
+    );
     let mut session_state = SessionState::from_operation(operation, options);
     let deadline = options.e2e_deadline();
 
     loop {
+        // Acquire immutable snapshots of endpoint state for this attempt.
+        // Each snapshot is an Arc clone — cheap, lock-free, and stable
+        // for the lifetime of the attempt.
+        let account_state = account_state_store.snapshot();
+        let partition_state = partition_state_store.snapshot();
+
         // STAGE 1: Resolve endpoint for this attempt
         let routing = resolve_endpoint(
             operation,
             &retry_state,
-            endpoint_manager,
-            partition_manager,
+            &account_state,
+            &partition_state,
         );
 
         // STAGE 2: Build transport request
@@ -449,8 +460,14 @@ pub(crate) async fn execute_operation_pipeline(
             OperationAction::SessionRetry { new_state } => {
                 retry_state = new_state;
             }
-            OperationAction::PartitionFailover { new_state } => {
-                partition_manager.mark_partition_unavailable(/* ... */);
+            OperationAction::PartitionFailover { new_state, unavailable_partition } => {
+                // SYSTEM: Apply partition failure — produces a new
+                // PartitionEndpointState snapshot and swaps it into the store.
+                let new_partition_state = mark_partition_unavailable(
+                    &partition_state,
+                    &unavailable_partition,
+                );
+                partition_state_store.swap(new_partition_state);
                 retry_state = new_state;
             }
             OperationAction::Hedge { secondary_routing } => {
@@ -652,33 +669,64 @@ fn evaluate_operation_retry(
 }
 ```
 
-### 4.4 GlobalEndpointManager & LocationCache
+### 4.4 Account Endpoint State & Routing Systems
 
-These are moved from `azure_data_cosmos` into `azure_data_cosmos_driver` (under
-`driver/routing/`). The design remains similar but the mutable `LocationCache` behind a `Mutex`
-gets replaced with an immutable-swap pattern:
+Following the DOP principle, the account-level endpoint routing is split into:
+
+- **Data (Component)**: `AccountEndpointState` — an immutable snapshot of everything the
+  routing system needs to pick an endpoint. Replaced atomically on refresh.
+- **Store (Infrastructure)**: `AccountEndpointStateStore` — a thin `RwLock<Arc<_>>` wrapper
+  that provides thread-safe snapshot access and atomic swap.
+- **Systems (Behavior)**: Pure functions that read state and produce `RoutingDecision`s, or
+  take old state + an event and produce new state.
 
 ```rust
-/// Thread-safe endpoint routing. Uses RwLock with immutable snapshots.
-pub(crate) struct GlobalEndpointManager {
-    /// Current snapshot of location info. Replaced atomically on refresh.
-    locations: RwLock<Arc<LocationSnapshot>>,
-    /// Account properties cache — uses the existing `AccountMetadataCache`
-    /// from `driver/cache/account_metadata_cache.rs` rather than a new
-    /// `AsyncCache` instance. This ensures a single source of truth for
-    /// account metadata across the driver.
-    account_cache: AccountMetadataCache,
-    /// Default (hub) endpoint.
-    default_endpoint: Url,
+/// COMPONENT: Immutable snapshot of all account-level endpoint routing state.
+///
+/// Created from `AccountProperties` (fetched via `AccountMetadataCache`).
+/// Replaced as a whole when account properties refresh — never mutated
+/// in place. The operation pipeline clones an `Arc<AccountEndpointState>`
+/// at the start of each attempt, giving it a stable view for the duration
+/// of that attempt.
+#[derive(Clone, Debug)]
+pub(crate) struct AccountEndpointState {
+    /// Ordered list of endpoints preferred for read operations, based on
+    /// the account's configured preferred locations and available regions.
+    pub preferred_read_endpoints: Vec<CosmosEndpoint>,
+    /// Ordered list of endpoints preferred for write operations.
+    pub preferred_write_endpoints: Vec<CosmosEndpoint>,
+    /// Endpoints currently marked as unavailable, with the time they were
+    /// marked and the reason. Used by `resolve_endpoint` to skip bad
+    /// endpoints without mutating the snapshot.
+    pub unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
+    /// Whether the account has multiple write regions enabled.
+    pub multiple_write_locations_enabled: bool,
+    /// The raw account properties from the last metadata fetch.
+    pub account_properties: AccountProperties,
+    /// Default (hub) endpoint — used as fallback when all regional
+    /// endpoints are unavailable.
+    pub default_endpoint: CosmosEndpoint,
 }
 
-/// Immutable snapshot of all location routing state.
-/// Replaced as a whole when account properties refresh.
-struct LocationSnapshot {
-    preferred_read_endpoints: Vec<CosmosEndpoint>,
-    preferred_write_endpoints: Vec<CosmosEndpoint>,
-    unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
-    account_properties: AccountProperties,
+/// Thread-safe holder for the current `AccountEndpointState` snapshot.
+///
+/// Read path: clone the `Arc` (lock-free via `RwLock::read`).
+/// Write path: build a new `AccountEndpointState`, take the write lock,
+/// and swap the `Arc`.
+pub(crate) struct AccountEndpointStateStore {
+    state: RwLock<Arc<AccountEndpointState>>,
+}
+
+impl AccountEndpointStateStore {
+    /// Get a cheap clone of the current snapshot.
+    pub fn snapshot(&self) -> Arc<AccountEndpointState> {
+        Arc::clone(&self.state.read())
+    }
+
+    /// Atomically replace the current snapshot.
+    pub fn swap(&self, new_state: AccountEndpointState) {
+        *self.state.write() = Arc::new(new_state);
+    }
 }
 
 /// A Cosmos DB service endpoint: region name, URL, and whether
@@ -710,17 +758,168 @@ pub(crate) enum EndpointKind {
 }
 ```
 
-**Key difference from current design**: Instead of mutating fields on `LocationCache` behind a
-`Mutex`, we create a new `LocationSnapshot` and swap it atomically via `RwLock<Arc<_>>`.
-This makes the read path lock-free (clone the `Arc`) and mutations are serialized through the
-write lock with snapshot replacement.
+**Systems (pure functions) operating on `AccountEndpointState`**:
 
-### 4.5 GlobalPartitionEndpointManager
+```rust
+// SYSTEM: Build an initial AccountEndpointState from account properties.
+// Called at client init and on background metadata refresh.
+fn build_account_endpoint_state(
+    properties: &AccountProperties,
+    preferred_locations: &[RegionName],
+    default_endpoint: CosmosEndpoint,
+) -> AccountEndpointState;
 
-Moved from `azure_data_cosmos`. Same circuit-breaker logic with per-partition failover tracking.
-Background failback loop via `BackgroundTaskManager`.
+// SYSTEM: Produce a new state with an endpoint marked unavailable.
+// The old state is not mutated — a new snapshot is returned.
+fn mark_endpoint_unavailable(
+    state: &AccountEndpointState,
+    endpoint: &Url,
+    reason: UnavailableReason,
+) -> AccountEndpointState;
 
-**Key circuit-breaker thresholds** (from Java SDK reference):
+// SYSTEM: Produce a new state with expired unavailability entries removed.
+// Called by the background health sweep.
+fn expire_unavailable_endpoints(
+    state: &AccountEndpointState,
+    now: Instant,
+    expiry_duration: Duration,
+) -> AccountEndpointState;
+```
+
+**Key difference from previous design**: There is no `GlobalEndpointManager` struct with methods.
+The `AccountEndpointState` is pure data, and each mutation is an explicit system function that
+returns a new snapshot. The `AccountEndpointStateStore` is a trivial `RwLock<Arc<_>>` holder —
+it has no routing logic. The `AccountMetadataCache` remains a separate infrastructure component
+responsible for async-fetching and caching `AccountProperties`; on refresh, it calls
+`build_account_endpoint_state` and swaps the result into the store.
+
+This makes the read path lock-free (clone the `Arc`), keeps mutation explicit and traceable,
+and means every system function can be unit-tested with a hand-constructed `AccountEndpointState`
+— no mocking required.
+
+### 4.5 Partition Endpoint State & Circuit-Breaker Systems
+
+Same DOP split as §4.4: data component + state store + system functions.
+
+```rust
+/// COMPONENT: Immutable snapshot of partition-level circuit-breaker state.
+///
+/// Tracks which partitions in which regions are currently considered
+/// unavailable and should be failed over to an alternate region.
+/// Replaced atomically on mutation — never mutated in place.
+#[derive(Clone, Debug)]
+pub(crate) struct PartitionEndpointState {
+    /// Partitions currently marked unavailable, keyed by
+    /// (partition_key_range_id, region). Value is the circuit-breaker
+    /// state for that partition/region pair.
+    pub unavailable_partitions: HashMap<PartitionRegionKey, PartitionCircuitBreaker>,
+    /// Circuit-breaker configuration thresholds.
+    pub config: CircuitBreakerConfig,
+}
+
+/// Composite key for partition-level circuit-breaker tracking.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct PartitionRegionKey {
+    pub partition_key_range_id: String,
+    pub region: RegionName,
+}
+
+/// Per-partition circuit-breaker state.
+#[derive(Clone, Debug)]
+pub(crate) struct PartitionCircuitBreaker {
+    /// When this partition was marked unavailable.
+    pub marked_at: Instant,
+    /// Consecutive read failure count.
+    pub consecutive_read_failures: u32,
+    /// Consecutive write failure count.
+    pub consecutive_write_failures: u32,
+    /// Last failure timestamp.
+    pub last_failure: Instant,
+    /// Whether the circuit is currently open (tripped).
+    pub is_open: bool,
+}
+
+/// Identifies a partition + region to mark unavailable.
+/// Carried in `OperationAction::PartitionFailover` so the operation
+/// pipeline can apply the mutation without coupling to internals.
+#[derive(Clone, Debug)]
+pub(crate) struct UnavailablePartition {
+    pub partition_key_range_id: String,
+    pub region: RegionName,
+    pub is_read: bool,
+}
+
+/// Circuit-breaker configuration thresholds.
+#[derive(Clone, Debug)]
+pub(crate) struct CircuitBreakerConfig {
+    /// Consecutive read failures before tripping. Default: 2.
+    pub read_failure_threshold: u32,
+    /// Consecutive write failures before tripping. Default: 5.
+    pub write_failure_threshold: u32,
+    /// Window after which consecutive failure counters reset. Default: 5 min.
+    pub counter_reset_window: Duration,
+    /// How long a partition stays unavailable before a probe attempt. Default: 5s.
+    pub unavailability_probe_delay: Duration,
+    /// Background failback sweep interval. Default: 300s.
+    pub failback_interval: Duration,
+}
+
+/// Thread-safe holder for the current `PartitionEndpointState` snapshot.
+pub(crate) struct PartitionEndpointStateStore {
+    state: RwLock<Arc<PartitionEndpointState>>,
+}
+
+impl PartitionEndpointStateStore {
+    pub fn snapshot(&self) -> Arc<PartitionEndpointState> {
+        Arc::clone(&self.state.read())
+    }
+
+    pub fn swap(&self, new_state: PartitionEndpointState) {
+        *self.state.write() = Arc::new(new_state);
+    }
+}
+```
+
+**Systems (pure functions) operating on `PartitionEndpointState`**:
+
+```rust
+// SYSTEM: Produce a new state with the given partition marked unavailable.
+// Called from the operation pipeline's PartitionFailover handling.
+fn mark_partition_unavailable(
+    state: &PartitionEndpointState,
+    partition: &UnavailablePartition,
+) -> PartitionEndpointState;
+
+// SYSTEM: Record a failure against a partition/region.
+// Increments the consecutive failure counter and trips the circuit
+// if the threshold is exceeded.
+fn record_partition_failure(
+    state: &PartitionEndpointState,
+    key: &PartitionRegionKey,
+    is_read: bool,
+    now: Instant,
+) -> PartitionEndpointState;
+
+// SYSTEM: Record a success — resets the consecutive failure counter
+// and closes the circuit for the given partition/region.
+fn record_partition_success(
+    state: &PartitionEndpointState,
+    key: &PartitionRegionKey,
+    now: Instant,
+) -> PartitionEndpointState;
+
+// SYSTEM: Background failback sweep.
+// Produces a new state with partitions eligible for probing or
+// with expired counters reset. Called periodically by
+// BackgroundTaskManager.
+fn sweep_partition_health(
+    state: &PartitionEndpointState,
+    now: Instant,
+) -> PartitionEndpointState;
+```
+
+**Key circuit-breaker thresholds** (from Java SDK reference, used as `CircuitBreakerConfig`
+defaults):
 - Consecutive read failures before trip: 2
 - Consecutive write failures before trip: 5
 - Counter reset window: 5 minutes
@@ -1507,28 +1706,28 @@ single region with basic 429 retry. The architecture is in place for incremental
 
 ### Step 2: Multi-region failover & endpoint management
 
-Add cross-region failover, `GlobalEndpointManager`, and the `AccountMetadataCache` integration.
+Add cross-region failover, `AccountEndpointState` + routing systems, and the `AccountMetadataCache` integration.
 
-| Sub-step | Work Item                                                                                                                                                                                                                                      | Files                                                                      |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 2.1      | **Routing** — Move/adapt `GlobalEndpointManager` and `LocationCache` (with immutable `LocationSnapshot` swap pattern). Wire to existing `AccountMetadataCache`.                                                                                | `driver/routing/mod.rs`, `global_endpoint_manager.rs`, `location_cache.rs` |
-| 2.2      | **Expand `evaluate_operation_retry`** — Add 403.3 (WriteForbidden + cache refresh with rate-limiting), 503, 404/1022, 429/3092, 500-for-reads. Add `FailoverRetry`, `SessionRetry`, `PartitionFailover` action handling in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
-| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                            | `driver/transport/transport_pipeline.rs`                                   |
-| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `OperationOptions` / `RuntimeOptions`. Hard-coded defaults, environment variable overrides.                                                                             | `options/retry.rs`, `options/availability.rs`                              |
-| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_operation_retry`, integration tests for multi-region failover.                                                                                                                     | `tests/`                                                                   |
+| Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                                      |
+|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`. | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
+| 2.2      | **Expand `evaluate_operation_retry`** — Add 403.3 (WriteForbidden + cache refresh with rate-limiting), 503, 404/1022, 429/3092, 500-for-reads. Add `FailoverRetry`, `SessionRetry`, `PartitionFailover` action handling in the operation loop.                | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
+| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                           | `driver/transport/transport_pipeline.rs`                                   |
+| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `OperationOptions` / `RuntimeOptions`. Hard-coded defaults, environment variable overrides.                                                                                            | `options/retry.rs`, `options/availability.rs`                              |
+| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_operation_retry`, integration tests for multi-region failover.                                                                                                                                    | `tests/`                                                                   |
 
 **What works after Step 2**: Full multi-region failover, 403.3 recovery with cache refresh,
 session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit breaker.
 
 ### Step 3: Session consistency & partition-level circuit breaker
 
-| Sub-step | Work Item                                                                                                                                                                | Files                                                    |
-|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
-| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                         | `driver/routing/session_manager.rs`                      |
-| 3.2      | **Partition endpoint manager** — Move `GlobalPartitionEndpointManager` with per-partition circuit breaker logic. Hard-coded thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_manager.rs`           |
-| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                  | `driver/pipeline/components.rs`, `operation_pipeline.rs` |
-| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerConfig`.                                                                                    | `options/availability.rs`                                |
-| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                   | `tests/`                                                 |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                          | Files                                                                      |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                   | `driver/routing/session_manager.rs`                                        |
+| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, `PartitionEndpointStateStore`, `CircuitBreakerConfig`, and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `circuit_breaker_systems.rs` |
+| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                            | `driver/pipeline/components.rs`, `operation_pipeline.rs`                   |
+| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerConfig`.                                                                                                                                                                                                                                              | `options/availability.rs`                                                  |
+| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                             | `tests/`                                                                   |
 
 **What works after Step 3**: Full session consistency routing, partition-level circuit breaker
 with failback. Still HTTP/1.1, no hedging.
