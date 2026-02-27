@@ -305,9 +305,7 @@ impl From<ItemReference> for CosmosResourceReference {
                 name.to_owned(),
             )))
         } else if let Some(rid) = item.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(
-                rid.to_owned(),
-            )))
+            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
             None
         };
@@ -331,9 +329,7 @@ impl From<StoredProcedureReference> for CosmosResourceReference {
                 name.to_owned(),
             )))
         } else if let Some(rid) = sp.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(
-                rid.to_owned(),
-            )))
+            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
             None
         };
@@ -357,9 +353,7 @@ impl From<TriggerReference> for CosmosResourceReference {
                 name.to_owned(),
             )))
         } else if let Some(rid) = trigger.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(
-                rid.to_owned(),
-            )))
+            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
             None
         };
@@ -383,9 +377,7 @@ impl From<UdfReference> for CosmosResourceReference {
                 name.to_owned(),
             )))
         } else if let Some(rid) = udf.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(
-                rid.to_owned(),
-            )))
+            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
             None
         };
@@ -502,8 +494,7 @@ mod tests {
 
     #[test]
     fn from_item_reference() {
-        let item =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let r: CosmosResourceReference = item.into();
         assert_eq!(r.resource_type(), ResourceType::Document);
         assert!(r.container().is_some());
