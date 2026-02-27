@@ -68,13 +68,13 @@ impl std::fmt::Display for ETag {
 /// # Example
 ///
 /// ```
-/// use azure_data_cosmos_driver::models::{ETag, ETagCondition};
+/// use azure_data_cosmos_driver::models::{ETag, Precondition};
 ///
 /// // Update only if the resource hasn't changed (optimistic concurrency)
-/// let condition = ETagCondition::if_match("\"abc123\"");
+/// let condition = Precondition::if_match("\"abc123\"");
 ///
 /// // Create only if the resource doesn't exist
-/// let condition = ETagCondition::if_none_match("*");
+/// let condition = Precondition::if_none_match("*");
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
