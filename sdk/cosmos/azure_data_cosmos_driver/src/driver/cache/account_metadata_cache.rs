@@ -143,6 +143,18 @@ pub(crate) struct AccountProperties {
 
     /// Raw JSON string containing query engine feature/configuration flags.
     pub query_engine_configuration: String,
+
+    /// Regional Gateway 2.0 endpoints accepting writes (thin client mode).
+    /// When present, indicates that Gateway 2.0 should be used for the
+    /// dataplane transport instead of the standard gateway endpoint.
+    #[serde(default)]
+    pub thin_client_writable_locations: Vec<AccountRegion>,
+
+    /// Regional Gateway 2.0 endpoints for reads (thin client mode).
+    /// When present, indicates that Gateway 2.0 should be used for the
+    /// dataplane transport instead of the standard gateway endpoint.
+    #[serde(default)]
+    pub thin_client_readable_locations: Vec<AccountRegion>,
 }
 
 // Convenience accessors for the account properties JSON contract. Some may not
@@ -162,6 +174,31 @@ impl AccountProperties {
     /// Returns readable regions derived from the account metadata.
     pub(crate) fn readable_regions(&self) -> Vec<Region> {
         self.readable_locations
+            .iter()
+            .map(|loc| loc.name.clone())
+            .collect()
+    }
+
+    /// Returns `true` if Gateway 2.0 (thin client) endpoints are available.
+    ///
+    /// When thin client locations are present in the account properties,
+    /// the driver should use Gateway 2.0 for the dataplane transport.
+    pub(crate) fn has_thin_client_endpoints(&self) -> bool {
+        !self.thin_client_writable_locations.is_empty()
+            || !self.thin_client_readable_locations.is_empty()
+    }
+
+    /// Returns thin client (Gateway 2.0) writable locations, if any.
+    pub(crate) fn thin_client_writable_regions(&self) -> Vec<Region> {
+        self.thin_client_writable_locations
+            .iter()
+            .map(|loc| loc.name.clone())
+            .collect()
+    }
+
+    /// Returns thin client (Gateway 2.0) readable locations, if any.
+    pub(crate) fn thin_client_readable_regions(&self) -> Vec<Region> {
+        self.thin_client_readable_locations
             .iter()
             .map(|loc| loc.name.clone())
             .collect()

@@ -284,14 +284,13 @@ pub(crate) struct TransportResult {
 pub(crate) enum TransportOutcome {
     /// Successful response.
     Success {
-        status: StatusCode,
+        status: CosmosStatus,
         headers: Headers,
         body: Vec<u8>,
     },
     /// Failed with an HTTP error that may be retryable at operation level.
     HttpError {
-        status: StatusCode,
-        sub_status: Option<u32>,
+        status: CosmosStatus,
         headers: Headers,
         body: Vec<u8>,
         request_sent: RequestSentStatus,
@@ -595,52 +594,58 @@ fn evaluate_transport_result(
             OperationAction::Complete(result.clone())
         }
 
-        TransportOutcome::HttpError { status, sub_status, request_sent, .. } => {
-            match (*status, *sub_status) {
-                // 403.3 WriteForbidden → refresh AccountMetadataCache + endpoint failover
+        TransportOutcome::HttpError { status, request_sent, .. } => {
+            match *status {
+                // 403/3 WriteForbidden → refresh AccountMetadataCache + endpoint failover
                 // The account metadata cache is refreshed to obtain fresh account
                 // properties (e.g., updated writable/readable locations). A rate
                 // limiter ensures refreshes happen at most N times per minute to
                 // avoid overwhelming the metadata endpoint during sustained
                 // failover scenarios.
-                (403, Some(3)) => {
+                CosmosStatus::WRITE_FORBIDDEN => {
                     if retry_state.failover_retry_count < MAX_FAILOVER_RETRIES {
                         OperationAction::FailoverRetry {
                             new_state: retry_state.advance_failover_with_cache_refresh(result),
                             delay: None,
                         }
                     } else {
-                        OperationAction::Abort(build_error(status, sub_status))
+                        OperationAction::Abort(build_error(status))
                     }
                 }
 
-                // 404.1022 ReadSessionNotAvailable → session retry
-                (404, Some(1022)) => {
+                // 404/1002 ReadSessionNotAvailable → session retry
+                CosmosStatus::READ_SESSION_NOT_AVAILABLE => {
                     if retry_state.session_token_retry_count < MAX_SESSION_RETRIES {
                         OperationAction::SessionRetry {
                             new_state: retry_state.advance_session_retry(),
                         }
                     } else {
-                        OperationAction::Abort(build_error(status, sub_status))
+                        OperationAction::Abort(build_error(status))
                     }
                 }
 
-                // 429.3092 SystemResourceUnavailable → treat as 503
-                (429, Some(3092)) | (503, _) | (410, Some(_)) => {
+                // 429/3092 SystemResourceUnavailable → treat as 503.
+                // Also covers 503 (any sub-status) and 410 (any Gone sub-status).
+                // These don't map to a single CosmosStatus constant, so we use
+                // helper predicates on the status code + sub-status.
+                _ if status.is_system_resource_unavailable()
+                    || status.is_service_unavailable()
+                    || status.is_gone() =>
+                {
                     OperationAction::PartitionFailover {
                         new_state: retry_state.advance_partition_failover(result),
                     }
                 }
 
                 // 500 for reads → try next endpoint
-                (500, _) if operation.is_read_only() => {
+                _ if status.is_internal_server_error() && operation.is_read_only() => {
                     OperationAction::FailoverRetry {
                         new_state: retry_state.advance_failover(result),
                         delay: None,
                     }
                 }
 
-                _ => OperationAction::Abort(build_error(status, sub_status)),
+                _ => OperationAction::Abort(build_error(status)),
             }
         }
 
@@ -1013,7 +1018,7 @@ impl TransportPipeline {
             // multiple nodes and each backend partition has 4 replicas, so
             // retries via a different network path have a high success rate.
             let should_transport_retry = match &result.outcome {
-                TransportOutcome::HttpError { status: 429, .. } => true,
+                TransportOutcome::HttpError { status, .. } if status.is_throttled() => true,
                 TransportOutcome::TransportError { .. }
                     if operation_is_idempotent_or_request_not_sent(&result) => true,
                 _ => false,
