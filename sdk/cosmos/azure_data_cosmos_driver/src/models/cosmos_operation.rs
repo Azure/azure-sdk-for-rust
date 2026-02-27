@@ -159,42 +159,6 @@ impl CosmosOperation {
         }
     }
 
-    /// Creates a Create operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    #[cfg(test)]
-    pub(crate) fn create(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Create, resource_reference)
-    }
-
-    /// Creates a Read operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    #[cfg(test)]
-    pub(crate) fn read(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Read, resource_reference)
-    }
-
-    /// Creates a Replace operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`, `ContainerReference`, etc.
-    #[cfg(test)]
-    pub(crate) fn replace(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Replace, resource_reference)
-    }
-
-    /// Creates an Upsert operation.
-    ///
-    /// Accepts any type that can be converted into a `CosmosResourceReference`,
-    /// including typed references like `ItemReference`.
-    #[cfg(test)]
-    pub(crate) fn upsert(resource_reference: impl Into<CosmosResourceReference>) -> Self {
-        Self::new(OperationType::Upsert, resource_reference)
-    }
-
     // ===== Control Plane Factory Methods =====
 
     /// Creates a database in the account.
@@ -387,6 +351,17 @@ impl CosmosOperation {
         Self::new(OperationType::Read, resource_ref)
     }
 
+    /// Reads a container's properties by database RID and container RID.
+    pub fn read_container_by_rid(
+        database: DatabaseReference,
+        container_rid: impl Into<std::borrow::Cow<'static, str>>,
+    ) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(database)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid(container_rid.into());
+        Self::new(OperationType::Read, resource_ref)
+    }
+
     // ===== Data Plane Factory Methods =====
 
     /// Creates an item (document) in a container.
@@ -562,7 +537,10 @@ impl CosmosOperation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AccountReference, ContainerReference, PartitionKeyDefinition};
+    use crate::models::{
+        AccountReference, ContainerProperties, ContainerReference, PartitionKeyDefinition,
+        SystemProperties,
+    };
 
     use url::Url;
 
@@ -573,11 +551,16 @@ mod tests {
         )
     }
 
-    fn test_container_props() -> crate::models::ContainerProperties {
-        crate::models::ContainerProperties::new(
-            "testcontainer",
-            PartitionKeyDefinition::new(["/pk"]),
-        )
+    fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {
+        serde_json::from_str(&format!(r#"{{"paths":["{path}"]}}"#)).unwrap()
+    }
+
+    fn test_container_props() -> ContainerProperties {
+        ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: test_partition_key_definition("/pk"),
+            system_properties: SystemProperties::default(),
+        }
     }
 
     fn test_container() -> ContainerReference {
@@ -596,7 +579,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::create(resource_ref);
+        let op = CosmosOperation::new(OperationType::Create, resource_ref);
 
         assert_eq!(op.operation_type(), OperationType::Create);
         assert_eq!(op.resource_type(), ResourceType::Document);
@@ -609,7 +592,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::read(resource_ref);
+        let op = CosmosOperation::new(OperationType::Read, resource_ref);
 
         assert_eq!(op.operation_type(), OperationType::Read);
         assert_eq!(op.resource_type(), ResourceType::Document);
@@ -622,7 +605,8 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::read(resource_ref).with_partition_key(PartitionKey::from("pk1"));
+        let op = CosmosOperation::new(OperationType::Read, resource_ref)
+            .with_partition_key(PartitionKey::from("pk1"));
 
         assert!(op.partition_key().is_some());
     }
@@ -633,7 +617,7 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
         let body = b"{\"id\":\"doc1\"}".to_vec();
-        let op = CosmosOperation::create(resource_ref).with_body(body.clone());
+        let op = CosmosOperation::new(OperationType::Create, resource_ref).with_body(body.clone());
 
         assert_eq!(op.body(), Some(body.as_slice()));
     }
@@ -643,7 +627,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::replace(resource_ref);
+        let op = CosmosOperation::new(OperationType::Replace, resource_ref);
 
         assert!(!op.is_read_only());
         assert!(op.is_idempotent());
@@ -654,7 +638,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::upsert(resource_ref);
+        let op = CosmosOperation::new(OperationType::Upsert, resource_ref);
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());

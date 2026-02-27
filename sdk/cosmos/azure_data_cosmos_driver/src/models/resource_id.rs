@@ -155,6 +155,10 @@ mod tests {
     use super::*;
     use base64::{engine::general_purpose::STANDARD, Engine as _};
 
+    // =========================================================================
+    // ParsedResourceId (test-only)
+    // =========================================================================
+
     /// Parsed components of a Cosmos DB RID.
     ///
     /// RIDs encode the resource hierarchy. This struct extracts the individual
@@ -226,6 +230,10 @@ mod tests {
         }
     }
 
+    // =========================================================================
+    // RID Parsing Utilities (test-only)
+    // =========================================================================
+
     /// Errors that can occur when parsing a Cosmos DB RID.
     #[derive(Clone, Debug, PartialEq, Eq)]
     enum RidParseError {
@@ -273,20 +281,6 @@ mod tests {
     }
 
     /// Extracts the database RID string from a container (collection) RID string.
-    ///
-    /// A container RID is 8 bytes: the first 4 bytes encode the parent database ID.
-    /// This function extracts those 4 bytes and re-encodes them as a database RID.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` if the input is not a valid container RID (must decode to
-    /// exactly 8 bytes with `buffer.len() % 4 == 0`).
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// let db_rid = extract_database_rid_from_container_rid("dbs-rid==").unwrap();
-    /// ```
     fn extract_database_rid_from_container_rid(
         container_rid: &str,
     ) -> Result<ResourceId, RidParseError> {
@@ -300,14 +294,6 @@ mod tests {
     }
 
     /// Extracts the container (collection) RID string from a document or sub-resource RID string.
-    ///
-    /// A document RID is 16 bytes: the first 8 bytes encode the parent container
-    /// (which itself encodes the database in its first 4 bytes).
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` if the input is not a valid document/sub-resource RID
-    /// (must decode to at least 16 bytes with `buffer.len() % 4 == 0`).
     fn extract_container_rid_from_document_rid(
         document_rid: &str,
     ) -> Result<ResourceId, RidParseError> {
@@ -321,13 +307,6 @@ mod tests {
     }
 
     /// Parses a RID string into its hierarchical components.
-    ///
-    /// Determines the resource level based on byte length and populates
-    /// the appropriate fields of `ParsedResourceId`.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` if the input is not a valid Cosmos DB RID.
     fn parse_rid(rid: &str) -> Result<ParsedResourceId, RidParseError> {
         let bytes = decode_rid(rid)?;
         let len = bytes.len();
