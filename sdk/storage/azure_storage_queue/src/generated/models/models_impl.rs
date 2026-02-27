@@ -13,8 +13,7 @@ use azure_core::{
     Result,
 };
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl Page for ListQueuesResponse {
     type Item = QueueItem;
     type IntoIter = <Vec<QueueItem> as IntoIterator>::IntoIter;

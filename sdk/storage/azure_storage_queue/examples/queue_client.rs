@@ -38,7 +38,9 @@ async fn send_and_delete_message(
     if let Ok(response) = result {
         let message = response.into_model()?;
 
-        if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
+        if let (Some(message_id), Some(pop_receipt)) =
+            (message.message_id.clone(), message.pop_receipt.clone())
+        {
             println!(
                 "Deleting message with ID: {} and pop receipt: {}",
                 message_id, pop_receipt
@@ -62,7 +64,9 @@ async fn send_and_update_message(
     if let Ok(response) = result {
         let message = response.into_model()?;
 
-        if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
+        if let (Some(message_id), Some(pop_receipt)) =
+            (message.message_id.clone(), message.pop_receipt.clone())
+        {
             println!(
                 "Updating message with ID: {} and pop receipt: {}",
                 message_id, pop_receipt

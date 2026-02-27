@@ -197,8 +197,8 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 
         let delete_response = queue_client
             .delete_message(
-                &send_message.message_id.unwrap(),
-                &send_message.pop_receipt.unwrap(),
+                &send_message.message_id.clone().unwrap(),
+                &send_message.pop_receipt.clone().unwrap(),
                 None,
             )
             .await?;
@@ -252,8 +252,8 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         // Update the message in the queue
         let update_response = queue_client
             .update_message(
-                &sent_message.message_id.unwrap(),
-                &sent_message.pop_receipt.unwrap(),
+                &sent_message.message_id.clone().unwrap(),
+                &sent_message.pop_receipt.clone().unwrap(),
                 10,
                 option,
             )
