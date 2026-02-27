@@ -208,15 +208,6 @@ impl ContainerReference {
         &self.partition_key_definition
     }
 
-    /// Returns a `DatabaseReference` for the parent database (name-based).
-    #[allow(dead_code)]
-    pub(crate) fn database(&self) -> DatabaseReference {
-        DatabaseReference {
-            account: self.account.clone(),
-            id: ResourceIdentifier::ByName(self.db_name.clone()),
-        }
-    }
-
     /// Returns the name-based relative path: `/dbs/{db_name}/colls/{container_name}`
     pub fn name_based_path(&self) -> String {
         format!("/dbs/{}/colls/{}", self.db_name, self.container_name)
