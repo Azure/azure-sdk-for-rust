@@ -53,4 +53,5 @@ features = [
   "hmac_rust",
   "hmac_openssl",
   "allow_invalid_certificates",
+  "fault_injection",
 ]
