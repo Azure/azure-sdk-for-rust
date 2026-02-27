@@ -243,10 +243,8 @@ impl CosmosResourceReference {
     fn identifier_str(id: &ResourceIdentifier) -> &str {
         if let Some(name) = id.name() {
             name
-        } else if let Some(rid) = id.rid() {
-            rid
         } else {
-            ""
+            id.rid().unwrap_or_default()
         }
     }
 }
@@ -304,10 +302,9 @@ impl From<ItemReference> for CosmosResourceReference {
             Some(ResourceIdentifier::by_name(ResourceName::new(
                 name.to_owned(),
             )))
-        } else if let Some(rid) = item.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
-            None
+            item.rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
         Self {
             resource_type: ResourceType::Document,
@@ -328,10 +325,9 @@ impl From<StoredProcedureReference> for CosmosResourceReference {
             Some(ResourceIdentifier::by_name(ResourceName::new(
                 name.to_owned(),
             )))
-        } else if let Some(rid) = sp.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
-            None
+            sp.rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
         Self {
             resource_type: ResourceType::StoredProcedure,
@@ -352,10 +348,10 @@ impl From<TriggerReference> for CosmosResourceReference {
             Some(ResourceIdentifier::by_name(ResourceName::new(
                 name.to_owned(),
             )))
-        } else if let Some(rid) = trigger.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
-            None
+            trigger
+                .rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
         Self {
             resource_type: ResourceType::Trigger,
@@ -376,10 +372,9 @@ impl From<UdfReference> for CosmosResourceReference {
             Some(ResourceIdentifier::by_name(ResourceName::new(
                 name.to_owned(),
             )))
-        } else if let Some(rid) = udf.rid() {
-            Some(ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         } else {
-            None
+            udf.rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
         Self {
             resource_type: ResourceType::UserDefinedFunction,

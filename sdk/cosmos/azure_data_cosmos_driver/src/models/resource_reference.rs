@@ -209,6 +209,7 @@ impl ContainerReference {
     }
 
     /// Returns a `DatabaseReference` for the parent database (name-based).
+    #[allow(dead_code)]
     pub(crate) fn database(&self) -> DatabaseReference {
         DatabaseReference {
             account: self.account.clone(),
@@ -653,8 +654,13 @@ mod tests {
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "test-key",
         );
-        let partition_key = PartitionKeyDefinition::new(["/tenantId"]);
-        let container_properties = ContainerProperties::new("my-container", partition_key);
+        let partition_key: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/tenantId"]}"#).unwrap();
+        let container_properties = ContainerProperties {
+            id: "my-container".into(),
+            partition_key,
+            system_properties: Default::default(),
+        };
 
         ContainerReference::new(
             account,

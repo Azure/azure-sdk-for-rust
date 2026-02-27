@@ -278,7 +278,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_master_key() {
         let key = Secret::new("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==");
-        let auth = Credential::MasterKey(key);
+        let auth = crate::models::Credential::MasterKey(key);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);
@@ -304,7 +304,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_token_credential() {
         let cred = Arc::new(MockTokenCredential("test_token".to_string()));
-        let auth = Credential::TokenCredential(cred);
+        let auth = crate::models::Credential::TokenCredential(cred);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);
