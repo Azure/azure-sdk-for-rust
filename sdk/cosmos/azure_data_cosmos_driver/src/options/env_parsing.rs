@@ -25,6 +25,14 @@ impl<T> ValidationBounds<T> {
             max: Some(max),
         }
     }
+
+    /// Create validation bounds with only a minimum value.
+    pub const fn min(min: T) -> Self {
+        Self {
+            min: Some(min),
+            max: None,
+        }
+    }
 }
 
 /// Parses a value from an environment variable with proper error handling and optional validation.
@@ -112,7 +120,7 @@ where
 }
 
 /// Parses a duration from an environment variable (in milliseconds) with validation.
-pub(super) fn parse_duration_millis_from_env(
+pub(crate) fn parse_duration_millis_from_env(
     builder_value: Option<Duration>,
     env_var_name: &str,
     default_millis: u64,

@@ -62,6 +62,12 @@ subsec
 FILETIME
 MEMORYSTATUSEX
 
+# macOS memory statistics terms (used in cpu_memory.rs)
+pageins
+pageouts
+purgeable
+reactivations
+
 # Common English words not in default dictionary
 roundtrips
 normalises
@@ -94,6 +100,7 @@ Pkrange
 PKRANGE
 
 # Test values (used in doc tests and unit tests)
+Replicaset
 myaccount
 mydb
 mycoll

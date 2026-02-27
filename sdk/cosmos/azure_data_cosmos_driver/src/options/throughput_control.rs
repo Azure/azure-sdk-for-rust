@@ -597,14 +597,19 @@ impl ThroughputControlGroupRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AccountReference, PartitionKeyDefinition};
+    use crate::models::{AccountReference, PartitionKeyDefinition, SystemProperties};
     use url::Url;
 
+    fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {
+        serde_json::from_str(&format!(r#"{{"paths":["{path}"]}}"#)).unwrap()
+    }
+
     fn test_container_props() -> crate::models::ContainerProperties {
-        crate::models::ContainerProperties::new(
-            "testcontainer",
-            PartitionKeyDefinition::new(["/pk"]),
-        )
+        crate::models::ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: test_partition_key_definition("/pk"),
+            system_properties: SystemProperties::default(),
+        }
     }
 
     fn test_container() -> ContainerReference {

@@ -31,7 +31,10 @@ use std::sync::{Arc, OnceLock};
 
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
-pub(crate) use tracked_transport::{RequestSentExt, RequestSentStatus};
+pub(crate) use tracked_transport::{
+    infer_request_sent_status, RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
+    RequestSentStatus,
+};
 
 /// Determines whether the dataplane pipeline should be used for a given operation.
 ///
@@ -236,38 +239,40 @@ impl CosmosTransport {
     ) -> azure_core::Result<reqwest::Client> {
         let mut builder = reqwest::ClientBuilder::new();
 
-        // Connection pool settings
-        builder = builder.pool_max_idle_per_host(pool.max_idle_connections_per_endpoint());
+        {
+            // Connection pool settings
+            builder = builder.pool_max_idle_per_host(pool.max_idle_connections_per_endpoint());
 
-        if let Some(idle_timeout) = pool.idle_connection_timeout() {
-            builder = builder.pool_idle_timeout(idle_timeout);
-        }
+            if let Some(idle_timeout) = pool.idle_connection_timeout() {
+                builder = builder.pool_idle_timeout(idle_timeout);
+            }
 
-        // Connect timeout
-        builder = builder.connect_timeout(pool.max_connect_timeout());
+            // Connect timeout
+            builder = builder.connect_timeout(pool.max_connect_timeout());
 
-        // Request timeout (different for metadata vs data plane)
-        let request_timeout = if is_metadata {
-            pool.max_metadata_request_timeout()
-        } else {
-            pool.max_dataplane_request_timeout()
-        };
-        builder = builder.timeout(request_timeout);
+            // Request timeout (different for metadata vs data plane)
+            let request_timeout = if is_metadata {
+                pool.max_metadata_request_timeout()
+            } else {
+                pool.max_dataplane_request_timeout()
+            };
+            builder = builder.timeout(request_timeout);
 
-        // Proxy settings
-        if !pool.is_proxy_allowed() {
-            builder = builder.no_proxy();
-        }
-        // When proxy is allowed, reqwest automatically respects HTTP_PROXY/HTTPS_PROXY env vars
+            // Proxy settings
+            if !pool.is_proxy_allowed() {
+                builder = builder.no_proxy();
+            }
+            // When proxy is allowed, reqwest automatically respects HTTP_PROXY/HTTPS_PROXY env vars
 
-        // Local address binding
-        if let Some(local_addr) = pool.local_address() {
-            builder = builder.local_address(local_addr);
-        }
+            // Local address binding
+            if let Some(local_addr) = pool.local_address() {
+                builder = builder.local_address(local_addr);
+            }
 
-        // Emulator settings - disable TLS validation
-        if for_emulator {
-            builder = builder.danger_accept_invalid_certs(true);
+            // Emulator settings - disable TLS validation
+            if for_emulator {
+                builder = builder.danger_accept_invalid_certs(true);
+            }
         }
 
         builder.build().map_err(|e| {

@@ -6,7 +6,7 @@
 //! This module provides the [`Region`] type for representing Azure regions in a type-safe manner
 //! with normalization support and constants for all known Azure regions.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::borrow::Cow;
 use std::fmt;
 
@@ -14,6 +14,10 @@ use std::fmt;
 ///
 /// Represents an Azure region with normalization support (case-insensitive, whitespace-agnostic).
 /// Input strings like "WESTUS2", "WestUS 2", and "West US 2" are all normalized to "westus2".
+///
+/// Normalization is applied both when constructing via [`Region::new`] and when
+/// deserializing from JSON, so a service response containing `"West US 2"` will
+/// produce the same `Region` as the constant [`Region::WEST_US_2`].
 ///
 /// # Examples
 ///
@@ -38,10 +42,23 @@ use std::fmt;
 /// assert_eq!(custom.display_name(), "eastus9");
 /// ```
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
 #[serde(transparent)]
 pub struct Region {
     normalized: Cow<'static, str>,
+}
+
+// Custom Deserialize implementation that normalizes region names on
+// deserialization. This ensures service responses like `"West US 2"` produce
+// the same canonical `Region` as `Region::new("West US 2")`.
+impl<'de> Deserialize<'de> for Region {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw = String::deserialize(deserializer)?;
+        Ok(Region::new(raw))
+    }
 }
 
 impl Region {
