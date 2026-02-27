@@ -4,19 +4,38 @@
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
 use crate::{
-    logging::apply_storage_logging_defaults, models::StorageErrorCode,
-    pipeline::StorageHeadersPolicy, BlobClient,
+    logging::apply_storage_logging_defaults,
+    models::{BlobContainerClientGetAccessPolicyOptions, SignedIdentifier, StorageErrorCode},
+    pipeline::StorageHeadersPolicy,
+    BlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, StatusCode, Url,
+        NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
-    tracing, Result,
+    tracing,
+    xml::{from_xml, to_xml},
+    Result,
 };
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+
+#[derive(Serialize)]
+#[serde(rename = "SignedIdentifiers")]
+struct SignedIdentifiersEnvelope<'a> {
+    #[serde(rename = "SignedIdentifier")]
+    items: &'a [SignedIdentifier],
+}
+
+#[derive(Deserialize)]
+#[serde(rename = "SignedIdentifiers")]
+struct SignedIdentifiersEnvelopeOwned {
+    #[serde(rename = "SignedIdentifier", default)]
+    items: Vec<SignedIdentifier>,
+}
 
 impl BlobContainerClient {
     /// Creates a new BlobContainerClient, using Entra ID authentication.
@@ -142,5 +161,76 @@ impl BlobContainerClient {
             },
             Err(e) => Err(e),
         }
+    }
+
+    /// Gets access policies as a vector of signed identifiers.
+    pub async fn get_access_policy_items(
+        &self,
+        options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
+    ) -> Result<Vec<SignedIdentifier>> {
+        let response = self.get_access_policy(options).await?;
+        let envelope: SignedIdentifiersEnvelopeOwned = from_xml(response.body().as_ref())?;
+        Ok(envelope.items)
+    }
+
+    /// Sets access policies from signed identifiers.
+    ///
+    /// This method wraps the identifiers in a `SignedIdentifiers` XML root element
+    /// before sending so it works with the current generated request body shape.
+    pub async fn set_access_policy_items(
+        &self,
+        signed_identifiers: Vec<SignedIdentifier>,
+        options: Option<crate::models::BlobContainerClientSetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        let envelope = SignedIdentifiersEnvelope {
+            items: &signed_identifiers,
+        };
+
+        let content: RequestContent<Vec<SignedIdentifier>, XmlFormat> =
+            RequestContent::from(to_xml(&envelope)?.to_vec());
+
+        self.set_access_policy(content, options).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SignedIdentifiersEnvelope;
+    use crate::models::SignedIdentifier;
+
+    #[test]
+    fn signed_identifiers_envelope_serializes_with_root_and_multiple_items() {
+        let signed_identifiers = vec![
+            SignedIdentifier {
+                id: Some("id-1".to_string()),
+                access_policy: None,
+            },
+            SignedIdentifier {
+                id: Some("id-2".to_string()),
+                access_policy: None,
+            },
+        ];
+
+        let xml = azure_core::xml::to_xml(&SignedIdentifiersEnvelope {
+            items: &signed_identifiers,
+        })
+        .expect("serialization should succeed");
+        let xml = std::str::from_utf8(&xml).expect("serialized xml should be utf-8");
+
+        assert!(xml.contains("<SignedIdentifiers>"));
+        assert_eq!(xml.match_indices("<SignedIdentifier>").count(), 2);
+    }
+
+    #[test]
+    fn signed_identifiers_envelope_serializes_empty_array() {
+        let signed_identifiers: Vec<SignedIdentifier> = Vec::new();
+
+        let xml = azure_core::xml::to_xml(&SignedIdentifiersEnvelope {
+            items: &signed_identifiers,
+        })
+        .expect("serialization should succeed");
+        let xml = std::str::from_utf8(&xml).expect("serialized xml should be utf-8");
+
+        assert!(xml.contains("<SignedIdentifiers"));
     }
 }

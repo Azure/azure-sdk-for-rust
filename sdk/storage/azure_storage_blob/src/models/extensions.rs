@@ -2,9 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    AccessPolicy, AppendBlobClientCreateOptions, BlobTag, BlobTags,
-    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions,
-    PageBlobClientCreateOptions, SignedIdentifier, SignedIdentifiers,
+    AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
+    BlockBlobClientUploadOptions, PageBlobClientCreateOptions,
 };
 use std::collections::HashMap;
 
@@ -95,27 +94,6 @@ impl From<HashMap<String, String>> for BlobTags {
             .collect();
         BlobTags {
             blob_tag_set: Some(blob_tags),
-        }
-    }
-}
-
-/// Converts a `HashMap<String, AccessPolicy>` into a `SignedIdentifiers` struct.
-impl From<HashMap<String, AccessPolicy>> for SignedIdentifiers {
-    fn from(policies: HashMap<String, AccessPolicy>) -> Self {
-        if policies.is_empty() {
-            return SignedIdentifiers { items: None };
-        }
-
-        let signed_identifiers: Vec<SignedIdentifier> = policies
-            .into_iter()
-            .map(|(id, access_policy)| SignedIdentifier {
-                id: Some(id),
-                access_policy: Some(access_policy),
-            })
-            .collect();
-
-        SignedIdentifiers {
-            items: Some(signed_identifiers),
         }
     }
 }

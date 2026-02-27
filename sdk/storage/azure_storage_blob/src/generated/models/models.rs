@@ -138,7 +138,7 @@ pub struct BlobFlatListSegment {
 #[serde(rename = "Blob")]
 pub struct BlobItem {
     /// The tags of the blob.
-    #[serde(rename = "BlobTags", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Tags", skip_serializing_if = "Option::is_none")]
     pub blob_tags: Option<BlobTags>,
 
     /// Whether the blob is deleted.
@@ -672,7 +672,7 @@ pub struct ContainerProperties {
     pub deleted_time: Option<OffsetDateTime>,
 
     /// The ETag of the container.
-    #[serde(rename = "ETag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 
     /// Whether it has an immutability policy.
@@ -777,7 +777,7 @@ pub struct FilterBlobItem {
     pub name: Option<String>,
 
     /// The metadata of the blob.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Tags", skip_serializing_if = "Option::is_none")]
     pub tags: Option<BlobTags>,
 
     /// The version ID of the blob.
@@ -1037,14 +1037,6 @@ pub struct SignedIdentifier {
     /// The unique ID for the signed identifier.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-}
-
-/// Represents an array of signed identifiers
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-pub struct SignedIdentifiers {
-    /// The array of signed identifiers.
-    #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<SignedIdentifier>>,
 }
 
 /// The properties that enable an account to host a static website

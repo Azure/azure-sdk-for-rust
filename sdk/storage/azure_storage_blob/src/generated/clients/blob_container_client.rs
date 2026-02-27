@@ -14,7 +14,7 @@ use crate::generated::models::{
     BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsResponse, SignedIdentifiers,
+    BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsResponse, SignedIdentifier,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -471,14 +471,14 @@ impl BlobContainerClient {
     ///
     /// ## Response Headers
     ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`SignedIdentifiersHeaders`] trait, which provides
+    /// The returned [`Response`](azure_core::http::Response) implements the [`VecSignedIdentifierHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{SignedIdentifiers, SignedIdentifiersHeaders};
+    /// use azure_storage_blob::models::{SignedIdentifier, VecSignedIdentifierHeaders};
     /// async fn example() -> Result<()> {
-    ///     let response: Response<SignedIdentifiers, XmlFormat> = unimplemented!();
+    ///     let response: Response<Vec<SignedIdentifier>, XmlFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(etag) = response.etag()? {
     ///         println!("etag: {:?}", etag);
@@ -494,16 +494,16 @@ impl BlobContainerClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`etag`()](crate::generated::models::SignedIdentifiersHeaders::etag) - etag
-    /// * [`last_modified`()](crate::generated::models::SignedIdentifiersHeaders::last_modified) - last-modified
-    /// * [`access`()](crate::generated::models::SignedIdentifiersHeaders::access) - x-ms-blob-public-access
+    /// * [`etag`()](crate::generated::models::VecSignedIdentifierHeaders::etag) - etag
+    /// * [`last_modified`()](crate::generated::models::VecSignedIdentifierHeaders::last_modified) - last-modified
+    /// * [`access`()](crate::generated::models::VecSignedIdentifierHeaders::access) - x-ms-blob-public-access
     ///
-    /// [`SignedIdentifiersHeaders`]: crate::generated::models::SignedIdentifiersHeaders
+    /// [`VecSignedIdentifierHeaders`]: crate::generated::models::VecSignedIdentifierHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.getAccessPolicy")]
     pub async fn get_access_policy(
         &self,
         options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<SignedIdentifiers, XmlFormat>> {
+    ) -> Result<Response<Vec<SignedIdentifier>, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -942,7 +942,7 @@ impl BlobContainerClient {
     #[tracing::function("Storage.Blob.BlobContainerClient.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
-        container_acl: RequestContent<SignedIdentifiers, XmlFormat>,
+        container_acl: RequestContent<Vec<SignedIdentifier>, XmlFormat>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();

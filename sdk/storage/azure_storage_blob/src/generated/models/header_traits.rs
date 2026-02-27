@@ -20,7 +20,7 @@ use super::{
     PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
     PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifiers, SkuName,
+    SignedIdentifier, SkuName,
 };
 use azure_core::{
     base64,
@@ -2724,9 +2724,9 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
 ///
 /// ```no_run
 /// use azure_core::{Result, http::{Response, XmlFormat}};
-/// use azure_storage_blob::models::{SignedIdentifiers, SignedIdentifiersHeaders};
+/// use azure_storage_blob::models::{SignedIdentifier, VecSignedIdentifierHeaders};
 /// async fn example() -> Result<()> {
-///     let response: Response<SignedIdentifiers, XmlFormat> = unimplemented!();
+///     let response: Response<Vec<SignedIdentifier>, XmlFormat> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(etag) = response.etag()? {
 ///         println!("etag: {:?}", etag);
@@ -2740,13 +2740,13 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
 ///     Ok(())
 /// }
 /// ```
-pub trait SignedIdentifiersHeaders: private::Sealed {
+pub trait VecSignedIdentifierHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn access(&self) -> Result<Option<PublicAccessType>>;
 }
 
-impl SignedIdentifiersHeaders for Response<SignedIdentifiers, XmlFormat> {
+impl VecSignedIdentifierHeaders for Response<Vec<SignedIdentifier>, XmlFormat> {
     /// The ETag contains a value that you can use to perform operations conditionally.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
@@ -2781,7 +2781,7 @@ mod private {
         BlockBlobClientUploadInternalResult, BlockList, PageBlobClientClearPagesResult,
         PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
-        PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
+        PageBlobClientUploadPagesResult, PageList, SignedIdentifier,
     };
     use azure_core::http::{AsyncResponse, NoFormat, Response, XmlFormat};
 
@@ -2821,5 +2821,5 @@ mod private {
     impl Sealed for Response<PageBlobClientUploadPagesFromUrlResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientUploadPagesResult, NoFormat> {}
     impl Sealed for Response<PageList, XmlFormat> {}
-    impl Sealed for Response<SignedIdentifiers, XmlFormat> {}
+    impl Sealed for Response<Vec<SignedIdentifier>, XmlFormat> {}
 }

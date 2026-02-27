@@ -12,7 +12,7 @@ use azure_storage_blob::models::{
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
-    SignedIdentifiers,
+    SignedIdentifier,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
@@ -460,11 +460,22 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         (test_id_1.clone().unwrap(), access_policy_1.clone()),
         (test_id_2.clone().unwrap(), access_policy_2.clone()),
     ]);
+    let signed_identifiers: Vec<SignedIdentifier> = policies
+        .into_iter()
+        .map(|(id, access_policy)| SignedIdentifier {
+            id: Some(id),
+            access_policy: Some(access_policy),
+        })
+        .collect();
+    // NOTE: The service wire contract for Set ACL is still wrapped XML:
+    //   <?xml ...?><SignedIdentifiers><SignedIdentifier>...</SignedIdentifier>...</SignedIdentifiers>
+    // but the regenerated model exposes a bare `Vec<SignedIdentifier>`.
+    // A raw Vec cannot be serialized with `azure_core::xml::to_xml` because it has no root tag
+    // (`cannot serialize sequence without defined root tag`).
+    // To make requests valid, `set_access_policy_items` wraps the Vec in a temporary
+    // `SignedIdentifiers` envelope and sends that XML payload.
     container_client
-        .set_access_policy(
-            RequestContent::try_from(SignedIdentifiers::from(policies))?,
-            None,
-        )
+        .set_access_policy_items(signed_identifiers, None)
         .await?;
 
     // Sleep in live mode to allow signed identifiers to be indexed on the service
@@ -475,8 +486,12 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     }
 
     // Assert
-    let response = container_client.get_access_policy(None).await?;
-    let signed_identifiers = response.into_model()?.items.unwrap();
+    // NOTE: GET ACL response is also wrapped XML with repeated SignedIdentifier elements.
+    // In raw HTTP over-the-wire we can see both identifiers in the raw response body, but direct generated
+    // deserialization to a bare Vec can under-read this wrapped payload (my issue was only yielding 1 item always, thus bottom assert failing).
+    // `get_access_policy_items` fixes this by explicitly deserializing the
+    // `SignedIdentifiers` wrapper first, then returning all enclosed items.
+    let signed_identifiers = container_client.get_access_policy_items(None).await?;
     assert_eq!(2, signed_identifiers.len());
 
     let expected_policies = HashMap::from([
@@ -512,15 +527,14 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     }
 
     // Clear Access Policy
-    let clear_signed_identifiers: SignedIdentifiers = HashMap::<String, AccessPolicy>::new().into();
+    let clear_signed_identifiers: Vec<SignedIdentifier> = Vec::new();
     container_client
-        .set_access_policy(RequestContent::try_from(clear_signed_identifiers)?, None)
+        .set_access_policy_items(clear_signed_identifiers, None)
         .await?;
 
     // Assert
-    let cleared_response = container_client.get_access_policy(None).await?;
-    let cleared_signed_identifiers = cleared_response.into_model()?;
-    assert!(cleared_signed_identifiers.items.is_none());
+    let cleared_signed_identifiers = container_client.get_access_policy_items(None).await?;
+    assert!(cleared_signed_identifiers.is_empty());
 
     Ok(())
 }
