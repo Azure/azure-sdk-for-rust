@@ -533,26 +533,26 @@ async fn execute_hedged(
             // (or first to complete if both error)
             tokio::select! {
                 primary_result = primary_fut => {
-                    diagnostics.record_attempt_primary(&primary_result);
+                    diagnostics.record_primary_attempt(&primary_result);
                     if primary_result.is_success() {
                         // Cancel secondary (drop future)
                         evaluate_and_return(operation, primary_result, diagnostics)
                     } else {
                         // Wait for secondary
                         let secondary_result = secondary_fut.await;
-                        diagnostics.record_attempt_hedged(&secondary_result);
+                        diagnostics.record_hedged_attempt(&secondary_result);
                         pick_best_result(primary_result, secondary_result, diagnostics)
                     }
                 }
                 secondary_result = secondary_fut => {
-                    diagnostics.record_attempt_hedged(&secondary_result);
+                    diagnostics.record_hedged_attempt(&secondary_result);
                     if secondary_result.is_success() {
                         // Cancel primary (drop future)
                         evaluate_and_return(operation, secondary_result, diagnostics)
                     } else {
                         // Wait for primary
                         let primary_result = primary_fut.await;
-                        diagnostics.record_attempt_primary(&primary_result);
+                        diagnostics.record_primary_attempt(&primary_result);
                         pick_best_result(primary_result, secondary_result, diagnostics)
                     }
                 }
