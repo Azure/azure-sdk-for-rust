@@ -65,7 +65,6 @@ impl QueueServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -107,7 +106,6 @@ impl QueueServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -174,7 +172,6 @@ impl QueueServiceClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
-                request.insert_header("content-type", "application/xml");
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
