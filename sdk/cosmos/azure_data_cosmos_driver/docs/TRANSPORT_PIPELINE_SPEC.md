@@ -847,8 +847,8 @@ pub(crate) struct PartitionEndpointState {
     /// (partition_key_range_id, region). Value is the circuit-breaker
     /// state for that partition/region pair.
     pub unavailable_partitions: HashMap<PartitionRegionKey, PartitionCircuitBreaker>,
-    /// Circuit-breaker configuration thresholds.
-    pub config: CircuitBreakerConfig,
+    /// Circuit-breaker configuration thresholds (resolved from `CircuitBreakerOptions`).
+    pub config: CircuitBreakerOptions,
 }
 
 /// Composite key for partition-level circuit-breaker tracking.
@@ -884,8 +884,12 @@ pub(crate) struct UnavailablePartition {
 }
 
 /// Circuit-breaker configuration thresholds.
+///
+/// This is a resolved snapshot built from `CircuitBreakerOptions` (§9.4)
+/// after layered option resolution. All fields are concrete (non-`Option`)
+/// with defaults applied.
 #[derive(Clone, Debug)]
-pub(crate) struct CircuitBreakerConfig {
+pub(crate) struct CircuitBreakerOptions {
     /// Consecutive read failures before tripping. Default: 2.
     pub read_failure_threshold: u32,
     /// Consecutive write failures before tripping. Default: 5.
@@ -952,7 +956,7 @@ fn sweep_partition_health(
 ) -> PartitionEndpointState;
 ```
 
-**Key circuit-breaker thresholds** (from Java SDK reference, used as `CircuitBreakerConfig`
+**Key circuit-breaker thresholds** (from Java SDK reference, used as `CircuitBreakerOptions`
 defaults):
 - Consecutive read failures before trip: 2
 - Consecutive write failures before trip: 5
@@ -1203,6 +1207,10 @@ pub(crate) struct ShardedHttpTransport {
 }
 
 /// Configuration for HTTP/2 connection sharding.
+///
+/// This is a driver-internal resolved snapshot built from the sharding
+/// fields on `ConnectionPoolOptions` (§9.1) after layered option resolution.
+/// All fields are concrete (non-`Option`) with defaults applied.
 #[non_exhaustive]
 pub struct ShardingConfig {
     /// Maximum concurrent streams per HttpClient per endpoint before
@@ -1812,7 +1820,7 @@ Add cross-region failover, `AccountEndpointState` + routing systems, and the `Ac
 | 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`. | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
 | 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh with rate-limiting), 503, 404/1022, 429/3092, 500-for-reads. Add `FailoverRetry`, `SessionRetry`, `PartitionFailover` action handling in the operation loop.               | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
 | 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                           | `driver/transport/transport_pipeline.rs`                                   |
-| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `OperationOptions` / `RuntimeOptions`. Hard-coded defaults, environment variable overrides.                                                                                            | `options/retry.rs`, `options/availability.rs`                              |
+| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                             | `options/retry.rs`, `options/availability.rs`                              |
 | 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                   | `tests/`                                                                   |
 
 **What works after Step 2**: Full multi-region failover, 403.3 recovery with cache refresh,
@@ -1820,25 +1828,25 @@ session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit brea
 
 ### Step 3: Session consistency & partition-level circuit breaker
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                          | Files                                                                      |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                   | `driver/routing/session_manager.rs`                                        |
-| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, `PartitionEndpointStateStore`, `CircuitBreakerConfig`, and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `circuit_breaker_systems.rs` |
-| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                            | `driver/pipeline/components.rs`, `operation_pipeline.rs`                   |
-| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerConfig`.                                                                                                                                                                                                                                              | `options/availability.rs`                                                  |
-| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                             | `tests/`                                                                   |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                           | Files                                                                      |
+|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                    | `driver/routing/session_manager.rs`                                        |
+| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, `PartitionEndpointStateStore`, `CircuitBreakerOptions`, and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `circuit_breaker_systems.rs` |
+| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                             | `driver/pipeline/components.rs`, `operation_pipeline.rs`                   |
+| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerOptions`.                                                                                                                                                                                                                                              | `options/availability.rs`                                                  |
+| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                              | `tests/`                                                                   |
 
 **What works after Step 3**: Full session consistency routing, partition-level circuit breaker
 with failback. Still HTTP/1.1, no hedging.
 
 ### Step 4: Hedging (speculative execution)
 
-| Sub-step | Work Item                                                                                                                                        | Files                        |
-|----------|--------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
-| 4.1      | **Hedging implementation** — `execute_hedged` with `tokio::select!` racing. Initial/Hedging `ExecutionContext` tracking. Static threshold first. | `driver/pipeline/hedging.rs` |
-| 4.2      | **Dynamic threshold** — P99 latency tracker with safety gates (50–4000 ms).                                                                      | `driver/pipeline/hedging.rs` |
-| 4.3      | **Hedging config** — `HedgingThreshold` enum (Dynamic/Static), `hedging_enabled` flag, overridable at `DriverRuntime`/`Driver`/operation levels. | `options/availability.rs`    |
-| 4.4      | **Tests** — Hedging fires after threshold, primary wins, secondary wins, both fail, write hedging on MWR only.                                   | `tests/`                     |
+| Sub-step | Work Item                                                                                                                                                                    | Files                        |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
+| 4.1      | **Hedging implementation** — `execute_hedged` with `tokio::select!` racing. Initial/Hedging `ExecutionContext` tracking. Static threshold first.                             | `driver/pipeline/hedging.rs` |
+| 4.2      | **Dynamic threshold** — P99 latency tracker with safety gates (50–4000 ms).                                                                                                  | `driver/pipeline/hedging.rs` |
+| 4.3      | **Hedging config** — `HedgingThreshold` enum (Dynamic/Static), `HedgingOptions` with `enabled` flag (§9.3). Nested in `RetryOptions`. Overridable at Runtime/Account layers. | `options/availability.rs`    |
+| 4.4      | **Tests** — Hedging fires after threshold, primary wins, secondary wins, both fail, write hedging on MWR only.                                                               | `tests/`                     |
 
 **What works after Step 4**: Full hedging with dynamic P99-based threshold. Still HTTP/1.1.
 
@@ -1859,13 +1867,13 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 
 ### Step 6: HTTP/2 connection sharding
 
-| Sub-step | Work Item                                                                                                                                                                                                       | Files                                                    |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
-| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via atomics. Immutable `Arc<Vec<...>>` snapshot for lock-free shard reads.                              | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
-| 6.2      | **Shard selection algorithm** — `select_shard` with `load_spread_ratio`, active set, least-loaded routing, scale-up on capacity.                                                                                | `driver/transport/shard_pool.rs`                         |
-| 6.3      | **`ShardingConfig`** — All knobs (`max_streams_per_client`, `max_clients_per_endpoint = num_cpus * 2`, `min_clients_per_endpoint`, `load_spread_ratio`, `idle_client_timeout`). Environment variable overrides. | `options/connection_pool.rs`                             |
-| 6.4      | **Wire into `AdaptiveTransport`** — When HTTP/2 is detected, use `ShardedHttpTransport` instead of plain.                                                                                                       | `driver/transport/adaptive_transport.rs`                 |
-| 6.5      | **Tests** — Shard selection under load, scale-up, inflight tracking, multi-endpoint pools.                                                                                                                      | `tests/`                                                 |
+| Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                    |
+|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via atomics. Immutable `Arc<Vec<...>>` snapshot for lock-free shard reads.                                                                            | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
+| 6.2      | **Shard selection algorithm** — `select_shard` with `load_spread_ratio`, active set, least-loaded routing, scale-up on capacity.                                                                                                                              | `driver/transport/shard_pool.rs`                         |
+| 6.3      | **`ShardingConfig`** — All knobs (`max_streams_per_client`, `max_clients_per_endpoint = num_cpus * 2`, `min_clients_per_endpoint`, `load_spread_ratio`, `idle_client_timeout`). Resolved from `ConnectionPoolOptions` (§9.1). Environment variable overrides. | `options/connection_pool.rs`                             |
+| 6.4      | **Wire into `AdaptiveTransport`** — When HTTP/2 is detected, use `ShardedHttpTransport` instead of plain.                                                                                                                                                     | `driver/transport/adaptive_transport.rs`                 |
+| 6.5      | **Tests** — Shard selection under load, scale-up, inflight tracking, multi-endpoint pools.                                                                                                                                                                    | `tests/`                                                 |
 
 **What works after Step 6**: HTTP/2 with connection sharding and elastic scale-up. No health
 checks or eviction yet — shards accumulate but do not get reclaimed.
@@ -1932,32 +1940,143 @@ retry, and routing code is removed.
 
 ## 9. Configuration Surface
 
-### New Options in `ConnectionPoolOptions`
+This section describes the new transport-pipeline options introduced by this spec. All option
+types follow the conventions defined in the
+[Configuration Options Specification](ConfigurationOptions.md):
+
+- All fields `pub`, all `Option<T>`, `#[non_exhaustive]`, `Default`, fluent `with_*` setters.
+- `#[derive(CosmosOptions)]` generates `View` structs, `from_env()`, and builders.
+- Environment variables use the `AZURE_COSMOS_` prefix + `SCREAMING_SNAKE_CASE`.
+- Environment variables are read once at SDK init via `from_env()` and cached.
+
+### 9.1 Additions to `ConnectionPoolOptions`
+
+**Layers:** Runtime, Account *(nested inside `ConnectionOptions` via `#[option(nested)]`)*
+
+The existing `ConnectionPoolOptions` (§3.3 of the Configuration Options spec) gains sharding
+fields for HTTP/2 connection management. These are only effective when the `AdaptiveTransport`
+selects the sharded path (HTTP/2 gateways — ComputeGateway or Gateway 2.0). They are ignored
+when the gateway supports only HTTP/1.1 (RoutingGateway).
 
 ```rust
-// Added to ConnectionPoolOptions or a new ShardingOptions struct:
+#[derive(CosmosOptions)]
+#[options(layers(runtime, account))]
+pub struct ConnectionPoolOptions {
+    // --- Existing fields (from Configuration Options spec §3.3) ---
 
-/// Configuration for HTTP/2 connection sharding.
-/// Only applies when using an HTTP/2 gateway (ComputeGateway or Gateway 2.0).
-/// Ignored when the gateway only supports HTTP/1.1 (RoutingGateway).
-pub sharding: ShardingConfig,
+    /// How long idle connections are kept alive.
+    pub idle_timeout: Option<Duration>,
+    /// Maximum number of connections in the pool.
+    pub max_connections: Option<usize>,
+
+    // --- New fields for HTTP/2 sharding (this spec) ---
+
+    /// Maximum concurrent HTTP/2 streams per `HttpClient` shard per endpoint
+    /// before a new shard is created. Default: 20 (aligned with current Cosmos
+    /// gateway stream limit).
+    pub max_streams_per_client: Option<usize>,
+    /// Maximum number of `HttpClient` shards per endpoint. Default: `num_cpus * 2`.
+    pub max_clients_per_endpoint: Option<usize>,
+    /// Minimum number of `HttpClient` shards per endpoint. The pool never
+    /// scales below this count. Default: 1.
+    pub min_clients_per_endpoint: Option<usize>,
+    /// Fraction of shards in the "active set" that receive new requests.
+    /// Shards outside the active set drain and are eventually reclaimed.
+    /// Default: 0.5.
+    pub load_spread_ratio: Option<f64>,
+    /// Consecutive failures on a shard (with healthy peers) before eviction.
+    /// Default: 5.
+    pub consecutive_failure_threshold: Option<u32>,
+    /// Grace period after eviction-mark before a shard is actually dropped.
+    /// Default: 10 s.
+    pub eviction_grace_period: Option<Duration>,
+    /// Time a shard must be idle (0 inflight, 0 new requests) before
+    /// the health sweep reclaims it. Default: 60 s.
+    pub idle_client_timeout: Option<Duration>,
+    /// Interval between background health-sweep iterations. Default: 5 s.
+    pub health_check_interval: Option<Duration>,
+    /// When average inflight / `max_streams_per_client` across active shards
+    /// exceeds this ratio, a new shard is created proactively (off the
+    /// request hot path). Default: 0.75.
+    pub scale_up_threshold_ratio: Option<f64>,
+}
 ```
 
-### New Options in `OperationOptions` or `RuntimeOptions`
+| Option                          | Type               | Env Var                                           | Notes                                        |
+|---------------------------------|--------------------|---------------------------------------------------|----------------------------------------------|
+| `idle_timeout`                  | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                  | *(existing)*                                 |
+| `max_connections`               | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`               | *(existing)*                                 |
+| `max_streams_per_client`        | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_STREAMS_PER_CLIENT`        | **New.** H2 stream limit per shard.          |
+| `max_clients_per_endpoint`      | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CLIENTS_PER_ENDPOINT`      | **New.** Upper bound on shards per endpoint. |
+| `min_clients_per_endpoint`      | `Option<usize>`    | `AZURE_COSMOS_POOL_MIN_CLIENTS_PER_ENDPOINT`      | **New.** Lower bound on shards per endpoint. |
+| `load_spread_ratio`             | `Option<f64>`      | `AZURE_COSMOS_POOL_LOAD_SPREAD_RATIO`             | **New.** Active-set fraction for scale-down. |
+| `consecutive_failure_threshold` | `Option<u32>`      | `AZURE_COSMOS_POOL_CONSECUTIVE_FAILURE_THRESHOLD` | **New.** Eviction trigger.                   |
+| `eviction_grace_period`         | `Option<Duration>` | `AZURE_COSMOS_POOL_EVICTION_GRACE_PERIOD`         | **New.**                                     |
+| `idle_client_timeout`           | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_CLIENT_TIMEOUT`           | **New.** Per-shard idle reclaim.             |
+| `health_check_interval`         | `Option<Duration>` | `AZURE_COSMOS_POOL_HEALTH_CHECK_INTERVAL`         | **New.** Sweep cadence.                      |
+| `scale_up_threshold_ratio`      | `Option<f64>`      | `AZURE_COSMOS_POOL_SCALE_UP_THRESHOLD_RATIO`      | **New.** Proactive scale-up trigger.         |
+
+### 9.2 Additions to `RetryOptions`
+
+**Layers:** Runtime, Account
+
+The existing `RetryOptions` (§3.5 of the Configuration Options spec) gains nested groups for
+hedging and circuit-breaker threshold tuning. The top-level `enable_partition_level_circuit_breaker`
+and `disable_partition_level_failover` flags are already defined there; the new nested groups
+provide fine-grained knobs.
 
 ```rust
-/// Hedging configuration. Hedging is enabled by default with a dynamic
-/// threshold based on observed P99 latency (clamped to 50-4000 ms).
-/// Set `hedging_enabled` to `false` to disable hedging entirely.
-/// Overridable at `DriverRuntime`, `Driver`, and per-operation levels.
-pub hedging_enabled: bool,  // Default: true
-pub hedging_threshold: HedgingThreshold,
+#[derive(CosmosOptions)]
+#[options(layers(runtime, account))]
+pub struct RetryOptions {
+    // --- Existing fields (from Configuration Options spec §3.5) ---
 
-/// Circuit breaker configuration for partition-level failover.
-pub circuit_breaker: CircuitBreakerConfig,
+    /// Nested group for session-consistency retry behavior on 404/1002 errors.
+    #[option(nested)]
+    pub session_retry: Option<SessionRetryOptions>,
+    /// Enable partition-level circuit breaker for transient failure isolation.
+    pub enable_partition_level_circuit_breaker: Option<bool>,
+    /// Disable automatic partition-level failover to other replicas.
+    pub disable_partition_level_failover: Option<bool>,
+
+    // --- New nested groups (this spec) ---
+
+    /// Hedging (speculative execution) configuration.
+    #[option(nested)]
+    pub hedging: Option<HedgingOptions>,
+    /// Fine-grained circuit-breaker threshold tuning.
+    #[option(nested)]
+    pub circuit_breaker: Option<CircuitBreakerOptions>,
+}
 ```
 
+### 9.3 `HedgingOptions` *(new nested group)*
+
+**Layers:** Runtime, Account *(nested inside `RetryOptions` via `#[option(nested)]`)*
+
+Controls speculative hedging of requests. Hedging is enabled by default with a dynamic
+threshold based on observed P99 latency (clamped to safety gates). For writes, hedging is
+only active on multi-write-region (MWR) accounts.
+
 ```rust
+#[derive(CosmosOptions)]
+#[options(layers(runtime, account))]
+pub struct HedgingOptions {
+    /// Whether hedging is enabled. Default: `true`.
+    pub enabled: Option<bool>,
+    /// Threshold strategy. Default: `HedgingThreshold::Dynamic { min: 50ms, max: 4000ms }`.
+    pub threshold: Option<HedgingThreshold>,
+}
+```
+
+| Option      | Type                       | Env Var                             | Notes                                                                     |
+|-------------|----------------------------|-------------------------------------|---------------------------------------------------------------------------|
+| `enabled`   | `Option<bool>`             | `AZURE_COSMOS_HEDGING_ENABLED`      | Set `false` to disable hedging entirely.                                  |
+| `threshold` | `Option<HedgingThreshold>` | `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Static threshold in ms; dynamic threshold is configured programmatically. |
+
+```rust
+/// Strategy for computing the hedging delay.
+#[derive(Clone, Debug, PartialEq)]
 pub enum HedgingThreshold {
     /// Dynamic threshold based on observed P99 latency with safety gates.
     /// This is the default.
@@ -1972,31 +2091,67 @@ pub enum HedgingThreshold {
 }
 ```
 
+> **Environment variable note:** When `AZURE_COSMOS_HEDGING_THRESHOLD_MS` is set to a numeric
+> value, the SDK uses `HedgingThreshold::Static(Duration::from_millis(value))`. The dynamic
+> threshold with custom bounds is only configurable programmatically.
+
+### 9.4 `CircuitBreakerOptions` *(new nested group)*
+
+**Layers:** Runtime, Account *(nested inside `RetryOptions` via `#[option(nested)]`)*
+
+Fine-grained thresholds for the partition-level circuit breaker. The top-level
+`RetryOptions.enable_partition_level_circuit_breaker` controls whether the circuit breaker is
+active; these options tune its behavior when enabled.
+
 ```rust
-pub struct CircuitBreakerConfig {
+#[derive(CosmosOptions)]
+#[options(layers(runtime, account))]
+pub struct CircuitBreakerOptions {
     /// Consecutive read failures before tripping. Default: 2.
-    pub read_failure_threshold: u32,
+    pub read_failure_threshold: Option<u32>,
     /// Consecutive write failures before tripping. Default: 5.
-    pub write_failure_threshold: u32,
+    pub write_failure_threshold: Option<u32>,
     /// Counter reset window. Default: 5 minutes.
-    pub counter_reset_window: Duration,
+    pub counter_reset_window: Option<Duration>,
     /// Background failback interval. Default: 300 seconds.
-    pub failback_interval: Duration,
+    pub failback_interval: Option<Duration>,
     /// Duration a partition must be unavailable before probe. Default: 5 seconds.
-    pub unavailability_probe_delay: Duration,
+    pub unavailability_probe_delay: Option<Duration>,
 }
 ```
 
-### Environment Variable Support
+| Option                       | Type               | Env Var                                      | Notes                                                                 |
+|------------------------------|--------------------|----------------------------------------------|-----------------------------------------------------------------------|
+| `read_failure_threshold`     | `Option<u32>`      | `AZURE_COSMOS_CB_READ_FAILURE_THRESHOLD`     | Trips after N consecutive read failures.                              |
+| `write_failure_threshold`    | `Option<u32>`      | `AZURE_COSMOS_CB_WRITE_FAILURE_THRESHOLD`    | Trips after N consecutive write failures.                             |
+| `counter_reset_window`       | `Option<Duration>` | `AZURE_COSMOS_CB_COUNTER_RESET_WINDOW`       | Resets consecutive-failure counters after this period of no failures. |
+| `failback_interval`          | `Option<Duration>` | `AZURE_COSMOS_CB_FAILBACK_INTERVAL`          | How often the background sweep probes tripped partitions.             |
+| `unavailability_probe_delay` | `Option<Duration>` | `AZURE_COSMOS_CB_UNAVAILABILITY_PROBE_DELAY` | Time a partition must be unavailable before the first probe.          |
 
-Following the existing pattern in `ConnectionPoolOptions`:
+### 9.5 Integration with Layer Structs
 
-| Variable                                | Config Field                        |
-|-----------------------------------------|-------------------------------------|
-| `AZURE_COSMOS_MAX_STREAMS_PER_CLIENT`   | `sharding.max_streams_per_client`   |
-| `AZURE_COSMOS_MAX_CLIENTS_PER_ENDPOINT` | `sharding.max_clients_per_endpoint` |
-| `AZURE_COSMOS_SHARD_IDLE_TIMEOUT_SECS`  | `sharding.idle_client_timeout`      |
-| `AZURE_COSMOS_HEDGING_THRESHOLD_MS`     | `hedging_threshold`                 |
+The new option groups nest inside existing groups already aggregated by `CosmosRuntimeOptions`
+and `CosmosClientOptions` (§4 of the Configuration Options spec). No new top-level fields are
+needed on the layer structs:
+
+```text
+CosmosRuntimeOptions / CosmosClientOptions
+├── connection: Arc<ConnectionOptions>
+│   └── connection_pool: Option<ConnectionPoolOptions>   ← sharding fields added here (§9.1)
+├── retry: Arc<RetryOptions>
+│   ├── session_retry: Option<SessionRetryOptions>       ← existing
+│   ├── hedging: Option<HedgingOptions>                  ← new (§9.3)
+│   └── circuit_breaker: Option<CircuitBreakerOptions>   ← new (§9.4)
+├── request: Arc<RequestOptions>
+├── regions: Arc<RegionOptions>
+├── account: Arc<CosmosAccountOptions>
+└── quirks: Arc<QuirkOptions>
+```
+
+Resolution follows the standard layered walk: **Operation → Account → Runtime → Environment**
+(highest to lowest priority). Because sharding, hedging, and circuit-breaker options participate
+at the Runtime and Account layers only (not Operation), the effective walk is
+**Account → Runtime → Environment**.
 
 ---
 
@@ -2105,11 +2260,11 @@ sdk/cosmos/azure_data_cosmos_driver/src/
 │   └── (unchanged)
 ├── options/
 │   ├── mod.rs
-│   ├── connection_pool.rs        # Updated with ShardingConfig
+│   ├── connection_pool.rs        # Updated with sharding fields on ConnectionPoolOptions (§9.1)
 │   ├── driver_options.rs
-│   ├── operation_options.rs      # Updated with hedging/CB config
+│   ├── operation_options.rs      # Unchanged (hedging/CB in RetryOptions §9.2–§9.4)
 │   ├── retry.rs                  # NEW: RetryOptions
-│   └── availability.rs           # NEW: CircuitBreakerConfig, HedgingConfig
+│   └── availability.rs           # NEW: CircuitBreakerOptions, HedgingOptions
 └── system/
     └── (unchanged)
 ```
