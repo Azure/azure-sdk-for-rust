@@ -41,6 +41,14 @@ impl DatabaseReference {
         }
     }
 
+    /// Creates a new database reference by RID.
+    pub fn from_rid(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            account,
+            id: ResourceIdentifier::ByRid(ResourceId::new(rid)),
+        }
+    }
+
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
         &self.account

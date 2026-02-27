@@ -94,14 +94,23 @@ impl std::fmt::Debug for AuthorizationPolicy {
     }
 }
 
+impl From<&crate::models::Credential> for Credential {
+    fn from(public: &crate::models::Credential) -> Self {
+        match public {
+            crate::models::Credential::MasterKey(key) => Credential::MasterKey(key.clone()),
+            crate::models::Credential::TokenCredential(cred) => {
+                Credential::TokenCredential(Arc::clone(cred))
+            }
+        }
+    }
+}
+
 impl AuthorizationPolicy {
     /// Creates a new authorization policy from authentication options.
-    pub(crate) fn new(auth: &Credential) -> Self {
-        let credential = match auth {
-            Credential::MasterKey(key) => Credential::MasterKey(key.clone()),
-            Credential::TokenCredential(cred) => Credential::TokenCredential(Arc::clone(cred)),
-        };
-        Self { credential }
+    pub(crate) fn new(auth: &crate::models::Credential) -> Self {
+        Self {
+            credential: Credential::from(auth),
+        }
     }
 }
 

@@ -105,14 +105,14 @@ impl std::fmt::Display for ResourceId {
 /// This is reused across resource reference types (including databases) to avoid
 /// duplicating identical `ByName`/`ByRid` enums per resource.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum ResourceIdentifierType {
+pub(crate) enum ResourceIdentifier {
     /// Reference by user-provided resource name.
     ByName(ResourceName),
     /// Reference by internal RID.
     ByRid(ResourceId),
 }
 
-impl ResourceIdentifierType {
+impl ResourceIdentifier {
     /// Creates a resource identifier by name.
     pub(crate) fn by_name(name: impl Into<ResourceName>) -> Self {
         Self::ByName(name.into())
@@ -360,14 +360,14 @@ mod tests {
 
     #[test]
     fn database_id_by_name() {
-        let id = ResourceIdentifierType::ByName(ResourceName::from("testdb"));
+        let id = ResourceIdentifier::ByName(ResourceName::from("testdb"));
         assert_eq!(id.name(), Some("testdb"));
         assert_eq!(id.rid(), None);
     }
 
     #[test]
     fn database_id_by_rid() {
-        let id = ResourceIdentifierType::ByRid(ResourceId::from("abc123"));
+        let id = ResourceIdentifier::ByRid(ResourceId::from("abc123"));
         assert_eq!(id.name(), None);
         assert_eq!(id.rid(), Some("abc123"));
     }
