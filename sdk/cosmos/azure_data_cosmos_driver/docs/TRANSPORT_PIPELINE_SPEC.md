@@ -318,8 +318,9 @@ fn resolve_endpoint(
     partition_state: &PartitionEndpointState,
 ) -> RoutingDecision;
 
-// SYSTEM: Decide what to do after a transport attempt completes.
-fn evaluate_operation_retry(
+// SYSTEM: Evaluate the result of a transport attempt and decide the
+// next OperationAction (complete, retry, failover, hedge, or abort).
+fn evaluate_transport_result(
     operation: &CosmosOperation,
     result: &TransportResult,
     retry_state: &OperationRetryState,
@@ -327,7 +328,7 @@ fn evaluate_operation_retry(
 ) -> OperationAction;
 
 // SYSTEM: Decide whether to retry a 429 or connectivity error at transport level.
-// Extracted as a pure function (like `evaluate_operation_retry`) so it can be
+// Extracted as a pure function (like `evaluate_transport_result`) so it can be
 // unit-tested in isolation. Covers 429 backoff as well as transient I/O /
 // timeout errors that can be retried on a different HttpClient shard.
 fn evaluate_transport_retry(
@@ -442,7 +443,7 @@ pub(crate) async fn execute_operation_pipeline(
         diagnostics.record_attempt(&result);
 
         // STAGE 5: Evaluate result and decide next action
-        let action = evaluate_operation_retry(
+        let action = evaluate_transport_result(
             operation,
             &result,
             &retry_state,
@@ -577,13 +578,13 @@ async fn execute_hedged(
 - Both attempts are tracked in `DiagnosticsContext`
 - The hedged attempt's RU charge is always reported regardless of which wins
 
-### 4.3 `evaluate_operation_retry` Decision Tree
+### 4.3 `evaluate_transport_result` Decision Tree
 
 This pure function replaces the complex `ClientRetryPolicy::should_retry` method. Because it is a
 pure function over data components, it is trivially unit-testable.
 
 ```rust
-fn evaluate_operation_retry(
+fn evaluate_transport_result(
     operation: &CosmosOperation,
     result: &TransportResult,
     retry_state: &OperationRetryState,
@@ -1699,7 +1700,7 @@ just the structural refactoring with a plain `Arc<dyn HttpClient>`.
 | 1.2      | **Transport pipeline (slim)** — Implement `TransportPipeline` with auth header, common headers, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff. | `driver/transport/transport_pipeline.rs`                       |
 | 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Only the happy path + 429 retry propagation. No failover, no hedging. Hard-coded deadline.              | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
 | 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                           | `driver/cosmos_driver.rs`                                      |
-| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_operation_retry` happy path, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                            | `tests/`                                                       |
+| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                           | `tests/`                                                       |
 
 **What works after Step 1**: Operations flow through the new pipeline end-to-end against a
 single region with basic 429 retry. The architecture is in place for incremental additions.
@@ -1711,10 +1712,10 @@ Add cross-region failover, `AccountEndpointState` + routing systems, and the `Ac
 | Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                                      |
 |----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
 | 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`. | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
-| 2.2      | **Expand `evaluate_operation_retry`** — Add 403.3 (WriteForbidden + cache refresh with rate-limiting), 503, 404/1022, 429/3092, 500-for-reads. Add `FailoverRetry`, `SessionRetry`, `PartitionFailover` action handling in the operation loop.                | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
+| 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh with rate-limiting), 503, 404/1022, 429/3092, 500-for-reads. Add `FailoverRetry`, `SessionRetry`, `PartitionFailover` action handling in the operation loop.               | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
 | 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                           | `driver/transport/transport_pipeline.rs`                                   |
 | 2.4      | **Config surface (initial)** — Add basic retry and failover options to `OperationOptions` / `RuntimeOptions`. Hard-coded defaults, environment variable overrides.                                                                                            | `options/retry.rs`, `options/availability.rs`                              |
-| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_operation_retry`, integration tests for multi-region failover.                                                                                                                                    | `tests/`                                                                   |
+| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                   | `tests/`                                                                   |
 
 **What works after Step 2**: Full multi-region failover, 403.3 recovery with cache refresh,
 session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit breaker.
@@ -1977,7 +1978,7 @@ sdk/cosmos/azure_data_cosmos_driver/src/
 │   │   ├── components.rs         # ECS-style state component types
 │   │   ├── operation_pipeline.rs # Operation-level orchestration loop
 │   │   ├── hedging.rs            # Hedging/speculative execution
-│   │   └── retry_evaluation.rs   # Pure fn: evaluate_operation_retry
+│   │   └── retry_evaluation.rs   # Pure fn: evaluate_transport_result
 │   ├── routing/                  # NEW (moved from azure_data_cosmos)
 │   │   ├── mod.rs
 │   │   ├── global_endpoint_manager.rs
