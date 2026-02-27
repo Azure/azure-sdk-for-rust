@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::availability_strategy::AvailabilityStrategy;
 use crate::constants;
 use crate::models::ThroughputProperties;
 use crate::regions::RegionName;
@@ -38,6 +39,7 @@ pub struct CosmosClientOptions {
     pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
     pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
+    pub(crate) availability_strategy: Option<AvailabilityStrategy>,
 }
 
 impl CosmosClientOptions {
@@ -55,6 +57,17 @@ impl CosmosClientOptions {
         self.custom_headers = custom_headers;
         self
     }
+
+    /// Sets the availability strategy for cross-region hedging.
+    ///
+    /// When configured, the SDK sends parallel requests to additional regions
+    /// when the primary request exceeds a latency threshold. See
+    /// [`AvailabilityStrategy`] for details.
+    pub fn with_availability_strategy(mut self, strategy: AvailabilityStrategy) -> Self {
+        self.availability_strategy = Some(strategy);
+        self
+    }
+
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
         for (header_name, header_value) in &self.custom_headers {
             // Only insert if not already set — request-level headers take priority.

@@ -6,6 +6,7 @@
 
 mod account_endpoint;
 mod account_reference;
+mod availability_strategy;
 pub mod clients;
 mod connection_string;
 pub mod constants;
@@ -28,6 +29,7 @@ pub use clients::CosmosClientBuilder;
 
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
+pub use availability_strategy::{AvailabilityStrategy, CrossRegionHedgingStrategy};
 pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::CosmosResponse;

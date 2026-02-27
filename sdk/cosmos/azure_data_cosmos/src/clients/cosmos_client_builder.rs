@@ -4,6 +4,7 @@
 //! Builder for creating [`CosmosClient`] instances.
 
 use crate::{
+    availability_strategy::AvailabilityStrategy,
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
     regions::RegionName,
     resource_context::{ResourceLink, ResourceType},
@@ -145,6 +146,35 @@ impl CosmosClientBuilder {
     #[cfg(feature = "allow_invalid_certificates")]
     pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
         self.allow_emulator_invalid_certificates = allow;
+        self
+    }
+
+    /// Sets the availability strategy for cross-region hedging.
+    ///
+    /// When configured, the SDK sends parallel requests to additional regions
+    /// when the primary request exceeds a latency threshold. This can reduce
+    /// tail latency when a region is experiencing high response times.
+    ///
+    /// # Arguments
+    ///
+    /// * `strategy` - The availability strategy to use.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use azure_data_cosmos::{CosmosClientBuilder, AvailabilityStrategy};
+    /// use std::time::Duration;
+    ///
+    /// let builder = CosmosClientBuilder::new()
+    ///     .with_availability_strategy(
+    ///         AvailabilityStrategy::cross_region_hedging(
+    ///             Duration::from_millis(500),
+    ///             Some(Duration::from_millis(100)),
+    ///         ),
+    ///     );
+    /// ```
+    pub fn with_availability_strategy(mut self, strategy: AvailabilityStrategy) -> Self {
+        self.options.availability_strategy = Some(strategy);
         self
     }
 
