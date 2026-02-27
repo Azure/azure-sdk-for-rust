@@ -75,15 +75,6 @@ impl ChangeFeedStartFromInternal {
             },
         }
     }
-
-    pub fn with_etag_and_range(etag: String, feed_range: serde_json::Value) -> Self {
-        Self {
-            start_type: ChangeFeedStartFromType::Lease,
-            point_in_time_ms: None,
-            etag: Some(etag),
-            feed_range: Some(feed_range),
-        }
-    }
 }
 
 #[cfg(test)]
