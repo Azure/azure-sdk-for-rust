@@ -111,9 +111,9 @@ pub struct QueueClientReceiveMessagesOptions<'a> {
     pub visibility_timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueClient::send_message_internal()`
+/// Options to be passed to `QueueClient::send_message()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueClientSendMessageInternalOptions<'a> {
+pub struct QueueClientSendMessageOptions<'a> {
     /// Optional. Specifies the time-to-live interval for the message, in seconds.
     /// Prior to version 2017-07-29, the maximum time-to-live allowed is 7 days. For
     /// version 2017-07-29 or later, the maximum time-to-live can be any positive

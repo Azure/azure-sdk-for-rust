@@ -8,9 +8,9 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat,
+        NoFormat, Pipeline, Response, StatusCode, Url,
     },
-    tracing, xml, Result,
+    tracing, Result,
 };
 use std::sync::Arc;
 
@@ -100,25 +100,6 @@ impl QueueClient {
         }
     }
 
-    /// Enqueues a message and returns the single [`SentMessage`] from the response.
-    ///
-    /// TODO: Need to figure out what to do to finalize this design.
-    /// The underlying operation returns a list; this method unwraps that list
-    /// and returns `Response<SentMessage>` directly.
-    ///
-    /// # Arguments
-    ///
-    /// * `queue_message` - The message to enqueue.
-    /// * `options` - Optional configuration for the request.
-    pub async fn send_message(
-        &self,
-        queue_message: RequestContent<QueueMessage, XmlFormat>,
-        options: Option<QueueClientSendMessageInternalOptions<'_>>,
-    ) -> Result<Response<SentMessage, XmlFormat>> {
-        let response = self.send_message_internal(queue_message, options).await?;
-        Self::extract_first_sent_message(response).await
-    }
-
     /// Updates the visibility timeout and optionally the content of a queued message.
     ///
     /// # Arguments
@@ -136,26 +117,5 @@ impl QueueClient {
     ) -> Result<Response<(), NoFormat>> {
         self.update(message_id, pop_receipt, visibility_timeout, options)
             .await
-    }
-
-    async fn extract_first_sent_message(
-        response: Response<ListOfSentMessage, XmlFormat>,
-    ) -> Result<Response<SentMessage, XmlFormat>> {
-        let status = response.status();
-        let headers = response.headers().clone();
-        let list = response.into_model()?;
-        let first = list
-            .items
-            .unwrap_or_default()
-            .into_iter()
-            .next()
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "No messages found in the response.",
-                )
-            })?;
-        let xml_body = xml::to_xml(&first)?;
-        Ok(RawResponse::from_bytes(status, headers, xml_body).into())
     }
 }
