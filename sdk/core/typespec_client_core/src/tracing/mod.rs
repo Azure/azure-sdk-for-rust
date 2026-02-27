@@ -16,10 +16,8 @@ use std::{borrow::Cow, fmt::Debug, sync::Arc};
 /// - Tracer: This trait is responsible for creating spans and managing the active span.
 /// - Span: This trait represents a single unit of work in the distributed tracing system.
 mod attributes;
-mod with_context;
 
 pub use attributes::{Attribute, AttributeArray, AttributeValue};
-pub(crate) use with_context::{FutureExt, WithContext};
 
 /// The `TracerProvider` trait is the entrypoint for distributed tracing in the SDK.
 ///

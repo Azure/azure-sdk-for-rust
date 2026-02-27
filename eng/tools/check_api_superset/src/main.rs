@@ -2,13 +2,15 @@
 // Licensed under the MIT License.
 
 use rustdoc_types::{Crate, Id, ItemEnum, ItemKind, ItemSummary, Visibility};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::error::Error;
-use std::ffi::OsStr;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-use std::process::Command;
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap},
+    error::Error,
+    ffi::OsStr,
+    fs::File,
+    io::Read,
+    path::Path,
+    process::Command,
+};
 
 const CRATES: &[&str] = &["typespec", "typespec_client_core", "azure_core"];
 
