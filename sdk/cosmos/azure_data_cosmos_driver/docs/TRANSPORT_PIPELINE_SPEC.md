@@ -70,6 +70,7 @@ eventually live in `azure_data_cosmos_driver`. The goal is:
 │  │  ┌─ Region selection (GlobalEndpointManager)                          │  │
 │  │  ├─ Hedging (parallel speculative execution in secondary region)      │  │
 │  │  ├─ Cross-region failover (503/WriteForbidden/SessionNotAvailable)    │  │
+│  │  ├─ 403.3 recovery (refresh AccountMetadataCache, rate-limited)       │  │
 │  │  ├─ Partition-level circuit breaker (PPAF/PPCB)                       │  │
 │  │  ├─ Session token resolution                                          │  │
 │  │  └─ Operation-level diagnostics aggregation                           │  │
@@ -168,6 +169,10 @@ pub(crate) struct PartitionOverride {
 /// Accumulated across attempts. Replaced (not mutated) between attempts.
 pub(crate) struct OperationRetryState {
     /// Index into the preferred endpoint list for round-robin failover.
+    /// This indexes into an immutable `LocationSnapshot` (see §4.4).
+    /// The snapshot is replaced atomically on refresh — it is never mutated
+    /// in place — so the index remains stable for the lifetime of one
+    /// operation attempt.
     pub location_index: usize,
     /// Regions/endpoints that have already been tried and failed.
     pub failed_endpoints: Vec<FailedEndpoint>,
@@ -195,7 +200,10 @@ pub(crate) struct FailedEndpoint {
 /// COMPONENT: Session state for consistency tracking.
 pub(crate) struct SessionState {
     pub session_token: Option<String>,
-    pub consistency_level: Option<ConsistencyLevel>,
+    /// The effective read consistency strategy for this operation, taking
+    /// into account the account-level default, any request-level override,
+    /// and driver-level policies (e.g., session-read-from-write-region).
+    pub effective_read_consistency_strategy: ReadConsistencyStrategy,
     /// LSN tracking for session consistency.
     pub quorum_selected_lsn: Option<i64>,
     pub global_committed_selected_lsn: Option<i64>,
@@ -221,11 +229,25 @@ pub(crate) struct TransportRequest {
     /// The execution context (Initial/Retry/Hedging/Failover).
     pub execution_context: ExecutionContext,
     /// End-to-end deadline for the overall operation.
+    /// Enforced in the transport pipeline by:
+    /// 1. Checking `Instant::now() >= deadline` before each attempt.
+    /// 2. Setting the per-request timeout on the underlying `HttpClient`
+    ///    to `deadline - Instant::now()` (clamped to a minimum of 1ms)
+    ///    so that the HTTP layer itself cancels the I/O if the deadline
+    ///    is reached mid-flight.
+    /// 3. On timeout, the response stream is dropped, which closes the
+    ///    underlying HTTP/2 stream or TCP connection.
     pub deadline: Option<Instant>,
 }
 
-/// COMPONENT: Transport-level retry state (for 429 throttling).
-/// Tracked per-attempt, not shared across operation-level retries.
+/// COMPONENT: Transport-level retry state (for 429 throttling and
+/// connectivity errors that can be retried locally by switching to a
+/// different HttpClient shard).
+///
+/// Scoped to a single attempt (including any regional failover within
+/// that attempt from `ClientRetryPolicy`). When hedging is active,
+/// each hedged request maintains its own independent `ThrottleRetryState`
+/// to avoid one attempt's throttling causing the other to fail.
 pub(crate) struct ThrottleRetryState {
     pub attempt_count: u32,
     pub max_attempts: u32,
@@ -287,8 +309,11 @@ fn evaluate_operation_retry(
     session_state: &SessionState,
 ) -> OperationAction;
 
-// SYSTEM: Decide whether to retry a 429 at transport level.
-fn evaluate_throttle_retry(
+// SYSTEM: Decide whether to retry a 429 or connectivity error at transport level.
+// Extracted as a pure function (like `evaluate_operation_retry`) so it can be
+// unit-tested in isolation. Covers 429 backoff as well as transient I/O /
+// timeout errors that can be retried on a different HttpClient shard.
+fn evaluate_transport_retry(
     result: &TransportResult,
     throttle_state: &ThrottleRetryState,
 ) -> ThrottleAction;
@@ -504,9 +529,19 @@ async fn execute_hedged(
 ```
 
 **Key hedging rules**:
-- Only for read-only operations (or idempotent operations if configured)
-- Threshold is configurable per-operation (default: 50ms, or dynamic based on P99 latency)
-- Both attempts are tracked in `DiagnosticsContext` with `ExecutionContext::Hedging`
+- Enabled by default for all operations. For write operations, hedging is only
+  enabled on multi-write-region (MWR) accounts. An option to opt-out exists and
+  is overridable at `DriverRuntime`, `Driver`, and per-operation levels.
+- Threshold is **dynamic by default**, based on the observed P99 latency
+  (preferring recent measurements for fast reaction). Hard-coded safety gates
+  clamp the effective threshold to the range **50 ms – 4000 ms**; configurable
+  min/max bounds can tighten this range further.
+- The primary (first) attempt always uses `ExecutionContext::Initial` so that
+  diagnostics can clearly distinguish whether hedging occurred. A hedged attempt
+  uses `ExecutionContext::Hedging`. This makes it easy to identify concurrent
+  execution caused by the original attempt not producing a terminal result
+  within the configured threshold.
+- Both attempts are tracked in `DiagnosticsContext`
 - The hedged attempt's RU charge is always reported regardless of which wins
 
 ### 4.3 `evaluate_operation_retry` Decision Tree
@@ -528,11 +563,16 @@ fn evaluate_operation_retry(
 
         TransportOutcome::HttpError { status, sub_status, request_sent, .. } => {
             match (*status, *sub_status) {
-                // 403.3 WriteForbidden → endpoint failover + cache refresh
+                // 403.3 WriteForbidden → refresh AccountMetadataCache + endpoint failover
+                // The account metadata cache is refreshed to obtain fresh account
+                // properties (e.g., updated writable/readable locations). A rate
+                // limiter ensures refreshes happen at most N times per minute to
+                // avoid overwhelming the metadata endpoint during sustained
+                // failover scenarios.
                 (403, Some(3)) => {
                     if retry_state.failover_retry_count < MAX_FAILOVER_RETRIES {
                         OperationAction::FailoverRetry {
-                            new_state: retry_state.advance_failover(result),
+                            new_state: retry_state.advance_failover_with_cache_refresh(result),
                             delay: None,
                         }
                     } else {
@@ -607,8 +647,11 @@ gets replaced with an immutable-swap pattern:
 pub(crate) struct GlobalEndpointManager {
     /// Current snapshot of location info. Replaced atomically on refresh.
     locations: RwLock<Arc<LocationSnapshot>>,
-    /// Account properties cache (TTL-based).
-    account_cache: AsyncCache<String, AccountProperties>,
+    /// Account properties cache — uses the existing `AccountMetadataCache`
+    /// from `driver/cache/account_metadata_cache.rs` rather than a new
+    /// `AsyncCache` instance. This ensures a single source of truth for
+    /// account metadata across the driver.
+    account_cache: AccountMetadataCache,
     /// Default (hub) endpoint.
     default_endpoint: Url,
 }
@@ -656,10 +699,10 @@ regional endpoint**. It is responsible for:
 
 1. Adding authorization header
 2. Adding common Cosmos headers
-3. Transport-level retry (429 throttling ONLY)
+3. Transport-level retry (429 throttling AND connectivity/I/O errors via shard rotation)
 4. Tracking request-sent-status for retry safety
 5. Recording per-attempt diagnostics events
-6. Enforcing end-to-end deadline
+6. Enforcing end-to-end deadline (setting per-request timeout on the `HttpClient`)
 
 The transport pipeline does **NOT** handle:
 - Region failover (that's the operation pipeline)
@@ -686,11 +729,15 @@ impl TransportPipeline {
         );
 
         loop {
-            // Check deadline
+            // Check deadline and set per-request timeout
             if let Some(deadline) = request.deadline {
-                if Instant::now() >= deadline {
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                if remaining.is_zero() {
                     return TransportResult::deadline_exceeded(diagnostics);
                 }
+                // Clamp per-request timeout so the HTTP layer cancels I/O
+                // when the operation-level deadline is reached mid-flight.
+                http_request.set_timeout(remaining.max(Duration::from_millis(1)));
             }
 
             // Build HTTP request
@@ -720,9 +767,21 @@ impl TransportPipeline {
                 }
             };
 
-            // Check for 429 throttling → transport-level retry
-            if let TransportOutcome::HttpError { status: 429, .. } = &result.outcome {
-                let action = evaluate_throttle_retry(&result, &throttle_state);
+            // Check for 429 throttling or connectivity errors → transport-level retry.
+            // Connectivity errors (I/O errors, timeouts) are retried locally by
+            // selecting a different HttpClient shard, which routes through a
+            // different TCP connection. This is effective because Gateway has
+            // multiple nodes and each backend partition has 4 replicas, so
+            // retries via a different network path have a high success rate.
+            let should_transport_retry = match &result.outcome {
+                TransportOutcome::HttpError { status: 429, .. } => true,
+                TransportOutcome::TransportError { .. }
+                    if operation_is_idempotent_or_request_not_sent(&result) => true,
+                _ => false,
+            };
+
+            if should_transport_retry {
+                let action = evaluate_transport_retry(&result, &throttle_state);
                 match action {
                     ThrottleAction::Retry { delay, new_state } => {
                         sleep(delay).await;
@@ -768,20 +827,27 @@ test (call the function directly), and have less overhead.
 
 Cosmos DB exposes **three gateway flavors** that differ in HTTP version support:
 
-| Gateway | Usage | HTTP Version | Notes |
-|---------|-------|-------------|-------|
-| **RoutingGateway** | Metadata + Dataplane | HTTP/1.1 only | Legacy, no ALPN |
-| **ComputeGateway** | Metadata + Dataplane | HTTP/2 via ALPN | Preferred for metadata |
-| **Gateway 2.0** | Dataplane only | HTTP/2 forced (different port) | No HTTP/1.1 fallback |
+| Gateway            | Usage                | HTTP Version                   | Notes                  |
+|--------------------|----------------------|--------------------------------|------------------------|
+| **RoutingGateway** | Metadata + Dataplane | HTTP/1.1 only                  | Legacy, no ALPN        |
+| **ComputeGateway** | Metadata + Dataplane | HTTP/2 via ALPN                | Preferred for metadata |
+| **Gateway 2.0**    | Dataplane only       | HTTP/2 forced (different port) | No HTTP/1.1 fallback   |
 
 At `CosmosClient` initialization, when fetching account properties via the metadata transport,
-the driver **probes the gateway's protocol support** (via ALPN negotiation or the well-known
-Gateway 2.0 port). This determines the transport strategy for the lifetime of the client:
+the driver **probes the gateway's protocol support** using ALPN negotiation. ALPN is sufficient
+to decide between HTTP/1.1 and HTTP/2 (adaptive). This determines the transport strategy for
+the lifetime of the client:
 
 - **HTTP/2 detected** (ComputeGateway or Gateway 2.0): Use `ShardedHttpTransport` (§6.1+)
 - **HTTP/1.1 only** (RoutingGateway): Use a plain `Arc<dyn HttpClient>` — no sharding needed
   since HTTP/1.1 uses one-request-per-connection and the underlying client already manages a
   connection pool via `pool_max_idle_per_host`.
+
+**Gateway 2.0 detection**: The `AccountProperties` response from the metadata endpoint contains
+`thinClientWritableLocations` and `thinClientReadableLocations` properties with regional
+Gateway 2.0 endpoints. Their presence indicates that Gateway 2.0 should be used for the
+dataplane transport (see Java reference:
+`sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/DatabaseAccount.java`).
 
 Both metadata and dataplane pipelines independently determine their transport strategy based on
 their respective gateway endpoint. When deploying to a region that uses ComputeGateway, both
@@ -809,7 +875,7 @@ impl AdaptiveTransport {
 
 ### 6.1 Problem Statement (HTTP/2 Sharding)
 
-When operating against an HTTP/2 gateway, the server enforces a strict limit of **20 concurrent
+When operating against an HTTP/2 gateway, the Cosmos DB service endpoint enforces a strict limit of **20 concurrent
 streams per H2 connection**. Most `HttpClient` implementations (including reqwest) prefer
 multiplexing over a single TCP connection in HTTP/2 mode and do NOT automatically allocate
 more connections when the stream limit is reached. This causes:
@@ -871,7 +937,11 @@ pub struct ShardingConfig {
     pub max_streams_per_client: u32,
 
     /// Maximum number of HttpClient instances per endpoint.
-    /// Limits total connection fan-out. Default: 32.
+    /// Limits total connection fan-out.
+    /// Default: `num_cpus * 2` (dynamically determined at runtime).
+    /// A static fallback of 32 is used if CPU count cannot be detected.
+    /// The value should be large enough to sustain thousands of point
+    /// reads per second (`num_cpus * 2 * max_streams_per_client` concurrent requests).
     pub max_clients_per_endpoint: u32,
 
     /// Minimum number of HttpClient instances per endpoint.
@@ -896,6 +966,8 @@ pub struct ShardingConfig {
     /// Idle timeout for HttpClient instances above min_clients_per_endpoint.
     /// Clients with no inflight requests for this duration are closed.
     /// Default: 60 seconds.
+    /// **TODO @fabianm**: Align with the idle connection timeout used by the Cosmos DB
+    /// Gateway. Follow up with the Gateway team for the recommended value.
     pub idle_client_timeout: Duration,
 
     /// How often to run the background health check/eviction sweep.
@@ -914,11 +986,18 @@ pub struct ShardingConfig {
 
 ```rust
 /// A pool of HttpClient instances for a single endpoint.
+///
+/// The shard list is stored as an immutable `Arc<Vec<...>>` and swapped
+/// atomically on writes (clone-on-write). This makes the read path
+/// (shard selection) lock-free — callers clone the `Arc` and iterate
+/// without holding a lock. Mutations (add/remove shard) take a write
+/// lock, build a new `Vec`, and swap the `Arc`.
 struct EndpointShardPool {
     endpoint: EndpointKey,
     config: ShardingConfig,
-    /// The shards (each wrapping an HttpClient).
-    shards: RwLock<Vec<Arc<ClientShard>>>,
+    /// The shards. Stored as Arc<Vec<...>> for lock-free reads.
+    /// Replaced atomically on shard add/remove.
+    shards: RwLock<Arc<Vec<Arc<ClientShard>>>>,
     /// Factory for creating new HttpClient instances.
     client_factory: Arc<dyn HttpClientFactory>,
     /// HttpClient configuration for this pool.
@@ -1239,9 +1318,18 @@ cause latency spikes.
 - Java checks per-channel (per TCP connection); we check per-`HttpClient` shard (which manages its
   own connection pool internally)
 - Java has CPU-aware guards (disable eviction under high CPU); we should adopt this using the
-  existing `CpuMemoryMonitor`
+  existing `CpuMemoryMonitor` (with a 90% CPU threshold, aligned with Java)
 - Java has transit-timeout counting; we use consecutive-failure counting as a proxy since the
   `HttpClient` trait doesn't expose per-stream timeout events separately
+
+**TCP keepalive consideration**: Proactive shard eviction is most valuable when it is driven
+by actual connectivity signals. The `reqwest` client supports TCP keepalive configuration
+(`tcp_keepalive`). When TCP keepalive probes detect a dead connection, the resulting I/O error
+feeds into the consecutive-failure counter, which then triggers eviction. Without keepalive,
+idle connections may silently go stale (e.g., due to NAT/firewall timeouts) and only fail on
+the next real request. **Recommended**: enable TCP keepalive on all `HttpClient` instances
+created by the `HttpClientFactory` (e.g., 30-second interval). Research is needed on the
+specific `reqwest` / `hyper` APIs for configuring keepalive intervals and probes.
 
 ### 6.6 Background Health Sweep
 
@@ -1354,35 +1442,154 @@ difference is that it wraps `AdaptiveTransport` instead of a raw `HttpClient`.
 
 ---
 
-## 8. Migration Plan (Step 1 → Step 2)
+## 8. Migration Plan
 
-### Step 1: Build in `azure_data_cosmos_driver`
+Each step below is designed as a **vertical slice** — a self-contained PR that delivers working
+end-to-end functionality with clear, limited scope. Earlier steps may use hard-coded
+timeouts/thresholds, skip advanced features, or support only HTTP/1.1. Later steps layer on
+capabilities incrementally. This keeps PRs review-friendly and reduces risk.
 
-| Phase | Work Item | New Modules/Files |
-|-------|-----------|-------------------|
-| 1a | **Routing** — Move `GlobalEndpointManager`, `LocationCache`, `GlobalPartitionEndpointManager` | `driver/routing/mod.rs`, `global_endpoint_manager.rs`, `location_cache.rs`, `partition_endpoint_manager.rs` |
-| 1b | **Operation pipeline** — Implement `execute_operation_pipeline`, `evaluate_operation_retry`, hedging | `driver/pipeline/mod.rs`, `operation_pipeline.rs`, `hedging.rs`, `retry_evaluation.rs` |
-| 1c | **Transport pipeline** — Implement `TransportPipeline`, throttle retry | `driver/transport/transport_pipeline.rs` (refactor existing `pipeline.rs`) |
-| 1d | **Adaptive transport** — Implement `AdaptiveTransport`, `ShardedHttpTransport`, gateway probing | `driver/transport/adaptive_transport.rs`, `sharded_transport.rs`, `shard_pool.rs`, `shard_health.rs` |
-| 1e | **State components** — Define all ECS-style component types | `driver/pipeline/components.rs` |
-| 1f | **Fault injection** — Move from `azure_data_cosmos`, integrate with sharded transport | `driver/fault_injection/mod.rs`, `rule.rs`, `condition.rs`, `result.rs` |
-| 1g | **Session tracking** — Session token management | `driver/routing/session_manager.rs` |
-| 1h | **Update `execute_operation`** — Wire `CosmosDriver::execute_operation` to use the operation pipeline | Modify `driver/cosmos_driver.rs` |
-| 1i | **Config surface** — Add `ShardingConfig`, hedging threshold, circuit breaker configs to options | Modify `options/connection_pool.rs`, add `options/retry.rs`, `options/availability.rs` |
-| 1j | **Testing** — Unit tests for each pure function + integration tests | `tests/` |
+### Step 1: Minimal Transport Pipeline (HTTP/1.1, single-region, basic retry)
 
-### Step 2: Cut Over `azure_data_cosmos`
+Refactor `execute_operation` to use the new pipeline architecture with the absolute minimum
+viable transport. No HTTP/2 sharding, no hedging, no circuit breaker, no session consistency —
+just the structural refactoring with a plain `Arc<dyn HttpClient>`.
 
-| Phase | Work Item |
-|-------|-----------|
-| 2a | Replace `GatewayPipeline` + `BackOffRetryHandler` with `driver.execute_operation()` calls |
-| 2b | Remove `azure_data_cosmos/src/pipeline/` |
-| 2c | Remove `azure_data_cosmos/src/retry_policies/` |
-| 2d | Remove `azure_data_cosmos/src/handler/` |
-| 2e | Remove `azure_data_cosmos/src/routing/` (endpoint managers) |
-| 2f | Remove `azure_data_cosmos/src/request_context.rs` |
-| 2g | Move fault injection tests to use driver-level APIs |
-| 2h | Update `azure_data_cosmos/src/clients/` to build `CosmosOperation` and call driver |
+| Sub-step | Work Item                                                                                                                                                                                                                        | Files                                                          |
+|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                  | `driver/pipeline/components.rs`                                |
+| 1.2      | **Transport pipeline (slim)** — Implement `TransportPipeline` with auth header, common headers, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff. | `driver/transport/transport_pipeline.rs`                       |
+| 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Only the happy path + 429 retry propagation. No failover, no hedging. Hard-coded deadline.              | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
+| 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                           | `driver/cosmos_driver.rs`                                      |
+| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_operation_retry` happy path, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                            | `tests/`                                                       |
+
+**What works after Step 1**: Operations flow through the new pipeline end-to-end against a
+single region with basic 429 retry. The architecture is in place for incremental additions.
+
+### Step 2: Multi-region failover & endpoint management
+
+Add cross-region failover, `GlobalEndpointManager`, and the `AccountMetadataCache` integration.
+
+| Sub-step | Work Item                                                                                                                                                                                                                                      | Files                                                                      |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| 2.1      | **Routing** — Move/adapt `GlobalEndpointManager` and `LocationCache` (with immutable `LocationSnapshot` swap pattern). Wire to existing `AccountMetadataCache`.                                                                                | `driver/routing/mod.rs`, `global_endpoint_manager.rs`, `location_cache.rs` |
+| 2.2      | **Expand `evaluate_operation_retry`** — Add 403.3 (WriteForbidden + cache refresh with rate-limiting), 503, 404/1022, 429/3092, 500-for-reads. Add `FailoverRetry`, `SessionRetry`, `PartitionFailover` action handling in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
+| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                            | `driver/transport/transport_pipeline.rs`                                   |
+| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `OperationOptions` / `RuntimeOptions`. Hard-coded defaults, environment variable overrides.                                                                             | `options/retry.rs`, `options/availability.rs`                              |
+| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_operation_retry`, integration tests for multi-region failover.                                                                                                                     | `tests/`                                                                   |
+
+**What works after Step 2**: Full multi-region failover, 403.3 recovery with cache refresh,
+session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit breaker.
+
+### Step 3: Session consistency & partition-level circuit breaker
+
+| Sub-step | Work Item                                                                                                                                                                | Files                                                    |
+|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                         | `driver/routing/session_manager.rs`                      |
+| 3.2      | **Partition endpoint manager** — Move `GlobalPartitionEndpointManager` with per-partition circuit breaker logic. Hard-coded thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_manager.rs`           |
+| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                  | `driver/pipeline/components.rs`, `operation_pipeline.rs` |
+| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerConfig`.                                                                                    | `options/availability.rs`                                |
+| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                   | `tests/`                                                 |
+
+**What works after Step 3**: Full session consistency routing, partition-level circuit breaker
+with failback. Still HTTP/1.1, no hedging.
+
+### Step 4: Hedging (speculative execution)
+
+| Sub-step | Work Item                                                                                                                                        | Files                        |
+|----------|--------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
+| 4.1      | **Hedging implementation** — `execute_hedged` with `tokio::select!` racing. Initial/Hedging `ExecutionContext` tracking. Static threshold first. | `driver/pipeline/hedging.rs` |
+| 4.2      | **Dynamic threshold** — P99 latency tracker with safety gates (50–4000 ms).                                                                      | `driver/pipeline/hedging.rs` |
+| 4.3      | **Hedging config** — `HedgingThreshold` enum (Dynamic/Static), `hedging_enabled` flag, overridable at `DriverRuntime`/`Driver`/operation levels. | `options/availability.rs`    |
+| 4.4      | **Tests** — Hedging fires after threshold, primary wins, secondary wins, both fail, write hedging on MWR only.                                   | `tests/`                     |
+
+**What works after Step 4**: Full hedging with dynamic P99-based threshold. Still HTTP/1.1.
+
+### Step 5: HTTP/2 support & adaptive transport (no sharding yet)
+
+Add protocol detection and the `AdaptiveTransport` enum, but without the sharded transport —
+HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
+
+| Sub-step | Work Item                                                                                                                                     | Files                                     |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| 5.1      | **Gateway probing** — ALPN negotiation to detect HTTP/2 vs HTTP/1.1. Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. | `driver/transport/adaptive_transport.rs`  |
+| 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                          | `driver/transport/adaptive_transport.rs`  |
+| 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                         | `driver/transport/http_client_factory.rs` |
+| 5.4      | **Tests** — Protocol detection, factory creates clients, adaptive dispatch.                                                                   | `tests/`                                  |
+
+**What works after Step 5**: HTTP/2 requests work (via a single connection). Gateway 2.0
+endpoints are detected and used. No sharding yet — stream limit may be hit under high load.
+
+### Step 6: HTTP/2 connection sharding
+
+| Sub-step | Work Item                                                                                                                                                                                                       | Files                                                    |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via atomics. Immutable `Arc<Vec<...>>` snapshot for lock-free shard reads.                              | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
+| 6.2      | **Shard selection algorithm** — `select_shard` with `load_spread_ratio`, active set, least-loaded routing, scale-up on capacity.                                                                                | `driver/transport/shard_pool.rs`                         |
+| 6.3      | **`ShardingConfig`** — All knobs (`max_streams_per_client`, `max_clients_per_endpoint = num_cpus * 2`, `min_clients_per_endpoint`, `load_spread_ratio`, `idle_client_timeout`). Environment variable overrides. | `options/connection_pool.rs`                             |
+| 6.4      | **Wire into `AdaptiveTransport`** — When HTTP/2 is detected, use `ShardedHttpTransport` instead of plain.                                                                                                       | `driver/transport/adaptive_transport.rs`                 |
+| 6.5      | **Tests** — Shard selection under load, scale-up, inflight tracking, multi-endpoint pools.                                                                                                                      | `tests/`                                                 |
+
+**What works after Step 6**: HTTP/2 with connection sharding and elastic scale-up. No health
+checks or eviction yet — shards accumulate but do not get reclaimed.
+
+### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
+
+| Sub-step | Work Item                                                                                                                                                          | Files                                     |
+|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| 7.1      | **Shard health checks** — `check_shard_health` (read-hang, consecutive failures with healthy peers, idle timeout). CPU-aware eviction guard (90% threshold).       | `driver/transport/shard_health.rs`        |
+| 7.2      | **Background health sweep** — `health_sweep_loop` (evict unhealthy, reclaim idle, proactive scale-up). Scale-down via `load_spread_ratio` + `idle_client_timeout`. | `driver/transport/shard_health.rs`        |
+| 7.3      | **TCP keepalive** — Enable TCP keepalive on all `HttpClient` instances (30s interval). Research reqwest/hyper APIs.                                                | `driver/transport/http_client_factory.rs` |
+| 7.4      | **Connectivity retry in transport** — Expand `evaluate_transport_retry` to retry I/O errors and timeouts on a different shard (for idempotent/not-sent requests).  | `driver/transport/transport_pipeline.rs`  |
+| 7.5      | **Tests** — Shard eviction, idle reclaim, scale-down flow, keepalive config, connectivity retry on different shard.                                                | `tests/`                                  |
+
+**What works after Step 7**: Full HTTP/2 sharding with health monitoring, automatic eviction
+& scale-down, TCP keepalive, and connectivity-level retry via shard rotation.
+
+### Step 8: Fault injection
+
+| Sub-step | Work Item                                                                                                                                                                         | Files                                                                   |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| 8.1      | **Move fault injection** — Move `FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult` from `azure_data_cosmos` to driver behind `fault_injection` feature flag. | `driver/fault_injection/mod.rs`, `rule.rs`, `condition.rs`, `result.rs` |
+| 8.2      | **`FaultInjectionTransport`** — Wraps `AdaptiveTransport`, evaluates rules before sending.                                                                                        | `driver/fault_injection/client_builder.rs`                              |
+| 8.3      | **Tests** — Fault injection triggers retry/failover, rule matching, feature gate.                                                                                                 | `tests/`                                                                |
+
+**What works after Step 8**: Complete driver pipeline with fault injection support.
+
+### Step 9: Cut over `azure_data_cosmos` — Phase 1 (readItem + createItem)
+
+Cut over `readItem` and `createItem` to use `driver.execute_operation()`. The existing pipeline
+code in `azure_data_cosmos` remains in place — other operations still use it. This validates the
+new pipeline under real workloads with the two most common operations before committing to a
+full cut-over.
+
+| Sub-step | Work Item                                                                                          | Files                                               |
+|----------|----------------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| 9.1      | Wire `ContainerClient::read_item` to build `CosmosOperation` and call `driver.execute_operation()` | `azure_data_cosmos/src/clients/container_client.rs` |
+| 9.2      | Wire `ContainerClient::create_item` similarly                                                      | `azure_data_cosmos/src/clients/container_client.rs` |
+| 9.3      | Integration tests verifying read/create through the new pipeline                                   | `tests/`                                            |
+
+**What works after Step 9**: `readItem` and `createItem` flow through the new driver pipeline.
+All other operations still use the old pipeline. No code is removed yet.
+
+### Step 10: Cut over `azure_data_cosmos` — Phase 2 (full cut-over + cleanup)
+
+Cut over all remaining operations and remove the old pipeline code.
+
+| Sub-step | Work Item                                                                                             | Files                                |
+|----------|-------------------------------------------------------------------------------------------------------|--------------------------------------|
+| 10.1     | Cut over all remaining operations in `azure_data_cosmos/src/clients/` to `driver.execute_operation()` | `azure_data_cosmos/src/clients/*.rs` |
+| 10.2     | Remove `azure_data_cosmos/src/pipeline/`                                                              | —                                    |
+| 10.3     | Remove `azure_data_cosmos/src/retry_policies/`                                                        | —                                    |
+| 10.4     | Remove `azure_data_cosmos/src/handler/`                                                               | —                                    |
+| 10.5     | Remove `azure_data_cosmos/src/routing/` (endpoint managers)                                           | —                                    |
+| 10.6     | Remove `azure_data_cosmos/src/request_context.rs`                                                     | —                                    |
+| 10.7     | Move fault injection tests to driver-level APIs                                                       | `tests/`                             |
+| 10.8     | Full integration test pass                                                                            | `tests/`                             |
+
+**What works after Step 10**: `azure_data_cosmos` is a thin client layer that builds
+`CosmosOperation` values and delegates all execution to the driver. Duplicate pipeline,
+retry, and routing code is removed.
 
 ---
 
@@ -1402,13 +1609,30 @@ pub sharding: ShardingConfig,
 ### New Options in `OperationOptions` or `RuntimeOptions`
 
 ```rust
-/// Hedging threshold: if the primary attempt has not completed
-/// within this duration, start a hedged attempt in a secondary region.
-/// None = hedging disabled. Default: None (opt-in).
-pub hedging_threshold: Option<Duration>,
+/// Hedging configuration. Hedging is enabled by default with a dynamic
+/// threshold based on observed P99 latency (clamped to 50-4000 ms).
+/// Set `hedging_enabled` to `false` to disable hedging entirely.
+/// Overridable at `DriverRuntime`, `Driver`, and per-operation levels.
+pub hedging_enabled: bool,  // Default: true
+pub hedging_threshold: HedgingThreshold,
 
 /// Circuit breaker configuration for partition-level failover.
 pub circuit_breaker: CircuitBreakerConfig,
+```
+
+```rust
+pub enum HedgingThreshold {
+    /// Dynamic threshold based on observed P99 latency with safety gates.
+    /// This is the default.
+    Dynamic {
+        /// Minimum threshold (hard floor). Default: 50 ms.
+        min: Duration,
+        /// Maximum threshold (hard ceiling). Default: 4000 ms.
+        max: Duration,
+    },
+    /// Static threshold (fixed duration).
+    Static(Duration),
+}
 ```
 
 ```rust
@@ -1430,38 +1654,43 @@ pub struct CircuitBreakerConfig {
 
 Following the existing pattern in `ConnectionPoolOptions`:
 
-| Variable | Config Field |
-|----------|-------------|
-| `AZURE_COSMOS_MAX_STREAMS_PER_CLIENT` | `sharding.max_streams_per_client` |
+| Variable                                | Config Field                        |
+|-----------------------------------------|-------------------------------------|
+| `AZURE_COSMOS_MAX_STREAMS_PER_CLIENT`   | `sharding.max_streams_per_client`   |
 | `AZURE_COSMOS_MAX_CLIENTS_PER_ENDPOINT` | `sharding.max_clients_per_endpoint` |
-| `AZURE_COSMOS_SHARD_IDLE_TIMEOUT_SECS` | `sharding.idle_client_timeout` |
-| `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | `hedging_threshold` |
+| `AZURE_COSMOS_SHARD_IDLE_TIMEOUT_SECS`  | `sharding.idle_client_timeout`      |
+| `AZURE_COSMOS_HEDGING_THRESHOLD_MS`     | `hedging_threshold`                 |
 
 ---
 
 ## 10. Open Questions
 
-1. **Hedging scope**: Should hedging be opt-in or default-enabled? The Java SDK uses
-   `ThresholdBasedAvailabilityStrategy` which is opt-in. The design principles doc suggests
-   force-enabling. What's the right default for the Rust driver?
+1. ~~**Hedging scope**~~: **Resolved** — Hedging is **enabled by default** for all operations.
+   For writes, hedging is only active on multi-write-region (MWR) accounts. An opt-out option
+   is available and overridable at `DriverRuntime`, `Driver`, and per-operation levels.
 
-2. **Dynamic hedging threshold**: Should the hedging threshold be static (configured) or dynamic
-   (based on observed P99 latency)? Dynamic is more robust but adds complexity.
+2. ~~**Dynamic hedging threshold**~~: **Resolved** — The hedging threshold is **dynamic by
+   default**, based on observed P99 latency (preferring recent measurements for fast reaction).
+   Hard-coded safety gates clamp the effective threshold to **50 ms – 4000 ms**; configurable
+   min/max bounds can tighten this range further.
 
-3. **Sharding granularity**: Should `ShardedHttpTransport` track inflight per
-   `(HttpClient, endpoint)` pair (proposed) or per `HttpClient` globally? Per-endpoint
-   gives more precise load balancing but more bookkeeping.
+3. ~~**Sharding granularity**~~: **Resolved** — Track inflight per `(HttpClient, endpoint)` pair.
+   Per-endpoint tracking gives more precise load balancing. This is especially important for
+   multi-tenant applications where a single shared-tenant app uses separate Cosmos DB accounts
+   per tenant.
 
-4. **Transport pipeline vs. policy chain**: The spec proposes replacing the `Policy` chain with
-   direct function calls. This is simpler but loses extensibility. Is that acceptable given the
-   fixed nature of Cosmos policies?
+4. ~~**Transport pipeline vs. policy chain**~~: **Resolved** — Yes, direct function calls are
+   acceptable. There is no need for caller/customer-side extensibility given the fixed nature
+   of Cosmos policies.
 
-5. **HTTP/2 stream limit detection**: Can we detect when the underlying `HttpClient` implementation
-   is actually hitting the H2 stream limit? Or do we rely purely on the configured
-   `max_streams_per_client` threshold? The `HttpClient` trait doesn't expose H2 frame-level events.
+5. **HTTP/2 stream limit detection**: Given that the Cosmos service endpoint's 20-stream limit
+   is very conservative (most service implementations allow at least 100), hitting this limit
+   should be infrequent. Eventually, higher latency/timeouts from stream exhaustion will
+   produce health signals that trigger shard eviction/scaling. The `max_streams_per_client`
+   configuration should remain configurable to allow tuning. No change to the approach.
 
-6. **CPU-aware eviction**: The Java health checker disables eviction under high CPU (to avoid
-   making things worse). Should we adopt this using `CpuMemoryMonitor`? What CPU threshold?
+6. ~~**CPU-aware eviction**~~: **Resolved** — Yes, adopt CPU-aware eviction using
+   `CpuMemoryMonitor`. Use a 90% CPU threshold, aligned with the Java SDK.
 
 7. ~~**Metadata vs. dataplane sharding**~~: **Resolved** — both metadata and dataplane pipelines
    use `AdaptiveTransport`, which automatically selects sharded or plain transport based on the
@@ -1469,19 +1698,21 @@ Following the existing pattern in `ConnectionPoolOptions`:
    sharding. If HTTP/1.1 only (RoutingGateway), it uses plain transport. Different timeout
    configs are passed via `HttpClientConfig`.
 
-8. **`HttpClient` reuse across endpoints**: A single `HttpClient` implementation might maintain
-   connections to multiple endpoints. Should we use one `HttpClient` per endpoint (simpler
-   health tracking) or share clients across endpoints (fewer client instances)?
+8. ~~**`HttpClient` reuse across endpoints**~~: **Resolved** — Share `HttpClient` instances across
+   endpoints. This is important for multi-tenant applications using separate Cosmos DB accounts
+   per tenant, where per-endpoint clients would waste resources. Note: .NET and Java use the
+   DNS hostname as the connection pool key (not the resolved IP). Research is needed on whether
+   Rust's reqwest/hyper uses the same approach — if it resolves IPs for the pool key, sharing
+   clients across endpoints would better utilize connection pools for multi-tenant scenarios.
 
-9. **`HttpClientFactory` abstraction level**: The proposed `HttpClientFactory` trait takes an
-   `HttpClientConfig` struct with pool/timeout/TLS knobs. Should these knobs be extended to
-   cover HTTP version preferences (force H2, prefer H1.1, etc.)? Or is that determined
-   externally by the gateway probing logic?
+9. ~~**`HttpClientFactory` abstraction level**~~: **Resolved** — The HTTP version preference is
+   determined externally by the gateway probing logic (ALPN negotiation + `AccountProperties`
+   Gateway 2.0 detection). The `HttpClientFactory` does not need HTTP version knobs. The
+   default should come from the probing logic, with overrides available as proposed in §9.
 
-10. **`load_spread_ratio` tuning**: The default of 0.5 means only half of available shards are
-    in the active set. Is this too aggressive (causes premature scale-down during variable load)
-    or too conservative (holds onto shards too long)? Should it be adaptive based on observed
-    request rate variance?
+10. ~~**`load_spread_ratio` tuning**~~: **Resolved** — Make `load_spread_ratio` **adaptive based
+    on observed behavior** (request rate variance). Start with the default of 0.5 and adjust
+    dynamically.
 
 ---
 
