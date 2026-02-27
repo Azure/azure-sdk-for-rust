@@ -1,6 +1,6 @@
 //! Concrete (yet unimplemented) GlobalEndpointManager.
-//! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
+use crate::background_task_manager::BackgroundTaskManager;
 use crate::constants::ACCOUNT_PROPERTIES_KEY;
 use crate::cosmos_request::CosmosRequest;
 use crate::models::AccountProperties;
@@ -10,11 +10,20 @@ use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::location_cache::{LocationCache, RequestOperation};
 use azure_core::http::{Context, Pipeline, Response};
+use azure_core::time::Duration;
 use azure_core::Error;
 use std::collections::HashMap;
-use std::sync::Mutex;
-use std::time::Duration;
+use std::fmt::Debug;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, Weak};
+use tracing::info;
 use url::Url;
+
+/// Type alias for the account refresh callback function.
+pub type OnAccountRefreshCallback = Arc<dyn Fn(&AccountProperties) + Send + Sync>;
+
+/// Default interval (in seconds) at which the background account refresh loop runs.
+const BACKGROUND_ACCOUNT_REFRESH_INTERVAL_SECS: i64 = 600;
 
 /// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
 ///
@@ -22,7 +31,6 @@ use url::Url;
 /// refreshing account properties, and resolving service endpoints based on request characteristics
 /// and availability. It handles endpoint discovery, tracks unavailable endpoints, and supports
 /// multi-master write configurations.
-#[derive(Debug)]
 pub(crate) struct GlobalEndpointManager {
     /// The primary default endpoint URL for the Cosmos DB account
     default_endpoint: Url,
@@ -35,6 +43,30 @@ pub(crate) struct GlobalEndpointManager {
 
     /// Cache for account properties with 600 second TTL to reduce redundant service calls
     account_properties_cache: AsyncCache<&'static str, AccountProperties>,
+
+    /// Optional callback invoked when account properties are refreshed via HTTP call
+    on_account_refresh: Mutex<Option<OnAccountRefreshCallback>>,
+
+    /// Flag indicating if the background connection initialization task is active.
+    background_account_refresh_active: AtomicBool,
+
+    /// Manages background tasks and signals them to stop when dropped.
+    background_task_manager: BackgroundTaskManager,
+
+    /// Background account refresh interval in seconds. Default is 10 minutes.
+    background_account_refresh_interval: Duration,
+}
+
+impl Debug for GlobalEndpointManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GlobalEndpointManager")
+            .field("default_endpoint", &self.default_endpoint)
+            .field("location_cache", &self.location_cache)
+            .field("pipeline", &self.pipeline)
+            .field("account_properties_cache", &self.account_properties_cache)
+            .field("on_account_refresh", &"<callback>")
+            .finish()
+    }
 }
 
 impl GlobalEndpointManager {
@@ -60,7 +92,7 @@ impl GlobalEndpointManager {
         preferred_locations: Vec<RegionName>,
         excluded_regions: Vec<RegionName>,
         pipeline: Pipeline,
-    ) -> Self {
+    ) -> Arc<Self> {
         let location_cache = Mutex::new(LocationCache::new(
             default_endpoint.clone(),
             preferred_locations.clone(),
@@ -68,15 +100,37 @@ impl GlobalEndpointManager {
         ));
 
         let account_properties_cache = AsyncCache::new(
-            Some(Duration::from_secs(600)), // Default 10 minutes TTL
+            Some(Duration::seconds(600)), // Default 10 minutes TTL
         );
 
-        Self {
+        let instance = Arc::new(Self {
             default_endpoint,
             location_cache,
             pipeline,
             account_properties_cache,
-        }
+            on_account_refresh: Mutex::new(None),
+            background_account_refresh_active: AtomicBool::new(false),
+            background_task_manager: BackgroundTaskManager::new(),
+            background_account_refresh_interval: Duration::seconds(
+                BACKGROUND_ACCOUNT_REFRESH_INTERVAL_SECS,
+            ),
+        });
+        instance.initialize_and_start_background_account_refresh();
+        instance
+    }
+
+    /// Sets a callback to be invoked whenever account properties are refreshed via HTTP call.
+    ///
+    /// # Summary
+    /// Registers a callback function that will be called automatically whenever `refresh_location`
+    /// fetches new account properties from the service (not when serving from cache). This is useful
+    /// for updating partition-level failover configurations when account properties change.
+    ///
+    /// # Arguments
+    /// * `callback` - The callback function to invoke with the refreshed account properties
+    pub fn set_on_account_refresh_callback(&self, callback: OnAccountRefreshCallback) {
+        let mut guard = self.on_account_refresh.lock().unwrap();
+        *guard = Some(callback);
     }
 
     /// Returns the default hub endpoint URL for the Cosmos DB account.
@@ -267,8 +321,11 @@ impl GlobalEndpointManager {
                 .await;
         }
 
+        // Flag to track if an HTTP call was made
+        let http_call_made = AtomicBool::new(false);
+
         // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        _ = self
+        let account_properties = self
             .account_properties_cache
             .get(
                 ACCOUNT_PROPERTIES_KEY,
@@ -277,6 +334,9 @@ impl GlobalEndpointManager {
                     // Fetch latest account properties from service
                     let account_properties: AccountProperties =
                         self.get_database_account().await?.into_body().json()?;
+
+                    // Mark that we're making an HTTP call
+                    http_call_made.store(true, Ordering::SeqCst);
 
                     // Update location cache with the fetched account properties (only on fresh fetch)
                     {
@@ -287,7 +347,22 @@ impl GlobalEndpointManager {
                     Ok::<AccountProperties, Error>(account_properties)
                 },
             )
-            .await;
+            .await?;
+
+        // Invoke the registered callback if an HTTP call was made
+        let was_http_call_made = http_call_made.load(Ordering::SeqCst);
+        if was_http_call_made {
+            // Clone the callback out of the mutex, then drop the lock before invoking it
+            // to avoid holding the mutex during arbitrary user code (prevents potential deadlocks).
+            let callback = {
+                let guard = self.on_account_refresh.lock().unwrap();
+                guard.as_ref().map(Arc::clone)
+            };
+
+            if let Some(callback) = callback {
+                callback(&account_properties);
+            }
+        }
 
         Ok(())
     }
@@ -382,6 +457,82 @@ impl GlobalEndpointManager {
             .map(Into::into)
     }
 
+    /// Initializes and starts the background account refresh loop.
+    ///
+    /// # Summary
+    /// Atomically checks and sets the `background_account_refresh_active` flag to ensure only
+    /// one background refresh task runs at a time. If the flag is already set, the call is a
+    /// no-op. Otherwise, it spawns a background task via [`BackgroundTaskManager`] that
+    /// periodically refreshes account properties. The spawned task captures a `Weak<Self>`
+    /// reference to avoid a reference cycle, allowing the `GlobalEndpointManager` to be
+    /// dropped normally, which in turn cancels the background task.
+    fn initialize_and_start_background_account_refresh(self: &Arc<Self>) {
+        // Atomically try to set from false to true.
+        // If it was already true, another thread already started the task.
+        if self
+            .background_account_refresh_active
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return;
+        }
+
+        let weak_self = Arc::downgrade(self);
+        // Spawn via BackgroundTaskManager so the task is tracked and will be
+        // canceled when the manager (and thus the client) is dropped.
+        // We capture a Weak<Self> (not Arc<Self>) to avoid a reference cycle
+        // that would prevent the GlobalEndpointManager from ever being dropped.
+        self.background_task_manager.spawn(Box::pin(async move {
+            Self::initiate_background_account_refresh_loop(weak_self).await;
+        }));
+    }
+
+    /// Runs the background account refresh loop that periodically updates location information.
+    ///
+    /// # Summary
+    /// Executes an infinite loop that sleeps for the configured refresh interval and then
+    /// calls [`refresh_location`](Self::refresh_location) with `force_refresh: true` to
+    /// fetch the latest account properties from the service. The loop holds only a
+    /// [`Weak`] reference to the `GlobalEndpointManager`; if the manager has been dropped
+    /// (i.e., the `Weak` upgrade fails), the loop exits gracefully. Any errors during
+    /// refresh are logged but do not terminate the loop.
+    ///
+    /// # Arguments
+    /// * `weak_self` - A weak reference to the owning `GlobalEndpointManager`
+    async fn initiate_background_account_refresh_loop(weak_self: Weak<Self>) {
+        // Briefly upgrade to read the interval, then release the strong ref
+        // so it does not keep Self alive across the sleep.
+        let interval = match weak_self.upgrade() {
+            Some(strong) => strong.background_account_refresh_interval,
+            None => return,
+        };
+
+        loop {
+            // Use the runtime-agnostic sleep from azure_core
+            azure_core::async_runtime::get_async_runtime()
+                .sleep(interval)
+                .await;
+
+            // Upgrade the Weak ref for this iteration only. If it fails, the
+            // manager has been dropped and we should exit.
+            let strong = match weak_self.upgrade() {
+                Some(s) => s,
+                None => {
+                    info!("GlobalEndpointManager: background refresh loop exiting because the client has been dropped.");
+                    return;
+                }
+            };
+
+            info!("GlobalEndpointManager: refresh_location() trying to refresh database account.");
+
+            if let Err(e) = strong.refresh_location(true).await {
+                tracing::error!("GlobalEndpointManager: initiate_background_account_refresh_loop() - failed to refresh database account. Exception: {}", e);
+            }
+            // `strong` is dropped here, releasing the temporary strong ref
+            // before the next sleep.
+        }
+    }
+
     /// Updates the location cache with the given write and read regions.
     ///
     /// This is exposed as `pub(crate)` to allow other modules' tests to populate
@@ -417,7 +568,7 @@ mod tests {
         )
     }
 
-    fn create_test_manager() -> GlobalEndpointManager {
+    fn create_test_manager() -> Arc<GlobalEndpointManager> {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US"), RegionName::from("East US")],
@@ -438,8 +589,8 @@ mod tests {
         request
     }
 
-    #[test]
-    fn test_new_manager_initialization() {
+    #[tokio::test]
+    async fn test_new_manager_initialization() {
         let manager = create_test_manager();
         assert_eq!(
             manager.hub_uri(),
@@ -447,8 +598,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_hub_uri() {
+    #[tokio::test]
+    async fn test_hub_uri() {
         let manager = create_test_manager();
         let hub_uri = manager.hub_uri();
         assert_eq!(
@@ -457,8 +608,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_resolve_service_endpoint_returns_default() {
+    #[tokio::test]
+    async fn test_resolve_service_endpoint_returns_default() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Read);
         let endpoint = manager.resolve_service_endpoint(&request);
@@ -469,8 +620,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_read_endpoints_initial_state() {
+    #[tokio::test]
+    async fn test_read_endpoints_initial_state() {
         let manager = create_test_manager();
         let endpoints = manager.read_endpoints();
         // Initial state may be empty until account properties are loaded
@@ -478,8 +629,8 @@ mod tests {
         let _ = endpoints.len();
     }
 
-    #[test]
-    fn test_write_endpoints_initial_state() {
+    #[tokio::test]
+    async fn test_write_endpoints_initial_state() {
         let manager = create_test_manager();
         let endpoints = manager.write_endpoints();
         // Initial state may be empty until account properties are loaded
@@ -487,8 +638,8 @@ mod tests {
         let _ = endpoints.len();
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_for_read() {
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_for_read() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
         let account_region = AccountRegion {
@@ -510,8 +661,8 @@ mod tests {
         assert!(!read_endpoints.is_empty());
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_for_write() {
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_for_write() {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
         let account_region = AccountRegion {
@@ -533,8 +684,8 @@ mod tests {
         assert!(!write_endpoints.is_empty());
     }
 
-    #[test]
-    fn test_can_use_multiple_write_locations_for_read_request() {
+    #[tokio::test]
+    async fn test_can_use_multiple_write_locations_for_read_request() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Read);
 
@@ -542,8 +693,8 @@ mod tests {
         assert!(!manager.can_use_multiple_write_locations(&request));
     }
 
-    #[test]
-    fn test_can_use_multiple_write_locations_for_write_request() {
+    #[tokio::test]
+    async fn test_can_use_multiple_write_locations_for_write_request() {
         let manager = create_test_manager();
         let request = create_test_request(OperationType::Create);
 
@@ -552,8 +703,8 @@ mod tests {
         let _ = manager.can_use_multiple_write_locations(&request);
     }
 
-    #[test]
-    fn test_can_support_multiple_write_locations_for_documents() {
+    #[tokio::test]
+    async fn test_can_support_multiple_write_locations_for_documents() {
         let manager = create_test_manager();
 
         // Documents should potentially support multiple write locations
@@ -562,8 +713,8 @@ mod tests {
             .can_support_multiple_write_locations(ResourceType::Documents, OperationType::Create);
     }
 
-    #[test]
-    fn test_can_support_multiple_write_locations_for_stored_procedures() {
+    #[tokio::test]
+    async fn test_can_support_multiple_write_locations_for_stored_procedures() {
         let manager = create_test_manager();
 
         // Stored procedures with Execute operation should potentially support multiple write locations
@@ -573,8 +724,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_can_support_multiple_write_locations_for_databases() {
+    #[tokio::test]
+    async fn test_can_support_multiple_write_locations_for_databases() {
         let manager = create_test_manager();
 
         // Database operations should not support multiple write locations
@@ -585,15 +736,15 @@ mod tests {
         assert!(!result);
     }
 
-    #[test]
-    fn test_applicable_endpoints() {
+    #[tokio::test]
+    async fn test_applicable_endpoints() {
         let manager = create_test_manager();
         let endpoints = manager.applicable_endpoints(OperationType::Read, None);
         assert!(!endpoints.is_empty());
     }
 
-    #[test]
-    fn test_applicable_excluded_endpoints() {
+    #[tokio::test]
+    async fn test_applicable_excluded_endpoints() {
         let manager = create_test_manager();
         // Exclude all regions to test behavior - should still return default endpoint
         let excluded_regions: Vec<RegionName> =
@@ -605,8 +756,8 @@ mod tests {
         assert!(!endpoints.is_empty());
     }
 
-    #[test]
-    fn test_account_read_endpoints() {
+    #[tokio::test]
+    async fn test_account_read_endpoints() {
         let manager = create_test_manager();
         let endpoints = manager.account_read_endpoints();
 
@@ -614,8 +765,8 @@ mod tests {
         assert_eq!(endpoints, manager.read_endpoints());
     }
 
-    #[test]
-    fn test_available_write_endpoints_by_location() {
+    #[tokio::test]
+    async fn test_available_write_endpoints_by_location() {
         let manager = create_test_manager();
         let endpoints_map = manager.available_write_endpoints_by_location();
 
@@ -623,8 +774,8 @@ mod tests {
         let _ = endpoints_map.len();
     }
 
-    #[test]
-    fn test_available_read_endpoints_by_location() {
+    #[tokio::test]
+    async fn test_available_read_endpoints_by_location() {
         let manager = create_test_manager();
         let endpoints_map = manager.available_read_endpoints_by_location();
 

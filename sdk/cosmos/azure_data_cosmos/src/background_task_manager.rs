@@ -75,8 +75,8 @@ mod tests {
         assert_eq!(manager.tasks.lock().unwrap().len(), 0);
     }
 
-    #[test]
-    fn drop_cleans_up_tasks() {
+    #[tokio::test]
+    async fn drop_cleans_up_tasks() {
         let manager = BackgroundTaskManager::new();
         // Spawn a no-op task
         manager.spawn(Box::pin(async {}));
