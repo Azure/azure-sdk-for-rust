@@ -160,7 +160,8 @@ pub(crate) struct PartitionOverride {
 /// Accumulated across attempts. Replaced (not mutated) between attempts.
 pub(crate) struct OperationRetryState {
     /// Index into the preferred endpoint list for round-robin failover.
-    /// This indexes into an immutable `LocationSnapshot` (see §4.4).
+    /// This indexes into the `LocationSnapshot` (§3.1) which bundles
+    /// `AccountEndpointState` (§4.4) and `PartitionEndpointState` (§4.5).
     /// The snapshot is replaced atomically on refresh — it is never mutated
     /// in place — so the index remains stable for the lifetime of one
     /// operation attempt.
@@ -182,6 +183,22 @@ pub(crate) struct FailedEndpoint {
     pub endpoint: CosmosEndpoint,
     pub error: OperationError,
     pub request_sent: bool,
+}
+
+/// COMPONENT: Composite snapshot of all location routing state for one
+/// operation attempt. Acquired **once** at the top of each loop iteration
+/// and immutable for the lifetime of that attempt. All routing decisions
+/// within the attempt are based on this snapshot.
+///
+/// Mutations (marking endpoints/partitions unavailable, refreshing account
+/// metadata) are expressed as `LocationEffect` values (see §3.4) and applied
+/// in a single, well-defined stage (STAGE 6 of the operation loop). The next
+/// iteration re-acquires a fresh snapshot that includes the applied mutations.
+pub(crate) struct LocationSnapshot {
+    /// Account-level endpoint routing (preferred regions, unavailable endpoints).
+    pub account: Arc<AccountEndpointState>,
+    /// Partition-level circuit-breaker state.
+    pub partitions: Arc<PartitionEndpointState>,
 }
 
 /// COMPONENT: Diagnostics accumulator for the operation.
@@ -309,22 +326,28 @@ Each stage is a function with an explicit, narrow signature:
 
 ```rust
 // SYSTEM: Resolve which endpoint to send this attempt to.
-// Pure function over immutable state snapshots — no manager references.
+// Pure function over an immutable LocationSnapshot — no manager or store
+// references. The snapshot is acquired once per loop iteration.
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
-    account_state: &AccountEndpointState,
-    partition_state: &PartitionEndpointState,
+    location: &LocationSnapshot,
 ) -> RoutingDecision;
 
 // SYSTEM: Evaluate the result of a transport attempt and decide the
-// next OperationAction (complete, retry, failover, hedge, or abort).
+// next OperationAction (complete, retry, failover, hedge, or abort),
+// plus any location-state mutations to apply before the next iteration.
+//
+// The returned `Vec<LocationEffect>` captures all side-effects on
+// location state (mark unavailable, refresh metadata, etc.). These are
+// applied in STAGE 6 of the operation loop — the only place where
+// location state is mutated.
 fn evaluate_transport_result(
     operation: &CosmosOperation,
     result: &TransportResult,
     retry_state: &OperationRetryState,
     session_state: &SessionState,
-) -> OperationAction;
+) -> (OperationAction, Vec<LocationEffect>);
 
 // SYSTEM: Decide whether to retry a 429 or connectivity error at transport level.
 // Extracted as a pure function (like `evaluate_transport_result`) so it can be
@@ -369,6 +392,11 @@ fn sign_request(
 
 ```rust
 /// What the operation pipeline should do after an attempt.
+///
+/// `OperationAction` is purely a control-flow decision. Any side-effects
+/// on location state (marking endpoints/partitions unavailable, refreshing
+/// account metadata) are expressed separately as `LocationEffect` values
+/// returned alongside this action from `evaluate_transport_result`.
 pub(crate) enum OperationAction {
     /// Return the successful response.
     Complete(TransportResult),
@@ -381,18 +409,35 @@ pub(crate) enum OperationAction {
     SessionRetry {
         new_state: OperationRetryState,
     },
-    /// Mark partition unavailable and retry with partition-level override.
-    PartitionFailover {
-        new_state: OperationRetryState,
-        /// Identifies the partition + region to mark unavailable.
-        unavailable_partition: UnavailablePartition,
-    },
     /// Start a hedged attempt in a secondary region.
     Hedge {
         secondary_routing: RoutingDecision,
     },
     /// Abort the operation with this error.
     Abort(azure_core::Error),
+}
+
+/// A mutation to apply to location state.
+///
+/// Produced by `evaluate_transport_result` alongside an `OperationAction`.
+/// Applied in STAGE 6 of the operation loop — the **only** place where
+/// location state is mutated. This keeps the mutation scope explicit,
+/// traceable, and testable.
+pub(crate) enum LocationEffect {
+    /// Mark an endpoint as temporarily unavailable so future routing
+    /// skips it until the unavailability expires.
+    MarkEndpointUnavailable {
+        endpoint: Url,
+        reason: UnavailableReason,
+    },
+    /// Mark a partition as unavailable in a specific region, triggering
+    /// the partition-level circuit breaker.
+    MarkPartitionUnavailable(UnavailablePartition),
+    /// Trigger an async refresh of the `AccountMetadataCache` to obtain
+    /// fresh `AccountProperties` (e.g., updated writable/readable locations).
+    /// Rate-limited internally to avoid overwhelming the metadata endpoint
+    /// during sustained failover scenarios.
+    RefreshAccountProperties,
 }
 
 /// What the transport pipeline should do after a 429.
@@ -416,12 +461,24 @@ pub(crate) enum ThrottleAction {
 The operation pipeline orchestrates attempts across regions. It is the replacement for
 `ClientRetryPolicy` + `MetadataRequestRetryPolicy` + `BackOffRetryHandler` from `azure_data_cosmos`.
 
+**Design principle**: The loop acquires an immutable `LocationSnapshot` once per iteration.
+All routing decisions within that iteration use this snapshot — the transport pipeline never
+sees the stores. Any mutations triggered by the transport result (marking
+endpoints/partitions unavailable, refreshing account metadata) are expressed as `LocationEffect`
+values returned from `evaluate_transport_result` and applied in a single, well-defined stage
+(STAGE 6). This ensures:
+
+1. Routing within an attempt is always based on a consistent point-in-time view.
+2. Mutations are explicit, traceable, and testable (returned from a pure function).
+3. The next iteration re-acquires a fresh snapshot that includes the applied mutations.
+
 ```rust
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptions,
     account_state_store: &AccountEndpointStateStore,
     partition_state_store: &PartitionEndpointStateStore,
+    account_metadata_cache: &AccountMetadataCache,
     transport: &AdaptiveTransport,
     auth_context: &AuthContext,
     diagnostics: &mut DiagnosticsContextBuilder,
@@ -433,21 +490,23 @@ pub(crate) async fn execute_operation_pipeline(
     let deadline = options.e2e_deadline();
 
     loop {
-        // Acquire immutable snapshots of endpoint state for this attempt.
-        // Each snapshot is an Arc clone — cheap, lock-free, and stable
-        // for the lifetime of the attempt.
-        let account_state = account_state_store.snapshot();
-        let partition_state = partition_state_store.snapshot();
+        // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
+        // One immutable snapshot per iteration. All routing decisions in
+        // this iteration are based on this view. Mutations (STAGE 6)
+        // apply to the stores; the next iteration re-snapshots.
+        let location = LocationSnapshot {
+            account: account_state_store.snapshot(),
+            partitions: partition_state_store.snapshot(),
+        };
 
-        // STAGE 1: Resolve endpoint for this attempt
+        // ── STAGE 2: Resolve endpoint ──────────────────────────────────
         let routing = resolve_endpoint(
             operation,
             &retry_state,
-            &account_state,
-            &partition_state,
+            &location,
         );
 
-        // STAGE 2: Build transport request
+        // ── STAGE 3: Build transport request ───────────────────────────
         let transport_request = build_transport_request(
             operation,
             &routing,
@@ -456,22 +515,35 @@ pub(crate) async fn execute_operation_pipeline(
             deadline,
         );
 
-        // STAGE 3: Execute via transport pipeline
+        // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
             transport_request, transport, auth_context, diagnostics,
         ).await;
 
-        // STAGE 4: Record attempt diagnostics
+        // ── STAGE 5: Evaluate result → action + location effects ───────
+        // Pure function: decides what to do next AND what location state
+        // to mutate. No mutation happens here — effects are just data.
         diagnostics.record_attempt(&result);
-
-        // STAGE 5: Evaluate result and decide next action
-        let action = evaluate_transport_result(
+        let (action, effects) = evaluate_transport_result(
             operation,
             &result,
             &retry_state,
             &session_state,
         );
 
+        // ── STAGE 6: Apply location effects ────────────────────────────
+        // This is the ONLY place in the loop where location state is
+        // mutated. Each effect produces a new snapshot and swaps it into
+        // the appropriate store.
+        apply_location_effects(
+            &effects,
+            &location,
+            account_state_store,
+            partition_state_store,
+            account_metadata_cache,
+        ).await;
+
+        // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
             OperationAction::Complete(result) => {
                 return build_cosmos_response(result, diagnostics);
@@ -479,18 +551,9 @@ pub(crate) async fn execute_operation_pipeline(
             OperationAction::FailoverRetry { new_state, delay } => {
                 if let Some(d) = delay { sleep(d).await; }
                 retry_state = new_state;
+                // → next iteration re-snapshots with updated location state
             }
             OperationAction::SessionRetry { new_state } => {
-                retry_state = new_state;
-            }
-            OperationAction::PartitionFailover { new_state, unavailable_partition } => {
-                // SYSTEM: Apply partition failure — produces a new
-                // PartitionEndpointState snapshot and swaps it into the store.
-                let new_partition_state = mark_partition_unavailable(
-                    &partition_state,
-                    &unavailable_partition,
-                );
-                partition_state_store.swap(new_partition_state);
                 retry_state = new_state;
             }
             OperationAction::Hedge { secondary_routing } => {
@@ -502,6 +565,45 @@ pub(crate) async fn execute_operation_pipeline(
             }
             OperationAction::Abort(error) => {
                 return Err(error);
+            }
+        }
+    }
+}
+
+/// SYSTEM: Apply location effects to the stores.
+///
+/// Each effect reads the current snapshot, produces a new one via a pure
+/// system function, and swaps the result into the store. This is the only
+/// function that mutates location state during the operation loop.
+async fn apply_location_effects(
+    effects: &[LocationEffect],
+    location: &LocationSnapshot,
+    account_state_store: &AccountEndpointStateStore,
+    partition_state_store: &PartitionEndpointStateStore,
+    account_metadata_cache: &AccountMetadataCache,
+) {
+    for effect in effects {
+        match effect {
+            LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
+                let new_state = mark_endpoint_unavailable(
+                    &location.account,
+                    endpoint,
+                    reason.clone(),
+                );
+                account_state_store.swap(new_state);
+            }
+            LocationEffect::MarkPartitionUnavailable(partition) => {
+                let new_state = mark_partition_unavailable(
+                    &location.partitions,
+                    partition,
+                );
+                partition_state_store.swap(new_state);
+            }
+            LocationEffect::RefreshAccountProperties => {
+                // Trigger an async (rate-limited) refresh of account
+                // metadata. The cache internally rate-limits to avoid
+                // overwhelming the metadata endpoint.
+                account_metadata_cache.refresh_if_stale().await;
             }
         }
     }
@@ -616,87 +718,155 @@ fn evaluate_transport_result(
     result: &TransportResult,
     retry_state: &OperationRetryState,
     session_state: &SessionState,
-) -> OperationAction {
+) -> (OperationAction, Vec<LocationEffect>) {
     match &result.outcome {
         TransportOutcome::Success { .. } => {
-            OperationAction::Complete(result.clone())
+            (OperationAction::Complete(result.clone()), vec![])
         }
 
         TransportOutcome::HttpError { status, request_sent, .. } => {
             match *status {
-                // 403/3 WriteForbidden → refresh AccountMetadataCache + endpoint failover
-                // The account metadata cache is refreshed to obtain fresh account
-                // properties (e.g., updated writable/readable locations). A rate
-                // limiter ensures refreshes happen at most N times per minute to
-                // avoid overwhelming the metadata endpoint during sustained
-                // failover scenarios.
+                // 403/3 WriteForbidden → refresh account metadata + endpoint failover.
+                //
+                // The write-forbidden error indicates a regional failover has
+                // occurred (or this endpoint is no longer the write region).
+                // Two effects:
+                //   1. Refresh AccountMetadataCache to pick up the new topology.
+                //   2. Mark the current endpoint unavailable so the next routing
+                //      attempt skips it.
+                //
+                // NOTE: `advance_failover` (not `advance_failover_with_cache_refresh`)
+                // is used here because the cache refresh is now expressed as a
+                // LocationEffect and applied in STAGE 6.
                 CosmosStatus::WRITE_FORBIDDEN => {
                     if retry_state.failover_retry_count < MAX_FAILOVER_RETRIES {
-                        OperationAction::FailoverRetry {
-                            new_state: retry_state.advance_failover_with_cache_refresh(result),
-                            delay: None,
-                        }
+                        (
+                            OperationAction::FailoverRetry {
+                                new_state: retry_state.advance_failover(result),
+                                delay: None,
+                            },
+                            vec![
+                                LocationEffect::RefreshAccountProperties,
+                                LocationEffect::MarkEndpointUnavailable {
+                                    endpoint: result.endpoint().clone(),
+                                    reason: UnavailableReason::WriteForbidden,
+                                },
+                            ],
+                        )
                     } else {
-                        OperationAction::Abort(build_error(status))
+                        (OperationAction::Abort(build_error(status)), vec![])
                     }
                 }
 
-                // 404/1002 ReadSessionNotAvailable → session retry
+                // 404/1002 ReadSessionNotAvailable → session retry.
+                // No location effects — session consistency errors are resolved
+                // by retrying with a different session token, not by changing
+                // the endpoint topology.
                 CosmosStatus::READ_SESSION_NOT_AVAILABLE => {
                     if retry_state.session_token_retry_count < MAX_SESSION_RETRIES {
-                        OperationAction::SessionRetry {
-                            new_state: retry_state.advance_session_retry(),
-                        }
+                        (
+                            OperationAction::SessionRetry {
+                                new_state: retry_state.advance_session_retry(),
+                            },
+                            vec![],
+                        )
                     } else {
-                        OperationAction::Abort(build_error(status))
+                        (OperationAction::Abort(build_error(status)), vec![])
                     }
                 }
 
-                // 429/3092 SystemResourceUnavailable → treat as 503.
-                // Also covers 503 (any sub-status) and 410 (any Gone sub-status).
-                // These don't map to a single CosmosStatus constant, so we use
-                // helper predicates on the status code + sub-status.
+                // 429/3092 SystemResourceUnavailable, 503 (any sub-status),
+                // 410 (any Gone sub-status) → failover retry + mark partition
+                // unavailable.
+                //
+                // These indicate that a specific partition on this endpoint is
+                // unhealthy. Mark the partition unavailable (circuit-breaker)
+                // AND mark the endpoint unavailable so routing prefers a
+                // different region.
                 _ if status.is_system_resource_unavailable()
                     || status.is_service_unavailable()
                     || status.is_gone() =>
                 {
-                    OperationAction::PartitionFailover {
-                        new_state: retry_state.advance_partition_failover(result),
-                    }
+                    (
+                        OperationAction::FailoverRetry {
+                            new_state: retry_state.advance_partition_failover(result),
+                            delay: None,
+                        },
+                        vec![
+                            LocationEffect::MarkPartitionUnavailable(
+                                UnavailablePartition::from_result(result),
+                            ),
+                            LocationEffect::MarkEndpointUnavailable {
+                                endpoint: result.endpoint().clone(),
+                                reason: UnavailableReason::ServiceUnavailable,
+                            },
+                        ],
+                    )
                 }
 
-                // 500 for reads → try next endpoint
+                // 500 for reads → try next endpoint.
+                // Mark the current endpoint unavailable because an internal
+                // server error suggests a regional issue.
                 _ if status.is_internal_server_error() && operation.is_read_only() => {
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.advance_failover(result),
-                        delay: None,
-                    }
+                    (
+                        OperationAction::FailoverRetry {
+                            new_state: retry_state.advance_failover(result),
+                            delay: None,
+                        },
+                        vec![LocationEffect::MarkEndpointUnavailable {
+                            endpoint: result.endpoint().clone(),
+                            reason: UnavailableReason::InternalServerError,
+                        }],
+                    )
                 }
 
-                _ => OperationAction::Abort(build_error(status)),
+                _ => (OperationAction::Abort(build_error(status)), vec![]),
             }
         }
 
         TransportOutcome::TransportError { request_sent, error, .. } => {
             match request_sent {
+                // Request was never sent → safe to retry on any endpoint
+                // for any operation type. No location effects because we
+                // don't know whether the endpoint itself is unhealthy (the
+                // error may be a local DNS or socket issue).
                 RequestSentStatus::NotSent => {
-                    // Safe to retry on any endpoint for any operation
                     if retry_state.failover_retry_count < MAX_CONNECTION_RETRIES {
-                        OperationAction::FailoverRetry {
-                            new_state: retry_state.advance_connection_retry(result),
-                            delay: None,
-                        }
+                        (
+                            OperationAction::FailoverRetry {
+                                new_state: retry_state.advance_connection_retry(result),
+                                delay: None,
+                            },
+                            vec![],
+                        )
                     } else {
-                        OperationAction::Abort(error.clone())
+                        (OperationAction::Abort(error.clone()), vec![])
                     }
                 }
+
+                // Request was (possibly) sent, but failed with a transport
+                // error. For read-only / idempotent operations we can safely
+                // retry on a different endpoint. Mark the current endpoint
+                // unavailable because the transport error suggests the
+                // region is unreachable or degraded.
                 _ if operation.is_read_only() || operation.is_idempotent() => {
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.advance_failover(result),
-                        delay: None,
-                    }
+                    (
+                        OperationAction::FailoverRetry {
+                            new_state: retry_state.advance_failover(result),
+                            delay: None,
+                        },
+                        vec![LocationEffect::MarkEndpointUnavailable {
+                            endpoint: result.endpoint().clone(),
+                            reason: UnavailableReason::TransportError,
+                        }],
+                    )
                 }
-                _ => OperationAction::Abort(error.clone()),
+
+                // Non-idempotent write whose request was sent → cannot safely
+                // retry. No location effects — we don't mark the endpoint
+                // because the error may be transient and the write may have
+                // succeeded on the server.
+                _ => (OperationAction::Abort(error.clone()), vec![]),
             }
         }
     }
@@ -709,8 +879,11 @@ Following the DOP principle, the account-level endpoint routing is split into:
 
 - **Data (Component)**: `AccountEndpointState` — an immutable snapshot of everything the
   routing system needs to pick an endpoint. Replaced atomically on refresh.
+  Together with `PartitionEndpointState`, it forms the `LocationSnapshot` (§3.1) that
+  the operation loop acquires once per iteration and passes to `resolve_endpoint`.
 - **Store (Infrastructure)**: `AccountEndpointStateStore` — a thin `RwLock<Arc<_>>` wrapper
-  that provides thread-safe snapshot access and atomic swap.
+  that provides thread-safe snapshot access and atomic swap. Mutated exclusively in
+  STAGE 6 (`apply_location_effects`) of the operation loop.
 - **Systems (Behavior)**: Pure functions that read state and produce `RoutingDecision`s, or
   take old state + an event and produce new state.
 
@@ -874,8 +1047,8 @@ pub(crate) struct PartitionCircuitBreaker {
 }
 
 /// Identifies a partition + region to mark unavailable.
-/// Carried in `OperationAction::PartitionFailover` so the operation
-/// pipeline can apply the mutation without coupling to internals.
+/// Carried in `LocationEffect::MarkPartitionUnavailable` so the operation
+/// pipeline can apply the mutation in STAGE 6 without coupling to internals.
 #[derive(Clone, Debug)]
 pub(crate) struct UnavailablePartition {
     pub partition_key_range_id: String,
@@ -922,7 +1095,8 @@ impl PartitionEndpointStateStore {
 
 ```rust
 // SYSTEM: Produce a new state with the given partition marked unavailable.
-// Called from the operation pipeline's PartitionFailover handling.
+// Called from STAGE 6 (`apply_location_effects`) when a
+// `LocationEffect::MarkPartitionUnavailable` effect is applied.
 fn mark_partition_unavailable(
     state: &PartitionEndpointState,
     partition: &UnavailablePartition,
@@ -1818,7 +1992,7 @@ Add cross-region failover, `AccountEndpointState` + routing systems, and the `Ac
 | Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                                      |
 |----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
 | 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`. | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
-| 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh with rate-limiting), 503, 404/1022, 429/3092, 500-for-reads. Add `FailoverRetry`, `SessionRetry`, `PartitionFailover` action handling in the operation loop.               | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
+| 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
 | 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                           | `driver/transport/transport_pipeline.rs`                                   |
 | 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                             | `options/retry.rs`, `options/availability.rs`                              |
 | 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                   | `tests/`                                                                   |
