@@ -188,16 +188,41 @@ pub(crate) struct FailedEndpoint {
 /// Append-only across attempts.
 // Reuse existing DiagnosticsContextBuilder (already mutable accumulator).
 
+/// Newtype wrapper for a Cosmos DB Log Sequence Number (LSN).
+///
+/// LSNs are monotonically increasing 64-bit integers assigned by the
+/// storage engine to each committed write within a partition. They are
+/// used for session-consistency tracking, quorum reads, and
+/// change-feed continuation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) struct LogSequenceNumber(i64);
+
+impl LogSequenceNumber {
+    pub fn new(value: i64) -> Self {
+        Self(value)
+    }
+
+    pub fn value(self) -> i64 {
+        self.0
+    }
+}
+
+impl std::fmt::Display for LogSequenceNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// COMPONENT: Session state for consistency tracking.
 pub(crate) struct SessionState {
-    pub session_token: Option<String>,
+    pub session_token: Option<SessionToken>,
     /// The effective read consistency strategy for this operation, taking
     /// into account the account-level default, any request-level override,
     /// and driver-level policies (e.g., session-read-from-write-region).
     pub effective_read_consistency_strategy: ReadConsistencyStrategy,
     /// LSN tracking for session consistency.
-    pub quorum_selected_lsn: Option<i64>,
-    pub global_committed_selected_lsn: Option<i64>,
+    pub quorum_selected_lsn: Option<LogSequenceNumber>,
+    pub global_committed_selected_lsn: Option<LogSequenceNumber>,
 }
 ```
 
