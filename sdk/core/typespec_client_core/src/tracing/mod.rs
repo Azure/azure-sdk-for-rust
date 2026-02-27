@@ -19,7 +19,7 @@ mod attributes;
 mod with_context;
 
 pub use attributes::{Attribute, AttributeArray, AttributeValue};
-pub use with_context::{FutureExt, WithContext};
+pub(crate) use with_context::{FutureExt, WithContext};
 
 /// The `TracerProvider` trait is the entrypoint for distributed tracing in the SDK.
 ///
