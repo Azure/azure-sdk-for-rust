@@ -73,6 +73,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
  * use std::sync::Arc;
  *
+ * # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
  * let credential: Arc<dyn azure_core::credentials::TokenCredential> =
  *     azure_identity::DeveloperToolsCredential::new(None).unwrap();
  * let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
@@ -81,7 +82,9 @@ typedef struct cosmos_container_client cosmos_container_client;
  * let account = CosmosAccountReference::with_credential(endpoint, credential);
  * let client = CosmosClient::builder()
  *     .build(account)
- *     .unwrap();
+ *     .await?;
+ * # Ok(())
+ * # }
  * ```
  *
  * Using key authentication (requires `key_auth` feature):
@@ -90,6 +93,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
  * use azure_core::credentials::Secret;
  *
+ * # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
  * let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
  *     .parse()
  *     .unwrap();
@@ -99,7 +103,9 @@ typedef struct cosmos_container_client cosmos_container_client;
  * );
  * let client = CosmosClient::builder()
  *     .build(account)
- *     .unwrap();
+ *     .await?;
+ * # Ok(())
+ * # }
  * ```
  */
 typedef struct cosmos_client cosmos_client;

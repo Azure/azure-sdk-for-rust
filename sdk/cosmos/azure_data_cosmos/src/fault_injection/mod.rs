@@ -47,6 +47,7 @@
 //! use std::sync::Arc;
 //! use std::time::{Duration, Instant};
 //!
+//! # async fn doc() {
 //! // 1. Define what error to inject
 //! let result = FaultInjectionResultBuilder::new()
 //!     .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -78,7 +79,9 @@
 //!         "https://myaccount.documents.azure.com/".parse().unwrap(),
 //!         Secret::new("my_account_key"),
 //!     ))
+//!     .await
 //!     .unwrap();
+//! # }
 //! ```
 //!
 //! # Rule Evaluation
@@ -102,7 +105,7 @@ use crate::resource_context::ResourceType;
 
 pub use client_builder::FaultInjectionClientBuilder;
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
-pub use result::{FaultInjectionResult, FaultInjectionResultBuilder};
+pub use result::{CustomResponse, FaultInjectionResult, FaultInjectionResultBuilder};
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
 /// Represents different server error types that can be injected for fault testing.

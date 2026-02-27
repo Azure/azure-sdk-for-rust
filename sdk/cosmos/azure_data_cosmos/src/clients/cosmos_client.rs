@@ -32,6 +32,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
 /// use std::sync::Arc;
 ///
+/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
@@ -40,7 +41,9 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClient::builder()
 ///     .build(account)
-///     .unwrap();
+///     .await?;
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// Using key authentication (requires `key_auth` feature):
@@ -49,6 +52,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
 /// use azure_core::credentials::Secret;
 ///
+/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
 ///     .parse()
 ///     .unwrap();
@@ -58,7 +62,9 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// );
 /// let client = CosmosClient::builder()
 ///     .build(account)
-///     .unwrap();
+///     .await?;
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
@@ -76,6 +82,7 @@ impl CosmosClient {
     /// ```rust,no_run
     /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
     ///
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
     ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
     /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
@@ -84,7 +91,9 @@ impl CosmosClient {
     /// let account = CosmosAccountReference::with_credential(endpoint, credential);
     /// let client = CosmosClient::builder()
     ///     .build(account)
-    ///     .unwrap();
+    ///     .await?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn builder() -> CosmosClientBuilder {
         CosmosClientBuilder::new()

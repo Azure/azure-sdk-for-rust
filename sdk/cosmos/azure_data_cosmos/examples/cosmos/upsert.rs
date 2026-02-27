@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::error::Error;
 
 use azure_data_cosmos::{CosmosClient, ItemOptions, PartitionKey};
@@ -28,7 +31,7 @@ pub struct UpsertCommand {
 impl UpsertCommand {
     pub async fn run(self, client: CosmosClient) -> Result<(), Box<dyn Error>> {
         let db_client = client.database_client(&self.database);
-        let container_client = db_client.container_client(&self.container);
+        let container_client = db_client.container_client(&self.container).await;
 
         let pk = PartitionKey::from(&self.partition_key);
         let item: serde_json::Value = serde_json::from_str(&self.json)?;

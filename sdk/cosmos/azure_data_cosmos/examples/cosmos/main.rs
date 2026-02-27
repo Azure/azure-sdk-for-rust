@@ -7,6 +7,7 @@ use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::error::Error;
 use std::sync::Arc;
 
+mod batch;
 mod create;
 mod delete;
 mod metadata;
@@ -41,6 +42,7 @@ struct SharedArgs {
 
 #[derive(Clone, Subcommand)]
 enum Subcommands {
+    Batch(batch::BatchCommand),
     Create(create::CreateCommand),
     Delete(delete::DeleteCommand),
     Metadata(metadata::MetadataCommand),
@@ -63,9 +65,10 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     };
 
-    let client = create_client(&args.shared_args)?;
+    let client = create_client(&args.shared_args).await?;
 
     match cmd {
+        Subcommands::Batch(cmd) => cmd.run(&client).await,
         Subcommands::Create(cmd) => cmd.run(client).await,
         Subcommands::Delete(cmd) => cmd.run(client).await,
         Subcommands::Metadata(cmd) => cmd.run(client).await,
@@ -76,7 +79,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     }
 }
 
-fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
+async fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
     let endpoint: CosmosAccountEndpoint = args.endpoint.parse()?;
     if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
@@ -85,7 +88,7 @@ fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
                 endpoint,
                 azure_core::credentials::Secret::from(key.clone()),
             );
-            Ok(CosmosClient::builder().build(account)?)
+            Ok(CosmosClient::builder().build(account).await?)
         }
         #[cfg(not(feature = "key_auth"))]
         {
@@ -96,6 +99,6 @@ fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
         let cred: Arc<dyn azure_core::credentials::TokenCredential> =
             DeveloperToolsCredential::new(None).unwrap();
         let account = CosmosAccountReference::with_credential(endpoint, cred);
-        Ok(CosmosClient::builder().build(account)?)
+        Ok(CosmosClient::builder().build(account).await?)
     }
 }

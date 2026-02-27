@@ -26,7 +26,7 @@ pub async fn ensure_container(
     throughput: usize,
     default_ttl: Option<Duration>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let container_client = db_client.container_client(container_name);
+    let container_client = db_client.container_client(container_name).await;
 
     match container_client.read(None).await {
         Ok(_) => {

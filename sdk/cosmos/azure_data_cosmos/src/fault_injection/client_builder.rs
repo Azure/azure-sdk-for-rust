@@ -28,6 +28,7 @@ use super::rule::FaultInjectionRule;
 /// use azure_core::credentials::Secret;
 /// use std::sync::Arc;
 ///
+/// # async fn doc() {
 /// let result = FaultInjectionResultBuilder::new()
 ///     .with_error(FaultInjectionErrorType::ServiceUnavailable)
 ///     .build();
@@ -41,7 +42,9 @@ use super::rule::FaultInjectionRule;
 /// let client = CosmosClientBuilder::new()
 ///     .with_fault_injection(fault_builder)
 ///     .build((endpoint, Secret::from("my_account_key")))
+///     .await
 ///     .unwrap();
+/// # }
 /// ```
 pub struct FaultInjectionClientBuilder {
     /// The fault injection rules to apply.

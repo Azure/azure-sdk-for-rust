@@ -54,7 +54,7 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `name` - The name of the container.
-    pub fn container_client(&self, name: &str) -> ContainerClient {
+    pub async fn container_client(&self, name: &str) -> ContainerClient {
         ContainerClient::new(
             self.pipeline.clone(),
             &self.link,
@@ -62,6 +62,7 @@ impl DatabaseClient {
             self.global_endpoint_manager.clone(),
             self.global_partition_endpoint_manager.clone(),
         )
+        .await
     }
 
     /// Returns the identifier of the Cosmos database.

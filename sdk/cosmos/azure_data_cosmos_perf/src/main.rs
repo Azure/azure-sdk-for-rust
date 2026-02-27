@@ -43,14 +43,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build the Cosmos client using the builder pattern
-    let preferred_regions: Vec<_> = config
-        .preferred_regions
-        .iter()
-        .map(|r| r.clone().into())
-        .collect();
+    let preferred_region: Option<azure_data_cosmos::regions::RegionName> =
+        config.preferred_regions.first().map(|r| r.clone().into());
 
-    let builder =
-        CosmosClientBuilder::new().with_application_preferred_regions(preferred_regions.clone());
+    let mut builder = CosmosClientBuilder::new();
+    if let Some(region) = preferred_region.clone() {
+        builder = builder.with_application_region(region);
+    }
 
     let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
@@ -60,18 +59,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )?;
             let account =
                 CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
-            builder.build(account)?
+            builder.build(account).await?
         }
         AuthMethod::Aad => {
             let credential: Arc<dyn azure_core::credentials::TokenCredential> =
                 azure_identity::ManagedIdentityCredential::new(None)?;
             let account = CosmosAccountReference::with_credential(endpoint, credential);
-            builder.build(account)?
+            builder.build(account).await?
         }
     };
 
     let db_client = client.database_client(&config.database);
-    let container_client = db_client.container_client(&config.container);
+    let container_client = db_client.container_client(&config.container).await;
 
     // Ensure the database exists (with retry logic for multi-region setups)
     setup::ensure_database(&client, &config.database).await?;
@@ -120,8 +119,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
         let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
-        let results_builder =
-            CosmosClientBuilder::new().with_application_preferred_regions(preferred_regions);
+        let mut results_builder = CosmosClientBuilder::new();
+        if let Some(region) = preferred_region {
+            results_builder = results_builder.with_application_region(region);
+        }
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(
@@ -131,13 +132,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     results_ep,
                     Secret::from(key.to_string()),
                 );
-                results_builder.build(account)?
+                results_builder.build(account).await?
             }
             AuthMethod::Aad => {
                 let credential: Arc<dyn azure_core::credentials::TokenCredential> =
                     azure_identity::ManagedIdentityCredential::new(None)?;
                 let account = CosmosAccountReference::with_credential(results_ep, credential);
-                results_builder.build(account)?
+                results_builder.build(account).await?
             }
         };
         setup::ensure_database(&results_client, &config.results_database).await?;
@@ -147,14 +148,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
             results_endpoint, config.results_database, config.results_container, config.workload_id,
         );
-        results_db.container_client(&config.results_container)
+        results_db.container_client(&config.results_container).await
     } else {
         setup::ensure_container(&db_client, &config.results_container, 400, None).await?;
         println!(
             "Perf results will be stored in container '{}'. Workload ID: {}",
             config.results_container, config.workload_id,
         );
-        db_client.container_client(&config.results_container)
+        db_client.container_client(&config.results_container).await
     };
 
     // Run the perf test

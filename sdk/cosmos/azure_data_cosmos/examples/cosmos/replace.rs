@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::error::Error;
 
 use azure_core::http::StatusCode;
@@ -69,7 +72,7 @@ impl ReplaceCommand {
                 show_updated,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container);
+                let container_client = db_client.container_client(&container).await;
 
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
@@ -118,7 +121,7 @@ impl ReplaceCommand {
             } => {
                 let throughput_properties = throughput_options.try_into()?;
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container);
+                let container_client = db_client.container_client(&container).await;
                 let new_throughput = container_client
                     .replace_throughput(throughput_properties, None)
                     .await?
