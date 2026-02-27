@@ -1,0 +1,22 @@
+{
+  "import": [
+    "../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "AADSTS",
+    "adfs",
+    "appservice",
+    "azureauth",
+    "clientcertificate",
+    "clientsecret",
+    "cloudshell",
+    "imds",
+    "LINUXPOOL",
+    "LINUXVMIMAGE",
+    "managedidentity",
+    "msal",
+    "replacen",
+    "SYSTEMROOT",
+    "workloadidentity"
+  ]
+}
