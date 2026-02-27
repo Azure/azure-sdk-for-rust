@@ -144,19 +144,10 @@ focused component types. Each pipeline stage operates on only the components it 
 /// Produced by endpoint resolution, consumed by transport.
 /// Replaced (not mutated) on retry/failover.
 pub(crate) struct RoutingDecision {
-    /// The resolved regional endpoint URL.
-    pub endpoint: Url,
-    /// The region name (for diagnostics and failover tracking).
-    pub region: RegionName,
-    /// Whether this is the hub (default) endpoint or a regional endpoint.
-    pub endpoint_kind: EndpointKind,
+    /// The resolved Cosmos DB service endpoint.
+    pub endpoint: CosmosEndpoint,
     /// Whether partition-level override was applied.
     pub partition_override: Option<PartitionOverride>,
-}
-
-pub(crate) enum EndpointKind {
-    Hub,
-    Regional,
 }
 
 pub(crate) struct PartitionOverride {
@@ -187,8 +178,8 @@ pub(crate) struct OperationRetryState {
 }
 
 pub(crate) struct FailedEndpoint {
-    pub endpoint: Url,
-    pub region: RegionName,
+    /// The endpoint that failed.
+    pub endpoint: CosmosEndpoint,
     pub error: OperationError,
     pub request_sent: bool,
 }
@@ -659,15 +650,38 @@ pub(crate) struct GlobalEndpointManager {
 /// Immutable snapshot of all location routing state.
 /// Replaced as a whole when account properties refresh.
 struct LocationSnapshot {
-    preferred_read_endpoints: Vec<RegionalEndpoint>,
-    preferred_write_endpoints: Vec<RegionalEndpoint>,
+    preferred_read_endpoints: Vec<CosmosEndpoint>,
+    preferred_write_endpoints: Vec<CosmosEndpoint>,
     unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
     account_properties: AccountProperties,
 }
 
-struct RegionalEndpoint {
+/// A Cosmos DB service endpoint: region name, URL, and whether
+/// the endpoint is global or regional.
+///
+/// This is the canonical representation used throughout routing,
+/// failover tracking, and diagnostics.
+///
+/// - **Global** endpoints usually use the pattern `{account}.documents.azure.com`.
+///   DNS resolves them to the hub (default) region.
+/// - **Regional** endpoints usually use the pattern `{account}-{region}.documents.azure.com`
+///   and resolve directly to that region.
+#[derive(Clone, Debug)]
+pub(crate) struct CosmosEndpoint {
     region: RegionName,
-    endpoint: Url,
+    url: Url,
+    kind: EndpointKind,
+}
+
+/// Whether an endpoint targets a specific region or the global
+/// (hub) entry point.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum EndpointKind {
+    /// Global endpoint (`{account}.documents.azure.com`).
+    /// DNS resolves to the hub region.
+    Global,
+    /// Regional endpoint (`{account}-{region}.documents.azure.com`).
+    Regional,
 }
 ```
 
