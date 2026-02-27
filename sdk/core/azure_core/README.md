@@ -36,6 +36,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 <!-- CLIENT COMMON BAR -->
 
 [Client options](#configuring-service-clients-using-clientoptions) |
+[Sending an HTTP request body](#sending-an-http-request-body) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
 [Handling errors](#handling-errors) |
 [Iterating through pages of resources](#consuming-service-methods-returning-pagert) |
@@ -125,6 +126,36 @@ let client = SecretClient::new(
     Some(options),
 )?;
 ```
+
+### Sending an HTTP request body
+
+_Service clients_ have methods that can be used to call Azure services. We refer to these client methods as _service methods_.
+Some service clients have methods have parameters for required path components, query string parameters, or request bodies.
+You can serialize request bodies from a model or from a formatted string such as raw JSON.
+
+Using the `client` we instantiated above:
+
+```rust ignore request
+use azure_security_keyvault_secrets::models::UpdateSecretPropertiesParameters;
+use std::collections::HashMap;
+
+let tags = HashMap::from([
+    ("classification".into(), "example".into()),
+]);
+#[allow(clippy::needless_update)]
+let parameters = UpdateSecretPropertiesParameters {
+    content_type: Some("text/plain".into()),
+    secret_attributes: None, // No change
+    tags: Some(tags),
+    ..Default::default()
+};
+
+client.update_secret_properties("secret-name", parameters.try_into()?, None).await?;
+```
+
+**NOTE:** Service models and other structs that can be created by the caller are not attributed with `#[non_exhaustive]` to allow struct initialization.
+To mitigate breaking changes should fields be added, we recommend using the [struct update syntax](https://doc.rust-lang.org/book/ch05-01-defining-structs.html#creating-instances-with-struct-update-syntax) with `Default` even if you assign all fields.
+You can attribute the struct initialization, module, or crate to ignore `clippy::needless_update` as shown above.
 
 ### Accessing HTTP response details using `Response<T>`
 

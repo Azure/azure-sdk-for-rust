@@ -20,7 +20,6 @@
     "NOTICE.txt",
     "deny.toml",
     "eng/",
-    "**/.dict.txt",
     "rust-toolchain.toml"
   ],
   "words": [
@@ -57,12 +56,12 @@
     "hmac",
     "iothub",
     "keyvault",
-    "LASTEXITCODE",
-    "LINUXPOOL",
-    "LINUXVMIMAGE",
+    "lastexitcode",
+    "linuxpool",
+    "linuxvmimage",
     "lldb",
-    "MACPOOL",
-    "MACVMIMAGE",
+    "macpool",
+    "macvmimage",
     "markdownlintrc",
     "maxresults",
     "maxsize",
@@ -103,8 +102,8 @@
     "vcpkg",
     "versionid",
     "virtualmachine",
-    "WINDOWSPOOL",
-    "WINDOWSVMIMAGE",
+    "windowspool",
+    "windowsvmimage",
     "webpki",
     "worktree"
   ],
@@ -118,41 +117,6 @@
     {
       "name": "rust-custom",
       "path": "../eng/dict/rust-custom.txt",
-      "noSuggest": true
-    },
-    {
-      "name": "azure_core_amqp",
-      "path": "../sdk/core/azure_core_amqp/.dict.txt",
-      "noSuggest": true
-    },
-    {
-      "name": "cosmos",
-      "path": "../sdk/cosmos/.dict.txt",
-      "noSuggest": true
-    },
-    {
-      "name": "eventhubs",
-      "path": "../sdk/eventhubs/.dict.txt",
-      "noSuggest": true
-    },
-    {
-      "name": "identity",
-      "path": "../sdk/identity/.dict.txt",
-      "noSuggest": true
-    },
-    {
-      "name": "keyvault",
-      "path": "../sdk/keyvault/.dict.txt",
-      "noSuggest": true
-    },
-    {
-      "name": "servicebus",
-      "path": "../sdk/servicebus/.dict.txt",
-      "noSuggest": true
-    },
-    {
-      "name": "storage",
-      "path": "../sdk/storage/.dict.txt",
       "noSuggest": true
     }
   ],
@@ -183,66 +147,10 @@
       ]
     },
     {
-      "filename": "sdk/core/azure_core_amqp/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "azure_core_amqp"
-      ]
-    },
-    {
-      "filename": "sdk/eventhubs/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "eventhubs"
-      ]
-    },
-    {
-      "filename": "sdk/identity/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "identity"
-      ]
-    },
-    {
-      "filename": "sdk/keyvault/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "keyvault"
-      ]
-    },
-    {
       "filename": "sdk/core/typespec*/**",
       "flagWords": [
         "azure",
         "azurite"
-      ]
-    },
-    {
-      "filename": "sdk/cosmos/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "cosmos"
-      ]
-    },
-    {
-      "filename": "sdk/servicebus/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "servicebus"
-      ]
-    },
-    {
-      "filename": "sdk/storage/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "storage"
       ]
     }
   ]
