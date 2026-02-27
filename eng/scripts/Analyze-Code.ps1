@@ -44,13 +44,18 @@ Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features" -GroupOutp
 # Verify package dependencies and keywords
 $verifyDependenciesScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-dependencies.rs'))
 $verifyKeywordsScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-keywords.rs'))
+$checkApiSupersetManifest = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'check_api_superset', 'Cargo.toml'))
 
 if (!$SkipPackageAnalysis) {
+  $checkApiSupersetCrates = @('typespec', 'typespec_client_core', 'azure_core')
+
   if (!(Test-Path $PackageInfoDirectory)) {
     Write-Host "Analyzing workspace`n"
     $manifestPath = ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
     Invoke-LoggedCommand "&$verifyDependenciesScript $manifestPath" -GroupOutput
     Invoke-LoggedCommand "&$verifyKeywordsScript $manifestPath" -GroupOutput
+
+    Invoke-LoggedCommand "cargo run --manifest-path $checkApiSupersetManifest" -GroupOutput
     return
   }
 
@@ -62,6 +67,7 @@ if (!$SkipPackageAnalysis) {
   | Get-Content -Raw
   | ConvertFrom-Json
 
+  $shouldCheckApiSuperset = $false
   foreach ($package in $packagesToTest) {
     Write-Host "Analyzing package '$($package.Name)' in directory '$($package.DirectoryPath)'`n"
     $packageManifestPath = ([System.IO.Path]::Combine($package.DirectoryPath, 'Cargo.toml'))
@@ -71,5 +77,13 @@ if (!$SkipPackageAnalysis) {
     if ($Toolchain -eq 'nightly') {
       Invoke-LoggedCommand "cargo +nightly docs-rs --package $($package.Name)" -GroupOutput
     }
+
+    if ($checkApiSupersetCrates -contains $package.Name) {
+      $shouldCheckApiSuperset = $true
+    }
+  }
+
+  if ($shouldCheckApiSuperset) {
+    Invoke-LoggedCommand "cargo run --manifest-path $checkApiSupersetManifest" -GroupOutput
   }
 }

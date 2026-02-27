@@ -1,0 +1,14 @@
+{
+  "import": [
+    "../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "amqps",
+    "consts",
+    "eventdata",
+    "mgmt",
+    "myapp",
+    "rustc",
+    "yourcontainername"
+  ]
+}

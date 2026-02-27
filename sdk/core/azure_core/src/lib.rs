@@ -20,7 +20,8 @@ pub mod test;
 
 // Re-export modules in typespec_client_core such that azure_core-based crates don't need to reference it directly.
 pub use typespec_client_core::{
-    async_runtime, base64, fmt, json, sleep, stream, time, Bytes, Error, Result, Uuid, Value,
+    async_runtime, base64, fmt, json, request_header, request_option, request_query, sleep, stream,
+    time, Bytes, Error, Result, Uuid, Value,
 };
 
 /// Abstractions for distributed tracing and telemetry.

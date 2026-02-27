@@ -5,6 +5,9 @@
 ### Features Added
 
 - Added `ErrorKind::Connection` for connection errors.
+- Added `QueryBuilder`, `DEFAULT_ALLOWED_HEADER_NAMES`, `DEFAULT_ALLOWED_QUERY_PARAMETERS`, and `REDACTED_PATTERN` to `azure_core::http`.
+- Added `request_header!`, `request_option!`, and `request_query!` macros.
+- Added `SecretBytes` to `azure_core::credentials` for securely passing byte secrets without printing them in `Debug` or `Display` output.
 - The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
 
 ### Breaking Changes

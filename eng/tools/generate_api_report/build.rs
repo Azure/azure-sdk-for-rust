@@ -5,7 +5,9 @@ use serde::Deserialize;
 use std::{fs, path::Path};
 
 fn main() {
-    let toolchain_file = Path::new(env!("CARGO_MANIFEST_DIR")).join("rust-toolchain.toml");
+    let toolchain_file = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("rust-toolchain.toml");
     let toolchain_content =
         fs::read_to_string(toolchain_file).expect("read rust-toolchain.toml from crate root");
     let manifest: Manifest =
@@ -14,7 +16,7 @@ fn main() {
         "cargo::rustc-env=TOOLCHAIN_CHANNEL={}",
         manifest.toolchain.channel
     );
-    println!("cargo::rerun-if-changed=rust-toolchain.toml");
+    println!("cargo::rerun-if-changed=../rust-toolchain.toml");
 }
 
 #[derive(Debug, Deserialize)]
