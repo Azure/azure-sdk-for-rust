@@ -85,8 +85,7 @@ impl AuthorizationPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl Policy for AuthorizationPolicy {
     async fn send(
         &self,
@@ -210,8 +209,7 @@ mod tests {
     #[derive(Debug)]
     struct MockTransport;
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for MockTransport {
         async fn send(
             &self,
@@ -231,8 +229,7 @@ mod tests {
     #[derive(Debug)]
     struct MockTokenCredential(String);
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl TokenCredential for MockTokenCredential {
         async fn get_token(
             &self,

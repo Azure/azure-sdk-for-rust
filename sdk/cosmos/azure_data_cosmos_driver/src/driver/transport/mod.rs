@@ -237,16 +237,8 @@ impl CosmosTransport {
         is_metadata: bool,
         for_emulator: bool,
     ) -> azure_core::Result<reqwest::Client> {
-        #[cfg(not(target_arch = "wasm32"))]
         let mut builder = reqwest::ClientBuilder::new();
 
-        #[cfg(target_arch = "wasm32")]
-        let builder = reqwest::ClientBuilder::new();
-
-        // Native-only settings (not available on WASM)
-        // WASM uses browser's fetch API which handles connection pooling,
-        // timeouts, and TLS internally.
-        #[cfg(not(target_arch = "wasm32"))]
         {
             // Connection pool settings
             builder = builder.pool_max_idle_per_host(pool.max_idle_connections_per_endpoint());
@@ -282,10 +274,6 @@ impl CosmosTransport {
                 builder = builder.danger_accept_invalid_certs(true);
             }
         }
-
-        // Suppress unused variable warnings on WASM
-        #[cfg(target_arch = "wasm32")]
-        let _ = (pool, is_metadata, for_emulator);
 
         builder.build().map_err(|e| {
             azure_core::Error::with_message(
