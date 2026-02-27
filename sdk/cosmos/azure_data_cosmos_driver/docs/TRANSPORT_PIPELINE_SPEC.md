@@ -1382,46 +1382,48 @@ impl EndpointShardPool {
     /// 5. If at max clients, use the least-loaded shard from the FULL pool
     ///    (queue pressure, but bounded).
     fn select_shard(&self, endpoint: &EndpointKey) -> Arc<ClientShard> {
-        let shards = self.shards.read();
+        let mut candidates = {
+            let shards = self.shards.read();
 
-        // Healthy shards, sorted by inflight count ascending
-        let mut candidates: Vec<_> = shards.iter()
-            .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
-            .map(|s| {
-                let inflight = s.endpoint_inflight(endpoint);
-                (s.clone(), inflight)
-            })
-            .collect();
+            // Healthy shards, sorted by inflight count ascending
+            let mut candidates: Vec<_> = shards.iter()
+                .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
+                .map(|s| {
+                    let inflight = s.endpoint_inflight(endpoint);
+                    (s.clone(), inflight)
+                })
+                .collect();
 
-        candidates.sort_by_key(|(_, inflight)| *inflight);
+            candidates.sort_by_key(|(_, inflight)| *inflight);
 
-        // Active set: only the top N shards receive new requests.
-        // Remaining shards are left to drain (scale-down path).
-        let active_count = (candidates.len() as f64 * self.config.load_spread_ratio)
-            .ceil()
-            .max(1.0) as usize;
+            // Active set: only the top N shards receive new requests.
+            // Remaining shards are left to drain (scale-down path).
+            let active_count = (candidates.len() as f64 * self.config.load_spread_ratio)
+                .ceil()
+                .max(1.0) as usize;
 
-        // Among active set, find least-loaded
-        // Note: candidates are sorted ascending by inflight, so we want
-        // to route to the least-loaded within the active set. The "active set"
-        // is the first `active_count` shards (sorted ascending = least loaded first).
-        let active_set = &candidates[..active_count.min(candidates.len())];
+            // Among active set, find least-loaded
+            // Note: candidates are sorted ascending by inflight, so we want
+            // to route to the least-loaded within the active set. The "active set"
+            // is the first `active_count` shards (sorted ascending = least loaded first).
+            let active_set = &candidates[..active_count.min(candidates.len())];
 
-        if let Some((best, inflight)) = active_set.first() {
-            if *inflight < self.config.max_streams_per_client {
-                return best.clone();
+            if let Some((best, inflight)) = active_set.first() {
+                if *inflight < self.config.max_streams_per_client {
+                    return best.clone();
+                }
             }
-        }
+
+            candidates
+        }; // read lock released here
 
         // All active shards at capacity → try to create a new one
-        drop(shards); // release read lock
         if let Some(new_shard) = self.try_create_shard() {
             return new_shard;
         }
 
         // At max clients → fall back to least-loaded across ALL shards
         // (including draining ones) to prevent request queuing
-        let shards = self.shards.read();
         candidates.first()
             .map(|(s, _)| s.clone())
             .unwrap_or_else(|| self.create_emergency_shard())
@@ -1853,11 +1855,11 @@ checks or eviction yet — shards accumulate but do not get reclaimed.
 
 ### Step 8: Fault injection
 
-| Sub-step | Work Item                                                                                                                                                                         | Files                                                                   |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| 8.1      | **Move fault injection** — Move `FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult` from `azure_data_cosmos` to driver behind `fault_injection` feature flag. | `driver/fault_injection/mod.rs`, `rule.rs`, `condition.rs`, `result.rs` |
+| Sub-step | Work Item                                                                                                                                                                                                                     | Files                                                                            |
+|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| 8.1      | **Move fault injection** — Move `FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult` from `azure_data_cosmos` to driver behind `fault_injection` feature flag.                                             | `driver/fault_injection/mod.rs`, `rule.rs`, `condition.rs`, `result.rs`          |
 | 8.2      | **`FaultInjectingHttpClientFactory`** — Wraps the real `HttpClientFactory`, producing `FaultInjectingHttpClient` instances that intercept at the `HttpClient` trait level (below `AdaptiveTransport`/`ShardedHttpTransport`). | `driver/fault_injection/fault_injecting_factory.rs`, `fault_injecting_client.rs` |
-| 8.3      | **Tests** — Shard eviction under injected failures, scale-up/down validation, full pipeline retry/failover with injected faults, rule matching, feature gate. | `tests/` |
+| 8.3      | **Tests** — Shard eviction under injected failures, scale-up/down validation, full pipeline retry/failover with injected faults, rule matching, feature gate.                                                                 | `tests/`                                                                         |
 
 **What works after Step 8**: Complete driver pipeline with fault injection support.
 
