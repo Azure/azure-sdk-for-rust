@@ -186,3 +186,24 @@ process can achieve.
 
 The script builds the crate in release mode, spawns the requested number of
 processes, and forwards `Ctrl+C` to all children for graceful shutdown.
+
+### Testing Against a Specific SDK Commit
+
+Use `--cosmos-commit` to build and run against a specific version of
+`azure_data_cosmos`. This is useful for A/B performance comparisons across
+SDK changes.
+
+```bash
+# Test against a specific commit
+./run_perf.sh --cosmos-commit abc123 --processes 4 \
+  --endpoint https://myaccount.documents.azure.com:443 \
+  --auth key --key "$AZURE_COSMOS_KEY"
+
+# Test against a branch
+./run_perf.sh --cosmos-commit upstream/main --processes 2 \
+  --endpoint https://myaccount.documents.azure.com:443 \
+  --auth aad
+```
+
+The script checks out the SDK source at the given ref before building, then
+restores the original source after the build completes (or on Ctrl+C/error).
