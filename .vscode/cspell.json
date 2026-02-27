@@ -21,6 +21,7 @@
     "deny.toml",
     "eng/",
     "**/.dict.txt",
+    "**/cspell.yaml",
     "rust-toolchain.toml"
   ],
   "words": [
@@ -89,6 +90,7 @@
     "rustfmt",
     "rustup",
     "schannel",
+    "sastoken",
     "seekable",
     "servicebus",
     "spector",

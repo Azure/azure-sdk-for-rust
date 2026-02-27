@@ -5,7 +5,8 @@ use crate::{common::recoverable::RecoverableConnection, error::Result};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
-    credentials::{AccessToken, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential},
+    hmac::hmac_sha256_bytes,
     http::Url,
     time::{Duration, OffsetDateTime},
 };
@@ -41,12 +42,22 @@ impl Default for TokenRefreshTimes {
     }
 }
 
+pub(crate) enum AuthorizerCredential {
+    TokenCredential {
+        credential: Arc<dyn TokenCredential>,
+    },
+    SasToken {
+        key_name: String,
+        key_value: Secret,
+    },
+}
+
 pub(crate) struct Authorizer {
-    authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
+    credential: AuthorizerCredential,
     authorization_refresher: OnceLock<SpawnedTask>,
+    authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
-    credential: Arc<dyn TokenCredential>,
     recoverable_connection: Weak<RecoverableConnection>,
     /// This is used to disable authorization for testing purposes.
     #[cfg(test)]
@@ -59,13 +70,13 @@ unsafe impl Sync for Authorizer {}
 impl Authorizer {
     pub(crate) fn new(
         recoverable_connection: Weak<RecoverableConnection>,
-        credential: Arc<dyn TokenCredential>,
+        credential: AuthorizerCredential,
     ) -> Self {
         Self {
-            authorization_refresher: OnceLock::new(),
-            authorization_scopes: AsyncMutex::new(HashMap::new()),
-            token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
+            authorization_scopes: AsyncMutex::new(HashMap::new()),
+            authorization_refresher: OnceLock::new(),
+            token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             recoverable_connection,
             #[cfg(test)]
             disable_authorization: SyncMutex::new(false),
@@ -100,17 +111,7 @@ impl Authorizer {
 
         if !scopes.contains_key(path) {
             debug!("Creating new authorization scope for path: {path}");
-
-            debug!("Get Token.");
-            let token = self
-                .credential
-                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                .await
-                .map_err(AmqpError::from)?;
-
-            debug!("Token for path {path} expires at {}", token.expires_on);
-
-            self.perform_authorization(connection, path, &token).await?;
+            let token = self.perform_authentication(connection, path).await?;
 
             // insert returns some if it *fails* to insert, None if it succeeded.
             let present = scopes.insert(path.clone(), token);
@@ -136,6 +137,45 @@ impl Authorizer {
             .clone())
     }
 
+    // Selects the appropriate authentication method based on the credential type.
+    async fn perform_authentication(
+        self: &Arc<Self>,
+        connection: &Arc<RecoverableConnection>,
+        url: &Url,
+    ) -> azure_core_amqp::Result<AccessToken> {
+        match &self.credential {
+            AuthorizerCredential::TokenCredential { credential } => {
+                let new_token = credential
+                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
+                    .await?;
+                debug!("Token for path {url} expires at {}", new_token.expires_on);
+                self.perform_token_authorization(connection, url, None, &new_token)
+                    .await?;
+                Ok(new_token)
+            }
+            AuthorizerCredential::SasToken {
+                key_name,
+                key_value,
+            } => {
+                const TOKEN_TYPE: &str = "servicebus.windows.net:sastoken";
+                let new_token =
+                    create_sas_token(OffsetDateTime::now_utc(), key_name, key_value, url.as_str())?;
+                debug!(
+                    "SAS token for path {url} expires at {}",
+                    new_token.expires_on
+                );
+                self.perform_token_authorization(
+                    connection,
+                    url,
+                    Some(TOKEN_TYPE.to_string()),
+                    &new_token,
+                )
+                .await?;
+                Ok(new_token)
+            }
+        }
+    }
+
     /// Actually perform an authorization against the Event Hubs service.
     ///
     /// This method establishes a connection to the Event Hubs service and
@@ -147,10 +187,11 @@ impl Authorizer {
     /// * `url` - The URL of the resource being authorized.
     /// * `new_token` - The new access token to use for authorization.
     ///
-    async fn perform_authorization(
+    async fn perform_token_authorization(
         self: &Arc<Self>,
         connection: &Arc<RecoverableConnection>,
         url: &Url,
+        token_type: Option<String>,
         new_token: &AccessToken,
     ) -> azure_core_amqp::Result<()> {
         // Test Hook: Disable interacting with Event Hubs service if the test doesn't want it.
@@ -171,7 +212,7 @@ impl Authorizer {
             .get_cbs_client()
             .authorize_path(
                 url.to_string(),
-                None,
+                token_type,
                 &new_token.token,
                 new_token.expires_on,
             )
@@ -316,22 +357,11 @@ impl Authorizer {
             // Now refresh tokens without holding the lock to avoid deadlocks
             let mut updated_tokens = HashMap::new();
             for url in tokens_to_refresh {
-                let new_token = self
-                    .credential
-                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                    .await?;
-
-                // Create an ephemeral connection to host the authentication.
+                debug!("Refreshing token for {url}");
                 let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
                     AmqpError::with_message("Recoverable connection has been dropped")
                 })?;
-                self.perform_authorization(&connection, &url, &new_token)
-                    .await?;
-
-                debug!(
-                    "Token refreshed for {url}, new expiration time: {}",
-                    new_token.expires_on
-                );
+                let new_token = self.perform_authentication(&connection, &url).await?;
                 updated_tokens.insert(url.clone(), new_token);
             }
 
@@ -356,10 +386,51 @@ impl Authorizer {
     }
 }
 
+fn url_encode(url: &str) -> String {
+    url::form_urlencoded::byte_serialize(url.as_bytes()).collect::<String>()
+}
+
+fn create_sas_token(
+    now: OffsetDateTime,
+    key_name: &str,
+    key_value: &Secret,
+    url: &str,
+) -> azure_core_amqp::Result<AccessToken> {
+    // Remove anything after the topic name.
+    // amqps://../..[/]
+    let url = if let Some((index, _)) = url.char_indices().filter(|&(_, c)| c == '/').nth(3) {
+        // Make sure we are using a amqp URL.
+        if url.starts_with("amqps://") || url.starts_with("amqp://") {
+            &url[..index]
+        } else {
+            url
+        }
+    } else {
+        url
+    };
+
+    let url = url_encode(url);
+    let expires_on = now + Duration::hours(24);
+    let expiry_timestamp = expires_on.unix_timestamp();
+    let string_to_sign = format!("{url}\n{expiry_timestamp}");
+    let signature = hmac_sha256_bytes(string_to_sign.as_bytes(), key_value.secret().as_bytes())?;
+    let signature = url_encode(&signature);
+    let token_value = format!(
+        "SharedAccessSignature sr={url}&sig={signature}&se={expiry_timestamp}&skn={key_name}"
+    );
+
+    Ok(AccessToken {
+        token: token_value.into(),
+        expires_on,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::{credentials::TokenRequestOptions, http::Url, time::OffsetDateTime, Result};
+    use azure_core::{
+        base64, credentials::TokenRequestOptions, http::Url, time::OffsetDateTime, Result,
+    };
     use azure_core_test::{recorded, TestContext};
     use std::sync::Arc;
     use tracing::info;
@@ -443,13 +514,17 @@ mod tests {
             url,
             None,
             None,
-            mock_credential.clone(),
+            AuthorizerCredential::TokenCredential {
+                credential: mock_credential.clone(),
+            },
             Default::default(),
         );
 
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection_manager),
-            mock_credential.clone(),
+            AuthorizerCredential::TokenCredential {
+                credential: mock_credential.clone(),
+            },
         ));
 
         // Disable actual authorization for testing
@@ -507,7 +582,9 @@ mod tests {
             url,
             None,
             None,
-            mock_credential.clone(),
+            AuthorizerCredential::TokenCredential {
+                credential: mock_credential.clone(),
+            },
             Default::default(),
         );
 
@@ -519,7 +596,9 @@ mod tests {
 
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection_manager),
-            mock_credential.clone(),
+            AuthorizerCredential::TokenCredential {
+                credential: mock_credential.clone(),
+            },
         ));
 
         // Disable actual authorization for testing
@@ -575,12 +654,16 @@ mod tests {
             host.clone(),
             None,
             None,
-            mock_credential.clone(),
+            AuthorizerCredential::TokenCredential {
+                credential: mock_credential.clone(),
+            },
             Default::default(),
         ));
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&recoverable_connection),
-            mock_credential.clone(),
+            AuthorizerCredential::TokenCredential {
+                credential: mock_credential.clone(),
+            },
         ));
 
         // Get initial token get count
@@ -660,6 +743,44 @@ mod tests {
             "Expected second get token count to be 4, but got {final_count}"
         );
         info!("Second token expiration get count: {}", final_count);
+
+        Ok(())
+    }
+
+    #[test]
+    fn sas_token_creation() -> azure_core_amqp::Result<()> {
+        let hardcoded_date = OffsetDateTime::from_unix_timestamp(1737504000).unwrap();
+
+        let url = "amqps://example.com/eventhub";
+        let key_name = "test_key";
+        let key_value = Secret::new(base64::encode("test_key_value"));
+
+        let token = create_sas_token(hardcoded_date, key_name, &key_value, url)?;
+
+        let token_str = token.token.secret();
+        let token_str = token_str
+            .strip_prefix("SharedAccessSignature ")
+            .expect("Has SAS prefix");
+
+        let parts: Vec<&str> = token_str.split('&').collect();
+        assert_eq!(parts.len(), 4);
+
+        let params: HashMap<_, _> = parts.iter().filter_map(|p| p.split_once('=')).collect();
+
+        assert_eq!(
+            params.get("sr"),
+            Some(&"amqps%3A%2F%2Fexample.com%2Feventhub")
+        );
+        assert_eq!(params.get("skn"), Some(&"test_key"));
+
+        let expires_on = hardcoded_date + Duration::hours(24);
+        let expected_expiry = expires_on.unix_timestamp().to_string();
+        assert_eq!(params.get("se"), Some(&expected_expiry.as_str()));
+
+        assert_eq!(
+            params.get("sig"),
+            Some(&"xpqBEOqlRsPRuBqlJGGlp4xCpS%2BK9INXIq%2B0vXa6Z4M%3D")
+        );
 
         Ok(())
     }

@@ -9,7 +9,7 @@ use super::{
 };
 use crate::{
     common::{
-        authorizer::Authorizer,
+        authorizer::{Authorizer, AuthorizerCredential},
         retry::ErrorRecoveryAction,
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
     },
@@ -19,10 +19,7 @@ use crate::{
     RetryOptions,
 };
 use async_lock::Mutex as AsyncMutex;
-use azure_core::{
-    credentials::TokenCredential, error::ErrorKind as AzureErrorKind, http::Url, time::Duration,
-    Uuid,
-};
+use azure_core::{error::ErrorKind as AzureErrorKind, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
@@ -95,11 +92,11 @@ unsafe impl Send for RecoverableConnection {}
 unsafe impl Sync for RecoverableConnection {}
 
 impl RecoverableConnection {
-    pub fn new(
+    pub(crate) fn new(
         url: Url,
         application_id: Option<String>,
         custom_endpoint: Option<Url>,
-        credential: Arc<dyn TokenCredential>,
+        credential: AuthorizerCredential,
         retry_options: RetryOptions,
     ) -> Arc<Self> {
         let connection_name = application_id
@@ -653,7 +650,9 @@ mod tests {
             url,
             None,
             None,
-            Arc::new(MockCredential),
+            AuthorizerCredential::TokenCredential {
+                credential: Arc::new(MockCredential),
+            },
             Default::default(),
         );
         assert!(!connection_manager.connections.lock_blocking().is_some());
@@ -675,7 +674,9 @@ mod tests {
             url,
             Some(app_id.clone()),
             None,
-            Arc::new(MockCredential),
+            AuthorizerCredential::TokenCredential {
+                credential: Arc::new(MockCredential),
+            },
             Default::default(),
         );
         assert!(!connection_manager.connections.lock_blocking().is_some());
@@ -694,7 +695,9 @@ mod tests {
             url.clone(),
             None,
             None,
-            Arc::new(MockCredential),
+            AuthorizerCredential::TokenCredential {
+                credential: Arc::new(MockCredential),
+            },
             Default::default(),
         ));
 
@@ -711,7 +714,9 @@ mod tests {
             url,
             None,
             Some(custom_endpoint.clone()),
-            Arc::new(MockCredential),
+            AuthorizerCredential::TokenCredential {
+                credential: Arc::new(MockCredential),
+            },
             Default::default(),
         );
 
