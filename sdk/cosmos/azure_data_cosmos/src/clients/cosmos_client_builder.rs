@@ -12,11 +12,12 @@ use crate::{
 
 use std::sync::Arc;
 
-use crate::constants::COSMOS_ALLOWED_HEADERS;
 #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
 use crate::constants::{
+    AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED, COSMOS_ALLOWED_HEADERS,
     DEFAULT_CONNECTION_TIMEOUT, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_REQUEST_TIMEOUT,
 };
+use crate::models::AccountProperties;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
@@ -268,15 +269,44 @@ impl CosmosClientBuilder {
             Vec::new()
         };
 
-        let global_endpoint_manager = Arc::new(GlobalEndpointManager::new(
+        let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
             preferred_regions,
             Vec::new(),
             pipeline_core.clone(),
-        ));
+        );
+
+        // Enable per-partition circuit breaker based on the
+        // `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment
+        // variable. When unset or not parseable, defaults to `true`.
+        let enable_partition_level_circuit_breaker =
+            std::env::var(AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED)
+                .ok()
+                .and_then(|v| v.parse::<bool>().ok())
+                .unwrap_or(true);
 
         let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
-            GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), false, true);
+            GlobalPartitionEndpointManager::new(
+                global_endpoint_manager.clone(),
+                false,
+                enable_partition_level_circuit_breaker,
+            );
+
+        // Register the callback for account refresh to update partition-level failover config
+        let partition_manager_clone = Arc::clone(&global_partition_endpoint_manager);
+
+        global_endpoint_manager.set_on_account_refresh_callback(Arc::new(
+            move |account_props: &AccountProperties| {
+                partition_manager_clone.configure_partition_level_automatic_failover(
+                    account_props.enable_per_partition_failover_behavior,
+                );
+
+                partition_manager_clone.configure_per_partition_circuit_breaker(
+                    account_props.enable_per_partition_failover_behavior
+                        || enable_partition_level_circuit_breaker,
+                );
+            },
+        ));
 
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,

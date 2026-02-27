@@ -172,12 +172,7 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        Arc::new(GlobalEndpointManager::new(
-            endpoint,
-            vec![],
-            vec![],
-            pipeline,
-        ))
+        GlobalEndpointManager::new(endpoint, vec![], vec![], pipeline)
     }
 
     // Helper function to create a test GatewayPipeline
@@ -259,8 +254,8 @@ mod tests {
         assert_eq!(request.resource_type, ResourceType::Documents);
     }
 
-    #[test]
-    fn container_connection_with_preferred_locations() {
+    #[tokio::test]
+    async fn container_connection_with_preferred_locations() {
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -270,12 +265,12 @@ mod tests {
             None,
         );
         let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        let endpoint_manager = Arc::new(GlobalEndpointManager::new(
+        let endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
             vec![RegionName::from("East US"), RegionName::from("West US")],
             vec![],
             pipeline.clone(),
-        ));
+        );
         let partition_manager =
             GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
 
@@ -307,8 +302,8 @@ mod tests {
         assert!(std::mem::size_of_val(&connection) > 0);
     }
 
-    #[test]
-    fn multiple_container_connections_share_caches() {
+    #[tokio::test]
+    async fn multiple_container_connections_share_caches() {
         let endpoint_manager = create_endpoint_manager();
         let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
@@ -393,8 +388,8 @@ mod tests {
         assert!(query_request.is_read_only_request());
     }
 
-    #[test]
-    fn container_connection_debug_implementation() {
+    #[tokio::test]
+    async fn container_connection_debug_implementation() {
         let endpoint_manager = create_endpoint_manager();
         let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
         let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());

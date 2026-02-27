@@ -470,6 +470,57 @@ impl std::fmt::Display for SubStatusCode {
     }
 }
 
+// cSpell:enable
+
+// -----------------------------------------------------------------------
+// Environment-variable names
+// -----------------------------------------------------------------------
+
+/// Controls whether the per-partition circuit breaker is enabled.
+///
+/// Expected values: `"true"` or `"false"`. Defaults to `true` when unset.
+pub const AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED: &str =
+    "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED";
+
+/// Maximum duration (in seconds) a partition may remain marked unavailable
+/// before the background failback loop considers it eligible for health
+/// re-evaluation.
+///
+/// Expected value: an integer string. Falls back to the compiled-in default
+/// when unset or not parseable.
+pub const AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS: &str =
+    "AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS";
+
+/// Interval (in seconds) at which the background failback loop runs to check
+/// whether previously failed partitions can be restored to healthy status.
+///
+/// Expected value: an integer string. Falls back to the compiled-in default
+/// when unset or not parseable.
+pub const AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS: &str =
+    "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS";
+
+/// Consecutive read failure count threshold that triggers the circuit breaker.
+///
+/// Expected value: an integer string. Falls back to the compiled-in default
+/// when unset or not parseable.
+pub const AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS: &str =
+    "AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS";
+
+/// Consecutive write failure count threshold that triggers the circuit breaker.
+///
+/// Expected value: an integer string. Falls back to the compiled-in default
+/// when unset or not parseable.
+pub const AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES: &str =
+    "AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES";
+
+/// Window (in minutes) after which the read/write failure counters are reset
+/// if no new failures occur.
+///
+/// Expected value: an integer string. Falls back to the compiled-in default
+/// when unset or not parseable.
+pub const AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES: &str =
+    "AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES";
+
 #[cfg(test)]
 mod tests {
     use super::*;
