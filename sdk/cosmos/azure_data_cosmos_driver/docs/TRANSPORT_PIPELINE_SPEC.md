@@ -1638,51 +1638,112 @@ impl ShardedHttpTransport {
 
 ### 7.1 Architecture
 
-Fault injection is integrated at the **HTTP transport level**, below the transport pipeline's retry
-logic but above actual HTTP I/O. This ensures injected faults trigger the full retry/failover
-pipeline just like real service errors.
+Fault injection is integrated at the **`HttpClient` level** — *below* the `AdaptiveTransport`
+(sharding) layer. Each shard's `Arc<dyn HttpClient>` is wrapped (or replaced) by a
+`FaultInjectingHttpClient` that evaluates rules before delegating to the real client.
+
+This placement is deliberate: it means injected faults are visible to the shard health tracking,
+eviction logic, and scale-up/down algorithms in `ShardedHttpTransport`. A fault that triggers
+consecutive failures on one shard will cause that shard to be evicted and replaced — exactly
+the behavior we need to validate in tests. If fault injection sat *above* `AdaptiveTransport`,
+the sharding layer would never see the injected errors and its management logic would be
+untestable.
 
 ```text
   TransportPipeline
        │
        ▼
   ┌─────────────────────────────┐
-  │  FaultInjectionLayer        │  ← evaluates rules BEFORE sending
-  │  (optional, feature-gated)  │
-  └─────────────┬───────────────┘
-                │
-                ▼
-  ┌─────────────────────────────┐
   │  AdaptiveTransport          │  ← Sharded (H2) or Plain (H1.1)
+  │                             │
+  │  ┌────────────────────────┐ │
+  │  │ ShardedHttpTransport   │ │  ← shard selection, health tracking
+  │  │  ┌──────────────────┐  │ │
+  │  │  │ ClientShard[0]   │  │ │
+  │  │  │  ┌─────────────┐ │  │ │
+  │  │  │  │FaultInject- │ │  │ │  ← evaluates rules, may short-circuit
+  │  │  │  │ingHttpClient│ │  │ │
+  │  │  │  │  ┌────────┐ │ │  │ │
+  │  │  │  │  │ real   │ │ │  │ │  ← actual HTTP I/O (reqwest etc.)
+  │  │  │  │  │HttpCli.│ │ │  │ │
+  │  │  │  │  └────────┘ │ │  │ │
+  │  │  │  └─────────────┘ │  │ │
+  │  │  └──────────────────┘  │ │
+  │  │  ┌──────────────────┐  │ │
+  │  │  │ ClientShard[1]   │  │ │  ← same wrapping per shard
+  │  │  │  ...             │  │ │
+  │  │  └──────────────────┘  │ │
+  │  └────────────────────────┘ │
   └─────────────────────────────┘
 ```
 
-### 7.2 Fault Injection in the Driver
+### 7.2 Injection via `HttpClientFactory`
 
-The existing `azure_data_cosmos` fault injection model (`FaultInjectionRule`, `FaultInjectionCondition`,
-`FaultInjectionResult`) is moved into `azure_data_cosmos_driver` behind a `fault_injection` feature
-flag.
+The `HttpClientFactory` trait (§6.2) is the natural injection point. A
+`FaultInjectingHttpClientFactory` wraps the real factory and produces
+`FaultInjectingHttpClient` instances. Because the factory is called once per shard creation,
+each shard gets its own fault-injecting wrapper — and the `ShardedHttpTransport` is completely
+unaware that interception is happening.
 
 ```rust
-/// Wraps AdaptiveTransport with fault injection capability.
-pub(crate) struct FaultInjectionTransport {
-    inner: AdaptiveTransport,
+/// Factory that wraps each produced HttpClient with fault injection.
+/// Feature-gated behind `fault_injection`.
+pub(crate) struct FaultInjectingHttpClientFactory {
+    inner: Arc<dyn HttpClientFactory>,
     rules: Arc<RwLock<Vec<FaultInjectionRule>>>,
 }
 
-impl FaultInjectionTransport {
-    pub async fn send(&self, request: &Request) -> Result<AsyncRawResponse> {
-        // Check rules
+impl HttpClientFactory for FaultInjectingHttpClientFactory {
+    fn create(&self, config: &HttpClientConfig) -> Arc<dyn HttpClient> {
+        let real_client = self.inner.create(config);
+        Arc::new(FaultInjectingHttpClient {
+            inner: real_client,
+            rules: Arc::clone(&self.rules),
+        })
+    }
+}
+
+/// HttpClient wrapper that evaluates fault injection rules before
+/// delegating to the real client.
+pub(crate) struct FaultInjectingHttpClient {
+    inner: Arc<dyn HttpClient>,
+    rules: Arc<RwLock<Vec<FaultInjectionRule>>>,
+}
+
+impl HttpClient for FaultInjectingHttpClient {
+    async fn execute_request(
+        &self,
+        request: &Request,
+    ) -> Result<AsyncRawResponse> {
+        // Evaluate rules — first matching rule wins.
         if let Some(fault) = self.evaluate_rules(request) {
-            return fault.apply();
+            return fault.apply(request);
         }
-        self.inner.send(request).await
+        // No rule matched — pass through to real client.
+        self.inner.execute_request(request).await
     }
 }
 ```
 
-The existing `FaultClient` pattern (wrapping `HttpClient`) maps cleanly to this design. The key
-difference is that it wraps `AdaptiveTransport` instead of a raw `HttpClient`.
+### 7.3 What This Enables
+
+Because faults hit at the `HttpClient` level, tests can validate:
+
+1. **Shard eviction**: Inject consecutive transport errors on one shard → verify it gets
+   evicted after `consecutive_failure_threshold` and replaced with a healthy shard.
+2. **Scale-up under failure**: Inject errors on all current shards → verify pool scales up
+   to `max_clients_per_endpoint` as shards are marked unhealthy.
+3. **Scale-down after recovery**: Remove fault rules → verify healthy shards drain idle
+   ones and the pool shrinks back to `min_clients_per_endpoint`.
+4. **Per-shard behavior**: Inject a fault on shard 0 only → verify requests route to
+   other shards while shard 0 is evicted.
+5. **Full pipeline integration**: Injected 429/503/transport errors still trigger the
+   transport-level and operation-level retry/failover logic, since the `TransportPipeline`
+   sees the error responses from the sharded transport as usual.
+
+The existing `FaultInjectionRule`, `FaultInjectionCondition`, and `FaultInjectionResult` types
+from `azure_data_cosmos` are moved into `azure_data_cosmos_driver` behind a `fault_injection`
+feature flag.
 
 ---
 
@@ -1795,8 +1856,8 @@ checks or eviction yet — shards accumulate but do not get reclaimed.
 | Sub-step | Work Item                                                                                                                                                                         | Files                                                                   |
 |----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
 | 8.1      | **Move fault injection** — Move `FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult` from `azure_data_cosmos` to driver behind `fault_injection` feature flag. | `driver/fault_injection/mod.rs`, `rule.rs`, `condition.rs`, `result.rs` |
-| 8.2      | **`FaultInjectionTransport`** — Wraps `AdaptiveTransport`, evaluates rules before sending.                                                                                        | `driver/fault_injection/client_builder.rs`                              |
-| 8.3      | **Tests** — Fault injection triggers retry/failover, rule matching, feature gate.                                                                                                 | `tests/`                                                                |
+| 8.2      | **`FaultInjectingHttpClientFactory`** — Wraps the real `HttpClientFactory`, producing `FaultInjectingHttpClient` instances that intercept at the `HttpClient` trait level (below `AdaptiveTransport`/`ShardedHttpTransport`). | `driver/fault_injection/fault_injecting_factory.rs`, `fault_injecting_client.rs` |
+| 8.3      | **Tests** — Shard eviction under injected failures, scale-up/down validation, full pipeline retry/failover with injected faults, rule matching, feature gate. | `tests/` |
 
 **What works after Step 8**: Complete driver pipeline with fault injection support.
 
