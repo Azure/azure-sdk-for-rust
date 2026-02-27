@@ -55,6 +55,7 @@ const CONTENT_LANGUAGE: HeaderName = HeaderName::from_static("content-language")
 const CONTENT_LENGTH: HeaderName = HeaderName::from_static("content-length");
 const CONTENT_MD5: HeaderName = HeaderName::from_static("content-md5");
 const CONTENT_RANGE: HeaderName = HeaderName::from_static("content-range");
+const CONTENT_TYPE: HeaderName = HeaderName::from_static("content-type");
 const COPY_COMPLETION_TIME: HeaderName = HeaderName::from_static("x-ms-copy-completion-time");
 const COPY_DESTINATION_SNAPSHOT: HeaderName =
     HeaderName::from_static("x-ms-copy-destination-snapshot");
@@ -1000,6 +1001,7 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn content_language(&self) -> Result<Option<String>>;
     fn content_length(&self) -> Result<Option<u64>>;
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+    fn content_type(&self) -> Result<Option<String>>;
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn access_tier(&self) -> Result<Option<String>>;
@@ -1072,6 +1074,11 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
+    }
+
+    /// Content-type.
+    fn content_type(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_TYPE)
     }
 
     /// The ETag contains a value that you can use to perform operations conditionally.
