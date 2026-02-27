@@ -8,7 +8,7 @@ use serde::Deserialize;
 use std::ops::Deref;
 
 #[derive(Clone, Default, SafeDebug)]
-pub struct SentMessage(pub SentMessageInternal);
+pub struct SentMessage(SentMessageInternal);
 
 impl Deref for SentMessage {
     type Target = SentMessageInternal;
