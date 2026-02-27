@@ -1,7 +1,0 @@
-amqps
-consts
-eventdata
-mgmt
-rustc
-myapp
-yourcontainername
