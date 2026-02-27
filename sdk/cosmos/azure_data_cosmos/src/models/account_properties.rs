@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 
 //! Models for deserializing the Cosmos DB Account (DatabaseAccount) JSON payload.
-//! This is a focused representation for the sample JSON provided; fields not
-//! present in the sample are intentionally omitted for now.
 
 use crate::regions::RegionName;
 use azure_core::fmt::SafeDebug;
@@ -14,110 +12,27 @@ use url::Url;
 #[derive(SafeDebug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub(crate) struct AccountRegion {
-    pub(crate) name: RegionName,
+    pub name: RegionName,
 
     #[serde(with = "crate::serde::url")]
-    pub(crate) database_account_endpoint: Url,
-}
-
-/// Describes replica set sizing characteristics for user/system replication policies.
-#[derive(SafeDebug, Clone, Serialize, Deserialize)]
-#[safe(true)]
-// cSpell:disable
-#[serde(rename_all = "camelCase")]
-#[non_exhaustive]
-pub(crate) struct ReplicationPolicy {
-    pub(crate) min_replica_set_size: i32,
-
-    // Note: service returns key `maxReplicasetSize` (lowercase 's' in 'set')
-    #[serde(rename = "maxReplicasetSize")]
-    pub(crate) max_replica_set_size: i32,
-}
-
-/// User-configured default consistency level for the account.
-#[derive(SafeDebug, Clone, Serialize, Deserialize)]
-#[safe(true)]
-#[serde(rename_all = "camelCase")]
-#[non_exhaustive]
-pub(crate) struct ConsistencyPolicy {
-    pub(crate) default_consistency_level: String,
-}
-
-/// Read preference coefficients used by the service when selecting regions.
-#[derive(SafeDebug, Clone, Serialize, Deserialize)]
-#[safe(true)]
-#[serde(rename_all = "camelCase")]
-#[non_exhaustive]
-pub(crate) struct ReadPolicy {
-    pub(crate) primary_read_coefficient: i32,
-
-    pub(crate) secondary_read_coefficient: i32,
+    pub database_account_endpoint: Url,
 }
 
 /// Top-level Cosmos DB DatabaseAccount properties returned by the control plane.
 ///
-/// This struct captures a subset of fields surfaced in the account read payload
-/// (not exhaustive). It includes region lists, consistency/replication policies
-/// and a raw `query_engine_configuration` JSON string for optional parsing.
+/// This struct captures a subset of fields surfaced in the account read payload.
+/// Only the region lists are retained; other fields in the server response are
+/// silently ignored during deserialization.
 #[derive(SafeDebug, Clone, Serialize, Deserialize)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub(crate) struct AccountProperties {
-    #[serde(rename = "_self")]
-    pub(crate) self_link: String,
-
-    /// The id of the respective account.
-    pub(crate) id: String,
-
-    /// The resource id of the respective account.
-    #[serde(rename = "_rid")]
-    pub(crate) rid: String,
-
-    /// The media type of the respective account.
-    pub(crate) media: String,
-
-    /// Root relative path for the addresses endpoint (used to enumerate address/partition routing info).
-    pub(crate) addresses: String,
-
-    #[serde(rename = "_dbs")]
-    /// Root relative path for the databases feed (base path when listing or creating databases).
-    pub(crate) dbs: String,
-
     /// Regions currently accepting writes for the account (multi-master may yield >1).
-    pub(crate) writable_locations: Vec<AccountRegion>,
+    pub writable_locations: Vec<AccountRegion>,
 
     /// Regions from which the account can be read (includes writable regions plus any read regions).
-    pub(crate) readable_locations: Vec<AccountRegion>,
-
-    /// True when multi-master writes are enabled (more than one writable region allowed).
-    pub(crate) enable_multiple_write_locations: bool,
-
-    /// Indicates if continuous backup (point-in-time restore) is enabled for the account.
-    pub(crate) continuous_backup_enabled: bool,
-
-    /// Enables synchronous commit across N regions for stricter durability guarantees.
-    pub(crate) enable_n_region_synchronous_commit: bool,
-
-    /// Allows failover at a per-partition granularity instead of full-region only.
-    pub(crate) enable_per_partition_failover_behavior: bool,
-
-    /// User replication settings (minimum and maximum replica set sizes).
-    pub(crate) user_replication_policy: ReplicationPolicy,
-
-    /// Default consistency level configured by the user (e.g. Session, Strong).
-    pub(crate) user_consistency_policy: ConsistencyPolicy,
-
-    /// System-managed replication sizing policy (service internal settings).
-    pub(crate) system_replication_policy: ReplicationPolicy,
-
-    /// Coefficients guiding regional read preference selection.
-    pub(crate) read_policy: ReadPolicy,
-
-    /// Raw JSON string containing query engine feature/configuration flags.
-    pub(crate) query_engine_configuration: String,
+    pub readable_locations: Vec<AccountRegion>,
 }
 
 #[cfg(test)]
@@ -128,33 +43,15 @@ mod tests {
     const SAMPLE: &str = r#"{
       "_self" : "",
       "id" : "test",
-      "_rid" : "test.documents.azure.com",
-      "media" : "//media/",
-      "addresses" : "//addresses/",
-      "_dbs" : "//dbs/",
       "writableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://test-westus2.documents.azure.com:443/" } ],
       "readableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://test-westus2.documents.azure.com:443/" } ],
-      "enableMultipleWriteLocations" : false,
-      "continuousBackupEnabled" : false,
-      "enableNRegionSynchronousCommit" : false,
-      "enablePerPartitionFailoverBehavior" : false,
-      "userReplicationPolicy" : { "asyncReplication" : false, "minReplicaSetSize" : 3, "maxReplicasetSize" : 4 },
-      "userConsistencyPolicy" : { "defaultConsistencyLevel" : "Session" },
-      "systemReplicationPolicy" : { "minReplicaSetSize" : 3, "maxReplicasetSize" : 4, "asyncReplication" : false },
-      "readPolicy" : { "primaryReadCoefficient" : 1, "secondaryReadCoefficient" : 1 },
-      "queryEngineConfiguration" : "{\"allowNewKeywords\":true}"
+      "enableMultipleWriteLocations" : false
     }"#;
 
     #[test]
     fn deserialize_account_props() {
         let props: AccountProperties = serde_json::from_str(SAMPLE).expect("deserialize");
-        assert_eq!(props.id, "test");
         assert_eq!(props.writable_locations.len(), 1);
         assert_eq!(props.readable_locations.len(), 1);
-        assert_eq!(props.user_replication_policy.min_replica_set_size, 3);
-        assert_eq!(
-            props.user_consistency_policy.default_consistency_level,
-            "Session"
-        );
     }
 }
