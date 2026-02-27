@@ -4,7 +4,7 @@
 //! Request options for Cosmos DB operations.
 
 use crate::{
-    models::{ETagCondition, PartitionKey, SessionToken, ThroughputControlGroupName},
+    models::{PartitionKey, Precondition, SessionToken, ThroughputControlGroupName},
     options::{
         ContentResponseOnWrite, DedicatedGatewayOptions, DiagnosticsThresholds,
         EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, QuotaInfoEnabled,
@@ -47,7 +47,7 @@ pub struct OperationOptions {
     priority_level: Option<PriorityLevel>,
 
     // Just read operations
-    etag_condition: Option<ETagCondition>,
+    etag_condition: Option<Precondition>,
 
     // Just write operations
     triggers: Option<TriggerOptions>,
@@ -126,13 +126,13 @@ impl OperationOptions {
     }
 
     /// Sets the ETag condition for read operations.
-    pub fn with_etag_condition(mut self, condition: ETagCondition) -> Self {
+    pub fn with_etag_condition(mut self, condition: Precondition) -> Self {
         self.etag_condition = Some(condition);
         self
     }
 
     /// Gets the ETag condition.
-    pub fn etag_condition_ref(&self) -> Option<&ETagCondition> {
+    pub fn etag_condition_ref(&self) -> Option<&Precondition> {
         self.etag_condition.as_ref()
     }
 

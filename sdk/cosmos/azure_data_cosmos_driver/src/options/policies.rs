@@ -167,3 +167,10 @@ impl From<bool> for EmulatorServerCertValidation {
         Self(disabled)
     }
 }
+
+impl From<EmulatorServerCertValidation> for bool {
+    /// Converts to `true` if certificate validation is disabled (dangerous).
+    fn from(value: EmulatorServerCertValidation) -> Self {
+        value.0
+    }
+}

@@ -290,7 +290,7 @@ impl AccountReferenceBuilder {
 
         Ok(AccountReference {
             endpoint: self.endpoint,
-            credential: auth,
+            credential,
         })
     }
 }

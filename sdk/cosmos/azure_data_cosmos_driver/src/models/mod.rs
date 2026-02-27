@@ -14,7 +14,6 @@ mod activity_id;
 mod connection_string;
 mod cosmos_headers;
 mod cosmos_operation;
-mod cosmos_resource_reference;
 mod cosmos_response;
 mod cosmos_status;
 mod etag;
@@ -30,7 +29,6 @@ pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
 pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
 pub use cosmos_operation::CosmosOperation;
-pub use cosmos_resource_reference::CosmosResourceReference;
 pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
@@ -45,7 +43,6 @@ pub use resource_reference::{
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
-pub(crate) use finite_f64::FiniteF64;
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
