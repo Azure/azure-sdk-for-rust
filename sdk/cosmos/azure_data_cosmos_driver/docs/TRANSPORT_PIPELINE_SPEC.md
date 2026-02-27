@@ -343,6 +343,26 @@ fn build_transport_request(
     options: &OperationOptions,
     deadline: Option<Instant>,
 ) -> TransportRequest;
+
+// SYSTEM: Execute a single transport attempt — build HTTP request,
+// apply headers, sign, send, retry 429s and connectivity errors.
+// Pure function over its inputs (no struct state).
+async fn execute_transport_pipeline(
+    request: TransportRequest,
+    transport: &AdaptiveTransport,
+    auth_context: &AuthContext,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult;
+
+// SYSTEM: Apply standard Cosmos headers (x-ms-version, User-Agent,
+// Content-Type, etc.) to an outgoing HTTP request.
+fn apply_cosmos_headers(request: &mut Request);
+
+// SYSTEM: Generate and attach the Authorization header.
+fn sign_request(
+    request: &mut Request,
+    auth_context: &AuthContext,
+) -> Result<()>;
 ```
 
 ### 3.4 Decision Enums
@@ -402,7 +422,8 @@ pub(crate) async fn execute_operation_pipeline(
     options: &OperationOptions,
     account_state_store: &AccountEndpointStateStore,
     partition_state_store: &PartitionEndpointStateStore,
-    transport: &TransportPipeline,
+    transport: &AdaptiveTransport,
+    auth_context: &AuthContext,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> Result<CosmosResponse> {
     let mut retry_state = OperationRetryState::initial(
@@ -436,7 +457,9 @@ pub(crate) async fn execute_operation_pipeline(
         );
 
         // STAGE 3: Execute via transport pipeline
-        let result = transport.execute(transport_request, diagnostics).await;
+        let result = execute_transport_pipeline(
+            transport_request, transport, auth_context, diagnostics,
+        ).await;
 
         // STAGE 4: Record attempt diagnostics
         diagnostics.record_attempt(&result);
@@ -500,7 +523,8 @@ async fn execute_hedged(
     primary_routing: &RoutingDecision,
     secondary_routing: &RoutingDecision,
     session: &SessionState,
-    transport: &TransportPipeline,
+    transport: &AdaptiveTransport,
+    auth_context: &AuthContext,
     diagnostics: &mut DiagnosticsContextBuilder,
     deadline: Option<Instant>,
 ) -> Result<CosmosResponse> {
@@ -511,7 +535,9 @@ async fn execute_hedged(
     let hedging_threshold = options.hedging_threshold(); // e.g. 50ms
 
     // Start primary attempt
-    let primary_fut = transport.execute(primary_req, diagnostics);
+    let primary_fut = execute_transport_pipeline(
+        primary_req, transport, auth_context, diagnostics,
+    );
 
     // Race: primary completes within threshold, or we start secondary
     tokio::select! {
@@ -526,7 +552,9 @@ async fn execute_hedged(
                 operation, secondary_routing, session, options, deadline,
             ).with_execution_context(ExecutionContext::Hedging);
 
-            let secondary_fut = transport.execute(secondary_req, diagnostics);
+            let secondary_fut = execute_transport_pipeline(
+                secondary_req, transport, auth_context, diagnostics,
+            );
 
             // Race primary vs secondary - first successful response wins
             // (or first to complete if both error)
@@ -955,98 +983,98 @@ The transport pipeline does **NOT** handle:
 
 ### 5.2 Transport Pipeline Flow
 
+Following the same DOP pattern as the operation pipeline, the transport pipeline is a bare
+async function — not a struct with methods. Its dependencies (`AdaptiveTransport`,
+`AuthContext`) are passed as parameters. Header application and request signing are also bare
+functions rather than policy objects.
+
 ```rust
-pub(crate) struct TransportPipeline {
-    headers_policy: CosmosHeadersPolicy,
-    auth_policy: AuthorizationPolicy,
-    http_transport: AdaptiveTransport, // See §6
-}
+// SYSTEM: Execute a single transport attempt.
+// Applies headers, signs, sends, and handles 429 / connectivity retries.
+pub(crate) async fn execute_transport_pipeline(
+    request: TransportRequest,
+    transport: &AdaptiveTransport,
+    auth_context: &AuthContext,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult {
+    let mut throttle_state = ThrottleRetryState::new(
+        MAX_THROTTLE_ATTEMPTS, MAX_THROTTLE_WAIT, BACKOFF_FACTOR,
+    );
 
-impl TransportPipeline {
-    pub async fn execute(
-        &self,
-        request: TransportRequest,
-        diagnostics: &mut DiagnosticsContextBuilder,
-    ) -> TransportResult {
-        let mut throttle_state = ThrottleRetryState::new(
-            MAX_THROTTLE_ATTEMPTS, MAX_THROTTLE_WAIT, BACKOFF_FACTOR,
-        );
-
-        loop {
-            // Check deadline and set per-request timeout
-            if let Some(deadline) = request.deadline {
-                let remaining = deadline.saturating_duration_since(Instant::now());
-                if remaining.is_zero() {
-                    return TransportResult::deadline_exceeded(diagnostics);
-                }
-                // Clamp per-request timeout so the HTTP layer cancels I/O
-                // when the operation-level deadline is reached mid-flight.
-                http_request.set_timeout(remaining.max(Duration::from_millis(1)));
+    loop {
+        // Check deadline and set per-request timeout
+        if let Some(deadline) = request.deadline {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                return TransportResult::deadline_exceeded(diagnostics);
             }
-
-            // Build HTTP request
-            let mut http_request = self.build_http_request(&request);
-            self.headers_policy.apply(&mut http_request);
-            self.auth_policy.sign(&mut http_request, &request.auth_context)?;
-
-            // Record transport start event
-            let attempt_start = Instant::now();
-            diagnostics.record_event(RequestEvent::TransportStart);
-
-            // Execute via adaptive HTTP transport (sharded or plain)
-            let http_result = self.http_transport.send(http_request).await;
-
-            // Map to TransportResult
-            let result = match http_result {
-                Ok(response) => {
-                    diagnostics.record_event(RequestEvent::ResponseHeadersReceived);
-                    self.map_response(response, attempt_start, diagnostics).await
-                }
-                Err(error) => {
-                    let sent_status = infer_request_sent_status(&error);
-                    diagnostics.record_event(RequestEvent::TransportFailed(
-                        error.to_string(),
-                    ));
-                    TransportResult::transport_error(error, sent_status, diagnostics)
-                }
-            };
-
-            // Check for 429 throttling or connectivity errors → transport-level retry.
-            // Connectivity errors (I/O errors, timeouts) are retried locally by
-            // selecting a different HttpClient shard, which routes through a
-            // different TCP connection. This is effective because Gateway has
-            // multiple nodes and each backend partition has 4 replicas, so
-            // retries via a different network path have a high success rate.
-            let should_transport_retry = match &result.outcome {
-                TransportOutcome::HttpError { status, .. } if status.is_throttled() => true,
-                TransportOutcome::TransportError { .. }
-                    if operation_is_idempotent_or_request_not_sent(&result) => true,
-                _ => false,
-            };
-
-            if should_transport_retry {
-                let action = evaluate_transport_retry(&result, &throttle_state);
-                match action {
-                    ThrottleAction::Retry { delay, new_state } => {
-                        sleep(delay).await;
-                        throttle_state = new_state;
-                        continue;
-                    }
-                    ThrottleAction::Propagate => return result,
-                }
-            }
-
-            return result;
+            // Clamp per-request timeout so the HTTP layer cancels I/O
+            // when the operation-level deadline is reached mid-flight.
+            http_request.set_timeout(remaining.max(Duration::from_millis(1)));
         }
+
+        // Build HTTP request, apply standard headers, sign
+        let mut http_request = build_http_request(&request);
+        apply_cosmos_headers(&mut http_request);
+        sign_request(&mut http_request, auth_context)?;
+
+        // Record transport start event
+        let attempt_start = Instant::now();
+        diagnostics.record_event(RequestEvent::TransportStart);
+
+        // Execute via adaptive HTTP transport (sharded or plain)
+        let http_result = transport.send(http_request).await;
+
+        // Map to TransportResult
+        let result = match http_result {
+            Ok(response) => {
+                diagnostics.record_event(RequestEvent::ResponseHeadersReceived);
+                map_response(response, attempt_start, diagnostics).await
+            }
+            Err(error) => {
+                let sent_status = infer_request_sent_status(&error);
+                diagnostics.record_event(RequestEvent::TransportFailed(
+                    error.to_string(),
+                ));
+                TransportResult::transport_error(error, sent_status, diagnostics)
+            }
+        };
+
+        // Check for 429 throttling or connectivity errors → transport-level retry.
+        // Connectivity errors (I/O errors, timeouts) are retried locally by
+        // selecting a different HttpClient shard, which routes through a
+        // different TCP connection. This is effective because Gateway has
+        // multiple nodes and each backend partition has 4 replicas, so
+        // retries via a different network path have a high success rate.
+        let should_transport_retry = match &result.outcome {
+            TransportOutcome::HttpError { status, .. } if status.is_throttled() => true,
+            TransportOutcome::TransportError { .. }
+                if operation_is_idempotent_or_request_not_sent(&result) => true,
+            _ => false,
+        };
+
+        if should_transport_retry {
+            let action = evaluate_transport_retry(&result, &throttle_state);
+            match action {
+                ThrottleAction::Retry { delay, new_state } => {
+                    sleep(delay).await;
+                    throttle_state = new_state;
+                    continue;
+                }
+                ThrottleAction::Propagate => return result,
+            }
+        }
+
+        return result;
     }
 }
 ```
 
-### 5.3 Policy Application (Not a Chain)
+### 5.3 Policy Application (Bare Functions, Not a Chain)
 
 Unlike the current design where policies are chained via `Policy` trait with `next[0].send()`, the
-transport pipeline applies policies as direct function calls. This is simpler, more explicit, and
-avoids the indirection of a policy chain.
+transport pipeline uses bare functions for header application and request signing. There are no
+policy objects — just functions that take and mutate the request.
 
 ```rust
 // Instead of:
@@ -1054,14 +1082,16 @@ avoids the indirection of a policy chain.
 //   pipeline.send(request, context)  // each calls next
 
 // We do:
-//   headers_policy.apply(&mut request);        // mutates request headers
-//   auth_policy.sign(&mut request, context);   // adds Authorization header
-//   transport.send(request)                    // sends the HTTP request
+//   apply_cosmos_headers(&mut request);       // bare fn: mutates request headers
+//   sign_request(&mut request, auth_context); // bare fn: adds Authorization header
+//   transport.send(request)                   // sends the HTTP request
 ```
 
-**Rationale**: The Cosmos pipeline has a fixed, small set of policies. There's no user-extensible
-policy chain. Direct function calls are easier to debug (no `next[0]` indirection), easier to
-test (call the function directly), and have less overhead.
+**Rationale**: The Cosmos pipeline has a fixed, small set of header/auth concerns. There's no
+user-extensible policy chain. Bare functions are easier to debug (no indirection), easier to
+test (call the function directly), and have less overhead. They also align with the DOP
+principle of separating behavior from state — there's no `CosmosHeadersPolicy` or
+`AuthorizationPolicy` struct holding state; the functions take exactly the inputs they need.
 
 ---
 
@@ -1652,7 +1682,7 @@ the sharding layer would never see the injected errors and its management logic 
 untestable.
 
 ```text
-  TransportPipeline
+  execute_transport_pipeline()
        │
        ▼
   ┌─────────────────────────────┐
@@ -1740,8 +1770,8 @@ Because faults hit at the `HttpClient` level, tests can validate:
 4. **Per-shard behavior**: Inject a fault on shard 0 only → verify requests route to
    other shards while shard 0 is evicted.
 5. **Full pipeline integration**: Injected 429/503/transport errors still trigger the
-   transport-level and operation-level retry/failover logic, since the `TransportPipeline`
-   sees the error responses from the sharded transport as usual.
+   transport-level and operation-level retry/failover logic, since
+   `execute_transport_pipeline` sees the error responses from the sharded transport as usual.
 
 The existing `FaultInjectionRule`, `FaultInjectionCondition`, and `FaultInjectionResult` types
 from `azure_data_cosmos` are moved into `azure_data_cosmos_driver` behind a `fault_injection`
@@ -1762,13 +1792,13 @@ Refactor `execute_operation` to use the new pipeline architecture with the absol
 viable transport. No HTTP/2 sharding, no hedging, no circuit breaker, no session consistency —
 just the structural refactoring with a plain `Arc<dyn HttpClient>`.
 
-| Sub-step | Work Item                                                                                                                                                                                                                        | Files                                                          |
-|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                  | `driver/pipeline/components.rs`                                |
-| 1.2      | **Transport pipeline (slim)** — Implement `TransportPipeline` with auth header, common headers, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff. | `driver/transport/transport_pipeline.rs`                       |
-| 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Only the happy path + 429 retry propagation. No failover, no hedging. Hard-coded deadline.              | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
-| 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                           | `driver/cosmos_driver.rs`                                      |
-| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                           | `tests/`                                                       |
+| Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                          |
+|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                                               | `driver/pipeline/components.rs`                                |
+| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff. | `driver/transport/transport_pipeline.rs`                       |
+| 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Only the happy path + 429 retry propagation. No failover, no hedging. Hard-coded deadline.                                           | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
+| 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                                                        | `driver/cosmos_driver.rs`                                      |
+| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                                                        | `tests/`                                                       |
 
 **What works after Step 1**: Operations flow through the new pipeline end-to-end against a
 single region with basic 429 retry. The architecture is in place for incremental additions.
@@ -2055,11 +2085,11 @@ sdk/cosmos/azure_data_cosmos_driver/src/
 │   │   └── session_manager.rs
 │   ├── transport/
 │   │   ├── mod.rs                # CosmosTransport (updated)
-│   │   ├── transport_pipeline.rs # Transport-level pipeline (refactored)
+│   │   ├── transport_pipeline.rs # execute_transport_pipeline fn (refactored)
 │   │   ├── adaptive_transport.rs # NEW: AdaptiveTransport (H2/H1.1 dispatch)
 │   │   ├── http_client_factory.rs# NEW: HttpClientFactory trait + default impl
-│   │   ├── authorization_policy.rs
-│   │   ├── headers_policy.rs
+│   │   ├── cosmos_headers.rs     # apply_cosmos_headers bare fn
+│   │   ├── request_signing.rs    # sign_request bare fn
 │   │   ├── tracked_transport.rs
 │   │   ├── emulator.rs
 │   │   ├── sharded_transport.rs  # NEW: ShardedHttpTransport (H2 only)
