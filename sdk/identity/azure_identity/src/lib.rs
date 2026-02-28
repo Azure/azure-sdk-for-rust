@@ -146,10 +146,13 @@ fn get_authority_host(env: Option<Env>, cloud: Option<&CloudConfiguration>) -> R
 
     let url = Url::parse(&authority_host)?;
     if url.scheme() != "https" {
-        return Err(Error::with_message(
-            ErrorKind::Other,
-            format!("authority host doesn't use HTTPS scheme: {authority_host}"),
-        ));
+        let localhost_authorities = ["localhost", "127.0.0.1", "[::1]"];
+        if !localhost_authorities.contains(&url.host_str().unwrap_or_default()) {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                format!("authority host doesn't use HTTPS scheme: {authority_host}"),
+            ));
+        }
     }
     Ok(url)
 }
