@@ -28,7 +28,7 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
             ErrorKind::InvalidInput,
             format!(
                 "provided length {} is not aligned to a 512-byte boundary.",
-                offset
+                length
             ),
         ));
     }

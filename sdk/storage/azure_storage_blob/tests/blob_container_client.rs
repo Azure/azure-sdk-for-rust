@@ -256,6 +256,55 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
 }
 
 #[recorded::test]
+async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    // Upload blobs with XML-invalid characters (U+FFFE and U+FFFF) in their names.
+    // Per the Storage REST API (version 2021-02-12+), List Blobs will percent-encode
+    // Name values containing these characters and set Encoded="true" on the element.
+    let test_cases = [
+        ("blob_with_fffe", "blob\u{FFFE}name".to_string()),
+        ("blob_with_ffff", "blob\u{FFFF}name".to_string()),
+        ("blob_with_both", "blob\u{FFFE}and\u{FFFF}chars".to_string()),
+    ];
+
+    for (_, blob_name) in &test_cases {
+        let blob_client = container_client.blob_client(blob_name);
+        create_test_blob(&blob_client, None, None).await?;
+    }
+
+    // List blobs and verify the names are correctly percent-decoded
+    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+    let page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = page.unwrap().into_model()?;
+    let blob_items = list_blob_segment_response.segment.blob_items;
+
+    // Assert
+    assert_eq!(test_cases.len(), blob_items.len());
+
+    let listed_blob_names: Vec<String> = blob_items
+        .iter()
+        .map(|blob| blob.name.clone().unwrap())
+        .collect();
+
+    for (label, expected_name) in &test_cases {
+        assert!(
+            listed_blob_names.contains(expected_name),
+            "Blob '{}' with name '{}' not found in listed names: {:?}",
+            label,
+            expected_name,
+            listed_blob_names
+        );
+    }
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

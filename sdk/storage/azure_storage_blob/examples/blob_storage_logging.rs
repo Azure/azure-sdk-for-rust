@@ -37,13 +37,13 @@
 //! az login
 //! export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
 //! export RUST_LOG="<log-level>"
-//! cargo run --package azure_storage_blob --example storage_logging
+//! cargo run --package azure_storage_blob --example blob_storage_logging
 //! ```
 //!
 //! To enable OpenTelemetry tracing (outputs spans to stdout):
 //!
 //! ```bash
-//! cargo run --package azure_storage_blob --example storage_logging -- --otel
+//! cargo run --package azure_storage_blob --example blob_storage_logging -- --otel
 //! ```
 
 use azure_core::{
