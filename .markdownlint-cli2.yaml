@@ -1,0 +1,16 @@
+$schema: https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/v0.21.0/schema/markdownlint-cli2-config-schema.json
+gitignore: true
+globs:
+  - "**/*.md"
+ignores:
+  - eng/common/
+config:
+  code-block-style:
+    style: consistent
+  line-length: false
+  no-bare-urls: false
+  no-duplicate-heading: false
+  ol-prefix:
+    style: ordered
+  ul-style:
+    style: dash
