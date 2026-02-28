@@ -25,9 +25,6 @@ pub struct KeyClientCreateKeyOptions<'a> {
 /// Options to be passed to [`KeyClient::decrypt()`](crate::generated::clients::KeyClient::decrypt())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientDecryptOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -42,9 +39,6 @@ pub struct KeyClientDeleteKeyOptions<'a> {
 /// Options to be passed to [`KeyClient::encrypt()`](crate::generated::clients::KeyClient::encrypt())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientEncryptOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -209,9 +203,6 @@ pub struct KeyClientRotateKeyOptions<'a> {
 /// Options to be passed to [`KeyClient::sign()`](crate::generated::clients::KeyClient::sign())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientSignOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -219,9 +210,6 @@ pub struct KeyClientSignOptions<'a> {
 /// Options to be passed to [`KeyClient::unwrap_key()`](crate::generated::clients::KeyClient::unwrap_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientUnwrapKeyOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -246,9 +234,6 @@ pub struct KeyClientUpdateKeyRotationPolicyOptions<'a> {
 /// Options to be passed to [`KeyClient::verify()`](crate::generated::clients::KeyClient::verify())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientVerifyOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -256,9 +241,6 @@ pub struct KeyClientVerifyOptions<'a> {
 /// Options to be passed to [`KeyClient::wrap_key()`](crate::generated::clients::KeyClient::wrap_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientWrapKeyOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

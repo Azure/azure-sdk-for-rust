@@ -275,29 +275,34 @@ impl SecretClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListDeletedSecretPropertiesResult = json::from_json(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_link {
-                        Some(next_link) if !next_link.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Link(next_link.parse()?),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
+                Box::pin({
+                    let first_url = first_url.clone();
+                    async move {
+                        let rsp = pipeline
+                            .send(
+                                &pager_options.context,
+                                &mut request,
+                                Some(PipelineSendOptions {
+                                    check_success: CheckSuccessOptions {
+                                        success_codes: &[200],
+                                    },
+                                    ..Default::default()
+                                }),
+                            )
+                            .await?;
+                        let (status, headers, body) = rsp.deconstruct();
+                        let res: ListDeletedSecretPropertiesResult = json::from_json(&body)?;
+                        let rsp = RawResponse::from_bytes(status, headers, body).into();
+                        Ok(match res.next_link {
+                            Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                                response: rsp,
+                                continuation: PagerContinuation::Link(
+                                    first_url.join(next_link.as_ref())?,
+                                ),
+                            },
+                            _ => PagerResult::Done { response: rsp },
+                        })
+                    }
                 })
             },
             Some(options.method_options),
@@ -344,29 +349,34 @@ impl SecretClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListSecretPropertiesResult = json::from_json(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_link {
-                        Some(next_link) if !next_link.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Link(next_link.parse()?),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
+                Box::pin({
+                    let first_url = first_url.clone();
+                    async move {
+                        let rsp = pipeline
+                            .send(
+                                &pager_options.context,
+                                &mut request,
+                                Some(PipelineSendOptions {
+                                    check_success: CheckSuccessOptions {
+                                        success_codes: &[200],
+                                    },
+                                    ..Default::default()
+                                }),
+                            )
+                            .await?;
+                        let (status, headers, body) = rsp.deconstruct();
+                        let res: ListSecretPropertiesResult = json::from_json(&body)?;
+                        let rsp = RawResponse::from_bytes(status, headers, body).into();
+                        Ok(match res.next_link {
+                            Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                                response: rsp,
+                                continuation: PagerContinuation::Link(
+                                    first_url.join(next_link.as_ref())?,
+                                ),
+                            },
+                            _ => PagerResult::Done { response: rsp },
+                        })
+                    }
                 })
             },
             Some(options.method_options),
@@ -422,29 +432,34 @@ impl SecretClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListSecretPropertiesResult = json::from_json(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_link {
-                        Some(next_link) if !next_link.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Link(next_link.parse()?),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
+                Box::pin({
+                    let first_url = first_url.clone();
+                    async move {
+                        let rsp = pipeline
+                            .send(
+                                &pager_options.context,
+                                &mut request,
+                                Some(PipelineSendOptions {
+                                    check_success: CheckSuccessOptions {
+                                        success_codes: &[200],
+                                    },
+                                    ..Default::default()
+                                }),
+                            )
+                            .await?;
+                        let (status, headers, body) = rsp.deconstruct();
+                        let res: ListSecretPropertiesResult = json::from_json(&body)?;
+                        let rsp = RawResponse::from_bytes(status, headers, body).into();
+                        Ok(match res.next_link {
+                            Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                                response: rsp,
+                                continuation: PagerContinuation::Link(
+                                    first_url.join(next_link.as_ref())?,
+                                ),
+                            },
+                            _ => PagerResult::Done { response: rsp },
+                        })
+                    }
                 })
             },
             Some(options.method_options),

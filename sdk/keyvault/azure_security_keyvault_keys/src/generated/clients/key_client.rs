@@ -165,12 +165,14 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the decryption operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.decrypt")]
     pub async fn decrypt(
         &self,
         key_name: &str,
+        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientDecryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -180,15 +182,18 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/decrypt");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version.as_ref() {
-            Some(key_version) => path.replace("{key-version}", key_version),
-            None => path.replace("{key-version}", ""),
-        };
+        path = path.replace("{key-version}", key_version);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
@@ -274,12 +279,14 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the encryption operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.encrypt")]
     pub async fn encrypt(
         &self,
         key_name: &str,
+        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientEncryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -289,15 +296,18 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/encrypt");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version.as_ref() {
-            Some(key_version) => path.replace("{key-version}", key_version),
-            None => path.replace("{key-version}", ""),
-        };
+        path = path.replace("{key-version}", key_version);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
@@ -657,29 +667,34 @@ impl KeyClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListDeletedKeyPropertiesResult = json::from_json(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_link {
-                        Some(next_link) if !next_link.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Link(next_link.parse()?),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
+                Box::pin({
+                    let first_url = first_url.clone();
+                    async move {
+                        let rsp = pipeline
+                            .send(
+                                &pager_options.context,
+                                &mut request,
+                                Some(PipelineSendOptions {
+                                    check_success: CheckSuccessOptions {
+                                        success_codes: &[200],
+                                    },
+                                    ..Default::default()
+                                }),
+                            )
+                            .await?;
+                        let (status, headers, body) = rsp.deconstruct();
+                        let res: ListDeletedKeyPropertiesResult = json::from_json(&body)?;
+                        let rsp = RawResponse::from_bytes(status, headers, body).into();
+                        Ok(match res.next_link {
+                            Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                                response: rsp,
+                                continuation: PagerContinuation::Link(
+                                    first_url.join(next_link.as_ref())?,
+                                ),
+                            },
+                            _ => PagerResult::Done { response: rsp },
+                        })
+                    }
                 })
             },
             Some(options.method_options),
@@ -726,29 +741,34 @@ impl KeyClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListKeyPropertiesResult = json::from_json(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_link {
-                        Some(next_link) if !next_link.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Link(next_link.parse()?),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
+                Box::pin({
+                    let first_url = first_url.clone();
+                    async move {
+                        let rsp = pipeline
+                            .send(
+                                &pager_options.context,
+                                &mut request,
+                                Some(PipelineSendOptions {
+                                    check_success: CheckSuccessOptions {
+                                        success_codes: &[200],
+                                    },
+                                    ..Default::default()
+                                }),
+                            )
+                            .await?;
+                        let (status, headers, body) = rsp.deconstruct();
+                        let res: ListKeyPropertiesResult = json::from_json(&body)?;
+                        let rsp = RawResponse::from_bytes(status, headers, body).into();
+                        Ok(match res.next_link {
+                            Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                                response: rsp,
+                                continuation: PagerContinuation::Link(
+                                    first_url.join(next_link.as_ref())?,
+                                ),
+                            },
+                            _ => PagerResult::Done { response: rsp },
+                        })
+                    }
                 })
             },
             Some(options.method_options),
@@ -803,29 +823,34 @@ impl KeyClient {
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/json");
                 let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: ListKeyPropertiesResult = json::from_json(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_link {
-                        Some(next_link) if !next_link.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Link(next_link.parse()?),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
+                Box::pin({
+                    let first_url = first_url.clone();
+                    async move {
+                        let rsp = pipeline
+                            .send(
+                                &pager_options.context,
+                                &mut request,
+                                Some(PipelineSendOptions {
+                                    check_success: CheckSuccessOptions {
+                                        success_codes: &[200],
+                                    },
+                                    ..Default::default()
+                                }),
+                            )
+                            .await?;
+                        let (status, headers, body) = rsp.deconstruct();
+                        let res: ListKeyPropertiesResult = json::from_json(&body)?;
+                        let rsp = RawResponse::from_bytes(status, headers, body).into();
+                        Ok(match res.next_link {
+                            Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                                response: rsp,
+                                continuation: PagerContinuation::Link(
+                                    first_url.join(next_link.as_ref())?,
+                                ),
+                            },
+                            _ => PagerResult::Done { response: rsp },
+                        })
+                    }
                 })
             },
             Some(options.method_options),
@@ -1087,12 +1112,14 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the signing operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.sign")]
     pub async fn sign(
         &self,
         key_name: &str,
+        key_version: &str,
         parameters: RequestContent<SignParameters>,
         options: Option<KeyClientSignOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1102,15 +1129,18 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/sign");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version.as_ref() {
-            Some(key_version) => path.replace("{key-version}", key_version),
-            None => path.replace("{key-version}", ""),
-        };
+        path = path.replace("{key-version}", key_version);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
@@ -1144,12 +1174,14 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the key operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.unwrapKey")]
     pub async fn unwrap_key(
         &self,
         key_name: &str,
+        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientUnwrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1159,15 +1191,18 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/unwrapkey");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version.as_ref() {
-            Some(key_version) => path.replace("{key-version}", key_version),
-            None => path.replace("{key-version}", ""),
-        };
+        path = path.replace("{key-version}", key_version);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
@@ -1310,12 +1345,14 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for verify operations.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.verify")]
     pub async fn verify(
         &self,
         key_name: &str,
+        key_version: &str,
         parameters: RequestContent<VerifyParameters>,
         options: Option<KeyClientVerifyOptions<'_>>,
     ) -> Result<Response<KeyVerifyResult>> {
@@ -1325,15 +1362,18 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/verify");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version.as_ref() {
-            Some(key_version) => path.replace("{key-version}", key_version),
-            None => path.replace("{key-version}", ""),
-        };
+        path = path.replace("{key-version}", key_version);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
@@ -1369,12 +1409,14 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for wrap operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.wrapKey")]
     pub async fn wrap_key(
         &self,
         key_name: &str,
+        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientWrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1384,15 +1426,18 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/wrapkey");
         path = path.replace("{key-name}", key_name);
-        path = match options.key_version.as_ref() {
-            Some(key_version) => path.replace("{key-version}", key_version),
-            None => path.replace("{key-version}", ""),
-        };
+        path = path.replace("{key-version}", key_version);
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
