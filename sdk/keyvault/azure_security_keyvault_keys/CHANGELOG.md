@@ -6,6 +6,7 @@
 
 ### Breaking Changes
 
+- Moved `key_version` from options to a required parameter on `KeyClient::decrypt()`, `encrypt()`, `sign()`, `unwrap_key()`, `verify()`, and `wrap_key()`.
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 
 ### Bugs Fixed

@@ -17,8 +17,7 @@ use azure_core::{
     Result,
 };
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl Page for ListCertificatePropertiesResult {
     type Item = CertificateProperties;
     type IntoIter = <Vec<CertificateProperties> as IntoIterator>::IntoIter;
@@ -27,8 +26,7 @@ impl Page for ListCertificatePropertiesResult {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl Page for ListDeletedCertificatePropertiesResult {
     type Item = DeletedCertificateProperties;
     type IntoIter = <Vec<DeletedCertificateProperties> as IntoIterator>::IntoIter;
@@ -37,8 +35,7 @@ impl Page for ListDeletedCertificatePropertiesResult {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl Page for ListIssuerPropertiesResult {
     type Item = IssuerProperties;
     type IntoIter = <Vec<IssuerProperties> as IntoIterator>::IntoIter;

@@ -231,7 +231,7 @@ use azure_security_keyvault_certificates::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters,
         KeyProperties, KeyType, KeyUsageType, X509CertificateProperties,
     },
-    ResourceExt, ResourceId,
+    ResourceExt,
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},
@@ -266,9 +266,14 @@ let body = CreateCertificateParameters {
 };
 
 // Wait for the certificate operation to complete.
-client
+let certificate = client
     .create_certificate("ec-signing-certificate", body.try_into()?, None)?
-    .await?;
+    .await?
+    .into_model()?;
+let certificate_version = certificate
+    .resource_id()?
+    .version
+    .expect("certificate version required");
 
 // Hash the plaintext to be signed.
 let digest = sha256(plaintext.as_bytes()).to_vec();
@@ -280,7 +285,7 @@ let body = SignParameters {
 };
 
 let signature = key_client
-    .sign("ec-signing-certificate", body.try_into()?, None)
+    .sign("ec-signing-certificate", &certificate_version, body.try_into()?, None)
     .await?
     .into_model()?;
 
