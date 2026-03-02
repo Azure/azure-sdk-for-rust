@@ -311,8 +311,8 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let mut options = options.unwrap_or_default();
+        let excluded_regions = options.excluded_regions.take();
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.items_link.clone())
                 .json(&item)
@@ -397,8 +397,8 @@ impl ContainerClient {
         options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let mut options = options.unwrap_or_default();
+        let excluded_regions = options.excluded_regions.take();
         let mut cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
             .json(&item)
             .partition_key(partition_key.into())
@@ -483,8 +483,8 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let mut options = options.unwrap_or_default();
+        let excluded_regions = options.excluded_regions.take();
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
                 .json(&item)
@@ -542,7 +542,7 @@ impl ContainerClient {
         options = options.with_content_response_on_write_enabled(true);
 
         let link = self.items_link.item(item_id);
-        let excluded_regions = options.excluded_regions.clone();
+        let excluded_regions = options.excluded_regions.take();
         let mut cosmos_request = CosmosRequest::builder(OperationType::Read, link)
             .partition_key(partition_key.into())
             .excluded_regions(excluded_regions)
@@ -582,8 +582,8 @@ impl ContainerClient {
         options: Option<ItemOptions>,
     ) -> azure_core::Result<CosmosResponse<()>> {
         let link = self.items_link.item(item_id);
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let mut options = options.unwrap_or_default();
+        let excluded_regions = options.excluded_regions.take();
         let mut cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
             .excluded_regions(excluded_regions)

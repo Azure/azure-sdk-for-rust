@@ -164,3 +164,6 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)'] }
 
 [workspace.lints.rustdoc]
 bare_urls = "allow"
+
+[profile.release]
+debug = true
