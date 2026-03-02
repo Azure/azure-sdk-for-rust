@@ -481,7 +481,7 @@ pub(crate) enum LocationEffect {
     /// Mark an endpoint as temporarily unavailable so future routing
     /// skips it until the unavailability expires.
     MarkEndpointUnavailable {
-        endpoint: Url,
+        endpoint: CosmosEndpoint,
         reason: UnavailableReason,
     },
     /// Mark a partition as unavailable in a specific region, triggering
@@ -985,9 +985,10 @@ pub(crate) struct AccountEndpointState {
     /// Ordered list of endpoints preferred for write operations.
     pub preferred_write_endpoints: Vec<CosmosEndpoint>,
     /// Endpoints currently marked as unavailable, with the time they were
-    /// marked and the reason. Used by `resolve_endpoint` to skip bad
-    /// endpoints without mutating the snapshot.
-    pub unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
+    /// marked and the reason. Keyed by `CosmosEndpoint` (which carries the
+    /// `RegionName`) so that unavailability tracking is region-aware —
+    /// `resolve_endpoint` can skip an entire region, not just a raw URL.
+    pub unavailable_endpoints: HashMap<CosmosEndpoint, (Instant, UnavailableReason)>,
     /// Whether the account has multiple write regions enabled.
     pub multiple_write_locations_enabled: bool,
     /// The raw account properties from the last metadata fetch.
@@ -1028,7 +1029,7 @@ impl AccountEndpointStateStore {
 ///   DNS resolves them to the hub (default) region.
 /// - **Regional** endpoints usually use the pattern `{account}-{region}.documents.azure.com`
 ///   and resolve directly to that region.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct CosmosEndpoint {
     region: RegionName,
     url: Url,
@@ -1067,7 +1068,7 @@ fn build_account_endpoint_state(
 // The old state is not mutated — a new snapshot is returned.
 fn mark_endpoint_unavailable(
     state: &AccountEndpointState,
-    endpoint: &Url,
+    endpoint: &CosmosEndpoint,
     reason: UnavailableReason,
 ) -> AccountEndpointState;
 
