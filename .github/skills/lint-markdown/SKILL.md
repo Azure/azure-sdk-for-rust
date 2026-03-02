@@ -9,7 +9,7 @@ Check markdown files for common mistakes.
 
 ## Installation and usage
 
-Run `npm install --dev` from this skill directory (`.github/skills/lint-markdown/`) first. Then run commands using `npx --prefix .github/skills/lint-markdown markdownlint-cli2 <command>` from the repository root.
+Run `npm ci` from this skill directory (`.github/skills/lint-markdown/`) first. Then run commands using `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2 <command>` from the repository root.
 
 ## Configuration
 
@@ -19,14 +19,14 @@ For markdownlint rules configuration, nest it under the `config` property follow
 
 ## Check Markdown
 
-Run `npx --prefix .github/skills/lint-markdown markdownlint-cli2` from the repository root to lint Markdown files according to the configuration.
+Run `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2` from the repository root to lint Markdown files according to the configuration.
 
 ## Fix issues
 
 Run with the `--fix` flag to automatically fix supported issues:
 
 ```bash
-npx --prefix .github/skills/lint-markdown markdownlint-cli2 --fix
+npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2 --fix
 ```
 
 ## Testing

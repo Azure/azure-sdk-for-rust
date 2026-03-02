@@ -15,9 +15,9 @@ Get all staged and unstaged non-deleted files, then pipe them to the spell check
 
 ## Configuration
 
-The root configuration is at `.vscode/cspell.json`.
+The root configuration is `.vscode/cspell.json`, and CI runs cSpell with this config via `eng/common/spelling/Invoke-Cspell.ps1`.
 
-Each service directory (e.g., `sdk/{service-directory}`) or crate directory (e.g., `sdk/{service-directory}/{crate-directory}`) can have a `.cspell.json` that should `import` either a parent `.cspell.json` or `.vscode/cspell.json` from the root of the repo.
+Each service directory (e.g., `sdk/{service-directory}`) or crate directory (e.g., `sdk/{service-directory}/{crate-directory}`) can have a `.cspell.json` that should `import` either a parent `.cspell.json` or `.vscode/cspell.json` from the root of the repo. Per-directory configs are loaded based on the paths of files being checked.
 
 ## Fix spelling
 

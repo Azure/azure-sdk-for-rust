@@ -8,7 +8,8 @@ The Azure SDK for Rust provides Rust language bindings and client libraries for 
 
 ⚠️ Under active development. Large breaking changes may occur before 1.0 release.
 
-- **Primary Language**: Rust (MSRV: 1.88)
+- **Primary Language**: Rust
+- **Minimum Supported Rust Version (MSRV)**: found in the root `Cargo.toml` file
 - **Key Technologies**: Cargo, TypeSpec, OpenTelemetry, Test Proxy
 
 ## Repository Structure
@@ -128,13 +129,15 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 ### Imports
 
 - Keep `use` directives at the top of the module in which they are used, and avoid placing them inside functions or blocks unless absolutely necessary.
-- Prefer using `crate` in `use` directives to refer to types anywhere in the current crate instead of using its name, or relative paths like `super` or `self`.
+- In non-test code, prefer using `crate` in `use` directives to refer to types anywhere in the current crate instead of using its name, or relative paths like `super` or `self`.
+- Inside `#[cfg(test)] mod tests` modules, it is acceptable (and preferred) to import APIs from `super` as described in the test generation guidance below.
 - Prefer merging new `use` directives into existing ones rather than creating new `use` blocks.
 - All imported types, constants, functions, modules, and macros should be imported explicitly. Never import `*`.
 
 ### Error Handling
 
 - Handle errors using Rust's `Result` type with the `?` operator when the parent function returns a `Result`.
+- Use the `?` operator for calls that return an `Option` in a function that returns `Option`.
 - Use `azure_core::Result<T>` for public APIs.
 
 ### Documentation
@@ -150,6 +153,8 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 
 ### General
 
+- Write idiomatic Rust code following conventions in `std` like implementing `From`, `TryFrom`, `Display`, and other standard traits instead of ad-hoc conversion methods.
+- Derive `SafeDebug` instead of `Debug` for model types to protect privacy and security. Generated code should also use `SafeDebug`.
 - Prioritize safety, efficiency, and correctness.
 - Respect Rust's ownership and borrowing rules.
 - Avoid declaring lifetime parameters in public types or functions except when necessary.
