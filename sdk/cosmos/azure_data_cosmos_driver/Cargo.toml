@@ -32,6 +32,7 @@ uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
 azure_identity.workspace = true
+criterion.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
@@ -49,3 +50,9 @@ workspace = true
 
 [features]
 default = []
+bench = [] # Exposes internal types for benchmarking
+
+[[bench]]
+name = "async_cache"
+harness = false
+required-features = ["bench"]

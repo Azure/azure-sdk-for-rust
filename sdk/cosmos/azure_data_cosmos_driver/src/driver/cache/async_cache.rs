@@ -21,7 +21,7 @@ use std::{collections::HashMap, future::Future, hash::Hash, sync::Arc};
 ///
 /// Uses `async_lock::RwLock` instead of tokio to remain async-runtime agnostic.
 #[derive(Debug)]
-pub(crate) struct AsyncCache<K, V> {
+pub struct AsyncCache<K, V> {
     /// The underlying map storing lazy values, protected by an async RwLock.
     map: RwLock<HashMap<K, Arc<AsyncLazy<V>>>>,
 }
@@ -31,7 +31,7 @@ where
     K: Eq + Hash + Clone,
 {
     /// Creates a new empty cache.
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             map: RwLock::new(HashMap::new()),
         }
@@ -44,7 +44,7 @@ where
     /// the initialization. Concurrent requests for the same missing key will share
     /// the same `AsyncLazy` and thus the same initialization - only one factory
     /// function runs per key.
-    pub(crate) async fn get_or_insert_with<F, Fut>(&self, key: K, factory: F) -> Arc<V>
+    pub async fn get_or_insert_with<F, Fut>(&self, key: K, factory: F) -> Arc<V>
     where
         F: FnOnce() -> Fut,
         Fut: Future<Output = V>,
@@ -84,7 +84,7 @@ where
     /// Gets a cached value if it exists and is initialized.
     ///
     /// Returns `None` if the key doesn't exist or initialization hasn't completed.
-    pub(crate) async fn get(&self, key: &K) -> Option<Arc<V>> {
+    pub async fn get(&self, key: &K) -> Option<Arc<V>> {
         let read_guard = self.map.read().await;
         read_guard.get(key).and_then(|lazy| lazy.try_get())
     }
@@ -92,7 +92,7 @@ where
     /// Removes an entry from the cache.
     ///
     /// Returns the value if the key existed and was initialized.
-    pub(crate) async fn invalidate(&self, key: &K) -> Option<Arc<V>> {
+    pub async fn invalidate(&self, key: &K) -> Option<Arc<V>> {
         let mut write_guard = self.map.write().await;
         write_guard.remove(key).and_then(|lazy| lazy.try_get())
     }

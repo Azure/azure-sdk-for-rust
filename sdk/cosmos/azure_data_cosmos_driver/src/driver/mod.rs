@@ -11,6 +11,12 @@
 //! - [`CosmosDriver`] - A driver instance for a specific Cosmos DB account
 
 pub(crate) mod cache;
+
+/// Re-export for benchmarks only. Not part of the public API.
+#[doc(hidden)]
+#[cfg(feature = "bench")]
+pub use cache::_bench as _cache_bench;
+
 mod cosmos_driver;
 mod runtime;
 pub(crate) mod transport;

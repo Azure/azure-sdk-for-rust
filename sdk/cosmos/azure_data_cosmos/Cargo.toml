@@ -29,6 +29,7 @@ url.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity = { version = "0.32.0" }
 clap.workspace = true
+criterion.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 time.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
@@ -46,6 +47,7 @@ hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [] # Enables support for fault injection testing
 allow_invalid_certificates = ["reqwest", "reqwest/native-tls"] # Enables accepting invalid TLS certificates (e.g., for emulator testing)
+bench = [] # Exposes internal types for benchmarking
 
 [package.metadata.docs.rs]
 features = [
@@ -54,3 +56,8 @@ features = [
   "hmac_openssl",
   "allow_invalid_certificates",
 ]
+
+[[bench]]
+name = "async_cache"
+harness = false
+required-features = ["bench"]

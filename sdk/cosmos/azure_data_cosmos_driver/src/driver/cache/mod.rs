@@ -19,3 +19,10 @@ pub(crate) use account_metadata_cache::{AccountMetadataCache, AccountProperties,
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
 pub(crate) use container_cache::ContainerCache;
+
+/// Re-export for benchmarks only. Not part of the public API.
+#[doc(hidden)]
+#[cfg(feature = "bench")]
+pub mod _bench {
+    pub use super::async_cache::AsyncCache;
+}

@@ -53,4 +53,11 @@ pub mod regions;
 mod request_context;
 mod retry_policies;
 mod routing;
+
+/// Re-export for benchmarks only. Not part of the public API.
+#[doc(hidden)]
+#[cfg(feature = "bench")]
+pub mod _bench {
+    pub use crate::routing::async_cache::AsyncCache;
+}
 mod serde;

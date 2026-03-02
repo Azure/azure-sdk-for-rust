@@ -30,7 +30,7 @@ impl<V> CacheEntry<V> {
 ///
 /// When created with `new()`, entries expire after the specified TTL.
 #[derive(Clone)]
-pub(crate) struct AsyncCache<K, V>
+pub struct AsyncCache<K, V>
 where
     K: Eq + Hash + Clone,
     V: Clone,
