@@ -7,16 +7,13 @@
 //! Unlike standard Azure services that use `Authorization: Bearer`, Cosmos DB
 //! uses a custom format as defined in the [official documentation](https://learn.microsoft.com/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
 
-use crate::models::{Credential as AccountCredential, ResourceType};
-use azure_core::{
-    credentials::{Secret, TokenCredential},
-    http::{
-        headers::{HeaderName, HeaderValue, AUTHORIZATION},
-        policies::{Policy, PolicyResult},
-        Context, Method, Request,
-    },
-    time::{self, OffsetDateTime},
+use crate::models::{Credential, ResourceType};
+use azure_core::http::{
+    headers::{HeaderName, HeaderValue, AUTHORIZATION},
+    policies::{Policy, PolicyResult},
+    Context, Method, Request,
 };
+use azure_core::time::{self, OffsetDateTime};
 use std::sync::Arc;
 use tracing::{debug, trace};
 
@@ -71,37 +68,20 @@ pub(crate) struct AuthorizationPolicy {
     credential: Credential,
 }
 
-/// Internal credential representation.
-#[derive(Clone)]
-enum Credential {
-    /// Token-based authentication (Entra ID / AAD).
-    Token(Arc<dyn TokenCredential>),
-    /// Key-based authentication (master key).
-    MasterKey(Secret),
-}
-
 impl std::fmt::Debug for AuthorizationPolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AuthorizationPolicy")
-            .field(
-                "credential",
-                &match &self.credential {
-                    Credential::Token(_) => "Token(***)",
-                    Credential::MasterKey(_) => "MasterKey(***)",
-                },
-            )
+            .field("credential", &self.credential)
             .finish()
     }
 }
 
 impl AuthorizationPolicy {
     /// Creates a new authorization policy from authentication options.
-    pub(crate) fn new(auth: &AccountCredential) -> Self {
-        let credential = match auth {
-            AccountCredential::MasterKey(key) => Credential::MasterKey(key.clone()),
-            AccountCredential::TokenCredential(cred) => Credential::Token(Arc::clone(cred)),
-        };
-        Self { credential }
+    pub(crate) fn new(credential: &Credential) -> Self {
+        Self {
+            credential: credential.clone(),
+        }
     }
 }
 
@@ -154,7 +134,7 @@ impl AuthorizationPolicy {
         date_string: &str,
     ) -> azure_core::Result<String> {
         let token = match &self.credential {
-            Credential::Token(cred) => {
+            Credential::TokenCredential(cred) => {
                 // AAD/Entra ID authentication
                 let token = cred
                     .get_token(&[COSMOS_AAD_SCOPE], None)
@@ -220,7 +200,7 @@ fn url_encode(s: &str) -> String {
 mod tests {
     use super::*;
     use azure_core::{
-        credentials::{AccessToken, TokenRequestOptions},
+        credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
         http::{headers::Headers, response::AsyncRawResponse, StatusCode, Url},
         time::Duration,
     };
@@ -266,7 +246,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_master_key() {
         let key = Secret::new("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==");
-        let auth = AccountCredential::MasterKey(key);
+        let auth = crate::models::Credential::MasterKey(key);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);
@@ -292,7 +272,7 @@ mod tests {
     #[tokio::test]
     async fn authorization_policy_adds_headers_for_token_credential() {
         let cred = Arc::new(MockTokenCredential("test_token".to_string()));
-        let auth = AccountCredential::TokenCredential(cred);
+        let auth = crate::models::Credential::TokenCredential(cred);
         let policy = AuthorizationPolicy::new(&auth);
 
         let transport: Arc<dyn Policy> = Arc::new(MockTransport);

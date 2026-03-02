@@ -7,17 +7,21 @@ use azure_core::http::ClientOptions;
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
+    time::Duration,
 };
 
 use crate::{
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
-        ConnectionPoolOptions, CorrelationId, DriverOptions, RuntimeOptions, SharedRuntimeOptions,
-        ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
-        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
+        RuntimeOptions, SharedRuntimeOptions, ThroughputControlGroupOptions,
+        ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry, UserAgentSuffix,
+        WorkloadId,
     },
+    system::{CpuMemoryMonitor, VmMetadataService},
 };
 
+use super::cache::{AccountMetadataCache, ContainerCache};
 use super::{transport::CosmosTransport, CosmosDriver};
 
 /// The Cosmos DB driver runtime environment.
@@ -114,6 +118,18 @@ pub struct CosmosDriverRuntime {
     ///
     /// Ensures singleton driver per account reference.
     driver_registry: Arc<RwLock<HashMap<String, Arc<CosmosDriver>>>>,
+
+    /// Shared container metadata cache used by drivers in this runtime.
+    container_cache: Arc<ContainerCache>,
+
+    /// Shared account metadata cache used by drivers in this runtime.
+    account_metadata_cache: Arc<AccountMetadataCache>,
+
+    /// CPU and memory monitor for diagnostics.
+    cpu_monitor: CpuMemoryMonitor,
+
+    /// Machine identifier for diagnostics (VM ID on Azure, generated UUID otherwise).
+    machine_id: Arc<String>,
 }
 
 impl CosmosDriverRuntime {
@@ -138,6 +154,26 @@ impl CosmosDriverRuntime {
     /// metadata and data plane operations, with automatic emulator detection.
     pub(crate) fn transport(&self) -> &Arc<CosmosTransport> {
         &self.transport
+    }
+
+    /// Returns the shared container cache.
+    pub(crate) fn container_cache(&self) -> &Arc<ContainerCache> {
+        &self.container_cache
+    }
+
+    /// Returns the shared account metadata cache.
+    pub(crate) fn account_metadata_cache(&self) -> &Arc<AccountMetadataCache> {
+        &self.account_metadata_cache
+    }
+
+    /// Returns the CPU/memory monitor for diagnostics.
+    pub(crate) fn cpu_monitor(&self) -> &CpuMemoryMonitor {
+        &self.cpu_monitor
+    }
+
+    /// Returns the machine identifier for diagnostics.
+    pub(crate) fn machine_id(&self) -> &Arc<String> {
+        &self.machine_id
     }
 
     /// Returns the thread-safe runtime options.
@@ -315,6 +351,7 @@ pub struct CosmosDriverRuntimeBuilder {
     correlation_id: Option<CorrelationId>,
     user_agent_suffix: Option<UserAgentSuffix>,
     throughput_control_groups: ThroughputControlGroupRegistry,
+    cpu_refresh_interval: Option<Duration>,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -382,6 +419,19 @@ impl CosmosDriverRuntimeBuilder {
     /// app name with region.
     pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
         self.user_agent_suffix = Some(suffix);
+        self
+    }
+
+    /// Sets the CPU/memory monitoring refresh interval.
+    ///
+    /// Controls how frequently the background CPU and memory sampling thread
+    /// collects new data points. If not set, the value is read from the
+    /// `AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS` environment variable. If the
+    /// environment variable is also absent, the default of 5000 ms is used.
+    ///
+    /// Valid range: 1000–60000 ms (1–60 seconds).
+    pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
+        self.cpu_refresh_interval = Some(interval);
         self
     }
 
@@ -471,6 +521,20 @@ impl CosmosDriverRuntimeBuilder {
             user_agent.as_str(),
         )?);
 
+        // Initialize system monitoring singletons.
+        // CpuMemoryMonitor starts a background thread on first call;
+        // VmMetadataService makes a single IMDS request (or falls back to a UUID).
+        let refresh_interval = parse_duration_millis_from_env(
+            self.cpu_refresh_interval,
+            "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS",
+            5_000,
+            1_000,
+            60_000,
+        )?;
+        let cpu_monitor = CpuMemoryMonitor::get_or_init(refresh_interval);
+        let vm_metadata = VmMetadataService::get_or_init().await;
+        let machine_id = Arc::new(vm_metadata.machine_id().to_owned());
+
         Ok(CosmosDriverRuntime {
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
@@ -484,6 +548,10 @@ impl CosmosDriverRuntimeBuilder {
             user_agent_suffix: self.user_agent_suffix,
             throughput_control_groups: self.throughput_control_groups,
             driver_registry: Arc::new(RwLock::new(HashMap::new())),
+            container_cache: Arc::new(ContainerCache::new()),
+            account_metadata_cache: Arc::new(AccountMetadataCache::new()),
+            cpu_monitor,
+            machine_id,
         })
     }
 }

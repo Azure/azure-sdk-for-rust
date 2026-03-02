@@ -19,6 +19,7 @@ mod cosmos_response;
 mod cosmos_status;
 mod etag;
 mod finite_f64;
+pub(crate) use finite_f64::FiniteF64;
 mod partition_key;
 mod request_charge;
 mod resource_id;
@@ -45,7 +46,6 @@ pub use resource_reference::{
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
-pub(crate) use finite_f64::FiniteF64;
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -83,24 +83,6 @@ pub(crate) struct ContainerProperties {
     pub system_properties: SystemProperties,
 }
 
-impl ContainerProperties {
-    /// Creates new container properties with the given identifier and partition key.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `id` is empty.
-    #[cfg(test)]
-    pub fn new(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self {
-        let id = id.into();
-        assert!(!id.is_empty(), "container id must not be empty");
-        Self {
-            id,
-            partition_key,
-            system_properties: SystemProperties::default(),
-        }
-    }
-}
-
 /// Partition key definition for a container.
 ///
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
@@ -133,18 +115,6 @@ impl PartitionKeyDefinition {
     /// Returns the partition key kind.
     pub fn kind(&self) -> PartitionKeyKind {
         self.kind
-    }
-
-    /// Creates a new partition key definition with the given paths.
-    ///
-    /// Uses version 2 and `Hash` kind by default.
-    #[cfg(test)]
-    pub(crate) fn new(paths: impl IntoIterator<Item = impl Into<Cow<'static, str>>>) -> Self {
-        Self {
-            paths: paths.into_iter().map(Into::into).collect(),
-            version: PartitionKeyVersion::V2,
-            kind: PartitionKeyKind::Hash,
-        }
     }
 }
 
@@ -249,6 +219,21 @@ pub enum ResourceType {
 }
 
 impl ResourceType {
+    /// Returns the string representation of this resource type.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ResourceType::DatabaseAccount => "database_account",
+            ResourceType::Database => "database",
+            ResourceType::DocumentCollection => "document_collection",
+            ResourceType::Document => "document",
+            ResourceType::StoredProcedure => "stored_procedure",
+            ResourceType::Trigger => "trigger",
+            ResourceType::UserDefinedFunction => "user_defined_function",
+            ResourceType::PartitionKeyRange => "partition_key_range",
+            ResourceType::Offer => "offer",
+        }
+    }
+
     /// Returns the URL path segment for this resource type.
     pub fn path_segment(self) -> &'static str {
         match self {
@@ -301,6 +286,44 @@ impl ResourceType {
                 | ResourceType::UserDefinedFunction
                 | ResourceType::PartitionKeyRange
         )
+    }
+}
+
+impl std::fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for ResourceType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl std::str::FromStr for ResourceType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().replace(' ', "_").as_str() {
+            "database_account" | "account" => Ok(ResourceType::DatabaseAccount),
+            "database" | "db" => Ok(ResourceType::Database),
+            "document_collection" | "collection" | "container" => {
+                Ok(ResourceType::DocumentCollection)
+            }
+            "document" | "item" => Ok(ResourceType::Document),
+            "stored_procedure" | "sproc" => Ok(ResourceType::StoredProcedure),
+            "trigger" => Ok(ResourceType::Trigger),
+            "user_defined_function" | "udf" => Ok(ResourceType::UserDefinedFunction),
+            "partition_key_range" | "pkrange" => Ok(ResourceType::PartitionKeyRange),
+            "offer" => Ok(ResourceType::Offer),
+            _ => Err(format!(
+                "Unknown resource type: '{}'. Expected one of: database_account, database, \
+                 document_collection, document, stored_procedure, trigger, \
+                 user_defined_function, partition_key_range, offer",
+                s
+            )),
+        }
     }
 }
 
@@ -387,6 +410,37 @@ impl OperationType {
                 | OperationType::Delete
         )
     }
+
+    /// Returns the string representation of this operation type.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            OperationType::Create => "create",
+            OperationType::Read => "read",
+            OperationType::ReadFeed => "read_feed",
+            OperationType::Replace => "replace",
+            OperationType::Delete => "delete",
+            OperationType::Upsert => "upsert",
+            OperationType::Query => "query",
+            OperationType::SqlQuery => "sql_query",
+            OperationType::QueryPlan => "query_plan",
+            OperationType::Batch => "batch",
+            OperationType::Head => "head",
+            OperationType::HeadFeed => "head_feed",
+            OperationType::Execute => "execute",
+        }
+    }
+}
+
+impl std::fmt::Display for OperationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for OperationType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 
 /// A session token for maintaining session consistency.
@@ -414,6 +468,12 @@ impl<T: Into<Cow<'static, str>>> From<T> for SessionToken {
     }
 }
 
+impl AsRef<str> for SessionToken {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl std::fmt::Display for SessionToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
@@ -438,6 +498,23 @@ impl TriggerInvocation {
     /// Creates a new trigger invocation with the given name.
     pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
         Self { name: name.into() }
+    }
+
+    /// Returns the trigger name as a string slice.
+    pub fn as_str(&self) -> &str {
+        &self.name
+    }
+}
+
+impl AsRef<str> for TriggerInvocation {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl std::fmt::Display for TriggerInvocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.name)
     }
 }
 
@@ -487,6 +564,12 @@ impl From<String> for ThroughputControlGroupName {
 impl From<Cow<'static, str>> for ThroughputControlGroupName {
     fn from(name: Cow<'static, str>) -> Self {
         Self::new(name)
+    }
+}
+
+impl AsRef<str> for ThroughputControlGroupName {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 

@@ -46,6 +46,12 @@ impl PartialEq for FiniteF64 {
 
 impl Eq for FiniteF64 {}
 
+impl std::fmt::Display for FiniteF64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl Hash for FiniteF64 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.0.to_bits().hash(state);

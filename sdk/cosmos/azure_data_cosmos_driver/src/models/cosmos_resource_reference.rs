@@ -1,313 +1,259 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Generic resource reference type for Cosmos DB resources.
+//! A generic reference to any Cosmos DB resource, used by [`CosmosOperation`](crate::models::CosmosOperation).
+//!
+//! `CosmosResourceReference` unifies account, database, container, item, stored
+//! procedure, trigger, and UDF references into a single type that carries enough
+//! information to compute **resource links** (for authorization signing) and
+//! **request paths** (for URL construction).
 
 use crate::models::{
-    resource_id::ResourceIdentifier, AccountReference, ContainerReference, DatabaseReference,
-    ItemReference, ResourceType, StoredProcedureReference, TriggerReference, UdfReference,
+    resource_id::{ResourceId, ResourceIdentifier, ResourceName},
+    AccountReference, ContainerReference, DatabaseReference, ItemReference, ResourceType,
+    StoredProcedureReference, TriggerReference, UdfReference,
 };
+
 use std::borrow::Cow;
 
 /// A generic reference to any Cosmos DB resource.
 ///
-/// Contains the resource type, optional parent references (account, database, container),
-/// and either a name or resource identifier (RID) for the resource itself.
+/// Used internally by [`CosmosOperation`](crate::models::CosmosOperation) to capture the
+/// resource-routing information needed before the operation is converted into
+/// an HTTP request.
 ///
-/// Construct references from typed references via `From<T>` implementations.
-///
-/// Operation code can refine the scope using internal helpers such as
-/// `with_resource_type` and `into_feed_reference`.
-#[derive(Clone, Debug, PartialEq)]
-#[non_exhaustive]
+/// Instances are created via `From` conversions from concrete reference types
+/// (e.g., `DatabaseReference`, `ContainerReference`, `ItemReference`) or via
+/// builder-style methods (`with_resource_type`, `with_name`, `with_rid`,
+/// `into_feed_reference`).
+#[derive(Clone, Debug)]
 pub struct CosmosResourceReference {
     /// The type of resource being referenced.
     resource_type: ResourceType,
-    /// Reference to the parent account (always required).
+    /// The parent account.
     account: AccountReference,
-    /// Reference to the parent database (optional, depends on resource type).
+    /// Optional database reference (present for database-level and below).
     database: Option<DatabaseReference>,
-    /// Reference to the parent container (optional, depends on resource type).
+    /// Optional container reference (present for container-level and below).
     container: Option<ContainerReference>,
-    /// The resource identifier (name or RID, mutually exclusive).
+    /// Optional resource identifier (name or RID) for the leaf resource.
     id: Option<ResourceIdentifier>,
+    /// When true, this reference targets a feed (collection of resources)
+    /// rather than a single resource.
+    is_feed: bool,
 }
 
 impl CosmosResourceReference {
     /// Returns the resource type.
-    pub(crate) fn resource_type(&self) -> ResourceType {
+    pub fn resource_type(&self) -> ResourceType {
         self.resource_type
     }
 
-    /// Returns a reference to the account.
-    pub(crate) fn account(&self) -> &AccountReference {
+    /// Returns a reference to the parent account.
+    pub fn account(&self) -> &AccountReference {
         &self.account
     }
 
-    /// Returns a reference to the database, if applicable.
-    #[cfg(test)]
-    pub(crate) fn database(&self) -> Option<&DatabaseReference> {
-        self.database.as_ref()
-    }
-
-    /// Returns a reference to the container, if applicable.
-    pub(crate) fn container(&self) -> Option<&ContainerReference> {
+    /// Returns the container reference, if this operation targets a container-level
+    /// or child resource.
+    pub fn container(&self) -> Option<&ContainerReference> {
         self.container.as_ref()
     }
 
-    /// Returns the resource name, if set.
-    #[cfg(test)]
-    pub(crate) fn name(&self) -> Option<&str> {
-        self.id.as_ref().and_then(ResourceIdentifier::name)
-    }
-
-    /// Returns the resource identifier (RID), if set.
-    #[cfg(test)]
-    pub(crate) fn rid(&self) -> Option<&str> {
-        self.id.as_ref().and_then(ResourceIdentifier::rid)
-    }
-
-    /// Returns `true` if this reference is name-based.
-    #[cfg(test)]
-    pub(crate) fn is_by_name(&self) -> bool {
-        self.id.as_ref().is_some_and(ResourceIdentifier::is_by_name)
-    }
-
-    /// Returns `true` if this reference is RID-based.
-    #[cfg(test)]
-    pub(crate) fn is_by_rid(&self) -> bool {
-        self.id.as_ref().is_some_and(ResourceIdentifier::is_by_rid)
-    }
-
-    /// Sets the resource name.
-    pub(crate) fn with_name(mut self, name: impl Into<Cow<'static, str>>) -> Self {
-        self.id = Some(ResourceIdentifier::by_name(name.into().into_owned()));
+    /// Sets a name-based identifier on this reference.
+    pub fn with_name(mut self, name: Cow<'static, str>) -> Self {
+        self.id = Some(ResourceIdentifier::by_name(ResourceName::new(name)));
+        self.is_feed = false;
         self
     }
 
-    /// Overrides the resource type while preserving account/database/container scope.
-    pub(crate) fn with_resource_type(mut self, resource_type: ResourceType) -> Self {
+    /// Sets a RID-based identifier on this reference.
+    pub fn with_rid(mut self, rid: Cow<'static, str>) -> Self {
+        self.id = Some(ResourceIdentifier::by_rid(ResourceId::new(rid)));
+        self.is_feed = false;
+        self
+    }
+
+    /// Overrides the resource type.
+    ///
+    /// Used when building feed references that target a child resource type
+    /// relative to the current reference. For example, starting from a
+    /// `DatabaseReference` (which is `ResourceType::Database`) and overriding
+    /// to `ResourceType::DocumentCollection` for a "list containers" operation.
+    pub fn with_resource_type(mut self, resource_type: ResourceType) -> Self {
         self.resource_type = resource_type;
         self
     }
 
-    /// Converts this reference to a feed (collection-level) scope.
-    pub(crate) fn into_feed_reference(mut self) -> Self {
+    /// Marks this reference as targeting a feed (collection of resources).
+    ///
+    /// Feed references drop the leaf identifier so that the resource link
+    /// points to the parent, and the request path includes the child resource
+    /// type's path segment.
+    pub fn into_feed_reference(mut self) -> Self {
         self.id = None;
-
-        match self.resource_type {
-            ResourceType::Database => {
-                self.database = None;
-                self.container = None;
-            }
-            ResourceType::DocumentCollection => {
-                self.container = None;
-            }
-            ResourceType::Offer | ResourceType::DatabaseAccount => {
-                self.database = None;
-                self.container = None;
-            }
-            _ => {}
-        }
-
+        self.is_feed = true;
         self
     }
 
-    /// Returns the full resource link for this resource.
+    /// Returns the resource link used for authorization signing.
     ///
-    /// Prefers a name-based path when available, and falls back to RID-based
-    /// addressing when required.
-    pub(crate) fn resource_link(&self) -> String {
-        self.resolved_resource_link()
-            .expect("CosmosResourceReference is guaranteed to have a valid path")
-    }
-
-    fn resolved_resource_link(&self) -> Option<String> {
-        match self.resource_type {
-            ResourceType::DatabaseAccount => Some(String::new()),
-            ResourceType::Database => {
-                if let Some(db) = self.database.as_ref() {
-                    db.name_based_path().or_else(|| db.rid_based_path())
-                } else {
-                    Some("/dbs".to_string())
-                }
-            }
-            ResourceType::DocumentCollection => {
-                if let Some(container) = self.container.as_ref() {
-                    Some(container.name_based_path())
-                } else {
-                    let db_path = self
-                        .database
-                        .as_ref()?
-                        .name_based_path()
-                        .or_else(|| self.database.as_ref()?.rid_based_path())?;
-                    match self.id.as_ref() {
-                        Some(ResourceIdentifier::ByName(name)) => {
-                            Some(format!("{}/colls/{}", db_path, name))
-                        }
-                        Some(ResourceIdentifier::ByRid(rid)) => {
-                            Some(format!("{}/colls/{}", db_path, rid))
-                        }
-                        None => Some(format!("{}/colls", db_path)),
-                    }
-                }
-            }
-            ResourceType::Document => {
-                let container = self.container.as_ref()?;
-                match self.id.as_ref()? {
-                    ResourceIdentifier::ByName(name) => {
-                        Some(format!("{}/docs/{}", container.name_based_path(), name))
-                    }
-                    ResourceIdentifier::ByRid(rid) => {
-                        Some(format!("{}/docs/{}", container.rid_based_path(), rid))
-                    }
-                }
-            }
-            ResourceType::StoredProcedure
-            | ResourceType::Trigger
-            | ResourceType::UserDefinedFunction
-            | ResourceType::PartitionKeyRange => {
-                let container = self.container.as_ref()?;
-                let segment = self.resource_type.path_segment();
-                match self.id.as_ref()? {
-                    ResourceIdentifier::ByName(name) => Some(format!(
-                        "{}/{}/{}",
-                        container.name_based_path(),
-                        segment,
-                        name
-                    )),
-                    ResourceIdentifier::ByRid(rid) => Some(format!(
-                        "{}/{}/{}",
-                        container.rid_based_path(),
-                        segment,
-                        rid
-                    )),
-                }
-            }
-            ResourceType::Offer => {
-                let rid = self.id.as_ref()?.rid()?;
-                Some(format!("/offers/{}", rid))
-            }
-        }
-    }
-
-    /// Returns the resource link for authorization signing.
-    ///
-    /// The resource link is an unencoded path used for generating the
-    /// authorization signature. Prefers name-based paths over RID-based.
-    ///
-    /// **Important**: For feed operations (create, list, query) where no specific
-    /// item is targeted, this returns the **parent's** path, not the collection path.
-    /// This matches the Cosmos DB signature algorithm requirements.
-    ///
-    /// Examples:
-    /// - Creating a database: signing link = "" (empty, account has no parent)
-    /// - Creating a container in "mydb": signing link = "dbs/mydb"
-    /// - Creating a document: signing link = "dbs/mydb/colls/mycoll"
-    /// - Reading a specific database "mydb": signing link = "dbs/mydb"
-    /// - Reading a specific document: signing link = "dbs/mydb/colls/mycoll/docs/mydoc"
-    ///
-    /// This method always returns a valid path because `CosmosResourceReference`
-    /// validates that the required identifiers are present at construction time.
-    pub(crate) fn link_for_signing(&self) -> String {
-        // Check if this is a feed operation (no specific item targeted)
-        let is_feed = self.is_feed_reference();
-
-        if is_feed {
-            // For feed operations, return parent's path
-            self.parent_signing_link().unwrap_or_default()
+    /// For feed operations this is the **parent** resource's link (because
+    /// Cosmos DB signs against the parent when listing children). For single-
+    /// resource operations it is the full resource link.
+    pub fn link_for_signing(&self) -> String {
+        if self.is_feed {
+            self.parent_signing_link()
         } else {
-            // For item operations, return the full path
-            self.resource_link()
+            self.resolved_resource_link()
         }
     }
 
-    /// Returns true if this reference targets a feed (collection) rather than a specific item.
-    fn is_feed_reference(&self) -> bool {
-        match self.resource_type {
-            ResourceType::DatabaseAccount => false,
-            ResourceType::Database => self.database.is_none(),
-            ResourceType::DocumentCollection => self.container.is_none() && self.id.is_none(),
-            ResourceType::Document => self.id.is_none(),
-            ResourceType::StoredProcedure
-            | ResourceType::Trigger
-            | ResourceType::UserDefinedFunction
-            | ResourceType::PartitionKeyRange => self.id.is_none(),
-            ResourceType::Offer => self.id.is_none(),
+    /// Returns the URL request path for this reference.
+    ///
+    /// For feed operations this appends the child resource type's path segment
+    /// to the parent link. For single-resource operations it is the same as
+    /// the resolved resource link.
+    pub fn request_path(&self) -> String {
+        if self.is_feed {
+            let parent = self.parent_signing_link();
+            let segment = self.resource_type.path_segment();
+            if parent.is_empty() {
+                // Account-level feed (e.g., list databases).
+                format!("/{}", segment)
+            } else {
+                format!("{}/{}", parent, segment)
+            }
+        } else {
+            self.resolved_resource_link()
         }
     }
 
-    /// Returns the parent's path for signing feed operations.
-    fn parent_signing_link(&self) -> Option<String> {
+    // ===== Private Helpers =====
+
+    /// Computes the full resource link for the leaf resource.
+    ///
+    /// This combines the parent chain (account -> database -> container) with
+    /// the leaf identifier and resource type path segment.
+    fn resolved_resource_link(&self) -> String {
         match self.resource_type {
-            ResourceType::DatabaseAccount => None,
+            ResourceType::DatabaseAccount => {
+                // Account-level: empty link.
+                String::new()
+            }
             ResourceType::Database => {
-                // Parent is account, which has no path
-                None
+                // /dbs/{id}
+                self.db_link()
             }
             ResourceType::DocumentCollection => {
-                // Parent is database
-                self.database
-                    .as_ref()
-                    .and_then(|db| db.name_based_path().or_else(|| db.rid_based_path()))
-                    .map(|path| path.trim_start_matches('/').to_string())
+                // /dbs/{db}/colls/{id}
+                self.container_link()
             }
             ResourceType::Document
             | ResourceType::StoredProcedure
             | ResourceType::Trigger
             | ResourceType::UserDefinedFunction
             | ResourceType::PartitionKeyRange => {
-                // Parent is container — both paths are always available
-                self.container
-                    .as_ref()
-                    .map(|c| c.name_based_path())
-                    .map(|path| path.trim_start_matches('/').to_string())
+                // /dbs/{db}/colls/{container}/{segment}/{id}
+                let container_path = self.container_link();
+                let segment = self.resource_type.path_segment();
+                if let Some(ref id) = self.id {
+                    let id_str = Self::identifier_str(id);
+                    format!("{}/{}/{}", container_path, segment, id_str)
+                } else {
+                    // Feed path for child resources -- should not happen
+                    // for resolved links, but provide a reasonable fallback.
+                    format!("{}/{}", container_path, segment)
+                }
             }
-            ResourceType::Offer => None,
+            ResourceType::Offer => {
+                // Offers are top-level, addressed by RID.
+                if let Some(ref id) = self.id {
+                    let id_str = Self::identifier_str(id);
+                    format!("/offers/{}", id_str)
+                } else {
+                    "/offers".to_string()
+                }
+            }
         }
     }
 
-    /// Returns the URL path for this resource.
+    /// Returns the parent's resource link for signing feed operations.
     ///
-    /// This path can be appended to the account endpoint to form the
-    /// full request URL. Prefers name-based paths over RID-based.
-    ///
-    /// This method always returns a valid path because `CosmosResourceReference`
-    /// validates that the required identifiers are present at construction time.
-    pub(crate) fn request_path(&self) -> String {
-        self.resource_link()
+    /// For a feed targeting `ResourceType::Database`, the parent is the account
+    /// (empty link). For a feed targeting `ResourceType::DocumentCollection`,
+    /// the parent is `/dbs/{db}`. For feeds below containers, the parent is
+    /// `/dbs/{db}/colls/{container}`.
+    fn parent_signing_link(&self) -> String {
+        match self.resource_type {
+            ResourceType::DatabaseAccount => String::new(),
+            ResourceType::Database | ResourceType::Offer => {
+                // Parent is the account -- empty link.
+                String::new()
+            }
+            ResourceType::DocumentCollection => {
+                // Parent is the database.
+                self.db_link()
+            }
+            ResourceType::Document
+            | ResourceType::StoredProcedure
+            | ResourceType::Trigger
+            | ResourceType::UserDefinedFunction
+            | ResourceType::PartitionKeyRange => {
+                // Parent is the container.
+                self.container_link()
+            }
+        }
+    }
+
+    /// Builds the database portion of the link from the database reference.
+    fn db_link(&self) -> String {
+        if let Some(ref db) = self.database {
+            if let Some(name) = db.name() {
+                return format!("/dbs/{}", name);
+            }
+            if let Some(rid) = db.rid() {
+                return format!("/dbs/{}", rid);
+            }
+        }
+        // Fallback: use the leaf id if no database reference is set.
+        if let Some(ref id) = self.id {
+            let id_str = Self::identifier_str(id);
+            return format!("/dbs/{}", id_str);
+        }
+        String::new()
+    }
+
+    /// Builds the container portion of the link from the container reference.
+    fn container_link(&self) -> String {
+        if let Some(ref container) = self.container {
+            // Prefer name-based path.
+            return container.name_based_path();
+        }
+        // If we have a database but no container, try using the leaf id.
+        if let Some(ref id) = self.id {
+            let db = self.db_link();
+            let id_str = Self::identifier_str(id);
+            return format!("{}/colls/{}", db, id_str);
+        }
+        self.db_link()
+    }
+
+    /// Extracts a string representation from a `ResourceIdentifier`.
+    fn identifier_str(id: &ResourceIdentifier) -> &str {
+        if let Some(name) = id.name() {
+            name
+        } else {
+            id.rid().unwrap_or_default()
+        }
     }
 }
 
 // =============================================================================
-// From implementations for typed references
+// From Implementations
 // =============================================================================
-
-impl From<DatabaseReference> for CosmosResourceReference {
-    /// Converts a `DatabaseReference` into a `CosmosResourceReference`.
-    ///
-    /// The resulting reference has `ResourceType::Database` and preserves
-    /// the name-based or RID-based addressing mode.
-    fn from(database: DatabaseReference) -> Self {
-        let id = match (database.name(), database.rid()) {
-            (Some(name), None) => Some(ResourceIdentifier::by_name(name.to_owned())),
-            (None, Some(rid)) => Some(ResourceIdentifier::by_rid(rid.to_owned())),
-            _ => None,
-        };
-        let account = database.account().clone();
-
-        Self {
-            resource_type: ResourceType::Database,
-            account,
-            database: Some(database),
-            container: None,
-            id,
-        }
-    }
-}
 
 impl From<AccountReference> for CosmosResourceReference {
-    /// Converts an `AccountReference` into an account-level `CosmosResourceReference`.
     fn from(account: AccountReference) -> Self {
         Self {
             resource_type: ResourceType::DatabaseAccount,
@@ -315,121 +261,128 @@ impl From<AccountReference> for CosmosResourceReference {
             database: None,
             container: None,
             id: None,
+            is_feed: false,
+        }
+    }
+}
+
+impl From<DatabaseReference> for CosmosResourceReference {
+    fn from(database: DatabaseReference) -> Self {
+        let account = database.account().clone();
+        Self {
+            resource_type: ResourceType::Database,
+            account,
+            database: Some(database),
+            container: None,
+            id: None,
+            is_feed: false,
         }
     }
 }
 
 impl From<ContainerReference> for CosmosResourceReference {
-    /// Converts a `ContainerReference` into a `CosmosResourceReference`.
-    ///
-    /// The resulting reference has `ResourceType::DocumentCollection` and uses
-    /// name-based addressing (both name and RID are always available on
-    /// a resolved `ContainerReference`).
     fn from(container: ContainerReference) -> Self {
-        let id = Some(ResourceIdentifier::by_name(container.name().to_owned()));
         let account = container.account().clone();
-        let database = Some(container.database());
-
         Self {
             resource_type: ResourceType::DocumentCollection,
             account,
-            database,
+            database: None,
             container: Some(container),
-            id,
+            id: None,
+            is_feed: false,
         }
     }
 }
 
 impl From<ItemReference> for CosmosResourceReference {
-    /// Converts an `ItemReference` into a `CosmosResourceReference`.
-    ///
-    /// The resulting reference has `ResourceType::Document` and preserves
-    /// the name-based or RID-based addressing mode.
     fn from(item: ItemReference) -> Self {
+        let account = item.account().clone();
         let container = item.container().clone();
-        let account = container.account().clone();
-        let database = Some(container.database());
-        let id = match (item.name(), item.rid()) {
-            (Some(name), None) => Some(ResourceIdentifier::by_name(name.to_owned())),
-            (None, Some(rid)) => Some(ResourceIdentifier::by_rid(rid.to_owned())),
-            _ => None,
+        let id = if let Some(name) = item.name() {
+            Some(ResourceIdentifier::by_name(ResourceName::new(
+                name.to_owned(),
+            )))
+        } else {
+            item.rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
-
         Self {
             resource_type: ResourceType::Document,
             account,
-            database,
+            database: None,
             container: Some(container),
             id,
+            is_feed: false,
         }
     }
 }
 
 impl From<StoredProcedureReference> for CosmosResourceReference {
-    /// Converts a `StoredProcedureReference` into a `CosmosResourceReference`.
-    ///
-    /// The resulting reference has `ResourceType::StoredProcedure` and preserves
-    /// the name-based or RID-based addressing mode.
-    fn from(stored_procedure: StoredProcedureReference) -> Self {
-        let container = stored_procedure.container().clone();
-        let account = container.account().clone();
-        let database = Some(container.database());
-        let id = match (stored_procedure.name(), stored_procedure.rid()) {
-            (Some(name), None) => Some(ResourceIdentifier::by_name(name.to_owned())),
-            (None, Some(rid)) => Some(ResourceIdentifier::by_rid(rid.to_owned())),
-            _ => None,
+    fn from(sp: StoredProcedureReference) -> Self {
+        let account = sp.account().clone();
+        let container = sp.container().clone();
+        let id = if let Some(name) = sp.name() {
+            Some(ResourceIdentifier::by_name(ResourceName::new(
+                name.to_owned(),
+            )))
+        } else {
+            sp.rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
-
         Self {
             resource_type: ResourceType::StoredProcedure,
             account,
-            database,
+            database: None,
             container: Some(container),
             id,
+            is_feed: false,
         }
     }
 }
 
 impl From<TriggerReference> for CosmosResourceReference {
-    /// Converts a `TriggerReference` into a `CosmosResourceReference`.
     fn from(trigger: TriggerReference) -> Self {
+        let account = trigger.account().clone();
         let container = trigger.container().clone();
-        let account = container.account().clone();
-        let database = Some(container.database());
-        let id = match (trigger.name(), trigger.rid()) {
-            (Some(name), None) => Some(ResourceIdentifier::by_name(name.to_owned())),
-            (None, Some(rid)) => Some(ResourceIdentifier::by_rid(rid.to_owned())),
-            _ => None,
+        let id = if let Some(name) = trigger.name() {
+            Some(ResourceIdentifier::by_name(ResourceName::new(
+                name.to_owned(),
+            )))
+        } else {
+            trigger
+                .rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
-
         Self {
             resource_type: ResourceType::Trigger,
             account,
-            database,
+            database: None,
             container: Some(container),
             id,
+            is_feed: false,
         }
     }
 }
 
 impl From<UdfReference> for CosmosResourceReference {
-    /// Converts a `UdfReference` into a `CosmosResourceReference`.
     fn from(udf: UdfReference) -> Self {
+        let account = udf.account().clone();
         let container = udf.container().clone();
-        let account = container.account().clone();
-        let database = Some(container.database());
-        let id = match (udf.name(), udf.rid()) {
-            (Some(name), None) => Some(ResourceIdentifier::by_name(name.to_owned())),
-            (None, Some(rid)) => Some(ResourceIdentifier::by_rid(rid.to_owned())),
-            _ => None,
+        let id = if let Some(name) = udf.name() {
+            Some(ResourceIdentifier::by_name(ResourceName::new(
+                name.to_owned(),
+            )))
+        } else {
+            udf.rid()
+                .map(|rid| ResourceIdentifier::by_rid(ResourceId::new(rid.to_owned())))
         };
-
         Self {
             resource_type: ResourceType::UserDefinedFunction,
             account,
-            database,
+            database: None,
             container: Some(container),
             id,
+            is_feed: false,
         }
     }
 }
@@ -437,8 +390,7 @@ impl From<UdfReference> for CosmosResourceReference {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{PartitionKey, PartitionKeyDefinition};
-
+    use crate::models::{ContainerProperties, PartitionKey, PartitionKeyDefinition};
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -448,196 +400,145 @@ mod tests {
         )
     }
 
-    fn test_database() -> DatabaseReference {
-        DatabaseReference::from_name(test_account(), "testdb")
+    fn test_partition_key_definition() -> PartitionKeyDefinition {
+        serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap()
     }
 
-    fn test_container_props() -> crate::models::ContainerProperties {
-        crate::models::ContainerProperties::new(
-            "testcontainer",
-            PartitionKeyDefinition::new(["/pk"]),
-        )
+    fn test_container_props() -> ContainerProperties {
+        ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: test_partition_key_definition(),
+            system_properties: Default::default(),
+        }
     }
 
     fn test_container() -> ContainerReference {
         ContainerReference::new(
             test_account(),
             "testdb",
-            "dbRid123",
+            "testdb_rid",
             "testcontainer",
-            "collRid456",
+            "testcontainer_rid",
             &test_container_props(),
         )
     }
 
     #[test]
     fn from_account_reference() {
-        let ref_: CosmosResourceReference = test_account().into();
-        assert_eq!(ref_.resource_type(), ResourceType::DatabaseAccount);
-        assert!(ref_.database().is_none());
-        assert!(ref_.container().is_none());
-        assert_eq!(ref_.resource_link(), String::new());
+        let account = test_account();
+        let r: CosmosResourceReference = account.into();
+        assert_eq!(r.resource_type(), ResourceType::DatabaseAccount);
+        assert!(r.container().is_none());
+        assert_eq!(r.link_for_signing(), "");
+        assert_eq!(r.request_path(), "");
     }
 
     #[test]
     fn from_database_reference() {
-        let ref_: CosmosResourceReference = test_database().into();
-        assert_eq!(ref_.resource_type(), ResourceType::Database);
-        assert!(ref_.database().is_some());
-        assert!(ref_.container().is_none());
-        assert_eq!(ref_.name(), Some("testdb"));
-        assert!(ref_.is_by_name());
-        assert_eq!(ref_.resource_link(), "/dbs/testdb".to_string());
+        let db = DatabaseReference::from_name(test_account(), "mydb");
+        let r: CosmosResourceReference = db.into();
+        assert_eq!(r.resource_type(), ResourceType::Database);
+        assert!(r.container().is_none());
+        assert_eq!(r.link_for_signing(), "/dbs/mydb");
+    }
+
+    #[test]
+    fn database_feed_reference() {
+        let account = test_account();
+        let r: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Database)
+            .into_feed_reference();
+        assert_eq!(r.resource_type(), ResourceType::Database);
+        // Signing link for database feed is the account (empty).
+        assert_eq!(r.link_for_signing(), "");
+        // Request path for database feed is /dbs.
+        assert_eq!(r.request_path(), "/dbs");
+    }
+
+    #[test]
+    fn container_feed_reference() {
+        let db = DatabaseReference::from_name(test_account(), "mydb");
+        let r: CosmosResourceReference = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .into_feed_reference();
+        // Signing link for container feed is the parent database.
+        assert_eq!(r.link_for_signing(), "/dbs/mydb");
+        // Request path includes the colls segment.
+        assert_eq!(r.request_path(), "/dbs/mydb/colls");
     }
 
     #[test]
     fn from_container_reference() {
-        let ref_: CosmosResourceReference = test_container().into();
-        assert_eq!(ref_.resource_type(), ResourceType::DocumentCollection);
-        assert!(ref_.database().is_some());
-        assert!(ref_.container().is_some());
-        assert_eq!(ref_.name(), Some("testcontainer"));
-        assert!(ref_.is_by_name());
-        assert_eq!(
-            ref_.resource_link(),
-            "/dbs/testdb/colls/testcontainer".to_string()
-        );
+        let r: CosmosResourceReference = test_container().into();
+        assert_eq!(r.resource_type(), ResourceType::DocumentCollection);
+        assert!(r.container().is_some());
+        assert_eq!(r.link_for_signing(), "/dbs/testdb/colls/testcontainer");
+    }
+
+    #[test]
+    fn item_feed_reference() {
+        let container = test_container();
+        let r: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        // Signing link for item feed is the container.
+        assert_eq!(r.link_for_signing(), "/dbs/testdb/colls/testcontainer");
+        // Request path includes docs segment.
+        assert_eq!(r.request_path(), "/dbs/testdb/colls/testcontainer/docs");
     }
 
     #[test]
     fn from_item_reference() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk"), "doc1");
-        let ref_: CosmosResourceReference = item_ref.into();
-        assert_eq!(ref_.resource_type(), ResourceType::Document);
-        assert!(ref_.database().is_some());
-        assert!(ref_.container().is_some());
-        assert_eq!(ref_.name(), Some("doc1"));
-        assert!(ref_.is_by_name());
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let r: CosmosResourceReference = item.into();
+        assert_eq!(r.resource_type(), ResourceType::Document);
+        assert!(r.container().is_some());
         assert_eq!(
-            ref_.resource_link(),
-            "/dbs/testdb/colls/testcontainer/docs/doc1".to_string()
+            r.link_for_signing(),
+            "/dbs/testdb/colls/testcontainer/docs/doc1"
         );
     }
 
     #[test]
-    fn from_stored_procedure_reference_name() {
-        let sproc_ref =
-            crate::models::StoredProcedureReference::from_name(&test_container(), "mysproc");
-        let ref_: CosmosResourceReference = sproc_ref.into();
-        assert_eq!(ref_.resource_type(), ResourceType::StoredProcedure);
-        assert_eq!(ref_.name(), Some("mysproc"));
-        assert!(ref_.is_by_name());
-        assert_eq!(
-            ref_.resource_link(),
-            "/dbs/testdb/colls/testcontainer/sprocs/mysproc".to_string()
-        );
-    }
-
-    #[test]
-    fn from_stored_procedure_reference_rid() {
-        let sproc_ref =
-            crate::models::StoredProcedureReference::from_rid(&test_container(), "sprocRid789");
-        let ref_: CosmosResourceReference = sproc_ref.into();
-
-        assert_eq!(ref_.resource_type(), ResourceType::StoredProcedure);
-        assert_eq!(ref_.rid(), Some("sprocRid789"));
-        assert!(ref_.is_by_rid());
-        assert_eq!(
-            ref_.resource_link(),
-            "/dbs/dbRid123/colls/collRid456/sprocs/sprocRid789".to_string()
-        );
+    fn read_container_by_name_reference() {
+        let db = DatabaseReference::from_name(test_account(), "mydb");
+        let r = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_name("mycontainer".into());
+        assert_eq!(r.resource_type(), ResourceType::DocumentCollection);
+        assert_eq!(r.link_for_signing(), "/dbs/mydb/colls/mycontainer");
     }
 
     #[test]
     fn from_stored_procedure_reference() {
-        let sproc_ref =
-            crate::models::StoredProcedureReference::from_name(&test_container(), "mysproc");
-        let ref_: CosmosResourceReference = sproc_ref.into();
-
-        assert_eq!(ref_.resource_type(), ResourceType::StoredProcedure);
-        assert_eq!(ref_.name(), Some("mysproc"));
-        assert!(ref_.is_by_name());
+        let sp = StoredProcedureReference::from_name(&test_container(), "mysproc");
+        let r: CosmosResourceReference = sp.into();
+        assert_eq!(r.resource_type(), ResourceType::StoredProcedure);
         assert_eq!(
-            ref_.resource_link(),
-            "/dbs/testdb/colls/testcontainer/sprocs/mysproc".to_string()
+            r.link_for_signing(),
+            "/dbs/testdb/colls/testcontainer/sprocs/mysproc"
         );
     }
 
     #[test]
     fn from_trigger_reference() {
-        let trigger_ref = TriggerReference::from_name(&test_container(), "mytrigger");
-        let ref_: CosmosResourceReference = trigger_ref.into();
-        assert_eq!(ref_.resource_type(), ResourceType::Trigger);
-        assert_eq!(ref_.name(), Some("mytrigger"));
-        assert!(ref_.is_by_name());
+        let trigger = TriggerReference::from_name(&test_container(), "mytrigger");
+        let r: CosmosResourceReference = trigger.into();
+        assert_eq!(r.resource_type(), ResourceType::Trigger);
         assert_eq!(
-            ref_.resource_link(),
-            "/dbs/testdb/colls/testcontainer/triggers/mytrigger".to_string()
+            r.link_for_signing(),
+            "/dbs/testdb/colls/testcontainer/triggers/mytrigger"
         );
     }
 
     #[test]
     fn from_udf_reference() {
-        let udf_ref = UdfReference::from_name(&test_container(), "myudf");
-        let ref_: CosmosResourceReference = udf_ref.into();
-        assert_eq!(ref_.resource_type(), ResourceType::UserDefinedFunction);
-        assert_eq!(ref_.name(), Some("myudf"));
-        assert!(ref_.is_by_name());
+        let udf = UdfReference::from_name(&test_container(), "myudf");
+        let r: CosmosResourceReference = udf.into();
+        assert_eq!(r.resource_type(), ResourceType::UserDefinedFunction);
         assert_eq!(
-            ref_.resource_link(),
-            "/dbs/testdb/colls/testcontainer/udfs/myudf".to_string()
+            r.link_for_signing(),
+            "/dbs/testdb/colls/testcontainer/udfs/myudf"
         );
-    }
-
-    #[test]
-    fn feed_scope_helpers() {
-        let db_ref: CosmosResourceReference = test_database().into();
-        let ref_ = db_ref
-            .with_resource_type(ResourceType::DocumentCollection)
-            .into_feed_reference();
-        assert_eq!(ref_.resource_type(), ResourceType::DocumentCollection);
-        assert!(ref_.database().is_some());
-        assert!(ref_.container().is_none());
-        assert_eq!(ref_.resource_link(), "/dbs/testdb/colls".to_string());
-    }
-
-    #[test]
-    fn link_for_signing_prefers_name_based() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk"), "doc1");
-        let ref_: CosmosResourceReference = item_ref.into();
-        assert_eq!(
-            ref_.link_for_signing(),
-            "/dbs/testdb/colls/testcontainer/docs/doc1"
-        );
-
-        let ref_: CosmosResourceReference = test_database().into();
-        assert_eq!(ref_.link_for_signing(), "/dbs/testdb");
-
-        let ref_: CosmosResourceReference = test_account().into();
-        assert_eq!(ref_.link_for_signing(), "");
-    }
-
-    #[test]
-    fn link_for_signing_falls_back_to_rid() {
-        let item_ref =
-            ItemReference::from_rid(&test_container(), PartitionKey::from("pk"), "docRid789");
-        let ref_: CosmosResourceReference = item_ref.into();
-        assert_eq!(
-            ref_.link_for_signing(),
-            "/dbs/dbRid123/colls/collRid456/docs/docRid789"
-        );
-    }
-
-    #[test]
-    fn request_path_matches_link_for_signing() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk"), "doc1");
-        let ref_: CosmosResourceReference = item_ref.into();
-        assert_eq!(ref_.request_path(), ref_.link_for_signing());
-
-        let ref_: CosmosResourceReference = test_database().into();
-        assert_eq!(ref_.request_path(), ref_.link_for_signing());
     }
 }

@@ -41,6 +41,14 @@ impl DatabaseReference {
         }
     }
 
+    /// Creates a new database reference by RID.
+    pub fn from_rid(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            account,
+            id: ResourceIdentifier::ByRid(ResourceId::new(rid)),
+        }
+    }
+
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
         &self.account
@@ -198,14 +206,6 @@ impl ContainerReference {
     /// Returns the partition key definition for this container.
     pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition {
         &self.partition_key_definition
-    }
-
-    /// Returns a `DatabaseReference` for the parent database (name-based).
-    pub(crate) fn database(&self) -> DatabaseReference {
-        DatabaseReference {
-            account: self.account.clone(),
-            id: ResourceIdentifier::ByName(self.db_name.clone()),
-        }
     }
 
     /// Returns the name-based relative path: `/dbs/{db_name}/colls/{container_name}`
@@ -645,8 +645,13 @@ mod tests {
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "test-key",
         );
-        let partition_key = PartitionKeyDefinition::new(["/tenantId"]);
-        let container_properties = ContainerProperties::new("my-container", partition_key);
+        let partition_key: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/tenantId"]}"#).unwrap();
+        let container_properties = ContainerProperties {
+            id: "my-container".into(),
+            partition_key,
+            system_properties: Default::default(),
+        };
 
         ContainerReference::new(
             account,

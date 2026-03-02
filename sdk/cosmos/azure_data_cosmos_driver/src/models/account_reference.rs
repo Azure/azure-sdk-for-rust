@@ -26,6 +26,14 @@ impl AccountEndpoint {
         &self.0
     }
 
+    /// Returns the host portion of the endpoint URL.
+    ///
+    /// Returns an empty string if the URL has no host (which shouldn't
+    /// happen for valid Cosmos DB endpoints).
+    pub(crate) fn host(&self) -> &str {
+        self.0.host_str().unwrap_or("")
+    }
+
     /// Joins a resource path to this endpoint to create a full request URL.
     ///
     /// The path should be the resource path (e.g., "/dbs/mydb/colls/mycoll").
@@ -52,6 +60,12 @@ impl PartialEq for AccountEndpoint {
 }
 
 impl Eq for AccountEndpoint {}
+
+impl std::fmt::Display for AccountEndpoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0.as_str())
+    }
+}
 
 impl Hash for AccountEndpoint {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -143,10 +157,10 @@ pub struct AccountReference {
     /// The service endpoint URL (required).
     endpoint: AccountEndpoint,
     /// Authentication credentials (required).
-    auth: Credential,
+    credential: Credential,
 }
 
-// Manual PartialEq implementation because Credential contains Arc<dyn TokenCredential>
+// Manual PartialEq implementation because AuthOptions contains Arc<dyn TokenCredential>
 // which doesn't implement PartialEq. We compare by endpoint only.
 impl PartialEq for AccountReference {
     fn eq(&self, other: &Self) -> bool {
@@ -177,7 +191,7 @@ impl AccountReference {
     pub fn with_master_key(endpoint: Url, key: impl Into<Secret>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: Credential::MasterKey(key.into()),
+            credential: Credential::MasterKey(key.into()),
         }
     }
 
@@ -187,7 +201,7 @@ impl AccountReference {
     pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: Credential::TokenCredential(credential),
+            credential: Credential::TokenCredential(credential),
         }
     }
 
@@ -200,7 +214,7 @@ impl AccountReference {
     ///
     /// Authentication is always present - it's required during construction.
     pub fn auth(&self) -> &Credential {
-        &self.auth
+        &self.credential
     }
 }
 
@@ -225,7 +239,7 @@ impl AccountReference {
 #[non_exhaustive]
 pub struct AccountReferenceBuilder {
     endpoint: AccountEndpoint,
-    auth: Option<Credential>,
+    credential: Option<Credential>,
 }
 
 impl AccountReferenceBuilder {
@@ -233,7 +247,7 @@ impl AccountReferenceBuilder {
     pub fn new(endpoint: Url) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: None,
+            credential: None,
         }
     }
 
@@ -245,19 +259,19 @@ impl AccountReferenceBuilder {
 
     /// Sets master key authentication.
     pub fn master_key(mut self, key: impl Into<Secret>) -> Self {
-        self.auth = Some(Credential::MasterKey(key.into()));
+        self.credential = Some(Credential::MasterKey(key.into()));
         self
     }
 
     /// Sets token credential authentication.
     pub fn credential(mut self, credential: Arc<dyn TokenCredential>) -> Self {
-        self.auth = Some(Credential::TokenCredential(credential));
+        self.credential = Some(Credential::TokenCredential(credential));
         self
     }
 
     /// Sets authentication options directly.
-    pub fn auth(mut self, auth: Credential) -> Self {
-        self.auth = Some(auth);
+    pub fn auth(mut self, credential: Credential) -> Self {
+        self.credential = Some(credential);
         self
     }
 
@@ -267,7 +281,7 @@ impl AccountReferenceBuilder {
     ///
     /// Returns an error if authentication has not been configured.
     pub fn build(self) -> azure_core::Result<AccountReference> {
-        let auth = self.auth.ok_or_else(|| {
+        let credential = self.credential.ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Credential,
                 "Authentication is required. Use master_key() or credential() to set credentials.",
@@ -276,7 +290,7 @@ impl AccountReferenceBuilder {
 
         Ok(AccountReference {
             endpoint: self.endpoint,
-            auth,
+            credential,
         })
     }
 }
@@ -309,6 +323,13 @@ mod tests {
         let url = endpoint.join_path("");
         // Empty path is normalized to "/" by the URL library
         assert_eq!(url.path(), "/");
+    }
+
+    #[test]
+    fn account_endpoint_host() {
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+        assert_eq!(endpoint.host(), "myaccount.documents.azure.com");
     }
 
     #[test]

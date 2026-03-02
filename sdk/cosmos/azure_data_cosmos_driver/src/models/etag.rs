@@ -41,6 +41,12 @@ impl From<Cow<'static, str>> for ETag {
     }
 }
 
+impl AsRef<str> for ETag {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl std::fmt::Display for ETag {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
