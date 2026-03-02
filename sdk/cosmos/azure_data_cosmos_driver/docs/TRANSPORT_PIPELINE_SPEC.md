@@ -1222,7 +1222,7 @@ fn sweep_partition_health(
 defaults):
 - Consecutive read failures before trip: 2
 - Consecutive write failures before trip: 5
-- Counter reset window: 5 minutes
+- Counter reset window: 300 seconds
 - Background failback interval: 300 seconds
 - Partition unavailability duration before probe: 5 seconds
 
@@ -2373,7 +2373,7 @@ pub struct CircuitBreakerOptions {
     pub read_failure_threshold: Option<u32>,
     /// Consecutive write failures before tripping. Default: 5.
     pub write_failure_threshold: Option<u32>,
-    /// Counter reset window. Default: 5 minutes.
+    /// Counter reset window. Default: 300 seconds.
     pub counter_reset_window: Option<Duration>,
     /// Background failback interval. Default: 300 seconds.
     pub failback_interval: Option<Duration>,
