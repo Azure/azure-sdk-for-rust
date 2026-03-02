@@ -1124,10 +1124,10 @@ pub(crate) struct PartitionRegionKey {
 pub(crate) struct PartitionCircuitBreaker {
     /// When this partition was marked unavailable.
     pub marked_at: Instant,
-    /// Consecutive read failure count.
-    pub consecutive_read_failures: u32,
-    /// Consecutive write failure count.
-    pub consecutive_write_failures: u32,
+    /// Read failure count within the counter reset window.
+    pub read_failure_count: u32,
+    /// Write failure count within the counter reset window.
+    pub write_failure_count: u32,
     /// Last failure timestamp.
     pub last_failure: Instant,
     /// Whether the circuit is currently open (tripped).
@@ -1151,11 +1151,11 @@ pub(crate) struct UnavailablePartition {
 /// with defaults applied.
 #[derive(Clone, Debug)]
 pub(crate) struct CircuitBreakerOptions {
-    /// Consecutive read failures before tripping. Default: 2.
+    /// Read failures within the counter reset window before tripping. Default: 2.
     pub read_failure_threshold: u32,
-    /// Consecutive write failures before tripping. Default: 5.
+    /// Write failures within the counter reset window before tripping. Default: 5.
     pub write_failure_threshold: u32,
-    /// Window after which consecutive failure counters reset. Default: 5 min.
+    /// Window after which failure counters reset if no new failures occur. Default: 300 seconds.
     pub counter_reset_window: Duration,
     /// How long a partition stays unavailable before a probe attempt. Default: 5s.
     pub unavailability_probe_delay: Duration,
@@ -1191,8 +1191,8 @@ fn mark_partition_unavailable(
 ) -> PartitionEndpointState;
 
 // SYSTEM: Record a failure against a partition/region.
-// Increments the consecutive failure counter and trips the circuit
-// if the threshold is exceeded.
+// Increments the failure counter for the current window and trips
+// the circuit if the threshold is exceeded.
 fn record_partition_failure(
     state: &PartitionEndpointState,
     key: &PartitionRegionKey,
@@ -1200,8 +1200,10 @@ fn record_partition_failure(
     now: Instant,
 ) -> PartitionEndpointState;
 
-// SYSTEM: Record a success — resets the consecutive failure counter
-// and closes the circuit for the given partition/region.
+// SYSTEM: Record a success — closes the circuit for the given
+// partition/region. Failure counters are not reset on success;
+// they expire naturally when the counter reset window elapses
+// without new failures.
 fn record_partition_success(
     state: &PartitionEndpointState,
     key: &PartitionRegionKey,
@@ -1220,8 +1222,8 @@ fn sweep_partition_health(
 
 **Key circuit-breaker thresholds** (from Java SDK reference, used as `CircuitBreakerOptions`
 defaults):
-- Consecutive read failures before trip: 2
-- Consecutive write failures before trip: 5
+- Read failures (in window) before trip: 2
+- Write failures (in window) before trip: 5
 - Counter reset window: 300 seconds
 - Background failback interval: 300 seconds
 - Partition unavailability duration before probe: 5 seconds
@@ -2369,11 +2371,11 @@ active; these options tune its behavior when enabled.
 #[derive(CosmosOptions)]
 #[options(layers(runtime, account))]
 pub struct CircuitBreakerOptions {
-    /// Consecutive read failures before tripping. Default: 2.
+    /// Read failures within the counter reset window before tripping. Default: 2.
     pub read_failure_threshold: Option<u32>,
-    /// Consecutive write failures before tripping. Default: 5.
+    /// Write failures within the counter reset window before tripping. Default: 5.
     pub write_failure_threshold: Option<u32>,
-    /// Counter reset window. Default: 300 seconds.
+    /// Window after which failure counters reset if no new failures occur. Default: 300 seconds.
     pub counter_reset_window: Option<Duration>,
     /// Background failback interval. Default: 300 seconds.
     pub failback_interval: Option<Duration>,
@@ -2384,9 +2386,9 @@ pub struct CircuitBreakerOptions {
 
 | Option                       | Type               | Env Var                                      | Notes                                                                 |
 |------------------------------|--------------------|----------------------------------------------|-----------------------------------------------------------------------|
-| `read_failure_threshold`     | `Option<u32>`      | `AZURE_COSMOS_CB_READ_FAILURE_THRESHOLD`     | Trips after N consecutive read failures.                              |
-| `write_failure_threshold`    | `Option<u32>`      | `AZURE_COSMOS_CB_WRITE_FAILURE_THRESHOLD`    | Trips after N consecutive write failures.                             |
-| `counter_reset_window`       | `Option<Duration>` | `AZURE_COSMOS_CB_COUNTER_RESET_WINDOW`       | Resets consecutive-failure counters after this period of no failures. |
+| `read_failure_threshold`     | `Option<u32>`      | `AZURE_COSMOS_CB_READ_FAILURE_THRESHOLD`     | Trips after N read failures within the counter reset window.          |
+| `write_failure_threshold`    | `Option<u32>`      | `AZURE_COSMOS_CB_WRITE_FAILURE_THRESHOLD`    | Trips after N write failures within the counter reset window.         |
+| `counter_reset_window`       | `Option<Duration>` | `AZURE_COSMOS_CB_COUNTER_RESET_WINDOW`       | Resets failure counters after this period of no new failures.         |
 | `failback_interval`          | `Option<Duration>` | `AZURE_COSMOS_CB_FAILBACK_INTERVAL`          | How often the background sweep probes tripped partitions.             |
 | `unavailability_probe_delay` | `Option<Duration>` | `AZURE_COSMOS_CB_UNAVAILABILITY_PROBE_DELAY` | Time a partition must be unavailable before the first probe.          |
 
