@@ -15,7 +15,7 @@ use azure_core::Error;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Mutex, OnceLock, Weak};
 use tracing::info;
 use url::Url;
 
@@ -44,8 +44,11 @@ pub(crate) struct GlobalEndpointManager {
     /// Cache for account properties with 600 second TTL to reduce redundant service calls
     account_properties_cache: AsyncCache<&'static str, AccountProperties>,
 
-    /// Optional callback invoked when account properties are refreshed via HTTP call
-    on_account_refresh: Mutex<Option<OnAccountRefreshCallback>>,
+    /// Optional callback invoked when account properties are refreshed via HTTP call.
+    /// Uses `OnceLock` because the callback is registered exactly once during client
+    /// construction and never changes afterward. This avoids the need for a `Mutex`
+    /// (which is error-prone in async code) and is completely lock-free on reads.
+    on_account_refresh: OnceLock<OnAccountRefreshCallback>,
 
     /// Flag indicating if the background connection initialization task is active.
     background_account_refresh_active: AtomicBool,
@@ -108,7 +111,7 @@ impl GlobalEndpointManager {
             location_cache,
             pipeline,
             account_properties_cache,
-            on_account_refresh: Mutex::new(None),
+            on_account_refresh: OnceLock::new(),
             background_account_refresh_active: AtomicBool::new(false),
             background_task_manager: BackgroundTaskManager::new(),
             background_account_refresh_interval: Duration::seconds(
@@ -126,11 +129,15 @@ impl GlobalEndpointManager {
     /// fetches new account properties from the service (not when serving from cache). This is useful
     /// for updating partition-level failover configurations when account properties change.
     ///
+    /// This method must be called at most once (during client construction). Subsequent calls
+    /// are silently ignored because the callback slot is backed by a [`OnceLock`].
+    ///
     /// # Arguments
     /// * `callback` - The callback function to invoke with the refreshed account properties
     pub fn set_on_account_refresh_callback(&self, callback: OnAccountRefreshCallback) {
-        let mut guard = self.on_account_refresh.lock().unwrap();
-        *guard = Some(callback);
+        // OnceLock::set returns Err if already initialized; we intentionally ignore that
+        // because the callback is expected to be set exactly once.
+        let _ = self.on_account_refresh.set(callback);
     }
 
     /// Returns the default hub endpoint URL for the Cosmos DB account.
@@ -349,17 +356,11 @@ impl GlobalEndpointManager {
             )
             .await?;
 
-        // Invoke the registered callback if an HTTP call was made
+        // Invoke the registered callback if an HTTP call was made.
+        // `OnceLock::get` is lock-free, so this is safe to call from async code.
         let was_http_call_made = http_call_made.load(Ordering::SeqCst);
         if was_http_call_made {
-            // Clone the callback out of the mutex, then drop the lock before invoking it
-            // to avoid holding the mutex during arbitrary user code (prevents potential deadlocks).
-            let callback = {
-                let guard = self.on_account_refresh.lock().unwrap();
-                guard.as_ref().map(Arc::clone)
-            };
-
-            if let Some(callback) = callback {
+            if let Some(callback) = self.on_account_refresh.get() {
                 callback(&account_properties);
             }
         }
