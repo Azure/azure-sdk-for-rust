@@ -199,10 +199,13 @@ dependencies = [
  "azure_core_macros 0.6.0",
  "bytes",
  "futures",
+ "hmac",
+ "openssl",
  "pin-project",
  "rustc_version",
  "serde",
  "serde_json",
+ "sha2",
  "tracing",
  "typespec 0.12.0",
  "typespec_client_core 0.11.0",
@@ -216,7 +219,7 @@ dependencies = [
  "async-trait",
  "azure_core_macros 0.7.0",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_security_keyvault_certificates",
  "azure_security_keyvault_secrets",
  "bytes",
@@ -295,7 +298,7 @@ dependencies = [
  "azure_core 0.33.0",
  "azure_core_test",
  "azure_core_test_macros",
- "azure_identity",
+ "azure_identity 0.33.0",
  "opentelemetry",
  "opentelemetry_sdk",
  "tokio",
@@ -310,7 +313,7 @@ dependencies = [
  "async-trait",
  "azure_core 0.33.0",
  "azure_core_test_macros",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_security_keyvault_secrets",
  "clap",
  "dotenvy",
@@ -343,13 +346,13 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.31.0"
+version = "0.32.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.32.0",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.32.0",
  "clap",
  "futures",
  "pin-project",
@@ -370,7 +373,7 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core 0.33.0",
- "azure_identity",
+ "azure_identity 0.33.0",
  "base64 0.22.1",
  "futures",
  "reqwest",
@@ -402,9 +405,9 @@ name = "azure_data_cosmos_perf"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.32.0",
  "azure_data_cosmos",
- "azure_identity",
+ "azure_identity 0.32.0",
  "clap",
  "futures",
  "hdrhistogram",
@@ -414,6 +417,24 @@ dependencies = [
  "sysinfo",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "azure_identity"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "825f8df144a4dc10dc6e81014906568363ef8e2b94c9234ddb951675161eb972"
+dependencies = [
+ "async-lock",
+ "async-trait",
+ "azure_core 0.32.0",
+ "futures",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "time",
+ "tracing",
+ "url",
 ]
 
 [[package]]
@@ -451,7 +472,7 @@ dependencies = [
  "azure_core 0.33.0",
  "azure_core_amqp",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_messaging_eventhubs",
  "criterion",
  "fe2o3-amqp",
@@ -472,7 +493,7 @@ dependencies = [
  "azure_core 0.33.0",
  "azure_core_opentelemetry",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_messaging_eventhubs",
  "azure_storage_blob",
  "futures",
@@ -498,7 +519,7 @@ dependencies = [
  "azure_core 0.33.0",
  "azure_core_amqp",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_messaging_servicebus",
  "futures",
  "rand 0.10.0",
@@ -519,7 +540,7 @@ dependencies = [
  "async-trait",
  "azure_core 0.33.0",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -541,7 +562,7 @@ dependencies = [
  "async-trait",
  "azure_core 0.33.0",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_security_keyvault_test",
  "criterion",
  "futures",
@@ -564,7 +585,7 @@ dependencies = [
  "async-trait",
  "azure_core 0.33.0",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_security_keyvault_test",
  "futures",
  "include-file",
@@ -592,7 +613,7 @@ dependencies = [
  "azure_core 0.33.0",
  "azure_core_opentelemetry",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "azure_storage_blob_test",
  "bytes",
  "futures",
@@ -635,7 +656,7 @@ dependencies = [
  "azure_core 0.33.0",
  "azure_core_opentelemetry",
  "azure_core_test",
- "azure_identity",
+ "azure_identity 0.33.0",
  "futures",
  "opentelemetry-stdout",
  "opentelemetry_sdk",
