@@ -39,7 +39,7 @@ $TspClientDir = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'common', 'tsp-clie
 
 # Install tsp-client if not already in PATH.
 if (-not (Get-Command tsp-client -ErrorAction SilentlyContinue)) {
-  Invoke-LoggedCommand "npm ci --no-fund --no-audit --prefix $TspClientDir" -GroupOutput
+  Invoke-LoggedCommand "npm ci --no-fund --no-audit --prefix `"$TspClientDir`"" -GroupOutput
 }
 
 function Invoke-TspClient {
@@ -48,7 +48,7 @@ function Invoke-TspClient {
   $cmd = if (Get-Command tsp-client -ErrorAction SilentlyContinue) {
     "tsp-client $($Arguments -join ' ')"
   } else {
-    "npm exec --prefix $TspClientDir --no -- tsp-client $($Arguments -join ' ')"
+    "npm exec --prefix `"$TspClientDir`" --no -- tsp-client $($Arguments -join ' ')"
   }
 
   Invoke-LoggedCommand $cmd -GroupOutput
@@ -95,7 +95,7 @@ if ($currentVersion -eq $latestVersion) {
 # Regenerate all SDK clients if requested.
 if ($Regenerate) {
   $sdkPath = ([System.IO.Path]::Combine($RepoRoot, 'sdk'))
-  $tspFiles = Get-ChildItem -Path $sdkPath -Recurse -Filter 'tsp-location.yaml'
+  [array]$tspFiles = Get-ChildItem -Path $sdkPath -Recurse -Filter 'tsp-location.yaml'
 
   if ($tspFiles.Count -eq 0) {
     Write-Host "No tsp-location.yaml files found under sdk/"
