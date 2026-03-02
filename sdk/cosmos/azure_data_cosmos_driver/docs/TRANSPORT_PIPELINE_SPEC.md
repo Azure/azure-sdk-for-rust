@@ -2206,7 +2206,7 @@ retry, and routing code is removed.
 
 This section describes the new transport-pipeline options introduced by this spec. All option
 types follow the conventions defined in the
-[Configuration Options Specification](ConfigurationOptions.md):
+[Configuration Options Specification](https://aka.ms/rust_azure_data_cosmos_ConfigurationOptions):
 
 - All fields `pub`, all `Option<T>`, `#[non_exhaustive]`, `Default`, fluent `with_*` setters.
 - `#[derive(CosmosOptions)]` generates `View` structs, `from_env()`, and builders.
