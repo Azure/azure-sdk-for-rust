@@ -703,7 +703,17 @@ async fn execute_hedged(
             evaluate_and_return(operation, result, diagnostics)
         }
         _ = sleep(hedging_threshold) => {
-            // Primary still pending - start secondary
+            // Primary still pending — start secondary in another region.
+            //
+            // The hedged attempt inherits the *same* e2e deadline as the
+            // primary. By the time we reach this branch at least
+            // `hedging_threshold` has elapsed, so the remaining budget is
+            // `deadline - Instant::now()`. We do NOT recompute a fresh
+            // deadline here — `build_transport_request` + the transport
+            // pipeline already enforce the original deadline by clamping
+            // the per-request timeout to `deadline - now` (see §5.1).
+            // If the deadline has already passed, the transport pipeline
+            // will return immediately with a timeout error.
             let secondary_req = build_transport_request(
                 operation, secondary_routing, session, options, deadline,
             ).with_execution_context(ExecutionContext::Hedging);
@@ -712,7 +722,7 @@ async fn execute_hedged(
                 secondary_req, transport, auth_context, diagnostics,
             );
 
-            // Race primary vs secondary - first successful response wins
+            // Race primary vs secondary — first successful response wins
             // (or first to complete if both error)
             tokio::select! {
                 primary_result = primary_fut => {
@@ -760,6 +770,20 @@ async fn execute_hedged(
   within the configured threshold.
 - Both attempts are tracked in `DiagnosticsContext`
 - The hedged attempt's RU charge is always reported regardless of which wins
+- **Deadline enforcement**: The hedged attempt shares the original e2e deadline.
+  By the time the hedged attempt starts, at least `hedging_threshold` has
+  elapsed, so the remaining budget is `deadline − now`. The transport pipeline
+  enforces this by clamping the per-request timeout to `deadline − Instant::now()`
+  before each HTTP call. If the deadline has already passed, the transport
+  pipeline returns immediately with a timeout error — no unnecessary network
+  I/O is performed.
+- **Single secondary region**: Currently hedging is limited to one secondary
+  region per operation. Architecturally nothing prevents hedging to a 3rd or
+  4th region, but in practice multi-region outages (where more than one region
+  fails simultaneously) are rare, and the cost of additional speculative
+  requests (extra RU charges, additional network traffic) grows linearly.
+  Limiting to one hedged attempt keeps the blast radius predictable. This
+  constraint can be relaxed in a future iteration if telemetry shows a need.
 
 ### 4.3 `evaluate_transport_result` Decision Tree
 
