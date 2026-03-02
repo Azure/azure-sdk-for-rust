@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.32.0"
+version = "0.31.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -16,7 +16,7 @@ categories = ["api-bindings"]
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core = { version = "0.32.0", default-features = false }
+azure_core.workspace = true
 futures.workspace = true
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
@@ -27,7 +27,7 @@ url.workspace = true
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity = { version = "0.32.0" }
+azure_identity.workspace = true
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 time.workspace = true
@@ -53,5 +53,4 @@ features = [
   "hmac_rust",
   "hmac_openssl",
   "allow_invalid_certificates",
-  "fault_injection",
 ]
