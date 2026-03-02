@@ -159,13 +159,11 @@ pub(crate) struct PartitionOverride {
 /// COMPONENT: Operation-level retry/failover state.
 /// Accumulated across attempts. Replaced (not mutated) between attempts.
 pub(crate) struct OperationRetryState {
-    /// Index into the preferred endpoint list for round-robin failover.
-    /// This indexes into the `LocationSnapshot` (§3.1) which bundles
-    /// `AccountEndpointState` (§4.4) and `PartitionEndpointState` (§4.5).
-    /// The snapshot is replaced atomically on refresh — it is never mutated
-    /// in place — so the index remains stable for the lifetime of one
-    /// operation attempt.
-    pub location_index: usize,
+    /// Type-safe index into the preferred endpoint list for round-robin
+    /// failover. Bundles a numeric index with a generation counter so
+    /// `resolve_endpoint` can detect stale references after an account
+    /// metadata refresh (see `LocationIndex`).
+    pub location: LocationIndex,
     /// Regions/endpoints that have already been tried and failed.
     pub failed_endpoints: Vec<FailedEndpoint>,
     /// How many failover retries have been attempted.
@@ -176,6 +174,57 @@ pub(crate) struct OperationRetryState {
     pub can_use_multiple_write_locations: bool,
     /// Excluded regions for this operation.
     pub excluded_regions: Vec<RegionName>,
+}
+
+/// COMPONENT: Type-safe index into a preferred endpoint list.
+///
+/// Bundles the numeric position with a `generation` counter from the
+/// `AccountEndpointState` that produced it. The generation advances
+/// each time the preferred endpoint list is rebuilt (e.g., after an
+/// account metadata refresh triggered by `LocationEffect::RefreshAccountProperties`).
+///
+/// `resolve_endpoint` compares the generation in the `LocationIndex`
+/// with the generation in the current `LocationSnapshot`. On mismatch
+/// (the endpoint list changed), it resets the index to 0 and uses the
+/// fresh list — preventing out-of-bounds access or stale region ordering.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct LocationIndex {
+    /// Position in the preferred endpoint list.
+    index: usize,
+    /// Monotonically increasing counter tied to the
+    /// `AccountEndpointState` that produced this index.
+    generation: u64,
+}
+
+impl LocationIndex {
+    /// Create an index at position 0 for the given generation.
+    pub fn initial(generation: u64) -> Self {
+        Self { index: 0, generation }
+    }
+
+    /// Advance to the next endpoint in the list (wrapping).
+    pub fn next(self, list_len: usize) -> Self {
+        Self {
+            index: (self.index + 1) % list_len,
+            generation: self.generation,
+        }
+    }
+
+    /// The numeric index.
+    pub fn index(self) -> usize {
+        self.index
+    }
+
+    /// The generation this index was created for.
+    pub fn generation(self) -> u64 {
+        self.generation
+    }
+
+    /// Whether this index is current for the given generation.
+    /// When stale, `resolve_endpoint` resets to index 0.
+    pub fn is_current(self, generation: u64) -> bool {
+        self.generation == generation
+    }
 }
 
 pub(crate) struct FailedEndpoint {
@@ -328,6 +377,11 @@ Each stage is a function with an explicit, narrow signature:
 // SYSTEM: Resolve which endpoint to send this attempt to.
 // Pure function over an immutable LocationSnapshot — no manager or store
 // references. The snapshot is acquired once per loop iteration.
+//
+// Stale-index handling: if `retry_state.location.generation` does not
+// match `location.account.generation`, the endpoint list has changed
+// since the LocationIndex was created. In that case, the function
+// resets the index to 0 and uses the fresh list from the snapshot.
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
@@ -897,6 +951,10 @@ Following the DOP principle, the account-level endpoint routing is split into:
 /// of that attempt.
 #[derive(Clone, Debug)]
 pub(crate) struct AccountEndpointState {
+    /// Monotonically increasing counter, incremented each time the
+    /// preferred endpoint lists are rebuilt (e.g., after a metadata
+    /// refresh). Used by `LocationIndex` for stale-detection.
+    pub generation: u64,
     /// Ordered list of endpoints preferred for read operations, based on
     /// the account's configured preferred locations and available regions.
     pub preferred_read_endpoints: Vec<CosmosEndpoint>,
@@ -970,10 +1028,15 @@ pub(crate) enum EndpointKind {
 ```rust
 // SYSTEM: Build an initial AccountEndpointState from account properties.
 // Called at client init and on background metadata refresh.
+// `previous_generation` is `None` on first init (generation starts at 0)
+// and `Some(prev.generation)` on refresh — the returned state uses
+// `previous_generation.map_or(0, |g| g + 1)` so `LocationIndex` holders
+// can detect stale references.
 fn build_account_endpoint_state(
     properties: &AccountProperties,
     preferred_locations: &[RegionName],
     default_endpoint: CosmosEndpoint,
+    previous_generation: Option<u64>,
 ) -> AccountEndpointState;
 
 // SYSTEM: Produce a new state with an endpoint marked unavailable.
@@ -1989,13 +2052,13 @@ single region with basic 429 retry. The architecture is in place for incremental
 
 Add cross-region failover, `AccountEndpointState` + routing systems, and the `AccountMetadataCache` integration.
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                                      |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`. | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                      | Files                                                                      |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                                  | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
 | 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
-| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                           | `driver/transport/transport_pipeline.rs`                                   |
-| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                             | `options/retry.rs`, `options/availability.rs`                              |
-| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                   | `tests/`                                                                   |
+| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `driver/transport/transport_pipeline.rs`                                   |
+| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                                                              | `options/retry.rs`, `options/availability.rs`                              |
+| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                                                    | `tests/`                                                                   |
 
 **What works after Step 2**: Full multi-region failover, 403.3 recovery with cache refresh,
 session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit breaker.
