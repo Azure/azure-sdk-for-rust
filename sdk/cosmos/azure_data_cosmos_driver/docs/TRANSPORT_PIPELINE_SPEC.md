@@ -2384,13 +2384,13 @@ pub struct CircuitBreakerOptions {
 }
 ```
 
-| Option                       | Type               | Env Var                                      | Notes                                                                 |
-|------------------------------|--------------------|----------------------------------------------|-----------------------------------------------------------------------|
-| `read_failure_threshold`     | `Option<u32>`      | `AZURE_COSMOS_CB_READ_FAILURE_THRESHOLD`     | Trips after N read failures within the counter reset window.          |
-| `write_failure_threshold`    | `Option<u32>`      | `AZURE_COSMOS_CB_WRITE_FAILURE_THRESHOLD`    | Trips after N write failures within the counter reset window.         |
-| `counter_reset_window`       | `Option<Duration>` | `AZURE_COSMOS_CB_COUNTER_RESET_WINDOW`       | Resets failure counters after this period of no new failures.         |
-| `failback_interval`          | `Option<Duration>` | `AZURE_COSMOS_CB_FAILBACK_INTERVAL`          | How often the background sweep probes tripped partitions.             |
-| `unavailability_probe_delay` | `Option<Duration>` | `AZURE_COSMOS_CB_UNAVAILABILITY_PROBE_DELAY` | Time a partition must be unavailable before the first probe.          |
+| Option                       | Type               | Env Var                                      | Notes                                                         |
+|------------------------------|--------------------|----------------------------------------------|---------------------------------------------------------------|
+| `read_failure_threshold`     | `Option<u32>`      | `AZURE_COSMOS_CB_READ_FAILURE_THRESHOLD`     | Trips after N read failures within the counter reset window.  |
+| `write_failure_threshold`    | `Option<u32>`      | `AZURE_COSMOS_CB_WRITE_FAILURE_THRESHOLD`    | Trips after N write failures within the counter reset window. |
+| `counter_reset_window`       | `Option<Duration>` | `AZURE_COSMOS_CB_COUNTER_RESET_WINDOW`       | Resets failure counters after this period of no new failures. |
+| `failback_interval`          | `Option<Duration>` | `AZURE_COSMOS_CB_FAILBACK_INTERVAL`          | How often the background sweep probes tripped partitions.     |
+| `unavailability_probe_delay` | `Option<Duration>` | `AZURE_COSMOS_CB_UNAVAILABILITY_PROBE_DELAY` | Time a partition must be unavailable before the first probe.  |
 
 ### 9.5 Integration with Layer Structs
 
