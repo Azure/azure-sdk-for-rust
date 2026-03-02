@@ -1,8 +1,9 @@
 use async_lock::RwLock;
+use azure_core::time::Duration;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// Cache entry with optional TTL tracking
 #[derive(Clone, Debug)]
@@ -165,7 +166,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_and_compute() {
-        let cache = AsyncCache::new(Some(Duration::from_secs(60)));
+        let cache = AsyncCache::new(Some(Duration::seconds(60)));
 
         let compute_count = Arc::new(AtomicUsize::new(0));
         let count_clone = compute_count.clone();
@@ -205,7 +206,7 @@ mod tests {
 
     #[tokio::test]
     async fn key_expiration() {
-        let cache = AsyncCache::new(Some(Duration::from_secs(60)));
+        let cache = AsyncCache::new(Some(Duration::seconds(60)));
 
         // Add entry
         cache
@@ -221,7 +222,7 @@ mod tests {
         {
             let mut store = cache.store.write().await;
             if let Some(entry) = store.get_mut(&"key1".to_string()) {
-                entry.expires_at = Some(Instant::now() - Duration::from_secs(1));
+                entry.expires_at = Some(Instant::now() - Duration::seconds(1));
             }
         }
 
@@ -240,7 +241,7 @@ mod tests {
 
     #[tokio::test]
     async fn key_remove() {
-        let cache = AsyncCache::new(Some(Duration::from_secs(60)));
+        let cache = AsyncCache::new(Some(Duration::seconds(60)));
 
         // Add entry
         cache
@@ -277,7 +278,7 @@ mod tests {
 
     #[tokio::test]
     async fn force_refresh() {
-        let cache = AsyncCache::new(Some(Duration::from_secs(60)));
+        let cache = AsyncCache::new(Some(Duration::seconds(60)));
 
         let compute_count = Arc::new(AtomicUsize::new(0));
         let count_clone = compute_count.clone();
@@ -349,7 +350,7 @@ mod tests {
 
     #[tokio::test]
     async fn conditional_refresh_based_on_cached_value() {
-        let cache = AsyncCache::new(Some(Duration::from_secs(60)));
+        let cache = AsyncCache::new(Some(Duration::seconds(60)));
 
         // First get - cache is empty, should_refresh receives None
         let value = cache
