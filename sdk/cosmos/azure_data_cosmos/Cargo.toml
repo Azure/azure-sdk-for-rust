@@ -39,7 +39,7 @@ workspace = true
 
 [features]
 default = ["hmac_rust", "reqwest"]
-reqwest = ["dep:reqwest", "azure_core/reqwest"]
+reqwest = ["dep:reqwest", "azure_core/reqwest", "azure_core/tokio"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 hmac_rust = ["azure_core/hmac_rust"]

@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::time::Instant;
 
 use crate::background_task_manager::BackgroundTaskManager;
+use crate::constants;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::resource_context::ResourceType;
@@ -141,7 +142,7 @@ impl GlobalPartitionEndpointManager {
     /// Reads from the `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS`
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn allowed_partition_unavailability_duration_secs(default: i64) -> i64 {
-        std::env::var("AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS")
+        std::env::var(constants::AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS)
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(default)
@@ -155,7 +156,7 @@ impl GlobalPartitionEndpointManager {
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn stale_partition_unavailability_refresh_interval_secs(default: i64) -> i64 {
         std::env::var(
-            "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS",
+            constants::AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS,
         )
         .ok()
         .and_then(|v| v.parse().ok())
@@ -806,6 +807,38 @@ impl GlobalPartitionEndpointManager {
             partition_failover.can_circuit_breaker_trigger_partition_failover(is_read_only)
         }
     }
+
+    /// Sets whether per partition automatic failover is enabled.
+    ///
+    /// Only logs when the value actually changes to avoid noisy repeated logs
+    /// during periodic account refresh.
+    pub fn configure_partition_level_automatic_failover(&self, is_enabled: bool) {
+        let previous = self
+            .partition_level_automatic_failover_enabled
+            .swap(is_enabled, Ordering::SeqCst);
+        if previous != is_enabled {
+            info!(
+                "Per partition automatic failover enablement flag changed: {} -> {}",
+                previous, is_enabled
+            );
+        }
+    }
+
+    /// Sets whether per partition circuit breaker is enabled.
+    ///
+    /// Only logs when the value actually changes to avoid noisy repeated logs
+    /// during periodic account refresh.
+    pub fn configure_per_partition_circuit_breaker(&self, is_enabled: bool) {
+        let previous = self
+            .partition_level_circuit_breaker_enabled
+            .swap(is_enabled, Ordering::SeqCst);
+        if previous != is_enabled {
+            info!(
+                "Per partition circuit breaker enablement flag changed: {} -> {}",
+                previous, is_enabled
+            );
+        }
+    }
 }
 
 /// Contains failover tracking information for a single partition key range.
@@ -903,7 +936,7 @@ impl PartitionKeyRangeFailoverInfo {
     /// Reads from the `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS`
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn circuit_breaker_consecutive_failure_count_for_reads(default: i32) -> i32 {
-        std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS")
+        std::env::var(constants::AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS)
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(default)
@@ -914,7 +947,7 @@ impl PartitionKeyRangeFailoverInfo {
     /// Reads from the `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES`
     /// environment variable, falling back to `default` if the variable is unset or not parseable.
     fn circuit_breaker_consecutive_failure_count_for_writes(default: i32) -> i32 {
-        std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES")
+        std::env::var(constants::AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES)
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(default)
@@ -927,10 +960,12 @@ impl PartitionKeyRangeFailoverInfo {
     /// `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES`
     /// environment variable, falling back to `default` if unset or not parseable.
     fn circuit_breaker_timeout_counter_reset_window_mins(default: i64) -> i64 {
-        std::env::var("AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(default)
+        std::env::var(
+            constants::AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES,
+        )
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
     }
 
     /// Attempts to move this partition's routing to the next available location.
@@ -1095,7 +1130,7 @@ mod tests {
         )
     }
 
-    fn create_single_region_manager() -> GlobalEndpointManager {
+    fn create_single_region_manager() -> Arc<GlobalEndpointManager> {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US")],
@@ -1104,7 +1139,7 @@ mod tests {
         )
     }
 
-    fn create_multi_region_manager() -> GlobalEndpointManager {
+    fn create_multi_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US"), RegionName::from("East US")],
@@ -1125,7 +1160,7 @@ mod tests {
         manager
     }
 
-    fn create_three_region_manager() -> GlobalEndpointManager {
+    fn create_three_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
@@ -1161,7 +1196,7 @@ mod tests {
 
     /// Creates a multi-region manager that simulates a single-master account:
     /// one write endpoint (West US) and two read endpoints (West US + East US).
-    fn create_single_master_multi_region_manager() -> GlobalEndpointManager {
+    fn create_single_master_multi_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![RegionName::from("West US"), RegionName::from("East US")],
@@ -1239,14 +1274,14 @@ mod tests {
     // PartitionHealthStatus tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_health_status_values() {
+    #[tokio::test]
+    async fn test_health_status_values() {
         assert_eq!(PartitionHealthStatus::Healthy as i32, 100);
         assert_eq!(PartitionHealthStatus::Unhealthy as i32, 200);
     }
 
-    #[test]
-    fn test_health_status_equality() {
+    #[tokio::test]
+    async fn test_health_status_equality() {
         assert_eq!(
             PartitionHealthStatus::Healthy,
             PartitionHealthStatus::Healthy
@@ -1261,8 +1296,8 @@ mod tests {
     // PartitionKeyRangeFailoverInfo tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_failover_info_new_initializes_correctly() {
+    #[tokio::test]
+    async fn test_failover_info_new_initializes_correctly() {
         let info = PartitionKeyRangeFailoverInfo::new(
             "rid1".to_string(),
             "https://loc1.documents.azure.com/".to_string(),
@@ -1280,8 +1315,8 @@ mod tests {
         assert_eq!(write_count, 0);
     }
 
-    #[test]
-    fn test_failover_info_timestamps_initialized_to_now() {
+    #[tokio::test]
+    async fn test_failover_info_timestamps_initialized_to_now() {
         let before = Instant::now();
         let info = PartitionKeyRangeFailoverInfo::new("rid".into(), "https://loc.com/".into());
         let after = Instant::now();
@@ -1291,8 +1326,8 @@ mod tests {
         assert!(last >= before && last <= after);
     }
 
-    #[test]
-    fn test_try_move_next_location_moves_to_first_available() {
+    #[tokio::test]
+    async fn test_try_move_next_location_moves_to_first_available() {
         let mut info =
             PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
@@ -1307,8 +1342,8 @@ mod tests {
         assert_eq!(info.current, "https://loc2.com/");
     }
 
-    #[test]
-    fn test_try_move_next_location_skips_current_location() {
+    #[tokio::test]
+    async fn test_try_move_next_location_skips_current_location() {
         let mut info =
             PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
@@ -1320,8 +1355,8 @@ mod tests {
         assert_eq!(info.current, "https://loc1.com/");
     }
 
-    #[test]
-    fn test_try_move_next_location_returns_true_if_already_moved() {
+    #[tokio::test]
+    async fn test_try_move_next_location_returns_true_if_already_moved() {
         let mut info =
             PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
@@ -1340,8 +1375,8 @@ mod tests {
         assert_eq!(info.current, "https://loc2.com/");
     }
 
-    #[test]
-    fn test_try_move_next_location_sequential_failover() {
+    #[tokio::test]
+    async fn test_try_move_next_location_sequential_failover() {
         let mut info =
             PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
@@ -1364,8 +1399,8 @@ mod tests {
         assert_eq!(info.current, "https://loc3.com/");
     }
 
-    #[test]
-    fn test_try_move_next_location_empty_locations() {
+    #[tokio::test]
+    async fn test_try_move_next_location_empty_locations() {
         let mut info =
             PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
@@ -1373,16 +1408,16 @@ mod tests {
         assert!(!result);
     }
 
-    #[test]
-    fn test_can_circuit_breaker_trigger_reads_below_threshold() {
+    #[tokio::test]
+    async fn test_can_circuit_breaker_trigger_reads_below_threshold() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // Default read threshold is 2, counter starts at 0
         assert!(!info.can_circuit_breaker_trigger_partition_failover(true));
     }
 
-    #[test]
-    fn test_can_circuit_breaker_trigger_reads_at_threshold() {
+    #[tokio::test]
+    async fn test_can_circuit_breaker_trigger_reads_at_threshold() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // Increment read counter to threshold (2)
@@ -1393,8 +1428,8 @@ mod tests {
         assert!(!info.can_circuit_breaker_trigger_partition_failover(true));
     }
 
-    #[test]
-    fn test_can_circuit_breaker_trigger_reads_above_threshold() {
+    #[tokio::test]
+    async fn test_can_circuit_breaker_trigger_reads_above_threshold() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // Default read threshold is 10; store 11 so that 11 > 10 triggers the breaker
@@ -1404,16 +1439,16 @@ mod tests {
         assert!(info.can_circuit_breaker_trigger_partition_failover(true));
     }
 
-    #[test]
-    fn test_can_circuit_breaker_trigger_writes_below_threshold() {
+    #[tokio::test]
+    async fn test_can_circuit_breaker_trigger_writes_below_threshold() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // Default write threshold is 5, counter starts at 0
         assert!(!info.can_circuit_breaker_trigger_partition_failover(false));
     }
 
-    #[test]
-    fn test_can_circuit_breaker_trigger_writes_at_threshold() {
+    #[tokio::test]
+    async fn test_can_circuit_breaker_trigger_writes_at_threshold() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // Increment write counter to threshold (5)
@@ -1424,8 +1459,8 @@ mod tests {
         assert!(!info.can_circuit_breaker_trigger_partition_failover(false));
     }
 
-    #[test]
-    fn test_can_circuit_breaker_trigger_writes_above_threshold() {
+    #[tokio::test]
+    async fn test_can_circuit_breaker_trigger_writes_above_threshold() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // Increment write counter above threshold (> 5)
@@ -1435,8 +1470,8 @@ mod tests {
         assert!(info.can_circuit_breaker_trigger_partition_failover(false));
     }
 
-    #[test]
-    fn test_can_circuit_breaker_read_count_does_not_affect_write_check() {
+    #[tokio::test]
+    async fn test_can_circuit_breaker_read_count_does_not_affect_write_check() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // High read count should not trigger write failover
@@ -1452,8 +1487,8 @@ mod tests {
         assert!(!info.can_circuit_breaker_trigger_partition_failover(true));
     }
 
-    #[test]
-    fn test_increment_read_failure_count() {
+    #[tokio::test]
+    async fn test_increment_read_failure_count() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
         let now = Instant::now();
 
@@ -1466,8 +1501,8 @@ mod tests {
         assert_eq!(write_count, 0);
     }
 
-    #[test]
-    fn test_increment_write_failure_count() {
+    #[tokio::test]
+    async fn test_increment_write_failure_count() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
         let now = Instant::now();
 
@@ -1479,8 +1514,8 @@ mod tests {
         assert_eq!(write_count, 2);
     }
 
-    #[test]
-    fn test_increment_mixed_read_and_write_failures() {
+    #[tokio::test]
+    async fn test_increment_mixed_read_and_write_failures() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
         let now = Instant::now();
 
@@ -1495,8 +1530,8 @@ mod tests {
         assert_eq!(write_count, 3);
     }
 
-    #[test]
-    fn test_increment_updates_last_failure_time() {
+    #[tokio::test]
+    async fn test_increment_updates_last_failure_time() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         let (_, time_before) = info.snapshot_partition_failover_timestamps();
@@ -1510,8 +1545,8 @@ mod tests {
         assert!(time_after > time_before);
     }
 
-    #[test]
-    fn test_increment_resets_counters_when_timeout_window_exceeded() {
+    #[tokio::test]
+    async fn test_increment_resets_counters_when_timeout_window_exceeded() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         // Add some failures at current time
@@ -1535,8 +1570,8 @@ mod tests {
         assert_eq!(write_count, 0);
     }
 
-    #[test]
-    fn test_increment_does_not_reset_within_timeout_window() {
+    #[tokio::test]
+    async fn test_increment_does_not_reset_within_timeout_window() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         let now = Instant::now();
@@ -1551,8 +1586,8 @@ mod tests {
         assert_eq!(read_count, 3);
     }
 
-    #[test]
-    fn test_snapshot_consecutive_count_returns_current_values() {
+    #[tokio::test]
+    async fn test_snapshot_consecutive_count_returns_current_values() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         info.consecutive_read_request_failure_count
@@ -1569,8 +1604,8 @@ mod tests {
     // mark_endpoints_to_healthy tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_mark_endpoints_to_healthy_marks_all_as_healthy() {
+    #[tokio::test]
+    async fn test_mark_endpoints_to_healthy_marks_all_as_healthy() {
         let pk1 = PartitionKeyRange::new("0".into(), "".into(), "AA".into());
         let pk2 = PartitionKeyRange::new("1".into(), "AA".into(), "FF".into());
 
@@ -1598,8 +1633,8 @@ mod tests {
         assert_eq!(mappings[&pk2].2, PartitionHealthStatus::Healthy);
     }
 
-    #[test]
-    fn test_mark_endpoints_to_healthy_empty_map() {
+    #[tokio::test]
+    async fn test_mark_endpoints_to_healthy_empty_map() {
         let mut mappings: HashMap<PartitionKeyRange, (String, String, PartitionHealthStatus)> =
             HashMap::new();
 
@@ -1608,8 +1643,8 @@ mod tests {
         assert!(mappings.is_empty());
     }
 
-    #[test]
-    fn test_mark_endpoints_to_healthy_already_healthy() {
+    #[tokio::test]
+    async fn test_mark_endpoints_to_healthy_already_healthy() {
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
 
         let mut mappings = HashMap::new();
@@ -1631,9 +1666,9 @@ mod tests {
     // GlobalPartitionEndpointManager flag tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_new_both_flags_disabled() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_new_both_flags_disabled() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         assert!(!manager.partition_level_automatic_failover_enabled());
@@ -1641,9 +1676,9 @@ mod tests {
         assert!(!manager.partition_level_failover_enabled());
     }
 
-    #[test]
-    fn test_new_auto_failover_enabled_only() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_new_auto_failover_enabled_only() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         assert!(manager.partition_level_automatic_failover_enabled());
@@ -1651,9 +1686,9 @@ mod tests {
         assert!(manager.partition_level_failover_enabled());
     }
 
-    #[test]
-    fn test_new_circuit_breaker_enabled_only() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_new_circuit_breaker_enabled_only() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         assert!(!manager.partition_level_automatic_failover_enabled());
@@ -1661,9 +1696,9 @@ mod tests {
         assert!(manager.partition_level_failover_enabled());
     }
 
-    #[test]
-    fn test_new_both_flags_enabled() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_new_both_flags_enabled() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         assert!(manager.partition_level_automatic_failover_enabled());
@@ -1675,9 +1710,9 @@ mod tests {
     // can_use_partition_level_failover_locations tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_can_use_failover_locations_with_single_endpoint() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_can_use_failover_locations_with_single_endpoint() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_read_request();
@@ -1685,27 +1720,27 @@ mod tests {
         assert!(!manager.can_use_partition_level_failover_locations(&request));
     }
 
-    #[test]
-    fn test_can_use_failover_locations_with_multiple_endpoints_documents() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_can_use_failover_locations_with_multiple_endpoints_documents() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_read_request();
         assert!(manager.can_use_partition_level_failover_locations(&request));
     }
 
-    #[test]
-    fn test_can_use_failover_locations_with_stored_procedure_execute() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_can_use_failover_locations_with_stored_procedure_execute() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_stored_procedure_execute_request();
         assert!(manager.can_use_partition_level_failover_locations(&request));
     }
 
-    #[test]
-    fn test_can_use_failover_locations_with_database_resource() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_can_use_failover_locations_with_database_resource() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         let request = create_database_request();
@@ -1717,10 +1752,10 @@ mod tests {
     // is_request_eligible_for_per_partition_automatic_failover tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_auto_failover_eligible_write_on_single_master() {
+    #[tokio::test]
+    async fn test_auto_failover_eligible_write_on_single_master() {
         // Single master: can_support_multiple_write_locations returns false
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_write_request();
@@ -1728,18 +1763,18 @@ mod tests {
         assert!(manager.is_request_eligible_for_per_partition_automatic_failover(&request));
     }
 
-    #[test]
-    fn test_auto_failover_not_eligible_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_auto_failover_not_eligible_when_disabled() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_write_request();
         assert!(!manager.is_request_eligible_for_per_partition_automatic_failover(&request));
     }
 
-    #[test]
-    fn test_auto_failover_not_eligible_for_read_request() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_auto_failover_not_eligible_for_read_request() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_read_request();
@@ -1751,28 +1786,28 @@ mod tests {
     // is_request_eligible_for_partition_level_circuit_breaker tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_circuit_breaker_eligible_for_read_request() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_circuit_breaker_eligible_for_read_request() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
         assert!(manager.is_request_eligible_for_partition_level_circuit_breaker(&request));
     }
 
-    #[test]
-    fn test_circuit_breaker_not_eligible_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_circuit_breaker_not_eligible_when_disabled() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
         assert!(!manager.is_request_eligible_for_partition_level_circuit_breaker(&request));
     }
 
-    #[test]
-    fn test_circuit_breaker_not_eligible_write_on_single_master() {
+    #[tokio::test]
+    async fn test_circuit_breaker_not_eligible_write_on_single_master() {
         // Single-master: can_support_multiple_write_locations returns false for writes
-        let gem = Arc::new(create_single_master_multi_region_manager());
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_write_request();
@@ -1785,9 +1820,9 @@ mod tests {
     // is_request_eligible_for_partition_failover tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_partition_failover_returns_none_when_both_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_partition_failover_returns_none_when_both_disabled() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -1796,9 +1831,9 @@ mod tests {
             .is_none());
     }
 
-    #[test]
-    fn test_partition_failover_returns_some_when_eligible() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_partition_failover_returns_some_when_eligible() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1810,9 +1845,9 @@ mod tests {
         assert!(failed_loc.is_none()); // Not validating failed location
     }
 
-    #[test]
-    fn test_partition_failover_validates_failed_location() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_partition_failover_validates_failed_location() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1828,9 +1863,9 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_partition_failover_returns_none_without_partition_key_range() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_partition_failover_returns_none_without_partition_key_range() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1841,9 +1876,9 @@ mod tests {
             .is_none());
     }
 
-    #[test]
-    fn test_partition_failover_returns_none_for_ineligible_resource_type() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_partition_failover_returns_none_for_ineligible_resource_type() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_database_request();
@@ -1852,9 +1887,9 @@ mod tests {
             .is_none());
     }
 
-    #[test]
-    fn test_partition_failover_returns_none_without_failed_location() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_partition_failover_returns_none_without_failed_location() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1870,9 +1905,9 @@ mod tests {
     // try_mark_endpoint_unavailable_for_partition_key_range tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_mark_endpoint_unavailable_circuit_breaker_path() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_circuit_breaker_path() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -1894,9 +1929,9 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_auto_failover_path() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_auto_failover_path() {
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_write_request();
@@ -1912,18 +1947,18 @@ mod tests {
         assert!(guard.contains_key(&pk));
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_returns_false_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_returns_false_when_disabled() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
         assert!(!manager.try_mark_endpoint_unavailable_for_partition_key_range(&request));
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_returns_false_without_failed_location() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_returns_false_without_failed_location() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
@@ -1932,9 +1967,9 @@ mod tests {
         assert!(!manager.try_mark_endpoint_unavailable_for_partition_key_range(&request));
     }
 
-    #[test]
-    fn test_mark_endpoint_unavailable_sequential_failover_removes_on_exhaust() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_mark_endpoint_unavailable_sequential_failover_removes_on_exhaust() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -1971,18 +2006,18 @@ mod tests {
     // try_add_partition_level_location_override tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_add_override_returns_false_when_no_override_exists() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_add_override_returns_false_when_no_override_exists() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let mut request = create_read_request();
         assert!(!manager.try_add_partition_level_location_override(&mut request));
     }
 
-    #[test]
-    fn test_add_override_routes_to_override_location() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_add_override_routes_to_override_location() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // First, mark endpoint as unavailable to create an override
@@ -2017,18 +2052,18 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_add_override_returns_false_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_add_override_returns_false_when_disabled() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let mut request = create_read_request();
         assert!(!manager.try_add_partition_level_location_override(&mut request));
     }
 
-    #[test]
-    fn test_add_override_circuit_breaker_below_threshold_returns_false() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_add_override_circuit_breaker_below_threshold_returns_false() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Mark endpoint unavailable to create override
@@ -2041,9 +2076,9 @@ mod tests {
         assert!(!result);
     }
 
-    #[test]
-    fn test_add_override_auto_failover_path() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+    #[tokio::test]
+    async fn test_add_override_auto_failover_path() {
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         // Mark write endpoint as unavailable
@@ -2060,9 +2095,9 @@ mod tests {
     // increment_request_failure_counter_and_check_if_partition_can_failover tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_increment_failure_counter_returns_false_when_disabled() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_increment_failure_counter_returns_false_when_disabled() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, false);
 
         let request = create_read_request();
@@ -2070,9 +2105,9 @@ mod tests {
             .increment_request_failure_counter_and_check_if_partition_can_failover(&request));
     }
 
-    #[test]
-    fn test_increment_failure_counter_creates_entry_on_first_call() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_increment_failure_counter_creates_entry_on_first_call() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2087,9 +2122,9 @@ mod tests {
         assert!(guard.contains_key(&pk));
     }
 
-    #[test]
-    fn test_increment_failure_counter_below_threshold_returns_false() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_increment_failure_counter_below_threshold_returns_false() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2099,9 +2134,9 @@ mod tests {
         assert!(!result);
     }
 
-    #[test]
-    fn test_increment_failure_counter_above_threshold_returns_true() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_increment_failure_counter_above_threshold_returns_true() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let request = create_read_request();
@@ -2117,9 +2152,9 @@ mod tests {
         assert!(result);
     }
 
-    #[test]
-    fn test_increment_failure_counter_auto_failover_path_for_writes() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+    #[tokio::test]
+    async fn test_increment_failure_counter_auto_failover_path_for_writes() {
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let request = create_write_request();
@@ -2146,9 +2181,9 @@ mod tests {
     // try_add_or_update_partition_failover_info_and_move_to_next_location tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_add_or_update_moves_to_next_location() {
-        let gem = Arc::new(create_three_region_manager());
+    #[tokio::test]
+    async fn test_add_or_update_moves_to_next_location() {
+        let gem = create_three_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -2175,9 +2210,9 @@ mod tests {
         assert_eq!(info.current, "https://test-eastus.documents.azure.com/");
     }
 
-    #[test]
-    fn test_add_or_update_removes_on_all_exhausted() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_add_or_update_removes_on_all_exhausted() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -2218,9 +2253,9 @@ mod tests {
     // Multiple partition key range tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_different_partition_key_ranges_tracked_independently() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_different_partition_key_ranges_tracked_independently() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Create two requests with different partition key ranges
@@ -2248,9 +2283,9 @@ mod tests {
     // Debug trait tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_debug_formatting() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_debug_formatting() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         let debug_str = format!("{:?}", manager);
@@ -2259,8 +2294,8 @@ mod tests {
         assert!(debug_str.contains("partition_level_circuit_breaker_enabled"));
     }
 
-    #[test]
-    fn test_failover_info_debug_formatting() {
+    #[tokio::test]
+    async fn test_failover_info_debug_formatting() {
         let info = PartitionKeyRangeFailoverInfo::new("rid1".into(), "https://loc1.com/".into());
 
         let debug_str = format!("{:?}", info);
@@ -2272,9 +2307,9 @@ mod tests {
     // Three-region failover tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_three_region_sequential_failover() {
-        let gem = Arc::new(create_three_region_manager());
+    #[tokio::test]
+    async fn test_three_region_sequential_failover() {
+        let gem = create_three_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         let pk = PartitionKeyRange::new("0".into(), "".into(), "FF".into());
@@ -2331,9 +2366,9 @@ mod tests {
     // Background initialization tests
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_background_init_flag_set_on_construction() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_background_init_flag_set_on_construction() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         assert!(manager
@@ -2341,9 +2376,9 @@ mod tests {
             .load(Ordering::SeqCst));
     }
 
-    #[test]
-    fn test_second_background_init_is_noop() {
-        let gem = Arc::new(create_single_region_manager());
+    #[tokio::test]
+    async fn test_second_background_init_is_noop() {
+        let gem = create_single_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, true);
 
         // Flag is already true after construction
@@ -2362,9 +2397,9 @@ mod tests {
     // End-to-end: mark unavailable → add override → verify routing
     // -----------------------------------------------------------------------
 
-    #[test]
-    fn test_end_to_end_failover_and_override_routing() {
-        let gem = Arc::new(create_multi_region_manager());
+    #[tokio::test]
+    async fn test_end_to_end_failover_and_override_routing() {
+        let gem = create_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, false, true);
 
         // Step 1: A read request fails at West US
@@ -2398,9 +2433,9 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_end_to_end_auto_failover_write_request() {
-        let gem = Arc::new(create_single_master_multi_region_manager());
+    #[tokio::test]
+    async fn test_end_to_end_auto_failover_write_request() {
+        let gem = create_single_master_multi_region_manager();
         let manager = GlobalPartitionEndpointManager::new(gem, true, false);
 
         // Step 1: A write request fails at West US
@@ -2420,5 +2455,58 @@ mod tests {
                 .as_str(),
             "https://test-eastus.documents.azure.com/"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Dynamic configure_* method tests
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_configure_partition_level_automatic_failover_toggles_flag() {
+        let gem = create_single_region_manager();
+        let manager = GlobalPartitionEndpointManager::new(gem, false, false);
+
+        // Initially disabled
+        assert!(!manager.partition_level_automatic_failover_enabled());
+
+        // Enable it
+        manager.configure_partition_level_automatic_failover(true);
+        assert!(manager.partition_level_automatic_failover_enabled());
+
+        // Disable it again
+        manager.configure_partition_level_automatic_failover(false);
+        assert!(!manager.partition_level_automatic_failover_enabled());
+    }
+
+    #[tokio::test]
+    async fn test_configure_per_partition_circuit_breaker_toggles_flag() {
+        let gem = create_single_region_manager();
+        let manager = GlobalPartitionEndpointManager::new(gem, false, false);
+
+        // Initially disabled
+        assert!(!manager.partition_level_circuit_breaker_enabled());
+
+        // Enable it
+        manager.configure_per_partition_circuit_breaker(true);
+        assert!(manager.partition_level_circuit_breaker_enabled());
+
+        // Disable it again
+        manager.configure_per_partition_circuit_breaker(false);
+        assert!(!manager.partition_level_circuit_breaker_enabled());
+    }
+
+    #[tokio::test]
+    async fn test_configure_idempotent_same_value() {
+        let gem = create_single_region_manager();
+        let manager = GlobalPartitionEndpointManager::new(gem, true, true);
+
+        // Setting the same value should not panic or change the flag
+        assert!(manager.partition_level_automatic_failover_enabled());
+        manager.configure_partition_level_automatic_failover(true);
+        assert!(manager.partition_level_automatic_failover_enabled());
+
+        assert!(manager.partition_level_circuit_breaker_enabled());
+        manager.configure_per_partition_circuit_breaker(true);
+        assert!(manager.partition_level_circuit_breaker_enabled());
     }
 }
