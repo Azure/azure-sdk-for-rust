@@ -155,9 +155,30 @@ pub mod http {
     }
     pub use typespec_client_core::http::{Transport, Context};
 
-    // Client options (just the struct, not PipelineOptions/LoggingOptions)
-    pub use typespec_client_core::http::ClientOptions;
+    // Client options wrapper (hides RetryOptions/LoggingOptions from public API)
+    ///
+    /// Client configuration for the HTTP pipeline used by this driver.
+    ///
+    /// This wraps `typespec_client_core::http::ClientOptions` but hides
+    /// retry and logging configuration from the public API surface.
+    #[derive(Clone, Debug)]
+    pub struct ClientOptions {
+        inner: typespec_client_core::http::ClientOptions,
+    }
 
+    impl ClientOptions {
+        /// Create client options with default settings.
+        pub fn new() -> Self {
+            Self {
+                inner: typespec_client_core::http::ClientOptions::default(),
+            }
+        }
+
+        /// Internal accessor for the underlying options.
+        pub(crate) fn as_inner(&self) -> &typespec_client_core::http::ClientOptions {
+            &self.inner
+        }
+    }
     // HttpClient trait (needed for Transport construction)
     pub use typespec_client_core::http::HttpClient;
 }
