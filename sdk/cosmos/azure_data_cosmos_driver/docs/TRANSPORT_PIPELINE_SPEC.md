@@ -2613,7 +2613,9 @@ high concurrency it still performs an atomic CAS on the lock word — and on som
 to replace these `RwLock<Arc<T>>` holders.  The read path becomes:
 
 ```rust
-use crossbeam::epoch::{self, Atomic, Owned, Shared};
+use std::sync::atomic::Ordering;
+
+use crossbeam::epoch::{self, Atomic, Owned};
 
 struct StateStore<T> {
     state: Atomic<T>,
@@ -2621,17 +2623,26 @@ struct StateStore<T> {
 
 impl<T> StateStore<T> {
     /// Lock-free snapshot — costs a single atomic load + epoch pin.
+    ///
+    /// # Safety contract
+    ///
+    /// The returned reference is valid only for the lifetime of the
+    /// `Guard` produced by `epoch::pin()`.  In practice this means the
+    /// caller must not hold the reference across an `.await` point.
+    /// The concrete `LocationStateStore` (§4.6) clones the inner value
+    /// into an `Arc<T>` so the snapshot can outlive the guard.
     fn snapshot(&self) -> &T {
         let guard = epoch::pin();
-        // SAFETY: Writers use `swap`/`apply` + deferred drop, so the
+        // SAFETY: Writers use `swap`/`apply` + `defer_destroy`, so the
         // pointee is valid for the lifetime of the guard.
-        unsafe { self.state.load(Ordering::Acquire, &guard).deref() }
+        let shared = self.state.load(Ordering::Acquire, &guard);
+        unsafe { shared.deref() }
     }
 
     /// Atomically apply a mutation to the current state (CAS loop).
     ///
     /// Reads the current value, applies `f`, and attempts a
-    /// compare-and-swap. On contention (another writer changed the
+    /// compare-and-swap.  On contention (another writer changed the
     /// state between load and CAS), re-reads and re-applies until
     /// the CAS succeeds — no concurrent mutation is lost.
     ///
@@ -2661,12 +2672,16 @@ impl<T> StateStore<T> {
     /// Unconditionally replace the current snapshot.
     ///
     /// Use when the new state does NOT depend on the current state
-    /// (e.g., full refresh from an external source). Concurrent
+    /// (e.g., full refresh from an external source).  Concurrent
     /// `apply` calls are safe — their CAS will fail and retry
     /// against the freshly swapped value.
     fn swap(&self, new_state: T) {
         let guard = epoch::pin();
-        let old = self.state.swap(Owned::new(new_state), Ordering::AcqRel, &guard);
+        let old = self.state.swap(
+            Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
         unsafe { guard.defer_destroy(old); }
     }
 }
