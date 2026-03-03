@@ -1,274 +1,270 @@
-# Spec: Remove azure_core Dependency from azure_data_cosmos_driver
+# Spec: Decouple azure_data_cosmos_driver from azure_core
 
 ## Problem Statement
 
-The `azure_data_cosmos_driver` crate currently depends on `azure_core` for HTTP infrastructure, credentials, error types, and utilities. Per the multi-crate versioning strategy (AGENTS.md), the driver should be independently versionable from the SDK layer. The `azure_core` dependency creates version coupling — breaking changes in `azure_core` force driver major version bumps even when the driver's own API is stable.
+The `azure_data_cosmos_driver` crate depends on `azure_core` for HTTP infrastructure, credentials, error types, and utilities. Per the multi-crate versioning strategy (AGENTS.md), the driver should be independently versionable from the SDK layer. The `azure_core` dependency creates version coupling — breaking changes in `azure_core` force driver major version bumps even when the driver's own API is stable.
 
-Additionally, since the driver is consumed by `azure_data_cosmos_native` (C FFI for Java/.NET/Python SDKs), minimizing Rust-ecosystem dependencies reduces binary size and cross-language complexity.
+Since the driver is consumed by `azure_data_cosmos_native` (C FFI for Java/.NET/Python SDKs), minimizing heavy Azure-specific dependencies reduces binary size and cross-language complexity.
 
 Reference: <https://github.com/Azure/azure-sdk-for-python/issues/45463>
 
-## Current azure_core Usage Inventory (149 references)
+## Current Crate Layering
 
-### Category 1: HTTP Pipeline Infrastructure (~60% of references)
-
-The driver builds its own custom pipeline (`CosmosPipeline`) but uses `azure_core` types throughout:
-
-| Type | Used In | Purpose |
-|------|---------|---------|
-| `Policy` trait | authorization_policy, headers_policy, tracked_transport, pipeline | Pipeline policy chain |
-| `PolicyResult` | All policy impls | Return type for `Policy::send()` |
-| `Transport` | transport/mod.rs, pipeline.rs | Wraps reqwest client |
-| `Request` | All policy impls, cosmos_driver | HTTP request builder |
-| `RawResponse` / `AsyncRawResponse` | pipeline.rs, tests | HTTP response types |
-| `Context` | All policy impls, pipeline, cosmos_driver | Request context bag |
-| `Headers`, `HeaderName`, `HeaderValue`, `AsHeaders` | headers_policy, authorization_policy, cosmos_headers, partition_key | Header types |
-| Standard headers (`AUTHORIZATION`, `ACCEPT`, etc.) | headers_policy, authorization_policy | Well-known header constants |
-| `Method` | authorization_policy, cosmos_driver, tests | HTTP methods |
-| `StatusCode` | cosmos_status, cosmos_response, diagnostics, pipeline tests | HTTP status codes |
-| `ClientOptions` | runtime.rs | Client-level options struct |
-| `Bytes` | tests | Byte buffer type |
-
-### Category 2: Error Types (~25% of references)
-
-| Type | Used In | Purpose |
-|------|---------|---------|
-| `azure_core::Result<T>` | Almost everywhere | Result type alias |
-| `azure_core::Error` | Options, builders, transport | Error construction |
-| `azure_core::error::ErrorKind` | tracked_transport, options, builders | Error categorization: `Connection`, `Credential`, `DataConversion`, `Io`, `Other`, `HttpResponse` |
-
-### Category 3: Credentials (~10% of references)
-
-| Type | Used In | Purpose |
-|------|---------|---------|
-| `TokenCredential` trait | account_reference, authorization_policy | AAD/Entra token acquisition |
-| `AccessToken` | authorization_policy tests | Token response type |
-| `Secret` | account_reference, connection_string | Secret string wrapper |
-| `TokenRequestOptions` | authorization_policy tests | Token request options |
-
-### Category 4: Utilities (~5% of references)
-
-| Type | Used In | Purpose |
-|------|---------|---------|
-| `hmac::hmac_sha256` | authorization_policy | Master key HMAC signing |
-| `time::OffsetDateTime` | authorization_policy | Timestamp for auth header |
-| `time::to_rfc7231` | authorization_policy | Date formatting |
-| `time::Duration` | authorization_policy tests | Duration type |
-| `fmt::SafeDebug` | connection_string | Debug derive that redacts secrets |
-
-## Replacement Strategy by Category
-
-### 1. TokenCredential Trait — KEEP (via lighter dependency)
-
-The driver must acquire AAD tokens. The `TokenCredential` trait is the standard contract that `azure_identity` implements.
-
-**Recommendation**: Depend on `typespec_client_core` (or a future `azure_core_credentials` crate) instead of `azure_core`. The trait is stable and rarely changes. If full decoupling is required, define an identical trait in the driver and provide a blanket adapter.
-
-### 2. Secret Type — REPLACE with own type
-
-`Secret` is a ~10-line newtype around `String` with `Debug` redaction. No reason to pull `azure_core` for this.
-
-```rust
-#[derive(Clone, PartialEq, Eq)]
-pub struct Secret(String);
-impl Secret {
-    pub fn new(s: impl Into<String>) -> Self { Self(s.into()) }
-    pub fn secret(&self) -> &str { &self.0 }
-}
-impl std::fmt::Debug for Secret {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("***")
-    }
-}
-```
-
-### 3. HMAC-SHA256 — REPLACE with direct `hmac` + `sha2` crates
-
-`azure_core::hmac::hmac_sha256` delegates to these crates when the `hmac_rust` feature is on. Cut out the middleman.
-
-### 4. Time Utilities — REPLACE with direct `time` crate
-
-`azure_core::time` wraps the `time` crate. Use it directly. For `to_rfc7231`, implement the format string locally (~5 lines).
-
-### 5. HTTP Pipeline Types — REPLACE with `http` crate + driver-owned abstractions
-
-The `http` crate (`hyperium/http`) provides `Method`, `StatusCode`, `HeaderMap`, `HeaderName`, `HeaderValue` — the de facto standard that reqwest uses internally.
-
-| Driver Type to Create | Replaces | Implementation |
-|-----------------------|----------|----------------|
-| `driver::http::Policy` trait | `azure_core::http::policies::Policy` | Own async trait (~10 lines) |
-| `driver::http::Request` | `azure_core::http::Request` | Thin wrapper over `http::request::Builder` or `reqwest::Request` |
-| `driver::http::Response` | `azure_core::http::RawResponse` | Thin wrapper over `reqwest::Response` |
-| `driver::http::Context` | `azure_core::http::Context` | Type-map bag (~30 lines, or use `typemap-rev` crate) |
-| `driver::http::Headers` | `azure_core::http::headers::Headers` | Re-export `http::HeaderMap` |
-| `driver::http::HeaderName` / `HeaderValue` | Same | Re-export from `http` crate |
-| `driver::http::Method` | Same | Re-export from `http` crate |
-| `driver::http::StatusCode` | Same | Re-export from `http` crate |
-| `driver::http::Transport` trait | `azure_core::http::Transport` | Own trait (~10 lines), reqwest impl |
-
-### 6. Error Types — REPLACE with driver-owned error
-
-The driver uses only a subset of `ErrorKind` variants. A driver-specific error can carry Cosmos-specific context (status, substatus, activity ID) natively.
-
-```rust
-#[derive(Debug)]
-pub enum ErrorKind {
-    Connection,
-    Credential,
-    DataConversion,
-    Io,
-    HttpResponse { status: StatusCode, substatus: Option<u32> },
-    Other,
-}
-
-pub struct Error {
-    kind: ErrorKind,
-    message: String,
-    source: Option<Box<dyn std::error::Error + Send + Sync>>,
-}
-pub type Result<T> = std::result::Result<T, Error>;
-```
-
-### 7. ClientOptions — REPLACE with driver's own config
-
-`ClientOptions` is used only in `runtime.rs`. Replace with a driver-specific `TransportOptions` struct.
-
-### 8. SafeDebug — REPLACE with manual Debug impl
-
-Only used on `ConnectionString`. Replace the derive with a hand-written `Debug` impl that redacts the key.
-
-### 9. Bytes — Use `bytes` crate directly
-
-Already a transitive dependency via reqwest.
-
-## Proposed New Dependency Set
-
-```toml
-[dependencies]
-# Existing (keep)
-async-trait = { workspace = true }
-base64 = { workspace = true }
-futures = { workspace = true }
-reqwest = { workspace = true, features = ["native-tls"] }
-serde = { workspace = true }
-serde_json = { workspace = true }
-tracing = { workspace = true }
-url = { workspace = true }
-uuid = { workspace = true }
-
-# New direct (currently transitive or via azure_core)
-bytes = { workspace = true }
-hmac = { workspace = true }
-sha2 = { workspace = true }
-http = { workspace = true }
-time = { workspace = true }
-
-# Credentials — pick ONE approach:
-# Option A: Keep typespec_client_core for TokenCredential only
-typespec_client_core = { workspace = true }
-# Option B: Full decoupling — define own trait, no azure/typespec deps
-# (nothing added)
-
-# REMOVED
-# azure_core = { workspace = true, features = ["reqwest_native_tls", "hmac_rust"] }
-```
-
-## New Module Layout
+The core crates form a dependency chain:
 
 ```text
-src/
-├── credentials/           (NEW)
-│   ├── mod.rs             # Re-exports, Credential enum
-│   ├── secret.rs          # Secret type
-│   └── token.rs           # TokenCredential trait (or re-export from typespec_client_core)
-│
-├── error.rs               (NEW — driver::Error + driver::ErrorKind + driver::Result)
-│
-├── http/                  (NEW)
-│   ├── mod.rs             # Re-exports from `http` crate + own types
-│   ├── context.rs         # Type-map context bag
-│   ├── headers.rs         # Cosmos-specific header constants
-│   ├── policy.rs          # Policy trait
-│   ├── request.rs         # Request builder
-│   ├── response.rs        # Response wrapper
-│   └── transport.rs       # Transport trait + reqwest impl
-│
-├── crypto.rs              (NEW — hmac_sha256 using hmac+sha2)
-├── time_util.rs           (NEW — RFC 7231 formatting using time crate)
-│
-├── driver/                (existing, updated imports)
-├── models/                (existing, updated imports)
-├── options/               (existing, updated imports)
-├── diagnostics/           (existing, updated imports)
-└── lib.rs                 (updated)
+typespec                      # Error, ErrorKind, Result, StatusCode, Bytes
+  └── typespec_client_core    # Policy, Transport, Request, Response, Context,
+  │                           # Headers, Method, ClientOptions, HttpClient,
+  │                           # SafeDebug, time, fmt, base64
+  │     └── azure_core        # credentials (Secret, TokenCredential, AccessToken),
+  │                           # hmac, Azure-specific headers, ErrorResponse,
+  │                           # check_success, Azure pipeline policies
+  │           └── azure_data_cosmos_driver  ← TODAY
 ```
+
+The driver uses types from **all three layers**, but what it gets from `azure_core` specifically (not re-exported from typespec/typespec_client_core) is a small surface:
+
+| azure_core-only type | Used in driver | Purpose |
+|----------------------|----------------|---------|
+| `credentials::Secret` | account_reference, connection_string | Secret string wrapper with constant-time eq |
+| `credentials::TokenCredential` trait | account_reference, authorization_policy | AAD/Entra token acquisition |
+| `credentials::AccessToken` | authorization_policy | Token response type |
+| `credentials::TokenRequestOptions` | authorization_policy | Token request options |
+| `hmac::hmac_sha256` | authorization_policy | Master key HMAC signing |
+| `http::headers::MS_DATE` | (via azure_core headers) | Azure-specific header constant |
+| `fmt::SafeDebug` derive | connection_string | Debug that redacts secrets |
+| `http::ClientOptions` (azure_core re-export) | runtime.rs | Client-level options (but this is actually from typespec_client_core) |
+
+Everything else the driver uses — `Error`, `ErrorKind`, `Result`, `Policy`, `Transport`, `Request`, `Response`, `Context`, `Headers`, `HeaderName`, `HeaderValue`, `Method`, `StatusCode`, `Bytes`, `time::OffsetDateTime`, `base64` — originates in `typespec` or `typespec_client_core` and is merely re-exported through `azure_core`.
+
+## Proposed Approach: Refactor the Core Crates
+
+Instead of the driver duplicating types that already exist in the core stack, we propose changes to the **core crates** that let the driver depend on lighter layers directly.
+
+### Target Architecture
+
+```text
+typespec                          # Error, ErrorKind, Result, StatusCode, Bytes
+  └── typespec_client_core        # Policy, Transport, Request, Response, Context,
+  │     │                         # Headers, Method, ClientOptions, HttpClient,
+  │     │                         # SafeDebug, time, fmt, base64
+  │     │
+  │     ├── azure_core_credentials  ← NEW CRATE (extracted from azure_core)
+  │     │   # Secret, TokenCredential, AccessToken, TokenRequestOptions
+  │     │
+  │     ├── azure_core_hmac         ← NEW CRATE (extracted from azure_core)
+  │     │   # hmac_sha256 (feature-gated: hmac_rust / hmac_openssl)
+  │     │
+  │     ├── azure_data_cosmos_driver  ← AFTER (depends on lighter crates)
+  │     │
+  │     └── azure_core              ← AFTER (re-exports credentials + hmac + adds Azure policies)
+  │           └── azure_data_cosmos   ← unchanged (still depends on azure_core)
+```
+
+### What Changes in the Core Package
+
+#### Change 1: Extract `azure_core_credentials` crate
+
+Move `azure_core::credentials` into a new standalone crate.
+
+**New crate**: `sdk/core/azure_core_credentials/`
+
+```rust
+// azure_core_credentials/src/lib.rs
+pub use typespec_client_core::time::OffsetDateTime;
+
+mod secret;
+mod token;
+
+pub use secret::{Secret, SecretBytes};
+pub use token::{AccessToken, TokenCredential, TokenRequestOptions};
+```
+
+**Contents** (moved from `azure_core/src/credentials.rs`):
+- `Secret` — secret string wrapper with constant-time `PartialEq` and redacted `Debug`
+- `SecretBytes` — secret bytes wrapper
+- `AccessToken` — token + expiry
+- `TokenRequestOptions` — options for `get_token()`
+- `TokenCredential` trait — async token acquisition
+
+**Dependencies** (minimal):
+- `typespec_client_core` (for `ClientMethodOptions`, `SafeDebug`, `time::OffsetDateTime`)
+- `async-trait`
+- `serde` (for `Secret`/`AccessToken` derives)
+
+**Impact on azure_core**: `azure_core` re-exports the new crate:
+
+```rust
+// azure_core/src/credentials.rs (AFTER)
+pub use azure_core_credentials::*;
+```
+
+No breaking change to existing azure_core consumers.
+
+#### Change 2: Extract `azure_core_hmac` crate
+
+Move `azure_core::hmac` into a new standalone crate.
+
+**New crate**: `sdk/core/azure_core_hmac/`
+
+```rust
+// azure_core_hmac/src/lib.rs
+pub fn hmac_sha256(data: &str, key: &azure_core_credentials::Secret) -> typespec::error::Result<String> {
+    // ... existing implementation using hmac + sha2 or openssl
+}
+```
+
+**Dependencies**:
+- `azure_core_credentials` (for `Secret`)
+- `typespec` (for `Error`/`Result`, `base64`)
+- `hmac` + `sha2` (feature-gated)
+- `openssl` (feature-gated)
+
+**Impact on azure_core**: `azure_core` re-exports the new crate:
+
+```rust
+// azure_core/src/hmac.rs (AFTER)
+pub use azure_core_hmac::*;
+```
+
+No breaking change.
+
+#### Change 3: No changes needed to typespec / typespec_client_core
+
+The driver can depend on `typespec_client_core` directly for everything it currently gets via `azure_core` re-exports:
+
+| Driver needs | Source (today via azure_core) | Source (after, direct) |
+|-------------|------------------------------|----------------------|
+| `Error`, `ErrorKind`, `Result` | `typespec::error` | `typespec::error` (via `typespec_client_core`) |
+| `Policy`, `PolicyResult` | `typespec_client_core::http::policies` | same, direct |
+| `Transport` | `typespec_client_core::http::options` | same, direct |
+| `Request`, `Body` | `typespec_client_core::http::request` | same, direct |
+| `RawResponse`, `AsyncRawResponse` | `typespec_client_core::http::response` | same, direct |
+| `Context` | `typespec_client_core::http::context` | same, direct |
+| `Headers`, `HeaderName`, `HeaderValue`, `AsHeaders` | `typespec_client_core::http::headers` | same, direct |
+| `AUTHORIZATION`, `ACCEPT`, `CONTENT_TYPE`, `USER_AGENT` | `typespec_client_core::http::headers` | same, direct |
+| `Method` | `typespec_client_core::http::method` | same, direct |
+| `StatusCode` | `typespec::http::StatusCode` | same, direct |
+| `Url` | `typespec_client_core::http::Url` (re-export of `url`) | same, direct |
+| `ClientOptions` | `typespec_client_core::http::options` | same, direct |
+| `Bytes` | `typespec::Bytes` | same, direct |
+| `time::OffsetDateTime`, `to_rfc7231` | `typespec_client_core::time` | same, direct |
+| `base64` | `typespec_client_core::base64` | same, direct |
+| `fmt::SafeDebug` | `typespec_client_core::fmt` | same, direct |
+
+### Driver Dependency Changes
+
+```toml
+# Cargo.toml BEFORE
+[dependencies]
+azure_core = { workspace = true, features = ["reqwest_native_tls", "hmac_rust"] }
+
+# Cargo.toml AFTER
+[dependencies]
+typespec_client_core = { workspace = true, features = ["reqwest_native_tls"] }
+azure_core_credentials = { workspace = true }
+azure_core_hmac = { workspace = true, features = ["hmac_rust"] }
+# azure_core is REMOVED
+```
+
+### Driver Import Migration
+
+The import changes are mechanical find-and-replace:
+
+```rust
+// BEFORE
+use azure_core::http::policies::{Policy, PolicyResult};
+use azure_core::http::{Context, Request, Method, StatusCode};
+use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
+use azure_core::credentials::{Secret, TokenCredential, AccessToken};
+use azure_core::hmac::hmac_sha256;
+use azure_core::{Error, Result, Bytes};
+use azure_core::time::OffsetDateTime;
+use azure_core::fmt::SafeDebug;
+
+// AFTER
+use typespec_client_core::http::policies::{Policy, PolicyResult};
+use typespec_client_core::http::{Context, Request, Method, StatusCode};
+use typespec_client_core::http::headers::{HeaderName, HeaderValue, Headers};
+use azure_core_credentials::{Secret, TokenCredential, AccessToken};
+use azure_core_hmac::hmac_sha256;
+use typespec_client_core::{Error, Result, Bytes};
+use typespec_client_core::time::OffsetDateTime;
+use typespec_client_core::fmt::SafeDebug;
+```
+
+## azure_core Consumers Are Unaffected
+
+Since `azure_core` re-exports the new crates, all existing code that uses `azure_core::credentials::*` or `azure_core::hmac::*` continues to work unchanged. The `azure_data_cosmos` SDK crate (which depends on `azure_core`) needs zero changes.
 
 ## Phased Migration Plan
 
-### Phase 1: Create Internal Abstractions (Non-Breaking)
+### Phase 1: Extract `azure_core_credentials` crate
 
-Create all new modules as thin wrappers/adapters over `azure_core` types. Internal code starts using `crate::*` imports but the underlying implementation still delegates to `azure_core`.
+1. Create `sdk/core/azure_core_credentials/` with `Cargo.toml` and `src/lib.rs`
+2. Move `Secret`, `SecretBytes`, `AccessToken`, `TokenRequestOptions`, `TokenCredential` from `azure_core/src/credentials.rs`
+3. Update `azure_core/src/credentials.rs` to `pub use azure_core_credentials::*;`
+4. Add `azure_core_credentials` to workspace `Cargo.toml`
+5. Add `azure_core_credentials` as dependency of `azure_core`
+6. Validate: `cargo build -p azure_core --all-features && cargo test -p azure_core --all-features`
 
-**Todos**:
+### Phase 2: Extract `azure_core_hmac` crate
 
-1. `create-error-module` — Define `driver::error::{Error, ErrorKind, Result}` wrapping azure_core equivalents
-2. `create-credentials-module` — Define `driver::credentials::{Secret, Credential, TokenCredential}` wrapping/re-exporting azure_core equivalents
-3. `create-http-module` — Define `driver::http::{Policy, Request, Response, Context, Headers, Method, StatusCode, Transport}` wrapping azure_core equivalents
-4. `create-crypto-module` — Define `driver::crypto::hmac_sha256` delegating to azure_core::hmac
-5. `create-time-module` — Define `driver::time_util` delegating to azure_core::time
+7. Create `sdk/core/azure_core_hmac/` with `Cargo.toml` and `src/lib.rs`
+8. Move `hmac_sha256` implementations from `azure_core/src/hmac.rs`
+9. Update `azure_core/src/hmac.rs` to `pub use azure_core_hmac::*;`
+10. Add `azure_core_hmac` to workspace `Cargo.toml`
+11. Validate: `cargo build -p azure_core --all-features && cargo test -p azure_core --all-features`
 
-### Phase 2: Switch All Imports
+### Phase 3: Switch driver dependencies
 
-Update every `use azure_core::*` in the driver to `use crate::*`. azure_core remains a dependency but is only referenced inside the new wrapper modules.
+12. Replace `azure_core` with `typespec_client_core` + `azure_core_credentials` + `azure_core_hmac` in driver `Cargo.toml`
+13. Mechanical find-and-replace of all `use azure_core::*` imports (see table above)
+14. Validate: `cargo build -p azure_data_cosmos_driver --all-features && cargo test -p azure_data_cosmos_driver --all-features`
 
-**Todos**:
+### Phase 4: Validate full stack
 
-6. `migrate-error-imports` — Replace all `azure_core::Error/Result/ErrorKind` with `crate::error::*`
-7. `migrate-http-imports` — Replace all `azure_core::http::*` with `crate::http::*`
-8. `migrate-credentials-imports` — Replace all `azure_core::credentials::*` with `crate::credentials::*`
-9. `migrate-utility-imports` — Replace `azure_core::hmac`, `azure_core::time`, `azure_core::Bytes`, `azure_core::fmt::SafeDebug`
-10. `validate-phase2` — Full test suite, clippy, fmt
+15. `cargo build --workspace && cargo test --workspace` to confirm nothing is broken
+16. Verify `azure_data_cosmos` (SDK crate) still works unchanged (it depends on `azure_core`, which re-exports everything)
 
-### Phase 3: Replace Implementations
+## Scope of Changes by Crate
 
-Swap wrapper implementations with direct dependencies. Remove azure_core.
-
-**Todos**:
-
-11. `impl-error` — Standalone Error/ErrorKind (no azure_core)
-12. `impl-http` — Use `http` crate types + own Policy/Transport/Context
-13. `impl-credentials` — Own Secret; decide on TokenCredential (own trait vs typespec_client_core)
-14. `impl-crypto` — Direct hmac+sha2
-15. `impl-time` — Direct time crate + RFC 7231 formatter
-16. `remove-azure-core-dep` — Delete azure_core from Cargo.toml
-17. `validate-phase3` — Full test suite, clippy, fmt, doc
-
-### Phase 4: SDK Adapter Layer
-
-Update `azure_data_cosmos` (the SDK crate) to bridge between `azure_core` types and `driver` types.
-
-**Todos**:
-
-18. `sdk-error-adapter` — Convert driver::Error ↔ azure_core::Error
-19. `sdk-credential-adapter` — Wrap azure_core::TokenCredential for driver
-20. `validate-sdk` — Full test suite for azure_data_cosmos
+| Crate | Changes | Breaking? |
+|-------|---------|-----------|
+| `azure_core_credentials` | **NEW** — extracted from `azure_core::credentials` | N/A (new) |
+| `azure_core_hmac` | **NEW** — extracted from `azure_core::hmac` | N/A (new) |
+| `azure_core` | Re-exports new crates instead of defining types inline | **No** — public API identical |
+| `typespec` | None | No |
+| `typespec_client_core` | None | No |
+| `azure_data_cosmos_driver` | Swap `azure_core` dep → `typespec_client_core` + new crates; update imports | No (internal crate) |
+| `azure_data_cosmos` | None (still uses `azure_core`) | No |
+| `azure_data_cosmos_native` | None (uses driver) | No |
+| Workspace `Cargo.toml` | Add two new workspace members + deps | No |
 
 ## Risk Assessment
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| TokenCredential incompatibility with azure_identity | High — breaks AAD auth | Phase 1 uses adapter pattern; Phase 3 defines compatible trait |
-| Missed azure_core behavior (e.g., header normalization) | Medium — subtle bugs | Comprehensive test suite already exists |
-| Increased maintenance burden (own HTTP types) | Medium — more code to maintain | Types are thin wrappers over well-tested ecosystem crates |
-| Binary size increase from duplicate types | Low — types are small | Monitor with `cargo bloat` |
-| Breaking change for azure_data_cosmos consumers | None — driver is internal | SDK layer adapts between azure_core ↔ driver types |
+| `azure_identity` must depend on `azure_core_credentials` | Medium — requires coordinated change | `azure_identity` already only uses `TokenCredential` from `azure_core::credentials`. It can depend on the new crate directly or continue via `azure_core` re-export. |
+| Circular dependency if `azure_core_credentials` needs `azure_core` types | Low | Credentials only need `ClientMethodOptions` from `typespec_client_core` — no `azure_core` types needed. |
+| Workspace CI must build/test new crates | Low | Standard workspace member addition. |
+| Other azure SDK crates using `azure_core::credentials` directly | None — re-export preserves API | All existing `use azure_core::credentials::*` continues to work. |
+
+## Benefits
+
+1. **Driver decoupled from azure_core versioning** — driver can rev independently
+2. **Smaller driver dependency tree** — `typespec_client_core` is much lighter than `azure_core` (no Azure-specific pipeline policies, retry logic, logging, etc.)
+3. **Reusable credential crate** — `azure_core_credentials` can be used by any crate that needs `TokenCredential` without pulling in the full `azure_core`
+4. **No breaking changes** — `azure_core` re-exports preserve all existing public APIs
+5. **Mechanical migration** — driver changes are pure import path updates, no behavioral changes
 
 ## Open Questions
 
-1. **`typespec_client_core` vs full decoupling?** Depending on `typespec_client_core` for just `TokenCredential` is lighter than `azure_core` but still couples to the azure crate family. Full decoupling means defining our own trait and requiring an adapter in the SDK.
+1. **Naming**: `azure_core_credentials` vs `azure_credentials` vs `azure_core_auth`? The `azure_core_*` prefix makes the relationship to `azure_core` clear.
 
-2. **Should `TokenCredential` be an exact copy of azure_core's trait or simplified?** The driver only needs `get_token(scopes, options) -> Result<AccessToken>`. A simplified trait reduces coupling but requires adapters.
+2. **Should `azure_core_hmac` be a separate crate or a feature of `azure_core_credentials`?** HMAC signing is closely tied to master key auth. Combining them reduces crate count but adds optional deps to the credentials crate.
 
-3. **Should we use `http` crate types directly in public API or newtype-wrap them?** Direct use is simpler but couples public API to `http` crate versions. Newtypes add indirection but decouple versioning.
+3. **Should the driver depend on `typespec_client_core` directly or through a thin `azure_core_http` extraction?** Direct `typespec_client_core` dependency works today but ties the driver to the typespec crate naming. An `azure_core_http` extraction that re-exports typespec types would add a stable Azure-branded interface layer.
 
-4. **Is `SafeDebug` derive worth replicating?** It's only used on `ConnectionString`. A manual `Debug` impl is simpler than replicating the derive macro.
+4. **Should `azure_identity` also move to `azure_core_credentials`?** If so, `azure_identity` would no longer need `azure_core` as a dependency — only `azure_core_credentials`. This is a bigger change but aligns with the same decoupling goal.
