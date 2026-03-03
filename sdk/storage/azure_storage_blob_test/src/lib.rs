@@ -21,7 +21,10 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult, EncryptionAlgorithmType},
+    models::{
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
+        EncryptionAlgorithmType,
+    },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
@@ -50,9 +53,33 @@ pub fn get_cpk_2() -> (EncryptionAlgorithmType, String, String) {
     )
 }
 
+/// Returns the encryption scope name provisioned in test-resources.bicep.
+pub fn get_valid_encryption_scope() -> String {
+    "testscope".to_string()
+}
+
 /// Returns an encryption scope name that should not exist in test accounts.
 pub fn get_invalid_encryption_scope() -> String {
     "invalid-encryption-scope-for-tests".to_string()
+}
+
+/// Returns a base64-encoded value that is valid but intentionally not the SHA-256 hash of
+/// any test key.
+///
+/// Used to verify that the service rejects mismatched key hashes.
+pub fn invalid_key_sha256() -> String {
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".to_string()
+}
+
+/// Returns a [`BlockLookupList`] that stages the given block ID from the latest block list.
+///
+/// Used by block blob tests to finalize a staged block into a committed blob.
+pub fn block_lookup(block_id: Vec<u8>) -> BlockLookupList {
+    BlockLookupList {
+        committed: Some(Vec::new()),
+        latest: Some(vec![block_id]),
+        uncommitted: Some(Vec::new()),
+    }
 }
 
 /// Asserts the error status for invalid encryption configuration requests.
