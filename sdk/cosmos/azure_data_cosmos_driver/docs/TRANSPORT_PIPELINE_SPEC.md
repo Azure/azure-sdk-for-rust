@@ -588,11 +588,14 @@ pub(crate) async fn execute_operation_pipeline(
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         // This is the ONLY place in the loop where location state is
-        // mutated. Each effect produces a new snapshot and swaps it into
-        // the appropriate store.
+        // mutated. Each effect is applied atomically via the store's
+        // CAS-loop `apply` method — it reads the *current* state (not
+        // the stale snapshot from STAGE 1), applies the mutation, and
+        // retries on contention. This prevents a concurrent writer
+        // (hedged attempt, background refresh) from having its update
+        // silently overwritten.
         apply_location_effects(
             &effects,
-            &location,
             account_state_store,
             partition_state_store,
             account_metadata_cache,
@@ -627,12 +630,21 @@ pub(crate) async fn execute_operation_pipeline(
 
 /// SYSTEM: Apply location effects to the stores.
 ///
-/// Each effect reads the current snapshot, produces a new one via a pure
-/// system function, and swaps the result into the store. This is the only
-/// function that mutates location state during the operation loop.
+/// Each effect is applied via the store's `apply` method, which uses a
+/// CAS loop: it reads the **current** state (not a stale snapshot),
+/// applies the pure mutation function, and compare-and-swaps the result
+/// back. On contention (another writer — e.g., a hedged attempt or
+/// background refresh — modified the state between load and CAS), the
+/// loop re-reads and re-applies the mutation until the CAS succeeds.
+///
+/// This ensures no concurrent mutation is silently overwritten, which
+/// would happen if we applied the mutation to a previously-captured
+/// snapshot and unconditionally swapped it in.
+///
+/// This is the only function that mutates location state during the
+/// operation loop.
 async fn apply_location_effects(
     effects: &[LocationEffect],
-    location: &LocationSnapshot,
     account_state_store: &AccountEndpointStateStore,
     partition_state_store: &PartitionEndpointStateStore,
     account_metadata_cache: &AccountMetadataCache,
@@ -640,19 +652,17 @@ async fn apply_location_effects(
     for effect in effects {
         match effect {
             LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
-                let new_state = mark_endpoint_unavailable(
-                    &location.account,
-                    endpoint,
-                    reason.clone(),
-                );
-                account_state_store.swap(new_state);
+                let endpoint = endpoint.clone();
+                let reason = reason.clone();
+                account_state_store.apply(|current| {
+                    mark_endpoint_unavailable(current, &endpoint, reason.clone())
+                });
             }
             LocationEffect::MarkPartitionUnavailable(partition) => {
-                let new_state = mark_partition_unavailable(
-                    &location.partitions,
-                    partition,
-                );
-                partition_state_store.swap(new_state);
+                let partition = partition.clone();
+                partition_state_store.apply(|current| {
+                    mark_partition_unavailable(current, &partition)
+                });
             }
             LocationEffect::RefreshAccountProperties => {
                 // Trigger an async (rate-limited) refresh of account
@@ -960,8 +970,8 @@ Following the DOP principle, the account-level endpoint routing is split into:
   routing system needs to pick an endpoint. Replaced atomically on refresh.
   Together with `PartitionEndpointState`, it forms the `LocationSnapshot` (§3.1) that
   the operation loop acquires once per iteration and passes to `resolve_endpoint`.
-- **Store (Infrastructure)**: `AccountEndpointStateStore` — a thin `RwLock<Arc<_>>` wrapper
-  that provides thread-safe snapshot access and atomic swap. Mutated exclusively in
+- **Store (Infrastructure)**: `AccountEndpointStateStore` — an epoch-guarded atomic pointer
+  (§11.1) that provides fully lock-free snapshot access and atomic swap. Mutated exclusively in
   STAGE 6 (`apply_location_effects`) of the operation loop.
 - **Systems (Behavior)**: Pure functions that read state and produce `RoutingDecision`s, or
   take old state + an event and produce new state.
@@ -1001,31 +1011,83 @@ pub(crate) struct AccountEndpointState {
 
 /// Thread-safe holder for the current `AccountEndpointState` snapshot.
 ///
-/// Read path: clone the `Arc` (lock-free via `RwLock::read`).
-/// Write path: build a new `AccountEndpointState`, take the write lock,
-/// and swap the `Arc`.
+/// Uses `crossbeam::epoch::Atomic` for fully lock-free reads (§11.1).
+/// The read path pins the epoch and loads the pointer — no reader
+/// synchronization whatsoever.
 ///
-/// **Crossbeam note** (§11): This struct is a prime candidate for
-/// `crossbeam::epoch`-based lock-free reads.  Replace the `RwLock<Arc<_>>`
-/// with a `crossbeam::epoch::Atomic<AccountEndpointState>` (or an
-/// `arc_swap::ArcSwap<AccountEndpointState>` backed by crossbeam epoch).
-/// This eliminates *all* reader synchronization — `snapshot()` becomes a
-/// single atomic load + epoch pin instead of an `RwLock::read()` +
-/// `Arc::clone`.  Writers call `store` / `swap` under epoch protection.
-/// See §11 for the full rationale and migration pattern.
+/// Two write methods:
+/// - **`apply`** — read-modify-write with a CAS loop. Use when the new
+///   state depends on the current state (e.g., marking an endpoint
+///   unavailable). Retries automatically on contention.
+/// - **`swap`** — unconditional replacement. Use when the new state is
+///   computed independently (e.g., full metadata refresh that rebuilds
+///   the endpoint state from scratch).
 pub(crate) struct AccountEndpointStateStore {
-    state: RwLock<Arc<AccountEndpointState>>,
+    state: crossbeam::epoch::Atomic<AccountEndpointState>,
 }
 
 impl AccountEndpointStateStore {
-    /// Get a cheap clone of the current snapshot.
-    pub fn snapshot(&self) -> Arc<AccountEndpointState> {
-        Arc::clone(&self.state.read())
+    /// Lock-free snapshot — costs a single atomic load + epoch pin.
+    pub fn snapshot(&self) -> crossbeam::epoch::Shared<'_, AccountEndpointState> {
+        let guard = crossbeam::epoch::pin();
+        self.state.load(Ordering::Acquire, &guard)
     }
 
-    /// Atomically replace the current snapshot.
+    /// Atomically apply a mutation to the current state (CAS loop).
+    ///
+    /// Reads the current snapshot, applies `f` to produce a new state,
+    /// and attempts a compare-and-swap.  On contention (another writer
+    /// modified the state between load and CAS), the loop re-reads the
+    /// current state and re-applies `f` until the CAS succeeds.
+    ///
+    /// Use this instead of `swap` when the new state is derived from
+    /// the current state — it guarantees no concurrent mutation is lost.
+    pub fn apply(&self, mut f: impl FnMut(&AccountEndpointState) -> AccountEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        loop {
+            let current = self.state.load(Ordering::Acquire, &guard);
+            // SAFETY: `current` is valid for the lifetime of `guard`.
+            let current_ref = unsafe { current.deref() };
+            let new_state = f(current_ref);
+            match self.state.compare_exchange(
+                current,
+                crossbeam::epoch::Owned::new(new_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    // CAS succeeded — defer destruction of the old snapshot.
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => {
+                    // CAS failed — another writer modified the state.
+                    // The rejected Owned is dropped here.  Re-read and
+                    // re-apply the mutation on the next iteration.
+                    continue;
+                }
+            }
+        }
+    }
+
+    /// Unconditionally replace the current snapshot.
+    ///
+    /// Use when the new state does NOT depend on the current state
+    /// (e.g., after a full account metadata refresh that rebuilds the
+    /// endpoint state from scratch).  Concurrent `apply` calls are safe:
+    /// their CAS will simply fail and retry against the freshly swapped
+    /// value.
+    ///
+    /// The old value is deferred-destroyed once all epoch guards unpin.
     pub fn swap(&self, new_state: AccountEndpointState) {
-        *self.state.write() = Arc::new(new_state);
+        let guard = crossbeam::epoch::pin();
+        let old = self.state.swap(
+            crossbeam::epoch::Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
+        unsafe { guard.defer_destroy(old); }
     }
 }
 
@@ -1093,14 +1155,14 @@ fn expire_unavailable_endpoints(
 
 **Key difference from previous design**: There is no `GlobalEndpointManager` struct with methods.
 The `AccountEndpointState` is pure data, and each mutation is an explicit system function that
-returns a new snapshot. The `AccountEndpointStateStore` is a trivial `RwLock<Arc<_>>` holder —
-it has no routing logic. The `AccountMetadataCache` remains a separate infrastructure component
-responsible for async-fetching and caching `AccountProperties`; on refresh, it calls
+returns a new snapshot. The `AccountEndpointStateStore` is a trivial epoch-guarded atomic pointer
+(§11.1) — it has no routing logic. The `AccountMetadataCache` remains a separate infrastructure
+component responsible for async-fetching and caching `AccountProperties`; on refresh, it calls
 `build_account_endpoint_state` and swaps the result into the store.
 
-This makes the read path lock-free (clone the `Arc`), keeps mutation explicit and traceable,
-and means every system function can be unit-tested with a hand-constructed `AccountEndpointState`
-— no mocking required.
+This makes the read path fully lock-free (epoch pin + atomic load), keeps mutation explicit and
+traceable, and means every system function can be unit-tested with a hand-constructed
+`AccountEndpointState` — no mocking required.
 
 ### 4.5 Partition Endpoint State & Circuit-Breaker Systems
 
@@ -1175,22 +1237,53 @@ pub(crate) struct CircuitBreakerOptions {
 
 /// Thread-safe holder for the current `PartitionEndpointState` snapshot.
 ///
-/// **Crossbeam note** (§11): Same pattern as `AccountEndpointStateStore`.
-/// Replace `RwLock<Arc<_>>` with epoch-based or ArcSwap-based lock-free
-/// reads.  Partition-level state is read on every request and mutated
-/// only by the circuit-breaker sweep — the read/write ratio makes this
-/// an ideal crossbeam target.  See §11.
+/// Same epoch-based lock-free pattern as `AccountEndpointStateStore` (§11.1),
+/// including the CAS-loop `apply` method for safe read-modify-write.
+/// Partition-level state is read on every request and mutated only by the
+/// circuit-breaker sweep — the extreme read/write ratio makes epoch-based
+/// access ideal.
 pub(crate) struct PartitionEndpointStateStore {
-    state: RwLock<Arc<PartitionEndpointState>>,
+    state: crossbeam::epoch::Atomic<PartitionEndpointState>,
 }
 
 impl PartitionEndpointStateStore {
-    pub fn snapshot(&self) -> Arc<PartitionEndpointState> {
-        Arc::clone(&self.state.read())
+    pub fn snapshot(&self) -> crossbeam::epoch::Shared<'_, PartitionEndpointState> {
+        let guard = crossbeam::epoch::pin();
+        self.state.load(Ordering::Acquire, &guard)
+    }
+
+    /// Atomically apply a mutation (CAS loop).  See
+    /// `AccountEndpointStateStore::apply` for full documentation.
+    pub fn apply(&self, mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        loop {
+            let current = self.state.load(Ordering::Acquire, &guard);
+            let current_ref = unsafe { current.deref() };
+            let new_state = f(current_ref);
+            match self.state.compare_exchange(
+                current,
+                crossbeam::epoch::Owned::new(new_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => continue,
+            }
+        }
     }
 
     pub fn swap(&self, new_state: PartitionEndpointState) {
-        *self.state.write() = Arc::new(new_state);
+        let guard = crossbeam::epoch::pin();
+        let old = self.state.swap(
+            crossbeam::epoch::Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
+        unsafe { guard.defer_destroy(old); }
     }
 }
 ```
@@ -1478,18 +1571,15 @@ pub(crate) struct HttpClientConfig {
 /// Manages a pool of HttpClient instances per target endpoint.
 /// Distributes requests to avoid exceeding HTTP/2 stream limits.
 ///
-/// **Crossbeam note** (§11): `pools` is read on every HTTP request and
-/// mutated only when a new endpoint is first seen or during health-sweep
-/// eviction.  Replace the `RwLock<HashMap<…>>` with a
-/// `crossbeam::epoch::Atomic<HashMap<…>>` snapshot-swap (or wrap the
-/// whole map in `ArcSwap`).  For the inner per-endpoint lookup, consider
-/// `crossbeam::utils::CachePadded` on individual pool entries to avoid
-/// false sharing.  See §11.
+/// `pools` uses `crossbeam::epoch::Atomic` for lock-free reads (§11.1).
+/// The map is read on every HTTP request and mutated only when a new
+/// endpoint is first seen or during health-sweep eviction.
 pub(crate) struct ShardedHttpTransport {
     /// Configuration for the sharding behavior.
     config: ShardingConfig,
     /// Per-endpoint shard pools. Key = endpoint authority (host:port).
-    pools: RwLock<HashMap<EndpointKey, Arc<EndpointShardPool>>>,
+    /// Lock-free reads via epoch; writers clone-and-swap the HashMap.
+    pools: crossbeam::epoch::Atomic<HashMap<EndpointKey, Arc<EndpointShardPool>>>,
     /// Factory for creating new HttpClient instances.
     client_factory: Arc<dyn HttpClientFactory>,
 }
@@ -1557,27 +1647,17 @@ pub struct ShardingConfig {
 ```rust
 /// A pool of HttpClient instances for a single endpoint.
 ///
-/// The shard list is stored as an immutable `Arc<Vec<...>>` and swapped
-/// atomically on writes (clone-on-write). This makes the read path
-/// (shard selection) lock-free — callers clone the `Arc` and iterate
-/// without holding a lock. Mutations (add/remove shard) take a write
-/// lock, build a new `Vec`, and swap the `Arc`.
-///
-/// **Crossbeam note** (§11): `shards` follows the exact snapshot-swap
-/// pattern described in §11.1.  Replace `RwLock<Arc<Vec<…>>>` with
-/// `crossbeam::epoch::Atomic<Vec<Arc<ClientShard>>>`.  The hot-path
-/// `select_shard()` then becomes a single epoch `load` + pin —
-/// fully wait-free for readers.  `endpoint_stats` inside `ClientShard`
-/// can remain `RwLock<HashMap<…>>` for now (per-shard, so contention is
-/// bounded), but consider `crossbeam::utils::CachePadded` on each
-/// `EndpointStats` to eliminate false sharing between atomics on
-/// adjacent cache lines.  See §11.
+/// The shard list is stored in a `crossbeam::epoch::Atomic` and swapped
+/// atomically on writes (clone-on-write).  The read path (`select_shard`)
+/// is fully lock-free — pin the epoch, load the pointer, iterate.
+/// Mutations (add/remove shard) build a new `Vec` and `swap` +
+/// `defer_destroy` the old one.
 struct EndpointShardPool {
     endpoint: EndpointKey,
     config: ShardingConfig,
-    /// The shards. Stored as Arc<Vec<...>> for lock-free reads.
+    /// The shards. Epoch-guarded for lock-free reads (§11.1).
     /// Replaced atomically on shard add/remove.
-    shards: RwLock<Arc<Vec<Arc<ClientShard>>>>,
+    shards: crossbeam::epoch::Atomic<Vec<Arc<ClientShard>>>,
     /// Factory for creating new HttpClient instances.
     client_factory: Arc<dyn HttpClientFactory>,
     /// HttpClient configuration for this pool.
@@ -1600,29 +1680,32 @@ struct ClientShard {
 
 /// Per-endpoint statistics on a single shard.
 /// Uses atomics for lock-free updates on the hot path.
+/// Each field is wrapped in `CachePadded` to prevent false sharing
+/// between cores updating adjacent counters concurrently (§11.3).
 struct EndpointStats {
     /// Currently inflight requests to this endpoint on this shard.
-    inflight: AtomicU32,
+    inflight: CachePadded<AtomicU32>,
     /// Timestamp of last successful response (nanos since epoch).
-    last_success_nanos: AtomicU64,
+    last_success_nanos: CachePadded<AtomicU64>,
     /// Timestamp of last request (success or failure).
-    last_request_nanos: AtomicU64,
+    last_request_nanos: CachePadded<AtomicU64>,
     /// Consecutive failure count (reset on success).
-    consecutive_failures: AtomicU32,
+    consecutive_failures: CachePadded<AtomicU32>,
     /// Total requests sent.
-    total_requests: AtomicU64,
+    total_requests: CachePadded<AtomicU64>,
     /// Total failures.
-    total_failures: AtomicU64,
+    total_failures: CachePadded<AtomicU64>,
 }
 
 /// Shard-level health tracking (across all endpoints on this shard).
+/// Fields are `CachePadded` to avoid false sharing (§11.3).
 struct ShardHealth {
     /// Total inflight across all endpoints.
-    total_inflight: AtomicU32,
+    total_inflight: CachePadded<AtomicU32>,
     /// Last successful response on any endpoint.
-    last_success_nanos: AtomicU64,
+    last_success_nanos: CachePadded<AtomicU64>,
     /// Whether this shard is marked for eviction.
-    marked_for_eviction: AtomicBool,
+    marked_for_eviction: CachePadded<AtomicBool>,
 }
 ```
 
@@ -2167,7 +2250,7 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 
 | Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                    |
 |----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
-| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via atomics. Immutable `Arc<Vec<...>>` snapshot for lock-free shard reads.                                                                            | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
+| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via `CachePadded` atomics. Epoch-guarded (`crossbeam::epoch::Atomic`) snapshot-swap for lock-free shard reads (§11.1).                                | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
 | 6.2      | **Shard selection algorithm** — `select_shard` with `load_spread_ratio`, active set, least-loaded routing, scale-up on capacity.                                                                                                                              | `driver/transport/shard_pool.rs`                         |
 | 6.3      | **`ShardingConfig`** — All knobs (`max_streams_per_client`, `max_clients_per_endpoint = num_cpus * 2`, `min_clients_per_endpoint`, `load_spread_ratio`, `idle_client_timeout`). Resolved from `ConnectionPoolOptions` (§9.1). Environment variable overrides. | `options/connection_pool.rs`                             |
 | 6.4      | **Wire into `AdaptiveTransport`** — When HTTP/2 is detected, use `ShardedHttpTransport` instead of plain.                                                                                                                                                     | `driver/transport/adaptive_transport.rs`                 |
@@ -2535,18 +2618,50 @@ impl<T> StateStore<T> {
     /// Lock-free snapshot — costs a single atomic load + epoch pin.
     fn snapshot(&self) -> &T {
         let guard = epoch::pin();
-        // SAFETY: The only writer is `swap`, which uses `store` + deferred
-        // drop, so the pointee is valid for the lifetime of the guard.
+        // SAFETY: Writers use `swap`/`apply` + deferred drop, so the
+        // pointee is valid for the lifetime of the guard.
         unsafe { self.state.load(Ordering::Acquire, &guard).deref() }
     }
 
-    /// Replace the current snapshot.  The old value is reclaimed
-    /// after all readers holding an epoch guard release it.
+    /// Atomically apply a mutation to the current state (CAS loop).
+    ///
+    /// Reads the current value, applies `f`, and attempts a
+    /// compare-and-swap. On contention (another writer changed the
+    /// state between load and CAS), re-reads and re-applies until
+    /// the CAS succeeds — no concurrent mutation is lost.
+    ///
+    /// Use this when the new state depends on the current state.
+    fn apply(&self, mut f: impl FnMut(&T) -> T) {
+        let guard = epoch::pin();
+        loop {
+            let current = self.state.load(Ordering::Acquire, &guard);
+            let current_ref = unsafe { current.deref() };
+            let new_val = f(current_ref);
+            match self.state.compare_exchange(
+                current,
+                Owned::new(new_val),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => continue, // another writer won — retry
+            }
+        }
+    }
+
+    /// Unconditionally replace the current snapshot.
+    ///
+    /// Use when the new state does NOT depend on the current state
+    /// (e.g., full refresh from an external source). Concurrent
+    /// `apply` calls are safe — their CAS will fail and retry
+    /// against the freshly swapped value.
     fn swap(&self, new_state: T) {
         let guard = epoch::pin();
         let old = self.state.swap(Owned::new(new_state), Ordering::AcqRel, &guard);
-        // SAFETY: We are the sole writer; `old` is no longer reachable
-        // after the swap.  Defer destruction until no reader can see it.
         unsafe { guard.defer_destroy(old); }
     }
 }
@@ -2557,14 +2672,16 @@ higher-level API with `load()` returning a `Guard` that derefs to `Arc<T>`.  Eit
 is acceptable — choose `Atomic<T>` for minimal overhead when the reader does not need to
 outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>`.
 
-**Applies to (spec structures)**:
+**Already applied to spec structures** (see §4.4, §4.5, §6.2, §6.3):
 
-| Structure                     | Field    | Section | Hot-path?                                  | Notes                 |
-|-------------------------------|----------|---------|--------------------------------------------|-----------------------|
-| `AccountEndpointStateStore`   | `state`  | §4.4    | Yes — every request reads routing state    | Highest-impact target |
-| `PartitionEndpointStateStore` | `state`  | §4.5    | Yes — every request checks circuit-breaker | Highest-impact target |
-| `EndpointShardPool`           | `shards` | §6.3    | Yes — every HTTP request selects a shard   |                       |
-| `ShardedHttpTransport`        | `pools`  | §6.2    | Yes — every HTTP request looks up the pool |                       |
+| Structure                     | Field    | Section | Hot-path?                                  | Notes                            |
+|-------------------------------|----------|---------|--------------------------------------------|----------------------------------|
+| `AccountEndpointStateStore`   | `state`  | §4.4    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`   |
+| `PartitionEndpointStateStore` | `state`  | §4.5    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>` |
+| `ShardedHttpTransport`        | `pools`  | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>`             |
+| `EndpointShardPool`           | `shards` | §6.3    | Yes — every HTTP request selects a shard   | `Atomic<Vec<…>>`                 |
+| `EndpointStats`               | all      | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
+| `ShardHealth`                 | all      | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
 
 **Applies to (existing driver code)**:
 
