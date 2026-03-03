@@ -234,7 +234,7 @@ async fn upsert_results(
 ) {
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
-        .unwrap_or_default();
+        .expect("RFC 3339 formatting should never fail");
     let (cpu, mem, sys_cpu, sys_total, sys_used) = metrics
         .map(|m| {
             (
@@ -291,7 +291,7 @@ async fn upsert_error(
 ) {
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
-        .unwrap_or_default();
+        .expect("RFC 3339 formatting should never fail");
     let id = Uuid::new_v4().to_string();
 
     let doc = ErrorResult {

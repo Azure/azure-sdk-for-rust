@@ -82,6 +82,10 @@ while [[ $# -gt 0 ]]; do
             STAGGER_MS="${1#*=}"
             shift
             ;;
+        --commit-sha|--commit-sha=*)
+            echo "Warning: --commit-sha is managed by the launcher and will be overridden." >&2
+            if [[ "$1" == "--commit-sha" ]]; then shift 2; else shift; fi
+            ;;
         --help|-h)
             echo "Usage: $0 [--processes N] [--cosmos-commit REF] [--poll-branch BRANCH] [perf-tool-args...]"
             echo ""
@@ -211,7 +215,7 @@ launch_processes() {
         last_index=$(( ${#PIDS[@]} - 1 ))
         echo "  Process $i: PID ${PIDS[$last_index]}"
         if [[ "$STAGGER_MS" -gt 0 && "$i" -lt "$PROCESSES" ]]; then
-            sleep "$(echo "scale=3; $STAGGER_MS / 1000" | bc)"
+            sleep "$(awk "BEGIN{printf \"%.3f\", $STAGGER_MS/1000}")"
         fi
     done
     echo ""

@@ -195,8 +195,8 @@ The launcher supports these additional flags:
 | `--processes N` | `1` | Number of OS processes to spawn |
 | `--cosmos-commit REF` | — | Build against a specific SDK commit/branch/tag |
 | `--poll-branch BRANCH` | — | Continuously poll a remote branch for new commits |
-| `--poll-interval SECS` | `60` | Seconds between branch polls |
-| `--stagger-ms MS` | `0` | Milliseconds between launching each process (0 = simultaneous) |
+| `--poll-interval SECS` | `43200` (12h) | Seconds between branch polls |
+| `--stagger-ms MS` | `200` | Milliseconds between launching each process (0 = simultaneous) |
 
 ### Staggered Launch
 
@@ -244,7 +244,7 @@ regression testing:
   --auth aad
 ```
 
-The script fetches the remote every `--poll-interval` seconds (default: 60),
+The script fetches the remote every `--poll-interval` seconds (default: 12 hours),
 and when a new commit is detected it stops all running processes, checks out
 the new code, rebuilds, and restarts. The commit SHA is automatically passed
 to each process via `--commit-sha` for Kusto correlation.
