@@ -39,6 +39,7 @@ struct PerfResult {
     partition_key: String,
     workload_id: String,
     commit_sha: String,
+    #[serde(rename = "TIMESTAMP")]
     timestamp: String,
     operation: String,
     count: u64,
@@ -63,6 +64,7 @@ struct ErrorResult {
     partition_key: String,
     workload_id: String,
     commit_sha: String,
+    #[serde(rename = "TIMESTAMP")]
     timestamp: String,
     operation: String,
     error_message: String,
