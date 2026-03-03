@@ -65,6 +65,8 @@ sysinfo
 PIDS
 
 # TCP/networking terms
+ALPN
+cpus
 keepalive
 
 # Common Rust syntax
