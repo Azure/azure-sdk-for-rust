@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The `azure_data_cosmos_driver` crate depends on `azure_core` for HTTP infrastructure, credentials, error types, and utilities. Per the multi-crate versioning strategy (AGENTS.md), the driver should be independently versionable from the SDK layer. The `azure_core` dependency creates version coupling — breaking changes in `azure_core` force driver major version bumps even when the driver's own API is stable.
+The `azure_data_cosmos_driver` crate depends on `azure_core` for HTTP infrastructure, credentials, error types, and utilities. Per the multi-crate versioning strategy (AGENTS.md), the driver should be independently versioned from the SDK layer. The `azure_core` dependency creates version coupling — breaking changes in `azure_core` force driver major version bumps even when the driver's own API is stable.
 
 Since the driver is consumed by `azure_data_cosmos_native` (C FFI for Java/.NET/Python SDKs), minimizing heavy Azure-specific dependencies reduces binary size and cross-language complexity.
 
@@ -149,6 +149,11 @@ pub mod http {
     // Client options (just the struct, not PipelineOptions/LoggingOptions)
     pub use typespec_client_core::http::ClientOptions;
 
+    // ClientMethodOptions — required because TokenRequestOptions has a public
+    // field of this type. Consumers constructing TokenRequestOptions must be
+    // able to name this type without depending on typespec_client_core directly.
+    pub use typespec_client_core::http::ClientMethodOptions;
+
     // HttpClient trait (needed for Transport construction)
     pub use typespec_client_core::http::HttpClient;
 }
@@ -253,13 +258,14 @@ These types exist in `typespec_client_core` but are **not re-exported** by `azur
 | `PipelineOptions` | Not used |
 | `TransportPolicy` | Driver has `TrackedTransportPolicy` |
 | `LoggingOptions`, logging policy | Driver does its own diagnostics |
-| `ClientMethodOptions` | Driver passes `Context` directly |
 | `sleep` module | Driver uses `tokio::time::sleep` |
 | `async_runtime` module | Driver uses tokio directly |
 | `stream` / `BytesStream` | Cosmos responses are buffered |
 | `tracing` module | Driver uses `tracing` crate directly |
-| `base64` module | Only needed internally for HMAC |
+| `base64` module | Only needed internally for HMAC (not in public API) |
 | `json` / `xml` modules | Driver does its own JSON |
+
+Note: `ClientMethodOptions` IS re-exported because `TokenRequestOptions` has a public field of that type. Consumers must be able to name it without depending on `typespec_client_core` directly.
 
 Note: these types are still **available transitively** since `azure_core_shared` depends on `typespec_client_core`. But they're not part of the `azure_core_shared` API surface, so the driver has no reason to reach for them.
 
@@ -339,10 +345,10 @@ find sdk/cosmos/azure_data_cosmos_driver/src -name '*.rs' \
 ### Phase 1: Create `azure_core_shared` crate
 
 1. Create `sdk/core/azure_core_shared/` with `Cargo.toml` and `src/lib.rs`
-2. Add re-exports of HTTP primitive types from `typespec_client_core`
-3. Move `Secret`, `SecretBytes`, `AccessToken`, `TokenRequestOptions`, `TokenCredential` from `azure_core/src/credentials.rs` into `azure_core_shared/src/credentials.rs`
-4. Move `hmac_sha256` implementations from `azure_core/src/hmac.rs` into `azure_core_shared/src/hmac.rs`
-5. Add `azure_core_shared` to workspace `Cargo.toml`
+2. Add `azure_core_shared` to `[workspace.members]` and `[workspace.dependencies]` in root `Cargo.toml`
+3. Add re-exports of HTTP primitive types from `typespec_client_core`
+4. Move `Secret`, `SecretBytes`, `AccessToken`, `TokenRequestOptions`, `TokenCredential` from `azure_core/src/credentials.rs` into `azure_core_shared/src/credentials.rs`
+5. Move `hmac_sha256` implementations from `azure_core/src/hmac.rs` into `azure_core_shared/src/hmac.rs`
 6. Validate: `cargo build -p azure_core_shared --all-features`
 
 ### Phase 2: Wire `azure_core` to re-export from `azure_core_shared`
@@ -382,11 +388,13 @@ find sdk/cosmos/azure_data_cosmos_driver/src -name '*.rs' \
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| `TokenRequestOptions` uses `ClientMethodOptions` from `typespec_client_core` | Low | `azure_core_shared` already depends on `typespec_client_core` — just don't re-export `ClientMethodOptions` at the crate root |
-| `azure_identity` wants `TokenCredential` | None | `azure_identity` can depend on `azure_core_shared` directly OR continue via `azure_core` re-export — either works |
-| Crate naming (`azure_core_shared` vs alternatives) | Low | Name clearly indicates relationship to `azure_core`; alternatives: `azure_core_base`, `azure_core_essentials` |
-| Future driver needs a type not in `azure_core_shared` | Low | Add another re-export to `azure_core_shared` — it's our crate to evolve |
-| Transitive dep still includes all of `typespec_client_core` | None | True, but unused code is dead-code-eliminated. The benefit is API surface control, not binary size. |
+| `TokenRequestOptions` has public field of type `ClientMethodOptions` | Medium | Re-export `ClientMethodOptions` in `azure_core_shared::http` so consumers can name it without depending on `typespec_client_core` directly. |
+| `azure_identity` implements `TokenCredential` extensively (10+ credential types) | Low | Compatible — `azure_identity` depends on `azure_core` which re-exports the trait. The underlying `Result`/`Error` types are identical (see Type Compatibility below). No changes needed in `azure_identity`. |
+| Feature flag passthrough to `typespec_client_core` | Medium | `azure_core_shared` must mirror transport-related features (reqwest, TLS). New upstream features (e.g., `reqwest_brotli`) require adding a passthrough feature. Document this as a known maintenance tradeoff. |
+| Crate naming (`azure_core_shared` vs alternatives) | Low | Name clearly indicates relationship to `azure_core`; alternatives: `azure_core_base`, `azure_core_essentials`. |
+| Future driver needs a type not in `azure_core_shared` | Low | Add another re-export to `azure_core_shared` — it's our crate to evolve. |
+| Transitive dep still includes all of `typespec_client_core` | None | Unused code is dead-code-eliminated. The benefit is API surface control and decoupling from `azure_core` versioning, not compile-time reduction. |
+| HMAC uses `base64` internally | None | `base64` is an internal dependency of `azure_core_shared`, not re-exported. `azure_core` continues to re-export `typespec_client_core::base64` for its own consumers. No conflict. |
 
 ## Benefits
 
@@ -397,12 +405,33 @@ find sdk/cosmos/azure_data_cosmos_driver/src -name '*.rs' \
 5. **No breaking changes** — `azure_core` re-exports preserve all existing public APIs
 6. **Reusable** — any crate that needs "just HTTP primitives + credentials" can use `azure_core_shared` instead of the full `azure_core`
 
+## Type Compatibility Guarantee
+
+All types re-exported by `azure_core_shared` are the **exact same types** from `typespec` / `typespec_client_core`, not wrappers or newtypes. This means:
+
+- `azure_core_shared::Result<T>` is `typespec::error::Result<T>`
+- `azure_core::Result<T>` is also `typespec::error::Result<T>` (re-export chain)
+- Therefore `azure_core_shared::Result<T>` and `azure_core::Result<T>` are **the same type**
+
+This is critical for trait compatibility:
+
+```rust
+// TokenCredential trait in azure_core_shared returns azure_core_shared::Result
+// which is typespec::error::Result
+
+// azure_identity implements TokenCredential via azure_core::credentials::TokenCredential
+// which is re-exported from azure_core_shared — same trait, same Result type
+
+// A driver function accepting Arc<dyn azure_core_shared::credentials::TokenCredential>
+// can receive an azure_identity credential passed through azure_core — fully compatible
+```
+
+The same applies to `Error`, `ErrorKind`, `Request`, `Response`, `Headers`, `Policy`, and all other re-exported types. Code using `azure_core::http::Request` and code using `azure_core_shared::http::Request` are working with the identical Rust type.
+
 ## Open Questions
 
 1. **Naming**: `azure_core_shared` vs `azure_core_base` vs `azure_core_essentials`? Should convey "lean subset of azure_core for library authors."
 
 2. **Should HMAC be a feature or always included?** Currently feature-gated (`hmac_rust` / `hmac_openssl`). Could make the whole `hmac` module optional if some consumers of `azure_core_shared` don't need crypto.
 
-3. **Should `azure_identity` also switch to `azure_core_shared`?** It primarily needs `TokenCredential` + HTTP types. Moving it would further validate the crate as a reusable foundation.
-
-4. **Type compatibility guarantee**: Since `azure_core_shared::http::Request` is literally `typespec_client_core::http::Request` (re-export, not wrapper), types are fully compatible across crate boundaries. Worth documenting this explicitly.
+3. **Should `azure_identity` also switch to `azure_core_shared`?** It primarily needs `TokenCredential` + HTTP types. Moving it would further validate the crate as a reusable foundation. Not required for this spec — `azure_identity` continues to work unchanged via `azure_core` re-exports.
