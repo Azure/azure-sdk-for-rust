@@ -43,9 +43,10 @@ typespec                      # Error, ErrorKind, Result, StatusCode, Bytes
 | **HTTP primitives** | `Method`, `StatusCode`, `Url` | `typespec_client_core::http` / `typespec::http` |
 | **Headers** | `HeaderName`, `HeaderValue`, `Headers`, `AsHeaders` | `typespec_client_core::http::headers` |
 | **Pipeline** | `Policy` trait, `PolicyResult`, `Transport`, `Context` | `typespec_client_core::http::policies` / `typespec_client_core::http` |
-| **Client config** | `ClientOptions` | `typespec_client_core::http` |
+| **Client config** | `ClientOptions` (note: `RetryOptions`/`LoggingOptions` fields are present but ignored by driver) | `typespec_client_core::http` |
 | **Utilities** | `SafeDebug`, `Bytes`, `Uuid` | `typespec_client_core::fmt`, `typespec`, `uuid` |
 | **Time** | `OffsetDateTime`, `to_rfc7231` | `typespec_client_core::time` |
+| **Async runtime** | `sleep`, async runtime abstractions | `typespec_client_core::sleep`, `typespec_client_core::async_runtime` |
 | **Credentials** | `Secret`, `SecretBytes`, `TokenCredential`, `AccessToken`, `TokenRequestOptions` | `azure_core::credentials` |
 | **Crypto** | `hmac_sha256` | `azure_core::hmac` |
 
@@ -60,8 +61,8 @@ typespec                      # Error, ErrorKind, Result, StatusCode, Bytes
 | `http::policies::transport` | `TransportPolicy` | Driver has `TrackedTransportPolicy` |
 | `http::policies::logging` | Request/response logging policy | Driver does its own diagnostics |
 | `tracing` | OpenTelemetry span/attribute helpers | Driver uses `tracing` crate directly |
-| `sleep` | Async sleep abstraction | Driver uses `tokio::time::sleep` directly |
-| `async_runtime` | Runtime-agnostic async helpers | Driver uses tokio directly |
+| `sleep` | Async sleep abstraction | ~~Excluded~~ → Included (see below) |
+| `async_runtime` | Runtime-agnostic async helpers | ~~Excluded~~ → Included (see below) |
 | `stream` / `BytesStream` | Streaming response bodies | Not needed — Cosmos responses are buffered (≤16MB) |
 | `base64` | Base64 encode/decode | Driver could use `base64` crate directly |
 | `json` / `xml` | Serde helpers | Driver does its own JSON (schema-agnostic) |
@@ -117,6 +118,14 @@ pub mod fmt {
     pub use typespec_client_core::fmt::*;
 }
 
+// === Async runtime abstractions ===
+pub mod sleep {
+    pub use typespec_client_core::sleep::*;
+}
+pub mod async_runtime {
+    pub use typespec_client_core::async_runtime::*;
+}
+
 // === HTTP primitives (NO retry, pipeline builder, logging, streaming) ===
 pub mod http {
     // Request/Response
@@ -149,27 +158,23 @@ pub mod http {
     // Client options (just the struct, not PipelineOptions/LoggingOptions)
     pub use typespec_client_core::http::ClientOptions;
 
-    // ClientMethodOptions — required because TokenRequestOptions has a public
-    // field of this type. Consumers constructing TokenRequestOptions must be
-    // able to name this type without depending on typespec_client_core directly.
-    pub use typespec_client_core::http::ClientMethodOptions;
-
     // HttpClient trait (needed for Transport construction)
     pub use typespec_client_core::http::HttpClient;
 }
 
-// === Credentials (moved from azure_core) ===
+// === Credentials (moved from azure_core, reshaped) ===
 pub mod credentials;
 
 // === HMAC (moved from azure_core) ===
 pub mod hmac;
 ```
 
-#### 2. Credentials module (moved from `azure_core/src/credentials.rs`)
+#### 2. Credentials module (moved from `azure_core/src/credentials.rs`, reshaped)
 
 ```rust
 // azure_core_shared/src/credentials.rs
-// Contents moved verbatim from azure_core/src/credentials.rs
+// Contents moved from azure_core/src/credentials.rs with TokenRequestOptions reshaped
+// to avoid exposing ClientMethodOptions.
 
 /// A secret string wrapper with constant-time PartialEq and redacted Debug.
 pub struct Secret { ... }
@@ -179,15 +184,31 @@ pub struct SecretBytes { ... }
 pub struct AccessToken { ... }
 
 /// Options for token requests.
-pub struct TokenRequestOptions<'a> { ... }
+///
+/// Reshaped from the azure_core version: instead of embedding a
+/// `ClientMethodOptions<'a>` field (which would pull pipeline/logging types
+/// into the shared crate), this struct takes a `&Context` directly for
+/// tracing propagation.
+pub struct TokenRequestOptions<'a> {
+    /// Additional claims required for the token (e.g., CAE claims).
+    pub claims: Option<&'a str>,
+    /// Scopes required for the token.
+    pub scopes: &'a [&'a str],
+    /// Tracing context for the token request.
+    pub context: Option<&'a Context>,
+    /// Tenant ID override for cross-tenant scenarios.
+    pub tenant_id: Option<&'a str>,
+}
 
 /// Async token acquisition.
 #[async_trait]
 pub trait TokenCredential: Send + Sync { ... }
 ```
 
+**NOTE**: `azure_core::credentials::TokenRequestOptions` retains its existing shape (with `ClientMethodOptions<'a>`) for backward compatibility. The `azure_core` version can construct an `azure_core_shared::TokenRequestOptions` internally when calling through to the shared trait. This avoids leaking `ClientMethodOptions` into the driver's dependency surface.
+
 **Dependencies** needed for credentials:
-- `typespec_client_core` (for `ClientMethodOptions` used by `TokenRequestOptions`, `SafeDebug`, `time::OffsetDateTime`)
+- `typespec_client_core` (for `Context`, `SafeDebug`, `time::OffsetDateTime`)
 - `async-trait`
 - `serde`
 
@@ -258,14 +279,16 @@ These types exist in `typespec_client_core` but are **not re-exported** by `azur
 | `PipelineOptions` | Not used |
 | `TransportPolicy` | Driver has `TrackedTransportPolicy` |
 | `LoggingOptions`, logging policy | Driver does its own diagnostics |
-| `sleep` module | Driver uses `tokio::time::sleep` |
-| `async_runtime` module | Driver uses tokio directly |
+| ~~`sleep` module~~ | ~~Driver uses tokio directly~~ → **Now included** — driver is runtime-agnostic |
+| ~~`async_runtime` module~~ | ~~Driver uses tokio directly~~ → **Now included** — driver is runtime-agnostic |
 | `stream` / `BytesStream` | Cosmos responses are buffered |
 | `tracing` module | Driver uses `tracing` crate directly |
 | `base64` module | Only needed internally for HMAC (not in public API) |
 | `json` / `xml` modules | Driver does its own JSON |
 
-Note: `ClientMethodOptions` IS re-exported because `TokenRequestOptions` has a public field of that type. Consumers must be able to name it without depending on `typespec_client_core` directly.
+Note: `ClientMethodOptions` is NOT re-exported. `TokenRequestOptions` has been reshaped in the shared crate to use `&Context` directly instead of embedding `ClientMethodOptions`, keeping pipeline/logging types out of the driver's API surface.
+
+Note: `sleep` and `async_runtime` ARE included because the driver is largely async-runtime agnostic and benefits from these abstractions rather than depending on tokio directly.
 
 Note: these types are still **available transitively** since `azure_core_shared` depends on `typespec_client_core`. But they're not part of the `azure_core_shared` API surface, so the driver has no reason to reach for them.
 
@@ -322,10 +345,10 @@ use azure_core_shared::time::OffsetDateTime;
 use azure_core_shared::fmt::SafeDebug;
 ```
 
-The migration is a single sed command:
+The migration is a single command:
 ```bash
 find sdk/cosmos/azure_data_cosmos_driver/src -name '*.rs' \
-  -exec sed -i '' 's/azure_core::/azure_core_shared::/g' {} +
+  -exec perl -pi -e 's/azure_core::/azure_core_shared::/g' {} +
 ```
 
 ## Comparison: Previous Approach vs This Approach
@@ -388,7 +411,7 @@ find sdk/cosmos/azure_data_cosmos_driver/src -name '*.rs' \
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| `TokenRequestOptions` has public field of type `ClientMethodOptions` | Medium | Re-export `ClientMethodOptions` in `azure_core_shared::http` so consumers can name it without depending on `typespec_client_core` directly. |
+| `TokenRequestOptions` reshaped to avoid `ClientMethodOptions` | Medium | Shared crate's `TokenRequestOptions` uses `&Context` directly. `azure_core`'s version retains backward-compatible shape and adapts internally. Two slightly different `TokenRequestOptions` types — document conversion clearly. |
 | `azure_identity` implements `TokenCredential` extensively (10+ credential types) | Low | Compatible — `azure_identity` depends on `azure_core` which re-exports the trait. The underlying `Result`/`Error` types are identical (see Type Compatibility below). No changes needed in `azure_identity`. |
 | Feature flag passthrough to `typespec_client_core` | Medium | `azure_core_shared` must mirror transport-related features (reqwest, TLS). New upstream features (e.g., `reqwest_brotli`) require adding a passthrough feature. Document this as a known maintenance tradeoff. |
 | Crate naming (`azure_core_shared` vs alternatives) | Low | Name clearly indicates relationship to `azure_core`; alternatives: `azure_core_base`, `azure_core_essentials`. |
