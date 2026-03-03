@@ -161,6 +161,40 @@ impl SubStatusCode {
                 _ => None,
             },
 
+            // 1013: PartitionKeyDefinitionNotSpecified (400) / CollectionCreateInProgress (404)
+            1013 => match u16::from(status_code?) {
+                400 => Some("PartitionKeyDefinitionNotSpecified"),
+                404 => Some("CollectionCreateInProgress"),
+                _ => None,
+            },
+
+            // 1024: CollectionRidMismatch (400) / ArchivalPartitionNotPresent (410)
+            1024 => match u16::from(status_code?) {
+                400 => Some("CollectionRidMismatch"),
+                410 => Some("ArchivalPartitionNotPresent"),
+                _ => None,
+            },
+
+            // 1031: SystemPartitionKeyNotAllowed (403) / PartitionMigratingCollectionDeleted (404)
+            1031 => match u16::from(status_code?) {
+                403 => Some("SystemPartitionKeyNotAllowed"),
+                404 => Some("PartitionMigratingCollectionDeleted"),
+                _ => None,
+            },
+
+            // 1034: ResourceSoftDeleted (403) / PartitionMigrationSourcePartitionDeletedInMaster (404)
+            1034 => match u16::from(status_code?) {
+                403 => Some("ResourceSoftDeleted"),
+                404 => Some("PartitionMigrationSourcePartitionDeletedInMaster"),
+                _ => None,
+            },
+
+            // 6001: AggregatedHealthStateError (503) / QueryWaitForSequentialProgress (other)
+            6001 => match u16::from(status_code?) {
+                503 => Some("AggregatedHealthStateError"),
+                _ => Some("QueryWaitForSequentialProgress"),
+            },
+
             // Codes with SINGLE meaning (no status code ambiguity)
 
             // 204: Head requests - LSN differences (unambiguous)
@@ -170,9 +204,16 @@ impl SubStatusCode {
             // 400: Bad Request
             1001 => Some("PartitionKeyMismatch"),
             1004 => Some("CrossPartitionQueryNotServable"),
+            1016 => Some("SchemaOwnerIdMismatch"),
+            1017 => Some("SchemaHashOrIdMismatch"),
+            1018 => Some("PartitionKeyDefinitionMissingForAutopilot"),
             0xFFFF => Some("ScriptCompileError"),
             3205 => Some("AnotherOfferReplaceOperationIsInProgress"),
             1101 => Some("HttpListenerException"),
+            1102 => Some("TransactionAlreadyActive"),
+            1103 => Some("InvalidTransactionId"),
+            1104 => Some("CrossCollectionTransactionNotSupported"),
+            1105 => Some("InvalidTopologyChangeRequest"),
 
             // 403: Forbidden
             3 => Some("WriteForbidden"),
@@ -181,28 +222,36 @@ impl SubStatusCode {
             1010 => Some("SharedThroughputDatabaseQuotaExceeded"),
             1011 => Some("SharedThroughputOfferGrowNotNeeded"),
             1014 => Some("PartitionKeyQuotaOverLimit"),
+            1015 => Some("OfferReplaceDisabledAutoScaleOffer"),
             1019 => Some("SharedThroughputDatabaseCollectionCountExceeded"),
             1020 => Some("SharedThroughputDatabaseCountExceeded"),
             1021 => Some("ComputeInternalError"),
+            1026 => Some("ClientIdMismatch"),
+            1027 => Some("UniqueIndexReIndexInProgress"),
             1028 => Some("ThroughputCapQuotaExceeded"),
             1029 => Some("InvalidThroughputCapValue"),
+            1032 => Some("PartitionKeyDeleteRequestLimitExceeded"),
+            1033 => Some("LeakedPartition"),
+            1110 => Some("PatchConditionNotMet"),
 
             // 404: Not Found
             1003 => Some("OwnerResourceNotFound"),
-            1013 => Some("CollectionCreateInProgress"),
             1023 => Some("StoreNotReady"),
-            1024 => Some("ArchivalPartitionNotPresent"),
             1030 => Some("AuthTokenNotFoundInCache"),
-            1031 => Some("PartitionMigratingCollectionDeleted"),
-            1034 => Some("PartitionMigrationSourcePartitionDeletedInMaster"),
             1035 => Some("PartitionMigrationSharedThroughputDbPartitionNotFound"),
             1036 => Some("PartitionMigrationPartitionResourceNotFound"),
             1037 => Some("PartitionMigrationFailedToUpdateDns"),
 
+            // 408: Request Timeout
+            1900 => Some("RequestPreempted"),
+
             // 409: Conflict
             1006 => Some("ConflictWithControlPlane"),
             3206 => Some("DatabaseNameAlreadyExists"),
+            3301 => Some("UniqueIndexConflict"),
             3302 => Some("PartitionKeyHashCollisionForId"),
+            3303 => Some("AzureBackupVaultIncrementalBackupPaused"),
+            3304 => Some("AzureBackupVaultIncrementalBackupRestoreDisabled"),
             3050 => Some("PartitionMigrationDocCountMismatchSourceTarget"),
             3051 => Some("PartitionMigrationDocCountMismatchTargetReplicas"),
 
@@ -223,17 +272,60 @@ impl SubStatusCode {
             2021 => Some("OfferScaledUpByUser"),
             2101 => Some("CannotAcquireLogStoreLoadBalanceLock"),
 
-            // 429: Too Many Requests
+            // 413: Request Entity Too Large
+            3401 => Some("TransactionLimitExceeded"),
+            3402 => Some("BatchResponseSizeExceeded"),
+
+            // 429: Too Many Requests (SLA Violations 30xx)
+            3073 => Some("BwTreeIORateLimiter"),
+            3074 => Some("StalenessExceededBound"),
+            3075 => Some("ReplicationQueueFull"),
+            3076 => Some("BwTreeLogFullBackpressure"),
+            3077 => Some("ConnectionRateLimiter"),
+            3078 => Some("XPCompositeReplicator"),
+            3079 => Some("Unexpected"),
+            3080 => Some("AsyncReaderWriterLock"),
+            3081 => Some("ServiceModule"),
+            3082 => Some("ValueDoesNotMatchExpectedBound"),
+            3083 => Some("SinkPartitionValueDoesNotMatchExpectedBound"),
+            3084 => Some("StoredProcedureConcurrency"),
+            3085 => Some("RntbdClientChannel"),
+            3086 => Some("LogFlushQueueDepthBackpressure"),
+            3087 => Some("CheckpointQueueDepthBackpressure"),
+            3088 => Some("ThrottleDueToSplit"),
+            3089 => Some("AEQueueFull"),
+            3090 => Some("QuotaExceeded"),
+            3091 => Some("CollectionQuotaExceeded"),
+            3092 => Some("SystemResourceUnavailable"),
+            3093 => Some("PartitionedResourceQuotaExceeded"),
+            3094 => Some("ThrottleDueToResourceExhaustion"),
+            3095 => Some("ThrottleDueToStagingIndexQueueFull"),
+            3096 => Some("ThrottleDueToReplicationBackpressure"),
+            3097 => Some("CollectionQuotaExceededAutopilot"),
+            3098 => Some("LogStoreNoFreeSegments"),
+            3099 => Some("ThrottledByBlobRead"),
+            3100 => Some("OperationLogSizeTooBig"),
+            3101 => Some("ArchivalPartitionPendingCatchup"),
+            3102 => Some("ThrottleDueToTrafficRegulation"),
+            3103 => Some("ThrottleDueToTransportBufferUsage"),
+            // 429: Too Many Requests (Non-SLA Violations 32xx)
             3200 => Some("RUBudgetExceeded"),
             3201 => Some("GatewayThrottled"),
+            3202 => Some("RUpmPartitionLimitExceeded"),
+            3203 => Some("RUpmSharedBudgetExceeded"),
+            3204 => Some("ThrottledOfferScaleDown"),
             3208 => Some("ClientTcpChannelFull"),
             3209 => Some("BWTermCountLimitExceeded"),
-            3084 => Some("StoredProcedureConcurrency"),
-            3088 => Some("ThrottleDueToSplit"),
-            3092 => Some("SystemResourceUnavailable"),
-            3103 => Some("ThrottleDueToTransportBufferUsage"),
+            3210 => Some("RUBudgetExceededForMaster"),
+            3211 => Some("ThrottleDueToEncryptedRevokedStoreLogNotEmpty"),
+            3212 => Some("ThroughputBucketLimitExhausted"),
             3213 => Some("TooManyThroughputBucketUpdates"),
+            3214 => Some("HotPartitionKeyThrottled"),
             3300 => Some("MicrosoftFabricCUBudgetExceeded"),
+
+            // 449: Retry With
+            5350 => Some("RbacAadGroupUnavailable"),
+            5351 => Some("AzureRbacAccessDecisionUnavailable"),
 
             // 500: Internal Server Error
             3001 => Some("ConfigurationNameNotEmpty"),
@@ -244,14 +336,17 @@ impl SubStatusCode {
             3021 => Some("OperationManagerDequeuePumpStopped"),
             3042 => Some("OperationCancelledWithNoRollback"),
             3043 => Some("SplitTimedOut"),
+            5360 => Some("RbacDisabledDueToArmPath"),
 
             // 503: Service Unavailable
+            1337 => Some("GoneException"),
+            1338 => Some("QuorumNotMet"),
+            1339 => Some("TooManyTentativeWritesToSatelliteRegion"),
             9001 => Some("OperationPaused"),
             9002 => Some("ServiceIsOffline"),
             9003 => Some("InsufficientCapacity"),
 
             // Federation/Health errors (6xxx)
-            6001 => Some("AggregatedHealthStateError"),
             6002 => Some("ApplicationHealthStateError"),
             6003 => Some("HealthStateError"),
             6004 => Some("UnhealthyEventFound"),
@@ -272,6 +367,16 @@ impl SubStatusCode {
             4007 => Some("InvalidInputBytes"),
             4008 => Some("KeyVaultInternalServerError"),
             4009 => Some("KeyVaultDnsNotResolved"),
+            4010 => Some("InvalidKeyVaultCertUri"),
+            4011 => Some("InvalidKeyVaultKeyAndCertUri"),
+            4012 => Some("CustomerKeyRotated"),
+            4013 => Some("MissingRequestParameter"),
+            4014 => Some("InvalidKeyVaultSecretUri"),
+            4015 => Some("UndefinedDefaultIdentity"),
+            4016 => Some("KeyVaultOutboundDeniedByNsp"),
+            4017 => Some("KeyVaultNotFound"),
+            4018 => Some("KeyDisabledOrExpired"),
+            4019 => Some("MasterServiceUnavailable"),
 
             // AAD/Auth errors (5xxx)
             5000 => Some("MissingAuthHeader"),
@@ -290,8 +395,9 @@ impl SubStatusCode {
             5200 => Some("AadTokenInvalidSigningKey"),
             5201 => Some("AadTokenGroupExpansionError"),
             5202 => Some("LocalAuthDisabled"),
+            5203 => Some("LocalAuthDisabled"),
 
-            // RBAC errors (53xx, 54xx)
+            // RBAC errors (53xx)
             5300 => Some("RbacOperationNotSupported"),
             5301 => Some("RbacUnauthorizedMetadataRequest"),
             5302 => Some("RbacUnauthorizedNameBasedDataRequest"),
@@ -300,7 +406,25 @@ impl SubStatusCode {
             5305 => Some("RbacMissingUserId"),
             5306 => Some("RbacMissingAction"),
             5307 => Some("NspInboundDenied"),
+
+            // 412: Precondition Failed (Migration)
+            5325 => Some("MismatchingCollectionRidsOnMigratePartitionDuringMigration"),
+            5326 => Some("PartitionNotInMigratingStatusForMigratePartitionRequest"),
+            5327 => Some("MissingPartitionResourceOnCompleteMigration"),
+            5328 => Some("MissingPartitionResourceOnAbortMigration"),
+
+            // RBAC and retriable writes (54xx)
             5400 => Some("RbacRequestWasNotAuthorized"),
+            5401 => Some("InitialRetriableWriteRequestCompleted"),
+            5402 => Some("DuplicateRetriableWriteRequest"),
+            5403 => Some("ConflictOperationInUserTransaction"),
+            5404 => Some("RetriableWriteRequestResponseExpiredInPrimaryCache"),
+
+            // Query execution (6xxx)
+            6000 => Some("QueryRequestInitialized"),
+            6100 => Some("QueryExecutionInProgress"),
+            6200 => Some("QueryExecutionComplete"),
+            6300 => Some("CollectionTruncateNotAllowedDuringMerge"),
 
             // Fabric codes (605x)
             6050 => Some("InsufficientFabricPermissions"),
@@ -398,6 +522,35 @@ impl SubStatusCode {
     /// HTTP listener exception (1101).
     pub const HTTP_LISTENER_EXCEPTION: SubStatusCode = SubStatusCode(1101);
 
+    /// Schema owner ID mismatch (1016).
+    pub const SCHEMA_OWNER_ID_MISMATCH: SubStatusCode = SubStatusCode(1016);
+
+    /// Schema hash or ID mismatch (1017).
+    pub const SCHEMA_HASH_OR_ID_MISMATCH: SubStatusCode = SubStatusCode(1017);
+
+    /// Partition key definition missing for autopilot (1018).
+    pub const PARTITION_KEY_DEFINITION_MISSING_FOR_AUTOPILOT: SubStatusCode = SubStatusCode(1018);
+
+    /// Partition key definition not specified (1013).
+    /// Note: Same value as `COLLECTION_CREATE_IN_PROGRESS` for 404.
+    pub const PARTITION_KEY_DEFINITION_NOT_SPECIFIED: SubStatusCode = SubStatusCode(1013);
+
+    /// Collection RID mismatch (1024).
+    /// Note: Same value as `ARCHIVAL_PARTITION_NOT_PRESENT` for 410.
+    pub const COLLECTION_RID_MISMATCH: SubStatusCode = SubStatusCode(1024);
+
+    /// Transaction already active (1102).
+    pub const TRANSACTION_ALREADY_ACTIVE: SubStatusCode = SubStatusCode(1102);
+
+    /// Invalid transaction ID (1103).
+    pub const INVALID_TRANSACTION_ID: SubStatusCode = SubStatusCode(1103);
+
+    /// Cross-collection transaction not supported (1104).
+    pub const CROSS_COLLECTION_TRANSACTION_NOT_SUPPORTED: SubStatusCode = SubStatusCode(1104);
+
+    /// Invalid topology change request (1105).
+    pub const INVALID_TOPOLOGY_CHANGE_REQUEST: SubStatusCode = SubStatusCode(1105);
+
     // ----- 403: Forbidden -----
 
     /// Write operations forbidden (3).
@@ -442,6 +595,32 @@ impl SubStatusCode {
     /// Compute internal error (1021).
     pub const COMPUTE_INTERNAL_ERROR: SubStatusCode = SubStatusCode(1021);
 
+    /// Offer replace disabled for auto-scale offer (1015).
+    pub const OFFER_REPLACE_DISABLED_AUTO_SCALE_OFFER: SubStatusCode = SubStatusCode(1015);
+
+    /// Client ID mismatch (1026).
+    pub const CLIENT_ID_MISMATCH: SubStatusCode = SubStatusCode(1026);
+
+    /// Unique index re-index in progress (1027).
+    pub const UNIQUE_INDEX_RE_INDEX_IN_PROGRESS: SubStatusCode = SubStatusCode(1027);
+
+    /// Partition key delete request limit exceeded (1032).
+    pub const PARTITION_KEY_DELETE_REQUEST_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(1032);
+
+    /// Leaked partition (1033).
+    pub const LEAKED_PARTITION: SubStatusCode = SubStatusCode(1033);
+
+    /// System partition key not allowed (1031).
+    /// Note: Same value as `PARTITION_MIGRATING_COLLECTION_DELETED` for 404.
+    pub const SYSTEM_PARTITION_KEY_NOT_ALLOWED: SubStatusCode = SubStatusCode(1031);
+
+    /// Resource soft deleted (1034).
+    /// Note: Same value as `PARTITION_MIGRATION_SOURCE_PARTITION_DELETED_IN_MASTER` for 404.
+    pub const RESOURCE_SOFT_DELETED: SubStatusCode = SubStatusCode(1034);
+
+    /// Patch condition not met (1110).
+    pub const PATCH_CONDITION_NOT_MET: SubStatusCode = SubStatusCode(1110);
+
     // ----- 404: Not Found -----
 
     /// Read session not available (1002).
@@ -480,6 +659,11 @@ impl SubStatusCode {
     /// Partition migration failed to update DNS (1037).
     pub const PARTITION_MIGRATION_FAILED_TO_UPDATE_DNS: SubStatusCode = SubStatusCode(1037);
 
+    // ----- 408: Request Timeout -----
+
+    /// Request preempted due to execution time limit (1900).
+    pub const REQUEST_PREEMPTED: SubStatusCode = SubStatusCode(1900);
+
     // ----- 409: Conflict -----
 
     /// Conflict with control plane (1006).
@@ -498,6 +682,16 @@ impl SubStatusCode {
     /// Partition migration document count mismatch between target partition replicas (3051).
     pub const PARTITION_MIGRATION_DOC_COUNT_MISMATCH_TARGET_REPLICAS: SubStatusCode =
         SubStatusCode(3051);
+
+    /// Unique index conflict (3301).
+    pub const UNIQUE_INDEX_CONFLICT: SubStatusCode = SubStatusCode(3301);
+
+    /// Azure Backup Vault incremental backup paused (3303).
+    pub const AZURE_BACKUP_VAULT_INCREMENTAL_BACKUP_PAUSED: SubStatusCode = SubStatusCode(3303);
+
+    /// Azure Backup Vault incremental backup restore disabled (3304).
+    pub const AZURE_BACKUP_VAULT_INCREMENTAL_BACKUP_RESTORE_DISABLED: SubStatusCode =
+        SubStatusCode(3304);
 
     // ----- 410: Gone -----
 
@@ -573,6 +767,14 @@ impl SubStatusCode {
     /// Cannot acquire log store storage account load balance lock (2101).
     pub const CANNOT_ACQUIRE_LOG_STORE_LOAD_BALANCE_LOCK: SubStatusCode = SubStatusCode(2101);
 
+    // ----- 413: Request Entity Too Large -----
+
+    /// Transaction limit exceeded (3401).
+    pub const TRANSACTION_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3401);
+
+    /// Batch response size exceeded (3402).
+    pub const BATCH_RESPONSE_SIZE_EXCEEDED: SubStatusCode = SubStatusCode(3402);
+
     // ----- 429: Too Many Requests -----
 
     /// RU budget exceeded (3200).
@@ -599,6 +801,116 @@ impl SubStatusCode {
     /// BW term count limit exceeded (3209).
     pub const BW_TERM_COUNT_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3209);
 
+    /// BwTree IO rate limiter throttle (3073).
+    pub const BW_TREE_IO_RATE_LIMITER: SubStatusCode = SubStatusCode(3073);
+
+    /// Staleness exceeded bound throttle (3074).
+    pub const STALENESS_EXCEEDED_BOUND: SubStatusCode = SubStatusCode(3074);
+
+    /// Replication queue full throttle (3075).
+    pub const REPLICATION_QUEUE_FULL: SubStatusCode = SubStatusCode(3075);
+
+    /// BwTree log full backpressure throttle (3076).
+    pub const BW_TREE_LOG_FULL_BACKPRESSURE: SubStatusCode = SubStatusCode(3076);
+
+    /// Connection rate limiter throttle (3077).
+    pub const CONNECTION_RATE_LIMITER: SubStatusCode = SubStatusCode(3077);
+
+    /// XP composite replicator throttle (3078).
+    pub const XP_COMPOSITE_REPLICATOR: SubStatusCode = SubStatusCode(3078);
+
+    /// Unexpected throttle (3079).
+    pub const UNEXPECTED_THROTTLE: SubStatusCode = SubStatusCode(3079);
+
+    /// Async reader-writer lock throttle (3080).
+    pub const ASYNC_READER_WRITER_LOCK: SubStatusCode = SubStatusCode(3080);
+
+    /// Service module throttle (3081).
+    pub const SERVICE_MODULE: SubStatusCode = SubStatusCode(3081);
+
+    /// Value does not match expected bound (3082).
+    pub const VALUE_DOES_NOT_MATCH_EXPECTED_BOUND: SubStatusCode = SubStatusCode(3082);
+
+    /// Sink partition value does not match expected bound (3083).
+    pub const SINK_PARTITION_VALUE_DOES_NOT_MATCH_EXPECTED_BOUND: SubStatusCode =
+        SubStatusCode(3083);
+
+    /// RNTBD client channel throttle (3085).
+    pub const RNTBD_CLIENT_CHANNEL: SubStatusCode = SubStatusCode(3085);
+
+    /// Log flush queue depth backpressure throttle (3086).
+    pub const LOG_FLUSH_QUEUE_DEPTH_BACKPRESSURE: SubStatusCode = SubStatusCode(3086);
+
+    /// Checkpoint queue depth backpressure throttle (3087).
+    pub const CHECKPOINT_QUEUE_DEPTH_BACKPRESSURE: SubStatusCode = SubStatusCode(3087);
+
+    /// AE queue full throttle (3089).
+    pub const AE_QUEUE_FULL: SubStatusCode = SubStatusCode(3089);
+
+    /// Quota exceeded throttle (3090).
+    pub const QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(3090);
+
+    /// Collection quota exceeded throttle (3091).
+    pub const COLLECTION_QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(3091);
+
+    /// Partitioned resource quota exceeded (3093).
+    pub const PARTITIONED_RESOURCE_QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(3093);
+
+    /// Throttle due to resource exhaustion (3094).
+    pub const THROTTLE_DUE_TO_RESOURCE_EXHAUSTION: SubStatusCode = SubStatusCode(3094);
+
+    /// Throttle due to staging index queue full (3095).
+    pub const THROTTLE_DUE_TO_STAGING_INDEX_QUEUE_FULL: SubStatusCode = SubStatusCode(3095);
+
+    /// Throttle due to replication backpressure (3096).
+    pub const THROTTLE_DUE_TO_REPLICATION_BACKPRESSURE: SubStatusCode = SubStatusCode(3096);
+
+    /// Collection quota exceeded for autopilot (3097).
+    pub const COLLECTION_QUOTA_EXCEEDED_AUTOPILOT: SubStatusCode = SubStatusCode(3097);
+
+    /// Log store no free segments (3098).
+    pub const LOG_STORE_NO_FREE_SEGMENTS: SubStatusCode = SubStatusCode(3098);
+
+    /// Throttled by blob read (3099).
+    pub const THROTTLED_BY_BLOB_READ: SubStatusCode = SubStatusCode(3099);
+
+    /// Operation log size too big (3100).
+    pub const OPERATION_LOG_SIZE_TOO_BIG: SubStatusCode = SubStatusCode(3100);
+
+    /// Archival partition pending catchup (3101).
+    pub const ARCHIVAL_PARTITION_PENDING_CATCHUP: SubStatusCode = SubStatusCode(3101);
+
+    /// Throttle due to traffic regulation (3102).
+    pub const THROTTLE_DUE_TO_TRAFFIC_REGULATION: SubStatusCode = SubStatusCode(3102);
+
+    /// Throttle due to transport buffer usage (3103).
+    pub const THROTTLE_DUE_TO_TRANSPORT_BUFFER_USAGE: SubStatusCode = SubStatusCode(3103);
+
+    /// RU per minute partition limit exceeded (3202).
+    pub const RUPM_PARTITION_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3202);
+
+    /// RU per minute shared budget exceeded (3203).
+    pub const RUPM_SHARED_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3203);
+
+    /// Throttled offer scale down (3204).
+    pub const THROTTLED_OFFER_SCALE_DOWN: SubStatusCode = SubStatusCode(3204);
+
+    /// RU budget exceeded for master (3210).
+    pub const RU_BUDGET_EXCEEDED_FOR_MASTER: SubStatusCode = SubStatusCode(3210);
+
+    /// Throttle due to encrypted revoked store log not empty (3211).
+    pub const THROTTLE_DUE_TO_ENCRYPTED_REVOKED_STORE_LOG_NOT_EMPTY: SubStatusCode =
+        SubStatusCode(3211);
+
+    /// Throughput bucket limit exhausted (3212).
+    pub const THROUGHPUT_BUCKET_LIMIT_EXHAUSTED: SubStatusCode = SubStatusCode(3212);
+
+    /// Too many throughput bucket updates (3213).
+    pub const TOO_MANY_THROUGHPUT_BUCKET_UPDATES: SubStatusCode = SubStatusCode(3213);
+
+    /// Hot partition key throttled (3214).
+    pub const HOT_PARTITION_KEY_THROTTLED: SubStatusCode = SubStatusCode(3214);
+
     // ----- 500: Internal Server Error -----
 
     /// Invalid account configuration (3003).
@@ -616,6 +928,9 @@ impl SubStatusCode {
     /// Partition failover error code (3010).
     pub const PARTITION_FAILOVER_ERROR_CODE: SubStatusCode = SubStatusCode(3010);
 
+    /// RBAC disabled due to ARM path (5360).
+    pub const RBAC_DISABLED_DUE_TO_ARM_PATH: SubStatusCode = SubStatusCode(5360);
+
     // ----- 503: Service Unavailable -----
 
     /// Operation paused (9001).
@@ -630,6 +945,15 @@ impl SubStatusCode {
 
     /// Service is offline (9002).
     pub const SERVICE_IS_OFFLINE: SubStatusCode = SubStatusCode(9002);
+
+    /// Server received a Gone exception (1337).
+    pub const GONE_EXCEPTION: SubStatusCode = SubStatusCode(1337);
+
+    /// Quorum not met for service unavailable (1338).
+    pub const QUORUM_NOT_MET: SubStatusCode = SubStatusCode(1338);
+
+    /// Too many tentative writes to satellite region (1339).
+    pub const TOO_MANY_TENTATIVE_WRITES_TO_SATELLITE_REGION: SubStatusCode = SubStatusCode(1339);
 
     // ----- SDK Client-side codes (10xxx, 2xxxx) -----
 
@@ -721,6 +1045,94 @@ impl SubStatusCode {
 
     /// RBAC request was not authorized (5400).
     pub const RBAC_REQUEST_NOT_AUTHORIZED: SubStatusCode = SubStatusCode(5400);
+
+    // ----- Key Vault extended codes (4010-4019) -----
+
+    /// Invalid Key Vault certificate URI (4010).
+    pub const INVALID_KEY_VAULT_CERT_URI: SubStatusCode = SubStatusCode(4010);
+
+    /// Invalid Key Vault key and certificate URI (4011).
+    pub const INVALID_KEY_VAULT_KEY_AND_CERT_URI: SubStatusCode = SubStatusCode(4011);
+
+    /// Customer key rotated (4012).
+    pub const CUSTOMER_KEY_ROTATED: SubStatusCode = SubStatusCode(4012);
+
+    /// Missing request parameter (4013).
+    pub const MISSING_REQUEST_PARAMETER: SubStatusCode = SubStatusCode(4013);
+
+    /// Invalid Key Vault secret URI (4014).
+    pub const INVALID_KEY_VAULT_SECRET_URI: SubStatusCode = SubStatusCode(4014);
+
+    /// Undefined default identity (4015).
+    pub const UNDEFINED_DEFAULT_IDENTITY: SubStatusCode = SubStatusCode(4015);
+
+    /// Key Vault outbound denied by NSP (4016).
+    pub const KEY_VAULT_OUTBOUND_DENIED_BY_NSP: SubStatusCode = SubStatusCode(4016);
+
+    /// Key Vault not found (4017).
+    pub const KEY_VAULT_NOT_FOUND: SubStatusCode = SubStatusCode(4017);
+
+    /// Key disabled or expired (4018).
+    pub const KEY_DISABLED_OR_EXPIRED: SubStatusCode = SubStatusCode(4018);
+
+    /// Master service unavailable (4019).
+    pub const MASTER_SERVICE_UNAVAILABLE: SubStatusCode = SubStatusCode(4019);
+
+    // ----- 412: Precondition Failed (Migration) -----
+
+    /// Mismatching collection RIDs on migrate partition during migration (5325).
+    pub const MISMATCHING_COLLECTION_RIDS_ON_MIGRATE_PARTITION: SubStatusCode =
+        SubStatusCode(5325);
+
+    /// Partition not in migrating status for migrate partition request (5326).
+    pub const PARTITION_NOT_IN_MIGRATING_STATUS: SubStatusCode = SubStatusCode(5326);
+
+    /// Missing partition resource on complete migration (5327).
+    pub const MISSING_PARTITION_RESOURCE_ON_COMPLETE_MIGRATION: SubStatusCode =
+        SubStatusCode(5327);
+
+    /// Missing partition resource on abort migration (5328).
+    pub const MISSING_PARTITION_RESOURCE_ON_ABORT_MIGRATION: SubStatusCode = SubStatusCode(5328);
+
+    // ----- 449: Retry With -----
+
+    /// RBAC AAD group unavailable (5350).
+    pub const RBAC_AAD_GROUP_UNAVAILABLE: SubStatusCode = SubStatusCode(5350);
+
+    /// Azure RBAC access decision unavailable (5351).
+    pub const AZURE_RBAC_ACCESS_DECISION_UNAVAILABLE: SubStatusCode = SubStatusCode(5351);
+
+    // ----- Retriable writes (54xx) -----
+
+    /// Initial retriable write request completed (5401).
+    pub const INITIAL_RETRIABLE_WRITE_REQUEST_COMPLETED: SubStatusCode = SubStatusCode(5401);
+
+    /// Duplicate retriable write request (5402).
+    pub const DUPLICATE_RETRIABLE_WRITE_REQUEST: SubStatusCode = SubStatusCode(5402);
+
+    /// Conflict operation in user transaction (5403).
+    pub const CONFLICT_OPERATION_IN_USER_TRANSACTION: SubStatusCode = SubStatusCode(5403);
+
+    /// Retriable write request response expired in primary cache (5404).
+    pub const RETRIABLE_WRITE_RESPONSE_EXPIRED_IN_PRIMARY_CACHE: SubStatusCode =
+        SubStatusCode(5404);
+
+    // ----- Query execution (6xxx) -----
+
+    /// Query request initialized (6000).
+    pub const QUERY_REQUEST_INITIALIZED: SubStatusCode = SubStatusCode(6000);
+
+    /// Query waiting for sequential progress (6001).
+    pub const QUERY_WAIT_FOR_SEQUENTIAL_PROGRESS: SubStatusCode = SubStatusCode(6001);
+
+    /// Query execution in progress (6100).
+    pub const QUERY_EXECUTION_IN_PROGRESS: SubStatusCode = SubStatusCode(6100);
+
+    /// Query execution complete (6200).
+    pub const QUERY_EXECUTION_COMPLETE: SubStatusCode = SubStatusCode(6200);
+
+    /// Collection truncate not allowed during merge (6300).
+    pub const COLLECTION_TRUNCATE_NOT_ALLOWED_DURING_MERGE: SubStatusCode = SubStatusCode(6300);
 }
 
 impl Default for SubStatusCode {
