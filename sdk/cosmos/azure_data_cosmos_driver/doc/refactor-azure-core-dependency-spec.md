@@ -8,7 +8,7 @@ Since the driver is consumed by `azure_data_cosmos_native` (C FFI for Java/.NET/
 
 The previous revision of this spec proposed having the driver depend on `typespec_client_core` directly, but `typespec_client_core` includes significant functionality the driver never uses (retry policies, pipeline builder, logging policies, streaming, sleep abstractions, tracing module, etc.). The driver only needs the HTTP primitive types and a handful of Azure-specific types (credentials + HMAC).
 
-Reference: <https://github.com/Azure/azure-sdk-for-python/issues/45463>
+Reference: <https://github.com/Azure/azure-sdk-for-rust/issues/3845>
 
 ## Current Crate Layering
 
