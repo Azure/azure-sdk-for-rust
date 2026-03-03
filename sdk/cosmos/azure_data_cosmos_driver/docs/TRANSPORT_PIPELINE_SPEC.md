@@ -607,7 +607,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // See §4.2 Hedging
                 return execute_hedged(
                     operation, options, &routing, &secondary_routing,
-                    &session_state, transport, diagnostics, deadline,
+                    &session_state, transport, auth_context, diagnostics, deadline,
                 ).await;
             }
             OperationAction::Abort(error) => {
@@ -1052,8 +1052,8 @@ pub(crate) struct PartitionEndpointState {
     /// (partition_key_range_id, region). Value is the circuit-breaker
     /// state for that partition/region pair.
     pub unavailable_partitions: HashMap<PartitionRegionKey, PartitionCircuitBreaker>,
-    /// Circuit-breaker configuration thresholds (resolved from `CircuitBreakerOptions`).
-    pub config: CircuitBreakerOptions,
+    /// Circuit-breaker configuration thresholds (resolved from `CircuitBreakerOptions` §9.4).
+    pub config: CircuitBreakerConfig,
 }
 
 /// Composite key for partition-level circuit-breaker tracking.
@@ -1088,13 +1088,14 @@ pub(crate) struct UnavailablePartition {
     pub is_read: bool,
 }
 
-/// Circuit-breaker configuration thresholds.
+/// Resolved circuit-breaker configuration thresholds.
 ///
 /// This is a resolved snapshot built from `CircuitBreakerOptions` (§9.4)
 /// after layered option resolution. All fields are concrete (non-`Option`)
-/// with defaults applied.
+/// with defaults applied. Named `Config` (not `Options`) to distinguish
+/// from the user-facing `CircuitBreakerOptions` in §9.4.
 #[derive(Clone, Debug)]
-pub(crate) struct CircuitBreakerOptions {
+pub(crate) struct CircuitBreakerConfig {
     /// Read failures within the counter reset window before tripping. Default: 2.
     pub read_failure_threshold: u32,
     /// Write failures within the counter reset window before tripping. Default: 5.
@@ -1797,6 +1798,9 @@ impl EndpointShardPool {
     ///    create a new shard (if under max_clients_per_endpoint).
     /// 5. If at max clients, use the least-loaded shard from the FULL pool
     ///    (queue pressure, but bounded).
+    // NOTE: This pseudocode uses `.read()` / `.write()` shorthand for
+    // readability. The actual implementation should use epoch-pinned loads
+    // and clone-on-write swaps via `crossbeam::epoch::Atomic` (see §11.1).
     fn select_shard(&self, endpoint: &EndpointKey) -> Arc<ClientShard> {
         let mut candidates = {
             let shards = self.shards.read();
@@ -2001,6 +2005,9 @@ impl ShardedHttpTransport {
     /// 1. Checks shard health and evicts unhealthy shards
     /// 2. Reclaims idle shards above minimum
     /// 3. Proactively scales up if utilization is high
+    // NOTE: This pseudocode uses `.read()` / `.write()` shorthand for
+    // readability. The actual implementation should use epoch-pinned loads
+    // and clone-on-write swaps via `crossbeam::epoch::Atomic` (see §11.1).
     async fn health_sweep_loop(self: Arc<Self>) {
         loop {
             sleep(self.config.health_check_interval).await;
@@ -2206,13 +2213,13 @@ session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit brea
 
 ### Step 3: Session consistency & partition-level circuit breaker
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                       | Files                                                                                                 |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                                                | `driver/routing/session_manager.rs`                                                                   |
-| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, wire it into the existing `LocationStateStore` (§4.6), add `CircuitBreakerOptions`, and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `location_state_store.rs`, `circuit_breaker_systems.rs` |
-| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                                                         | `driver/pipeline/components.rs`, `operation_pipeline.rs`                                              |
-| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerOptions`.                                                                                                                                                                                                                                                                          | `options/availability.rs`                                                                             |
-| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                                                          | `tests/`                                                                                              |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                                                                   | Files                                                                                                 |
+|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                                                                                            | `driver/routing/session_manager.rs`                                                                   |
+| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, wire it into the existing `LocationStateStore` (§4.6), add `CircuitBreakerConfig` (resolved from `CircuitBreakerOptions` §9.4), and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `location_state_store.rs`, `circuit_breaker_systems.rs` |
+| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                                                                                                     | `driver/pipeline/components.rs`, `operation_pipeline.rs`                                              |
+| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerOptions`.                                                                                                                                                                                                                                                                                                                      | `options/availability.rs`                                                                             |
+| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                                                                                                      | `tests/`                                                                                              |
 
 **What works after Step 3**: Full session consistency routing, partition-level circuit breaker
 with failback. Still HTTP/1.1, no hedging.
@@ -2350,8 +2357,8 @@ pub struct ConnectionPoolOptions {
     // --- New fields for HTTP/2 sharding (this spec) ---
 
     /// Maximum concurrent HTTP/2 streams per `HttpClient` shard per endpoint
-    /// before a new shard is created. Default: 20 (aligned with current Cosmos
-    /// gateway stream limit).
+    /// before a new shard is created. Default: 16 (leaves headroom below the
+    /// Cosmos gateway's 20-stream H2 limit; see `ShardingConfig` §6.2).
     pub max_streams_per_client: Option<usize>,
     /// Maximum number of `HttpClient` shards per endpoint. Default: `num_cpus * 2`.
     pub max_clients_per_endpoint: Option<usize>,
@@ -2365,8 +2372,9 @@ pub struct ConnectionPoolOptions {
     /// Consecutive failures on a shard (with healthy peers) before eviction.
     /// Default: 5.
     pub consecutive_failure_threshold: Option<u32>,
-    /// Grace period after eviction-mark before a shard is actually dropped.
-    /// Default: 10 s.
+    /// Grace period after last successful request before a shard can be
+    /// evicted due to consecutive failures. Prevents premature eviction
+    /// during transient issues. Default: 2 s (see `ShardingConfig` §6.2).
     pub eviction_grace_period: Option<Duration>,
     /// Time a shard must be idle (0 inflight, 0 new requests) before
     /// the health sweep reclaims it. Default: 60 s.
@@ -2748,12 +2756,13 @@ The driver crate enables only the features it needs:
 ```toml
 # sdk/cosmos/azure_data_cosmos_driver/Cargo.toml
 [dependencies]
-crossbeam = { workspace = true, features = ["epoch", "utils"] }
+crossbeam = { workspace = true, features = ["crossbeam-epoch"] }
 ```
 
-- **`epoch`** (`crossbeam-epoch`): Provides `Atomic<T>`, epoch-based memory reclamation, `Guard`,
-  and `Owned` / `Shared` pointer types.  Used for all snapshot-swap state stores.
-- **`utils`** (`crossbeam-utils`): Provides `CachePadded<T>` for false-sharing prevention.
+- **`crossbeam-epoch`** (optional dep): Provides `Atomic<T>`, epoch-based memory reclamation,
+  `Guard`, and `Owned` / `Shared` pointer types.  Used for all snapshot-swap state stores.
+- **`crossbeam-utils`** (always included): Provides `CachePadded<T>` for false-sharing prevention.
+  Not listed as a feature because it is a non-optional dependency of `crossbeam`.
 
 Other crossbeam features (`crossbeam-channel`, `crossbeam-deque`, `crossbeam-queue`) are
 **not** enabled — the driver uses `tokio::sync` channels and does not need lock-free
