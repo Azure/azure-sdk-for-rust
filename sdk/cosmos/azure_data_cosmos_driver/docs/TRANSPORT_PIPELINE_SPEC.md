@@ -588,18 +588,12 @@ pub(crate) async fn execute_operation_pipeline(
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         // This is the ONLY place in the loop where location state is
-        // mutated. Each effect is applied atomically via the store's
-        // CAS-loop `apply` method — it reads the *current* state (not
-        // the stale snapshot from STAGE 1), applies the mutation, and
-        // retries on contention. This prevents a concurrent writer
-        // (hedged attempt, background refresh) from having its update
-        // silently overwritten.
-        apply_location_effects(
-            &effects,
-            account_state_store,
-            partition_state_store,
-            account_metadata_cache,
-        ).await;
+        // mutated. The unified `LocationStateStore::apply` method
+        // processes all effects, applying each via a CAS loop against
+        // the *current* state (not the stale STAGE 1 snapshot). It
+        // handles `RefreshAccountProperties` internally by delegating
+        // to the `AccountMetadataCache`.
+        location_store.apply(&effects).await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
@@ -628,51 +622,8 @@ pub(crate) async fn execute_operation_pipeline(
     }
 }
 
-/// SYSTEM: Apply location effects to the stores.
-///
-/// Each effect is applied via the store's `apply` method, which uses a
-/// CAS loop: it reads the **current** state (not a stale snapshot),
-/// applies the pure mutation function, and compare-and-swaps the result
-/// back. On contention (another writer — e.g., a hedged attempt or
-/// background refresh — modified the state between load and CAS), the
-/// loop re-reads and re-applies the mutation until the CAS succeeds.
-///
-/// This ensures no concurrent mutation is silently overwritten, which
-/// would happen if we applied the mutation to a previously-captured
-/// snapshot and unconditionally swapped it in.
-///
-/// This is the only function that mutates location state during the
-/// operation loop.
-async fn apply_location_effects(
-    effects: &[LocationEffect],
-    account_state_store: &AccountEndpointStateStore,
-    partition_state_store: &PartitionEndpointStateStore,
-    account_metadata_cache: &AccountMetadataCache,
-) {
-    for effect in effects {
-        match effect {
-            LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
-                let endpoint = endpoint.clone();
-                let reason = reason.clone();
-                account_state_store.apply(|current| {
-                    mark_endpoint_unavailable(current, &endpoint, reason.clone())
-                });
-            }
-            LocationEffect::MarkPartitionUnavailable(partition) => {
-                let partition = partition.clone();
-                partition_state_store.apply(|current| {
-                    mark_partition_unavailable(current, &partition)
-                });
-            }
-            LocationEffect::RefreshAccountProperties => {
-                // Trigger an async (rate-limited) refresh of account
-                // metadata. The cache internally rate-limits to avoid
-                // overwhelming the metadata endpoint.
-                account_metadata_cache.refresh_if_stale().await;
-            }
-        }
-    }
-}
+// NOTE: `apply_location_effects` is now the `LocationStateStore::apply`
+// method (§4.6). See that section for the full implementation.
 ```
 
 ### 4.2 Hedging (Speculative Execution)
@@ -970,9 +921,10 @@ Following the DOP principle, the account-level endpoint routing is split into:
   routing system needs to pick an endpoint. Replaced atomically on refresh.
   Together with `PartitionEndpointState`, it forms the `LocationSnapshot` (§3.1) that
   the operation loop acquires once per iteration and passes to `resolve_endpoint`.
-- **Store (Infrastructure)**: `AccountEndpointStateStore` — an epoch-guarded atomic pointer
-  (§11.1) that provides fully lock-free snapshot access and atomic swap. Mutated exclusively in
-  STAGE 6 (`apply_location_effects`) of the operation loop.
+- **Store (Infrastructure)**: `LocationStateStore` — a unified store (§4.6) that holds both
+  account-level and partition-level state behind separate epoch-guarded atomic pointers (§11.1).
+  Provides a single `apply(&self, effects, cache)` method that applies all `LocationEffect`s
+  atomically via CAS loops. Mutated exclusively in STAGE 6 of the operation loop.
 - **Systems (Behavior)**: Pure functions that read state and produce `RoutingDecision`s, or
   take old state + an event and produce new state.
 
@@ -1009,87 +961,10 @@ pub(crate) struct AccountEndpointState {
     pub default_endpoint: CosmosEndpoint,
 }
 
-/// Thread-safe holder for the current `AccountEndpointState` snapshot.
-///
-/// Uses `crossbeam::epoch::Atomic` for fully lock-free reads (§11.1).
-/// The read path pins the epoch and loads the pointer — no reader
-/// synchronization whatsoever.
-///
-/// Two write methods:
-/// - **`apply`** — read-modify-write with a CAS loop. Use when the new
-///   state depends on the current state (e.g., marking an endpoint
-///   unavailable). Retries automatically on contention.
-/// - **`swap`** — unconditional replacement. Use when the new state is
-///   computed independently (e.g., full metadata refresh that rebuilds
-///   the endpoint state from scratch).
-pub(crate) struct AccountEndpointStateStore {
-    state: crossbeam::epoch::Atomic<AccountEndpointState>,
-}
-
-impl AccountEndpointStateStore {
-    /// Lock-free snapshot — costs a single atomic load + epoch pin.
-    pub fn snapshot(&self) -> crossbeam::epoch::Shared<'_, AccountEndpointState> {
-        let guard = crossbeam::epoch::pin();
-        self.state.load(Ordering::Acquire, &guard)
-    }
-
-    /// Atomically apply a mutation to the current state (CAS loop).
-    ///
-    /// Reads the current snapshot, applies `f` to produce a new state,
-    /// and attempts a compare-and-swap.  On contention (another writer
-    /// modified the state between load and CAS), the loop re-reads the
-    /// current state and re-applies `f` until the CAS succeeds.
-    ///
-    /// Use this instead of `swap` when the new state is derived from
-    /// the current state — it guarantees no concurrent mutation is lost.
-    pub fn apply(&self, mut f: impl FnMut(&AccountEndpointState) -> AccountEndpointState) {
-        let guard = crossbeam::epoch::pin();
-        loop {
-            let current = self.state.load(Ordering::Acquire, &guard);
-            // SAFETY: `current` is valid for the lifetime of `guard`.
-            let current_ref = unsafe { current.deref() };
-            let new_state = f(current_ref);
-            match self.state.compare_exchange(
-                current,
-                crossbeam::epoch::Owned::new(new_state),
-                Ordering::AcqRel,
-                Ordering::Acquire,
-                &guard,
-            ) {
-                Ok(old) => {
-                    // CAS succeeded — defer destruction of the old snapshot.
-                    unsafe { guard.defer_destroy(old); }
-                    return;
-                }
-                Err(_) => {
-                    // CAS failed — another writer modified the state.
-                    // The rejected Owned is dropped here.  Re-read and
-                    // re-apply the mutation on the next iteration.
-                    continue;
-                }
-            }
-        }
-    }
-
-    /// Unconditionally replace the current snapshot.
-    ///
-    /// Use when the new state does NOT depend on the current state
-    /// (e.g., after a full account metadata refresh that rebuilds the
-    /// endpoint state from scratch).  Concurrent `apply` calls are safe:
-    /// their CAS will simply fail and retry against the freshly swapped
-    /// value.
-    ///
-    /// The old value is deferred-destroyed once all epoch guards unpin.
-    pub fn swap(&self, new_state: AccountEndpointState) {
-        let guard = crossbeam::epoch::pin();
-        let old = self.state.swap(
-            crossbeam::epoch::Owned::new(new_state),
-            Ordering::AcqRel,
-            &guard,
-        );
-        unsafe { guard.defer_destroy(old); }
-    }
-}
+// NOTE: The thread-safe store for `AccountEndpointState` (and
+// `PartitionEndpointState`) lives in the unified `LocationStateStore`
+// defined in §4.6.  See that section for the epoch-guarded atomic
+// pointers, snapshot access, CAS-loop `apply`, and unconditional `swap`.
 
 /// A Cosmos DB service endpoint: region name, URL, and whether
 /// the endpoint is global or regional.
@@ -1155,10 +1030,11 @@ fn expire_unavailable_endpoints(
 
 **Key difference from previous design**: There is no `GlobalEndpointManager` struct with methods.
 The `AccountEndpointState` is pure data, and each mutation is an explicit system function that
-returns a new snapshot. The `AccountEndpointStateStore` is a trivial epoch-guarded atomic pointer
-(§11.1) — it has no routing logic. The `AccountMetadataCache` remains a separate infrastructure
-component responsible for async-fetching and caching `AccountProperties`; on refresh, it calls
-`build_account_endpoint_state` and swaps the result into the store.
+returns a new snapshot. The `LocationStateStore` (§4.6) is a trivial epoch-guarded holder — it
+has no routing logic. The `AccountMetadataCache` remains a separate infrastructure component
+responsible for async-fetching and caching `AccountProperties`; on refresh, it calls
+`build_account_endpoint_state` and swaps the result into the store via
+`location_store.swap_account(new_state)`.
 
 This makes the read path fully lock-free (epoch pin + atomic load), keeps mutation explicit and
 traceable, and means every system function can be unit-tested with a hand-constructed
@@ -1166,7 +1042,8 @@ traceable, and means every system function can be unit-tested with a hand-constr
 
 ### 4.5 Partition Endpoint State & Circuit-Breaker Systems
 
-Same DOP split as §4.4: data component + state store + system functions.
+Same DOP split as §4.4: data component + system functions.  The store is the unified
+`LocationStateStore` (§4.6).
 
 ```rust
 /// COMPONENT: Immutable snapshot of partition-level circuit-breaker state.
@@ -1235,64 +1112,15 @@ pub(crate) struct CircuitBreakerOptions {
     pub failback_interval: Duration,
 }
 
-/// Thread-safe holder for the current `PartitionEndpointState` snapshot.
-///
-/// Same epoch-based lock-free pattern as `AccountEndpointStateStore` (§11.1),
-/// including the CAS-loop `apply` method for safe read-modify-write.
-/// Partition-level state is read on every request and mutated only by the
-/// circuit-breaker sweep — the extreme read/write ratio makes epoch-based
-/// access ideal.
-pub(crate) struct PartitionEndpointStateStore {
-    state: crossbeam::epoch::Atomic<PartitionEndpointState>,
-}
-
-impl PartitionEndpointStateStore {
-    pub fn snapshot(&self) -> crossbeam::epoch::Shared<'_, PartitionEndpointState> {
-        let guard = crossbeam::epoch::pin();
-        self.state.load(Ordering::Acquire, &guard)
-    }
-
-    /// Atomically apply a mutation (CAS loop).  See
-    /// `AccountEndpointStateStore::apply` for full documentation.
-    pub fn apply(&self, mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState) {
-        let guard = crossbeam::epoch::pin();
-        loop {
-            let current = self.state.load(Ordering::Acquire, &guard);
-            let current_ref = unsafe { current.deref() };
-            let new_state = f(current_ref);
-            match self.state.compare_exchange(
-                current,
-                crossbeam::epoch::Owned::new(new_state),
-                Ordering::AcqRel,
-                Ordering::Acquire,
-                &guard,
-            ) {
-                Ok(old) => {
-                    unsafe { guard.defer_destroy(old); }
-                    return;
-                }
-                Err(_) => continue,
-            }
-        }
-    }
-
-    pub fn swap(&self, new_state: PartitionEndpointState) {
-        let guard = crossbeam::epoch::pin();
-        let old = self.state.swap(
-            crossbeam::epoch::Owned::new(new_state),
-            Ordering::AcqRel,
-            &guard,
-        );
-        unsafe { guard.defer_destroy(old); }
-    }
-}
+// NOTE: The thread-safe store for `PartitionEndpointState` lives in the
+// unified `LocationStateStore` (§4.6), alongside `AccountEndpointState`.
 ```
 
 **Systems (pure functions) operating on `PartitionEndpointState`**:
 
 ```rust
 // SYSTEM: Produce a new state with the given partition marked unavailable.
-// Called from STAGE 6 (`apply_location_effects`) when a
+// Called from STAGE 6 via `LocationStateStore::apply` (§4.6) when a
 // `LocationEffect::MarkPartitionUnavailable` effect is applied.
 fn mark_partition_unavailable(
     state: &PartitionEndpointState,
@@ -1336,6 +1164,180 @@ defaults):
 - Counter reset window: 300 seconds
 - Background failback interval: 300 seconds
 - Partition unavailability duration before probe: 5 seconds
+
+### 4.6 Unified `LocationStateStore`
+
+Both `AccountEndpointState` and `PartitionEndpointState` are held behind a single
+`LocationStateStore`. Each inner state has its own `crossbeam::epoch::Atomic<T>` — they're
+independent atomics (no shared lock), so a CAS on one never contends with a CAS on the other.
+
+The store exposes:
+- **`snapshot()`** — returns a `LocationSnapshot` with consistent (point-in-time) views of both
+  states.
+- **`apply(effects)`** — processes a `&[LocationEffect]` slice, applying each effect atomically
+  via the appropriate inner CAS loop. This is the single mutation entry point used by STAGE 6 of
+  the operation loop.
+- **`swap_account(state)`** / **`swap_partitions(state)`** — unconditional replacement of one
+  sub-state (used by `AccountMetadataCache` on refresh, or bulk partition reset).
+
+```rust
+/// Unified thread-safe holder for all location routing state.
+///
+/// Combines the account-level endpoint routing state and the partition-level
+/// circuit-breaker state into a single store. Each sub-state is stored
+/// behind its own `crossbeam::epoch::Atomic<T>` — reads and writes to
+/// account state do not contend with reads or writes to partition state.
+///
+/// Having a single store simplifies call sites: instead of threading two
+/// store references and an `AccountMetadataCache` through the pipeline,
+/// callers pass one `&LocationStateStore` and call `store.apply(effects)`.
+pub(crate) struct LocationStateStore {
+    account: crossbeam::epoch::Atomic<AccountEndpointState>,
+    partitions: crossbeam::epoch::Atomic<PartitionEndpointState>,
+    /// Reference to the metadata cache for `RefreshAccountProperties`.
+    account_metadata_cache: Arc<AccountMetadataCache>,
+}
+
+impl LocationStateStore {
+    /// Acquire a consistent snapshot of both sub-states.
+    ///
+    /// Each load is a single epoch-pinned atomic read — fully lock-free.
+    /// The two loads are NOT jointly atomic, but that is fine: routing
+    /// decisions are tolerant of a one-iteration lag between account and
+    /// partition state (the next loop iteration re-snapshots anyway).
+    pub fn snapshot(&self) -> LocationSnapshot {
+        let guard = crossbeam::epoch::pin();
+        LocationSnapshot {
+            account: unsafe {
+                self.account.load(Ordering::Acquire, &guard).deref()
+            }.clone().into(),
+            partitions: unsafe {
+                self.partitions.load(Ordering::Acquire, &guard).deref()
+            }.clone().into(),
+        }
+    }
+
+    /// Convenience accessor for account state only (used during init).
+    pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {
+        let guard = crossbeam::epoch::pin();
+        unsafe {
+            self.account.load(Ordering::Acquire, &guard).deref()
+        }.clone().into()
+    }
+
+    /// Apply a batch of `LocationEffect`s.
+    ///
+    /// Each effect is applied via a CAS loop against the *current* state
+    /// of the relevant sub-store — not a stale snapshot. On contention
+    /// (concurrent hedged attempt, background refresh), the CAS retries
+    /// automatically, re-reading current state and re-applying the
+    /// mutation until it succeeds.
+    ///
+    /// `RefreshAccountProperties` delegates to the `AccountMetadataCache`,
+    /// which may eventually call `swap_account` with fully rebuilt state.
+    pub async fn apply(&self, effects: &[LocationEffect]) {
+        for effect in effects {
+            match effect {
+                LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
+                    let endpoint = endpoint.clone();
+                    let reason = reason.clone();
+                    self.apply_account(|current| {
+                        mark_endpoint_unavailable(current, &endpoint, reason.clone())
+                    });
+                }
+                LocationEffect::MarkPartitionUnavailable(partition) => {
+                    let partition = partition.clone();
+                    self.apply_partitions(|current| {
+                        mark_partition_unavailable(current, &partition)
+                    });
+                }
+                LocationEffect::RefreshAccountProperties => {
+                    // Rate-limited async refresh — may eventually call
+                    // `swap_account` with a freshly built state.
+                    self.account_metadata_cache.refresh_if_stale().await;
+                }
+            }
+        }
+    }
+
+    // ── CAS-loop helpers (private) ─────────────────────────────────────
+
+    fn apply_account(&self, mut f: impl FnMut(&AccountEndpointState) -> AccountEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        loop {
+            let current = self.account.load(Ordering::Acquire, &guard);
+            let current_ref = unsafe { current.deref() };
+            let new_state = f(current_ref);
+            match self.account.compare_exchange(
+                current,
+                crossbeam::epoch::Owned::new(new_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+
+    fn apply_partitions(
+        &self,
+        mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
+    ) {
+        let guard = crossbeam::epoch::pin();
+        loop {
+            let current = self.partitions.load(Ordering::Acquire, &guard);
+            let current_ref = unsafe { current.deref() };
+            let new_state = f(current_ref);
+            match self.partitions.compare_exchange(
+                current,
+                crossbeam::epoch::Owned::new(new_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+
+    // ── Unconditional swap (full refresh) ──────────────────────────────
+
+    /// Unconditionally replace the account endpoint state.
+    ///
+    /// Use after a full metadata refresh that rebuilds the state from
+    /// scratch. Concurrent `apply_account` CAS loops will simply fail
+    /// and retry against the freshly swapped value.
+    pub fn swap_account(&self, new_state: AccountEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        let old = self.account.swap(
+            crossbeam::epoch::Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
+        unsafe { guard.defer_destroy(old); }
+    }
+
+    /// Unconditionally replace the partition endpoint state.
+    pub fn swap_partitions(&self, new_state: PartitionEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        let old = self.partitions.swap(
+            crossbeam::epoch::Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
+        unsafe { guard.defer_destroy(old); }
+    }
+}
+```
 
 ---
 
