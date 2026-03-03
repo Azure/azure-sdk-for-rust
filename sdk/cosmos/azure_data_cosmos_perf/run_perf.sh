@@ -35,7 +35,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 PROCESSES=1
 COSMOS_COMMIT=""
 POLL_BRANCH=""
-POLL_INTERVAL=60
+POLL_INTERVAL=43200
 STAGGER_MS=200
 PERF_ARGS=()
 
@@ -97,7 +97,7 @@ while [[ $# -gt 0 ]]; do
             echo "                       When a new commit is detected, running processes are"
             echo "                       stopped, the branch is checked out, the binary is"
             echo "                       rebuilt, and processes are restarted."
-            echo "  --poll-interval SECS Seconds between branch polls (default: 60)"
+            echo "  --poll-interval SECS Seconds between branch polls (default: 43200 / 12 hours)"
             echo "  --stagger-ms MS     Milliseconds to wait between launching each process"
             echo "                       (default: 200, set to 0 for simultaneous start)"
             echo ""
@@ -233,7 +233,7 @@ if [[ -n "$POLL_BRANCH" ]]; then
         REMOTE_SHA=""
         for remote in upstream origin; do
             if git -C "$REPO_ROOT" rev-parse --verify "$remote/$POLL_BRANCH" >/dev/null 2>&1; then
-                REMOTE_SHA=$(git -C "$REPO_ROOT" rev-parse --short "$remote/$POLL_BRANCH")
+                REMOTE_SHA=$(git -C "$REPO_ROOT" rev-parse "$remote/$POLL_BRANCH")
                 REMOTE_REF="$remote/$POLL_BRANCH"
                 break
             fi
@@ -245,20 +245,22 @@ if [[ -n "$POLL_BRANCH" ]]; then
         fi
 
         if [[ "$REMOTE_SHA" != "$CURRENT_SHA" ]]; then
+            SHORT_SHA=$(git -C "$REPO_ROOT" rev-parse --short "$REMOTE_SHA")
             if [[ -n "$CURRENT_SHA" ]]; then
-                echo "New commit detected: $CURRENT_SHA -> $REMOTE_SHA"
+                OLD_SHORT=$(git -C "$REPO_ROOT" rev-parse --short "$CURRENT_SHA")
+                echo "New commit detected: $OLD_SHORT -> $SHORT_SHA"
                 stop_processes
             fi
 
             RESOLVED=$(build_at_ref "$REMOTE_REF")
-            CURRENT_SHA="$RESOLVED"
+            CURRENT_SHA="$REMOTE_SHA"
 
             if [[ ! -x "$BINARY" ]]; then
                 echo "Error: binary not found at $BINARY" >&2
                 exit 1
             fi
 
-            launch_processes "$CURRENT_SHA"
+            launch_processes "$RESOLVED"
         fi
 
         sleep "$POLL_INTERVAL"
