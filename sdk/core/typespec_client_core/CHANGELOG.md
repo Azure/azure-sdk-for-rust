@@ -10,6 +10,7 @@
 ### Breaking Changes
 
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- Removed `tracing::FutureExt` and `tracing::WithContext`.
 
 ### Bugs Fixed
 

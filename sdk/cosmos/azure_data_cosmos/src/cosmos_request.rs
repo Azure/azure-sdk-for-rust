@@ -143,6 +143,11 @@ impl CosmosRequest {
             if self.operation_type == OperationType::Upsert {
                 req.insert_header(constants::IS_UPSERT, "true");
             }
+            if self.operation_type == OperationType::Batch {
+                req.insert_header(constants::COSMOS_IS_BATCH_REQUEST, "True");
+                req.insert_header(constants::COSMOS_BATCH_ATOMIC, "True");
+                req.insert_header(constants::COSMOS_BATCH_CONTINUE_ON_ERROR, "False");
+            }
             if let Some(ref body) = self.body {
                 req.set_body(body.clone());
             }
@@ -444,6 +449,28 @@ mod tests {
         assert_eq!(
             get_header(&HeaderName::from_static("x-custom-header")),
             "custom_value"
+        );
+    }
+
+    #[test]
+    fn to_raw_request_batch_sets_batch_headers() {
+        let req = make_base_request(OperationType::Batch);
+        let raw = req.into_raw_request();
+        let has_batch_request = raw
+            .headers()
+            .iter()
+            .any(|(n, v)| n == &constants::COSMOS_IS_BATCH_REQUEST && v.as_str() == "True");
+        let has_batch_atomic = raw
+            .headers()
+            .iter()
+            .any(|(n, v)| n == &constants::COSMOS_BATCH_ATOMIC && v.as_str() == "True");
+        assert!(
+            has_batch_request,
+            "Expected x-ms-cosmos-is-batch-request header to be set"
+        );
+        assert!(
+            has_batch_atomic,
+            "Expected x-ms-cosmos-batch-atomic header to be set"
         );
     }
 

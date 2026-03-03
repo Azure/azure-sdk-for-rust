@@ -29,7 +29,6 @@ azure_identity.workspace = true
 opentelemetry_sdk = { workspace = true, features = ["testing"] }
 tokio.workspace = true
 tracing-subscriber.workspace = true
-url.workspace = true
 
 [lints]
 workspace = true

@@ -19,6 +19,7 @@ review/
 results.json
 
 # Dependencies.
+node_modules/
 vcpkg_installed/
 
 # Editor user customizations.

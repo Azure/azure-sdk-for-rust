@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Clients used to communicate with the service.
 pub use crate::generated::clients::*;
 use crate::{
     authorizer::KeyVaultAuthorizer,

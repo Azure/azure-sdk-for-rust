@@ -7,11 +7,15 @@ publish = false
 [workspace]
 
 [dependencies]
+axum = { version = "0.8", default-features = false, features = [
+  "http1",
+  "tokio",
+  "query",
+] }
+azure_core = { path = "../../../../../core/azure_core" }
 azure_identity = { path = "../../../" }
 azure_storage_blob = { path = "../../../../../storage/azure_storage_blob" }
-azure_core = { path = "../../../../../core/azure_core" }
-openssl = { version = "0.10", features = ["vendored"]}
-tokio = { version = "1.0", features = ["full"] }
-url = "2.5"
-axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "query"] }
+openssl = { version = "0.10", features = ["vendored"] }
 serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+

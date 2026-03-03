@@ -6,9 +6,13 @@
 
 mod authorizer;
 pub mod clients;
+#[allow(
+    unused_imports,
+    reason = "Publicly exported generated/clients are instead exported from clients"
+)]
 mod generated;
 mod resource;
 
 pub use clients::{SecretClient, SecretClientOptions};
-pub use generated::*;
+pub use generated::models;
 pub use resource::*;

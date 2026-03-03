@@ -1,14 +1,14 @@
 # Release History
 
-## 0.31.0 (Unreleased)
+## 0.31.0 (2026-02-25)
 
 ### Features Added
 
-- Added `excluded_regions` to `CosmosClientOptions` and `ItemOptions` for additional regional routing options. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
-- Added `effective_preferred_regions` to the client, ensuring multi-region accounts use all regions without supplying `application_preferred_regions` to their client. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
-
+- Added `with_excluded_regions` to `ItemOptions` for additional regional routing options. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
+- Added `effective_preferred_regions` to the client, ensuring multi-region accounts use all regions for cross-regional availability without supplying regional preferences to their client. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
 - Added basic multi-region writes support. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482) and [#3495](https://github.com/Azure/azure-sdk-for-rust/pull/3495))
 - Added new `CosmosResponse` that wraps `azure_core::Response` for all operations except queries. ([#3622](https://github.com/Azure/azure-sdk-for-rust/pull/3622))
+- Added transactional batch support for executing multiple operations atomically within the same partition key. ([#3664](https://github.com/Azure/azure-sdk-for-rust/pull/3664))
 - Added fault injection support for testing cosmosdb clients in disaster scenarios. Fault injection is behind the feature flag `fault_injection`. ([#3599](https://github.com/Azure/azure-sdk-for-rust/pull/3599))
 
 ### Breaking Changes
@@ -17,10 +17,9 @@
 - Removed `ContainerClient::patch_item`, `PatchDocument`, and `PatchOperation` temporarily to redesign the PATCH API for safe idempotency. Use a Read/Modify/Replace model with ETag-based optimistic concurrency instead.
 - Changed return type of query methods from `FeedPager<T>` (an alias for `ItemIterator<FeedPage<T>, String>`) to `FeedItemIterator<T>`, which implements `Stream<Item = Result<T>>` and provides `into_pages()` for page-level access. ([#3515](https://github.com/Azure/azure-sdk-for-rust/pull/3515))
 - Introduced `CosmosClientBuilder` for constructing `CosmosClient` instances, replacing constructor-based API. Removed `consistency_level`, `priority`, `throughput_bucket`, `excluded_regions`, `SessionRetryOptions`, triggers, and `IndexingDirective` from options. Simplified `CosmosAccountReference` to take `CosmosAccountEndpoint` directly. Made option struct fields private with getters and `with_*` setters. ([#3744](https://github.com/Azure/azure-sdk-for-rust/pull/3744))
+- Removed `with_application_preferred_regions` API. Use `with_application_region` to set the Azure region the app is executing in (or the closest region to the actual location you're running in); the SDK generates preferred regions by geographic proximity. ([#3796](https://github.com/Azure/azure-sdk-for-rust/pull/3796))
 - Made `CosmosClientBuilder::build()` and `DatabaseClient::container_client()` async to prepare for future cache population (account, collection, partition key range caches).
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
-
-### Bugs Fixed
 
 ### Other Changes
 

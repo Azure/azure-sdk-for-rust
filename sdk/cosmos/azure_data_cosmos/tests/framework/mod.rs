@@ -14,6 +14,8 @@
 //!
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
+#[cfg(feature = "fault_injection")]
+pub mod mock_account;
 pub mod test_client;
 pub mod test_data;
 

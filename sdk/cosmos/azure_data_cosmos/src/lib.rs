@@ -19,6 +19,7 @@ pub(crate) mod resource_context;
 pub(crate) mod utils;
 
 pub mod models;
+pub mod transactional_batch;
 
 #[doc(inline)]
 pub use clients::CosmosClient;
@@ -33,6 +34,10 @@ pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
+pub use transactional_batch::{
+    BatchDeleteOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
+    TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
+};
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
 mod background_task_manager;
@@ -43,6 +48,7 @@ mod handler;
 mod hash;
 mod murmur_hash;
 mod operation_context;
+mod region_proximity;
 pub mod regions;
 mod request_context;
 mod retry_policies;
