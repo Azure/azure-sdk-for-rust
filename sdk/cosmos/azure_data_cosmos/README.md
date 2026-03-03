@@ -144,26 +144,24 @@ struct Item {
 }
 
 async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
-    let container = cosmos_client.database_client("myDatabase").container_client("myContainer");
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await;
 
     // Read feed ranges for the container (useful for parallelizing change feed processing)
     let feed_ranges = container.read_feed_ranges(None).await?;
     println!("Container has {} feed ranges", feed_ranges.len());
 
     // Read change feed from the beginning
-    let mut options = QueryChangeFeedOptions::default();
-    options.start_from = Some(ChangeFeedStartFrom::Beginning);
-    options.mode = Some(ChangeFeedMode::LatestVersion);
-    options.max_item_count = Some(100);
+    let options = QueryChangeFeedOptions::default()
+        .with_start_from(ChangeFeedStartFrom::Beginning)
+        .with_mode(ChangeFeedMode::LatestVersion)
+        .with_max_item_count(100);
 
     let pager = container.query_items_change_feed::<Item>(Some(options))?;
     futures::pin_mut!(pager);
 
     while let Some(result) = pager.next().await {
-        let page = result?;
-        for item in page.into_items()? {
-            println!("Change feed item: {:?}", item);
-        }
+        let item = result?;
+        println!("Change feed item: {:?}", item);
     }
 
     Ok(())
@@ -178,14 +176,14 @@ You can serialize feed ranges to persist them for later use:
 use azure_data_cosmos::{CosmosClient, change_feed::FeedRange};
 
 async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
-    let container = cosmos_client.database_client("myDatabase").container_client("myContainer");
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await;
 
     // Get feed ranges
     let feed_ranges = container.read_feed_ranges(None).await?;
 
     // Serialize for persistence
     for range in &feed_ranges {
-        let serialized = range.to_string_representation();
+        let serialized = range.to_string_representation()?;
         // Store `serialized` in your persistence layer
         println!("Serialized feed range: {}", serialized);
 
