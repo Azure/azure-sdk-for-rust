@@ -76,6 +76,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--results-auth` | same as `--auth` | Authentication method for the results account: `key` or `aad` |
 | `--results-key` | — | Account key for results account (or set `AZURE_COSMOS_RESULTS_KEY` env var) |
 | `--workload-id` | random UUID | Unique identifier for this workload instance (for multi-VM correlation) |
+| `--commit-sha` | auto-detected | Git commit SHA stamped on result documents (auto-detected from `git rev-parse --short HEAD` if omitted) |
 | `--no-reads` | `false` | Disable point read operations |
 | `--no-queries` | `false` | Disable query operations |
 | `--no-upserts` | `false` | Disable upsert operations |
@@ -187,6 +188,27 @@ process can achieve.
 The script builds the crate in release mode, spawns the requested number of
 processes, and forwards `Ctrl+C` to all children for graceful shutdown.
 
+The launcher supports these additional flags:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--processes N` | `1` | Number of OS processes to spawn |
+| `--cosmos-commit REF` | — | Build against a specific SDK commit/branch/tag |
+| `--poll-branch BRANCH` | — | Continuously poll a remote branch for new commits |
+| `--poll-interval SECS` | `60` | Seconds between branch polls |
+| `--stagger-ms MS` | `0` | Milliseconds between launching each process (0 = simultaneous) |
+
+### Staggered Launch
+
+Use `--stagger-ms` to introduce a delay between starting each process, which
+can help avoid thundering-herd effects during container seeding:
+
+```bash
+./run_perf.sh --processes 8 --stagger-ms 500 \
+  --endpoint https://myaccount.documents.azure.com:443 \
+  --auth aad --concurrency 50
+```
+
 ### Testing Against a Specific SDK Commit
 
 Use `--cosmos-commit` to build and run against a specific version of
@@ -207,3 +229,22 @@ SDK changes.
 
 The script checks out the SDK source at the given ref before building, then
 restores the original source after the build completes (or on Ctrl+C/error).
+
+### Continuous Branch Polling
+
+Use `--poll-branch` to automatically detect new commits on a remote branch,
+rebuild, and restart processes. This is useful for continuous performance
+regression testing:
+
+```bash
+# Poll for new commits on release branch, rebuild and restart automatically
+./run_perf.sh --poll-branch release/azure_data_cosmos-previews \
+  --poll-interval 120 --processes 4 \
+  --endpoint https://myaccount.documents.azure.com:443 \
+  --auth aad
+```
+
+The script fetches the remote every `--poll-interval` seconds (default: 60),
+and when a new commit is detected it stops all running processes, checks out
+the new code, rebuilds, and restarts. The commit SHA is automatically passed
+to each process via `--commit-sha` for Kusto correlation.

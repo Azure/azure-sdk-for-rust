@@ -170,6 +170,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         db_client.container_client(&config.results_container).await
     };
 
+    // Resolve commit SHA: use CLI arg or auto-detect from git
+    let commit_sha = config.commit_sha.unwrap_or_else(|| {
+        std::process::Command::new("git")
+            .args(["rev-parse", "--short", "HEAD"])
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    });
+
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
     let stats = Arc::new(Stats::new(&op_names));
@@ -182,6 +193,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         report_interval: Duration::from_secs(config.report_interval),
         results_container,
         workload_id: config.workload_id,
+        commit_sha,
     })
     .await;
 
