@@ -143,14 +143,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
         setup::ensure_database(&results_client, &config.results_database).await?;
         let results_db = results_client.database_client(&config.results_database);
-        setup::ensure_container(&results_db, &config.results_container, 400, None).await?;
+        setup::ensure_container(
+            &results_db,
+            &config.results_container,
+            10000,
+            Some(Duration::from_secs(86400)),
+        )
+        .await?;
         println!(
             "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
             results_endpoint, config.results_database, config.results_container, config.workload_id,
         );
         results_db.container_client(&config.results_container).await
     } else {
-        setup::ensure_container(&db_client, &config.results_container, 400, None).await?;
+        setup::ensure_container(
+            &db_client,
+            &config.results_container,
+            10000,
+            Some(Duration::from_secs(86400)),
+        )
+        .await?;
         println!(
             "Perf results will be stored in container '{}'. Workload ID: {}",
             config.results_container, config.workload_id,
