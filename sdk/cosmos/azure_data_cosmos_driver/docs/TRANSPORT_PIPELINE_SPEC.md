@@ -2615,28 +2615,49 @@ to replace these `RwLock<Arc<T>>` holders.  The read path becomes:
 ```rust
 use std::sync::atomic::Ordering;
 
-use crossbeam::epoch::{self, Atomic, Owned};
+use crossbeam::epoch::{self, Atomic, Guard, Owned};
 
 struct StateStore<T> {
     state: Atomic<T>,
 }
 
+/// RAII wrapper that keeps the epoch guard alive for as long as the
+/// snapshot reference is used.  Derefs to `&T`.
+struct Snapshot<'g, T> {
+    _guard: Guard,
+    ptr: &'g T,
+}
+
+impl<T> std::ops::Deref for Snapshot<'_, T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        self.ptr
+    }
+}
+
 impl<T> StateStore<T> {
     /// Lock-free snapshot — costs a single atomic load + epoch pin.
     ///
-    /// # Safety contract
+    /// Returns a `Snapshot` that keeps the epoch guard alive.  The
+    /// caller can deref into `&T` for as long as it holds the
+    /// `Snapshot`.  Do **not** hold the snapshot across `.await`
+    /// points — the pinned epoch blocks garbage collection of
+    /// retired pointers while alive.
     ///
-    /// The returned reference is valid only for the lifetime of the
-    /// `Guard` produced by `epoch::pin()`.  In practice this means the
-    /// caller must not hold the reference across an `.await` point.
-    /// The concrete `LocationStateStore` (§4.6) clones the inner value
-    /// into an `Arc<T>` so the snapshot can outlive the guard.
-    fn snapshot(&self) -> &T {
+    /// The concrete `LocationStateStore` (§4.6) clones the inner
+    /// value into an `Arc<T>` so the snapshot can outlive the guard;
+    /// that is the preferred approach when the data must cross an
+    /// await boundary.
+    fn snapshot(&self) -> Snapshot<'_, T> {
         let guard = epoch::pin();
-        // SAFETY: Writers use `swap`/`apply` + `defer_destroy`, so the
-        // pointee is valid for the lifetime of the guard.
-        let shared = self.state.load(Ordering::Acquire, &guard);
-        unsafe { shared.deref() }
+        // SAFETY: Writers use `swap`/`apply` + `defer_destroy`, so
+        // the pointee is valid for the lifetime of the guard.
+        let ptr = unsafe {
+            self.state
+                .load(Ordering::Acquire, &guard)
+                .deref()
+        };
+        Snapshot { _guard: guard, ptr }
     }
 
     /// Atomically apply a mutation to the current state (CAS loop).
@@ -2780,8 +2801,8 @@ crossbeam = { workspace = true, features = ["crossbeam-epoch"] }
   Not listed as a feature because it is a non-optional dependency of `crossbeam`.
 
 Other crossbeam features (`crossbeam-channel`, `crossbeam-deque`, `crossbeam-queue`) are
-**not** enabled — the driver uses `tokio::sync` channels and does not need lock-free
-work-stealing queues at this time.
+**not** enabled — the driver uses runtime-agnostic primitives and `azure_core` abstractions
+for async coordination and does not need lock-free work-stealing queues at this time.
 
 ---
 
