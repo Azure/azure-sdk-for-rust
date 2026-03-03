@@ -36,7 +36,7 @@ PROCESSES=1
 COSMOS_COMMIT=""
 POLL_BRANCH=""
 POLL_INTERVAL=60
-STAGGER_MS=0
+STAGGER_MS=200
 PERF_ARGS=()
 
 # Parse script-level args; collect everything else for the perf binary.
@@ -99,7 +99,7 @@ while [[ $# -gt 0 ]]; do
             echo "                       rebuilt, and processes are restarted."
             echo "  --poll-interval SECS Seconds between branch polls (default: 60)"
             echo "  --stagger-ms MS     Milliseconds to wait between launching each process"
-            echo "                       (default: 0, all processes start simultaneously)"
+            echo "                       (default: 200, set to 0 for simultaneous start)"
             echo ""
             echo "All other arguments are forwarded to each perf binary instance."
             echo ""
