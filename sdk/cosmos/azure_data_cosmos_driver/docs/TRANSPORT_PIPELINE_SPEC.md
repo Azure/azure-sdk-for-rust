@@ -257,19 +257,19 @@ pub(crate) struct LocationSnapshot {
 
 /// Newtype wrapper for a Cosmos DB Log Sequence Number (LSN).
 ///
-/// LSNs are monotonically increasing 64-bit integers assigned by the
-/// storage engine to each committed write within a partition. They are
+/// LSNs are monotonically increasing unsigned 64-bit integers assigned by
+/// the storage engine to each committed write within a partition. They are
 /// used for session-consistency tracking, quorum reads, and
 /// change-feed continuation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct LogSequenceNumber(i64);
+pub(crate) struct LogSequenceNumber(u64);
 
 impl LogSequenceNumber {
-    pub fn new(value: i64) -> Self {
+    pub fn new(value: u64) -> Self {
         Self(value)
     }
 
-    pub fn value(self) -> i64 {
+    pub fn value(self) -> u64 {
         self.0
     }
 }
@@ -531,15 +531,13 @@ values returned from `evaluate_transport_result` and applied in a single, well-d
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptions,
-    account_state_store: &AccountEndpointStateStore,
-    partition_state_store: &PartitionEndpointStateStore,
-    account_metadata_cache: &AccountMetadataCache,
+    location_store: &LocationStateStore,
     transport: &AdaptiveTransport,
     auth_context: &AuthContext,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> Result<CosmosResponse> {
     let mut retry_state = OperationRetryState::initial(
-        operation, options, &account_state_store.snapshot(),
+        operation, options, &location_store.account_snapshot(),
     );
     let mut session_state = SessionState::from_operation(operation, options);
     let deadline = options.e2e_deadline();
@@ -549,10 +547,7 @@ pub(crate) async fn execute_operation_pipeline(
         // One immutable snapshot per iteration. All routing decisions in
         // this iteration are based on this view. Mutations (STAGE 6)
         // apply to the stores; the next iteration re-snapshots.
-        let location = LocationSnapshot {
-            account: account_state_store.snapshot(),
-            partitions: partition_state_store.snapshot(),
-        };
+        let location = location_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
         let routing = resolve_endpoint(
@@ -2198,26 +2193,26 @@ single region with basic 429 retry. The architecture is in place for incremental
 
 Add cross-region failover, `AccountEndpointState` + routing systems, and the `AccountMetadataCache` integration.
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                                                      | Files                                                                      |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                                  | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
-| 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
-| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `driver/transport/transport_pipeline.rs`                                   |
-| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                                                              | `options/retry.rs`, `options/availability.rs`                              |
-| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                                                    | `tests/`                                                                   |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                      | Files                                                                                                 |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, the unified `LocationStateStore` (§4.6), and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                      | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `location_state_store.rs`, `routing_systems.rs` |
+| 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`                                        |
+| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `driver/transport/transport_pipeline.rs`                                                              |
+| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                                                              | `options/retry.rs`, `options/availability.rs`                                                         |
+| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                                                    | `tests/`                                                                                              |
 
 **What works after Step 2**: Full multi-region failover, 403.3 recovery with cache refresh,
 session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit breaker.
 
 ### Step 3: Session consistency & partition-level circuit breaker
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                           | Files                                                                      |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                    | `driver/routing/session_manager.rs`                                        |
-| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, `PartitionEndpointStateStore`, `CircuitBreakerOptions`, and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `circuit_breaker_systems.rs` |
-| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                             | `driver/pipeline/components.rs`, `operation_pipeline.rs`                   |
-| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerOptions`.                                                                                                                                                                                                                                              | `options/availability.rs`                                                  |
-| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                              | `tests/`                                                                   |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                       | Files                                                                                                 |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                                                | `driver/routing/session_manager.rs`                                                                   |
+| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, wire it into the existing `LocationStateStore` (§4.6), add `CircuitBreakerOptions`, and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `location_state_store.rs`, `circuit_breaker_systems.rs` |
+| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                                                         | `driver/pipeline/components.rs`, `operation_pipeline.rs`                                              |
+| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerOptions`.                                                                                                                                                                                                                                                                          | `options/availability.rs`                                                                             |
+| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                                                          | `tests/`                                                                                              |
 
 **What works after Step 3**: Full session consistency routing, partition-level circuit breaker
 with failback. Still HTTP/1.1, no hedging.
@@ -2674,16 +2669,16 @@ higher-level API with `load()` returning a `Guard` that derefs to `Arc<T>`.  Eit
 is acceptable — choose `Atomic<T>` for minimal overhead when the reader does not need to
 outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>`.
 
-**Already applied to spec structures** (see §4.4, §4.5, §6.2, §6.3):
+**Already applied to spec structures** (see §4.6, §6.2, §6.3):
 
-| Structure                     | Field    | Section | Hot-path?                                  | Notes                            |
-|-------------------------------|----------|---------|--------------------------------------------|----------------------------------|
-| `AccountEndpointStateStore`   | `state`  | §4.4    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`   |
-| `PartitionEndpointStateStore` | `state`  | §4.5    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>` |
-| `ShardedHttpTransport`        | `pools`  | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>`             |
-| `EndpointShardPool`           | `shards` | §6.3    | Yes — every HTTP request selects a shard   | `Atomic<Vec<…>>`                 |
-| `EndpointStats`               | all      | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
-| `ShardHealth`                 | all      | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
+| Structure              | Field        | Section | Hot-path?                                  | Notes                            |
+|------------------------|--------------|---------|--------------------------------------------|----------------------------------|
+| `LocationStateStore`   | `account`    | §4.6    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`   |
+| `LocationStateStore`   | `partitions` | §4.6    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>` |
+| `ShardedHttpTransport` | `pools`      | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>`             |
+| `EndpointShardPool`    | `shards`     | §6.3    | Yes — every HTTP request selects a shard   | `Atomic<Vec<…>>`                 |
+| `EndpointStats`        | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
+| `ShardHealth`          | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
 
 **Applies to (existing driver code)**:
 
@@ -2734,7 +2729,7 @@ sharing when adjacent atomics are updated by different cores.
 
 Recommended implementation order based on hot-path impact:
 
-1. **`AccountEndpointStateStore`** and **`PartitionEndpointStateStore`** (§4.4, §4.5) —
+1. **`LocationStateStore`** (§4.6) — unified account + partition state store,
    read on every single Cosmos request.
 2. **`EndpointShardPool.shards`** and **`ShardedHttpTransport.pools`** (§6.2, §6.3) —
    read on every HTTP send.
