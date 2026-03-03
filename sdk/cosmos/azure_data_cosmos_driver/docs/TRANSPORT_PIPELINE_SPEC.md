@@ -18,6 +18,7 @@
 8. [Migration Plan (Step 1 → Step 2)](#8-migration-plan-step-1--step-2)
 9. [Configuration Surface](#9-configuration-surface)
 10. [Open Questions](#10-open-questions)
+11. [Crossbeam & Lock-Free Data Structures](#11-crossbeam--lock-free-data-structures)
 
 ---
 
@@ -1003,6 +1004,15 @@ pub(crate) struct AccountEndpointState {
 /// Read path: clone the `Arc` (lock-free via `RwLock::read`).
 /// Write path: build a new `AccountEndpointState`, take the write lock,
 /// and swap the `Arc`.
+///
+/// **Crossbeam note** (§11): This struct is a prime candidate for
+/// `crossbeam::epoch`-based lock-free reads.  Replace the `RwLock<Arc<_>>`
+/// with a `crossbeam::epoch::Atomic<AccountEndpointState>` (or an
+/// `arc_swap::ArcSwap<AccountEndpointState>` backed by crossbeam epoch).
+/// This eliminates *all* reader synchronization — `snapshot()` becomes a
+/// single atomic load + epoch pin instead of an `RwLock::read()` +
+/// `Arc::clone`.  Writers call `store` / `swap` under epoch protection.
+/// See §11 for the full rationale and migration pattern.
 pub(crate) struct AccountEndpointStateStore {
     state: RwLock<Arc<AccountEndpointState>>,
 }
@@ -1164,6 +1174,12 @@ pub(crate) struct CircuitBreakerOptions {
 }
 
 /// Thread-safe holder for the current `PartitionEndpointState` snapshot.
+///
+/// **Crossbeam note** (§11): Same pattern as `AccountEndpointStateStore`.
+/// Replace `RwLock<Arc<_>>` with epoch-based or ArcSwap-based lock-free
+/// reads.  Partition-level state is read on every request and mutated
+/// only by the circuit-breaker sweep — the read/write ratio makes this
+/// an ideal crossbeam target.  See §11.
 pub(crate) struct PartitionEndpointStateStore {
     state: RwLock<Arc<PartitionEndpointState>>,
 }
@@ -1461,6 +1477,14 @@ pub(crate) struct HttpClientConfig {
 
 /// Manages a pool of HttpClient instances per target endpoint.
 /// Distributes requests to avoid exceeding HTTP/2 stream limits.
+///
+/// **Crossbeam note** (§11): `pools` is read on every HTTP request and
+/// mutated only when a new endpoint is first seen or during health-sweep
+/// eviction.  Replace the `RwLock<HashMap<…>>` with a
+/// `crossbeam::epoch::Atomic<HashMap<…>>` snapshot-swap (or wrap the
+/// whole map in `ArcSwap`).  For the inner per-endpoint lookup, consider
+/// `crossbeam::utils::CachePadded` on individual pool entries to avoid
+/// false sharing.  See §11.
 pub(crate) struct ShardedHttpTransport {
     /// Configuration for the sharding behavior.
     config: ShardingConfig,
@@ -1538,6 +1562,16 @@ pub struct ShardingConfig {
 /// (shard selection) lock-free — callers clone the `Arc` and iterate
 /// without holding a lock. Mutations (add/remove shard) take a write
 /// lock, build a new `Vec`, and swap the `Arc`.
+///
+/// **Crossbeam note** (§11): `shards` follows the exact snapshot-swap
+/// pattern described in §11.1.  Replace `RwLock<Arc<Vec<…>>>` with
+/// `crossbeam::epoch::Atomic<Vec<Arc<ClientShard>>>`.  The hot-path
+/// `select_shard()` then becomes a single epoch `load` + pin —
+/// fully wait-free for readers.  `endpoint_stats` inside `ClientShard`
+/// can remain `RwLock<HashMap<…>>` for now (per-shard, so contention is
+/// bounded), but consider `crossbeam::utils::CachePadded` on each
+/// `EndpointStats` to eliminate false sharing between atomics on
+/// adjacent cache lines.  See §11.
 struct EndpointShardPool {
     endpoint: EndpointKey,
     config: ShardingConfig,
@@ -2469,6 +2503,147 @@ at the Runtime and Account layers only (not Operation), the effective walk is
 10. ~~**`load_spread_ratio` tuning**~~: **Resolved** — Make `load_spread_ratio` **adaptive based
     on observed behavior** (request rate variance). Start with the default of 0.5 and adjust
     dynamically.
+
+---
+
+## 11. Crossbeam & Lock-Free Data Structures
+
+The `crossbeam` crate is available as a workspace dependency (`default-features = false`)
+and enabled in `azure_data_cosmos_driver` with the `crossbeam-epoch` and `crossbeam-utils`
+features.  This section describes where crossbeam primitives should replace (or augment)
+existing synchronization, and the general migration pattern for each case.
+
+### 11.1 Snapshot-Swap State Stores (`RwLock<Arc<T>>` → epoch-guarded atomic pointer)
+
+**Pattern**: Multiple structures in this spec use a `RwLock<Arc<T>>` where the write path
+builds a new `T`, wraps it in `Arc`, and swaps the pointer.  The read path acquires a read
+lock only to clone the `Arc`.  While `RwLock::read()` is cheap on uncontended paths, under
+high concurrency it still performs an atomic CAS on the lock word — and on some platforms
+(Windows `SRWLock`) read-locks can starve writers or introduce cache-line bouncing.
+
+**Crossbeam replacement**: Use `crossbeam::epoch::Atomic<T>` (or a thin wrapper around it)
+to replace these `RwLock<Arc<T>>` holders.  The read path becomes:
+
+```rust
+use crossbeam::epoch::{self, Atomic, Owned, Shared};
+
+struct StateStore<T> {
+    state: Atomic<T>,
+}
+
+impl<T> StateStore<T> {
+    /// Lock-free snapshot — costs a single atomic load + epoch pin.
+    fn snapshot(&self) -> &T {
+        let guard = epoch::pin();
+        // SAFETY: The only writer is `swap`, which uses `store` + deferred
+        // drop, so the pointee is valid for the lifetime of the guard.
+        unsafe { self.state.load(Ordering::Acquire, &guard).deref() }
+    }
+
+    /// Replace the current snapshot.  The old value is reclaimed
+    /// after all readers holding an epoch guard release it.
+    fn swap(&self, new_state: T) {
+        let guard = epoch::pin();
+        let old = self.state.swap(Owned::new(new_state), Ordering::AcqRel, &guard);
+        // SAFETY: We are the sole writer; `old` is no longer reachable
+        // after the swap.  Defer destruction until no reader can see it.
+        unsafe { guard.defer_destroy(old); }
+    }
+}
+```
+
+Alternatively, `arc_swap::ArcSwap<T>` (which uses crossbeam epoch internally) provides a
+higher-level API with `load()` returning a `Guard` that derefs to `Arc<T>`.  Either approach
+is acceptable — choose `Atomic<T>` for minimal overhead when the reader does not need to
+outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>`.
+
+**Applies to (spec structures)**:
+
+| Structure                     | Field    | Section | Hot-path?                                  | Notes                 |
+|-------------------------------|----------|---------|--------------------------------------------|-----------------------|
+| `AccountEndpointStateStore`   | `state`  | §4.4    | Yes — every request reads routing state    | Highest-impact target |
+| `PartitionEndpointStateStore` | `state`  | §4.5    | Yes — every request checks circuit-breaker | Highest-impact target |
+| `EndpointShardPool`           | `shards` | §6.3    | Yes — every HTTP request selects a shard   |                       |
+| `ShardedHttpTransport`        | `pools`  | §6.2    | Yes — every HTTP request looks up the pool |                       |
+
+**Applies to (existing driver code)**:
+
+| Structure                       | Field                          | File                            | Notes                                                                                                                                                   |
+|---------------------------------|--------------------------------|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AsyncCache<K, V>`              | inner `RwLock<HashMap>`        | `driver/cache/async_cache.rs`   | The outer map is read-heavy; writes only on cache miss. Wrap in `Atomic<HashMap<…>>` or `ArcSwap`. The per-entry `AsyncLazy` also benefits (see §11.2). |
+| `AsyncLazy<T>`                  | inner `RwLock<Option<Arc<T>>>` | `driver/cache/async_lazy.rs`    | After initialization the value is essentially immutable. Replace with `Atomic<T>` for truly zero-cost reads post-init. See §11.2.                       |
+| `DriverRuntime`                 | `driver_registry`              | `driver/runtime.rs`             | Read-heavy; new drivers created rarely.                                                                                                                 |
+| `SharedRuntimeOptions`          | inner `RwLock<RuntimeOptions>` | `options/runtime_options.rs`    | Read on every operation; mutated only by reconfiguration.                                                                                               |
+| `ThroughputControlGroupOptions` | mutable-value fields           | `options/throughput_control.rs` | Read per-request for throughput gating; written by background refresh.                                                                                  |
+| `CpuMemoryMonitorInner`         | `buffer` / `listener_count`    | `system/cpu_memory.rs`          | Lower priority — the monitor runs on a timer, not per-request. Still benefits from eliminating reader contention on the sample buffer.                  |
+
+### 11.2 `AsyncCache` / `AsyncLazy` — Epoch-Guarded Reads
+
+`AsyncCache` wraps `async_lock::RwLock<HashMap<K, Arc<AsyncLazy<V>>>>`.  The outer map
+lock is held for reads on every cache lookup (the hot path) and for writes only on cache
+miss.  This is the textbook crossbeam case:
+
+1. **Outer map**: Replace with `crossbeam::epoch::Atomic<HashMap<K, Arc<AsyncLazy<V>>>>`.
+   Readers pin the epoch, load the map pointer, do the lookup, and unpin.  Writers clone
+   the map, insert the new entry, and `swap` + `defer_destroy` the old map.
+2. **`AsyncLazy<T>` inner value**: After the one-time initialization completes, the value
+   never changes (or changes only on explicit invalidation).  Use
+   `crossbeam::epoch::Atomic<T>` for the read path (load + deref under epoch guard).  The
+   initialization path still needs an async mutex for single-flight, but the *read* path
+   after init becomes zero-cost.
+
+### 11.3 `CachePadded` for Atomics (False-Sharing Prevention)
+
+`crossbeam::utils::CachePadded<T>` pads `T` to a cache-line boundary, preventing false
+sharing when adjacent atomics are updated by different cores.
+
+**Applies to**:
+
+- `EndpointStats` (§6.3): Fields like `inflight: AtomicU32`, `consecutive_failures: AtomicU32`,
+  and `total_requests: AtomicU64` are updated concurrently from different request tasks.
+  Wrapping each field (or the whole struct) in `CachePadded` eliminates cross-core
+  invalidation traffic.
+- `ShardHealth` (§6.3): `total_inflight`, `last_success_nanos`, `marked_for_eviction` are
+  updated from multiple tasks. `CachePadded` avoids false sharing.
+- `CpuMemoryMonitorInner` atomics (`system/cpu_memory.rs`): `last_refresh`, `cached_cpu_usage`,
+  `cached_memory_usage` are adjacent `AtomicU64` / `AtomicU32` fields that benefit from
+  padding.
+- General guideline: Any struct with multiple `Atomic*` fields that are written by
+  independent tasks should wrap those fields in `CachePadded`.
+
+### 11.4 Migration Priority
+
+Recommended implementation order based on hot-path impact:
+
+1. **`AccountEndpointStateStore`** and **`PartitionEndpointStateStore`** (§4.4, §4.5) —
+   read on every single Cosmos request.
+2. **`EndpointShardPool.shards`** and **`ShardedHttpTransport.pools`** (§6.2, §6.3) —
+   read on every HTTP send.
+3. **`AsyncCache` / `AsyncLazy`** — read on every operation for container metadata lookup.
+4. **`CachePadded` on `EndpointStats` / `ShardHealth`** — reduces cache-line bouncing
+   under high concurrency.
+5. **`DriverRuntime.driver_registry`**, **`SharedRuntimeOptions`**,
+   **`ThroughputControlGroupOptions`** — moderate impact; operations read these for
+   configuration but contention is lower because the data is small.
+6. **`CpuMemoryMonitorInner`** — lowest priority; timer-driven, not per-request.
+
+### 11.5 Crossbeam Feature Selection
+
+The driver crate enables only the features it needs:
+
+```toml
+# sdk/cosmos/azure_data_cosmos_driver/Cargo.toml
+[dependencies]
+crossbeam = { workspace = true, features = ["epoch", "utils"] }
+```
+
+- **`epoch`** (`crossbeam-epoch`): Provides `Atomic<T>`, epoch-based memory reclamation, `Guard`,
+  and `Owned` / `Shared` pointer types.  Used for all snapshot-swap state stores.
+- **`utils`** (`crossbeam-utils`): Provides `CachePadded<T>` for false-sharing prevention.
+
+Other crossbeam features (`crossbeam-channel`, `crossbeam-deque`, `crossbeam-queue`) are
+**not** enabled — the driver uses `tokio::sync` channels and does not need lock-free
+work-stealing queues at this time.
 
 ---
 
