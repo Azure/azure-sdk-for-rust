@@ -38,7 +38,7 @@ struct PerfResult {
     id: String,
     partition_key: String,
     workload_id: String,
-    timestamp: u64,
+    timestamp: String,
     operation: String,
     count: u64,
     errors: u64,
@@ -61,7 +61,7 @@ struct ErrorResult {
     id: String,
     partition_key: String,
     workload_id: String,
-    timestamp: u64,
+    timestamp: String,
     operation: String,
     error_message: String,
     source_message: Option<String>,
@@ -214,10 +214,9 @@ async fn upsert_results(
     metrics: Option<&stats::ProcessMetrics>,
     workload_id: &str,
 ) {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
+    let now = time::OffsetDateTime::now_utc()
+        .format(&time::format_description::well_known::Rfc3339)
+        .unwrap_or_default();
     let (cpu, mem, sys_cpu, sys_total, sys_used) = metrics
         .map(|m| {
             (
@@ -235,7 +234,7 @@ async fn upsert_results(
             id: Uuid::new_v4().to_string(),
             partition_key: s.name.clone(),
             workload_id: workload_id.to_string(),
-            timestamp: now,
+            timestamp: now.clone(),
             operation: s.name.clone(),
             count: s.count,
             errors: s.errors,
@@ -270,10 +269,9 @@ async fn upsert_error(
     error: &azure_core::Error,
     workload_id: &str,
 ) {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
+    let now = time::OffsetDateTime::now_utc()
+        .format(&time::format_description::well_known::Rfc3339)
+        .unwrap_or_default();
     let id = Uuid::new_v4().to_string();
 
     let doc = ErrorResult {
