@@ -51,7 +51,7 @@ mod blob_client {
                 }),
             )
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         // Key + Algorithm Without Hash Scenario
         let key_plus_algorithm_blob = container_client.blob_client(&format!(
@@ -71,7 +71,7 @@ mod blob_client {
                 }),
             )
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         container_client.delete(None).await?;
         Ok(())
@@ -264,9 +264,10 @@ mod blob_client {
 
         // Assert Encryption Scope
         let response = blob_client.get_properties(None).await?;
-        if let Some(response_scope) = response.encryption_scope()? {
-            assert_eq!(scope, response_scope);
-        }
+        assert_eq!(
+            Some(scope.as_str()),
+            response.encryption_scope()?.as_deref()
+        );
 
         // Invalid Scope Upload
         let invalid_blob =
@@ -317,7 +318,7 @@ mod block_blob_client {
                 }),
             )
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         // Key + Algorithm Without Hash Scenario
         let result = block_blob_client
@@ -333,7 +334,7 @@ mod block_blob_client {
                 }),
             )
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         container_client.delete(None).await?;
         Ok(())
@@ -698,7 +699,7 @@ mod append_blob_client {
                 ..Default::default()
             }))
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         // Key + Algorithm Without Hash Append Block Scenario
         let key_plus_algorithm_blob = container_client.blob_client(&format!(
@@ -722,7 +723,7 @@ mod append_blob_client {
                 }),
             )
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         container_client.delete(None).await?;
         Ok(())
@@ -949,7 +950,7 @@ mod page_blob_client {
                 }),
             )
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         // Key + Algorithm Without Hash Upload Scenario
         let key_plus_algorithm_blob = container_client.blob_client(&format!(
@@ -971,7 +972,7 @@ mod page_blob_client {
                 }),
             )
             .await;
-        assert!(result.is_err());
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         container_client.delete(None).await?;
         Ok(())
