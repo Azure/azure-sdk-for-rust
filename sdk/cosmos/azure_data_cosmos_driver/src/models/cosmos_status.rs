@@ -880,6 +880,23 @@ impl CosmosStatus {
             && self.sub_status == Some(SubStatusCode::TRANSPORT_GENERATED_503)
     }
 
+    /// Returns `true` if the HTTP status is 503 Service Unavailable (any sub-status).
+    pub fn is_service_unavailable(&self) -> bool {
+        u16::from(self.status_code) == 503
+    }
+
+    /// Returns `true` if the HTTP status is 500 Internal Server Error (any sub-status).
+    pub fn is_internal_server_error(&self) -> bool {
+        u16::from(self.status_code) == 500
+    }
+
+    /// Returns `true` if this is a system-resource-unavailable error
+    /// (HTTP 429, sub-status 3092).
+    pub fn is_system_resource_unavailable(&self) -> bool {
+        u16::from(self.status_code) == 429
+            && self.sub_status == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE)
+    }
+
     /// Returns the human-readable name of this status combination, if known.
     ///
     /// Unlike the raw sub-status code, this method always resolves ambiguous
@@ -978,6 +995,15 @@ impl CosmosStatus {
     pub const RU_BUDGET_EXCEEDED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::TooManyRequests,
         sub_status: Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+    };
+
+    /// System resource unavailable (HTTP 429, sub-status 3092).
+    ///
+    /// Indicates a backend resource constraint. Treated as equivalent to
+    /// 503 for partition-level failover purposes.
+    pub const SYSTEM_RESOURCE_UNAVAILABLE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::TooManyRequests,
+        sub_status: Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE),
     };
 }
 
