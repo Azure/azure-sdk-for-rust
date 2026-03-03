@@ -113,6 +113,8 @@ Nway
 NWAY
 Pkrange
 PKRANGE
+backpressure
+RUPM
 
 # Test values (used in doc tests and unit tests)
 Replicaset

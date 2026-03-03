@@ -1081,15 +1081,13 @@ impl SubStatusCode {
     // ----- 412: Precondition Failed (Migration) -----
 
     /// Mismatching collection RIDs on migrate partition during migration (5325).
-    pub const MISMATCHING_COLLECTION_RIDS_ON_MIGRATE_PARTITION: SubStatusCode =
-        SubStatusCode(5325);
+    pub const MISMATCHING_COLLECTION_RIDS_ON_MIGRATE_PARTITION: SubStatusCode = SubStatusCode(5325);
 
     /// Partition not in migrating status for migrate partition request (5326).
     pub const PARTITION_NOT_IN_MIGRATING_STATUS: SubStatusCode = SubStatusCode(5326);
 
     /// Missing partition resource on complete migration (5327).
-    pub const MISSING_PARTITION_RESOURCE_ON_COMPLETE_MIGRATION: SubStatusCode =
-        SubStatusCode(5327);
+    pub const MISSING_PARTITION_RESOURCE_ON_COMPLETE_MIGRATION: SubStatusCode = SubStatusCode(5327);
 
     /// Missing partition resource on abort migration (5328).
     pub const MISSING_PARTITION_RESOURCE_ON_ABORT_MIGRATION: SubStatusCode = SubStatusCode(5328);
