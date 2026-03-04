@@ -1,0 +1,71 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# Kubernetes Job manifest for the Cosmos DB perf testing tool.
+#
+# Placeholders (replaced by deploy-aks.sh):
+#   ${ACR_NAME}           - Azure Container Registry name
+#   ${IMAGE_TAG}          - Docker image tag (default: latest)
+#   ${COSMOS_ENDPOINT}    - Cosmos DB workload endpoint
+#   ${RESULTS_ENDPOINT}   - Cosmos DB results endpoint (optional)
+#   ${RESULTS_AUTH}       - Auth method for results account
+#   ${PARALLELISM}        - Number of parallel pods
+#   ${CONCURRENCY}        - Concurrent operations per pod
+#   ${IDENTITY_CLIENT_ID} - Managed identity client ID
+#
+# Usage:
+#   envsubst < perf-job.yaml | kubectl apply -f -
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cosmos-perf
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cosmos-perf-sa
+  namespace: cosmos-perf
+  annotations:
+    azure.workload.identity/client-id: "${IDENTITY_CLIENT_ID}"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cosmos-perf
+  namespace: cosmos-perf
+spec:
+  parallelism: ${PARALLELISM}
+  completions: ${PARALLELISM}
+  template:
+    metadata:
+      labels:
+        app: cosmos-perf
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: cosmos-perf-sa
+      imagePullSecrets:
+      - name: acr-secret
+      containers:
+      - name: perf
+        image: ${ACR_NAME}.azurecr.io/cosmos-perf:${IMAGE_TAG}
+        args:
+        - "--endpoint"
+        - "${COSMOS_ENDPOINT}"
+        - "--auth"
+        - "aad"
+        - "--concurrency"
+        - "${CONCURRENCY}"
+        - "--results-endpoint"
+        - "${RESULTS_ENDPOINT}"
+        - "--results-auth"
+        - "${RESULTS_AUTH}"
+        resources:
+          requests:
+            cpu: "2"
+            memory: "1Gi"
+          limits:
+            cpu: "4"
+            memory: "2Gi"
+      restartPolicy: Never
+  backoffLimit: 0
