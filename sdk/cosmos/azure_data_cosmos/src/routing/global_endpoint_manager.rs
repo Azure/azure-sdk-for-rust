@@ -41,7 +41,9 @@ pub(crate) struct GlobalEndpointManager {
     /// HTTP pipeline for making requests to the Cosmos DB service
     pipeline: Pipeline,
 
-    /// Cache for account properties with 600 second TTL to reduce redundant service calls
+    /// Cache for account properties to reduce redundant service calls.
+    /// Entries do not expire on their own; refresh is driven by background refresh
+    /// and force-refresh requests.
     account_properties_cache: AsyncCache<&'static str, AccountProperties>,
 
     /// Optional callback invoked when account properties are refreshed via HTTP call.
@@ -79,7 +81,7 @@ impl GlobalEndpointManager {
     /// # Summary
     /// Initializes the endpoint manager with a default endpoint, preferred regions for routing,
     /// and an HTTP pipeline for communication. Sets up location cache for endpoint management
-    /// and account properties cache with 600 second TTL. The manager starts with empty endpoint
+    /// and an account properties cache (no TTL). The manager starts with empty endpoint
     /// lists until the first account properties refresh populates regional endpoints.
     ///
     /// # Arguments
@@ -102,9 +104,7 @@ impl GlobalEndpointManager {
             excluded_regions.clone(),
         ));
 
-        let account_properties_cache = AsyncCache::new(
-            Some(Duration::seconds(600)), // Default 10 minutes TTL
-        );
+        let account_properties_cache = AsyncCache::new(None);
 
         let instance = Arc::new(Self {
             default_endpoint,
@@ -310,58 +310,76 @@ impl GlobalEndpointManager {
     ///
     /// # Summary
     /// Fetches the latest Cosmos DB account properties including regional endpoint information
-    /// and updates the location cache. Uses a Moka cache with 600 second TTL to avoid redundant
-    /// service calls. If `force_refresh` is true, invalidates the cache to ensure fresh data.
-    /// The location cache is updated only when new data is fetched (TTL expiry or forced refresh),
-    /// not when serving cached data.
+    /// and updates the location cache. If `force_refresh` is true, bypasses the cache entirely
+    /// and makes a direct call to the gateway endpoint to fetch fresh account properties, then
+    /// updates both the location cache and the properties cache. When `force_refresh` is false,
+    /// the cached value is returned if present; the gateway is only called when the cache entry
+    /// is missing.
     ///
     /// # Arguments
-    /// * `force_refresh` - If true, invalidates cache and forces fresh fetch from service
+    /// * `force_refresh` - If true, bypasses cache and fetches fresh data directly from the gateway
     ///
     /// # Returns
     /// `Ok(())` if refresh succeeded, `Err` if fetching account properties failed
     pub async fn refresh_location(&self, force_refresh: bool) -> Result<(), Error> {
-        // If force_refresh is true, invalidate the cache to ensure a fresh fetch
         if force_refresh {
+            // Force refresh: remove cached entry, call gateway directly, and repopulate cache
             self.account_properties_cache
                 .remove(&ACCOUNT_PROPERTIES_KEY)
                 .await;
-        }
 
-        // Flag to track if an HTTP call was made
-        let http_call_made = AtomicBool::new(false);
+            let account_properties: AccountProperties =
+                self.get_database_account().await?.into_body().json()?;
 
-        // When TTL expires or cache is invalidated, the async block executes and updates location cache
-        let account_properties = self
-            .account_properties_cache
-            .get(
-                ACCOUNT_PROPERTIES_KEY,
-                |_| force_refresh,
-                || async {
-                    // Fetch latest account properties from service
-                    let account_properties: AccountProperties =
-                        self.get_database_account().await?.into_body().json()?;
+            // Update location cache with the fresh properties from the gateway
+            {
+                let mut cache = self.location_cache.lock().unwrap();
+                cache.on_database_account_read(account_properties.clone());
+            }
 
-                    // Mark that we're making an HTTP call
-                    http_call_made.store(true, Ordering::SeqCst);
+            // Repopulate the properties cache with the refreshed data
+            self.account_properties_cache
+                .insert(ACCOUNT_PROPERTIES_KEY, account_properties.clone())
+                .await;
 
-                    // Update location cache with the fetched account properties (only on fresh fetch)
-                    {
-                        let mut cache = self.location_cache.lock().unwrap();
-                        cache.on_database_account_read(account_properties.clone());
-                    }
-
-                    Ok::<AccountProperties, Error>(account_properties)
-                },
-            )
-            .await?;
-
-        // Invoke the registered callback if an HTTP call was made.
-        // `OnceLock::get` is lock-free, so this is safe to call from async code.
-        let was_http_call_made = http_call_made.load(Ordering::SeqCst);
-        if was_http_call_made {
+            // Invoke the registered callback since an HTTP call was made.
             if let Some(callback) = self.on_account_refresh.get() {
                 callback(&account_properties);
+            }
+        } else {
+            // Flag to track if an HTTP call was made
+            let http_call_made = AtomicBool::new(false);
+
+            // Normal path: use cache, fetch from gateway only when missing
+            let account_properties = self
+                .account_properties_cache
+                .get(
+                    ACCOUNT_PROPERTIES_KEY,
+                    |_| false,
+                    || async {
+                        let account_properties: AccountProperties =
+                            self.get_database_account().await?.into_body().json()?;
+
+                        // Mark that we're making an HTTP call
+                        http_call_made.store(true, Ordering::SeqCst);
+
+                        {
+                            let mut cache = self.location_cache.lock().unwrap();
+                            cache.on_database_account_read(account_properties.clone());
+                        }
+
+                        Ok::<AccountProperties, Error>(account_properties)
+                    },
+                )
+                .await?;
+
+            // Invoke the registered callback if an HTTP call was made.
+            // `OnceLock::get` is lock-free, so this is safe to call from async code.
+            let was_http_call_made = http_call_made.load(Ordering::SeqCst);
+            if was_http_call_made {
+                if let Some(callback) = self.on_account_refresh.get() {
+                    callback(&account_properties);
+                }
             }
         }
 
