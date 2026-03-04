@@ -1789,62 +1789,80 @@ impl EndpointShardPool {
     /// Select the best shard for a new request to the given endpoint.
     ///
     /// Algorithm:
-    /// 1. Filter out shards marked for eviction.
-    /// 2. Compute the "active set" size: ceil(total_shards * load_spread_ratio).
-    ///    Only shards in the active set are candidates for new requests.
-    /// 3. Among active shards, pick the one with the lowest inflight count
-    ///    for this endpoint (least-loaded first).
-    /// 4. If the best active shard's inflight >= max_streams_per_client,
-    ///    create a new shard (if under max_clients_per_endpoint).
-    /// 5. If at max clients, use the least-loaded shard from the FULL pool
-    ///    (queue pressure, but bounded).
+    /// 1. Filter out shards marked for eviction **and** shards already at
+    ///    `max_streams_per_client` — both are ineligible for new requests.
+    /// 2. Compute the "active set" size: `ceil(eligible * load_spread_ratio)`.
+    ///    Only shards in the active set are preferred for new requests.
+    /// 3. Among the active set, pick the shard with the lowest inflight
+    ///    count for this endpoint (least-loaded first).  If found, return it.
+    /// 4. If no active-set shard has capacity, check the **remaining**
+    ///    (draining) eligible shards — they still have room below
+    ///    `max_streams_per_client`.  Pick least-loaded.  This avoids
+    ///    creating a new shard when an existing one can absorb the request.
+    /// 5. If *all* eligible shards are at capacity, create a new shard
+    ///    (if under `max_clients_per_endpoint`).
+    /// 6. If at max clients, fall back to the least-loaded shard across
+    ///    the full pool (including saturated ones) to bound queue depth.
     // NOTE: This pseudocode uses `.read()` / `.write()` shorthand for
     // readability. The actual implementation should use epoch-pinned loads
     // and clone-on-write swaps via `crossbeam::epoch::Atomic` (see §11.1).
     fn select_shard(&self, endpoint: &EndpointKey) -> Arc<ClientShard> {
-        let mut candidates = {
+        let fallback = {
             let shards = self.shards.read();
 
-            // Healthy shards, sorted by inflight count ascending
-            let mut candidates: Vec<_> = shards.iter()
+            // Eligible shards: healthy AND below the stream limit.
+            let max = self.config.max_streams_per_client;
+            let mut eligible: Vec<_> = shards.iter()
+                .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
+                .map(|s| {
+                    let inflight = s.endpoint_inflight(endpoint);
+                    (s.clone(), inflight)
+                })
+                .filter(|(_, inflight)| *inflight < max)
+                .collect();
+
+            eligible.sort_by_key(|(_, inflight)| *inflight);
+
+            // Active set: only the top N eligible shards are preferred.
+            // Remaining eligible shards are left to drain (scale-down path)
+            // but can still absorb overflow before we create a new shard.
+            let active_count = (eligible.len() as f64 * self.config.load_spread_ratio)
+                .ceil()
+                .max(1.0) as usize;
+
+            // Step 3: try active set first (least-loaded).
+            let active_set = &eligible[..active_count.min(eligible.len())];
+            if let Some((best, _)) = active_set.first() {
+                return best.clone();
+            }
+
+            // Step 4: active set empty (all active shards saturated) —
+            // check remaining eligible (draining) shards before scaling up.
+            if let Some((best, _)) = eligible.first() {
+                return best.clone();
+            }
+
+            // No eligible shard has capacity.  Build a fallback from the
+            // full (unfiltered, including saturated) pool for step 6.
+            let mut all: Vec<_> = shards.iter()
                 .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
                 .map(|s| {
                     let inflight = s.endpoint_inflight(endpoint);
                     (s.clone(), inflight)
                 })
                 .collect();
-
-            candidates.sort_by_key(|(_, inflight)| *inflight);
-
-            // Active set: only the top N shards receive new requests.
-            // Remaining shards are left to drain (scale-down path).
-            let active_count = (candidates.len() as f64 * self.config.load_spread_ratio)
-                .ceil()
-                .max(1.0) as usize;
-
-            // Among active set, find least-loaded
-            // Note: candidates are sorted ascending by inflight, so we want
-            // to route to the least-loaded within the active set. The "active set"
-            // is the first `active_count` shards (sorted ascending = least loaded first).
-            let active_set = &candidates[..active_count.min(candidates.len())];
-
-            if let Some((best, inflight)) = active_set.first() {
-                if *inflight < self.config.max_streams_per_client {
-                    return best.clone();
-                }
-            }
-
-            candidates
+            all.sort_by_key(|(_, inflight)| *inflight);
+            all
         }; // read lock released here
 
-        // All active shards at capacity → try to create a new one
+        // Step 5: all eligible shards at capacity → try to create a new one.
         if let Some(new_shard) = self.try_create_shard() {
             return new_shard;
         }
 
-        // At max clients → fall back to least-loaded across ALL shards
-        // (including draining ones) to prevent request queuing
-        candidates.first()
+        // Step 6: at max clients → fall back to least-loaded across ALL
+        // shards (including saturated / draining ones) to bound queue depth.
+        fallback.first()
             .map(|(s, _)| s.clone())
             .unwrap_or_else(|| self.create_emergency_shard())
     }
