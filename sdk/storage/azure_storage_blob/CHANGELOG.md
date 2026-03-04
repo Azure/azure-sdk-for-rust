@@ -6,6 +6,7 @@
 
 ### Breaking Changes
 
+- Changed `BlockBlobClientManagedUploadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
 - Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
 - Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))

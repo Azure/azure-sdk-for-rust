@@ -266,7 +266,7 @@ impl BlobClient {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {
-            options.if_none_match = Some(String::from("*"));
+            options.if_none_match = Some("*".into());
         }
 
         self.block_blob_client()
