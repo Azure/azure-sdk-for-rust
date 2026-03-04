@@ -15,9 +15,7 @@ use crate::{constants, CosmosClientOptions};
 pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{
-    request::Request,
-    response::Response,
-    Context, Method, PipelineSendOptions, RawResponse,
+    request::Request, response::Response, Context, Method, PipelineSendOptions, RawResponse,
 };
 pub(crate) use cosmos_headers_policy::CosmosHeadersPolicy;
 use serde::de::DeserializeOwned;
@@ -175,38 +173,31 @@ impl GatewayPipeline {
         let pipeline = self.pipeline.clone();
         let context = ctx.with_value(resource_link).into_owned();
 
-        Ok(crate::FeedItemIterator::new(
-            futures::stream::try_unfold(
-                (pipeline, base_request, context, None::<String>, false),
-                |(pipeline, base_request, context, continuation, done)| async move {
-                    if done {
-                        return Ok(None);
-                    }
+        Ok(crate::FeedItemIterator::new(futures::stream::try_unfold(
+            (pipeline, base_request, context, None::<String>, false),
+            |(pipeline, base_request, context, continuation, done)| async move {
+                if done {
+                    return Ok(None);
+                }
 
-                    let mut req = base_request.clone();
-                    if let Some(ref cont) = continuation {
-                        // For change feed, continuation is the etag
-                        req.insert_header(constants::IF_NONE_MATCH, cont.clone());
-                    }
+                let mut req = base_request.clone();
+                if let Some(ref cont) = continuation {
+                    // For change feed, continuation is the etag
+                    req.insert_header(constants::IF_NONE_MATCH, cont.clone());
+                }
 
-                    let resp = pipeline.send(&context, &mut req, None).await?;
-                    let headers = resp.headers().clone();
-                    let next_continuation =
-                        headers.get_optional_string(&constants::CONTINUATION);
-                    let body: crate::feed::FeedBody<T> = resp.into_body().json()?;
-                    let page = crate::FeedPage::new(
-                        body.items,
-                        next_continuation.clone(),
-                        headers,
-                    );
-                    let is_done = next_continuation.is_none();
+                let resp = pipeline.send(&context, &mut req, None).await?;
+                let headers = resp.headers().clone();
+                let next_continuation = headers.get_optional_string(&constants::CONTINUATION);
+                let body: crate::feed::FeedBody<T> = resp.into_body().json()?;
+                let page = crate::FeedPage::new(body.items, next_continuation.clone(), headers);
+                let is_done = next_continuation.is_none();
 
-                    Ok(Some((
-                        page,
-                        (pipeline, base_request, context, next_continuation, is_done),
-                    )))
-                },
-            ),
-        ))
+                Ok(Some((
+                    page,
+                    (pipeline, base_request, context, next_continuation, is_done),
+                )))
+            },
+        )))
     }
 }
