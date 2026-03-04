@@ -1,0 +1,25 @@
+[package]
+name = "azure_data_cosmos_macros"
+version = "0.1.0"
+description = "Procedural macros for the Azure Cosmos DB SDK for Rust."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_data_cosmos_macros"
+keywords = ["sdk", "cloud", "cosmos", "macros"]
+categories = ["development-tools"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2.workspace = true
+quote.workspace = true
+syn.workspace = true
+
+[lints]
+workspace = true
