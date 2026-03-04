@@ -1908,14 +1908,21 @@ pattern (ordered priority, first match returns):
 enum ShardHealthStatus {
     Healthy,
     Unhealthy { reason: EvictionReason },
+    /// This shard is the designated probe candidate: it should be evicted
+    /// and replaced with a fresh connection to test whether the network
+    /// has recovered.  Only ONE shard per sweep iteration receives this
+    /// status (the one with the most consecutive failures).
+    UnhealthyProbeCandidate,
     Idle,
 }
 
 enum EvictionReason {
-    /// No successful response within read-delay limit despite having inflight requests.
+    /// No successful response within read-delay limit despite having
+    /// inflight requests.
     ReadHang,
-    /// Consecutive failures exceeded threshold AND other shards to the same
-    /// endpoint are succeeding (connection-level problem, not service-level).
+    /// Consecutive failures exceeded threshold AND other shards to the
+    /// same endpoint are succeeding (connection-level problem, not
+    /// service-level).
     ConsecutiveFailuresWithHealthyPeers,
     /// No activity for longer than idle timeout.
     IdleTimeout,
@@ -1926,6 +1933,10 @@ fn check_shard_health(
     endpoint: &EndpointKey,
     peer_shards: &[Arc<ClientShard>],
     config: &ShardingConfig,
+    /// `true` when the caller (health sweep) has designated *this* shard
+    /// as the probe candidate for the current sweep iteration.
+    /// See the "all-shards-failing" protocol below.
+    is_probe_candidate: bool,
 ) -> ShardHealthStatus {
     let stats = shard.endpoint_stats(endpoint);
     let now_nanos = now_as_nanos();
@@ -1944,10 +1955,11 @@ fn check_shard_health(
         };
     }
 
-    // 3. Consecutive failures with healthy peers
+    // 3. Consecutive failures — two sub-cases:
     let consecutive = stats.consecutive_failures.load(Ordering::Relaxed);
     if consecutive >= config.consecutive_failure_threshold {
-        // Check if peers are healthier (indicates connection problem, not service)
+        // 3a. At least one peer is healthier → connection-level problem
+        //     on *this* shard.  Evict it (subject to grace period).
         let peers_healthy = peer_shards.iter().any(|peer| {
             let peer_stats = peer.endpoint_stats(endpoint);
             let peer_consecutive = peer_stats.consecutive_failures.load(Ordering::Relaxed);
@@ -1956,7 +1968,6 @@ fn check_shard_health(
         });
 
         if peers_healthy {
-            // Grace period: don't evict immediately after recent success
             let grace_ok = (now_nanos - last_success)
                 > config.eviction_grace_period.as_nanos() as u64;
             if grace_ok {
@@ -1964,6 +1975,32 @@ fn check_shard_health(
                     reason: EvictionReason::ConsecutiveFailuresWithHealthyPeers,
                 };
             }
+        }
+
+        // 3b. NO peer is healthier — every shard is failing equally.
+        //     This happens when an external event (network component
+        //     upgrade, firewall rule change, NAT timeout) corrupts ALL
+        //     existing TCP connections simultaneously.
+        //
+        //     We must NOT evict all shards at once (that would drop all
+        //     inflight traffic).  Instead, the health sweep designates
+        //     exactly ONE shard — the one with the most consecutive
+        //     failures — as the "probe candidate".  Only that shard is
+        //     evicted and immediately replaced with a fresh connection.
+        //
+        //     On the NEXT sweep iteration, one of two things has happened:
+        //       • The fresh shard is succeeding → it becomes a "healthy
+        //         peer", and subsequent sweeps evict the remaining bad
+        //         shards one-by-one via the normal 3a path.
+        //       • The fresh shard is also failing → it's a service-level
+        //         outage, not a connection-level problem.  No further
+        //         evictions are triggered (the probe candidate rotates
+        //         to the worst shard again, but the pool isn't drained).
+        //
+        //     This limits churn to at most one eviction + replacement per
+        //     sweep interval when the entire pool is unhealthy.
+        if is_probe_candidate {
+            return ShardHealthStatus::UnhealthyProbeCandidate;
         }
     }
 
@@ -1977,13 +2014,66 @@ fn check_shard_health(
 }
 ```
 
+**Probe-candidate selection** (in the health sweep loop):
+
+Before iterating over shards, the sweep checks whether the pool is in an "all-shards-failing"
+state.  If every non-eviction-marked shard has `consecutive_failures >= threshold` AND no shard
+has a recent success, the sweep designates the shard with the **highest** `consecutive_failures`
+(ties broken by oldest `last_success_nanos`) as the probe candidate.  Only that shard receives
+`is_probe_candidate = true`; all others get `false`.
+
+```rust
+/// Determine the probe candidate when all shards are failing.
+/// Returns `Some(shard_id)` if — and only if — all shards exceed the
+/// failure threshold with no healthy peer among them.
+fn pick_probe_candidate(
+    shards: &[Arc<ClientShard>],
+    endpoint: &EndpointKey,
+    config: &ShardingConfig,
+) -> Option<u64> {
+    let mut all_failing = true;
+    let mut worst: Option<(u64, u32, u64)> = None; // (id, consecutive, last_success)
+
+    for shard in shards {
+        if shard.health.marked_for_eviction.load(Ordering::Relaxed) {
+            continue;
+        }
+        let stats = shard.endpoint_stats(endpoint);
+        let consecutive = stats.consecutive_failures.load(Ordering::Relaxed);
+        let last_success = stats.last_success_nanos.load(Ordering::Relaxed);
+
+        if consecutive < config.consecutive_failure_threshold {
+            all_failing = false;
+            break;
+        }
+
+        // Track the worst shard (most failures, then oldest success).
+        let dominated = worst.map_or(true, |(_, wc, ws)| {
+            consecutive > wc || (consecutive == wc && last_success < ws)
+        });
+        if dominated {
+            worst = Some((shard.id, consecutive, last_success));
+        }
+    }
+
+    if all_failing { worst.map(|(id, _, _)| id) } else { None }
+}
+```
+
 **Eviction process**:
 1. Mark shard for eviction (`marked_for_eviction = true`)
-2. Stop routing new requests to it (the `load_spread_ratio` mechanism naturally does this
-   by excluding draining shards from the active set)
+2. Stop routing new requests to it (the `select_shard` algorithm already excludes
+   eviction-marked shards from the eligible set)
 3. Wait for inflight requests to drain (with a timeout)
 4. Drop the `Arc<dyn HttpClient>` (the underlying client closes connections on final `Drop`)
 5. If pool size drops below `min_clients_per_endpoint`, create a replacement
+6. **Probe-candidate eviction** (`UnhealthyProbeCandidate`): same steps 1–5, but the
+   replacement shard is created **immediately** (not deferred) — this is the fresh
+   connection that tests whether the network has recovered.  On the next sweep:
+   - If the replacement is succeeding → it becomes a "healthy peer" and remaining bad
+     shards are evicted one-by-one via the normal `ConsecutiveFailuresWithHealthyPeers` path.
+   - If the replacement is also failing → it's a service-level outage; the sweep picks a
+     new probe candidate (the current worst), limiting churn to one replacement per sweep.
 
 **Scale-down flow**: The `load_spread_ratio` and `idle_client_timeout` work together:
 
