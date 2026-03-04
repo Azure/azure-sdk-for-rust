@@ -3,7 +3,7 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, PartitionKeyDefinition, ThroughputProperties},
     options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -34,6 +34,8 @@ pub struct ContainerClient {
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
     container_id: String,
+    partition_key_definition: PartitionKeyDefinition,
+    container_rid: String,
 }
 
 impl ContainerClient {
@@ -43,7 +45,7 @@ impl ContainerClient {
         container_id: &str,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
-    ) -> Self {
+    ) -> azure_core::Result<Self> {
         let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
@@ -60,6 +62,27 @@ impl ContainerClient {
             container_cache.clone(),
             global_endpoint_manager.clone(),
         ));
+
+        // Eagerly prime the container properties cache so that partition key
+        // definition and container RID are available immediately.
+        let container_props = container_cache
+            .resolve_by_id(container_id.to_string(), None, false)
+            .await?;
+
+        let partition_key_definition = container_props.partition_key.clone();
+        let container_rid = container_props
+            .system_properties
+            .resource_id
+            .clone()
+            .unwrap_or_default();
+
+        // Prime the partition key range cache using the container RID.
+        if !container_rid.is_empty() {
+            let _ = partition_key_range_cache
+                .try_lookup(&container_rid, None)
+                .await;
+        }
+
         let container_connection = Arc::from(ContainerConnection::new(
             pipeline.clone(),
             container_cache,
@@ -67,13 +90,31 @@ impl ContainerClient {
             global_partition_endpoint_manager.clone(),
         ));
 
-        Self {
+        Ok(Self {
             link,
             items_link,
             pipeline,
             container_connection,
             container_id: container_id.to_string(),
-        }
+            partition_key_definition,
+            container_rid,
+        })
+    }
+
+    /// Returns the partition key definition for this container.
+    ///
+    /// This is populated eagerly when the `ContainerClient` is created
+    /// and is available synchronously without additional service calls.
+    pub fn partition_key_definition(&self) -> &PartitionKeyDefinition {
+        &self.partition_key_definition
+    }
+
+    /// Returns the system-generated resource ID (RID) of this container.
+    ///
+    /// This is populated eagerly when the `ContainerClient` is created
+    /// and is available synchronously without additional service calls.
+    pub fn resource_id(&self) -> &str {
+        &self.container_rid
     }
 
     /// Reads the properties of the container.

@@ -672,7 +672,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await);
+                    return db_client.container_client(&created.id).await;
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                     println!(
@@ -684,7 +684,7 @@ impl TestRunContext {
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client.container_client(&properties.id).await;
+                    let container_client = db_client.container_client(&properties.id).await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -692,7 +692,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await);
+                    return db_client.container_client(&created.id).await;
                 }
                 Err(e) => return Err(e),
             }
@@ -734,7 +734,7 @@ impl TestRunContext {
             match hub_client
                 .database_client(db_client.id())
                 .container_client(container_id)
-                .await
+                .await?
                 .read(None)
                 .await
             {
@@ -755,7 +755,7 @@ impl TestRunContext {
             match satellite_client
                 .database_client(db_client.id())
                 .container_client(container_id)
-                .await
+                .await?
                 .read(None)
                 .await
             {
@@ -771,7 +771,7 @@ impl TestRunContext {
             }
         }
 
-        Ok(db_client.container_client(container_id).await)
+        db_client.container_client(container_id).await
     }
 
     /// Creates a CosmosClient with a specific preferred region.

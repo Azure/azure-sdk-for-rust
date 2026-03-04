@@ -308,6 +308,11 @@ impl CosmosClientBuilder {
             },
         ));
 
+        // Eagerly prime the account properties cache so that regional
+        // endpoints are available before the first data-plane operation.
+        // This also triggers the PPAF callback registered above.
+        global_endpoint_manager.refresh_location(false).await?;
+
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint,
             pipeline_core,
@@ -326,10 +331,15 @@ impl CosmosClientBuilder {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "fault_injection"))]
 mod tests {
+    use crate::fault_injection::{
+        CustomResponse, FaultInjectionClientBuilder, FaultInjectionConditionBuilder,
+        FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+    };
     use crate::{regions, CosmosAccountReference, CosmosClient};
     use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
+    use azure_core::http::{headers::Headers, StatusCode};
     use std::sync::Arc;
 
     #[derive(Debug)]
@@ -349,15 +359,51 @@ mod tests {
         }
     }
 
+    /// Minimal account properties JSON returned by the mock.
+    const MOCK_ACCOUNT_PROPS: &[u8] = br#"{
+        "writableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+        ],
+        "readableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+        ],
+        "enableMultipleWriteLocations": false,
+        "enablePerPartitionFailoverBehavior": false
+    }"#;
+
     fn test_account() -> CosmosAccountReference {
         let endpoint = "https://test.documents.azure.com/".parse().unwrap();
         CosmosAccountReference::with_credential(endpoint, Arc::new(MockCredential))
+    }
+
+    /// Creates a [`FaultInjectionClientBuilder`] that returns mock account
+    /// properties for any HTTP request. This is needed because `build()` eagerly
+    /// calls `refresh_location()` which makes an HTTP call.
+    fn mock_account_builder() -> FaultInjectionClientBuilder {
+        mock_account_builder_with_body(MOCK_ACCOUNT_PROPS)
+    }
+
+    fn mock_account_builder_with_body(body: &[u8]) -> FaultInjectionClientBuilder {
+        let result = FaultInjectionResultBuilder::new()
+            .with_custom_response(CustomResponse {
+                status_code: StatusCode::Ok,
+                headers: Headers::new(),
+                body: body.to_vec(),
+            })
+            .build();
+
+        let rule = FaultInjectionRuleBuilder::new("mock-account-props", result)
+            .with_condition(FaultInjectionConditionBuilder::new().build())
+            .build();
+
+        FaultInjectionClientBuilder::new().with_rule(Arc::new(rule))
     }
 
     #[tokio::test]
     async fn build_with_known_region_succeeds() {
         let result = CosmosClient::builder()
             .with_application_region(regions::EAST_US)
+            .with_fault_injection(mock_account_builder())
             .build(test_account())
             .await;
         assert!(result.is_ok());
@@ -368,6 +414,7 @@ mod tests {
         let unknown = regions::RegionName::from("unknown");
         let result = CosmosClient::builder()
             .with_application_region(unknown)
+            .with_fault_injection(mock_account_builder())
             .build(test_account())
             .await;
         assert!(
@@ -385,6 +432,7 @@ mod tests {
         let unknown = regions::RegionName::from("unknown");
         let client = CosmosClient::builder()
             .with_application_region(unknown)
+            .with_fault_injection(mock_account_builder())
             .build(test_account())
             .await
             .expect("build should succeed");
@@ -423,7 +471,10 @@ mod tests {
 
     #[tokio::test]
     async fn build_without_application_region_succeeds() {
-        let result = CosmosClient::builder().build(test_account()).await;
+        let result = CosmosClient::builder()
+            .with_fault_injection(mock_account_builder())
+            .build(test_account())
+            .await;
         assert!(result.is_ok());
     }
 
@@ -438,6 +489,7 @@ mod tests {
 
         let client = CosmosClient::builder()
             .with_application_region(regions::EAST_US)
+            .with_fault_injection(mock_account_builder())
             .build(test_account())
             .await
             .expect("build should succeed with known region");
@@ -493,6 +545,7 @@ mod tests {
 
         let client = CosmosClient::builder()
             .with_application_region(regions::EAST_US)
+            .with_fault_injection(mock_account_builder())
             .build(test_account())
             .await
             .expect("build should succeed");
@@ -560,6 +613,100 @@ mod tests {
             strings,
             vec!["https://test.documents.azure.com/"],
             "should fall back to default endpoint"
+        );
+    }
+
+    /// Verifies that `build()` eagerly primes the account properties cache,
+    /// populating regional endpoints immediately.
+    #[tokio::test]
+    async fn build_primes_regional_endpoints() {
+        let client = CosmosClient::builder()
+            .with_fault_injection(mock_account_builder())
+            .build(test_account())
+            .await
+            .expect("build should succeed");
+
+        // The mock returns West US 2 as both read and write region.
+        // After build(), these should already be populated.
+        let read_endpoints = client.global_endpoint_manager.read_endpoints();
+        assert!(
+            read_endpoints
+                .iter()
+                .any(|u| u.as_str().contains("westus2")),
+            "read endpoints should include West US 2 after build: {read_endpoints:?}"
+        );
+
+        let write_endpoints = client.global_endpoint_manager.write_endpoints();
+        assert!(
+            write_endpoints
+                .iter()
+                .any(|u| u.as_str().contains("westus2")),
+            "write endpoints should include West US 2 after build: {write_endpoints:?}"
+        );
+    }
+
+    /// Verifies that `build()` triggers the PPAF callback, configuring
+    /// partition-level failover flags from the account properties.
+    #[tokio::test]
+    async fn build_triggers_ppaf_callback() {
+        // The default mock returns enablePerPartitionFailoverBehavior: false.
+        let client = CosmosClient::builder()
+            .with_fault_injection(mock_account_builder())
+            .build(test_account())
+            .await
+            .expect("build should succeed");
+
+        // PPAF should be false (from mock account properties).
+        assert!(
+            !client
+                .global_partition_endpoint_manager
+                .partition_level_automatic_failover_enabled(),
+            "PPAF should be disabled when account property is false"
+        );
+
+        // Circuit breaker should be true: env var defaults to true,
+        // and (false || true) = true.
+        assert!(
+            client
+                .global_partition_endpoint_manager
+                .partition_level_circuit_breaker_enabled(),
+            "circuit breaker should be enabled by default"
+        );
+    }
+
+    /// Verifies that when the account has PPAF enabled, the callback configures
+    /// both partition-level failover and circuit breaker immediately at build time.
+    #[tokio::test]
+    async fn build_with_ppaf_enabled() {
+        let ppaf_body = br#"{
+            "writableLocations": [
+                { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+            ],
+            "readableLocations": [
+                { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+            ],
+            "enableMultipleWriteLocations": false,
+            "enablePerPartitionFailoverBehavior": true
+        }"#;
+
+        let client = CosmosClient::builder()
+            .with_fault_injection(mock_account_builder_with_body(ppaf_body))
+            .build(test_account())
+            .await
+            .expect("build should succeed");
+
+        assert!(
+            client
+                .global_partition_endpoint_manager
+                .partition_level_automatic_failover_enabled(),
+            "PPAF should be enabled when account property is true"
+        );
+
+        assert!(
+            client
+                .global_partition_endpoint_manager
+                .partition_level_circuit_breaker_enabled(),
+            "circuit breaker should be enabled when PPAF is true"
         );
     }
 }

@@ -52,9 +52,18 @@ impl DatabaseClient {
 
     /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
     ///
+    /// This eagerly fetches the container's metadata (partition key definition,
+    /// partition key ranges) so that the first data-plane operation does not
+    /// incur additional latency from cache warming.
+    ///
     /// # Arguments
     /// * `name` - The name of the container.
-    pub async fn container_client(&self, name: &str) -> ContainerClient {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the container metadata cannot be fetched (for
+    /// example, when the container does not exist).
+    pub async fn container_client(&self, name: &str) -> azure_core::Result<ContainerClient> {
         ContainerClient::new(
             self.pipeline.clone(),
             &self.link,

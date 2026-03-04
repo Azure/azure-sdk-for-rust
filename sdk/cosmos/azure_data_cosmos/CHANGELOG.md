@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- `CosmosClientBuilder::build()` and `DatabaseClient::container_client()` now eagerly prime metadata caches (account properties, container properties, partition key ranges) so the first data-plane operation does not incur additional latency from cache warming. `ContainerClient` exposes `partition_key_definition()` and `resource_id()` accessors for synchronous access to immutable container metadata.
+
 ### Breaking Changes
 
 ### Bugs Fixed
