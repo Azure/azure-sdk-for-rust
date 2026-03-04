@@ -2081,7 +2081,11 @@ fn pick_probe_candidate(
    (`ceil(N * load_spread_ratio)` shards).
 2. Shards outside the active set receive no new requests; their inflight drains to 0.
 3. Once `idle_client_timeout` elapses with 0 inflight, the health sweep marks them `Idle`.
-4. Idle shards above `min_clients_per_endpoint` are removed from the pool.
+4. The sweep runs in two phases: **Phase 1** evicts unhealthy shards and back-fills to
+   `min_clients_per_endpoint`. **Phase 2** removes idle shards only down to the minimum —
+   using the *post-eviction* pool size.  Because idle shards are already-warm connections,
+   the sweep keeps them around to absorb the loss from Phase 1 instead of creating new
+   shards (which are expensive: TLS handshake + TCP setup + H2 negotiation).
 5. The active set shrinks proportionally (`ceil(smaller_N * load_spread_ratio)`).
 6. The process continues until the pool stabilizes at `min_clients_per_endpoint`.
 
@@ -2110,9 +2114,11 @@ specific `reqwest` / `hyper` APIs for configuring keepalive intervals and probes
 ```rust
 impl ShardedHttpTransport {
     /// Background task that periodically:
-    /// 1. Checks shard health and evicts unhealthy shards
-    /// 2. Reclaims idle shards above minimum
-    /// 3. Proactively scales up if utilization is high
+    /// 1. **Phase 1** — Evicts unhealthy shards and back-fills to minimum.
+    /// 2. **Phase 2** — Reclaims idle shards *above* minimum, using the
+    ///    post-eviction pool size so that idle shards absorb the loss
+    ///    instead of being removed and immediately replaced.
+    /// 3. Proactively scales up if utilization is high.
     // NOTE: This pseudocode uses `.read()` / `.write()` shorthand for
     // readability. The actual implementation should use epoch-pinned loads
     // and clone-on-write swaps via `crossbeam::epoch::Atomic` (see §11.1).
@@ -2122,39 +2128,81 @@ impl ShardedHttpTransport {
 
             for (endpoint, pool) in self.pools.read().iter() {
                 let shards = pool.shards.read().clone();
+                let min = pool.config.min_clients_per_endpoint as usize;
+
+                // ── Phase 1: identify & remove unhealthy shards ──────────
                 let mut to_evict = Vec::new();
-                let mut to_remove_idle = Vec::new();
+                let mut idle_candidates = Vec::new();
+                let mut probe_replacement_needed = false;
 
                 for shard in &shards {
+                    let is_probe = pick_probe_candidate(&shards, endpoint, &self.config)
+                        .map_or(false, |id| id == shard.id);
                     let status = check_shard_health(
-                        shard, endpoint, &shards, &self.config,
+                        shard, endpoint, &shards, &self.config, is_probe,
                     );
                     match status {
-                        ShardHealthStatus::Unhealthy { reason } => {
+                        ShardHealthStatus::Unhealthy { reason } |
+                        ShardHealthStatus::UnhealthyProbeCandidate { reason } => {
                             shard.health.marked_for_eviction.store(true, Ordering::Relaxed);
-                            to_evict.push((shard.id, reason));
+                            if matches!(status, ShardHealthStatus::UnhealthyProbeCandidate { .. }) {
+                                probe_replacement_needed = true;
+                            }
+                            to_evict.push(shard.id);
                         }
-                        ShardHealthStatus::Idle if shards.len() > pool.config.min_clients_per_endpoint as usize => {
-                            to_remove_idle.push(shard.id);
+                        ShardHealthStatus::Idle => {
+                            // Collect idle candidates; we'll decide which to remove
+                            // in Phase 2 based on post-eviction pool size.
+                            idle_candidates.push(shard.id);
                         }
                         _ => {}
                     }
                 }
 
-                // Remove evicted/idle shards
-                if !to_evict.is_empty() || !to_remove_idle.is_empty() {
+                // Remove unhealthy shards and bring pool back to minimum.
+                // Creating new shards is relatively expensive (TLS handshake,
+                // TCP setup, H2 negotiation), so we defer idle removal until
+                // after this step — keeping idle shards around avoids replacing
+                // them with brand-new ones when the pool would otherwise drop
+                // below `min_clients_per_endpoint`.
+                if !to_evict.is_empty() {
                     let mut shards_mut = pool.shards.write();
-                    shards_mut.retain(|s| {
-                        !to_evict.iter().any(|(id, _)| *id == s.id) &&
-                        !to_remove_idle.contains(&s.id)
-                    });
+                    shards_mut.retain(|s| !to_evict.contains(&s.id));
 
-                    // Ensure minimum shard count
-                    while shards_mut.len() < pool.config.min_clients_per_endpoint as usize {
+                    // For probe-candidate evictions, create a replacement
+                    // immediately (the fresh connection tests recovery).
+                    if probe_replacement_needed {
                         if let Some(new) = pool.create_shard_internal() {
                             shards_mut.push(Arc::new(new));
                         }
                     }
+
+                    // Back-fill to minimum if still short.
+                    while shards_mut.len() < min {
+                        if let Some(new) = pool.create_shard_internal() {
+                            shards_mut.push(Arc::new(new));
+                        } else {
+                            break; // factory failure; retry on next sweep
+                        }
+                    }
+                }
+
+                // ── Phase 2: remove idle shards (only those above minimum) ─
+                // Decision is based on the *current* pool size, which already
+                // accounts for the evictions (and any replacements) from Phase 1.
+                // This avoids a pathological pattern where evicting N unhealthy
+                // shards drops the pool below minimum, idle shards that could
+                // have filled those slots were also removed, and N new shards
+                // are created unnecessarily.
+                if !idle_candidates.is_empty() {
+                    let mut shards_mut = pool.shards.write();
+                    let can_remove = shards_mut.len().saturating_sub(min);
+                    if can_remove > 0 {
+                        let remove_count = can_remove.min(idle_candidates.len());
+                        let remove_set = &idle_candidates[..remove_count];
+                        shards_mut.retain(|s| !remove_set.contains(&s.id));
+                    }
+                    // No back-fill needed: we only remove down to `min`.
                 }
 
                 // Proactive scale-up check
