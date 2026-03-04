@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let db_client = client.database_client(&config.database);
-    let container_client = db_client.container_client(&config.container).await;
+    let container_client = db_client.container_client(&config.container).await?;
 
     // Ensure the database exists (with retry logic for multi-region setups)
     setup::ensure_database(&client, &config.database).await?;
@@ -148,14 +148,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
             results_endpoint, config.results_database, config.results_container, config.workload_id,
         );
-        results_db.container_client(&config.results_container).await
+        results_db
+            .container_client(&config.results_container)
+            .await?
     } else {
         setup::ensure_container(&db_client, &config.results_container, 400, None).await?;
         println!(
             "Perf results will be stored in container '{}'. Workload ID: {}",
             config.results_container, config.workload_id,
         );
-        db_client.container_client(&config.results_container).await
+        db_client
+            .container_client(&config.results_container)
+            .await?
     };
 
     // Run the perf test
