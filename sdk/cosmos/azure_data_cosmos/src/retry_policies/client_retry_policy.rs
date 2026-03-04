@@ -531,18 +531,20 @@ impl ClientRetryPolicy {
                 .partition_key_range_location_cache
                 .partition_level_failover_enabled()
                 && self.request.is_some()
-                && self
+                && (self.is_request_eligible_for_per_partition_automatic_failover() || self.is_request_eligible_for_partition_level_circuit_breaker())
+            {
+                if self
                     .partition_key_range_location_cache
                     .try_mark_endpoint_unavailable_for_partition_key_range(
                         self.request.as_ref().unwrap(),
                     )
-            {
-                return Some(RetryResult::Retry {
-                    after: Duration::ZERO,
-                });
+                {
+                    return Some(RetryResult::Retry {
+                        after: Duration::ZERO,
+                    });
+                }
             }
 
-            // automatic failover support needed to be plugged in here.
             return Some(
                 self.should_retry_on_endpoint_failure(false, false, true, false, false)
                     .await,
