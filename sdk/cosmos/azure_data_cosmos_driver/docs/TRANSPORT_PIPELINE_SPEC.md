@@ -2708,9 +2708,9 @@ impl<T> StateStore<T> {
 }
 ```
 
-Alternatively, `arc_swap::ArcSwap<T>` (which uses crossbeam epoch internally) provides a
-higher-level API with `load()` returning a `Guard` that derefs to `Arc<T>`.  Either approach
-is acceptable — choose `Atomic<T>` for minimal overhead when the reader does not need to
+Alternatively, `arc_swap::ArcSwap<T>` provides a
+higher-level API with `load()` returning a `Guard` that derefs to `Arc<T>` - but this has more overhead.
+Prefer `Atomic<T>` for minimal overhead when the reader does not need to
 outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>`.
 
 **Already applied to spec structures** (see §4.6, §6.2, §6.3):
