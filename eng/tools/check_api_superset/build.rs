@@ -9,7 +9,7 @@ fn main() {
         .join("..")
         .join("rust-toolchain.toml");
     let toolchain_content =
-        fs::read_to_string(toolchain_file).expect("read rust-toolchain.toml from crate root");
+        fs::read_to_string(&toolchain_file).expect("read rust-toolchain.toml from workspace root");
     let manifest: Manifest =
         toml::from_str(&toolchain_content).expect("deserialize rust-toolchain.toml");
     println!(

@@ -159,7 +159,7 @@ pub struct BlobItem {
 
     /// The name of the blob.
     #[serde(
-        deserialize_with = "crate::models::deserialize_blob_name",
+        deserialize_with = "crate::models::blob_name::option::deserialize",
         rename = "Name",
         skip_serializing_if = "Option::is_none"
     )]
