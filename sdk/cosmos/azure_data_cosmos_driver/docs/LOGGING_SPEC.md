@@ -15,6 +15,7 @@ criteria, and testing strategy.
    - [Built-in Sinks](#built-in-sinks)
    - [LoggingOptions](#loggingoptions)
    - [LoggingRuntime](#loggingruntime)
+   - [Level Resolution](#level-resolution)
    - [`driver_log!` Macro](#driver_log-macro)
    - [Sampling Diagnostics Evaluator](#sampling-diagnostics-evaluator)
    - [Configuration Layering](#configuration-layering)
@@ -43,7 +44,7 @@ The driver needs three distinct logging capabilities:
 
 - **Lazy formatting**: The `driver_log!` macro checks the enabled level *before* calling `format!()`. No formatting cost when the level is disabled.
 - **Pre-formatted at sink boundary**: `LogSink::emit` receives `&[LogEntry]` with pre-formatted `String` messages. This simplifies FFI consumers that must copy data across language boundaries.
-- **Batched delivery**: A `LogBuffer` accumulates entries and flushes them in batches (configurable size, configurable flush interval) to reduce per-entry overhead. Auto-flush on drop is enabled by default.
+- **Batched delivery**: `LoggingRuntime` accumulates entries in an internal buffer and flushes them in batches (configurable size, configurable flush interval) to reduce per-entry overhead. Auto-flush on drop is enabled by default.
 - **DOP alignment**: Data types are plain structs/enums; behavior lives in `LoggingRuntime` and the `LogSink` trait.
 
 ---
@@ -92,9 +93,6 @@ consumers can use for filtering or routing in their sink implementation.
 
 ```rust
 pub trait LogSink: Send + Sync + 'static {
-    /// Maximum level this sink will accept. The runtime skips entries above this level.
-    fn max_level(&self) -> LogLevel;
-
     /// Deliver a batch of entries. Called from the buffer flush path.
     fn emit(&self, entries: &[LogEntry]);
 
@@ -103,8 +101,12 @@ pub trait LogSink: Send + Sync + 'static {
 }
 ```
 
+The `LogSink` trait has **no level filtering** — all filtering is performed by `LoggingRuntime`
+before entries reach the sink (see [Level Resolution](#level-resolution)). This is a deliberate
+simplification for the current single-sink design.
+
 Because `dyn LogSink` doesn't implement `Debug`, any struct containing `Arc<dyn LogSink>` must
-use a manual `Debug` impl (e.g., print `"LogSink(max_level=Info)"`).
+use a manual `Debug` impl (e.g., print `"LogSink"`).
 
 ### Built-in Sinks
 
@@ -132,12 +134,11 @@ The default sink used when no custom sink is provided via `LoggingOptions`.
 - **Structured fields**: Each event carries `logger`, `module`, `file`, and `line` as structured
   fields in addition to the pre-formatted `message` string, so subscribers that support
   structured logging (e.g., JSON formatters) can extract them.
-- **Derives / traits**: `Clone`, `Debug`, `Default` (defaults to `LogLevel::Info`).
+- **Derives / traits**: `Clone`, `Debug`, `Default`.
 - **No subscriber required**: If no `tracing` subscriber is installed, `emit()` is a no-op
   (the `tracing` crate silently discards events). This means the sink is always safe to use
   as a default — it adds zero overhead in applications that don't opt into `tracing`.
-- **Thread safety**: `TracingLogSink` is stateless beyond the stored `max_level`; it is
-  trivially `Send + Sync`.
+- **Thread safety**: `TracingLogSink` is stateless; it is trivially `Send + Sync`.
 
 #### `FfiLogSink`
 
@@ -176,7 +177,6 @@ Included here for completeness so the design handles its requirements.
   // Conceptual — exact signature TBD in the native crate's own spec
   pub extern "C" fn cosmos_set_log_callback(
       callback: Option<extern "C" fn(*const CosmosLogEntry)>,
-      max_level: i32,
   );
   ```
 
@@ -189,7 +189,7 @@ Included here for completeness so the design handles its requirements.
 #[non_exhaustive]
 pub struct LoggingOptions {
     pub(crate) sink: Option<Arc<dyn LogSink>>,
-    pub(crate) default_level: Option<LogLevel>,  // default: None (uses sink's max_level)
+    pub(crate) default_level: Option<LogLevel>,  // default: Info
     pub(crate) level_overrides: Vec<(String, LogLevel)>, // per-logger overrides
     pub(crate) max_batch_size: usize,            // default: 64
     pub(crate) flush_interval: Duration,          // default: 100 ms
@@ -266,6 +266,31 @@ pub struct LoggingRuntime { /* fields below */ }
 **Drop**: calls `flush()` when `auto_flush_on_drop` is `true`.
 
 Manual `Debug` impl required (see `LogSink` note above).
+
+### Level Resolution
+
+`LoggingRuntime` is the **sole authority** on log level filtering. The `LogSink` has no
+independent level gate — it receives exactly what the runtime decides to pass through.
+
+For a given `(logger, level)` pair, the decision is:
+
+```text
+effective = level_overrides[logger]  // if present
+          ?? default_level           // otherwise (defaults to Info)
+
+entry passes  ⟺  level <= effective
+```
+
+This means per-logger overrides can go in **both directions**:
+
+- **More restrictive**: `with_level_override("cpu_memory", LogLevel::Error)` — silences
+  everything below `Error` for that logger, even if `default_level` is `Info`.
+- **More verbose**: `with_level_override("cache", LogLevel::Trace)` — opens `Trace`-level
+  output for a specific logger in production without changing the global level.
+
+The ability to *raise* verbosity for a specific logger is the primary use case for
+per-logger overrides (debugging a specific component in production). Because the sink has
+no independent `max_level()` check, the raised verbosity is always honored.
 
 ### `driver_log!` Macro
 
@@ -434,7 +459,7 @@ All internal logging must go through `driver_log!`. Direct calls to `tracing::in
 
 - All log output is routed through the configurable `LogSink`.
 - FFI consumers receive the same log entries as Rust consumers.
-- Log level filtering is consistent (one `max_level` check, not two).
+- Log level filtering is consistent — all filtering goes through `LoggingRuntime`.
 
 ### Sampling Diagnostics Evaluator
 
@@ -443,9 +468,96 @@ All internal logging must go through `driver_log!`. Direct calls to `tracing::in
 After each `execute_operation`, evaluate whether the completed operation's diagnostics should be
 emitted to the log sink. Two categories trigger logging:
 
-1. **Errors**: The operation completed with a non-success status (HTTP >= 400).
+1. **Failures**: The operation completed with a status code that is classified as a failure
+   by the configurable **failure handler** (see below). Not all 4xx responses are failures —
+   some are semantically expected outcomes.
 2. **Threshold violations**: Latency, request charge, or payload size exceeded configured
    `DiagnosticsThresholds`.
+
+Both categories are **independently rate-limited** by separate hierarchical token-bucket
+samplers. This guarantees a hard cap on log volume regardless of failure rate. Failures get
+their own budgets (separate from threshold violations) so that a burst of slow-but-successful
+requests cannot starve failure diagnostics, and vice versa.
+
+#### Failure Classification
+
+Whether an operation outcome counts as a "failure" (and thus triggers error
+diagnostics logging, subject to the failure sampling budget) is determined by a **failure handler** — a predicate over `&CosmosStatus`.
+
+The default failure handler matches the Java SDK's `CosmosDiagnosticsThresholds` default:
+
+```rust
+/// Default failure classification for diagnostics evaluation.
+///
+/// Returns `true` if the `CosmosStatus` should be treated as a failure
+/// for diagnostics purposes.
+pub(crate) fn default_failure_handler(status: &CosmosStatus) -> bool {
+    let code = u16::from(status.status_code());
+    let sub = status.sub_status().map(|s| s.value()).unwrap_or(0);
+
+    // 5xx — always a failure
+    if code >= 500 {
+        return true;
+    }
+
+    // These 4xx/0 codes are semantically expected outcomes, not failures:
+    //   404/0 — Not Found (item does not exist)
+    //   409/0 — Conflict (document with same id+pk already exists)
+    //   412/0 — Precondition Failed (ETag mismatch)
+    if sub == 0 && (code == 404 || code == 409 || code == 412) {
+        return false;
+    }
+
+    // 429 throttling with well-known sub-status codes is not a failure:
+    //   429/3200  — RU budget exceeded (provisioned RU exceeded)
+    //   429/3214  — Hot partition key throttled (per-PK RU limit exceeded)
+    //   429/10003 — Throughput control request rate too large
+    if status.is_throttled()
+        && matches!(
+            status.sub_status(),
+            Some(s) if s == SubStatusCode::RU_BUDGET_EXCEEDED
+                    || s == SubStatusCode::HOT_PARTITION_KEY_THROTTLED
+                    || s == SubStatusCode::THROUGHPUT_CONTROL_REQUEST_RATE_TOO_LARGE
+        )
+    {
+        return false;
+    }
+
+    // All other 4xx codes are failures
+    code >= 400
+}
+```
+
+| Status | Sub-Status | Default Classification | Rationale |
+|--------|------------|------------------------|-----------|
+| 5xx    | any        | **Failure**            | Server-side errors are always failures |
+| 404    | 0          | Not a failure          | Item not found — common read-if-exists pattern |
+| 409    | 0          | Not a failure          | Conflict on create — common create-if-not-exists pattern |
+| 412    | 0          | Not a failure          | ETag precondition failed — expected in optimistic concurrency |
+| 429    | 3200       | Not a failure          | Provisioned RU exceeded — transient throttling |
+| 429    | 3214       | Not a failure          | Hot partition key throttled — per-PK RU limit exceeded |
+| 429    | 10003      | Not a failure          | Throughput control rate limiting |
+| 404    | non-zero   | **Failure**            | Partition gone, read session not available, etc. |
+| 409    | non-zero   | **Failure**            | Sub-status indicates an unexpected conflict |
+| Other 4xx | any     | **Failure**            | Client errors warranting diagnostics |
+
+Consumers can **override the failure handler** via `SamplingDiagnosticsOptionsBuilder`:
+
+```rust
+let options = SamplingDiagnosticsOptions::builder()
+    .with_failure_handler(|status| {
+        // Custom: also treat 429/3200 (RU budget exceeded) as a failure
+        if *status == CosmosStatus::RU_BUDGET_EXCEEDED {
+            return true;
+        }
+        default_failure_handler(status)
+    })
+    .build();
+```
+
+The failure handler is stored as a `Box<dyn Fn(&CosmosStatus) -> bool + Send + Sync>` in
+`SamplingDiagnosticsOptions`. It is invoked once per `evaluate()` call — the cost is a
+single function pointer call (no allocation).
 
 #### Reference Implementation
 
@@ -453,9 +565,11 @@ This is modeled after
 [`CosmosSamplingDiagnosticsLogger`](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos-spark_3-4_2-12/src/main/scala/com/azure/cosmos/spark/CosmosSamplingDiagnosticsLogger.scala)
 from the Spark connector. Key patterns borrowed:
 
-- **Errors are always logged** (never rate-limited).
+- **Failures are rate-limited independently** (own token-bucket hierarchy, separate from threshold violations).
 - **Threshold violations are rate-limited** via counter reset on interval expiry.
-- **Log verbosity is configurable separately** for error vs. threshold entries.
+- **Log verbosity is configurable separately** for failure vs. threshold entries.
+- **Failure classification is configurable** via a predicate over `&CosmosStatus`,
+  analogous to Java's `CosmosDiagnosticsThresholds.setFailureHandler(BiPredicate<Integer, Integer>)`.
 
 #### Hierarchical Token-Bucket Sampler
 
@@ -487,14 +601,21 @@ checks against the cap, resetting when the window expires. This is lock-free.
 #[non_exhaustive]
 pub struct SamplingDiagnosticsOptions {
     pub(crate) enabled: bool,                       // default: true
+    pub(crate) failure_handler: Box<dyn Fn(&CosmosStatus) -> bool + Send + Sync>, // default: default_failure_handler
     pub(crate) error_verbosity: DiagnosticsVerbosity,     // default: Summary
     pub(crate) threshold_verbosity: DiagnosticsVerbosity, // default: Summary
+    // Failure sampler caps (higher defaults — failures are prioritized)
+    pub(crate) failure_burst_cap: u32,              // default: 5
+    pub(crate) failure_medium_cap: u32,             // default: 20
+    pub(crate) failure_long_cap: u32,               // default: 120
+    // Threshold sampler caps
+    pub(crate) threshold_burst_cap: u32,            // default: 3
+    pub(crate) threshold_medium_cap: u32,           // default: 10
+    pub(crate) threshold_long_cap: u32,             // default: 60
+    // Shared window durations (same for both samplers)
     pub(crate) burst_window: Duration,              // default: 10 s
-    pub(crate) burst_cap: u32,                      // default: 3
     pub(crate) medium_window: Duration,             // default: 1 min
-    pub(crate) medium_cap: u32,                     // default: 10
     pub(crate) long_window: Duration,               // default: 10 min
-    pub(crate) long_cap: u32,                       // default: 60
 }
 ```
 
@@ -506,7 +627,8 @@ support:
 | `AZURE_COSMOS_SAMPLING_DIAG_ENABLED`             | `enabled`             | `false`    |
 | `AZURE_COSMOS_SAMPLING_DIAG_ERROR_VERBOSITY`     | `error_verbosity`     | `detailed` |
 | `AZURE_COSMOS_SAMPLING_DIAG_THRESHOLD_VERBOSITY` | `threshold_verbosity` | `summary`  |
-| `AZURE_COSMOS_SAMPLING_DIAG_BURST_CAP`           | `burst_cap`           | `5`        |
+| `AZURE_COSMOS_SAMPLING_DIAG_BURST_CAP`           | `threshold_burst_cap` | `5`        |
+| `AZURE_COSMOS_SAMPLING_DIAG_FAILURE_BURST_CAP`   | `failure_burst_cap`   | `10`       |
 
 (Window durations are not expected to be env-configurable; only caps.)
 
@@ -520,9 +642,14 @@ holds the `SamplingDiagnosticsOptions`, the three `TokenBucket` instances, and a
 pub(crate) struct SamplingDiagnosticsEvaluator {
     options: SamplingDiagnosticsOptions,
     thresholds: DiagnosticsThresholds,
-    burst_bucket: TokenBucket,
-    medium_bucket: TokenBucket,
-    long_bucket: TokenBucket,
+    // Failure sampler (independent budget)
+    failure_burst_bucket: TokenBucket,
+    failure_medium_bucket: TokenBucket,
+    failure_long_bucket: TokenBucket,
+    // Threshold sampler (independent budget)
+    threshold_burst_bucket: TokenBucket,
+    threshold_medium_bucket: TokenBucket,
+    threshold_long_bucket: TokenBucket,
 }
 ```
 
@@ -547,18 +674,20 @@ return Ok(CosmosResponse::new(body, headers, status, diagnostics));
 ```
 
 Also in the `Err` branch (around line ~660), a failed operation with a transport error
-can be evaluated too (since errors are always logged).
+can be evaluated too (subject to the failure sampling budget).
 
 #### Logging Format
 
 When the evaluator decides to log an entry, it emits via the `LogSink` at the appropriate level:
 
-- **Error entries**: `LogLevel::Error`, message includes account, db, container, status code,
+- **Failure entries**: `LogLevel::Error`, message includes account, db, container, status code,
   sub-status, and the diagnostics JSON at the configured `error_verbosity`.
+  Subject to the **failure sampler** budget.
 - **Threshold-violation entries**: `LogLevel::Info`, message includes account, db, container,
   status code, sub-status, and the diagnostics JSON at the configured `threshold_verbosity`.
+  Subject to the **threshold sampler** budget.
 - **When rate-limited**: A single `LogLevel::Info` message noting "Sampling budget exhausted;
-  suppressing threshold-violation diagnostics until window resets at {timestamp}."
+  suppressing {failure|threshold-violation} diagnostics until window resets at {timestamp}."
 
 ### Configuration Layering
 
@@ -568,7 +697,7 @@ Logging options follow the standard layered configuration model:
 | ----------- | -------------------- | ----------------------------------- |
 | 1 (highest) | Runtime builder API  | `builder.with_logging_options(...)` |
 | 2           | Environment variable | `AZURE_COSMOS_LOG_LEVEL=debug`      |
-| 3 (lowest)  | Compiled default     | `TracingLogSink` at `Info`          |
+| 3 (lowest)  | Compiled default     | `default_level = Info`              |
 
 Log levels are resolved once at runtime initialization and are **not** dynamically mutable.
 This is a deliberate simplification; dynamic level changes can be added in a follow-up if needed.
@@ -648,7 +777,7 @@ PR 2. The sampling evaluator is also not included yet — that is PR 3.
 // diagnostics module
 pub enum LogLevel { Error, Warn, Info, Debug, Trace }
 pub struct LogEntry { pub level, pub timestamp, pub logger, pub message, pub module, pub file, pub line }
-pub trait LogSink: Send + Sync + 'static { fn max_level() -> LogLevel; fn emit(&[LogEntry]); fn flush() {} }
+pub trait LogSink: Send + Sync + 'static { fn emit(&[LogEntry]); fn flush() {} }
 pub struct TracingLogSink { /* ... */ }
 
 // options module
@@ -675,7 +804,6 @@ macro_rules! driver_log { /* ... */ }
    - `LogLevel` ordering (`Error < Warn < Info < Debug < Trace`).
    - `LogLevel` `Display`/`FromStr` round-trip.
    - `LogEntry::new()` captures timestamp and logger name.
-   - `TracingLogSink::default()` max level is `Info`.
    - `TracingLogSink::emit()` does not panic (no subscriber installed).
    - `LoggingRuntime::is_enabled()` returns correct boolean for various levels.
    - `LoggingRuntime::is_enabled()` with per-logger override returns a different result
@@ -818,8 +946,9 @@ Production deployments should run at `Info`; `Debug`/`Trace` are development aid
 
 Implement the sampling diagnostics evaluator that, after each `execute_operation`,
 inspects the completed `DiagnosticsContext` and decides whether to emit it to the `LogSink`
-as a structured diagnostics log entry. Errors are always logged; threshold violations are
-rate-limited by a hierarchical token-bucket sampler.
+as a structured diagnostics log entry. Both failures and threshold violations are
+rate-limited by independent hierarchical token-bucket samplers, ensuring a hard cap on
+log volume.
 
 This is the Rust equivalent of Java/Scala's `CosmosDiagnosticsHandler` +
 `CosmosSamplingDiagnosticsLogger`.
@@ -865,8 +994,14 @@ pub(crate) struct SamplingDiagnosticsEvaluator { /* ... */ }
 
 #### Key Design Decisions
 
-1. **Errors always logged**: `evaluate()` always emits error diagnostics regardless of
-   sampling budget. This matches the Scala reference.
+1. **Failures independently rate-limited**: `evaluate()` emits failure diagnostics through
+   the **failure sampler** (own token-bucket hierarchy with more generous defaults).
+   This guarantees a hard cap on failure log volume while still prioritizing failures
+   over threshold violations. Failure classification uses a configurable predicate over
+   `&CosmosStatus`. The default matches the Java SDK: 5xx is always a
+   failure, 404/0, 409/0, 412/0 are not failures, 429/3200, 429/3214, and 429/10003 are not failures,
+   all other 4xx are failures. Consumers override via
+   `SamplingDiagnosticsOptionsBuilder::with_failure_handler()`.
 
 2. **Threshold check**: `is_threshold_violated()` compares `DiagnosticsContext::duration()`
    against `DiagnosticsThresholds::point_operation_latency_threshold()` /
@@ -922,18 +1057,23 @@ evaluate(diagnostics, thresholds, sink):
     if not diagnostics.is_completed():
         return
 
-    is_error = diagnostics.status() is Some and status.is_error()
+    is_failure = match diagnostics.status():
+        Some(status) => (self.options.failure_handler)(status)
+        None => false  // transport error handled separately
     is_threshold = is_threshold_violated(diagnostics, thresholds)
 
-    if is_error:
-        emit_to_sink(sink, LogLevel::Error, diagnostics, error_verbosity)
+    if is_failure:
+        if failure_burst.try_acquire() and failure_medium.try_acquire() and failure_long.try_acquire():
+            emit_to_sink(sink, LogLevel::Error, diagnostics, error_verbosity)
+        else:
+            // Failure budget exhausted. Log suppression notice once per bucket reset.
         return
 
     if is_threshold:
-        if burst_bucket.try_acquire() and medium_bucket.try_acquire() and long_bucket.try_acquire():
+        if threshold_burst.try_acquire() and threshold_medium.try_acquire() and threshold_long.try_acquire():
             emit_to_sink(sink, LogLevel::Info, diagnostics, threshold_verbosity)
         else:
-            // Rate-limited. Log suppression notice once per bucket reset.
+            // Threshold budget exhausted. Log suppression notice once per bucket reset.
 ```
 
 #### Acceptance Criteria
@@ -944,9 +1084,13 @@ evaluate(diagnostics, thresholds, sink):
    - `TokenBucket` resets after window expires (use `std::thread::sleep` or mock time).
    - Hierarchical bucket: inner bucket exhausted but outer still has capacity → allowed.
    - Hierarchical bucket: outer bucket exhausted → denied even if inner has capacity.
-   - `SamplingDiagnosticsEvaluator::evaluate()` with error diagnostics → always emits.
+   - `SamplingDiagnosticsEvaluator::evaluate()` with failure diagnostics (e.g., 500/0) → emits until failure budget exhausted.
+   - `SamplingDiagnosticsEvaluator::evaluate()` with failure diagnostics exceeding failure budget → rate-limited.
+   - `SamplingDiagnosticsEvaluator::evaluate()` with non-failure 4xx (e.g., 404/0) → does **not** emit as error.
    - `SamplingDiagnosticsEvaluator::evaluate()` with threshold violation → emits until budget.
    - `SamplingDiagnosticsEvaluator::evaluate()` with successful, non-threshold operation → no emit.
+   - `default_failure_handler` correctly classifies all status/sub-status combinations from the default table.
+   - Custom `failure_handler` overrides the default classification.
    - `SamplingDiagnosticsOptionsBuilder` default values and env-var override.
 3. The `evaluate()` call in `execute_operation` does not change the operation's return value
    or error behavior — it is purely side-effectful (logging).
@@ -970,7 +1114,12 @@ evaluate(diagnostics, thresholds, sink):
 
 - [ ] `TokenBucket` uses `Relaxed` ordering (sufficient for rate limiting).
 - [ ] `evaluate()` never panics — all `Option`/`Result` paths handled gracefully.
-- [ ] Error diagnostics are *never* rate-limited.
+- [ ] Failure diagnostics use the **failure sampler** (independent token-bucket hierarchy).
+- [ ] Threshold-violation diagnostics use the **threshold sampler** (separate hierarchy).
+- [ ] Both samplers enforce a hard cap — no category can produce unbounded log volume.
+- [ ] Default `failure_handler` matches the Java SDK: 404/0, 409/0, 412/0 are not failures;
+      429/3200, 429/3214, 429/10003 are not failures; 5xx always failures; other 4xx are failures.
+- [ ] Custom `failure_handler` is respected when provided via builder.
 - [ ] The `CosmosResponse` return path in `execute_operation` is not altered (evaluate is
       called before `return`, not after).
 - [ ] `SamplingDiagnosticsOptions` is `#[non_exhaustive]`.
@@ -989,6 +1138,30 @@ evaluate(diagnostics, thresholds, sink):
 | 3   | Should sampling diagnostics support per-operation-type budgets?                              | Deferred to post-PR 3 follow-up                                          |
 | 4   | Should the evaluator accept `DiagnosticsThresholds` per call or use a runtime-level default? | TBD in PR 3 design — likely per-call from effective options              |
 | 5   | Should a background flush thread be used instead of inline flushing in `emit()`?             | Deferred — inline flush is simpler, background thread can be added later |
+| 6   | **Multi-sink support**: Allow multiple sinks with per-sink level filtering?                  | Future direction — see note below                                        |
+
+### Future: Multi-Sink Support
+
+The current design supports a **single `LogSink`** and keeps all level filtering in
+`LoggingRuntime`. A future enhancement could allow registering multiple sinks, each with
+its own level filter. For example:
+
+```rust
+let options = LoggingOptions::builder()
+    .with_sink(TracingLogSink::default(), LogLevel::Info)   // tracing at Info
+    .with_sink(FileSink::new("debug.log"), LogLevel::Trace) // file at Trace
+    .build();
+```
+
+In that model, `LoggingRuntime` would still apply per-logger overrides first, but each
+sink would independently decide whether to accept the resulting entry based on its own
+configured level. This effectively reintroduces per-sink `max_level` — but at the
+**registration** site rather than as a method on the `LogSink` trait itself, keeping the
+trait simple.
+
+This is deferred because the single-sink model covers the initial use cases (Rust via
+`tracing`, FFI via callback). When multi-sink is implemented, it should be additive
+(new builder methods, no breaking changes to existing API).
 
 ---
 
