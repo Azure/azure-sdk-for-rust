@@ -58,6 +58,7 @@ reqwest = ["dep:reqwest"]
 reqwest_deflate = ["reqwest", "reqwest/deflate"]
 reqwest_gzip = ["reqwest", "reqwest/gzip"]
 reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
+reqwest_rustls = ["reqwest", "reqwest/rustls-no-provider"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
 xml = [
@@ -84,6 +85,7 @@ features = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_native_tls",
+  "reqwest_rustls",
   "tokio",
   "xml",
 ]
