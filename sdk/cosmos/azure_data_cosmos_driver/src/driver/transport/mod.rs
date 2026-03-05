@@ -34,9 +34,7 @@ pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
 pub(crate) use headers_policy::COSMOS_API_VERSION;
-pub(crate) use tracked_transport::{
-    infer_request_sent_status, RequestAttemptTelemetrySink, RequestSentStatus,
-};
+pub(crate) use tracked_transport::{infer_request_sent_status, RequestSentStatus};
 
 /// Determines whether the dataplane pipeline should be used for a given operation.
 ///

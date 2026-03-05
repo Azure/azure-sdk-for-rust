@@ -4,88 +4,24 @@
 //! Cosmos DB driver instance.
 
 use crate::{
-    diagnostics::{
-        DiagnosticsContextBuilder, PipelineType, RequestEvent,
-        RequestSentStatus as DiagnosticsRequestSentStatus, TransportSecurity,
-    },
+    diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference, SubStatusCode,
+        CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
         DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
         ThroughputControlGroupSnapshot,
     },
 };
-use azure_core::http::{Context, Request, StatusCode};
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use azure_core::http::{Context, Request};
+use std::sync::Arc;
 
 use super::{
     cache::AccountRegion,
-    transport::{
-        is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
-        RequestAttemptTelemetrySink, RequestSentStatus as TransportRequestSentStatus,
-    },
+    transport::{is_emulator_host, uses_dataplane_pipeline, AuthorizationContext},
     CosmosDriverRuntime,
 };
-
-// The following types and methods were part of the old policy-chain pipeline.
-// They are retained for backward compatibility and their existing unit tests.
-// They will be removed in Step 10 of the transport pipeline migration.
-
-#[allow(dead_code)]
-#[derive(Clone, Debug, Default)]
-struct RequestAttemptTelemetry {
-    request_reached_transport: bool,
-    request_sent_status: Option<TransportRequestSentStatus>,
-    events: Vec<RequestEvent>,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Default)]
-struct RequestAttemptTelemetryHandle(Mutex<RequestAttemptTelemetry>);
-
-#[allow(dead_code)]
-impl RequestAttemptTelemetryHandle {
-    fn new() -> Self {
-        Self(Mutex::new(RequestAttemptTelemetry::default()))
-    }
-
-    fn reset_attempt(&self) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            *telemetry = RequestAttemptTelemetry::default();
-        }
-    }
-
-    fn take_attempt(&self) -> RequestAttemptTelemetry {
-        if let Ok(mut telemetry) = self.0.lock() {
-            std::mem::take(&mut *telemetry)
-        } else {
-            RequestAttemptTelemetry::default()
-        }
-    }
-}
-
-impl RequestAttemptTelemetrySink for RequestAttemptTelemetryHandle {
-    fn mark_reached_transport(&self) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            telemetry.request_reached_transport = true;
-        }
-    }
-
-    fn set_request_sent_status(&self, request_sent_status: TransportRequestSentStatus) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            telemetry.request_sent_status = Some(request_sent_status);
-        }
-    }
-
-    fn record_event(&self, event: RequestEvent) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            telemetry.events.push(event);
-        }
-    }
-}
 
 /// Cosmos DB driver instance.
 ///
@@ -246,58 +182,6 @@ impl CosmosDriver {
             resolved_container_rid,
             &container_props,
         ))
-    }
-
-    #[allow(dead_code)]
-    fn should_retry_transport_failure(
-        attempt: usize,
-        max_transport_retries: usize,
-        is_idempotent: bool,
-        request_sent: TransportRequestSentStatus,
-    ) -> bool {
-        attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
-    }
-
-    /// Checks whether the end-to-end deadline has been exceeded and, if so,
-    /// records the timeout in diagnostics and returns an error.
-    ///
-    /// Returns `Ok(())` when no deadline is set or it has not yet expired.
-    #[allow(dead_code)]
-    fn check_e2e_deadline(
-        deadline: Option<Instant>,
-        timeout_duration: std::time::Duration,
-        diagnostics_builder: &mut DiagnosticsContextBuilder,
-        request_handle: Option<crate::diagnostics::RequestHandle>,
-    ) -> azure_core::Result<()> {
-        let deadline = match deadline {
-            Some(d) => d,
-            None => return Ok(()),
-        };
-        if Instant::now() < deadline {
-            return Ok(());
-        }
-        if let Some(handle) = request_handle {
-            diagnostics_builder.timeout_request(handle);
-        }
-        diagnostics_builder.set_operation_status(
-            StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-        );
-        Err(azure_core::Error::new(
-            azure_core::error::ErrorKind::Other,
-            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-        ))
-    }
-
-    #[allow(dead_code)]
-    fn map_request_sent_status(
-        request_sent: TransportRequestSentStatus,
-    ) -> DiagnosticsRequestSentStatus {
-        match request_sent {
-            TransportRequestSentStatus::Sent => DiagnosticsRequestSentStatus::Sent,
-            TransportRequestSentStatus::NotSent => DiagnosticsRequestSentStatus::NotSent,
-            TransportRequestSentStatus::Unknown => DiagnosticsRequestSentStatus::Unknown,
-        }
     }
 
     /// Creates a new driver instance.
@@ -895,52 +779,6 @@ mod tests {
             effective.content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
         );
-    }
-
-    #[test]
-    fn retry_gate_allows_only_idempotent_not_sent_with_budget() {
-        assert!(CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            true,
-            TransportRequestSentStatus::NotSent
-        ));
-    }
-
-    #[test]
-    fn retry_gate_blocks_non_idempotent_when_request_may_have_been_sent() {
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            TransportRequestSentStatus::Unknown
-        ));
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            TransportRequestSentStatus::Sent
-        ));
-    }
-
-    #[test]
-    fn retry_gate_allows_non_idempotent_when_not_sent() {
-        assert!(CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            TransportRequestSentStatus::NotSent
-        ));
-    }
-
-    #[test]
-    fn retry_gate_blocks_when_budget_exhausted() {
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            1,
-            1,
-            true,
-            TransportRequestSentStatus::NotSent
-        ));
     }
 
     #[test]
