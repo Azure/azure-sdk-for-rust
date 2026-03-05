@@ -230,7 +230,11 @@ fn nested_resolution_delegates_correctly() {
         }),
     };
 
-    let view = ConnectionOptionsView::new(Some(Arc::new(ConnectionOptions::default())), Some(runtime), Some(&account));
+    let view = ConnectionOptionsView::new(
+        Some(Arc::new(ConnectionOptions::default())),
+        Some(runtime),
+        Some(&account),
+    );
     let pool_view = view.pool();
 
     // max_connections: account has Some(200), wins

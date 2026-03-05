@@ -329,7 +329,10 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert_eq!("unknown layer `global`, expected one of: runtime, account, operation", e.to_string()),
+            Err(e) => assert_eq!(
+                "unknown layer `global`, expected one of: runtime, account, operation",
+                e.to_string()
+            ),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -418,7 +421,10 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert_eq!("CosmosOptions can only be derived for structs", e.to_string()),
+            Err(e) => assert_eq!(
+                "CosmosOptions can only be derived for structs",
+                e.to_string()
+            ),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -446,7 +452,10 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert_eq!("`env` and `merge` cannot be combined on the same field", e.to_string()),
+            Err(e) => assert_eq!(
+                "`env` and `merge` cannot be combined on the same field",
+                e.to_string()
+            ),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -461,7 +470,10 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert_eq!("`env` and `nested` cannot be combined on the same field", e.to_string()),
+            Err(e) => assert_eq!(
+                "`env` and `nested` cannot be combined on the same field",
+                e.to_string()
+            ),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -476,7 +488,10 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert_eq!("`merge` and `nested` cannot be combined on the same field", e.to_string()),
+            Err(e) => assert_eq!(
+                "`merge` and `nested` cannot be combined on the same field",
+                e.to_string()
+            ),
             Ok(_) => panic!("expected error"),
         }
     }

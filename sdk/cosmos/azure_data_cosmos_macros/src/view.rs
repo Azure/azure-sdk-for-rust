@@ -260,7 +260,10 @@ fn nested_view_path(inner_type: &Type) -> Result<syn::Path> {
         Type::Path(type_path) if type_path.qself.is_none() => {
             let mut path = type_path.path.clone();
             let last_seg = path.segments.last_mut().ok_or_else(|| {
-                syn::Error::new_spanned(inner_type, "nested type must have at least one path segment")
+                syn::Error::new_spanned(
+                    inner_type,
+                    "nested type must have at least one path segment",
+                )
             })?;
             last_seg.ident = format_ident!("{}View", last_seg.ident);
             last_seg.arguments = PathArguments::None;
