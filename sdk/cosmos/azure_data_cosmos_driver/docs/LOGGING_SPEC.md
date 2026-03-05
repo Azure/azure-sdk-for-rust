@@ -68,13 +68,60 @@ Ordering: `Error < Warn < Info < Debug < Trace`. A sink configured at `Info` rec
 
 `LogLevel` must also implement `Display`, `FromStr`, and `Default` (defaulting to `Info`).
 
+### Logger
+
+A closed enum representing the set of well-known internal loggers. Every `driver_log!` call
+site passes an explicit `Logger` variant — there are no free-form string loggers within the
+crate.
+
+```rust
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Logger {
+    Runtime,
+    CosmosDriver,
+    Transport,
+    ContainerCache,
+    AccountMetadataCache,
+    CpuMemory,
+    VmMetadata,
+    SamplingEvaluator,
+}
+```
+
+`Logger` must also implement `Display` and `FromStr`.
+
+- `Display`/`as_str()` maps each variant to its snake_case wire name (e.g.,
+  `Logger::ContainerCache` → `"container_cache"`). This is the string used in
+  `TracingLogSink` structured fields, `FfiLogSink` C strings, and environment-variable
+  suffixes.
+- `FromStr` parses the snake_case name back to a variant (case-insensitive). Used by
+  `LoggingOptionsBuilder` when reading `AZURE_COSMOS_LOG_LEVEL_{LOGGER}` from the
+  environment.
+- A `const ALL: &[Logger]` associated constant enumerates every variant so the builder
+  can iterate over them when scanning environment variables.
+
+| Variant                | `as_str()`                 | Source Module                            | Lowest Emitted Level |
+| ---------------------- | -------------------------- | ---------------------------------------- | -------------------- |
+| `Runtime`              | `"runtime"`                | `driver/runtime.rs`                      | `Info`               |
+| `CosmosDriver`         | `"cosmos_driver"`          | `driver/cosmos_driver.rs`                | `Debug`              |
+| `Transport`            | `"transport"`              | `driver/transport/`                      | `Debug`              |
+| `ContainerCache`       | `"container_cache"`        | `driver/cache/container_cache.rs`        | `Trace`              |
+| `AccountMetadataCache` | `"account_metadata_cache"` | `driver/cache/account_metadata_cache.rs` | `Trace`              |
+| `CpuMemory`            | `"cpu_memory"`             | `system/cpu_memory.rs`                   | `Trace`              |
+| `VmMetadata`           | `"vm_metadata"`            | `system/vm_metadata.rs`                  | `Info`               |
+| `SamplingEvaluator`    | `"sampling_evaluator"`     | `diagnostics/sampling_evaluator.rs`      | `Info`               |
+
+Adding a new variant is **not** a breaking change (the enum is `#[non_exhaustive]`).
+Renaming or removing a variant **is** a breaking change.
+
 ### Log Entry
 
 ```rust
 pub struct LogEntry {
     pub level: LogLevel,
     pub timestamp: SystemTime,
-    pub logger: &'static str,
+    pub logger: Logger,
     pub message: String,
     pub module: &'static str,
     pub file: &'static str,
@@ -85,9 +132,9 @@ pub struct LogEntry {
 `LogEntry` must implement `Clone`, `Debug`. A `new()` constructor captures `SystemTime::now()` automatically.
 
 The `logger` field identifies **which logical logger** produced the entry — see
-[`driver_log!` Macro](#driver_log-macro) for how it is derived. Logger names are short,
-stable identifiers like `"cosmos_driver"`, `"runtime"`, `"cache"`, `"transport"` that
-consumers can use for filtering or routing in their sink implementation.
+[`driver_log!` Macro](#driver_log-macro). It is a [`Logger`](#logger) enum variant.
+Sink implementations that need a string representation (e.g., for FFI or structured
+logging) can call `logger.as_str()` to get the stable snake_case name.
 
 ### LogSink Trait
 
@@ -131,7 +178,7 @@ The default sink used when no custom sink is provided via `LoggingOptions`.
   | `Debug`    | `tracing::debug!` |
   | `Trace`    | `tracing::trace!` |
 
-- **Structured fields**: Each event carries `logger`, `module`, `file`, and `line` as structured
+- **Structured fields**: Each event carries `logger` (via `Logger::as_str()`), `module`, `file`, and `line` as structured
   fields in addition to the pre-formatted `message` string, so subscribers that support
   structured logging (e.g., JSON formatters) can extract them.
 - **Derives / traits**: `Clone`, `Debug`, `Default`.
@@ -155,7 +202,7 @@ Included here for completeness so the design handles its requirements.
   typedef struct {
       int32_t level;           // LogLevel discriminant (0=Error .. 4=Trace)
       int64_t timestamp_ms;    // milliseconds since Unix epoch
-      const char* logger;      // UTF-8, null-terminated (e.g., "cosmos_driver")
+      const char* logger;      // Logger::as_str(), UTF-8, null-terminated (e.g., "cosmos_driver")
       const char* message;     // UTF-8, null-terminated
       const char* module;      // UTF-8, null-terminated
       const char* file;        // UTF-8, null-terminated
@@ -190,7 +237,7 @@ Included here for completeness so the design handles its requirements.
 pub struct LoggingOptions {
     pub(crate) sink: Option<Arc<dyn LogSink>>,
     pub(crate) default_level: Option<LogLevel>,  // default: Info
-    pub(crate) level_overrides: Vec<(String, LogLevel)>, // per-logger overrides
+    pub(crate) level_overrides: Vec<(Logger, LogLevel)>, // per-logger overrides
     pub(crate) max_batch_size: usize,            // default: 64
     pub(crate) flush_interval: Duration,          // default: 100 ms
     pub(crate) auto_flush_on_drop: bool,          // default: true
@@ -208,29 +255,31 @@ overridden to a different level via `level_overrides`:
 ```rust
 let options = LoggingOptions::builder()
     .with_default_level(LogLevel::Info)       // most loggers at Info
-    .with_level_override("cache", LogLevel::Trace)  // but caching at Trace
-    .with_level_override("transport", LogLevel::Debug)
+    .with_level_override(Logger::ContainerCache, LogLevel::Trace)  // but caching at Trace
+    .with_level_override(Logger::Transport, LogLevel::Debug)
     .build();
 ```
 
-The builder method `with_level_override(logger: &str, level: LogLevel)` appends to
-`level_overrides`. At runtime initialization, overrides are compiled into a `HashMap<&'static str, LogLevel>`
+The builder method `with_level_override(logger: Logger, level: LogLevel)` appends to
+`level_overrides`. At runtime initialization, overrides are compiled into a `HashMap<Logger, LogLevel>`
 inside `LoggingRuntime` for O(1) lookup.
 
 #### Environment Variables
 
 Builder reads defaults from environment where applicable:
 
-| Environment Variable              | Overrides           | Example Values                       |
-| --------------------------------- | ------------------- | ------------------------------------ |
-| `AZURE_COSMOS_LOG_LEVEL`          | `default_level`     | `error`, `debug`                     |
-| `AZURE_COSMOS_LOG_LEVEL_{LOGGER}` | Per-logger override | `AZURE_COSMOS_LOG_LEVEL_CACHE=trace` |
-| `AZURE_COSMOS_LOG_BATCH_SIZE`     | `max_batch_size`    | `128`                                |
-| `AZURE_COSMOS_LOG_FLUSH_MS`       | `flush_interval`    | `200`                                |
+| Environment Variable              | Overrides           | Example Values                                 |
+| --------------------------------- | ------------------- | ---------------------------------------------- |
+| `AZURE_COSMOS_LOG_LEVEL`          | `default_level`     | `error`, `debug`                               |
+| `AZURE_COSMOS_LOG_LEVEL_{LOGGER}` | Per-logger override | `AZURE_COSMOS_LOG_LEVEL_CONTAINER_CACHE=trace` |
+| `AZURE_COSMOS_LOG_BATCH_SIZE`     | `max_batch_size`    | `128`                                          |
+| `AZURE_COSMOS_LOG_FLUSH_MS`       | `flush_interval`    | `200`                                          |
 
-The `AZURE_COSMOS_LOG_LEVEL_{LOGGER}` pattern uses the **uppercased logger name** as the
-suffix. For example, `AZURE_COSMOS_LOG_LEVEL_CACHE=trace` overrides the `"cache"` logger
-to `Trace`. Programmatic overrides take priority over environment variables.
+The `AZURE_COSMOS_LOG_LEVEL_{LOGGER}` pattern uses the **uppercased `Logger::as_str()` name**
+as the suffix. For example, `AZURE_COSMOS_LOG_LEVEL_CONTAINER_CACHE=trace` overrides
+`Logger::ContainerCache` to `Trace`. The builder iterates `Logger::ALL` and checks
+`AZURE_COSMOS_LOG_LEVEL_{variant.as_str().to_uppercase()}` for each variant.
+Programmatic overrides take priority over environment variables.
 
 ### LoggingRuntime
 
@@ -242,23 +291,23 @@ pub struct LoggingRuntime { /* fields below */ }
 
 **Fields** (all private):
 
-| Field                | Type                              | Description                                   |
-| -------------------- | --------------------------------- | --------------------------------------------- |
-| `sink`               | `Arc<dyn LogSink>`                | The active log sink                           |
-| `buffer`             | `Mutex<Vec<LogEntry>>`            | Pending entries awaiting flush                |
-| `max_batch_size`     | `usize`                           | Flush when buffer reaches this size           |
-| `flush_interval`     | `Duration`                        | Flush when this time elapses since last flush |
-| `last_flush`         | `Mutex<Instant>`                  | Timestamp of most recent flush                |
-| `default_level`      | `LogLevel`                        | Global default level for all loggers          |
-| `level_overrides`    | `HashMap<&'static str, LogLevel>` | Per-logger level overrides (compiled at init) |
-| `auto_flush_on_drop` | `bool`                            | Whether `Drop` triggers a final flush         |
+| Field                | Type                        | Description                                   |
+| -------------------- | --------------------------- | --------------------------------------------- |
+| `sink`               | `Arc<dyn LogSink>`          | The active log sink                           |
+| `buffer`             | `Mutex<Vec<LogEntry>>`      | Pending entries awaiting flush                |
+| `max_batch_size`     | `usize`                     | Flush when buffer reaches this size           |
+| `flush_interval`     | `Duration`                  | Flush when this time elapses since last flush |
+| `last_flush`         | `Mutex<Instant>`            | Timestamp of most recent flush                |
+| `default_level`      | `LogLevel`                  | Global default level for all loggers          |
+| `level_overrides`    | `HashMap<Logger, LogLevel>` | Per-logger level overrides (compiled at init) |
+| `auto_flush_on_drop` | `bool`                      | Whether `Drop` triggers a final flush         |
 
 **Key methods**:
 
-- `is_enabled(logger: &str, level: LogLevel) -> bool` – looks up `logger` in
+- `is_enabled(logger: Logger, level: LogLevel) -> bool` – looks up `logger` in
   `level_overrides`; if found, compares against that level, otherwise compares against
   `default_level`. This is a `HashMap::get` (O(1) amortized) + integer comparison.
-- `effective_level(logger: &str) -> LogLevel` – returns the override for `logger` if
+- `effective_level(logger: Logger) -> LogLevel` – returns the override for `logger` if
   present, otherwise `default_level`. Useful for callers that want to inspect the level.
 - `emit(entry: LogEntry)` – pushes to buffer; flushes if batch full or interval elapsed.
 - `flush()` – drains buffer and calls `sink.emit()` + `sink.flush()`.
@@ -283,9 +332,9 @@ entry passes  ⟺  level <= effective
 
 This means per-logger overrides can go in **both directions**:
 
-- **More restrictive**: `with_level_override("cpu_memory", LogLevel::Error)` — silences
+- **More restrictive**: `with_level_override(Logger::CpuMemory, LogLevel::Error)` — silences
   everything below `Error` for that logger, even if `default_level` is `Info`.
-- **More verbose**: `with_level_override("cache", LogLevel::Trace)` — opens `Trace`-level
+- **More verbose**: `with_level_override(Logger::ContainerCache, LogLevel::Trace)` — opens `Trace`-level
   output for a specific logger in production without changing the global level.
 
 The ability to *raise* verbosity for a specific logger is the primary use case for
@@ -294,12 +343,11 @@ no independent `max_level()` check, the raised verbosity is always honored.
 
 ### `driver_log!` Macro
 
-The macro has two invocation forms — one with an explicit logger name and one that
-derives the logger name automatically from the source file:
+Every call site passes an explicit [`Logger`](#logger) variant. There is only one
+invocation form:
 
 ```rust
 macro_rules! driver_log {
-    // Form 1: explicit logger name
     ($logging:expr, $logger:expr, $level:expr, $($arg:tt)*) => {
         if $logging.is_enabled($logger, $level) {
             $logging.emit($crate::diagnostics::LogEntry::new(
@@ -312,66 +360,12 @@ macro_rules! driver_log {
             ));
         }
     };
-    // Form 2: derive logger name from file!() stem
-    ($logging:expr, $level:expr, $($arg:tt)*) => {
-        driver_log!(
-            $logging,
-            $crate::diagnostics::file_stem(file!()),
-            $level,
-            $($arg)*
-        )
-    };
 }
 ```
 
-#### Logger Name Derivation
-
-When the caller omits the logger name (Form 2), it is derived from `file!()` by stripping
-the directory prefix and `.rs` extension at compile time via a `const fn`:
-
-```rust
-/// Extracts the file stem from a path at compile time.
-///
-/// `"src/driver/cosmos_driver.rs"` → `"cosmos_driver"`
-pub(crate) const fn file_stem(path: &str) -> &str { /* ... */ }
-```
-
-This gives each source file a natural logger name that matches the module it represents:
-
-| Source File                           | Logger Name                                    |
-| ------------------------------------- | ---------------------------------------------- |
-| `src/driver/cosmos_driver.rs`         | `"cosmos_driver"`                              |
-| `src/driver/runtime.rs`               | `"runtime"`                                    |
-| `src/driver/cache/container_cache.rs` | `"container_cache"`                            |
-| `src/driver/transport/mod.rs`         | `"mod"` → override to `"transport"` via Form 1 |
-| `src/system/cpu_memory.rs`            | `"cpu_memory"`                                 |
-| `src/system/vm_metadata.rs`           | `"vm_metadata"`                                |
-
-For `mod.rs` files (where the stem would be the unhelpful `"mod"`), callers should use
-Form 1 with an explicit name:
-
-```rust
-driver_log!(self.runtime.logging(), "transport", LogLevel::Debug, "Pipeline created: ...");
-```
-
-#### Well-Known Logger Names
-
-The following logger names are used throughout the driver and can be referenced in
-`level_overrides` configuration:
-
-| Logger Name                | Source Module                            | Lowest Emitted Level |
-| -------------------------- | ---------------------------------------- | -------------------- |
-| `"runtime"`                | `driver/runtime.rs`                      | `Info`               |
-| `"cosmos_driver"`          | `driver/cosmos_driver.rs`                | `Debug`              |
-| `"transport"`              | `driver/transport/`                      | `Debug`              |
-| `"container_cache"`        | `driver/cache/container_cache.rs`        | `Trace`              |
-| `"account_metadata_cache"` | `driver/cache/account_metadata_cache.rs` | `Trace`              |
-| `"cpu_memory"`             | `system/cpu_memory.rs`                   | `Trace`              |
-| `"vm_metadata"`            | `system/vm_metadata.rs`                  | `Info`               |
-| `"sampling_evaluator"`     | `diagnostics/sampling_evaluator.rs`      | `Info`               |
-
-These names are **stable** and form part of the configuration contract. Adding a new logger
-name is not a breaking change; renaming or removing one is.
+`$logger` is always a `Logger` enum variant (e.g., `Logger::CosmosDriver`). The set of
+valid loggers is closed at compile time — no free-form strings are accepted. See the
+[Logger](#logger) section for the full variant list and their `as_str()` mappings.
 
 #### Visibility
 
@@ -411,19 +405,20 @@ The first argument is always a reference to the `LoggingRuntime`, obtained from
 `self.runtime.logging()` (in `CosmosDriver` methods) or from the runtime directly:
 
 ```rust
-// Form 2 (default): logger name derived from file stem → "cosmos_driver"
+// In cosmos_driver.rs:
 driver_log!(
     self.runtime.logging(),
+    Logger::CosmosDriver,
     LogLevel::Debug,
     "execute_operation: op={:?}, activity_id={}",
     operation.operation_type(),
     activity_id,
 );
 
-// Form 1 (explicit): logger name for mod.rs files or custom names
+// In transport/mod.rs:
 driver_log!(
     self.runtime.logging(),
-    "transport",
+    Logger::Transport,
     LogLevel::Debug,
     "Pipeline created: type={:?}, endpoint={}",
     pipeline_type,
@@ -433,7 +428,7 @@ driver_log!(
 // In CosmosDriverRuntimeBuilder::build():
 driver_log!(
     logging_runtime,
-    "runtime",
+    Logger::Runtime,
     LogLevel::Info,
     "CosmosDriverRuntime created (connection_pool={:?})",
     connection_pool,
@@ -528,18 +523,18 @@ pub(crate) fn default_failure_handler(status: &CosmosStatus) -> bool {
 }
 ```
 
-| Status | Sub-Status | Default Classification | Rationale |
-|--------|------------|------------------------|-----------|
-| 5xx    | any        | **Failure**            | Server-side errors are always failures |
-| 404    | 0          | Not a failure          | Item not found — common read-if-exists pattern |
-| 409    | 0          | Not a failure          | Conflict on create — common create-if-not-exists pattern |
-| 412    | 0          | Not a failure          | ETag precondition failed — expected in optimistic concurrency |
-| 429    | 3200       | Not a failure          | Provisioned RU exceeded — transient throttling |
-| 429    | 3214       | Not a failure          | Hot partition key throttled — per-PK RU limit exceeded |
-| 429    | 10003      | Not a failure          | Throughput control rate limiting |
-| 404    | non-zero   | **Failure**            | Partition gone, read session not available, etc. |
-| 409    | non-zero   | **Failure**            | Sub-status indicates an unexpected conflict |
-| Other 4xx | any     | **Failure**            | Client errors warranting diagnostics |
+| Status    | Sub-Status | Default Classification | Rationale                                                     |
+| --------- | ---------- | ---------------------- | ------------------------------------------------------------- |
+| 5xx       | any        | **Failure**            | Server-side errors are always failures                        |
+| 404       | 0          | Not a failure          | Item not found — common read-if-exists pattern                |
+| 409       | 0          | Not a failure          | Conflict on create — common create-if-not-exists pattern      |
+| 412       | 0          | Not a failure          | ETag precondition failed — expected in optimistic concurrency |
+| 429       | 3200       | Not a failure          | Provisioned RU exceeded — transient throttling                |
+| 429       | 3214       | Not a failure          | Hot partition key throttled — per-PK RU limit exceeded        |
+| 429       | 10003      | Not a failure          | Throughput control rate limiting                              |
+| 404       | non-zero   | **Failure**            | Partition gone, read session not available, etc.              |
+| 409       | non-zero   | **Failure**            | Sub-status indicates an unexpected conflict                   |
+| Other 4xx | any        | **Failure**            | Client errors warranting diagnostics                          |
 
 Consumers can **override the failure handler** via `SamplingDiagnosticsOptionsBuilder`:
 
@@ -746,25 +741,25 @@ PR 2. The sampling evaluator is also not included yet — that is PR 3.
 
 #### New Files
 
-| File                                  | Description                                                                              |
-| ------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `src/diagnostics/log_sink.rs`         | `LogLevel` enum, `LogEntry` struct, `LogSink` trait                                      |
-| `src/diagnostics/tracing_log_sink.rs` | `TracingLogSink`: default sink forwarding to `tracing`                                   |
-| `src/diagnostics/logging_runtime.rs`  | `LoggingRuntime` struct, buffer/flush logic, `driver_log!` macro, `file_stem()` const fn |
-| `src/options/logging_options.rs`      | `LoggingOptions`, `LoggingOptionsBuilder`                                                |
+| File                                  | Description                                                        |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| `src/diagnostics/log_sink.rs`         | `LogLevel` enum, `Logger` enum, `LogEntry` struct, `LogSink` trait |
+| `src/diagnostics/tracing_log_sink.rs` | `TracingLogSink`: default sink forwarding to `tracing`             |
+| `src/diagnostics/logging_runtime.rs`  | `LoggingRuntime` struct, buffer/flush logic, `driver_log!` macro   |
+| `src/options/logging_options.rs`      | `LoggingOptions`, `LoggingOptionsBuilder`                          |
 
 #### Modified Files
 
 - `src/diagnostics/mod.rs`
   - Add `mod log_sink; mod tracing_log_sink; mod logging_runtime;` declarations.
-  - Add public re-exports for `LogLevel`, `LogEntry`, `LogSink`, `TracingLogSink`.
+  - Add public re-exports for `LogLevel`, `Logger`, `LogEntry`, `LogSink`, `TracingLogSink`.
   - Re-export `LoggingRuntime` as `pub(crate)`.
   - Re-export `driver_log!` as `pub(crate)`.
 - `src/options/mod.rs`
   - Add `mod logging_options;` declaration.
   - Add `pub use logging_options::{LoggingOptions, LoggingOptionsBuilder};`.
 - `src/lib.rs`
-  - Add re-exports at crate root: `LogLevel`, `LogEntry`, `LogSink`, `TracingLogSink`, `LoggingOptions`.
+  - Add re-exports at crate root: `LogLevel`, `Logger`, `LogEntry`, `LogSink`, `TracingLogSink`, `LoggingOptions`.
 - `src/driver/runtime.rs`
   - Add `logging: Arc<LoggingRuntime>` field to `CosmosDriverRuntime`.
   - Add `pub(crate) fn logging(&self) -> &Arc<LoggingRuntime>` accessor.
@@ -776,6 +771,7 @@ PR 2. The sampling evaluator is also not included yet — that is PR 3.
 ```rust
 // diagnostics module
 pub enum LogLevel { Error, Warn, Info, Debug, Trace }
+pub enum Logger { Runtime, CosmosDriver, Transport, ContainerCache, AccountMetadataCache, CpuMemory, VmMetadata, SamplingEvaluator }
 pub struct LogEntry { pub level, pub timestamp, pub logger, pub message, pub module, pub file, pub line }
 pub trait LogSink: Send + Sync + 'static { fn emit(&[LogEntry]); fn flush() {} }
 pub struct TracingLogSink { /* ... */ }
@@ -803,7 +799,10 @@ macro_rules! driver_log { /* ... */ }
 6. Unit tests cover:
    - `LogLevel` ordering (`Error < Warn < Info < Debug < Trace`).
    - `LogLevel` `Display`/`FromStr` round-trip.
-   - `LogEntry::new()` captures timestamp and logger name.
+   - `LogEntry::new()` captures timestamp and `Logger` variant.
+   - `Logger` `Display`/`FromStr` round-trip for all variants.
+   - `Logger::as_str()` returns the expected snake_case name for each variant.
+   - `Logger::ALL` contains every variant exactly once.
    - `TracingLogSink::emit()` does not panic (no subscriber installed).
    - `LoggingRuntime::is_enabled()` returns correct boolean for various levels.
    - `LoggingRuntime::is_enabled()` with per-logger override returns a different result
@@ -814,10 +813,8 @@ macro_rules! driver_log { /* ... */ }
    - `LoggingOptionsBuilder` reads env vars when programmatic values are absent.
    - `LoggingOptionsBuilder` programmatic values override env vars.
    - `LoggingOptionsBuilder::with_level_override()` is reflected in `LoggingRuntime`.
-   - `file_stem()` correctly strips directory and `.rs` extension.
 7. Doctest on `TracingLogSink` example compiles and runs.
 8. The `driver_log!` macro compiles and correctly short-circuits when level is disabled.
-9. The `driver_log!` macro Form 2 (no explicit logger) produces entries with the file stem as logger.
 
 #### Testing Strategy
 
@@ -836,8 +833,9 @@ macro_rules! driver_log { /* ... */ }
 - [ ] `LogSink::emit()` receives `&[LogEntry]` (immutable slice), not `Vec`.
 - [ ] `LoggingRuntime` does not hold the `Mutex` lock while calling `sink.emit()`.
 - [ ] `driver_log!` checks `is_enabled(logger, level)` before `format!()`.
-- [ ] `driver_log!` Form 2 derives logger from `file_stem(file!())`.
-- [ ] `file_stem()` is `const fn` and handles edge cases (`mod.rs`, no extension, paths with `/` and `\`).
+- [ ] All `driver_log!` call sites use an explicit `Logger` variant (no string loggers).
+- [ ] `Logger` is `#[non_exhaustive]`.
+- [ ] `Logger::ALL` is kept in sync with the enum variants.
 - [ ] `LoggingOptions` is `#[non_exhaustive]`.
 - [ ] `level_overrides` are compiled into `HashMap` at `LoggingRuntime` construction, not on each `is_enabled` call.
 - [ ] No `use` directives inside functions.
@@ -879,22 +877,22 @@ None.
 
 #### Instrumentation Points (Detailed)
 
-| Module                                         | Logger Name                | Form             | Level   | When                      | Message Template                                                                          |
-| ---------------------------------------------- | -------------------------- | ---------------- | ------- | ------------------------- | ----------------------------------------------------------------------------------------- |
-| `runtime.rs` (`build()`)                       | `"runtime"`                | 2 (auto)         | `Info`  | Runtime created           | `"CosmosDriverRuntime created (connection_pool={:?}, cpu_interval={:?})"`                 |
-| `cosmos_driver.rs` (`execute_operation` entry) | `"cosmos_driver"`          | 2 (auto)         | `Debug` | Before retry loop         | `"execute_operation: op={:?}, resource={:?}, activity_id={}"`                             |
-| `cosmos_driver.rs` (retry branch)              | `"cosmos_driver"`          | 2 (auto)         | `Debug` | Retry decision made       | `"Retrying attempt {} for activity_id={} (reason: transport failure, sent_status={:?})"`  |
-| `cosmos_driver.rs` (success return)            | `"cosmos_driver"`          | 2 (auto)         | `Debug` | After successful response | `"execute_operation complete: activity_id={}, status={}, charge={:.2} RU, duration={}ms"` |
-| `cosmos_driver.rs` (error return)              | `"cosmos_driver"`          | 2 (auto)         | `Debug` | After final failure       | `"execute_operation failed: activity_id={}, attempts={}, error={}"`                       |
-| `transport/mod.rs` (pipeline create)           | `"transport"`              | **1 (explicit)** | `Debug` | Pipeline created          | `"Pipeline created: type={:?}, endpoint={}"`                                              |
-| `cache/container_cache.rs` (lookup)            | `"container_cache"`        | 2 (auto)         | `Trace` | Cache hit/miss            | `"Container cache {}: db={}, container={}"` (`"hit"` or `"miss"`)                         |
-| `cache/account_metadata_cache.rs` (lookup)     | `"account_metadata_cache"` | 2 (auto)         | `Trace` | Cache hit/miss            | `"Account metadata cache {}: endpoint={}"`                                                |
-| `cpu_memory.rs` (sample)                       | `"cpu_memory"`             | 2 (auto)         | `Trace` | Each sample               | `"CPU/memory sample: cpu={:.1}%, mem_available={}MB"`                                     |
-| `vm_metadata.rs` (success)                     | `"vm_metadata"`            | 2 (auto)         | `Info`  | IMDS response             | `"VM metadata fetched: machine_id={}"`                                                    |
-| `vm_metadata.rs` (fallback)                    | `"vm_metadata"`            | 2 (auto)         | `Warn`  | IMDS unavailable          | `"IMDS unavailable, using generated machine_id={}"`                                       |
+| Module                                         | Logger Variant                 | Level   | When                      | Message Template                                                                          |
+| ---------------------------------------------- | ------------------------------ | ------- | ------------------------- | ----------------------------------------------------------------------------------------- |
+| `runtime.rs` (`build()`)                       | `Logger::Runtime`              | `Info`  | Runtime created           | `"CosmosDriverRuntime created (connection_pool={:?}, cpu_interval={:?})"`                 |
+| `cosmos_driver.rs` (`execute_operation` entry) | `Logger::CosmosDriver`         | `Debug` | Before retry loop         | `"execute_operation: op={:?}, resource={:?}, activity_id={}"`                             |
+| `cosmos_driver.rs` (retry branch)              | `Logger::CosmosDriver`         | `Debug` | Retry decision made       | `"Retrying attempt {} for activity_id={} (reason: transport failure, sent_status={:?})"`  |
+| `cosmos_driver.rs` (success return)            | `Logger::CosmosDriver`         | `Debug` | After successful response | `"execute_operation complete: activity_id={}, status={}, charge={:.2} RU, duration={}ms"` |
+| `cosmos_driver.rs` (error return)              | `Logger::CosmosDriver`         | `Debug` | After final failure       | `"execute_operation failed: activity_id={}, attempts={}, error={}"`                       |
+| `transport/mod.rs` (pipeline create)           | `Logger::Transport`            | `Debug` | Pipeline created          | `"Pipeline created: type={:?}, endpoint={}"`                                              |
+| `cache/container_cache.rs` (lookup)            | `Logger::ContainerCache`       | `Trace` | Cache hit/miss            | `"Container cache {}: db={}, container={}"` (`"hit"` or `"miss"`)                         |
+| `cache/account_metadata_cache.rs` (lookup)     | `Logger::AccountMetadataCache` | `Trace` | Cache hit/miss            | `"Account metadata cache {}: endpoint={}"`                                                |
+| `cpu_memory.rs` (sample)                       | `Logger::CpuMemory`            | `Trace` | Each sample               | `"CPU/memory sample: cpu={:.1}%, mem_available={}MB"`                                     |
+| `vm_metadata.rs` (success)                     | `Logger::VmMetadata`           | `Info`  | IMDS response             | `"VM metadata fetched: machine_id={}"`                                                    |
+| `vm_metadata.rs` (fallback)                    | `Logger::VmMetadata`           | `Warn`  | IMDS unavailable          | `"IMDS unavailable, using generated machine_id={}"`                                       |
 
-> **Note**: `transport/mod.rs` uses Form 1 (explicit logger name) because `file_stem("…/mod.rs")` would
-> return `"mod"`, which is not a useful identifier. All other call sites use Form 2 (auto-derived from file stem).
+Every call site uses an explicit `Logger` variant. The `Logger` enum
+is the single source of truth for all valid logger identifiers.
 
 #### Noise Guidelines
 
@@ -930,8 +928,8 @@ Production deployments should run at `Info`; `Debug`/`Trace` are development aid
 #### Review Checklist
 
 - [ ] Every `driver_log!` call receives `self.runtime.logging()` (or the equivalent `LoggingRuntime` ref).
-- [ ] `mod.rs` files use Form 1 with an explicit logger name (not `"mod"`).
-- [ ] All logger names match the well-known names table in the spec.
+- [ ] Every `driver_log!` call uses an explicit `Logger` variant.
+- [ ] All `Logger` variants used match the enum definition in the spec.
 - [ ] No `format!()` happens outside the `driver_log!` macro (no eager formatting).
 - [ ] Log levels assigned per the noise guidelines above.
 - [ ] No `tracing::*!` macro calls added outside `tracing_log_sink.rs`.
