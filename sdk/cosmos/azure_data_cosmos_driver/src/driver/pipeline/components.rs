@@ -108,15 +108,20 @@ pub(crate) struct ThrottleRetryState {
     pub cumulative_delay: Duration,
     /// Maximum total wait time before giving up.
     pub max_wait_time: Duration,
-    /// Multiplicative backoff factor.
+    /// Maximum delay for a single retry (caps the service-specified value).
+    pub max_per_retry_delay: Duration,
+    /// Base delay used when the service does not specify `x-ms-retry-after-ms`.
+    pub fallback_base_delay: Duration,
+    /// Multiplicative backoff factor for the fallback delay.
     pub backoff_factor: f64,
 }
 
 /// Hard-coded defaults for throttle retry.
 const DEFAULT_MAX_THROTTLE_ATTEMPTS: u32 = 9;
 const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
+const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
+const DEFAULT_FALLBACK_BASE_DELAY: Duration = Duration::from_millis(5);
 const DEFAULT_BACKOFF_FACTOR: f64 = 2.0;
-const DEFAULT_BASE_DELAY: Duration = Duration::from_secs(1);
 
 impl ThrottleRetryState {
     /// Creates a new throttle retry state with default parameters.
@@ -126,14 +131,17 @@ impl ThrottleRetryState {
             max_attempts: DEFAULT_MAX_THROTTLE_ATTEMPTS,
             cumulative_delay: Duration::ZERO,
             max_wait_time: DEFAULT_MAX_THROTTLE_WAIT,
+            max_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+            fallback_base_delay: DEFAULT_FALLBACK_BASE_DELAY,
             backoff_factor: DEFAULT_BACKOFF_FACTOR,
         }
     }
 
-    /// Computes the delay for the current attempt using exponential backoff.
-    pub fn current_delay(&self) -> Duration {
+    /// Computes the fallback delay (used when the service does not send
+    /// `x-ms-retry-after-ms`). Uses exponential backoff from a small base.
+    pub fn fallback_delay(&self) -> Duration {
         let multiplier = self.backoff_factor.powi(self.attempt_count as i32);
-        DEFAULT_BASE_DELAY.mul_f64(multiplier)
+        self.fallback_base_delay.mul_f64(multiplier)
     }
 }
 
@@ -252,27 +260,29 @@ mod tests {
         assert_eq!(state.attempt_count, 0);
         assert_eq!(state.max_attempts, 9);
         assert_eq!(state.max_wait_time, Duration::from_secs(30));
+        assert_eq!(state.fallback_base_delay, Duration::from_millis(5));
+        assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
     }
 
     #[test]
-    fn throttle_retry_exponential_backoff() {
+    fn throttle_retry_fallback_exponential_backoff() {
         let state = ThrottleRetryState::new();
-        // attempt 0: 1s * 2^0 = 1s
-        assert_eq!(state.current_delay(), Duration::from_secs(1));
+        // attempt 0: 5ms * 2^0 = 5ms
+        assert_eq!(state.fallback_delay(), Duration::from_millis(5));
 
         let state = ThrottleRetryState {
             attempt_count: 1,
             ..ThrottleRetryState::new()
         };
-        // attempt 1: 1s * 2^1 = 2s
-        assert_eq!(state.current_delay(), Duration::from_secs(2));
+        // attempt 1: 5ms * 2^1 = 10ms
+        assert_eq!(state.fallback_delay(), Duration::from_millis(10));
 
         let state = ThrottleRetryState {
-            attempt_count: 3,
+            attempt_count: 5,
             ..ThrottleRetryState::new()
         };
-        // attempt 3: 1s * 2^3 = 8s
-        assert_eq!(state.current_delay(), Duration::from_secs(8));
+        // attempt 5: 5ms * 2^5 = 160ms
+        assert_eq!(state.fallback_delay(), Duration::from_millis(160));
     }
 
     #[test]

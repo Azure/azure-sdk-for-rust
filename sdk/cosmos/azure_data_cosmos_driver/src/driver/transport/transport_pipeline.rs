@@ -11,7 +11,7 @@
 //! request-sent-status tracking, per-attempt diagnostics, and deadline
 //! enforcement.
 
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use azure_core::http::Request;
 use tracing::trace;
@@ -33,10 +33,16 @@ use crate::driver::pipeline::components::{
     ThrottleAction, ThrottleRetryState, TransportOutcome, TransportRequest, TransportResult,
 };
 
+/// Cosmos DB retry-after header (milliseconds).
+const RETRY_AFTER_MS: azure_core::http::headers::HeaderName =
+    azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms");
+
 /// Decides whether to retry a 429 throttling response at the transport level.
 ///
-/// Pure function: checks whether the result is a 429, whether the retry budget
-/// allows another attempt, and computes the appropriate backoff delay.
+/// Honors the service-specified `x-ms-retry-after-ms` header when present.
+/// Falls back to exponential backoff from a small base delay (5ms) if the
+/// header is absent. Individual retry delays are capped at `max_per_retry_delay`
+/// (5s default) to avoid excessive waits from a misbehaving service response.
 pub(crate) fn evaluate_transport_retry(
     result: &TransportResult,
     throttle_state: &ThrottleRetryState,
@@ -54,7 +60,19 @@ pub(crate) fn evaluate_transport_retry(
         return ThrottleAction::Propagate;
     }
 
-    let delay = throttle_state.current_delay();
+    // Extract the service-specified retry delay from response headers,
+    // or fall back to exponential backoff.
+    let service_delay = result
+        .response_headers()
+        .and_then(|h| h.get_optional_str(&RETRY_AFTER_MS))
+        .and_then(|v| v.parse::<u64>().ok())
+        .map(Duration::from_millis);
+
+    let delay = service_delay.unwrap_or_else(|| throttle_state.fallback_delay());
+
+    // Cap individual retry delay to avoid excessive waits.
+    let delay = delay.min(throttle_state.max_per_retry_delay);
+
     let new_cumulative = throttle_state.cumulative_delay + delay;
 
     if new_cumulative > throttle_state.max_wait_time {
@@ -277,6 +295,19 @@ mod tests {
         }
     }
 
+    fn make_throttled_result_with_retry_after(ms: u64) -> TransportResult {
+        let mut headers = azure_core::http::headers::Headers::new();
+        headers.insert("x-ms-retry-after-ms", ms.to_string());
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
+                headers,
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
     fn make_success_result() -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::Success {
@@ -288,14 +319,43 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_transport_retry_429_within_budget() {
+    fn evaluate_transport_retry_429_uses_service_retry_after() {
+        let result = make_throttled_result_with_retry_after(42);
+        let state = ThrottleRetryState::new();
+
+        match evaluate_transport_retry(&result, &state) {
+            ThrottleAction::Retry { delay, new_state } => {
+                assert_eq!(delay, Duration::from_millis(42));
+                assert_eq!(new_state.attempt_count, 1);
+            }
+            ThrottleAction::Propagate => panic!("expected Retry"),
+        }
+    }
+
+    #[test]
+    fn evaluate_transport_retry_429_fallback_without_header() {
         let result = make_throttled_result();
         let state = ThrottleRetryState::new();
 
         match evaluate_transport_retry(&result, &state) {
             ThrottleAction::Retry { delay, new_state } => {
-                assert_eq!(delay, Duration::from_secs(1)); // 1s * 2^0
+                // fallback: 5ms * 2^0 = 5ms
+                assert_eq!(delay, Duration::from_millis(5));
                 assert_eq!(new_state.attempt_count, 1);
+            }
+            ThrottleAction::Propagate => panic!("expected Retry"),
+        }
+    }
+
+    #[test]
+    fn evaluate_transport_retry_429_caps_large_service_value() {
+        // Service says wait 10s, but max_per_retry_delay is 5s
+        let result = make_throttled_result_with_retry_after(10_000);
+        let state = ThrottleRetryState::new();
+
+        match evaluate_transport_retry(&result, &state) {
+            ThrottleAction::Retry { delay, .. } => {
+                assert_eq!(delay, Duration::from_secs(5)); // capped
             }
             ThrottleAction::Propagate => panic!("expected Retry"),
         }
@@ -317,14 +377,14 @@ mod tests {
 
     #[test]
     fn evaluate_transport_retry_429_exceeds_max_wait() {
-        let result = make_throttled_result();
+        let result = make_throttled_result_with_retry_after(2_000);
         let state = ThrottleRetryState {
             attempt_count: 5,
             cumulative_delay: Duration::from_secs(29),
             ..ThrottleRetryState::new()
         };
 
-        // attempt 5: delay = 1s * 2^5 = 32s, cumulative = 29 + 32 = 61s > 30s
+        // cumulative = 29s + 2s = 31s > 30s max
         assert!(matches!(
             evaluate_transport_retry(&result, &state),
             ThrottleAction::Propagate
