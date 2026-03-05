@@ -21,7 +21,7 @@ use crate::{
     system::{CpuMemoryMonitor, VmMetadataService},
 };
 
-use super::cache::{AccountMetadataCache, ContainerCache, PartitionKeyRangeCache};
+use super::cache::{AccountMetadataCache, ContainerCache};
 use super::{transport::CosmosTransport, CosmosDriver};
 
 /// The Cosmos DB driver runtime environment.
@@ -125,9 +125,6 @@ pub struct CosmosDriverRuntime {
     /// Shared account metadata cache used by drivers in this runtime.
     account_metadata_cache: Arc<AccountMetadataCache>,
 
-    /// Shared partition key range cache used by drivers in this runtime.
-    partition_key_range_cache: Arc<PartitionKeyRangeCache>,
-
     /// CPU and memory monitor for diagnostics.
     cpu_monitor: CpuMemoryMonitor,
 
@@ -167,11 +164,6 @@ impl CosmosDriverRuntime {
     /// Returns the shared account metadata cache.
     pub(crate) fn account_metadata_cache(&self) -> &Arc<AccountMetadataCache> {
         &self.account_metadata_cache
-    }
-
-    /// Returns the shared partition key range cache.
-    pub(crate) fn partition_key_range_cache(&self) -> &Arc<PartitionKeyRangeCache> {
-        &self.partition_key_range_cache
     }
 
     /// Returns the CPU/memory monitor for diagnostics.
@@ -313,18 +305,23 @@ impl CosmosDriverRuntime {
         }
 
         // Create new driver (write lock)
-        let mut registry = self.driver_registry.write().unwrap();
+        let driver = {
+            let mut registry = self.driver_registry.write().unwrap();
 
-        // Double-check after acquiring write lock
-        if let Some(driver) = registry.get(&key) {
-            return Ok(driver.clone());
-        }
+            // Double-check after acquiring write lock
+            if let Some(driver) = registry.get(&key) {
+                return Ok(driver.clone());
+            }
 
-        // Build driver options if not provided
-        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+            // Build driver options if not provided
+            let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
 
-        let driver = Arc::new(CosmosDriver::new(self.clone(), options));
-        registry.insert(key, driver.clone());
+            let driver = Arc::new(CosmosDriver::new(self.clone(), options));
+            registry.insert(key, driver.clone());
+            driver
+        };
+
+        driver.initialize().await?;
 
         Ok(driver)
     }
@@ -558,7 +555,6 @@ impl CosmosDriverRuntimeBuilder {
             driver_registry: Arc::new(RwLock::new(HashMap::new())),
             container_cache: Arc::new(ContainerCache::new()),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
-            partition_key_range_cache: Arc::new(PartitionKeyRangeCache::new()),
             cpu_monitor,
             machine_id,
         })

@@ -222,6 +222,7 @@ pub(crate) struct AccountMetadataCache {
     last_refresh: async_lock::RwLock<std::collections::HashMap<AccountEndpoint, Instant>>,
 
     /// Minimum interval between refresh attempts to rate-limit requests.
+    #[allow(dead_code)] // Used by refresh_if_stale, consumer coming in cutover
     staleness_threshold: Duration,
 }
 
@@ -278,6 +279,7 @@ impl AccountMetadataCache {
     ///
     /// Returns the (possibly refreshed) account properties, or `None` if
     /// no cached value exists and the staleness predicate declines to fetch.
+    #[allow(dead_code)] // Consumer coming in cutover
     pub(crate) async fn refresh_if_stale<F, Fut>(
         &self,
         endpoint: AccountEndpoint,
