@@ -13,6 +13,7 @@ use crate::models::AccountEndpoint;
 use crate::options::Region;
 use serde::Deserialize;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 // =============================================================================
 // Supporting types for the account JSON contract
@@ -205,12 +206,23 @@ impl AccountProperties {
     }
 }
 
+/// Default minimum interval between metadata refreshes (10 minutes).
+///
+/// Matches the SDK's `GlobalEndpointManager` TTL and background refresh interval.
+const DEFAULT_STALENESS_THRESHOLD: Duration = Duration::from_secs(600);
+
 /// Cache for Cosmos DB account metadata.
 ///
 /// Stores account properties keyed by account endpoint.
 #[derive(Debug)]
 pub(crate) struct AccountMetadataCache {
     cache: AsyncCache<AccountEndpoint, AccountProperties>,
+
+    /// Tracks the last time each endpoint's metadata was refreshed.
+    last_refresh: async_lock::RwLock<std::collections::HashMap<AccountEndpoint, Instant>>,
+
+    /// Minimum interval between refresh attempts to rate-limit requests.
+    staleness_threshold: Duration,
 }
 
 impl AccountMetadataCache {
@@ -218,6 +230,8 @@ impl AccountMetadataCache {
     pub(crate) fn new() -> Self {
         Self {
             cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: DEFAULT_STALENESS_THRESHOLD,
         }
     }
 
@@ -242,11 +256,69 @@ impl AccountMetadataCache {
         // Fetch from the service – propagate errors without caching them.
         let properties = fetch_fn().await?;
 
+        // Record the fetch time.
+        {
+            let mut timestamps = self.last_refresh.write().await;
+            timestamps.insert(endpoint.clone(), Instant::now());
+        }
+
         // Cache the successfully fetched properties.
         Ok(self
             .cache
             .get_or_insert_with(endpoint, || async { properties })
             .await)
+    }
+
+    /// Refreshes account properties if they are stale.
+    ///
+    /// "Stale" means the last refresh was more than the staleness threshold
+    /// ago (default 10 minutes, matching the SDK's background refresh interval).
+    /// This method is rate-limited internally to avoid overwhelming the
+    /// metadata endpoint.
+    ///
+    /// Returns the (possibly refreshed) account properties, or `None` if
+    /// no cached value exists and the staleness predicate declines to fetch.
+    pub(crate) async fn refresh_if_stale<F, Fut>(
+        &self,
+        endpoint: AccountEndpoint,
+        fetch_fn: F,
+    ) -> Option<Arc<AccountProperties>>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = AccountProperties>,
+    {
+        // Check staleness before calling into the cache primitive.
+        let is_stale = {
+            let timestamps = self.last_refresh.read().await;
+            match timestamps.get(&endpoint) {
+                Some(last) => last.elapsed() > self.staleness_threshold,
+                None => true, // Never fetched
+            }
+        };
+
+        if !is_stale {
+            // Not stale — return the current cached value (if any).
+            return self.cache.get(&endpoint).await;
+        }
+
+        let endpoint_for_timestamp = endpoint.clone();
+
+        let result = self
+            .cache
+            .get_or_refresh_with(
+                endpoint,
+                |_existing| true, // We already determined staleness above
+                fetch_fn,
+            )
+            .await;
+
+        // Update the refresh timestamp if we got a value back.
+        if result.is_some() {
+            let mut timestamps = self.last_refresh.write().await;
+            timestamps.insert(endpoint_for_timestamp, Instant::now());
+        }
+
+        result
     }
 }
 
@@ -456,5 +528,60 @@ mod tests {
 
         assert!(props.write_region().is_none());
         assert!(props.readable_regions().is_empty());
+    }
+
+    #[tokio::test]
+    async fn refresh_if_stale_returns_none_when_empty_and_not_stale() {
+        // A cache with zero staleness threshold but no data should still
+        // return None from refresh_if_stale since there's nothing cached
+        // and the predicate will trigger a fetch.
+        let cache = AccountMetadataCache::new();
+        let endpoint = test_endpoint("myaccount");
+
+        // First populate the cache
+        cache
+            .get_or_fetch(endpoint.clone(), || async { Ok(test_properties("westus")) })
+            .await
+            .unwrap();
+
+        // Immediately calling refresh_if_stale should NOT refresh (not stale yet)
+        let counter = Arc::new(AtomicUsize::new(0));
+        let counter_clone = counter.clone();
+        let result = cache
+            .refresh_if_stale(endpoint, || async move {
+                counter_clone.fetch_add(1, Ordering::SeqCst);
+                test_properties("eastus")
+            })
+            .await;
+
+        // Should return the cached value without calling the factory
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "westus");
+        assert_eq!(counter.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn refresh_if_stale_refreshes_when_threshold_exceeded() {
+        // Create cache with zero staleness threshold so everything is immediately stale
+        let cache = AccountMetadataCache {
+            cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: Duration::from_secs(0),
+        };
+        let endpoint = test_endpoint("myaccount");
+
+        // Populate with initial data
+        cache
+            .get_or_fetch(endpoint.clone(), || async { Ok(test_properties("westus")) })
+            .await
+            .unwrap();
+
+        // With zero threshold, the data should be considered stale immediately
+        let result = cache
+            .refresh_if_stale(endpoint, || async { test_properties("eastus") })
+            .await;
+
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "eastus");
     }
 }

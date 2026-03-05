@@ -124,7 +124,6 @@ where
     /// Unlike `invalidate` + `get_or_insert_with`, this approach keeps the old value
     /// available while refresh is in progress, and only replaces it atomically when
     /// the new value is ready.
-    #[cfg(test)]
     pub(crate) async fn get_or_refresh_with<F, Fut, P>(
         &self,
         key: K,
