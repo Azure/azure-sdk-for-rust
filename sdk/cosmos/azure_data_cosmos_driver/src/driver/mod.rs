@@ -12,6 +12,7 @@
 
 pub(crate) mod cache;
 mod cosmos_driver;
+pub(crate) mod pipeline;
 mod runtime;
 pub(crate) mod transport;
 

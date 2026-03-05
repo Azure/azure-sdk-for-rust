@@ -133,62 +133,75 @@ impl AuthorizationPolicy {
         auth_ctx: &AuthorizationContext,
         date_string: &str,
     ) -> azure_core::Result<String> {
-        let token = match &self.credential {
-            Credential::TokenCredential(cred) => {
-                // AAD/Entra ID authentication
-                let token = cred
-                    .get_token(&[COSMOS_AAD_SCOPE], None)
-                    .await?
-                    .token
-                    .secret()
-                    .to_string();
-                format!("type=aad&ver=1.0&sig={token}")
-            }
-            Credential::MasterKey(key) => {
-                // Master key authentication - compute HMAC signature
-                let string_to_sign = Self::build_string_to_sign(auth_ctx, date_string);
-
-                trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
-
-                let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key)?;
-                format!("type=master&ver=1.0&sig={signature}")
-            }
-        };
-
-        // URL-encode the token
-        Ok(url_encode(&token))
+        generate_authorization(&self.credential, auth_ctx, date_string).await
     }
+}
 
-    /// Builds the string to sign for master key authentication.
-    ///
-    /// Format (from official docs):
-    /// ```text
-    /// StringToSign =
-    ///     Verb.toLowerCase() + "\n" +
-    ///     ResourceType.toLowerCase() + "\n" +
-    ///     ResourceLink + "\n" +
-    ///     Date.toLowerCase() + "\n" +
-    ///     "" + "\n";
-    /// ```
-    fn build_string_to_sign(auth_ctx: &AuthorizationContext, date_string: &str) -> String {
-        let method_str = match auth_ctx.method {
-            Method::Get => "get",
-            Method::Put => "put",
-            Method::Post => "post",
-            Method::Delete => "delete",
-            Method::Head => "head",
-            Method::Patch => "patch",
-            _ => "extension",
-        };
+/// Generates the Cosmos DB authorization header value.
+///
+/// This is a standalone function so it can be called both from the
+/// `AuthorizationPolicy` (existing policy chain) and from the bare
+/// `sign_request` function in the new transport pipeline.
+pub(crate) async fn generate_authorization(
+    credential: &Credential,
+    auth_ctx: &AuthorizationContext,
+    date_string: &str,
+) -> azure_core::Result<String> {
+    let token = match credential {
+        Credential::TokenCredential(cred) => {
+            // AAD/Entra ID authentication
+            let token = cred
+                .get_token(&[COSMOS_AAD_SCOPE], None)
+                .await?
+                .token
+                .secret()
+                .to_string();
+            format!("type=aad&ver=1.0&sig={token}")
+        }
+        Credential::MasterKey(key) => {
+            // Master key authentication - compute HMAC signature
+            let string_to_sign = build_string_to_sign(auth_ctx, date_string);
 
-        format!(
-            "{}\n{}\n{}\n{}\n\n",
-            method_str,
-            auth_ctx.resource_type.path_segment(),
-            auth_ctx.resource_link,
-            date_string,
-        )
-    }
+            trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
+
+            let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key)?;
+            format!("type=master&ver=1.0&sig={signature}")
+        }
+    };
+
+    // URL-encode the token
+    Ok(url_encode(&token))
+}
+
+/// Builds the string to sign for master key authentication.
+///
+/// Format (from official docs):
+/// ```text
+/// StringToSign =
+///     Verb.toLowerCase() + "\n" +
+///     ResourceType.toLowerCase() + "\n" +
+///     ResourceLink + "\n" +
+///     Date.toLowerCase() + "\n" +
+///     "" + "\n";
+/// ```
+fn build_string_to_sign(auth_ctx: &AuthorizationContext, date_string: &str) -> String {
+    let method_str = match auth_ctx.method {
+        Method::Get => "get",
+        Method::Put => "put",
+        Method::Post => "post",
+        Method::Delete => "delete",
+        Method::Head => "head",
+        Method::Patch => "patch",
+        _ => "extension",
+    };
+
+    format!(
+        "{}\n{}\n{}\n{}\n\n",
+        method_str,
+        auth_ctx.resource_type.path_segment(),
+        auth_ctx.resource_link,
+        date_string,
+    )
 }
 
 /// URL-encodes a string using form URL encoding.
@@ -305,7 +318,7 @@ mod tests {
         );
 
         let date_string = "mon, 01 jan 1900 01:00:00 gmt";
-        let result = AuthorizationPolicy::build_string_to_sign(&auth_ctx, date_string);
+        let result = build_string_to_sign(&auth_ctx, date_string);
 
         let expected =
             "get\ncolls\ndbs/MyDatabase/colls/MyCollection\nmon, 01 jan 1900 01:00:00 gmt\n\n";
@@ -318,7 +331,7 @@ mod tests {
         let auth_ctx = AuthorizationContext::new(Method::Get, ResourceType::Database, "");
 
         let date_string = "mon, 01 jan 1900 01:00:00 gmt";
-        let result = AuthorizationPolicy::build_string_to_sign(&auth_ctx, date_string);
+        let result = build_string_to_sign(&auth_ctx, date_string);
 
         let expected = "get\ndbs\n\nmon, 01 jan 1900 01:00:00 gmt\n\n";
         assert_eq!(result, expected);

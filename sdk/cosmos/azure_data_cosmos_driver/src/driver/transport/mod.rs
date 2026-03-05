@@ -18,22 +18,24 @@ mod emulator;
 mod headers_policy;
 mod pipeline;
 mod tracked_transport;
+pub(crate) mod transport_pipeline;
 
 use crate::{
     models::{AccountEndpoint, Credential, OperationType, ResourceType},
     options::ConnectionPoolOptions,
 };
 use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{policies::Policy, Transport};
+use azure_core::http::{policies::Policy, HttpClient, Transport};
 use headers_policy::CosmosHeadersPolicy;
 use pipeline::CosmosPipeline;
 use std::sync::{Arc, OnceLock};
 
+pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
+pub(crate) use headers_policy::COSMOS_API_VERSION;
 pub(crate) use tracked_transport::{
-    infer_request_sent_status, RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
-    RequestSentStatus,
+    infer_request_sent_status, RequestAttemptTelemetrySink, RequestSentStatus,
 };
 
 /// Determines whether the dataplane pipeline should be used for a given operation.
@@ -100,6 +102,12 @@ pub(crate) struct CosmosTransport {
     /// Used as a base for creating authenticated pipelines per-driver.
     dataplane_transport: Transport,
 
+    /// Raw HttpClient for metadata operations (for the new transport pipeline).
+    metadata_http_client: Arc<dyn HttpClient>,
+
+    /// Raw HttpClient for data plane operations (for the new transport pipeline).
+    dataplane_http_client: Arc<dyn HttpClient>,
+
     /// Lazily-initialized transport for emulator metadata operations.
     /// Uses insecure TLS that accepts invalid/self-signed certificates.
     insecure_emulator_metadata_transport: OnceLock<Transport>,
@@ -107,6 +115,12 @@ pub(crate) struct CosmosTransport {
     /// Lazily-initialized transport for emulator data plane operations.
     /// Uses insecure TLS that accepts invalid/self-signed certificates.
     insecure_emulator_dataplane_transport: OnceLock<Transport>,
+
+    /// Lazily-initialized raw HttpClient for emulator metadata operations.
+    insecure_emulator_metadata_http_client: OnceLock<Arc<dyn HttpClient>>,
+
+    /// Lazily-initialized raw HttpClient for emulator data plane operations.
+    insecure_emulator_dataplane_http_client: OnceLock<Arc<dyn HttpClient>>,
 }
 
 impl CosmosTransport {
@@ -122,19 +136,25 @@ impl CosmosTransport {
     ) -> azure_core::Result<Self> {
         let headers_policy = Arc::new(CosmosHeadersPolicy::new(user_agent));
 
-        let metadata_client = Self::create_reqwest_client(&connection_pool, true, false)?;
-        let metadata_transport = Transport::new(Arc::new(metadata_client));
+        let metadata_client: Arc<dyn HttpClient> =
+            Arc::new(Self::create_reqwest_client(&connection_pool, true, false)?);
+        let metadata_transport = Transport::new(Arc::clone(&metadata_client));
 
-        let dataplane_client = Self::create_reqwest_client(&connection_pool, false, false)?;
-        let dataplane_transport = Transport::new(Arc::new(dataplane_client));
+        let dataplane_client: Arc<dyn HttpClient> =
+            Arc::new(Self::create_reqwest_client(&connection_pool, false, false)?);
+        let dataplane_transport = Transport::new(Arc::clone(&dataplane_client));
 
         Ok(Self {
             connection_pool,
             headers_policy,
             metadata_transport,
             dataplane_transport,
+            metadata_http_client: metadata_client,
+            dataplane_http_client: dataplane_client,
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
+            insecure_emulator_metadata_http_client: OnceLock::new(),
+            insecure_emulator_dataplane_http_client: OnceLock::new(),
         })
     }
 
@@ -222,6 +242,48 @@ impl CosmosTransport {
     fn should_use_insecure_emulator_transport(&self, endpoint: &AccountEndpoint) -> bool {
         bool::from(self.connection_pool.emulator_server_cert_validation())
             && is_emulator_host(endpoint)
+    }
+
+    /// Returns the raw `HttpClient` for metadata operations.
+    ///
+    /// Used by the new transport pipeline (`execute_transport_pipeline`).
+    /// Respects emulator settings — returns insecure client for emulator hosts.
+    pub(crate) fn get_metadata_http_client(
+        &self,
+        endpoint: &AccountEndpoint,
+    ) -> Arc<dyn HttpClient> {
+        if self.should_use_insecure_emulator_transport(endpoint) {
+            Arc::clone(self.insecure_emulator_metadata_http_client.get_or_init(|| {
+                let client = Self::create_reqwest_client(&self.connection_pool, true, true)
+                    .expect("failed to create emulator metadata client");
+                Arc::new(client)
+            }))
+        } else {
+            Arc::clone(&self.metadata_http_client)
+        }
+    }
+
+    /// Returns the raw `HttpClient` for data plane operations.
+    ///
+    /// Used by the new transport pipeline (`execute_transport_pipeline`).
+    /// Respects emulator settings — returns insecure client for emulator hosts.
+    pub(crate) fn get_dataplane_http_client(
+        &self,
+        endpoint: &AccountEndpoint,
+    ) -> Arc<dyn HttpClient> {
+        if self.should_use_insecure_emulator_transport(endpoint) {
+            Arc::clone(
+                self.insecure_emulator_dataplane_http_client
+                    .get_or_init(|| {
+                        let client =
+                            Self::create_reqwest_client(&self.connection_pool, false, true)
+                                .expect("failed to create emulator dataplane client");
+                        Arc::new(client)
+                    }),
+            )
+        } else {
+            Arc::clone(&self.dataplane_http_client)
+        }
     }
 
     // TODO @fabianm: allow the caller to provide a client factory instead of hard-coding reqwest.

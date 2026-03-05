@@ -5,20 +5,18 @@
 
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestEvent,
+        DiagnosticsContextBuilder, PipelineType, RequestEvent,
         RequestSentStatus as DiagnosticsRequestSentStatus, TransportSecurity,
     },
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
-        DatabaseReference, SubStatusCode,
+        CosmosOperation, DatabaseProperties, DatabaseReference, SubStatusCode,
     },
     options::{
         DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
         ThroughputControlGroupSnapshot,
     },
 };
-use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request, StatusCode};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -26,13 +24,17 @@ use std::time::Instant;
 use super::{
     cache::AccountRegion,
     transport::{
-        infer_request_sent_status, is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
-        RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
-        RequestSentStatus as TransportRequestSentStatus,
+        is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
+        RequestAttemptTelemetrySink, RequestSentStatus as TransportRequestSentStatus,
     },
     CosmosDriverRuntime,
 };
 
+// The following types and methods were part of the old policy-chain pipeline.
+// They are retained for backward compatibility and their existing unit tests.
+// They will be removed in Step 10 of the transport pipeline migration.
+
+#[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 struct RequestAttemptTelemetry {
     request_reached_transport: bool,
@@ -40,9 +42,11 @@ struct RequestAttemptTelemetry {
     events: Vec<RequestEvent>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Default)]
 struct RequestAttemptTelemetryHandle(Mutex<RequestAttemptTelemetry>);
 
+#[allow(dead_code)]
 impl RequestAttemptTelemetryHandle {
     fn new() -> Self {
         Self(Mutex::new(RequestAttemptTelemetry::default()))
@@ -244,6 +248,7 @@ impl CosmosDriver {
         ))
     }
 
+    #[allow(dead_code)]
     fn should_retry_transport_failure(
         attempt: usize,
         max_transport_retries: usize,
@@ -257,6 +262,7 @@ impl CosmosDriver {
     /// records the timeout in diagnostics and returns an error.
     ///
     /// Returns `Ok(())` when no deadline is set or it has not yet expired.
+    #[allow(dead_code)]
     fn check_e2e_deadline(
         deadline: Option<Instant>,
         timeout_duration: std::time::Duration,
@@ -283,6 +289,7 @@ impl CosmosDriver {
         ))
     }
 
+    #[allow(dead_code)]
     fn map_request_sent_status(
         request_sent: TransportRequestSentStatus,
     ) -> DiagnosticsRequestSentStatus {
@@ -452,49 +459,26 @@ impl CosmosDriver {
             .await?;
         let write_region = account_properties.write_account_region();
         let region = write_region.map(|r| r.name.clone());
-
-        // Step 5: Build resource link for authorization
-        let resource_ref = operation.resource_reference();
-        let resource_link = resource_ref.link_for_signing();
-
-        // Step 6: Build request URL
-        let request_path = resource_ref.request_path();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
-        let url = endpoint.join_path(&request_path);
 
-        // Step 7: Determine HTTP method
+        // Step 5: Select appropriate HttpClient based on pipeline type
+        let transport = self.runtime.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
-        let method = operation_type.http_method();
-
-        // Step 8: Create authorization context
-        // Strip leading slash from resource link for signing
-        let signing_link = resource_link.trim_start_matches('/');
-        let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
-
-        // Step 9: Select and create appropriate pipeline
-        let transport = self.runtime.transport();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        let pipeline = if is_dataplane {
-            transport.create_dataplane_pipeline(&endpoint, auth)
+        let http_client = if is_dataplane {
+            transport.get_dataplane_http_client(&endpoint)
         } else {
-            transport.create_metadata_pipeline(&endpoint, auth)
+            transport.get_metadata_http_client(&endpoint)
         };
 
-        // Step 10: Execute with a slim transport retry wrapper.
-        //
-        // Retry only once, and only when it is safe:
-        // - operation is idempotent, OR
-        // - operation may be non-idempotent but transport failure happened before bytes were sent
-        const MAX_TRANSPORT_RETRIES: usize = 1;
-        let mut attempt = 0usize;
+        // Step 6: Initialize diagnostics
         let mut diagnostics_builder = DiagnosticsContextBuilder::new(
             activity_id.clone(),
             std::sync::Arc::new(DiagnosticsOptions::default()),
         );
         diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
         diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
-        debug_assert_eq!(diagnostics_builder.activity_id(), &activity_id);
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -511,159 +495,25 @@ impl CosmosDriver {
         } else {
             TransportSecurity::Secure
         };
-        let endpoint_string = endpoint.url().as_str().to_owned();
-        let attempt_telemetry = Arc::new(RequestAttemptTelemetryHandle::new());
-        let deadline = effective_options
-            .end_to_end_latency_policy
-            .as_ref()
-            .map(|p| Instant::now() + p.timeout());
 
-        let e2e_timeout_duration = effective_options
-            .end_to_end_latency_policy
-            .as_ref()
-            .map(|p| p.timeout())
-            .unwrap_or_default();
+        let user_agent = self.runtime.user_agent().as_str();
 
-        loop {
-            // Check if the end-to-end deadline has already been exceeded before
-            // starting the next attempt.
-            Self::check_e2e_deadline(
-                deadline,
-                e2e_timeout_duration,
-                &mut diagnostics_builder,
-                None,
-            )?;
-
-            let execution_context = if attempt == 0 {
-                ExecutionContext::Initial
-            } else {
-                ExecutionContext::Retry
-            };
-            let request_handle = diagnostics_builder.start_request(
-                execution_context,
-                pipeline_type,
-                transport_security,
-                region.clone(),
-                endpoint_string.clone(),
-            );
-            debug_assert!(diagnostics_builder.request_count() > 0);
-
-            let mut request = Request::new(url.clone(), method);
-
-            if let Some(body) = operation.body() {
-                request.set_body(body.to_vec());
-            }
-
-            operation
-                .request_headers()
-                .write_to_headers(request.headers_mut());
-
-            if operation.request_headers().activity_id.is_none() {
-                request.insert_header(
-                    HeaderName::from_static("x-ms-activity-id"),
-                    HeaderValue::from(activity_id.as_str().to_owned()),
-                );
-            }
-
-            if let Some(pk) = operation.partition_key() {
-                let _partition_key_definition = operation
-                    .container()
-                    .map(|container| container.partition_key_definition());
-
-                use azure_core::http::headers::AsHeaders;
-                let pk_headers = match pk.as_headers() {
-                    Ok(headers) => headers,
-                    Err(e) => return Err(e),
-                };
-
-                for (name, value) in pk_headers {
-                    request.insert_header(name, value);
-                }
-            }
-
-            let mut ctx = Context::default();
-            ctx.insert(auth_context.clone());
-            attempt_telemetry.reset_attempt();
-            ctx.insert(RequestAttemptTelemetryContext::new(
-                attempt_telemetry.clone() as Arc<dyn RequestAttemptTelemetrySink>,
-            ));
-
-            let result = pipeline.send(&ctx, &mut request).await;
-            let telemetry = attempt_telemetry.take_attempt();
-            let request_reached_transport = telemetry.request_reached_transport;
-            let request_sent_from_transport = telemetry.request_sent_status;
-
-            for event in telemetry.events {
-                diagnostics_builder.add_event(request_handle, event);
-            }
-
-            match result {
-                Ok(response) => {
-                    let status_code = response.status();
-                    let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
-                    let sub_status = cosmos_headers.substatus;
-
-                    diagnostics_builder.update_request(request_handle, |request| {
-                        if let Some(charge) = cosmos_headers.request_charge {
-                            request.with_charge(charge);
-                        }
-                        if let Some(activity_id) = cosmos_headers.activity_id.clone() {
-                            request.with_activity_id(activity_id);
-                        }
-                        if let Some(token) = cosmos_headers.session_token.clone() {
-                            request.with_session_token(token.to_string());
-                        }
-                    });
-                    diagnostics_builder.complete_request(request_handle, status_code, sub_status);
-                    diagnostics_builder.set_operation_status(status_code, sub_status);
-
-                    let body = response.into_body();
-                    let status = CosmosStatus::from_parts(status_code, sub_status);
-                    let diagnostics = std::sync::Arc::new(diagnostics_builder.complete());
-
-                    return Ok(CosmosResponse::new(
-                        body.as_ref().to_vec(),
-                        cosmos_headers,
-                        status,
-                        diagnostics,
-                    ));
-                }
-                Err(e) => {
-                    let request_sent = if request_reached_transport {
-                        request_sent_from_transport.unwrap_or_else(|| infer_request_sent_status(&e))
-                    } else {
-                        TransportRequestSentStatus::NotSent
-                    };
-                    diagnostics_builder.fail_request(
-                        request_handle,
-                        e.to_string(),
-                        Self::map_request_sent_status(request_sent),
-                    );
-
-                    let should_retry = Self::should_retry_transport_failure(
-                        attempt,
-                        MAX_TRANSPORT_RETRIES,
-                        operation.is_idempotent(),
-                        request_sent,
-                    );
-
-                    if should_retry {
-                        // If the e2e deadline has already been exceeded, do not
-                        // retry: record the timeout and return immediately.
-                        Self::check_e2e_deadline(
-                            deadline,
-                            e2e_timeout_duration,
-                            &mut diagnostics_builder,
-                            Some(request_handle),
-                        )?;
-                        attempt += 1;
-                        continue;
-                    }
-
-                    return Err(e);
-                }
-            }
-        }
+        // Step 7: Execute via the new operation pipeline
+        super::pipeline::operation_pipeline::execute_operation_pipeline(
+            &operation,
+            &options,
+            &effective_options,
+            &endpoint,
+            region,
+            http_client,
+            auth,
+            user_agent,
+            &activity_id,
+            pipeline_type,
+            transport_security,
+            diagnostics_builder,
+        )
+        .await
     }
     /// Resolves a container by database and container name.
     ///
