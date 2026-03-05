@@ -117,15 +117,12 @@ impl BlockBlobClient {
         &self.endpoint
     }
 
-    /// Uploads data to a block blob, automatically using block staging for large payloads.
-    ///
-    /// For blobs smaller than the configured partition size a single `PUT` request is issued.
-    /// Larger blobs are split into blocks, staged in parallel, and committed with a block list.
-    /// Uploading overwrites any existing blob and its metadata unless
-    /// [`BlockBlobClientUploadOptions::with_if_not_exists()`] is set.
-    ///
-    /// For partial updates use [`stage_block`](Self::stage_block) and
-    /// [`commit_block_list`](Self::commit_block_list) directly.
+    /// The managed upload operation updates the content of an existing block blob. Updating an existing block blob overwrites
+    /// any existing metadata on the blob. Partial updates are not supported; the content of the existing blob is
+    /// overwritten with the content of the new blob. Updating an existing block blob overwrites the blob by default.
+    /// Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// content of the new blob. To perform a partial update of the content of a block blob, use
+    /// [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
     ///
     /// # Arguments
     ///
