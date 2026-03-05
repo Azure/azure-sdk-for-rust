@@ -897,3 +897,10 @@ tokio::spawn(async move {
 - CHANGELOG.md - Version history
 - [Azure Cosmos DB Documentation](https://learn.microsoft.com/azure/cosmos-db/)
 -->
+
+---
+
+## Related Specifications
+
+- [Transport Pipeline Spec](docs/TRANSPORT_PIPELINE_SPEC.md) — Transport pipeline architecture and retry handling
+- [Logging Spec](docs/LOGGING_SPEC.md) — Log sink callback interface, internal instrumentation, and sampling diagnostics
