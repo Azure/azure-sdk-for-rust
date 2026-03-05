@@ -334,16 +334,16 @@ driver_log!(self.runtime.logging(), "transport", LogLevel::Debug, "Pipeline crea
 The following logger names are used throughout the driver and can be referenced in
 `level_overrides` configuration:
 
-| Logger Name                | Source Module                            | Typical Level |
-| -------------------------- | ---------------------------------------- | ------------- |
-| `"runtime"`                | `driver/runtime.rs`                      | `Info`        |
-| `"cosmos_driver"`          | `driver/cosmos_driver.rs`                | `Debug`       |
-| `"transport"`              | `driver/transport/`                      | `Debug`       |
-| `"container_cache"`        | `driver/cache/container_cache.rs`        | `Trace`       |
-| `"account_metadata_cache"` | `driver/cache/account_metadata_cache.rs` | `Trace`       |
-| `"cpu_memory"`             | `system/cpu_memory.rs`                   | `Trace`       |
-| `"vm_metadata"`            | `system/vm_metadata.rs`                  | `Info`        |
-| `"sampling_evaluator"`     | `diagnostics/sampling_evaluator.rs`      | `Info`        |
+| Logger Name                | Source Module                            | Lowest Emitted Level |
+| -------------------------- | ---------------------------------------- | -------------------- |
+| `"runtime"`                | `driver/runtime.rs`                      | `Info`               |
+| `"cosmos_driver"`          | `driver/cosmos_driver.rs`                | `Debug`              |
+| `"transport"`              | `driver/transport/`                      | `Debug`              |
+| `"container_cache"`        | `driver/cache/container_cache.rs`        | `Trace`              |
+| `"account_metadata_cache"` | `driver/cache/account_metadata_cache.rs` | `Trace`              |
+| `"cpu_memory"`             | `system/cpu_memory.rs`                   | `Trace`              |
+| `"vm_metadata"`            | `system/vm_metadata.rs`                  | `Info`               |
+| `"sampling_evaluator"`     | `diagnostics/sampling_evaluator.rs`      | `Info`               |
 
 These names are **stable** and form part of the configuration contract. Adding a new logger
 name is not a breaking change; renaming or removing one is.
