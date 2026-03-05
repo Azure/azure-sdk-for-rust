@@ -143,20 +143,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
         setup::ensure_database(&results_client, &config.results_database).await?;
         let results_db = results_client.database_client(&config.results_database);
-        setup::ensure_container(&results_db, &config.results_container, 400, None).await?;
+        setup::ensure_container(
+            &results_db,
+            &config.results_container,
+            10000,
+            Some(Duration::from_secs(86400)),
+        )
+        .await?;
         println!(
             "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
             results_endpoint, config.results_database, config.results_container, config.workload_id,
         );
         results_db.container_client(&config.results_container).await
     } else {
-        setup::ensure_container(&db_client, &config.results_container, 400, None).await?;
+        setup::ensure_container(
+            &db_client,
+            &config.results_container,
+            10000,
+            Some(Duration::from_secs(86400)),
+        )
+        .await?;
         println!(
             "Perf results will be stored in container '{}'. Workload ID: {}",
             config.results_container, config.workload_id,
         );
         db_client.container_client(&config.results_container).await
     };
+
+    // Resolve commit SHA: use CLI arg or auto-detect from git
+    let commit_sha = config.commit_sha.unwrap_or_else(|| {
+        std::process::Command::new("git")
+            .args(["rev-parse", "--short", "HEAD"])
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    });
 
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
@@ -170,6 +194,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         report_interval: Duration::from_secs(config.report_interval),
         results_container,
         workload_id: config.workload_id,
+        commit_sha,
     })
     .await;
 

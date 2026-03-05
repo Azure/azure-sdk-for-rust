@@ -126,6 +126,13 @@ pub struct Config {
     /// results container. Defaults to a random UUID.
     #[arg(long, default_value_t = uuid::Uuid::new_v4().to_string())]
     pub workload_id: String,
+
+    /// Git commit SHA of the SDK being tested.
+    ///
+    /// Stamped on every result and error document for Kusto correlation.
+    /// If omitted, auto-detected via `git rev-parse --short HEAD`.
+    #[arg(long)]
+    pub commit_sha: Option<String>,
 }
 
 /// Authentication method for connecting to Cosmos DB.
