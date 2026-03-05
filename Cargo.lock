@@ -376,6 +376,7 @@ dependencies = [
  "azure_core 0.33.0",
  "azure_identity 0.33.0",
  "base64 0.22.1",
+ "crossbeam",
  "futures",
  "reqwest",
  "serde",
@@ -1061,6 +1062,16 @@ checksum = "d8d80a2f4f5b554395e47b5d8305bc3d27813bacb73493eb1001e8f76dae29ea"
 dependencies = [
  "cast",
  "itertools",
+]
+
+[[package]]
+name = "crossbeam"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1137cd7e7fc0fb5d3c5a8678be38ec56e819125d8d7907411fe24ccb943faca8"
+dependencies = [
+ "crossbeam-epoch",
+ "crossbeam-utils",
 ]
 
 [[package]]

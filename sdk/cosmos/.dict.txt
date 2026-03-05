@@ -73,6 +73,13 @@ keepalive
 rfind
 subsec
 
+# Concurrency / memory management terms
+RAII
+Derefs
+derefs
+pointee
+uncontended
+
 # Windows API types (used in cpu_memory.rs)
 FILETIME
 MEMORYSTATUSEX
