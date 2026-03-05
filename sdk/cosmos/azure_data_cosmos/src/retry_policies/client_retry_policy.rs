@@ -527,22 +527,18 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::Forbidden
             && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
-            if self
-                .partition_key_range_location_cache
-                .partition_level_failover_enabled()
-                && self.request.is_some()
-                && (self.is_request_eligible_for_per_partition_automatic_failover() || self.is_request_eligible_for_partition_level_circuit_breaker())
-            {
-                if self
+            if self.request.is_some()
+                && (self.is_request_eligible_for_per_partition_automatic_failover()
+                    || self.is_request_eligible_for_partition_level_circuit_breaker())
+                && self
                     .partition_key_range_location_cache
                     .try_mark_endpoint_unavailable_for_partition_key_range(
                         self.request.as_ref().unwrap(),
                     )
-                {
-                    return Some(RetryResult::Retry {
-                        after: Duration::ZERO,
-                    });
-                }
+            {
+                return Some(RetryResult::Retry {
+                    after: Duration::ZERO,
+                });
             }
 
             return Some(
