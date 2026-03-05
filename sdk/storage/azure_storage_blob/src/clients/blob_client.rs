@@ -8,8 +8,8 @@ use crate::{
     logging::apply_storage_logging_defaults,
     models::{
         http_ranges::IntoRangeHeader, method_options::BlobClientManagedDownloadOptions,
-        BlobClientDownloadOptions, BlobClientDownloadResult, BlockBlobClientUploadOptions,
-        BlockBlobClientUploadResult, StorageErrorCode,
+        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientUploadOptions,
+        BlobClientUploadResult, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -22,7 +22,7 @@ use azure_core::{
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
+        AsyncRawResponse, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -252,26 +252,13 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `data` - The blob data to upload.
-    /// * `overwrite` - Whether the blob to be uploaded should overwrite the current data. If True, `upload()` will overwrite the existing data.
-    ///   If False, the operation will fail with ResourceExistsError.
-    /// * `content_length` - Total length of the blob data to be uploaded.
     /// * `options` - Optional configuration for the request.
     pub async fn upload(
         &self,
         data: RequestContent<Bytes, NoFormat>,
-        overwrite: bool,
-        content_length: u64,
-        options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
-        let mut options = options.unwrap_or_default();
-
-        if !overwrite {
-            options.if_none_match = Some("*".into());
-        }
-
-        self.block_blob_client()
-            .upload_internal(data, content_length, Some(options))
-            .await
+        options: Option<BlobClientUploadOptions<'_>>,
+    ) -> Result<BlobClientUploadResult> {
+        self.block_blob_client().upload(data, options).await
     }
 
     /// Checks if the blob exists.

@@ -4,10 +4,14 @@
 pub use crate::generated::clients::{BlockBlobClient, BlockBlobClientOptions};
 
 use crate::{
+    generated::models::{
+        BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
+        BlockBlobClientUploadInternalResultHeaders,
+    },
     logging::apply_storage_logging_defaults,
     models::{
-        method_options::BlockBlobClientManagedUploadOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions, BlockLookupList,
+        method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -113,26 +117,31 @@ impl BlockBlobClient {
         &self.endpoint
     }
 
-    /// The managed upload operation updates the content of an existing block blob. Updating an existing block blob overwrites
-    /// any existing metadata on the blob. Partial updates are not supported; the content of the existing blob is
-    /// overwritten with the content of the new blob. To perform a partial update of the content of a block blob, use the Put
-    /// Block List operation.
+    /// Uploads data to a block blob, automatically using block staging for large payloads.
+    ///
+    /// For blobs smaller than the configured partition size a single `PUT` request is issued.
+    /// Larger blobs are split into blocks, staged in parallel, and committed with a block list.
+    /// Uploading overwrites any existing blob and its metadata unless
+    /// [`BlockBlobClientUploadOptions::with_if_not_exists()`] is set.
+    ///
+    /// For partial updates use [`stage_block`](Self::stage_block) and
+    /// [`commit_block_list`](Self::commit_block_list) directly.
     ///
     /// # Arguments
     ///
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.BlockBlob.managedUpload")]
-    pub async fn managed_upload(
+    #[tracing::function("Storage.Blob.BlockBlob.upload")]
+    pub async fn upload(
         &self,
         content: RequestContent<Bytes, NoFormat>,
-        options: Option<BlockBlobClientManagedUploadOptions<'_>>,
-    ) -> Result<()> {
+        options: Option<BlockBlobClientUploadOptions<'_>>,
+    ) -> Result<BlockBlobClientUploadResult> {
         let options = options.unwrap_or_default();
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
         // construct exhaustively to ensure we catch new options when added
-        let oneshot_options = BlockBlobClientUploadOptions {
+        let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
             blob_content_disposition: options.blob_content_disposition.clone(),
             blob_content_encoding: options.blob_content_encoding.clone(),
@@ -203,18 +212,17 @@ impl BlockBlobClient {
             transactional_content_crc64: None,
             transactional_content_md5: None,
         };
-        partitioned_transfer::upload(
-            content.into(),
-            parallel,
-            partition_size,
-            &BlockBlobClientUploadBehavior::new(
-                self,
-                oneshot_options,
-                stage_block_options,
-                commit_block_list_options,
-            ),
-        )
-        .await
+        let behavior = BlockBlobClientUploadBehavior::new(
+            self,
+            oneshot_options,
+            stage_block_options,
+            commit_block_list_options,
+        );
+        partitioned_transfer::upload(content.into(), parallel, partition_size, &behavior).await?;
+        Ok(behavior
+            .result
+            .into_inner()
+            .expect("upload completed without setting result"))
     }
 }
 
@@ -229,16 +237,17 @@ struct BlockInfo {
 
 struct BlockBlobClientUploadBehavior<'c, 'opt> {
     client: &'c BlockBlobClient,
-    oneshot_options: BlockBlobClientUploadOptions<'opt>,
+    oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
     stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
     commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     blocks: Mutex<Vec<BlockInfo>>,
+    result: Mutex<Option<BlockBlobClientUploadResult>>,
 }
 
 impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
     fn new(
         client: &'c BlockBlobClient,
-        oneshot_options: BlockBlobClientUploadOptions<'opt>,
+        oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
         stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
         commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     ) -> Self {
@@ -248,6 +257,7 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
             stage_block_options,
             commit_block_list_options,
             blocks: Mutex::new(vec![]),
+            result: Mutex::new(None),
         }
     }
 }
@@ -256,13 +266,23 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
         let content_len = content.len() as u64;
-        self.client
+        let rsp = self
+            .client
             .upload_internal(
                 content.into(),
                 content_len,
                 Some(self.oneshot_options.clone()),
             )
             .await?;
+        *self.result.lock().await = Some(BlockBlobClientUploadResult {
+            content_md5: rsp.content_md5()?,
+            encryption_key_sha256: rsp.encryption_key_sha256()?,
+            encryption_scope: rsp.encryption_scope()?,
+            etag: rsp.etag()?,
+            is_server_encrypted: rsp.is_server_encrypted()?,
+            last_modified: rsp.last_modified()?,
+            version_id: rsp.version_id()?,
+        });
         Ok(())
     }
 
@@ -302,13 +322,22 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
             ),
             ..Default::default()
         };
-        self.client
+        let rsp = self
+            .client
             .commit_block_list(
                 blocklist.try_into()?,
                 Some(self.commit_block_list_options.clone()),
             )
             .await?;
-
+        *self.result.lock().await = Some(BlockBlobClientUploadResult {
+            content_md5: rsp.content_md5()?,
+            encryption_key_sha256: rsp.encryption_key_sha256()?,
+            encryption_scope: rsp.encryption_scope()?,
+            etag: rsp.etag()?,
+            is_server_encrypted: rsp.is_server_encrypted()?,
+            last_modified: rsp.last_modified()?,
+            version_id: rsp.version_id()?,
+        });
         Ok(())
     }
 }

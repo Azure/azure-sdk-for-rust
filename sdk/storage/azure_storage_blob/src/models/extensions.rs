@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    AccessPolicy, AppendBlobClientCreateOptions, BlobTag, BlobTags,
-    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions,
-    PageBlobClientCreateOptions, SignedIdentifier, SignedIdentifiers,
+    method_options::BlockBlobClientUploadOptions, AccessPolicy, AppendBlobClientCreateOptions,
+    BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions, PageBlobClientCreateOptions,
+    SignedIdentifier, SignedIdentifiers,
 };
 use std::collections::HashMap;
 
@@ -39,6 +39,19 @@ impl AppendBlobClientCreateOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
+    pub fn with_if_not_exists(self) -> Self {
+        Self {
+            if_none_match: Some("*".into()),
+            ..self
+        }
+    }
+}
+
+/// Augments the current options bag to only create if the Block blob does not already exist.
+/// # Arguments
+///
+/// * `self` - The options bag to be modified.
+impl BlockBlobClientUploadOptions<'_> {
     pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),

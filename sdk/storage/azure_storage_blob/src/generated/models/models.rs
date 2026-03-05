@@ -553,7 +553,7 @@ pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload_internal()`
 #[derive(SafeDebug)]
-pub struct BlockBlobClientUploadInternalResult;
+pub(crate) struct BlockBlobClientUploadInternalResult;
 
 /// Contains the committed and uncommitted blocks in a block blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]

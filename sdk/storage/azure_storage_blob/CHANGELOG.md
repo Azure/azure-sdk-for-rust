@@ -6,7 +6,13 @@
 
 ### Breaking Changes
 
-- Changed `BlockBlobClientManagedUploadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
+- Revised `upload()` on `BlockBlobClient` and `BlobClient` with the following breaking changes:
+  - Now uses block staging for large blobs instead of a single HTTP `PUT`.
+  - Removed the `content_length` parameter.
+  - `BlobClient::upload()` removed the `overwrite` parameter; use `BlobClientUploadOptions::with_if_not_exists()` to prevent overwriting an existing blob.
+  - `BlockBlobClient::upload()` accepts `BlockBlobClientUploadOptions`; `BlobClient::upload()` accepts `BlobClientUploadOptions` (a re-export of the same type).
+  - Returns `Result<BlockBlobClientUploadResult>` (or `Result<BlobClientUploadResult>` via `BlobClient`) instead of `Result<()>`.
+  - Changed `BlockBlobClientUploadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
 - Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
 - Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))

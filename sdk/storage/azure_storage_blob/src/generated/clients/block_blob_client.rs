@@ -792,7 +792,7 @@ impl BlockBlobClient {
     /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientUploadInternalResultHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
-    /// ```no_run
+    /// ```ignore
     /// use azure_core::{Result, http::{Response, NoFormat}};
     /// use azure_storage_blob::models::{BlockBlobClientUploadInternalResult, BlockBlobClientUploadInternalResultHeaders};
     /// async fn example() -> Result<()> {
@@ -822,7 +822,7 @@ impl BlockBlobClient {
     ///
     /// [`BlockBlobClientUploadInternalResultHeaders`]: crate::generated::models::BlockBlobClientUploadInternalResultHeaders
     #[tracing::function("Storage.Blob.BlockBlobClient.upload")]
-    pub async fn upload_internal(
+    pub(crate) async fn upload_internal(
         &self,
         body: RequestContent<Bytes, NoFormat>,
         content_length: u64,

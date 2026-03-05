@@ -2149,7 +2149,7 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// use azure_core::{Result, http::{Response, NoFormat}};
 /// use azure_storage_blob::models::{BlockBlobClientUploadInternalResult, BlockBlobClientUploadInternalResultHeaders};
 /// async fn example() -> Result<()> {
@@ -2167,7 +2167,7 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
 ///     Ok(())
 /// }
 /// ```
-pub trait BlockBlobClientUploadInternalResultHeaders: private::Sealed {
+pub(crate) trait BlockBlobClientUploadInternalResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;

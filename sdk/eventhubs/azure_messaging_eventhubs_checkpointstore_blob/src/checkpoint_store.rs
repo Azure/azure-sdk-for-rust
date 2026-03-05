@@ -18,7 +18,7 @@ use azure_messaging_eventhubs::{
 use azure_storage_blob::{
     models::{
         BlobClientSetMetadataOptions, BlobContainerClientListBlobsOptions,
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResultHeaders, ListBlobsIncludeItem,
+        BlockBlobClientUploadOptions, ListBlobsIncludeItem,
     },
     BlobContainerClient,
 };
@@ -85,11 +85,9 @@ impl BlobCheckpointStore {
                         ..Default::default()
                     };
 
-                    let upload_result = blob_client
-                        .upload(blob_content, true, 0, Some(options))
-                        .await;
+                    let upload_result = blob_client.upload(blob_content, Some(options)).await;
                     match upload_result {
-                        Ok(r) => Ok((r.last_modified()?, r.etag()?)),
+                        Ok(r) => Ok((r.last_modified, r.etag)),
                         Err(e) => Err(e),
                     }
                 }
@@ -112,7 +110,7 @@ impl BlobCheckpointStore {
                 metadata, blob_name, etag
             );
             let options = BlobClientSetMetadataOptions {
-                if_match: etag.map(|e| e.to_string()),
+                if_match: etag,
                 ..Default::default()
             };
             let metadata_ref = metadata.unwrap_or_default();
@@ -129,15 +127,13 @@ impl BlobCheckpointStore {
         let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
         let options = BlockBlobClientUploadOptions {
             metadata: metadata.clone(),
-            if_none_match: Some("*".to_string()), // Upload without an etag, creating a new blob
+            if_none_match: Some("*".into()), // Upload without an etag, creating a new blob
             ..Default::default()
         };
 
-        let upload_result = blob_client
-            .upload(blob_content, true, 0, Some(options))
-            .await;
+        let upload_result = blob_client.upload(blob_content, Some(options)).await;
         match upload_result {
-            Ok(r) => Ok((r.last_modified()?, r.etag()?)),
+            Ok(r) => Ok((r.last_modified, r.etag)),
             Err(e) => Err(e),
         }
     }
