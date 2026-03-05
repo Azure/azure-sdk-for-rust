@@ -316,6 +316,7 @@ impl CosmosDriverRuntime {
         let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
 
         let driver = Arc::new(CosmosDriver::new(self.clone(), options));
+        driver.initialize().await?;
         registry.insert(key, driver.clone());
 
         Ok(driver)
