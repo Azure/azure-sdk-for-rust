@@ -98,7 +98,6 @@ impl<T> AsyncLazy<T> {
 /// This is runtime-agnostic: it returns [`Poll::Pending`] once (scheduling a
 /// wake-up via the waker) and [`Poll::Ready`] on the subsequent poll.
 #[allow(dead_code)] // Used by AsyncLazy::get, consumer coming once Driver is used
-
 struct YieldOnce(bool);
 
 impl Future for YieldOnce {
