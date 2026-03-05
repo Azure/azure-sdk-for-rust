@@ -97,6 +97,15 @@ pub(crate) struct LocationCache {
     pub location_unavailability_info_map: RwLock<HashMap<Url, LocationUnavailabilityInfo>>,
     /// Client level excluded regions. Empty if no regions are excluded.
     pub client_excluded_regions: Vec<RegionName>,
+    /// User-specified preferred locations preserved from construction.
+    ///
+    /// This is the immutable copy of what the customer originally provided
+    /// (via `with_application_region` or `with_preferred_regions`). On each
+    /// `update()` call, the effective `preferred_locations` in `locations_info`
+    /// is rebuilt from this list so that gateway-returned region order changes
+    /// (e.g. hub region changes) take effect instead of being permanently
+    /// overridden by the stale order from the first account fetch.
+    initial_preferred_locations: Vec<RegionName>,
 }
 
 impl LocationCache {
@@ -122,11 +131,12 @@ impl LocationCache {
         Self {
             default_endpoint,
             locations_info: DatabaseAccountLocationsInfo {
-                preferred_locations,
+                preferred_locations: preferred_locations.clone(),
                 ..Default::default()
             },
             location_unavailability_info_map: RwLock::new(HashMap::new()),
             client_excluded_regions: excluded_regions,
+            initial_preferred_locations: preferred_locations,
         }
     }
 
@@ -191,8 +201,10 @@ impl LocationCache {
         write_locations: Vec<AccountRegion>,
         read_locations: Vec<AccountRegion>,
     ) -> Result<(), &'static str> {
-        // Build effective preferred locations: preferred regions first, then remaining account regions
-        let mut effective_preferred_locations = self.locations_info.preferred_locations.clone();
+        // Rebuild effective preferred locations from the immutable user-specified
+        // list so that gateway-returned region order changes (e.g. hub region
+        // changes) take effect on every refresh.
+        let mut effective_preferred_locations = self.initial_preferred_locations.clone();
 
         // Use HashSet for O(1) lookups instead of O(n) linear search
         let existing: HashSet<RegionName> = effective_preferred_locations.iter().cloned().collect();
@@ -1771,6 +1783,125 @@ mod tests {
                 "https://test-westus.documents.azure.com/",
             ],
             "excluding a non-account region should have no effect"
+        );
+    }
+
+    #[test]
+    fn preferred_locations_not_permanently_mutated_no_user_preference() {
+        // When no user-specified preferred regions, the effective list should
+        // reflect the gateway's current region order on each update().
+        let default_endpoint: Url = "https://default.documents.example.com".parse().unwrap();
+
+        let loc_a = AccountRegion {
+            database_account_endpoint: "https://a.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Region A"),
+        };
+        let loc_b = AccountRegion {
+            database_account_endpoint: "https://b.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Region B"),
+        };
+        let loc_c = AccountRegion {
+            database_account_endpoint: "https://c.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Region C"),
+        };
+
+        // No user-specified preferred regions.
+        let mut cache = LocationCache::new(default_endpoint, vec![], vec![]);
+
+        // First refresh: gateway returns [A, B, C].
+        cache
+            .update(
+                vec![loc_a.clone(), loc_b.clone()],
+                vec![loc_a.clone(), loc_b.clone(), loc_c.clone()],
+            )
+            .unwrap();
+
+        assert_eq!(
+            cache.locations_info.preferred_locations,
+            vec![
+                RegionName::from("Region A"),
+                RegionName::from("Region B"),
+                RegionName::from("Region C"),
+            ],
+            "first update should reflect gateway order [A, B, C]"
+        );
+
+        // Second refresh: gateway returns reversed order [C, B, A] (e.g. hub change).
+        cache
+            .update(
+                vec![loc_c.clone(), loc_b.clone()],
+                vec![loc_c.clone(), loc_b.clone(), loc_a.clone()],
+            )
+            .unwrap();
+
+        assert_eq!(
+            cache.locations_info.preferred_locations,
+            vec![
+                RegionName::from("Region C"),
+                RegionName::from("Region B"),
+                RegionName::from("Region A"),
+            ],
+            "second update should reflect new gateway order [C, B, A], not stale [A, B, C]"
+        );
+    }
+
+    #[test]
+    fn preferred_locations_not_permanently_mutated_with_user_preference() {
+        // When user specifies preferred regions, the user prefix is always
+        // preserved, but non-user regions update their order from the gateway.
+        let default_endpoint: Url = "https://default.documents.example.com".parse().unwrap();
+
+        let loc_a = AccountRegion {
+            database_account_endpoint: "https://a.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Region A"),
+        };
+        let loc_b = AccountRegion {
+            database_account_endpoint: "https://b.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Region B"),
+        };
+        let loc_c = AccountRegion {
+            database_account_endpoint: "https://c.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Region C"),
+        };
+
+        // User specifies only Region A as preferred.
+        let mut cache =
+            LocationCache::new(default_endpoint, vec![RegionName::from("Region A")], vec![]);
+
+        // First refresh: gateway returns [A, B, C].
+        cache
+            .update(
+                vec![loc_a.clone(), loc_b.clone()],
+                vec![loc_a.clone(), loc_b.clone(), loc_c.clone()],
+            )
+            .unwrap();
+
+        assert_eq!(
+            cache.locations_info.preferred_locations,
+            vec![
+                RegionName::from("Region A"),
+                RegionName::from("Region B"),
+                RegionName::from("Region C"),
+            ],
+            "user prefix [A] + gateway tail [B, C]"
+        );
+
+        // Second refresh: gateway returns reversed order [C, B, A] (e.g. hub change).
+        cache
+            .update(
+                vec![loc_c.clone(), loc_b.clone()],
+                vec![loc_c.clone(), loc_b.clone(), loc_a.clone()],
+            )
+            .unwrap();
+
+        assert_eq!(
+            cache.locations_info.preferred_locations,
+            vec![
+                RegionName::from("Region A"),
+                RegionName::from("Region C"),
+                RegionName::from("Region B"),
+            ],
+            "user prefix [A] preserved, gateway tail updated to [C, B] (A deduplicated)"
         );
     }
 }
