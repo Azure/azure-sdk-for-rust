@@ -315,7 +315,7 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert!(e.to_string().contains("missing")),
+            Err(e) => assert_eq!("missing `#[options(layers(...))]` attribute", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -329,7 +329,7 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert!(e.to_string().contains("unknown layer")),
+            Err(e) => assert_eq!("unknown layer `global`, expected one of: runtime, account, operation", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -343,7 +343,7 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert!(e.to_string().contains("Option<T>")),
+            Err(e) => assert_eq!("field `field_a` must be `Option<T>`", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -418,7 +418,7 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert!(e.to_string().contains("structs")),
+            Err(e) => assert_eq!("CosmosOptions can only be derived for structs", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -446,7 +446,7 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert!(e.to_string().contains("`env` and `merge` cannot be combined")),
+            Err(e) => assert_eq!("`env` and `merge` cannot be combined on the same field", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -461,7 +461,7 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert!(e.to_string().contains("`env` and `nested` cannot be combined")),
+            Err(e) => assert_eq!("`env` and `nested` cannot be combined on the same field", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }
@@ -476,7 +476,7 @@ mod tests {
             }
         };
         match OptionsInput::from_derive_input(&input) {
-            Err(e) => assert!(e.to_string().contains("`merge` and `nested` cannot be combined")),
+            Err(e) => assert_eq!("`merge` and `nested` cannot be combined on the same field", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }

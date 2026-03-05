@@ -246,6 +246,7 @@ fn nested_view_path(inner_type: &Type) -> Result<syn::Path> {
 mod tests {
     use super::*;
     use crate::parse::OptionsInput;
+    use quote::quote;
 
     #[test]
     fn view_generated_for_three_layers() {
@@ -258,12 +259,44 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_view(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("RequestOptionsView"));
-        assert!(output.contains("fn consistency_level"));
-        assert!(output.contains("fn throughput_bucket"));
-        assert!(output.contains("fn new"));
+        let expected = quote! {
+            /// Snapshot view across all layers for resolution.
+            #[automatically_derived]
+            pub struct RequestOptionsView {
+                runtime: ::std::sync::Arc<RequestOptions>,
+                account: ::std::sync::Arc<RequestOptions>,
+                operation: RequestOptions
+            }
+
+            #[automatically_derived]
+            impl RequestOptionsView {
+                /// Creates a new view from layer snapshots.
+                pub fn new(
+                    runtime: ::std::sync::Arc<RequestOptions>,
+                    account: ::std::sync::Arc<RequestOptions>,
+                    operation: RequestOptions
+                ) -> Self {
+                    Self { runtime, account, operation }
+                }
+
+                /// Resolves this field across layers (highest priority first).
+                pub fn consistency_level(&self) -> Option<&String> {
+                    self.operation.consistency_level.as_ref()
+                        .or(self.account.consistency_level.as_ref())
+                        .or(self.runtime.consistency_level.as_ref())
+                }
+
+                /// Resolves this field across layers (highest priority first).
+                pub fn throughput_bucket(&self) -> Option<&usize> {
+                    self.operation.throughput_bucket.as_ref()
+                        .or(self.account.throughput_bucket.as_ref())
+                        .or(self.runtime.throughput_bucket.as_ref())
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 
     #[test]
@@ -276,10 +309,34 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_view(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("ConnectionOptionsView"));
-        assert!(output.contains("fn request_timeout"));
+        let expected = quote! {
+            /// Snapshot view across all layers for resolution.
+            #[automatically_derived]
+            pub struct ConnectionOptionsView {
+                runtime: ::std::sync::Arc<ConnectionOptions>,
+                account: ConnectionOptions
+            }
+
+            #[automatically_derived]
+            impl ConnectionOptionsView {
+                /// Creates a new view from layer snapshots.
+                pub fn new(
+                    runtime: ::std::sync::Arc<ConnectionOptions>,
+                    account: ConnectionOptions
+                ) -> Self {
+                    Self { runtime, account }
+                }
+
+                /// Resolves this field across layers (highest priority first).
+                pub fn request_timeout(&self) -> Option<&u64> {
+                    self.account.request_timeout.as_ref()
+                        .or(self.runtime.request_timeout.as_ref())
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 
     #[test]
@@ -293,9 +350,37 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_view(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("env"));
+        let expected = quote! {
+            /// Snapshot view across all layers for resolution.
+            #[automatically_derived]
+            pub struct TestOptionsView {
+                env: ::std::sync::Arc<TestOptions>,
+                runtime: ::std::sync::Arc<TestOptions>,
+                account: TestOptions
+            }
+
+            #[automatically_derived]
+            impl TestOptionsView {
+                /// Creates a new view from layer snapshots.
+                pub fn new(
+                    env: ::std::sync::Arc<TestOptions>,
+                    runtime: ::std::sync::Arc<TestOptions>,
+                    account: TestOptions
+                ) -> Self {
+                    Self { env, runtime, account }
+                }
+
+                /// Resolves this field across layers (highest priority first).
+                pub fn my_field(&self) -> Option<&String> {
+                    self.account.my_field.as_ref()
+                        .or(self.runtime.my_field.as_ref())
+                        .or(self.env.my_field.as_ref())
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 
     #[test]
@@ -309,10 +394,41 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_view(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("fn headers"));
-        assert!(output.contains("merged"));
+        let inner_type: syn::Type = syn::parse_quote!(Vec<String>);
+        let expected = quote! {
+            /// Snapshot view across all layers for resolution.
+            #[automatically_derived]
+            pub struct TestOptionsView {
+                runtime: ::std::sync::Arc<TestOptions>,
+                account: TestOptions
+            }
+
+            #[automatically_derived]
+            impl TestOptionsView {
+                /// Creates a new view from layer snapshots.
+                pub fn new(
+                    runtime: ::std::sync::Arc<TestOptions>,
+                    account: TestOptions
+                ) -> Self {
+                    Self { runtime, account }
+                }
+
+                /// Merges this field across all layers (lowest priority first).
+                pub fn headers(&self) -> Vec<String> {
+                    let mut merged = <#inner_type>::default();
+                    if let Some(ref v) = self.runtime.headers {
+                        merged.extend(v.clone());
+                    }
+                    if let Some(ref v) = self.account.headers {
+                        merged.extend(v.clone());
+                    }
+                    merged
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 
     #[test]
@@ -326,14 +442,39 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_view(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("fn child"));
-        // The view type should preserve the module path
-        assert!(
-            output.contains("inner :: ChildOptionsView"),
-            "expected `inner::ChildOptionsView` in output, got: {output}"
-        );
+        let expected = quote! {
+            /// Snapshot view across all layers for resolution.
+            #[automatically_derived]
+            pub struct TestOptionsView {
+                runtime: ::std::sync::Arc<TestOptions>,
+                account: TestOptions
+            }
+
+            #[automatically_derived]
+            impl TestOptionsView {
+                /// Creates a new view from layer snapshots.
+                pub fn new(
+                    runtime: ::std::sync::Arc<TestOptions>,
+                    account: TestOptions
+                ) -> Self {
+                    Self { runtime, account }
+                }
+
+                /// Returns a child View for the nested option group.
+                pub fn child(&self) -> inner::ChildOptionsView {
+                    let default = ::std::sync::Arc::new(<inner::ChildOptions>::default());
+                    inner::ChildOptionsView::new(
+                        self.runtime.child.as_ref()
+                            .map(|v| ::std::sync::Arc::new(v.clone()))
+                            .unwrap_or_else(|| ::std::sync::Arc::clone(&default)),
+                        self.account.child.clone().unwrap_or_default()
+                    )
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 
     #[test]
@@ -347,12 +488,38 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_view(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("fn child"));
-        assert!(
-            output.contains("ChildOptionsView"),
-            "expected `ChildOptionsView` in output, got: {output}"
-        );
+        let expected = quote! {
+            /// Snapshot view across all layers for resolution.
+            #[automatically_derived]
+            pub struct TestOptionsView {
+                runtime: ::std::sync::Arc<TestOptions>,
+                account: TestOptions
+            }
+
+            #[automatically_derived]
+            impl TestOptionsView {
+                /// Creates a new view from layer snapshots.
+                pub fn new(
+                    runtime: ::std::sync::Arc<TestOptions>,
+                    account: TestOptions
+                ) -> Self {
+                    Self { runtime, account }
+                }
+
+                /// Returns a child View for the nested option group.
+                pub fn child(&self) -> ChildOptionsView {
+                    let default = ::std::sync::Arc::new(<ChildOptions>::default());
+                    ChildOptionsView::new(
+                        self.runtime.child.as_ref()
+                            .map(|v| ::std::sync::Arc::new(v.clone()))
+                            .unwrap_or_else(|| ::std::sync::Arc::clone(&default)),
+                        self.account.child.clone().unwrap_or_default()
+                    )
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 }

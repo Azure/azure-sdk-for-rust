@@ -78,6 +78,7 @@ pub fn generate_builder(input: &OptionsInput) -> Result<TokenStream> {
 mod tests {
     use super::*;
     use crate::parse::OptionsInput;
+    use quote::quote;
 
     #[test]
     fn builder_generated() {
@@ -90,12 +91,47 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_builder(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("TestOptionsBuilder"));
-        assert!(output.contains("fn new"));
-        assert!(output.contains("fn with_field_a"));
-        assert!(output.contains("fn with_field_b"));
-        assert!(output.contains("fn build"));
+        let expected = quote! {
+            /// Builder for constructing option group instances.
+            #[automatically_derived]
+            pub struct TestOptionsBuilder {
+                field_a: Option<String>,
+                field_b: Option<u32>
+            }
+
+            #[automatically_derived]
+            impl TestOptionsBuilder {
+                /// Creates a new builder with all fields set to `None`.
+                pub fn new() -> Self {
+                    Self {
+                        field_a: None,
+                        field_b: None
+                    }
+                }
+
+                /// Sets this field on the builder.
+                pub fn with_field_a(mut self, value: String) -> Self {
+                    self.field_a = Some(value);
+                    self
+                }
+
+                /// Sets this field on the builder.
+                pub fn with_field_b(mut self, value: u32) -> Self {
+                    self.field_b = Some(value);
+                    self
+                }
+
+                /// Consumes the builder and returns the constructed option group.
+                pub fn build(self) -> TestOptions {
+                    TestOptions {
+                        field_a: self.field_a,
+                        field_b: self.field_b
+                    }
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 }

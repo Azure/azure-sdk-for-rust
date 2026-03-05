@@ -71,6 +71,7 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
 mod tests {
     use super::*;
     use crate::parse::OptionsInput;
+    use quote::quote;
 
     #[test]
     fn from_env_generated_when_env_fields_present() {
@@ -84,12 +85,32 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_from_env(&parsed).unwrap();
-        let output = tokens.to_string();
 
-        assert!(output.contains("from_env"));
-        assert!(output.contains("from_env_vars"));
-        assert!(output.contains("MY_VAR_A"));
-        assert!(output.contains("field_b : None"));
+        let expected = quote! {
+            #[automatically_derived]
+            impl TestOptions {
+                /// Creates an instance by reading environment variables.
+                ///
+                /// Fields with `#[option(env = "...")]` are populated from the
+                /// corresponding environment variable. All other fields are `None`.
+                pub fn from_env() -> Self {
+                    Self::from_env_vars(|key| ::std::env::var(key))
+                }
+
+                /// Creates an instance using the provided function to read environment variables.
+                #[doc(hidden)]
+                pub fn from_env_vars(env_var: impl Fn(&str) -> ::std::result::Result<String, ::std::env::VarError>) -> Self {
+                    Self {
+                        field_a: env_var("MY_VAR_A")
+                            .ok()
+                            .and_then(|v| v.parse().ok()),
+                        field_b: None
+                    }
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
     }
 
     #[test]
