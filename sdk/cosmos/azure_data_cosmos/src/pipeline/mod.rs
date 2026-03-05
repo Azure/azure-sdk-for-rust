@@ -16,6 +16,7 @@ pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{
     request::Request, response::Response, Context, Method, PipelineSendOptions, RawResponse,
+    StatusCode,
 };
 pub(crate) use cosmos_headers_policy::CosmosHeadersPolicy;
 use serde::de::DeserializeOwned;
@@ -186,7 +187,22 @@ impl GatewayPipeline {
                     req.insert_header(constants::IF_NONE_MATCH, cont.clone());
                 }
 
-                let resp = pipeline.send(&context, &mut req, None).await?;
+                let success_options = CheckSuccessOptions {
+                    success_codes: &SUCCESS_CODES,
+                };
+                let pipeline_send_options = PipelineSendOptions {
+                    skip_checks: false,
+                    check_success: success_options,
+                };
+                let resp = pipeline
+                    .send(&context, &mut req, Some(pipeline_send_options))
+                    .await?;
+
+                // 304 Not Modified means no more changes are available
+                if resp.status() == StatusCode::NotModified {
+                    return Ok(None);
+                }
+
                 let headers = resp.headers().clone();
                 let next_continuation = headers.get_optional_string(&constants::CONTINUATION);
                 let body: crate::feed::FeedBody<T> = resp.into_body().json()?;
