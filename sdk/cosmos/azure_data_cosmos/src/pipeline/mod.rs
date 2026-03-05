@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore changefeed
+
 mod authorization_policy;
 mod cosmos_headers_policy;
 mod signature_target;
