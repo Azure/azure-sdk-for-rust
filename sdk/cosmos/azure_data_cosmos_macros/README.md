@@ -11,4 +11,4 @@ Generates layered configuration boilerplate for option group structs, including:
 - **`from_env()`** for environment variable loading
 - **`Default` impl** (all `Option<T>` fields default to `None`)
 
-See the [Hierarchical Configuration Model](../azure_data_cosmos/docs/HierarchicalConfigModel.md) specification for details.
+See the Hierarchical Configuration Model specification for details.
