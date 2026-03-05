@@ -751,6 +751,11 @@ impl ContainerClient {
     /// Each call returns a page of changes, and you can continue reading by calling
     /// the pager's `next()` method.
     ///
+    /// The returned iterator reads changes across all physical partitions using round-robin.
+    /// Each [`FeedPage`](crate::FeedPage) includes a continuation token that can be saved
+    /// and used later to resume processing via
+    /// [`QueryChangeFeedOptions::with_continuation_token()`].
+    ///
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request including start position, mode, and filters.
@@ -773,7 +778,7 @@ impl ContainerClient {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let options = QueryChangeFeedOptions::default()
     ///     .with_start_from(ChangeFeedStartFrom::Beginning);
-    /// let mut pager = container_client.query_items_change_feed::<MyItem>(Some(options))?;
+    /// let mut pager = container_client.query_items_change_feed::<MyItem>(Some(options)).await?;
     /// while let Some(item) = pager.try_next().await? {
     ///     println!("Changed item: {:?}", item);
     /// }
@@ -790,61 +795,290 @@ impl ContainerClient {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let options = QueryChangeFeedOptions::default()
     ///     .with_start_from(ChangeFeedStartFrom::Now);
-    /// let pager = container_client.query_items_change_feed::<serde_json::Value>(Some(options))?;
+    /// let pager = container_client.query_items_change_feed::<serde_json::Value>(Some(options)).await?;
     /// // Poll periodically to get new changes
     /// # Ok(())
     /// # }
     /// ```
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
-    pub fn query_items_change_feed<T: DeserializeOwned + Send + 'static>(
+    pub async fn query_items_change_feed<T: DeserializeOwned + Send + 'static>(
         &self,
         options: Option<QueryChangeFeedOptions>,
     ) -> azure_core::Result<FeedItemIterator<T>> {
-        use crate::change_feed::{ChangeFeedMode, ChangeFeedStartFrom};
+        use crate::change_feed::{
+            feed_range_internal::FeedRangeInternal,
+            state::{ChangeFeedRequestHeaders, ChangeFeedState},
+            ChangeFeedMode, ChangeFeedStartFrom,
+        };
+        use crate::pipeline::change_feed_headers;
+        use azure_core::error::CheckSuccessOptions;
+        use azure_core::http::{Method, PipelineSendOptions, Request, StatusCode};
 
         let options = options.unwrap_or_default();
-
-        let start_from = options
-            .start_from()
-            .cloned()
-            .unwrap_or(ChangeFeedStartFrom::Beginning);
         let mode = options.mode().unwrap_or(ChangeFeedMode::LatestVersion);
         let is_full_fidelity = matches!(mode, ChangeFeedMode::AllVersionsAndDeletes);
 
-        // Determine If-None-Match header value based on start_from
-        let if_none_match = match &start_from {
-            ChangeFeedStartFrom::Now => Some("*".to_string()),
-            ChangeFeedStartFrom::Beginning => None,
-            ChangeFeedStartFrom::PointInTime(_) => None,
-        };
-
-        // Determine If-Modified-Since header for point-in-time queries
-        let if_modified_since = match &start_from {
-            ChangeFeedStartFrom::PointInTime(dt) => {
-                // Format as RFC 7231 date (HTTP date format)
-                Some(azure_core::time::to_rfc7231(dt))
+        // Validate mode restrictions: AllVersionsAndDeletes only supports fromNow
+        if is_full_fidelity && options.continuation_token().is_none() {
+            let start_from = options
+                .start_from()
+                .cloned()
+                .unwrap_or(ChangeFeedStartFrom::Beginning);
+            match start_from {
+                ChangeFeedStartFrom::Beginning | ChangeFeedStartFrom::PointInTime(_) => {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "AllVersionsAndDeletes mode can only be used with ChangeFeedStartFrom::Now. \
+                         Use ChangeFeedStartFrom::Now or switch to ChangeFeedMode::LatestVersion.",
+                    ));
+                }
+                ChangeFeedStartFrom::Now => {} // OK
             }
-            _ => None,
+        }
+
+        let cf_state = if let Some(token) = options.continuation_token() {
+            // Resume from a saved continuation token
+            ChangeFeedState::from_continuation_token(token)?
+        } else {
+            // Initialize new state
+            let start_from = options
+                .start_from()
+                .cloned()
+                .unwrap_or(ChangeFeedStartFrom::Beginning);
+
+            // Get container resource ID
+            let container_props = self.read(None).await?.into_model()?;
+            let collection_rid =
+                container_props
+                    .system_properties
+                    .resource_id
+                    .ok_or_else(|| {
+                        azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            "Container resource ID not found",
+                        )
+                    })?;
+
+            // Determine the target feed range
+            let target_range = if let Some(fr) = options.feed_range() {
+                fr.as_epk_range().cloned().unwrap_or_else(|| {
+                    crate::routing::range::Range::new("".to_string(), "FF".to_string(), true, false)
+                })
+            } else {
+                crate::routing::range::Range::new("".to_string(), "FF".to_string(), true, false)
+            };
+
+            let feed_range_internal = FeedRangeInternal::from_epk_range(target_range.clone());
+
+            // Resolve partition key ranges for the target range
+            let pk_ranges = self
+                .container_connection
+                .partition_key_range_cache()
+                .resolve_overlapping_ranges(&collection_rid, target_range, false)
+                .await?;
+
+            let sub_ranges: Vec<_> = match pk_ranges {
+                Some(ranges) if !ranges.is_empty() => ranges.iter().map(|r| r.to_range()).collect(),
+                _ => vec![feed_range_internal.get_normalized_range().clone()],
+            };
+
+            ChangeFeedState::with_sub_ranges(
+                collection_rid,
+                feed_range_internal,
+                &start_from,
+                mode,
+                sub_ranges,
+            )
         };
 
-        // For now, we use partition key range "0" as a starting point
-        // A full implementation would need to enumerate all ranges
-        let pk_range_id = "0".to_string();
-
+        // Capture what we need for the stream closure
+        let inner_pipeline = self.pipeline.inner_pipeline();
+        let client_options = self.pipeline.client_options().clone();
+        let container_connection = self.container_connection.clone();
         let url = self.pipeline.url(&self.items_link);
-        self.pipeline.send_change_feed_request(
-            Context::default(),
+        let resource_link = self.items_link.clone();
+
+        // Capture per-request header options
+        let options_for_headers = options.clone();
+
+        // Build the change feed stream with multi-partition round-robin
+        struct StreamState {
+            inner_pipeline: azure_core::http::Pipeline,
+            client_options: crate::CosmosClientOptions,
+            container_connection: Arc<ContainerConnection>,
+            url: url::Url,
+            resource_link: ResourceLink,
+            cf_state: ChangeFeedState,
+            is_full_fidelity: bool,
+            done: bool,
+            options_for_headers: QueryChangeFeedOptions,
+        }
+
+        let state = StreamState {
+            inner_pipeline,
+            client_options,
+            container_connection,
             url,
-            self.items_link.clone(),
-            pk_range_id,
+            resource_link,
+            cf_state,
             is_full_fidelity,
-            if_none_match,
-            if_modified_since,
-            |r| {
-                options.apply_headers(r.headers_mut());
-                Ok(())
+            done: false,
+            options_for_headers,
+        };
+
+        /// Success codes for change feed: 200-299 + 304 (Not Modified)
+        const CF_SUCCESS_CODES: [u16; 101] = {
+            let mut codes = [0u16; 101];
+            let mut i = 0;
+            while i < 100 {
+                codes[i] = 200 + i as u16;
+                i += 1;
+            }
+            codes[100] = 304;
+            codes
+        };
+
+        Ok(FeedItemIterator::new(futures::stream::try_unfold(
+            state,
+            |mut state| async move {
+                if state.done {
+                    return Ok(None);
+                }
+
+                loop {
+                    let current_range = state.cf_state.current_feed_range().clone();
+
+                    // Resolve EPK range to a physical partition key range ID
+                    let pk_range_id = {
+                        let pk_ranges = state
+                            .container_connection
+                            .partition_key_range_cache()
+                            .resolve_overlapping_ranges(
+                                &state.cf_state.container_rid,
+                                current_range.clone(),
+                                false,
+                            )
+                            .await?;
+
+                        match pk_ranges {
+                            Some(ranges) if !ranges.is_empty() => {
+                                if ranges.len() > 1 {
+                                    // Split detected — update continuation tokens
+                                    state.cf_state.continuation.handle_feed_range_gone(&ranges);
+                                    continue;
+                                }
+                                ranges[0].id.clone()
+                            }
+                            _ => "0".to_string(),
+                        }
+                    };
+
+                    // Build the HTTP request
+                    let mut req = Request::new(state.url.clone(), Method::Get);
+
+                    // Set change feed mode headers
+                    if state.is_full_fidelity {
+                        req.insert_header(
+                            crate::constants::A_IM,
+                            change_feed_headers::FULL_FIDELITY_FEED,
+                        );
+                        req.insert_header(
+                            crate::constants::COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION,
+                            change_feed_headers::WIRE_FORMAT_VERSION,
+                        );
+                    } else {
+                        req.insert_header(
+                            crate::constants::A_IM,
+                            change_feed_headers::INCREMENTAL_FEED,
+                        );
+                    }
+
+                    // Set partition key range ID
+                    req.insert_header(crate::constants::PARTITION_KEY_RANGE_ID, pk_range_id);
+
+                    // Set If-None-Match / If-Modified-Since based on state
+                    let headers = ChangeFeedRequestHeaders::from_state(&state.cf_state, None);
+                    if let Some(ref etag) = headers.if_none_match {
+                        req.insert_header(crate::constants::IF_NONE_MATCH, etag.clone());
+                    }
+                    if let Some(ref date) = headers.if_modified_since {
+                        req.insert_header("if-modified-since", date.clone());
+                    }
+
+                    // Apply per-request headers (session token, max item count, custom headers)
+                    state.options_for_headers.apply_headers(req.headers_mut());
+
+                    // Apply client-level headers
+                    state.client_options.apply_headers(req.headers_mut());
+
+                    // Send the request
+                    let context = azure_core::http::Context::default()
+                        .with_value(state.resource_link.clone())
+                        .into_owned();
+                    let success_options = CheckSuccessOptions {
+                        success_codes: &CF_SUCCESS_CODES,
+                    };
+                    let pipeline_send_options = PipelineSendOptions {
+                        skip_checks: false,
+                        check_success: success_options,
+                    };
+                    let resp = state
+                        .inner_pipeline
+                        .send(&context, &mut req, Some(pipeline_send_options))
+                        .await?;
+
+                    if resp.status() == StatusCode::NotModified {
+                        // No new changes for this sub-range
+                        // For change feed, the position is tracked via the etag response header
+                        let etag = resp
+                            .headers()
+                            .get_optional_string(&crate::constants::ETAG)
+                            .or_else(|| {
+                                resp.headers()
+                                    .get_optional_string(&crate::constants::CONTINUATION)
+                            })
+                            .unwrap_or_default();
+                        state.cf_state.apply_server_response(etag, false);
+                        state.cf_state.move_to_next_range();
+
+                        if !state.cf_state.should_retry_on_not_modified() {
+                            // All sub-ranges are caught up — yield a final page with continuation
+                            let continuation =
+                                state.cf_state.to_continuation_token().unwrap_or_default();
+                            let page = crate::FeedPage::new(
+                                vec![],
+                                Some(continuation),
+                                resp.headers().clone(),
+                            );
+                            state.done = true;
+                            return Ok(Some((page, state)));
+                        }
+                        continue;
+                    }
+
+                    // Parse the response
+                    let resp_headers = resp.headers().clone();
+                    // For change feed, position is tracked via the etag response header
+                    let etag = resp_headers
+                        .get_optional_string(&crate::constants::ETAG)
+                        .or_else(|| {
+                            resp_headers
+                                .get_optional_string(&crate::constants::CONTINUATION)
+                        })
+                        .unwrap_or_default();
+                    let body: crate::feed::FeedBody<T> = resp.into_body().json()?;
+
+                    state
+                        .cf_state
+                        .apply_server_response(etag, !body.items.is_empty());
+                    state.cf_state.move_to_next_range();
+
+                    let continuation = state.cf_state.to_continuation_token().unwrap_or_default();
+                    let page = crate::FeedPage::new(body.items, Some(continuation), resp_headers);
+                    return Ok(Some((page, state)));
+                }
             },
-        )
+        )))
     }
 
     /// Returns the feed ranges for this container.

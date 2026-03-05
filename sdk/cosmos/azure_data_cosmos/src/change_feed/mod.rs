@@ -15,13 +15,9 @@ pub use feed_range::FeedRange;
 pub use mode::ChangeFeedMode;
 pub use start_from::ChangeFeedStartFrom;
 
-// Internal modules for advanced change feed state management.
+// Internal modules for change feed state management.
 // These are used for continuation token handling and split/merge scenarios.
-#[allow(dead_code)]
 pub(crate) mod composite_continuation_token;
-#[allow(dead_code)]
 pub(crate) mod feed_range_composite_continuation;
-#[allow(dead_code)]
 pub(crate) mod feed_range_internal;
-#[allow(dead_code)]
 pub(crate) mod state;

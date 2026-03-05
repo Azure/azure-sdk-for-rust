@@ -166,6 +166,7 @@ cosmos_headers! {
     // Change feed
     A_IM => "a-im",
     IF_NONE_MATCH => "if-none-match",
+    ETAG => "etag",
     COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION => "x-ms-cosmos-changefeed-wire-format-version",
     // Dedicated Gateway
     DEDICATEDGATEWAY_MAX_AGE => "x-ms-dedicatedgateway-max-age",

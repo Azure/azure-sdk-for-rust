@@ -13,15 +13,13 @@ use crate::models::CosmosResponse;
 use crate::resource_context::ResourceLink;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
-use crate::{constants, CosmosClientOptions};
+use crate::CosmosClientOptions;
 pub(crate) use authorization_policy::AuthorizationPolicy;
 use azure_core::error::CheckSuccessOptions;
 use azure_core::http::{
-    request::Request, response::Response, Context, Method, PipelineSendOptions, RawResponse,
-    StatusCode,
+    response::Response, Context, PipelineSendOptions, RawResponse,
 };
 pub(crate) use cosmos_headers_policy::CosmosHeadersPolicy;
-use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use url::Url;
 
@@ -75,6 +73,16 @@ impl GatewayPipeline {
         }
     }
 
+    /// Returns a clone of the inner HTTP pipeline for use in async stream closures.
+    pub(crate) fn inner_pipeline(&self) -> azure_core::http::Pipeline {
+        self.pipeline.clone()
+    }
+
+    /// Returns a reference to the client options for applying default headers.
+    pub(crate) fn client_options(&self) -> &CosmosClientOptions {
+        &self.options
+    }
+
     /// Creates a [`Url`] out of the provided [`ResourceLink`]
     ///
     /// This is a little backwards, ideally we'd accept [`ResourceLink`] in the [`GatewayPipeline::send`] method,
@@ -126,96 +134,4 @@ impl GatewayPipeline {
         Ok(CosmosResponse::new(typed_response, cosmos_request))
     }
 
-    /// Creates a change feed request for reading changes from a container.
-    ///
-    /// This method sets up the appropriate headers and returns an iterator that
-    /// can be used to iterate through changes.
-    #[allow(clippy::too_many_arguments)]
-    pub fn send_change_feed_request<T: DeserializeOwned + Send + 'static>(
-        &self,
-        ctx: Context<'_>,
-        url: Url,
-        resource_link: ResourceLink,
-        partition_key_range_id: String,
-        is_full_fidelity: bool,
-        if_none_match: Option<String>,
-        if_modified_since: Option<String>,
-        apply_request_headers: impl Fn(&mut Request) -> azure_core::Result<()>,
-    ) -> azure_core::Result<crate::FeedItemIterator<T>> {
-        let mut base_request = Request::new(url, Method::Get);
-
-        // Set change feed headers
-        if is_full_fidelity {
-            base_request.insert_header(constants::A_IM, change_feed_headers::FULL_FIDELITY_FEED);
-            base_request.insert_header(
-                constants::COSMOS_CHANGEFEED_WIRE_FORMAT_VERSION,
-                change_feed_headers::WIRE_FORMAT_VERSION,
-            );
-        } else {
-            base_request.insert_header(constants::A_IM, change_feed_headers::INCREMENTAL_FEED);
-        }
-
-        // Set partition key range ID
-        base_request.insert_header(constants::PARTITION_KEY_RANGE_ID, partition_key_range_id);
-
-        // Set If-None-Match header (etag for continuation)
-        if let Some(etag) = if_none_match {
-            base_request.insert_header(constants::IF_NONE_MATCH, etag);
-        }
-
-        // Set If-Modified-Since header for point-in-time queries
-        if let Some(date) = if_modified_since {
-            base_request.insert_header("if-modified-since", date);
-        }
-
-        apply_request_headers(&mut base_request)?;
-
-        // Apply client-level headers if not already present
-        self.options.apply_headers(base_request.headers_mut());
-
-        let pipeline = self.pipeline.clone();
-        let context = ctx.with_value(resource_link).into_owned();
-
-        Ok(crate::FeedItemIterator::new(futures::stream::try_unfold(
-            (pipeline, base_request, context, None::<String>, false),
-            |(pipeline, base_request, context, continuation, done)| async move {
-                if done {
-                    return Ok(None);
-                }
-
-                let mut req = base_request.clone();
-                if let Some(ref cont) = continuation {
-                    // For change feed, continuation is the etag
-                    req.insert_header(constants::IF_NONE_MATCH, cont.clone());
-                }
-
-                let success_options = CheckSuccessOptions {
-                    success_codes: &SUCCESS_CODES,
-                };
-                let pipeline_send_options = PipelineSendOptions {
-                    skip_checks: false,
-                    check_success: success_options,
-                };
-                let resp = pipeline
-                    .send(&context, &mut req, Some(pipeline_send_options))
-                    .await?;
-
-                // 304 Not Modified means no more changes are available
-                if resp.status() == StatusCode::NotModified {
-                    return Ok(None);
-                }
-
-                let headers = resp.headers().clone();
-                let next_continuation = headers.get_optional_string(&constants::CONTINUATION);
-                let body: crate::feed::FeedBody<T> = resp.into_body().json()?;
-                let page = crate::FeedPage::new(body.items, next_continuation.clone(), headers);
-                let is_done = next_continuation.is_none();
-
-                Ok(Some((
-                    page,
-                    (pipeline, base_request, context, next_continuation, is_done),
-                )))
-            },
-        )))
-    }
 }

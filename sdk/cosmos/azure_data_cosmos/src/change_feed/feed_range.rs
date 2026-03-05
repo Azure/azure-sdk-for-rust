@@ -47,6 +47,13 @@ pub(crate) struct EpkFeedRange {
 }
 
 impl FeedRange {
+    /// Creates a feed range that covers the entire container.
+    ///
+    /// Use this to read the change feed across all partitions.
+    pub fn for_full_range() -> Self {
+        Self::from_epk_range(Range::new("".to_string(), "FF".to_string(), true, false))
+    }
+
     /// Creates a new `FeedRange` from an effective partition key (EPK) range.
     pub(crate) fn from_epk_range(range: Range<String>) -> Self {
         Self {
@@ -55,7 +62,6 @@ impl FeedRange {
     }
 
     /// Gets the underlying EPK range if this is an EPK-based feed range.
-    #[allow(dead_code)]
     pub(crate) fn as_epk_range(&self) -> Option<&Range<String>> {
         match &self.inner {
             FeedRangeInner::Epk(epk) => Some(&epk.range),

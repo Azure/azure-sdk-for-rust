@@ -378,6 +378,12 @@ pub struct QueryChangeFeedOptions {
     /// If not specified, the server determines the page size.
     max_item_count: Option<i32>,
 
+    /// A continuation token from a previous change feed query.
+    ///
+    /// When provided, the change feed resumes from the saved position.
+    /// All other options (start_from, mode, feed_range) are ignored when a continuation token is set.
+    continuation_token: Option<String>,
+
     /// Applies when working with Session consistency.
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
@@ -435,6 +441,20 @@ impl QueryChangeFeedOptions {
 
     pub fn max_item_count(&self) -> Option<i32> {
         self.max_item_count
+    }
+
+    /// Sets a continuation token from a previous change feed query.
+    ///
+    /// When set, the change feed resumes from the saved position.
+    /// Other options (start_from, mode, feed_range) are ignored.
+    pub fn with_continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
+        self.continuation_token = Some(continuation_token.into());
+        self
+    }
+
+    /// Gets the continuation token, if set.
+    pub fn continuation_token(&self) -> Option<&str> {
+        self.continuation_token.as_deref()
     }
 
     pub fn with_session_token(mut self, session_token: SessionToken) -> Self {

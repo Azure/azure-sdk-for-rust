@@ -3,8 +3,6 @@
 
 //! Feed range composite continuation for managing change feed state across partition splits/merges.
 
-use std::collections::VecDeque;
-
 use serde::{Deserialize, Serialize};
 
 use crate::routing::{partition_key_range::PartitionKeyRange, range::Range};
@@ -47,15 +45,31 @@ pub struct FeedRangeCompositeContinuation {
 }
 
 impl FeedRangeCompositeContinuation {
-    /// Creates a new composite continuation for the given feed range.
-    pub fn new(container_rid: String, feed_range: FeedRangeInternal) -> Self {
-        let range = feed_range.get_normalized_range().clone();
-        let initial_token = CompositeContinuationToken::new(range, None);
+    /// Creates a composite continuation with pre-resolved sub-ranges.
+    ///
+    /// Each sub-range gets its own continuation token for independent tracking.
+    /// If `sub_ranges` is empty, falls back to the feed range's full normalized range.
+    pub fn with_sub_ranges(
+        container_rid: String,
+        feed_range: FeedRangeInternal,
+        sub_ranges: Vec<Range<String>>,
+    ) -> Self {
+        let tokens: Vec<CompositeContinuationToken> = if sub_ranges.is_empty() {
+            vec![CompositeContinuationToken::new(
+                feed_range.get_normalized_range().clone(),
+                None,
+            )]
+        } else {
+            sub_ranges
+                .into_iter()
+                .map(|range| CompositeContinuationToken::new(range, None))
+                .collect()
+        };
 
         Self {
             version: "v2".to_string(),
             container_rid,
-            continuation: vec![initial_token],
+            continuation: tokens,
             feed_range,
             current_index: 0,
             initial_no_result_range: None,
@@ -133,11 +147,6 @@ impl FeedRangeCompositeContinuation {
         // Reset to the first new token
         // current_index already points to the first inserted token
     }
-
-    /// Converts the continuation to a queue-based structure for processing.
-    pub fn into_queue(self) -> VecDeque<CompositeContinuationToken> {
-        self.continuation.into()
-    }
 }
 
 #[cfg(test)]
@@ -149,11 +158,19 @@ mod tests {
         FeedRangeInternal::from_epk_range(range)
     }
 
+    fn create_single_range_continuation() -> FeedRangeCompositeContinuation {
+        let feed_range = create_test_feed_range();
+        let range = feed_range.get_normalized_range().clone();
+        FeedRangeCompositeContinuation::with_sub_ranges(
+            "test-rid".to_string(),
+            feed_range,
+            vec![range],
+        )
+    }
+
     #[test]
     fn new_composite_continuation() {
-        let feed_range = create_test_feed_range();
-        let continuation =
-            FeedRangeCompositeContinuation::new("test-rid".to_string(), feed_range.clone());
+        let continuation = create_single_range_continuation();
 
         assert_eq!(continuation.version, "v2");
         assert_eq!(continuation.container_rid, "test-rid");
@@ -163,9 +180,7 @@ mod tests {
 
     #[test]
     fn apply_server_response() {
-        let feed_range = create_test_feed_range();
-        let mut continuation =
-            FeedRangeCompositeContinuation::new("test-rid".to_string(), feed_range);
+        let mut continuation = create_single_range_continuation();
 
         continuation.apply_server_response_continuation("\"etag123\"".to_string(), true);
 
@@ -177,9 +192,7 @@ mod tests {
 
     #[test]
     fn move_to_next_token_single() {
-        let feed_range = create_test_feed_range();
-        let mut continuation =
-            FeedRangeCompositeContinuation::new("test-rid".to_string(), feed_range);
+        let mut continuation = create_single_range_continuation();
 
         // With single token, should stay at index 0
         continuation.move_to_next_token();
@@ -188,9 +201,7 @@ mod tests {
 
     #[test]
     fn should_retry_single_range() {
-        let feed_range = create_test_feed_range();
-        let mut continuation =
-            FeedRangeCompositeContinuation::new("test-rid".to_string(), feed_range);
+        let mut continuation = create_single_range_continuation();
 
         // Apply not-modified response
         continuation.apply_server_response_continuation("\"etag\"".to_string(), false);
@@ -201,9 +212,7 @@ mod tests {
 
     #[test]
     fn handle_split() {
-        let feed_range = create_test_feed_range();
-        let mut continuation =
-            FeedRangeCompositeContinuation::new("test-rid".to_string(), feed_range);
+        let mut continuation = create_single_range_continuation();
 
         // Set a token first
         continuation.apply_server_response_continuation("\"parent-etag\"".to_string(), true);
@@ -232,9 +241,7 @@ mod tests {
 
     #[test]
     fn serialization_roundtrip() {
-        let feed_range = create_test_feed_range();
-        let mut continuation =
-            FeedRangeCompositeContinuation::new("test-rid".to_string(), feed_range);
+        let mut continuation = create_single_range_continuation();
 
         continuation.apply_server_response_continuation("etag123".to_string(), true);
 
