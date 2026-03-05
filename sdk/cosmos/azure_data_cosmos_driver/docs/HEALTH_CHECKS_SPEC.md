@@ -75,7 +75,7 @@ orchestration, scheduling, or state management.
 This spec extends the Transport Pipeline Spec (§4.4) by adding:
 1. **Proactive probing** — a background task that calls a health probe on each endpoint
 2. **Availability recovery** — marking endpoints available again after successful probes
-3. **Startup probing** — verifying endpoint reachability during client initialization
+3. **Startup probing** — verifying endpoint reachability in the background during client initialization
 
 The `AccountEndpointState`, `AccountEndpointStateStore`, `mark_endpoint_unavailable`, and
 `expire_unavailable_endpoints` systems defined in §4.4 are consumed as-is. This spec adds
@@ -103,11 +103,23 @@ pub(crate) enum ProbeResult {
     },
     /// The endpoint did not respond or returned an error.
     Unhealthy {
-        /// Diagnostic reason for the failure.
-        reason: String,
+        /// Structured failure details for diagnostics integration.
+        failure: ProbeFailure,
         /// How long before the probe failed/timed out.
         latency: Duration,
     },
+}
+
+/// Structured details about a probe failure, providing the information
+/// needed by the `DiagnosticsContext` system without string parsing.
+#[derive(Clone, Debug)]
+pub(crate) struct ProbeFailure {
+    /// HTTP status code, if the probe received an HTTP response.
+    pub status_code: Option<u16>,
+    /// Cosmos sub-status code, if present in the response headers.
+    pub sub_status_code: Option<u32>,
+    /// Human-readable description of the failure.
+    pub message: String,
 }
 
 /// Trait for probing a single Cosmos DB gateway endpoint.
@@ -185,28 +197,41 @@ impl HealthProbe for GetDatabaseAccountProbe {
             "",
         ));
 
-        // Apply probe-specific timeout.
-        let result = tokio::time::timeout(
-            self.probe_timeout,
-            pipeline.send(&context, &mut request),
-        )
-        .await;
+        // Apply probe-specific timeout at the HTTP transport layer.
+        // The timeout is set on the request context so the pipeline applies it
+        // at the TCP/TLS level, ensuring clean connection abort rather than
+        // async task cancellation which may leave half-open connections.
+        context.insert(ProbeTimeout(self.probe_timeout));
+
+        let result = pipeline.send(&context, &mut request).await;
 
         let latency = start.elapsed();
         match result {
-            Ok(Ok(response)) if response.status().is_success() => {
+            Ok(response) if response.status().is_success() => {
                 ProbeResult::Healthy { latency }
             }
-            Ok(Ok(response)) => ProbeResult::Unhealthy {
-                reason: format!("HTTP {}", response.status()),
-                latency,
-            },
-            Ok(Err(e)) => ProbeResult::Unhealthy {
-                reason: format!("transport error: {e}"),
-                latency,
-            },
-            Err(_) => ProbeResult::Unhealthy {
-                reason: "probe timed out".to_string(),
+            Ok(response) => {
+                let status_code = Some(response.status().as_u16());
+                let sub_status_code = response
+                    .headers()
+                    .get("x-ms-substatus")
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(|v| v.parse().ok());
+                ProbeResult::Unhealthy {
+                    failure: ProbeFailure {
+                        status_code,
+                        sub_status_code,
+                        message: format!("HTTP {}", response.status()),
+                    },
+                    latency,
+                }
+            }
+            Err(e) => ProbeResult::Unhealthy {
+                failure: ProbeFailure {
+                    status_code: None,
+                    sub_status_code: None,
+                    message: format!("transport error: {e}"),
+                },
                 latency,
             },
         }
@@ -232,23 +257,14 @@ pub(crate) struct HealthMonitorConfig {
 
     /// Maximum number of retries per probe attempt.
     /// Default: 3, matching the Python SDK.
+    /// This is passed to `ClientRetryPolicy` via per-request options;
+    /// no custom retry loop is used.
     pub max_probe_retries: u32,
 
-    /// Initial retry delay for failed probes (exponential backoff).
-    /// Default: 500ms.
-    pub initial_retry_delay: Duration,
-
-    /// Maximum retry delay cap.
-    /// Default: 180s (3 minutes).
-    pub max_retry_delay: Duration,
-
-    /// Timeout for individual probe requests.
+    /// Timeout for individual probe requests, applied at the HTTP
+    /// transport layer.
     /// Default: 5s.
     pub probe_timeout: Duration,
-
-    /// Whether to run health checks on startup.
-    /// Default: true.
-    pub probe_on_startup: bool,
 }
 
 impl Default for HealthMonitorConfig {
@@ -256,10 +272,7 @@ impl Default for HealthMonitorConfig {
         Self {
             refresh_interval: Duration::from_secs(300),
             max_probe_retries: 3,
-            initial_retry_delay: Duration::from_millis(500),
-            max_retry_delay: Duration::from_secs(180),
             probe_timeout: Duration::from_secs(5),
-            probe_on_startup: true,
         }
     }
 }
@@ -316,45 +329,19 @@ fn endpoints_to_probe(state: &AccountEndpointState) -> Vec<CosmosEndpoint> {
 }
 ```
 
-### 3.5 Probe Execution with Retry
+### 3.5 Probe Retries via `ClientRetryPolicy`
 
-Each endpoint probe has its own retry loop with exponential backoff:
+Health probes are retried by the standard `ClientRetryPolicy` from the Transport Pipeline
+Spec — there is no custom retry loop. The probe-specific retry count
+(`HealthMonitorConfig::max_probe_retries`) is passed to the retry policy via per-request
+options, allowing probes to use different retry limits than normal data-plane requests
+while sharing the same retry mechanism and backoff logic.
 
 ```rust
-// driver/health/monitor.rs
-
-/// Probes a single endpoint with retries.
-///
-/// Returns the final `ProbeResult` after exhausting retries or
-/// getting a healthy response.
-async fn probe_with_retry(
-    probe: &dyn HealthProbe,
-    endpoint: &CosmosEndpoint,
-    config: &HealthMonitorConfig,
-) -> ProbeResult {
-    let mut delay = config.initial_retry_delay;
-
-    for attempt in 0..=config.max_probe_retries {
-        let result = probe.probe(endpoint).await;
-        match &result {
-            ProbeResult::Healthy { .. } => return result,
-            ProbeResult::Unhealthy { .. } if attempt < config.max_probe_retries => {
-                // Exponential backoff: delay + 2^attempt, capped.
-                let backoff = delay + Duration::from_millis(1 << attempt);
-                let capped = backoff.min(config.max_retry_delay);
-                tokio::time::sleep(capped).await;
-                delay = capped;
-            }
-            _ => return result,
-        }
-    }
-
-    // Unreachable, but satisfy compiler.
-    ProbeResult::Unhealthy {
-        reason: "max retries exhausted".to_string(),
-        latency: Duration::ZERO,
-    }
-}
+// Conceptual: retry configuration is applied per-request, not via a separate loop.
+// The HealthProbe::probe() call flows through the standard pipeline which includes
+// ClientRetryPolicy. The probe's max_probe_retries overrides the default retry count
+// for that request only.
 ```
 
 ### 3.6 Background Sweep Loop
@@ -363,7 +350,8 @@ async fn probe_with_retry(
 // driver/health/monitor.rs
 
 impl EndpointHealthMonitor {
-    /// The main background loop. Runs until the monitor is dropped.
+    /// The main background loop. Runs an initial sweep immediately,
+    /// then periodically until the monitor is dropped.
     async fn sweep_loop(
         config: HealthMonitorConfig,
         probe: Arc<dyn HealthProbe>,
@@ -371,6 +359,15 @@ impl EndpointHealthMonitor {
         account_metadata_cache: Arc<AccountMetadataCache>,
         shutdown: CancellationToken,
     ) {
+        // Run initial sweep immediately on startup.
+        Self::run_sweep(
+            &config,
+            &*probe,
+            &endpoint_state_store,
+            &account_metadata_cache,
+        )
+        .await;
+
         loop {
             tokio::select! {
                 _ = tokio::time::sleep(config.refresh_interval) => {},
@@ -408,13 +405,14 @@ impl EndpointHealthMonitor {
         }
 
         // Probe all endpoints concurrently.
+        // Retries are handled by `ClientRetryPolicy` within each probe call.
         let probe_futures: Vec<_> = endpoints
             .iter()
             .map(|ep| {
                 let ep = ep.clone();
                 let probe = probe; // borrow, not move
                 async move {
-                    let result = probe_with_retry(probe, &ep, config).await;
+                    let result = probe.probe(&ep).await;
                     (ep, result)
                 }
             })
@@ -431,7 +429,7 @@ impl EndpointHealthMonitor {
                     // Remove from unavailable set if present.
                     new_state.unavailable_endpoints.remove(endpoint);
                 }
-                ProbeResult::Unhealthy { reason, .. } => {
+                ProbeResult::Unhealthy { failure, .. } => {
                     // Mark unavailable (or keep unavailable if already marked).
                     new_state.unavailable_endpoints.entry(endpoint.clone())
                         .or_insert_with(|| {
@@ -439,7 +437,9 @@ impl EndpointHealthMonitor {
                         });
                     tracing::warn!(
                         endpoint = %endpoint,
-                        reason = %reason,
+                        reason = %failure.message,
+                        status_code = ?failure.status_code,
+                        sub_status_code = ?failure.sub_status_code,
                         "health probe failed, marking endpoint unavailable"
                     );
                 }
@@ -454,8 +454,10 @@ impl EndpointHealthMonitor {
 ### 3.7 Startup Probing
 
 On `CosmosDriver` initialization, after the initial `GetDatabaseAccount` succeeds and
-populates the `AccountMetadataCache`, the health monitor runs an initial sweep to verify
-all endpoints before the driver begins accepting requests:
+populates the `AccountMetadataCache`, the health monitor spawns the background sweep loop
+which immediately runs the first sweep. The driver does **not** block on the initial sweep
+— the client is usable immediately after construction. The reactive retry/failover path
+covers the window before the first sweep completes.
 
 ```rust
 // driver/health/monitor.rs
@@ -463,25 +465,15 @@ all endpoints before the driver begins accepting requests:
 impl EndpointHealthMonitor {
     /// Creates and starts the health monitor.
     ///
-    /// If `config.probe_on_startup` is true, runs an initial sweep
-    /// synchronously before returning. The background loop then takes over.
-    pub async fn start(
+    /// Spawns a background task that runs an initial sweep immediately,
+    /// then continues with periodic sweeps. Does not block — the driver
+    /// is ready to accept requests before the first sweep completes.
+    pub fn start(
         config: HealthMonitorConfig,
         probe: Arc<dyn HealthProbe>,
         endpoint_state_store: Arc<AccountEndpointStateStore>,
         account_metadata_cache: Arc<AccountMetadataCache>,
     ) -> Self {
-        // Run initial sweep if configured.
-        if config.probe_on_startup {
-            Self::run_sweep(
-                &config,
-                &*probe,
-                &endpoint_state_store,
-                &account_metadata_cache,
-            )
-            .await;
-        }
-
         let shutdown = CancellationToken::new();
         let sweep_handle = tokio::spawn(Self::sweep_loop(
             config.clone(),
@@ -553,14 +545,13 @@ let health_probe: Arc<dyn HealthProbe> = Arc::new(GetDatabaseAccountProbe::new(
     health_config.probe_timeout,
 ));
 
-// Start health monitor (runs initial sweep + background loop).
+// Start health monitor (non-blocking — spawns background sweep immediately).
 let health_monitor = EndpointHealthMonitor::start(
     health_config,
     health_probe,
     Arc::clone(&endpoint_state_store),
     Arc::clone(&self.runtime.account_metadata_cache()),
-)
-.await;
+);
 ```
 
 ### 4.2 `execute_operation` Integration
@@ -590,16 +581,26 @@ This means:
 
 ### 4.4 Diagnostics Integration
 
-Health probe activity is recorded in the `DiagnosticsContext` system. The existing
-`ExecutionContext::CircuitBreakerProbe` variant (already defined in the Transport Pipeline
-Spec) is used for health check probe requests:
+Health probe activity is recorded in the `DiagnosticsContext` system using a dedicated
+`ExecutionContext::HealthCheckProbe` variant. This is distinct from
+`ExecutionContext::CircuitBreakerProbe` (used by the partition-level circuit breaker /
+PPCB), since health checks and PPCB are independent features.
+
+Each probe result is recorded as a diagnostic event containing:
+- **Endpoint URI**: The regional gateway endpoint that was probed.
+- **HTTP status code**: When the probe received an HTTP response.
+- **Sub-status code**: When present in response headers (`x-ms-substatus`).
+- **Latency**: How long the probe took.
+- **Outcome**: Healthy or Unhealthy with the `ProbeFailure` details.
 
 ```rust
 // When logging probe attempts:
 tracing::debug!(
     endpoint = %endpoint,
-    execution_context = "CircuitBreakerProbe",
+    execution_context = "HealthCheckProbe",
     latency_ms = latency.as_millis(),
+    status_code = ?failure.as_ref().and_then(|f| f.status_code),
+    sub_status_code = ?failure.as_ref().and_then(|f| f.sub_status_code),
     "health probe completed"
 );
 ```
@@ -619,35 +620,26 @@ New option group nested within `DriverOptions`:
 ///
 /// Health checks probe regional gateway endpoints to detect unavailability
 /// and recovery. Results feed into the endpoint routing system.
+///
+/// Health checks are always enabled and always run on startup (non-blocking).
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct HealthCheckOptions {
-    /// Whether health checks are enabled. Default: `true`.
-    enabled: bool,
     /// Interval between background health sweeps. Default: 300s (5 minutes).
     refresh_interval: Duration,
-    /// Whether to probe all endpoints on startup before accepting requests.
-    /// Default: `true`.
-    probe_on_startup: bool,
-    /// Maximum retries per probe attempt. Default: 3.
+    /// Maximum retries per probe attempt, applied via `ClientRetryPolicy`.
+    /// Default: 3.
     max_probe_retries: u32,
-    /// Initial delay between probe retries. Default: 500ms.
-    initial_retry_delay: Duration,
-    /// Maximum delay between probe retries. Default: 180s.
-    max_retry_delay: Duration,
-    /// Timeout for individual probe requests. Default: 5s.
+    /// Timeout for individual probe requests, applied at the HTTP transport
+    /// layer. Default: 5s.
     probe_timeout: Duration,
 }
 
 impl Default for HealthCheckOptions {
     fn default() -> Self {
         Self {
-            enabled: true,
             refresh_interval: Duration::from_secs(300),
-            probe_on_startup: true,
             max_probe_retries: 3,
-            initial_retry_delay: Duration::from_millis(500),
-            max_retry_delay: Duration::from_secs(180),
             probe_timeout: Duration::from_secs(5),
         }
     }
@@ -658,18 +650,8 @@ impl HealthCheckOptions {
         Self::default()
     }
 
-    pub fn with_enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-
     pub fn with_refresh_interval(mut self, interval: Duration) -> Self {
         self.refresh_interval = interval;
-        self
-    }
-
-    pub fn with_probe_on_startup(mut self, probe: bool) -> Self {
-        self.probe_on_startup = probe;
         self
     }
 
@@ -698,21 +680,8 @@ pub struct DriverOptions {
 }
 ```
 
-### 5.3 Environment Variable Overrides
-
-Following the Python SDK pattern, key thresholds can be overridden via environment
-variables for debugging and tuning without code changes:
-
-| Env Var | Field | Default |
-|---------|-------|---------|
-| `AZURE_COSMOS_HEALTH_CHECK_INTERVAL_SECS` | `refresh_interval` | 300 |
-| `AZURE_COSMOS_HEALTH_CHECK_MAX_RETRIES` | `max_probe_retries` | 3 |
-| `AZURE_COSMOS_HEALTH_CHECK_RETRY_AFTER_MS` | `initial_retry_delay` | 500 |
-| `AZURE_COSMOS_HEALTH_CHECK_PROBE_TIMEOUT_SECS` | `probe_timeout` | 5 |
-| `AZURE_COSMOS_HEALTH_CHECK_ENABLED` | `enabled` | true |
-
-Environment variables take precedence over programmatic options. This is resolved at
-`HealthMonitorConfig` construction time (not in the public options struct).
+Configuration is programmatic-only via `HealthCheckOptions`. There are no environment
+variable overrides — all tuning is done in code.
 
 ---
 
@@ -753,7 +722,7 @@ When the dedicated gateway health endpoint ships, the migration is:
 2. Update the probe construction in `CosmosDriver` initialization to use
    `GatewayHealthProbe` instead of `GetDatabaseAccountProbe`.
 
-3. **Nothing else changes.** The monitor, sweep loop, retry logic, state management,
+3. **Nothing else changes.** The monitor, sweep loop, state management,
    configuration, and diagnostics all remain identical.
 
 This is the key design benefit of the `HealthProbe` trait abstraction.
@@ -781,14 +750,12 @@ No explicit `shutdown()` method is needed — the RAII pattern via `Drop` handle
 |------|-------------------|
 | `endpoints_to_probe_deduplicates` | Read + write overlap → no duplicate probes |
 | `endpoints_to_probe_empty_state` | No endpoints → empty probe list |
-| `probe_with_retry_succeeds_first_try` | Healthy response → no retries |
-| `probe_with_retry_succeeds_after_failures` | Retries until success |
-| `probe_with_retry_exhausts_retries` | All retries fail → returns Unhealthy |
 | `sweep_marks_healthy_available` | Previously unavailable endpoint passes probe → removed from unavailable set |
 | `sweep_marks_unhealthy_unavailable` | Failed probe → added to unavailable set |
 | `sweep_atomic_state_update` | Multiple probe results applied in single state swap |
 | `mark_endpoint_available_no_op` | Already-available endpoint → state unchanged |
-| `config_env_var_overrides` | Env vars override defaults |
+| `probe_failure_captures_status_codes` | `ProbeFailure` contains HTTP status and sub-status from response |
+| `startup_sweep_runs_immediately` | Background sweep loop executes first sweep without waiting for interval |
 
 ### 9.2 Integration Tests
 
@@ -831,16 +798,15 @@ since it requires `AccountEndpointState` and `AccountEndpointStateStore`.
 
 | Sub-step | Work Item | Files |
 |----------|-----------|-------|
-| HC.1 | **`HealthProbe` trait + `ProbeResult`** — Define the swappable probe interface. | `driver/health/probe.rs` |
-| HC.2 | **`GetDatabaseAccountProbe`** — Implement using existing metadata pipeline. | `driver/health/get_database_account_probe.rs` |
-| HC.3 | **`HealthCheckOptions`** — Public configuration surface. | `options/health.rs` |
-| HC.4 | **`EndpointHealthMonitor`** — Sweep loop, concurrent probing, retry logic. | `driver/health/monitor.rs`, `driver/health/config.rs` |
+| HC.1 | **`HealthProbe` trait + `ProbeResult` + `ProbeFailure`** — Define the swappable probe interface with structured failure details. | `driver/health/probe.rs` |
+| HC.2 | **`GetDatabaseAccountProbe`** — Implement using existing metadata pipeline with transport-layer timeout. | `driver/health/get_database_account_probe.rs` |
+| HC.3 | **`HealthCheckOptions`** — Public configuration surface (no env vars, no enabled toggle). | `options/health.rs` |
+| HC.4 | **`EndpointHealthMonitor`** — Sweep loop with concurrent probing. Retries delegated to `ClientRetryPolicy` with probe-specific config. | `driver/health/monitor.rs`, `driver/health/config.rs` |
 | HC.5 | **`mark_endpoint_available`** — New system function for endpoint recovery. | `driver/routing/account_endpoint_state.rs` |
-| HC.6 | **Wire into `CosmosDriver`** — Create probe + monitor during driver init. | `driver/cosmos_driver.rs` |
-| HC.7 | **Startup probing** — Run initial sweep before driver accepts requests. | `driver/health/monitor.rs` |
-| HC.8 | **Env var overrides** — Read `AZURE_COSMOS_HEALTH_CHECK_*` vars at config construction. | `driver/health/config.rs` |
-| HC.9 | **Unit tests** — Probe, retry, sweep, state update, config override tests. | `driver/health/tests/` |
-| HC.10 | **Integration tests** — End-to-end with fault injection. | `tests/` |
+| HC.6 | **Wire into `CosmosDriver`** — Create probe + monitor during driver init (non-blocking). | `driver/cosmos_driver.rs` |
+| HC.7 | **`ExecutionContext::HealthCheckProbe`** — New diagnostics variant, separate from PPCB. | `driver/diagnostics/` |
+| HC.8 | **Unit tests** — Probe, sweep, state update, structured failure tests. | `driver/health/tests/` |
+| HC.9 | **Integration tests** — End-to-end with fault injection. | `tests/` |
 
 ### Dependency
 
@@ -854,8 +820,8 @@ since it requires `AccountEndpointState` and `AccountEndpointStateStore`.
 
 | # | Question | Status |
 |---|----------|--------|
-| 1 | Should the startup probe block driver creation or run in the background? The Python SDK runs it in a background daemon. Blocking gives better first-request guarantees but adds latency to client construction. | **Proposed: blocking** (matches user expectation that client is ready after construction) |
-| 2 | Should health checks be disabled for emulator mode? The emulator is single-region and always localhost. | **Proposed: yes** (skip when connection string is `"emulator"`) |
-| 3 | Should the health monitor also trigger an `AccountMetadataCache` refresh on sweep? The Python SDK re-fetches account properties alongside health checks. | **Proposed: yes** (piggyback on the `GetDatabaseAccount` response to refresh topology) |
+| 1 | Should the startup probe block driver creation or run in the background? The Python SDK runs it in a background daemon. Blocking gives better first-request guarantees but adds latency to client construction. | **Resolved: non-blocking.** Startup probe runs in the background. The reactive retry/failover path covers the window before the first sweep completes. |
+| 2 | Should health checks be disabled for emulator mode? The emulator is single-region and always localhost. | **Resolved: keep enabled.** Health checks run against the emulator too. This provides limited value (single-region, localhost) but avoids code-path divergence and lets emulator tests exercise the health check path. |
+| 3 | Should the health monitor also trigger an `AccountMetadataCache` refresh on sweep? The Python SDK re-fetches account properties alongside health checks. | **Open.** Leaning toward decoupled (health sweep only updates endpoint availability, metadata refresh stays on its own schedule) but subject to further discussion. |
 | 4 | What is the gateway health API contract? Need to coordinate with the gateway team for the `GatewayHealthProbe` implementation. | **Deferred** until API is available |
 | 5 | Should `HealthCheckOptions` be `pub` on `DriverOptions` or only exposed via builder? | **Proposed: both** (field on options + builder setter for ergonomics) |
