@@ -131,8 +131,11 @@ pub(crate) async fn execute_operation_pipeline(
                 // → next iteration
             }
             OperationAction::Abort { error, status } => {
-                if let Some((status_code, sub_status)) = status {
-                    diagnostics.set_operation_status(status_code, sub_status);
+                if let Some(cosmos_status) = status {
+                    diagnostics.set_operation_status(
+                        cosmos_status.status_code(),
+                        cosmos_status.sub_status(),
+                    );
                 }
                 return Err(error);
             }

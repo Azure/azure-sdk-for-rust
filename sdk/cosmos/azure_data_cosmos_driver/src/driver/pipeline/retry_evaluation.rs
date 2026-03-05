@@ -56,7 +56,7 @@ pub(crate) fn evaluate_transport_result(
 
             OperationAction::Abort {
                 error: build_http_error(&status),
-                status: Some((status.status_code(), status.sub_status())),
+                status: Some(status),
             }
         }
 

@@ -6,25 +6,12 @@
 //! This module determines whether a request was definitely sent on the wire before
 //! a transport error occurred. The information is used by retry safety gates.
 
-use crate::diagnostics::{RequestEvent, RequestEventType};
+use crate::diagnostics::{RequestEvent, RequestEventType, RequestSentStatus};
 use azure_core::http::{
     policies::{Policy, PolicyResult},
     Context, Request, Transport,
 };
 use std::sync::Arc;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum RequestSentStatus {
-    Sent,
-    NotSent,
-    Unknown,
-}
-
-impl RequestSentStatus {
-    pub(crate) fn definitely_not_sent(self) -> bool {
-        matches!(self, RequestSentStatus::NotSent)
-    }
-}
 
 /// Infers from the error whether the request was definitely sent, not sent, or unknown.
 pub(crate) fn infer_request_sent_status(error: &azure_core::Error) -> RequestSentStatus {

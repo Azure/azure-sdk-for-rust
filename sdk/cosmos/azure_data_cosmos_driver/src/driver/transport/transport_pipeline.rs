@@ -31,25 +31,14 @@ use crate::{
 };
 
 use super::{
-    generate_authorization, infer_request_sent_status, AuthorizationContext,
-    RequestSentStatus as TransportRequestSentStatus, COSMOS_API_VERSION,
+    generate_authorization, infer_request_sent_status, AuthorizationContext, COSMOS_API_VERSION,
 };
 
 use crate::driver::pipeline::components::{
     ThrottleAction, ThrottleRetryState, TransportOutcome, TransportRequest, TransportResult,
 };
 
-// Re-export for convenience within this module.
 use crate::diagnostics::RequestSentStatus;
-
-/// Maps transport-level `RequestSentStatus` to diagnostics-level `RequestSentStatus`.
-fn map_sent_status(status: TransportRequestSentStatus) -> RequestSentStatus {
-    match status {
-        TransportRequestSentStatus::Sent => RequestSentStatus::Sent,
-        TransportRequestSentStatus::NotSent => RequestSentStatus::NotSent,
-        TransportRequestSentStatus::Unknown => RequestSentStatus::Unknown,
-    }
-}
 
 // ── Header constants (same values as CosmosHeadersPolicy) ──────────────
 
@@ -242,8 +231,7 @@ pub(crate) async fn execute_transport_pipeline(
                 map_http_response(response, request_handle, diagnostics).await
             }
             Err(error) => {
-                let transport_sent_status = infer_request_sent_status(&error);
-                let sent_status = map_sent_status(transport_sent_status);
+                let sent_status = infer_request_sent_status(&error);
                 diagnostics.add_event(
                     request_handle,
                     RequestEvent::new(RequestEventType::TransportFailed)

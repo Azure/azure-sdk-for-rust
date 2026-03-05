@@ -9,7 +9,7 @@
 
 use std::time::{Duration, Instant};
 
-use azure_core::http::{headers::Headers, Method, StatusCode};
+use azure_core::http::{headers::Headers, Method};
 use url::Url;
 
 use crate::{
@@ -226,7 +226,7 @@ pub(crate) enum OperationAction {
     /// Abort the operation with this error.
     Abort {
         error: azure_core::Error,
-        status: Option<(StatusCode, Option<crate::models::SubStatusCode>)>,
+        status: Option<CosmosStatus>,
     },
 }
 

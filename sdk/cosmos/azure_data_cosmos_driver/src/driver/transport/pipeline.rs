@@ -48,10 +48,8 @@ impl CosmosPipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::diagnostics::RequestEvent;
-    use crate::driver::transport::tracked_transport::{
-        RequestAttemptTelemetrySink, RequestSentStatus,
-    };
+    use crate::diagnostics::{RequestEvent, RequestSentStatus};
+    use crate::driver::transport::tracked_transport::RequestAttemptTelemetrySink;
     use azure_core::http::{policies::PolicyResult, response::AsyncRawResponse, Method, Url};
     use std::sync::Mutex;
 
@@ -133,7 +131,7 @@ mod tests {
         let has_sent_status = telemetry
             .request_sent_status
             .lock()
-            .map(|status| status.is_some())
+            .map(|status: std::sync::MutexGuard<'_, Option<RequestSentStatus>>| status.is_some())
             .unwrap_or(false);
         assert!(has_sent_status);
 
