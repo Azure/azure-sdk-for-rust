@@ -389,6 +389,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_data_cosmos_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.116",
+]
+
+[[package]]
 name = "azure_data_cosmos_native"
 version = "0.27.0"
 dependencies = [
