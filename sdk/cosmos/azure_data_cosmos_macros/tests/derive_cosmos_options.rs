@@ -45,7 +45,7 @@ fn shadow_resolution_order() {
         custom_headers: None,
     };
 
-    let view = RequestOptionsView::new(env, runtime, account, operation);
+    let view = RequestOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
     // consistency_level: operation is None, so account wins ("Strong")
     assert_eq!(view.consistency_level(), Some(&"Strong".to_string()));
@@ -65,7 +65,7 @@ fn shadow_falls_through_to_env() {
     let account = Arc::new(RequestOptions::default());
     let operation = RequestOptions::default();
 
-    let view = RequestOptionsView::new(env, runtime, account, operation);
+    let view = RequestOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
     assert_eq!(view.consistency_level(), Some(&"Eventual".to_string()));
     assert_eq!(view.throughput_bucket(), None);
@@ -103,7 +103,7 @@ fn merge_combines_all_layers() {
         custom_headers: None,
     };
 
-    let view = RequestOptionsView::new(env, runtime, account, operation);
+    let view = RequestOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
     let merged = view.custom_headers();
 
     // env-key was overridden by account layer
@@ -182,9 +182,9 @@ fn two_layer_view_resolution() {
     };
 
     let view = ConnectionOptionsView::new(
-        Arc::new(ConnectionOptions::default()),
-        runtime.clone(),
-        account,
+        Some(Arc::new(ConnectionOptions::default())),
+        Some(runtime.clone()),
+        Some(&account),
     );
 
     // request_timeout: account is None, falls to runtime (30)
@@ -230,7 +230,7 @@ fn nested_resolution_delegates_correctly() {
         }),
     };
 
-    let view = ConnectionOptionsView::new(Arc::new(ConnectionOptions::default()), runtime, account);
+    let view = ConnectionOptionsView::new(Some(Arc::new(ConnectionOptions::default())), Some(runtime), Some(&account));
     let pool_view = view.pool();
 
     // max_connections: account has Some(200), wins
@@ -256,6 +256,101 @@ fn no_env_group_has_no_env_field_in_view() {
     });
     let account = RegionOptions::default();
 
-    let view = RegionOptionsView::new(runtime, account);
+    let view = RegionOptionsView::new(Some(runtime), Some(&account));
     assert_eq!(view.application_region(), Some(&"West US".to_string()));
+}
+
+// --- Tests with None layers ---
+
+#[test]
+fn shadow_skips_none_layers() {
+    // Only the runtime layer is provided; account and operation are None.
+    let runtime = Arc::new(RequestOptions {
+        consistency_level: Some("Session".to_string()),
+        throughput_bucket: Some(42),
+        custom_headers: None,
+    });
+
+    let view = RequestOptionsView::new(None, Some(runtime), None, None);
+
+    assert_eq!(view.consistency_level(), Some(&"Session".to_string()));
+    assert_eq!(view.throughput_bucket(), Some(&42));
+}
+
+#[test]
+fn all_none_layers_resolve_to_none() {
+    let view = RequestOptionsView::new(None, None, None, None);
+
+    assert_eq!(view.consistency_level(), None);
+    assert_eq!(view.throughput_bucket(), None);
+}
+
+#[test]
+fn merge_skips_none_layers() {
+    // Only env and operation layers provided; runtime and account are None.
+    let env = Arc::new(RequestOptions {
+        consistency_level: None,
+        throughput_bucket: None,
+        custom_headers: Some(HashMap::from([(
+            "env-key".to_string(),
+            "env-val".to_string(),
+        )])),
+    });
+    let operation = RequestOptions {
+        consistency_level: None,
+        throughput_bucket: None,
+        custom_headers: Some(HashMap::from([(
+            "op-key".to_string(),
+            "op-val".to_string(),
+        )])),
+    };
+
+    let view = RequestOptionsView::new(Some(env), None, None, Some(&operation));
+    let merged = view.custom_headers();
+
+    assert_eq!(merged.len(), 2);
+    assert_eq!(merged.get("env-key"), Some(&"env-val".to_string()));
+    assert_eq!(merged.get("op-key"), Some(&"op-val".to_string()));
+}
+
+#[test]
+fn nested_with_none_bottom_layer() {
+    // Runtime has pool settings, but the bottom layer is None entirely.
+    let runtime = Arc::new(ConnectionOptions {
+        request_timeout: Some(30),
+        pool: Some(PoolOptions {
+            max_connections: Some(50),
+            idle_timeout: Some(120),
+        }),
+    });
+
+    let view = ConnectionOptionsView::new(None, Some(runtime), None);
+
+    assert_eq!(view.request_timeout(), Some(&30));
+
+    let pool_view = view.pool();
+    assert_eq!(pool_view.max_connections(), Some(&50));
+    assert_eq!(pool_view.idle_timeout(), Some(&120));
+}
+
+#[test]
+fn nested_with_none_nested_field() {
+    // Both layers present, but neither has the nested pool field set.
+    let runtime = Arc::new(ConnectionOptions {
+        request_timeout: Some(10),
+        pool: None,
+    });
+    let account = ConnectionOptions {
+        request_timeout: None,
+        pool: None,
+    };
+
+    let view = ConnectionOptionsView::new(None, Some(runtime), Some(&account));
+
+    assert_eq!(view.request_timeout(), Some(&10));
+
+    // Pool view gets None for all layers — every accessor returns None.
+    let pool_view = view.pool();
+    assert_eq!(pool_view.max_connections(), None);
+    assert_eq!(pool_view.idle_timeout(), None);
 }
