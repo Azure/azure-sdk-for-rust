@@ -305,19 +305,23 @@ impl CosmosDriverRuntime {
         }
 
         // Create new driver (write lock)
-        let mut registry = self.driver_registry.write().unwrap();
+        let driver = {
+            let mut registry = self.driver_registry.write().unwrap();
 
-        // Double-check after acquiring write lock
-        if let Some(driver) = registry.get(&key) {
-            return Ok(driver.clone());
-        }
+            // Double-check after acquiring write lock
+            if let Some(driver) = registry.get(&key) {
+                return Ok(driver.clone());
+            }
 
-        // Build driver options if not provided
-        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+            // Build driver options if not provided
+            let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
 
-        let driver = Arc::new(CosmosDriver::new(self.clone(), options));
+            let driver = Arc::new(CosmosDriver::new(self.clone(), options));
+            registry.insert(key, driver.clone());
+            driver
+        };
+
         driver.initialize().await?;
-        registry.insert(key, driver.clone());
 
         Ok(driver)
     }
