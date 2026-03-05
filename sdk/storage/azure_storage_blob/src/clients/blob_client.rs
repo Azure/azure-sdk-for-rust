@@ -22,7 +22,8 @@ use azure_core::{
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, UrlExt,
+        AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url,
+        UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -266,7 +267,7 @@ impl BlobClient {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {
-            options.if_none_match = Some(String::from("*"));
+            options.if_none_match = Some(Etag::from("*"));
         }
 
         self.block_blob_client()

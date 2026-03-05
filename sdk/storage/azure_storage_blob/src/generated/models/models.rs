@@ -632,7 +632,7 @@ pub struct ClearRange {
 pub struct ContainerItem {
     /// Whether the container is deleted.
     #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
-    pub delete: Option<bool>,
+    pub deleted: Option<bool>,
 
     /// The metadata of the container.
     #[serde(rename = "Metadata", skip_serializing_if = "Option::is_none")]

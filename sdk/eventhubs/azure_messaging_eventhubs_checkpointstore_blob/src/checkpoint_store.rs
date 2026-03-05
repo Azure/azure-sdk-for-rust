@@ -112,7 +112,7 @@ impl BlobCheckpointStore {
                 metadata, blob_name, etag
             );
             let options = BlobClientSetMetadataOptions {
-                if_match: etag.map(|e| e.to_string()),
+                if_match: etag,
                 ..Default::default()
             };
             let metadata_ref = metadata.unwrap_or_default();
@@ -129,7 +129,7 @@ impl BlobCheckpointStore {
         let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
         let options = BlockBlobClientUploadOptions {
             metadata: metadata.clone(),
-            if_none_match: Some("*".to_string()), // Upload without an etag, creating a new blob
+            if_none_match: Some(Etag::from("*")), // Upload without an etag, creating a new blob
             ..Default::default()
         };
 
