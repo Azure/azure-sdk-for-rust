@@ -14,12 +14,14 @@ use crate::{
         ThroughputControlGroupSnapshot,
     },
 };
-use azure_core::http::{Context, Request};
+use azure_core::http::Request;
 use std::sync::Arc;
 
 use super::{
     cache::AccountRegion,
-    transport::{is_emulator_host, uses_dataplane_pipeline, AuthorizationContext},
+    transport::{
+        is_emulator_host, transport_pipeline, uses_dataplane_pipeline, AuthorizationContext,
+    },
     CosmosDriverRuntime,
 };
 
@@ -71,19 +73,25 @@ impl CosmosDriver {
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let transport = self.runtime.transport();
-        let pipeline = transport.create_metadata_pipeline(&endpoint, account.auth());
-        let auth_context = AuthorizationContext::new(
-            azure_core::http::Method::Get,
-            crate::models::ResourceType::DatabaseAccount,
-            "",
-        );
+        let http_client = transport.get_metadata_http_client(&endpoint);
+        let user_agent = self.runtime.user_agent().as_str();
 
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
-        let mut context = Context::default();
-        context.insert(auth_context);
+        transport_pipeline::apply_cosmos_headers(&mut request, user_agent);
+        transport_pipeline::sign_request(
+            &mut request,
+            account.auth(),
+            &AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                crate::models::ResourceType::DatabaseAccount,
+                "",
+            ),
+        )
+        .await?;
 
-        let response = pipeline.send(&context, &mut request).await?;
-        Self::parse_account_properties_payload(response.into_body().as_ref())
+        let response = http_client.execute_request(&request).await?;
+        let raw = response.try_into_raw_response().await?;
+        Self::parse_account_properties_payload(raw.body())
     }
 
     async fn fetch_container_by_name(
