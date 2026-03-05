@@ -12,6 +12,8 @@
 //!
 //! Step 2 will expand this with failover, session retry, and location effects.
 
+use azure_core::http::headers::Headers;
+
 use crate::models::{CosmosOperation, CosmosStatus, SubStatusCode};
 
 use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
@@ -30,8 +32,9 @@ pub(crate) fn evaluate_transport_result(
 
         TransportOutcome::HttpError {
             status,
+            headers,
+            body,
             request_sent,
-            ..
         } => {
             // In Step 1, all HTTP errors (non-429) are propagated as abort.
             // 429 is already handled by the transport pipeline's throttle retry.
@@ -55,7 +58,7 @@ pub(crate) fn evaluate_transport_result(
             }
 
             OperationAction::Abort {
-                error: build_http_error(&status),
+                error: build_http_error(&status, headers, body),
                 status: Some(status),
             }
         }
@@ -82,7 +85,11 @@ pub(crate) fn evaluate_transport_result(
 }
 
 /// Builds an `azure_core::Error` from a Cosmos HTTP error status.
-fn build_http_error(status: &CosmosStatus) -> azure_core::Error {
+///
+/// Attaches the response body and headers as a `raw_response` so callers
+/// can match on `ErrorKind::HttpResponse { raw_response: Some(_), .. }`
+/// and inspect the service error payload.
+fn build_http_error(status: &CosmosStatus, headers: &Headers, body: &[u8]) -> azure_core::Error {
     let status_code = status.status_code();
     let name = status.name().unwrap_or("Unknown");
     let sub_status_str = match status.sub_status() {
@@ -100,11 +107,14 @@ fn build_http_error(status: &CosmosStatus) -> azure_core::Error {
         .sub_status()
         .map(|s: SubStatusCode| s.value().to_string());
 
+    let raw_response =
+        azure_core::http::RawResponse::from_bytes(status_code, headers.clone(), body.to_vec());
+
     azure_core::Error::new(
         azure_core::error::ErrorKind::HttpResponse {
             status: status_code,
             error_code,
-            raw_response: None,
+            raw_response: Some(Box::new(raw_response)),
         },
         message,
     )

@@ -20,7 +20,8 @@ use std::sync::Arc;
 use super::{
     cache::AccountRegion,
     transport::{
-        is_emulator_host, transport_pipeline, uses_dataplane_pipeline, AuthorizationContext,
+        cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
+        AuthorizationContext,
     },
     CosmosDriverRuntime,
 };
@@ -77,8 +78,8 @@ impl CosmosDriver {
         let user_agent = self.runtime.user_agent().as_str();
 
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
-        transport_pipeline::apply_cosmos_headers(&mut request, user_agent);
-        transport_pipeline::sign_request(
+        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+        request_signing::sign_request(
             &mut request,
             account.auth(),
             &AuthorizationContext::new(

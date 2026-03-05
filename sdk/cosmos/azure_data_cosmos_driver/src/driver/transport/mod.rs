@@ -14,9 +14,11 @@
 //!   with certificate validation disabled.
 
 mod authorization_policy;
+pub(crate) mod cosmos_headers;
 mod emulator;
 mod headers_policy;
 mod pipeline;
+pub(crate) mod request_signing;
 mod tracked_transport;
 pub(crate) mod transport_pipeline;
 

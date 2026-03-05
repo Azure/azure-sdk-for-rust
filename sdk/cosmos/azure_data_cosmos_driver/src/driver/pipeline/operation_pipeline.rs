@@ -39,6 +39,11 @@ use crate::driver::transport::{
 ///
 /// This is the entry point called by `CosmosDriver::execute_operation`.
 /// It orchestrates the 7-stage operation loop described in the spec.
+///
+/// NOTE: The parameter count is intentionally high for Step 1. Step 2
+/// introduces `LocationStateStore` and `AdaptiveTransport` which bundle
+/// several of these parameters into higher-level abstractions, naturally
+/// reducing the count to ~6 parameters.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,

@@ -1,98 +1,37 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Transport pipeline: bare functions for executing a single HTTP attempt.
+//! Transport pipeline: the core loop for executing a single HTTP attempt.
 //!
-//! This replaces the policy chain (`HeadersPolicy` → `AuthorizationPolicy` →
-//! `TrackedTransportPolicy`) with direct function calls. The pipeline handles:
+//! Header application and request signing live in their own modules:
+//! - [`super::cosmos_headers`] — `apply_cosmos_headers`
+//! - [`super::request_signing`] — `sign_request`
 //!
-//! - Applying standard Cosmos headers (`x-ms-version`, `Content-Type`, etc.)
-//! - Generating and attaching the authorization header
-//! - 429 throttle retry with exponential backoff
-//! - Request-sent-status tracking for retry safety
-//! - Per-attempt diagnostics event recording
-//! - End-to-end deadline enforcement
+//! This module handles the transport-level retry loop (429 throttling),
+//! request-sent-status tracking, per-attempt diagnostics, and deadline
+//! enforcement.
 
 use std::time::Instant;
 
-use azure_core::http::{
-    headers::{HeaderName, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
-    Request,
-};
-use azure_core::time::{self, OffsetDateTime};
+use azure_core::http::Request;
 use tracing::trace;
 
 use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestEvent, RequestEventType,
-        RequestHandle, TransportSecurity,
+        RequestHandle, RequestSentStatus, TransportSecurity,
     },
     models::{CosmosResponseHeaders, CosmosStatus, Credential},
 };
 
 use super::{
-    generate_authorization, infer_request_sent_status, AuthorizationContext, COSMOS_API_VERSION,
+    cosmos_headers::apply_cosmos_headers, infer_request_sent_status, request_signing::sign_request,
+    AuthorizationContext,
 };
 
 use crate::driver::pipeline::components::{
     ThrottleAction, ThrottleRetryState, TransportOutcome, TransportRequest, TransportResult,
 };
-
-use crate::diagnostics::RequestSentStatus;
-
-// ── Header constants (same values as CosmosHeadersPolicy) ──────────────
-
-const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
-const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
-const SDK_SUPPORTED_CAPABILITIES: HeaderName =
-    HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");
-const SUPPORTED_CAPABILITIES_VALUE: &str = "0";
-const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
-const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
-const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
-
-// ── Bare functions ─────────────────────────────────────────────────────
-
-/// Applies standard Cosmos DB headers to an outgoing HTTP request.
-///
-/// Sets `x-ms-version`, `x-ms-cosmos-sdk-supportedcapabilities`, `Content-Type`,
-/// `Accept`, `Cache-Control`, and `User-Agent`.
-pub(crate) fn apply_cosmos_headers(request: &mut Request, user_agent: &str) {
-    let headers = request.headers_mut();
-
-    headers.insert(VERSION, HeaderValue::from_static(COSMOS_API_VERSION));
-    headers.insert(
-        SDK_SUPPORTED_CAPABILITIES,
-        HeaderValue::from_static(SUPPORTED_CAPABILITIES_VALUE),
-    );
-
-    if headers.get_optional_str(&CONTENT_TYPE).is_none() {
-        headers.insert(CONTENT_TYPE, APPLICATION_JSON.clone());
-    }
-
-    headers.insert(ACCEPT, APPLICATION_JSON.clone());
-    headers.insert(CACHE_CONTROL, NO_CACHE.clone());
-    headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
-}
-
-/// Generates and attaches the Authorization header to an HTTP request.
-///
-/// Computes the HMAC-SHA256 signature (master key) or obtains an AAD token,
-/// then sets both `x-ms-date` and `Authorization` headers.
-pub(crate) async fn sign_request(
-    request: &mut Request,
-    credential: &Credential,
-    auth_context: &AuthorizationContext,
-) -> azure_core::Result<()> {
-    let date_string = time::to_rfc7231(&OffsetDateTime::now_utc()).to_lowercase();
-
-    let auth = generate_authorization(credential, auth_context, &date_string).await?;
-
-    request.insert_header(MS_DATE, HeaderValue::from(date_string));
-    request.insert_header(AUTHORIZATION, HeaderValue::from(auth));
-
-    Ok(())
-}
 
 /// Decides whether to retry a 429 throttling response at the transport level.
 ///
