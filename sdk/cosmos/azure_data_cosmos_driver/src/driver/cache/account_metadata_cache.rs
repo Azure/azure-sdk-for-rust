@@ -257,17 +257,20 @@ impl AccountMetadataCache {
         // Fetch from the service – propagate errors without caching them.
         let properties = fetch_fn().await?;
 
-        // Record the fetch time.
+        // Cache the successfully fetched properties.
+        let result = self
+            .cache
+            .get_or_insert_with(endpoint.clone(), || async { properties })
+            .await;
+
+        // Record the fetch time after caching, so a concurrent loser
+        // does not reset the staleness clock with a discarded fetch.
         {
             let mut timestamps = self.last_refresh.write().await;
-            timestamps.insert(endpoint.clone(), Instant::now());
+            timestamps.insert(endpoint, Instant::now());
         }
 
-        // Cache the successfully fetched properties.
-        Ok(self
-            .cache
-            .get_or_insert_with(endpoint, || async { properties })
-            .await)
+        Ok(result)
     }
 
     /// Refreshes account properties if they are stale.
@@ -276,20 +279,20 @@ impl AccountMetadataCache {
     /// ago (default 10 minutes, matching the SDK's background refresh interval),
     /// or there is no cached value for the endpoint.
     ///
-    /// When the entry is considered stale, this method always attempts to
-    /// refresh it using `fetch_fn`. It returns the (possibly refreshed)
-    /// account properties if a cached value exists, or `None` only when there
-    /// is currently no cached value and the entry is not considered stale
-    /// (so no refresh is performed for that call).
-    #[allow(dead_code)] // Consumer coming once Driver is used
+    /// When the entry is considered stale, this method attempts to refresh it
+    /// using `fetch_fn`. If the fetch fails, the error is propagated and the
+    /// existing cached value (if any) is preserved. Returns the (possibly
+    /// refreshed) account properties, or `None` only when there is no cached
+    /// value and the entry is not considered stale.
+    #[allow(dead_code)] // Consumer coming in cutover
     pub(crate) async fn refresh_if_stale<F, Fut>(
         &self,
         endpoint: AccountEndpoint,
         fetch_fn: F,
-    ) -> Option<Arc<AccountProperties>>
+    ) -> azure_core::Result<Option<Arc<AccountProperties>>>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = AccountProperties>,
+        Fut: std::future::Future<Output = azure_core::Result<AccountProperties>>,
     {
         // Look up the current cached value first so that staleness also reflects
         // whether there is any data stored for this endpoint.
@@ -309,8 +312,21 @@ impl AccountMetadataCache {
 
         if !is_stale {
             // Not stale — return the current cached value.
-            return cached;
+            return Ok(cached);
         }
+
+        // Fetch outside the cache primitive so we can handle errors.
+        let properties = match fetch_fn().await {
+            Ok(props) => props,
+            Err(e) => {
+                // On fetch failure, return the existing cached value (if any)
+                // so stale data is preferred over no data.
+                if cached.is_some() {
+                    return Ok(cached);
+                }
+                return Err(e);
+            }
+        };
 
         let endpoint_for_timestamp = endpoint.clone();
 
@@ -319,7 +335,7 @@ impl AccountMetadataCache {
             .get_or_refresh_with(
                 endpoint,
                 |_existing| true, // We already determined staleness above
-                fetch_fn,
+                || async { properties },
             )
             .await;
 
@@ -329,7 +345,7 @@ impl AccountMetadataCache {
             timestamps.insert(endpoint_for_timestamp, Instant::now());
         }
 
-        result
+        Ok(result)
     }
 }
 
@@ -560,9 +576,10 @@ mod tests {
         let result = cache
             .refresh_if_stale(endpoint, || async move {
                 counter_clone.fetch_add(1, Ordering::SeqCst);
-                test_properties("eastus")
+                Ok(test_properties("eastus"))
             })
-            .await;
+            .await
+            .unwrap();
 
         // Should return the cached value without calling the factory
         assert!(result.is_some());
@@ -588,8 +605,9 @@ mod tests {
 
         // With zero threshold, the data should be considered stale immediately
         let result = cache
-            .refresh_if_stale(endpoint, || async { test_properties("eastus") })
-            .await;
+            .refresh_if_stale(endpoint, || async { Ok(test_properties("eastus")) })
+            .await
+            .unwrap();
 
         assert!(result.is_some());
         assert_eq!(result.unwrap().write_region().unwrap().as_str(), "eastus");

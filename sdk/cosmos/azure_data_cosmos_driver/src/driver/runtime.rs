@@ -305,7 +305,7 @@ impl CosmosDriverRuntime {
         }
 
         // Create new driver (write lock)
-        let (driver, key_for_rollback) = {
+        let driver = {
             let mut registry = self.driver_registry.write().unwrap();
 
             // Double-check after acquiring write lock
@@ -318,14 +318,18 @@ impl CosmosDriverRuntime {
 
             let driver = Arc::new(CosmosDriver::new(self.clone(), options));
             registry.insert(key.clone(), driver.clone());
-            (driver, key)
+            driver
         };
 
+        // Best-effort initialization: prime the account metadata cache.
+        // On failure, log a warning and return the driver with cold caches
+        // so that a transient error doesn't block driver creation.
         if let Err(e) = driver.initialize().await {
-            // Roll back: remove the driver so the next call retries creation.
-            let mut registry = self.driver_registry.write().unwrap();
-            registry.remove(&key_for_rollback);
-            return Err(e);
+            tracing::warn!(
+                endpoint = %key,
+                error = %e,
+                "Driver initialization failed; caches will be populated lazily on first operation"
+            );
         }
 
         Ok(driver)
