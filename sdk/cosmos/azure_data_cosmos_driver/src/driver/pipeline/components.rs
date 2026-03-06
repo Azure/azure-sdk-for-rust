@@ -14,11 +14,10 @@ use url::Url;
 
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
+    driver::transport::AuthorizationContext,
     models::CosmosStatus,
     options::Region,
 };
-
-use super::super::transport::AuthorizationContext;
 
 // ── Operation-Level Components ─────────────────────────────────────────
 

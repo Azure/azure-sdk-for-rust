@@ -414,6 +414,7 @@ impl CosmosDriver {
         )
         .await
     }
+
     /// Resolves a container by database and container name.
     ///
     /// Reads the database and container from the service to obtain their

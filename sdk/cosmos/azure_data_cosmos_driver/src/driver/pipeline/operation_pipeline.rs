@@ -10,7 +10,7 @@
 use std::sync::Arc;
 use std::time::Instant;
 
-use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::HttpClient;
 
 use crate::{
@@ -202,7 +202,6 @@ fn build_transport_request(
 
     // Add partition key headers
     if let Some(pk) = operation.partition_key() {
-        use azure_core::http::headers::AsHeaders;
         let pk_headers = pk.as_headers()?;
         for (name, value) in pk_headers {
             headers.insert(name, value);

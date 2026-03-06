@@ -271,7 +271,8 @@ async fn map_http_response(
 
     // Read the body by converting to a raw response.
     // If conversion fails, this is a transport failure (truncated/invalid response stream),
-    // not a successful HTTP response with an empty payload.
+    // not a successful HTTP response with an empty payload. The request was
+    // definitely sent — we already received the status code and headers.
     let body = match response.try_into_raw_response().await {
         Ok(raw) => raw.body().to_vec(),
         Err(error) => {
@@ -283,12 +284,12 @@ async fn map_http_response(
             diagnostics.fail_request(
                 request_handle,
                 error.to_string(),
-                RequestSentStatus::Unknown,
+                RequestSentStatus::Sent,
             );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
                     error,
-                    request_sent: RequestSentStatus::Unknown,
+                    request_sent: RequestSentStatus::Sent,
                 },
             };
         }
