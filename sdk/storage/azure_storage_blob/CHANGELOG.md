@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Changed `if_match`, `if_none_match`, `source_if_match`, and `source_if_none_match` fields in all method option structs from `Option<String>` to `Option<Etag>`.
+- Changed `BlobProperties::etag` and `ContainerProperties::etag` from `Option<String>` to `Option<Etag>`.
 - Renamed `ContainerItem.delete` to `ContainerItem.deleted`.
 - Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
 - Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.

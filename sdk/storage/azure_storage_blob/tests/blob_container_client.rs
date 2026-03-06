@@ -127,10 +127,10 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         let blob_name = blob.name.unwrap();
         let properties = blob.properties.unwrap();
         let blob_type = properties.blob_type.unwrap();
-        let etag = properties.etag;
+        let etag = properties.etag.expect("etag should be present in list blobs response");
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
-        assert!(etag.is_some());
+        assert!(!etag.as_ref().is_empty());
     }
 
     container_client.delete(None).await?;
