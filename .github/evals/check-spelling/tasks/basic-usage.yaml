@@ -1,0 +1,21 @@
+id: basic-usage-001
+name: Basic Usage
+description: |
+  Test that the skill handles a typical request correctly.
+tags:
+  - basic
+  - happy-path
+inputs:
+  prompt: "Check and correct spelling mistakes in the project source files using cSpell."
+  files:
+    - path: sample.rs
+      content: |
+        // This is a smaple file with a speling mistake.
+        fn main() {
+            println!("Hello, world!");
+        }
+expected:
+  output_contains:
+    - "function"
+  outcomes:
+    - type: task_completed

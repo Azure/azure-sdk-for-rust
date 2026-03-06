@@ -24,6 +24,8 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     // Due to the significant performance impact when disabling connection pooling,
     // it is enabled here by default. See the `azure_core` troubleshooting guide to disable pooling.
     let client = ::reqwest::ClientBuilder::new()
+        .redirect(::reqwest::redirect::Policy::none())
+        .retry(reqwest::retry::never())
         .build()
         .expect("failed to build `reqwest` client");
 
