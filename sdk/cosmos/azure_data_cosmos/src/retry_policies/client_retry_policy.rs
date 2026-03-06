@@ -527,10 +527,9 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::Forbidden
             && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
-            if self
-                .partition_key_range_location_cache
-                .partition_level_failover_enabled()
-                && self.request.is_some()
+            if self.request.is_some()
+                && (self.is_request_eligible_for_per_partition_automatic_failover()
+                    || self.is_request_eligible_for_partition_level_circuit_breaker())
                 && self
                     .partition_key_range_location_cache
                     .try_mark_endpoint_unavailable_for_partition_key_range(
@@ -542,7 +541,6 @@ impl ClientRetryPolicy {
                 });
             }
 
-            // automatic failover support needed to be plugged in here.
             return Some(
                 self.should_retry_on_endpoint_failure(false, false, true, false, false)
                     .await,
