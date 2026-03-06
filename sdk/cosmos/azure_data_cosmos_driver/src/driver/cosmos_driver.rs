@@ -331,7 +331,9 @@ impl CosmosDriver {
         // Step 1: Derive effective runtime options
         let effective_options = self.effective_runtime_options(&options);
 
-        // Step 2: Get effective throughput control group (if any)
+        // Step 2: Resolve effective throughput control group (if any).
+        // Step 1 transport pipeline does not consume this yet.
+        // TODO(Step 2): wire resolved throughput control into operation/transport execution.
         let _effective_control_group = operation.container().and_then(|container| {
             self.effective_throughput_control_group(&effective_options, container)
         });

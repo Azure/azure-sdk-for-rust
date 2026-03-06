@@ -51,7 +51,9 @@ impl OperationRetryState {
     pub fn initial() -> Self {
         Self {
             transport_retry_count: 0,
-            // Step 1: 1 retry (same as current execute_operation behavior)
+            // Step 1 keeps the historical single transport retry behavior.
+            // TODO(Step 2): source this from runtime/retry options once failover
+            // and richer operation-level retry controls are wired.
             max_transport_retries: 1,
         }
     }

@@ -176,7 +176,9 @@ impl CosmosTransport {
         }
     }
 
-    // TODO @fabianm: allow the caller to provide a client factory instead of hard-coding reqwest.
+    // Step 1 intentionally uses reqwest as the concrete transport implementation.
+    // TODO(Step 2): introduce an HttpClientFactory abstraction so callers can
+    // provide non-reqwest HttpClient implementations without changing driver code.
     /// Creates a reqwest client with the appropriate settings.
     ///
     /// # Arguments

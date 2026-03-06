@@ -111,15 +111,7 @@ pub(crate) async fn execute_transport_pipeline(
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
                 trace!("transport pipeline: deadline exceeded before attempt");
-                return TransportResult {
-                    outcome: TransportOutcome::TransportError {
-                        error: azure_core::Error::new(
-                            azure_core::error::ErrorKind::Other,
-                            "end-to-end operation timeout exceeded",
-                        ),
-                        request_sent: RequestSentStatus::NotSent,
-                    },
-                };
+                return deadline_exceeded_result();
             }
         }
 
@@ -208,16 +200,55 @@ pub(crate) async fn execute_transport_pipeline(
         let action = evaluate_transport_retry(&result, &throttle_state);
         match action {
             ThrottleAction::Retry { delay, new_state } => {
+                // Never sleep past the end-to-end deadline. If there is no remaining
+                // budget, fail fast instead of delaying.
+                let mut effective_delay = delay;
+                if let Some(deadline) = request.deadline {
+                    let now = Instant::now();
+                    if now >= deadline {
+                        return deadline_exceeded_result();
+                    }
+
+                    let remaining = deadline.saturating_duration_since(now);
+                    if remaining.is_zero() {
+                        return deadline_exceeded_result();
+                    }
+                    effective_delay = effective_delay.min(remaining);
+                }
+
+                if effective_delay.is_zero() {
+                    return deadline_exceeded_result();
+                }
+
                 azure_core::sleep(
-                    azure_core::time::Duration::try_from(delay)
+                    azure_core::time::Duration::try_from(effective_delay)
                         .unwrap_or(azure_core::time::Duration::ZERO),
                 )
                 .await;
+
+                if let Some(deadline) = request.deadline {
+                    if Instant::now() >= deadline {
+                        return deadline_exceeded_result();
+                    }
+                }
+
                 throttle_state = new_state;
                 continue;
             }
             ThrottleAction::Propagate => return result,
         }
+    }
+}
+
+fn deadline_exceeded_result() -> TransportResult {
+    TransportResult {
+        outcome: TransportOutcome::TransportError {
+            error: azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                "end-to-end operation timeout exceeded",
+            ),
+            request_sent: RequestSentStatus::NotSent,
+        },
     }
 }
 
@@ -258,7 +289,11 @@ async fn map_http_response(
                 RequestEvent::new(RequestEventType::TransportFailed)
                     .with_details(error.to_string()),
             );
-            diagnostics.fail_request(request_handle, error.to_string(), RequestSentStatus::Unknown);
+            diagnostics.fail_request(
+                request_handle,
+                error.to_string(),
+                RequestSentStatus::Unknown,
+            );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
                     error,
