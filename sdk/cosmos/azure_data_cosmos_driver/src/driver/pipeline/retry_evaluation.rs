@@ -27,8 +27,15 @@ pub(crate) fn evaluate_transport_result(
     result: TransportResult,
     retry_state: &OperationRetryState,
 ) -> OperationAction {
-    match &result.outcome {
-        TransportOutcome::Success { .. } => OperationAction::Complete(result),
+    // Happy path: return the whole TransportResult without destructuring.
+    if matches!(&result.outcome, TransportOutcome::Success { .. }) {
+        return OperationAction::Complete(result);
+    }
+
+    // Error paths: destructure the owned outcome to move error values out
+    // without losing the error source chain.
+    match result.outcome {
+        TransportOutcome::Success { .. } => unreachable!("handled above"),
 
         TransportOutcome::HttpError {
             status,
@@ -39,26 +46,15 @@ pub(crate) fn evaluate_transport_result(
             // In Step 1, all HTTP errors (non-429) are propagated as abort.
             // 429 is already handled by the transport pipeline's throttle retry.
             // Step 2 will add handling for 403/3, 503, 404/1002, etc.
-            let status = *status;
-            let request_sent = *request_sent;
-
-            // If it's a non-success HTTP response and the request wasn't sent
-            // (or is idempotent), we could retry. But in Step 1, HTTP errors
-            // (other than 429, already handled) are not retried at the operation
-            // level — that comes in Step 2 with failover.
-            //
-            // However, we do allow transport-level retry for transport errors
-            // that surface as HTTP errors in some edge cases.
             if retry_state.can_retry_transport()
                 && (request_sent.definitely_not_sent() || operation.is_idempotent())
             {
-                // For Step 1, only retry on clearly transient errors.
-                // Most HTTP errors need operation-level handling (Step 2).
-                // Don't retry HTTP errors at transport level in Step 1.
+                // TODO(Step 2): retry on transient HTTP errors (403/3, 503,
+                // 404/1002, 429/3092, 500-for-reads) with failover.
             }
 
             OperationAction::Abort {
-                error: build_http_error(&status, headers, body),
+                error: build_http_error(&status, &headers, &body),
                 status: Some(status),
             }
         }
@@ -67,7 +63,6 @@ pub(crate) fn evaluate_transport_result(
             error,
             request_sent,
         } => {
-            let request_sent = *request_sent;
             let is_safe_to_retry = request_sent.definitely_not_sent() || operation.is_idempotent();
 
             if is_safe_to_retry && retry_state.can_retry_transport() {
@@ -76,7 +71,7 @@ pub(crate) fn evaluate_transport_result(
                 }
             } else {
                 OperationAction::Abort {
-                    error: azure_core::Error::new(error.kind().clone(), error.to_string()),
+                    error,
                     status: None,
                 }
             }
