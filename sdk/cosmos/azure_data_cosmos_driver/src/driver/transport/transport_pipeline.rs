@@ -36,6 +36,15 @@ use crate::driver::pipeline::components::{
 const RETRY_AFTER_MS: azure_core::http::headers::HeaderName =
     azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms");
 
+/// Keep a small budget before the e2e deadline so we still have time
+/// to send one final attempt.
+const DEADLINE_RETRY_SAFETY_MARGIN: Duration = Duration::from_millis(100);
+
+fn deadline_capped_delay(requested_delay: Duration, remaining: Duration) -> Duration {
+    let budget_for_delay = remaining.saturating_sub(DEADLINE_RETRY_SAFETY_MARGIN);
+    requested_delay.min(budget_for_delay)
+}
+
 /// Decides whether to retry a 429 throttling response at the transport level.
 ///
 /// Honors the service-specified `x-ms-retry-after-ms` header when present.
@@ -105,6 +114,7 @@ pub(crate) async fn execute_transport_pipeline(
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new();
+    let mut forced_final_throttle_retry = false;
 
     loop {
         // Check deadline before each attempt
@@ -208,7 +218,10 @@ pub(crate) async fn execute_transport_pipeline(
                     if remaining.is_zero() {
                         return deadline_exceeded_result(RequestSentStatus::Sent);
                     }
-                    effective_delay = effective_delay.min(remaining);
+
+                    // Never consume the entire remaining budget with delay;
+                    // keep a small margin for one final request attempt.
+                    effective_delay = deadline_capped_delay(effective_delay, remaining);
                 }
 
                 azure_core::sleep(
@@ -226,21 +239,42 @@ pub(crate) async fn execute_transport_pipeline(
                 throttle_state = new_state;
                 continue;
             }
-            ThrottleAction::Propagate => return result,
+            ThrottleAction::Propagate => {
+                let is_throttled = matches!(
+                    &result.outcome,
+                    TransportOutcome::HttpError { status, .. } if status.is_throttled()
+                );
+
+                if !forced_final_throttle_retry && is_throttled {
+                    if let Some(deadline) = request.deadline {
+                        let remaining = deadline.saturating_duration_since(Instant::now());
+                        if !remaining.is_zero() {
+                            // One extra deadline-bounded retry attempt after throttle budget is
+                            // exhausted. Leave a small safety margin before e2e timeout.
+                            let final_delay = deadline_capped_delay(remaining, remaining);
+
+                            if !final_delay.is_zero() {
+                                azure_core::sleep(
+                                    azure_core::time::Duration::try_from(final_delay)
+                                        .unwrap_or(azure_core::time::Duration::ZERO),
+                                )
+                                .await;
+                            }
+
+                            forced_final_throttle_retry = true;
+                            continue;
+                        }
+                    }
+                }
+
+                return result;
+            }
         }
     }
 }
 
 fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult {
-    TransportResult {
-        outcome: TransportOutcome::TransportError {
-            error: azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                "end-to-end operation timeout exceeded",
-            ),
-            request_sent,
-        },
-    }
+    TransportResult::deadline_exceeded(request_sent)
 }
 
 /// Maps an HTTP response to a `TransportResult`.
@@ -291,28 +325,8 @@ async fn map_http_response(
         }
     };
 
-    if cosmos_status.is_success() {
-        diagnostics.complete_request(request_handle, status_code, sub_status);
-
-        TransportResult {
-            outcome: TransportOutcome::Success {
-                status: cosmos_status,
-                headers,
-                body,
-            },
-        }
-    } else {
-        diagnostics.complete_request(request_handle, status_code, sub_status);
-
-        TransportResult {
-            outcome: TransportOutcome::HttpError {
-                status: cosmos_status,
-                headers,
-                body,
-                request_sent: RequestSentStatus::Sent,
-            },
-        }
-    }
+    diagnostics.complete_request(request_handle, status_code, sub_status);
+    TransportResult::from_http_response(cosmos_status, headers, body)
 }
 
 #[cfg(test)]
@@ -437,5 +451,23 @@ mod tests {
             evaluate_transport_retry(&result, &state),
             ThrottleAction::Propagate
         ));
+    }
+
+    #[test]
+    fn deadline_capped_delay_uses_max_zero_when_remaining_below_margin() {
+        let requested = Duration::from_millis(500);
+        let remaining = Duration::from_millis(50);
+
+        let capped = deadline_capped_delay(requested, remaining);
+        assert_eq!(capped, Duration::ZERO);
+    }
+
+    #[test]
+    fn deadline_capped_delay_caps_to_remaining_minus_margin() {
+        let requested = Duration::from_secs(5);
+        let remaining = Duration::from_millis(250);
+
+        let capped = deadline_capped_delay(requested, remaining);
+        assert_eq!(capped, Duration::from_millis(150));
     }
 }

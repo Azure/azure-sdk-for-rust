@@ -176,6 +176,44 @@ pub(crate) struct TransportResult {
 }
 
 impl TransportResult {
+    /// Creates a timeout result when the end-to-end operation deadline is exceeded.
+    pub fn deadline_exceeded(request_sent: RequestSentStatus) -> Self {
+        Self {
+            outcome: TransportOutcome::TransportError {
+                error: azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "end-to-end operation timeout exceeded",
+                ),
+                request_sent,
+            },
+        }
+    }
+
+    /// Creates a result from an HTTP response payload.
+    ///
+    /// Successful status codes are mapped to `Success`; non-success status codes
+    /// are mapped to `HttpError` with `request_sent` set to `Sent`.
+    pub fn from_http_response(status: CosmosStatus, headers: Headers, body: Vec<u8>) -> Self {
+        if status.is_success() {
+            Self {
+                outcome: TransportOutcome::Success {
+                    status,
+                    headers,
+                    body,
+                },
+            }
+        } else {
+            Self {
+                outcome: TransportOutcome::HttpError {
+                    status,
+                    headers,
+                    body,
+                    request_sent: RequestSentStatus::Sent,
+                },
+            }
+        }
+    }
+
     /// Returns the response headers if this is an HTTP response.
     pub fn response_headers(&self) -> Option<&Headers> {
         match &self.outcome {

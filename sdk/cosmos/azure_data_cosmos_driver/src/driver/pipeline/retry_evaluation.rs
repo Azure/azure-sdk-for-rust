@@ -27,15 +27,12 @@ pub(crate) fn evaluate_transport_result(
     result: TransportResult,
     retry_state: &OperationRetryState,
 ) -> OperationAction {
-    // Happy path: return the whole TransportResult without destructuring.
-    if matches!(&result.outcome, TransportOutcome::Success { .. }) {
-        return OperationAction::Complete(result);
-    }
-
-    // Error paths: destructure the owned outcome to move error values out
-    // without losing the error source chain.
+    // Destructure the owned outcome to move error values out without
+    // losing the error source chain.
     match result.outcome {
-        TransportOutcome::Success { .. } => unreachable!("handled above"),
+        outcome @ TransportOutcome::Success { .. } => {
+            OperationAction::Complete(TransportResult { outcome })
+        }
 
         TransportOutcome::HttpError {
             status,
