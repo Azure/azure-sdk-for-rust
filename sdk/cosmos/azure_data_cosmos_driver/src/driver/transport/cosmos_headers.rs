@@ -24,7 +24,7 @@ const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 ///
 /// Sets `x-ms-version`, `x-ms-cosmos-sdk-supportedcapabilities`, `Content-Type`,
 /// `Accept`, `Cache-Control`, and `User-Agent`.
-pub(crate) fn apply_cosmos_headers(request: &mut Request, user_agent: &str) {
+pub(crate) fn apply_cosmos_headers(request: &mut Request, user_agent: &HeaderValue) {
     let headers = request.headers_mut();
 
     headers.insert(VERSION, HeaderValue::from_static(COSMOS_API_VERSION));
@@ -39,5 +39,5 @@ pub(crate) fn apply_cosmos_headers(request: &mut Request, user_agent: &str) {
 
     headers.insert(ACCEPT, APPLICATION_JSON.clone());
     headers.insert(CACHE_CONTROL, NO_CACHE.clone());
-    headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
+    headers.insert(USER_AGENT, user_agent.clone());
 }

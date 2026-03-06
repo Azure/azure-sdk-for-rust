@@ -78,7 +78,10 @@ impl CosmosDriver {
         let user_agent = self.runtime.user_agent().as_str();
 
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
-        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+        cosmos_headers::apply_cosmos_headers(
+            &mut request,
+            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
+        );
         request_signing::sign_request(
             &mut request,
             account.auth(),
@@ -391,7 +394,8 @@ impl CosmosDriver {
             TransportSecurity::Secure
         };
 
-        let user_agent = self.runtime.user_agent().as_str();
+        let user_agent =
+            azure_core::http::headers::HeaderValue::from(self.runtime.user_agent().as_str().to_owned());
 
         // Step 7: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
@@ -399,10 +403,10 @@ impl CosmosDriver {
             &options,
             &effective_options,
             &endpoint,
-            region,
+            &region,
             http_client,
             auth,
-            user_agent,
+            &user_agent,
             &activity_id,
             pipeline_type,
             transport_security,

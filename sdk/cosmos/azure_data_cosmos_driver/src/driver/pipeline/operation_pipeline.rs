@@ -12,7 +12,6 @@ use std::time::Instant;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::HttpClient;
-use url::Url;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
@@ -50,10 +49,10 @@ pub(crate) async fn execute_operation_pipeline(
     _options: &OperationOptions,
     effective_options: &RuntimeOptions,
     endpoint: &AccountEndpoint,
-    region: Option<Region>,
+    region: &Option<Region>,
     http_client: Arc<dyn HttpClient>,
     credential: &Credential,
-    user_agent: &str,
+    user_agent: &azure_core::http::headers::HeaderValue,
     activity_id: &ActivityId,
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
@@ -72,7 +71,7 @@ pub(crate) async fn execute_operation_pipeline(
         // Step 1: no LocationSnapshot — single region.
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
-        let routing = resolve_endpoint(endpoint, region.clone());
+        let routing = resolve_endpoint(endpoint, region);
 
         // ── STAGE 3: Build transport request ───────────────────────────
         let execution_context = if retry_state.transport_retry_count == 0 {
@@ -152,10 +151,10 @@ pub(crate) async fn execute_operation_pipeline(
 ///
 /// Step 1: trivially wraps the provided endpoint and region.
 /// Step 2 will use `LocationSnapshot` and `AccountEndpointState`.
-fn resolve_endpoint(endpoint: &AccountEndpoint, region: Option<Region>) -> RoutingDecision {
+fn resolve_endpoint(endpoint: &AccountEndpoint, region: &Option<Region>) -> RoutingDecision {
     RoutingDecision {
         endpoint: endpoint.url().clone(),
-        region,
+        region: region.clone(),
     }
 }
 
@@ -169,7 +168,18 @@ fn build_transport_request(
 ) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
-    let url = join_url(&routing.endpoint, &request_path);
+    let url = {
+        let mut base = routing.endpoint.clone();
+        let normalized = if request_path.starts_with('/') {
+            request_path.to_string()
+        } else if request_path.is_empty() {
+            String::new()
+        } else {
+            format!("/{}", request_path)
+        };
+        base.set_path(&normalized);
+        base
+    };
 
     let method = operation.operation_type().http_method();
     let resource_type = operation.resource_type();
@@ -244,16 +254,4 @@ fn build_cosmos_response(
     }
 }
 
-/// Joins a base URL with a path, handling trailing/leading slashes.
-fn join_url(base: &Url, path: &str) -> Url {
-    let mut url = base.clone();
-    {
-        let mut segments = url.path_segments_mut().expect("URL cannot be a base");
-        for segment in path.trim_start_matches('/').split('/') {
-            if !segment.is_empty() {
-                segments.push(segment);
-            }
-        }
-    }
-    url
-}
+

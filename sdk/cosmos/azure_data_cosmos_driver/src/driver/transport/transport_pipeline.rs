@@ -99,7 +99,7 @@ pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     http_client: &dyn azure_core::http::HttpClient,
     credential: &Credential,
-    user_agent: &str,
+    user_agent: &azure_core::http::headers::HeaderValue,
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
     diagnostics: &mut DiagnosticsContextBuilder,
@@ -204,20 +204,11 @@ pub(crate) async fn execute_transport_pipeline(
                 // budget, fail fast instead of delaying.
                 let mut effective_delay = delay;
                 if let Some(deadline) = request.deadline {
-                    let now = Instant::now();
-                    if now >= deadline {
-                        return deadline_exceeded_result(RequestSentStatus::Sent);
-                    }
-
-                    let remaining = deadline.saturating_duration_since(now);
+                    let remaining = deadline.saturating_duration_since(Instant::now());
                     if remaining.is_zero() {
                         return deadline_exceeded_result(RequestSentStatus::Sent);
                     }
                     effective_delay = effective_delay.min(remaining);
-                }
-
-                if effective_delay.is_zero() {
-                    return deadline_exceeded_result(RequestSentStatus::Sent);
                 }
 
                 azure_core::sleep(
