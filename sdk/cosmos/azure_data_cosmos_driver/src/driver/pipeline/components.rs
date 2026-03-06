@@ -90,7 +90,7 @@ pub(crate) struct TransportRequest {
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
     /// Request body bytes (schema-agnostic).
-    pub body: Option<Vec<u8>>,
+    pub body: Option<azure_core::Bytes>,
     /// Authorization context for signing.
     pub auth_context: AuthorizationContext,
     /// The execution context (Initial/Retry/Hedging/Failover).
