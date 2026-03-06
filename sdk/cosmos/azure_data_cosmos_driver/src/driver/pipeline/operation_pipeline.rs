@@ -213,7 +213,7 @@ fn build_transport_request(
         url,
         region: routing.region.clone(),
         headers,
-        body: operation.body().map(|b| b.to_vec()),
+        body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
         execution_context,
         deadline,

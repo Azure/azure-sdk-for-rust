@@ -14,8 +14,8 @@ use url::Url;
 
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
-    driver::with_jitter,
     driver::transport::AuthorizationContext,
+    driver::with_jitter,
     models::CosmosStatus,
     options::Region,
 };
