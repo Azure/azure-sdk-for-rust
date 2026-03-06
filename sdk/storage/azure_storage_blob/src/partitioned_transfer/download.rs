@@ -8,7 +8,7 @@ use azure_core::{
     http::{response::PinnedStream, AsyncRawResponse, StatusCode},
     stream::BytesStream,
 };
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use futures::{stream::FuturesOrdered, StreamExt};
 
 use crate::models::http_ranges::ContentRange;
@@ -50,41 +50,23 @@ where
         return Ok(raw_stream);
     }
 
-    let initial_response = match client
-        .transfer_range(Some(
-            max_download_range.start
-                ..min(
-                    max_download_range.end,
-                    max_download_range.start.saturating_add(partition_size),
-                ),
-        ))
-        .await
-    {
-        Ok(response) => response,
-        Err(err) => match (err.http_status(), max_download_range.start) {
-            (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
-                client.transfer_range(None).await?
-            }
-            _ => Err(err)?,
-        },
-    };
+    let initial_response = download_handle_invalid_range(
+        client.as_ref(),
+        max_download_range.start
+            ..min(
+                max_download_range.end,
+                max_download_range.start.saturating_add(partition_size),
+            ),
+    )
+    .await?;
 
-    let mut ranges: VecDeque<_> = match initial_response
-        .headers()
-        .get_optional_as::<ContentRange, _>(&"content-range".into())?
-    {
-        Some(content_range) => match (content_range.range, content_range.total_len) {
-            (Some(received_range), Some(resource_len)) => {
-                let remainder_start = received_range.1;
-                let remainder_end = min(max_download_range.end, resource_len);
-                (remainder_start..remainder_end)
-                    .step_by(partition_size)
-                    .map(|i| i..min(i.saturating_add(partition_size), remainder_end))
-                    .collect()
-            }
-            _ => VecDeque::new(),
-        },
-        None => VecDeque::new(),
+    let mut ranges = match analyze_initial_response(
+        &initial_response,
+        partition_size,
+        max_download_range.end,
+    )? {
+        Some(stats) => stats.remaining_download_ranges,
+        None => Default::default(),
     };
 
     // the first operation has a different type from the others.
@@ -116,7 +98,103 @@ async fn download_range_to_bytes(
     range: Range<usize>,
 ) -> AzureResult<Bytes> {
     let response = client.transfer_range(Some(range)).await?;
-    response.into_body().collect().await
+    let mut dst = match get_body_len(&response)? {
+        Some(content_length) => BytesMut::with_capacity(content_length),
+        None => BytesMut::new(),
+    };
+    let mut response_body = response.into_body();
+    while let Some(bytes) = response_body.try_next().await? {
+        dst.extend_from_slice(&bytes);
+    }
+    Ok(dst.freeze())
+}
+
+/// Performs a `transfer_range()` call with the given range. If this results in a
+/// RequestedRangeNotSatisfiable error, and if the requested range begins at the
+/// start of the blob, retries the operation without a range argument.
+async fn download_handle_invalid_range<Behavior>(
+    client: &Behavior,
+    range: Range<usize>,
+) -> AzureResult<AsyncRawResponse>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
+    let range_start = range.start;
+    match client.transfer_range(Some(range)).await {
+        Ok(response) => Ok(response),
+        Err(err) => match (err.http_status(), range_start) {
+            (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
+                client.transfer_range(None).await
+            }
+            _ => Err(err),
+        },
+    }
+}
+
+/// First attempts to get the length from the Content-Range header. Content range will give the
+/// most accurate reading for the content length, unaffected by an encoding such as structured
+/// message. It is highly unlikely content-range will be absent.
+/// Uses the content-length header if content-range is unavailable.
+fn get_body_len(response: &AsyncRawResponse) -> AzureResult<Option<usize>> {
+    if let Some(content_range) = response
+        .headers()
+        .get_optional_as::<ContentRange, _>(&"content-range".into())?
+    {
+        if let Some(range) = content_range.range {
+            return Ok(Some(range.1 - range.0));
+        }
+    }
+    if let Some(content_length) = response
+        .headers()
+        .get_optional_as::<usize, _>(&"content-length".into())?
+    {
+        return Ok(Some(content_length));
+    }
+    Ok(None)
+}
+
+struct InitialResponseAnalysis {
+    overall_download_range: Range<usize>,
+    initial_download_range: Range<usize>,
+    remaining_download_ranges: VecDeque<Range<usize>>,
+}
+/// Reads over the response headers of the initial download response and compiles all relevant
+/// information to perform the remaining downloads and arrange all resulting bytes.
+///
+/// # Returns
+///
+/// Ok(Some(analysis)) if the appropriate information was available.
+///
+/// Ok(None) of the appropriate information was not available.
+///
+/// Err(error) if there was an error parsing the appropriate information.
+fn analyze_initial_response(
+    initial_response: &AsyncRawResponse,
+    partition_len: usize,
+    max_range_end: usize,
+) -> AzureResult<Option<InitialResponseAnalysis>> {
+    let content_range = match initial_response
+        .headers()
+        .get_optional_as::<ContentRange, _>(&"content-range".into())?
+    {
+        Some(content_range) => content_range,
+        None => return Ok(None),
+    };
+    match (content_range.range, content_range.total_len) {
+        (Some(received_range), Some(resource_len)) => {
+            let remainder_start = received_range.1;
+            let remainder_end = min(max_range_end, resource_len);
+            Ok(Some(InitialResponseAnalysis {
+                overall_download_range: received_range.0..remainder_end,
+                initial_download_range: received_range.0..received_range.1,
+                remaining_download_ranges: (remainder_start..remainder_end)
+                    .step_by(partition_len)
+                    .map(|i| i..min(i.saturating_add(partition_len), remainder_end))
+                    .collect(),
+            }))
+        }
+        _ => Ok(None),
+    }
 }
 
 trait DownloadRangeFuture: Future + Send {}
