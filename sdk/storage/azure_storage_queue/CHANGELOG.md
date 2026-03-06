@@ -11,6 +11,7 @@
 
 - Changed `QueueClient::set_metadata()` `metadata` parameter from owned `HashMap<String, String>` to `&HashMap<String, String>`.
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- `SentMessage` ownership semantics changed, and code that previously moved fields like `message_id`/`pop_receipt` may require `clone()` (or borrowing) updates.
 
 ### Bugs Fixed
 

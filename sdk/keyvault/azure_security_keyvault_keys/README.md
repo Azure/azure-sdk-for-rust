@@ -232,8 +232,7 @@ without the private key ever leaving the HSM.
 ```rust ignore encrypt_decrypt
 use azure_security_keyvault_keys::{
     models::{
-        CreateKeyParameters, EncryptionAlgorithm, KeyClientUnwrapKeyOptions,
-        KeyClientWrapKeyOptions, KeyOperationParameters, KeyType,
+        CreateKeyParameters, EncryptionAlgorithm, KeyOperationParameters, KeyType,
     },
     ResourceExt,
 };
@@ -250,7 +249,7 @@ let key = client
     .create_key("key-name", body.try_into()?, None)
     .await?
     .into_model()?;
-let key_version = key.resource_id()?.version;
+let key_version = key.resource_id()?.version.expect("key version required");
 
 // Generate a symmetric data encryption key (DEK). You'd encrypt your data using this DEK.
 let dek = random::<u32>().to_le_bytes().to_vec();
@@ -262,14 +261,7 @@ let mut parameters = KeyOperationParameters {
     ..Default::default()
 };
 let wrapped = client
-    .wrap_key(
-        "key-name",
-        parameters.clone().try_into()?,
-        Some(KeyClientWrapKeyOptions {
-            key_version: key_version.clone(),
-            ..Default::default()
-        }),
-    )
+    .wrap_key("key-name", &key_version, parameters.clone().try_into()?, None)
     .await?
     .into_model()?;
 
@@ -278,14 +270,7 @@ assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
 // Unwrap the DEK.
 parameters.value = wrapped.result;
 let unwrapped = client
-    .unwrap_key(
-        "key-name",
-        parameters.try_into()?,
-        Some(KeyClientUnwrapKeyOptions {
-            key_version,
-            ..Default::default()
-        }),
-    )
+    .unwrap_key("key-name", &key_version, parameters.try_into()?, None)
     .await?
     .into_model()?;
 

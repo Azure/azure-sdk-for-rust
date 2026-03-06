@@ -103,16 +103,6 @@ pub struct ListOfReceivedMessage {
     pub items: Option<Vec<ReceivedMessage>>,
 }
 
-/// List wrapper for EnqueuedMessage array
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-#[serde(rename = "QueueMessagesList")]
-pub struct ListOfSentMessage {
-    /// The list of enqueued messages.
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<SentMessage>>,
-}
-
 /// The list queue segment response
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -356,7 +346,7 @@ pub struct RetentionPolicy {
 /// Queue
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-pub struct SentMessage {
+pub struct SentMessageInternal {
     /// The time that the Message will expire and be automatically deleted.
     #[serde(
         default,
