@@ -518,7 +518,6 @@ impl CosmosDriverRuntimeBuilder {
         let connection_pool = self.connection_pool.unwrap_or_default();
         let transport = Arc::new(CosmosTransport::new(
             connection_pool.clone(),
-            user_agent.as_str(),
         )?);
 
         // Initialize system monitoring singletons.

@@ -104,10 +104,8 @@ impl CosmosTransport {
     /// # Arguments
     ///
     /// * `connection_pool` - Connection pool settings for HTTP clients
-    /// * `user_agent` - User agent string to use for all requests
     pub(crate) fn new(
         connection_pool: ConnectionPoolOptions,
-        _user_agent: impl Into<String>,
     ) -> azure_core::Result<Self> {
         let metadata_client: Arc<dyn HttpClient> =
             Arc::new(Self::create_reqwest_client(&connection_pool, true, false)?);
@@ -246,7 +244,7 @@ mod tests {
     #[test]
     fn transport_creates_with_default_options() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, "test-user-agent").unwrap();
+        let transport = CosmosTransport::new(pool).unwrap();
 
         // Should not be using emulator transport for regular endpoints
         let endpoint =
@@ -260,7 +258,7 @@ mod tests {
             .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, "test-user-agent").unwrap();
+        let transport = CosmosTransport::new(pool).unwrap();
 
         // localhost is an emulator host
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
@@ -279,7 +277,7 @@ mod tests {
     #[test]
     fn transport_ignores_emulator_hosts_when_validation_enabled() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, "test-user-agent").unwrap();
+        let transport = CosmosTransport::new(pool).unwrap();
 
         // Even localhost should not use emulator transport if validation is enabled
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
