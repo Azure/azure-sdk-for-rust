@@ -104,9 +104,7 @@ impl CosmosTransport {
     /// # Arguments
     ///
     /// * `connection_pool` - Connection pool settings for HTTP clients
-    pub(crate) fn new(
-        connection_pool: ConnectionPoolOptions,
-    ) -> azure_core::Result<Self> {
+    pub(crate) fn new(connection_pool: ConnectionPoolOptions) -> azure_core::Result<Self> {
         let metadata_client: Arc<dyn HttpClient> =
             Arc::new(Self::create_reqwest_client(&connection_pool, true, false)?);
 

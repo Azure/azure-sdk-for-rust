@@ -281,11 +281,7 @@ async fn map_http_response(
                 RequestEvent::new(RequestEventType::TransportFailed)
                     .with_details(error.to_string()),
             );
-            diagnostics.fail_request(
-                request_handle,
-                error.to_string(),
-                RequestSentStatus::Sent,
-            );
+            diagnostics.fail_request(request_handle, error.to_string(), RequestSentStatus::Sent);
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
                     error,

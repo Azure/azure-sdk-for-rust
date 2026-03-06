@@ -252,5 +252,3 @@ fn build_cosmos_response(
         }
     }
 }
-
-

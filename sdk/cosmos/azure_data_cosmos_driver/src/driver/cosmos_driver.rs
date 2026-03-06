@@ -394,8 +394,9 @@ impl CosmosDriver {
             TransportSecurity::Secure
         };
 
-        let user_agent =
-            azure_core::http::headers::HeaderValue::from(self.runtime.user_agent().as_str().to_owned());
+        let user_agent = azure_core::http::headers::HeaderValue::from(
+            self.runtime.user_agent().as_str().to_owned(),
+        );
 
         // Step 7: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(

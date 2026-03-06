@@ -516,9 +516,7 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let transport = Arc::new(CosmosTransport::new(
-            connection_pool.clone(),
-        )?);
+        let transport = Arc::new(CosmosTransport::new(connection_pool.clone())?);
 
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
