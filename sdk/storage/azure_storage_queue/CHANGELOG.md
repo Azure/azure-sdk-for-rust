@@ -9,6 +9,11 @@
 
 ### Breaking Changes
 
+- Removed `QueueServiceClient::create_queue()` and `QueueServiceClient::delete_queue()`; use `QueueServiceClient::queue_client()` to obtain a `QueueClient` and call `create()` or `delete()` directly.
+- Renamed `QueueClient::get_metadata()` to `get_properties()`; renamed related types `QueueClientGetMetadataOptions` → `QueueClientGetPropertiesOptions`, `QueueClientGetMetadataResult` → `QueueClientGetPropertiesResult`, and `QueueClientGetMetadataResultHeaders` → `QueueClientGetPropertiesResultHeaders`.
+- Renamed `QueueClient::update()` to `update_message()`; renamed `QueueClientUpdateOptions` → `QueueClientUpdateMessageOptions`.
+- Renamed `ListOfPeekedMessage` → `PeekedMessages` and `ListOfReceivedMessage` → `ReceivedMessages`.
+- Renamed `GeoReplicationStatusType` → `GeoReplicationStatus`.
 - Changed `QueueClient::set_metadata()` `metadata` parameter from owned `HashMap<String, String>` to `&HashMap<String, String>`.
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 - `SentMessage` ownership semantics changed, and code that previously moved fields like `message_id`/`pop_receipt` may require `clone()` (or borrowing) updates.

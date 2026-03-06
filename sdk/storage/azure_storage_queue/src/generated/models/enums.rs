@@ -5,7 +5,7 @@
 
 /// The geo replication status.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum GeoReplicationStatusType {
+pub enum GeoReplicationStatus {
     /// The geo replication is bootstrap.
     Bootstrap,
 
@@ -15,7 +15,7 @@ pub enum GeoReplicationStatusType {
     /// The geo replication is unavailable.
     Unavailable,
 
-    /// Any other value not defined in `GeoReplicationStatusType`.
+    /// Any other value not defined in `GeoReplicationStatus`.
     UnknownValue(String),
 }
 

@@ -7,7 +7,7 @@ use azure_core_test::{recorded, Recording, TestContext, TestMode};
 use azure_storage_queue::{
     models::{
         AccessPolicy, QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
-        QueueClientUpdateOptions, QueueMessage, SignedIdentifier, SignedIdentifiers,
+        QueueClientUpdateMessageOptions, QueueMessage, SignedIdentifier, SignedIdentifiers,
     },
     QueueClient, QueueClientOptions,
 };
@@ -18,7 +18,7 @@ use std::collections::HashMap;
 #[recorded::test]
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-create-queue").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
 
     let response = queue_client.create(None).await?;
     let test_result = async {
@@ -39,7 +39,7 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_send_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-send-message").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
     let queue_message = QueueMessage {
         message_text: Some("send_message".to_string()),
@@ -71,7 +71,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-delete-queue").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
 
     queue_client.create(None).await?;
 
@@ -89,7 +89,7 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_queue_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-queue-exists").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     let test_result = async {
@@ -117,7 +117,7 @@ async fn test_queue_exists(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-queue-metadata").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     let test_result = async {
@@ -150,7 +150,7 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_clear_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-clear-messages").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -174,7 +174,7 @@ async fn test_clear_messages(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_delete_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-delete-message").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -218,7 +218,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_update_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-update-message").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -239,7 +239,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         let sent_message = send_message_response.into_model()?;
 
         // Update the message in the queue
-        let option = Some(QueueClientUpdateOptions {
+        let option = Some(QueueClientUpdateMessageOptions {
             queue_message: Some(
                 QueueMessage {
                     message_text: Some("Updated message text from Rust".to_string()),
@@ -279,7 +279,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-peek-messages-empty").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -308,7 +308,7 @@ async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_peek_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-peek-messages").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
@@ -353,7 +353,7 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-receive-messages-empty").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -382,7 +382,7 @@ async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-receive-messages").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
@@ -428,7 +428,7 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-set-get-acl").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     let test_result = async {
@@ -486,6 +486,17 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     test_result?;
 
     Ok(())
+}
+
+/// Returns a randomized queue name with prefix "q" of length 13.
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
+fn get_queue_name(recording: &Recording) -> String {
+    recording
+        .random_string::<12>(Some("q"))
+        .to_ascii_lowercase()
 }
 
 /// Returns an instance of a QueueClient.
