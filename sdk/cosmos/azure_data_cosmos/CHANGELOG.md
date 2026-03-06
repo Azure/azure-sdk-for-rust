@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Fixed `LocationCache` permanently baking in the region order from the first account-property fetch, preventing hub region changes from taking effect. ([#3874](https://github.com/Azure/azure-sdk-for-rust/pull/3874))
+
 ### Other Changes
 
 ## 0.31.0 (2026-02-25)
