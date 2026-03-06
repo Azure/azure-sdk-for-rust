@@ -111,7 +111,7 @@ pub(crate) async fn execute_transport_pipeline(
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
                 trace!("transport pipeline: deadline exceeded before attempt");
-                return deadline_exceeded_result();
+                return deadline_exceeded_result(RequestSentStatus::NotSent);
             }
         }
 
@@ -206,18 +206,18 @@ pub(crate) async fn execute_transport_pipeline(
                 if let Some(deadline) = request.deadline {
                     let now = Instant::now();
                     if now >= deadline {
-                        return deadline_exceeded_result();
+                        return deadline_exceeded_result(RequestSentStatus::Sent);
                     }
 
                     let remaining = deadline.saturating_duration_since(now);
                     if remaining.is_zero() {
-                        return deadline_exceeded_result();
+                        return deadline_exceeded_result(RequestSentStatus::Sent);
                     }
                     effective_delay = effective_delay.min(remaining);
                 }
 
                 if effective_delay.is_zero() {
-                    return deadline_exceeded_result();
+                    return deadline_exceeded_result(RequestSentStatus::Sent);
                 }
 
                 azure_core::sleep(
@@ -228,7 +228,7 @@ pub(crate) async fn execute_transport_pipeline(
 
                 if let Some(deadline) = request.deadline {
                     if Instant::now() >= deadline {
-                        return deadline_exceeded_result();
+                        return deadline_exceeded_result(RequestSentStatus::Sent);
                     }
                 }
 
@@ -240,14 +240,14 @@ pub(crate) async fn execute_transport_pipeline(
     }
 }
 
-fn deadline_exceeded_result() -> TransportResult {
+fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult {
     TransportResult {
         outcome: TransportOutcome::TransportError {
             error: azure_core::Error::new(
                 azure_core::error::ErrorKind::Other,
                 "end-to-end operation timeout exceeded",
             ),
-            request_sent: RequestSentStatus::NotSent,
+            request_sent,
         },
     }
 }
