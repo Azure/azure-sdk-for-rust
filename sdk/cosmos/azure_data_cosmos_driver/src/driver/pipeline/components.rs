@@ -14,6 +14,7 @@ use url::Url;
 
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
+    driver::with_jitter,
     driver::transport::AuthorizationContext,
     models::CosmosStatus,
     options::Region,
@@ -117,6 +118,8 @@ pub(crate) struct ThrottleRetryState {
     pub fallback_base_delay: Duration,
     /// Multiplicative backoff factor for the fallback delay.
     pub backoff_factor: f64,
+    /// Jitter ratio applied to fallback backoff (for example 0.25 = +/- 25%).
+    pub backoff_jitter_ratio: f64,
 }
 
 /// Hard-coded defaults for throttle retry.
@@ -125,6 +128,7 @@ const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
 const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
 const DEFAULT_FALLBACK_BASE_DELAY: Duration = Duration::from_millis(5);
 const DEFAULT_BACKOFF_FACTOR: f64 = 2.0;
+const DEFAULT_BACKOFF_JITTER_RATIO: f64 = 0.25;
 
 impl ThrottleRetryState {
     /// Creates a new throttle retry state with default parameters.
@@ -137,14 +141,29 @@ impl ThrottleRetryState {
             max_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
             fallback_base_delay: DEFAULT_FALLBACK_BASE_DELAY,
             backoff_factor: DEFAULT_BACKOFF_FACTOR,
+            backoff_jitter_ratio: DEFAULT_BACKOFF_JITTER_RATIO,
         }
     }
 
-    /// Computes the fallback delay (used when the service does not send
-    /// `x-ms-retry-after-ms`). Uses exponential backoff from a small base.
-    pub fn fallback_delay(&self) -> Duration {
+    /// Computes the pure exponential fallback delay without jitter.
+    fn fallback_exponential_delay(&self) -> Duration {
         let multiplier = self.backoff_factor.powi(self.attempt_count as i32);
         self.fallback_base_delay.mul_f64(multiplier)
+    }
+
+    /// Computes the fallback delay (used when the service does not send
+    /// `x-ms-retry-after-ms`). Uses exponential backoff from a small base and
+    /// applies jitter to reduce synchronized retry waves.
+    pub fn fallback_delay(&self) -> Duration {
+        let base_delay = self.fallback_exponential_delay();
+
+        // Apply jitter only to the already-computed exponential delay.
+        let ratio = self.backoff_jitter_ratio.clamp(0.0, 1.0);
+        if ratio == 0.0 || base_delay.is_zero() {
+            return base_delay;
+        }
+
+        Duration::from_secs_f64(with_jitter(base_delay.as_secs_f64(), ratio))
     }
 }
 
@@ -234,26 +253,56 @@ mod tests {
         assert_eq!(state.max_wait_time, Duration::from_secs(30));
         assert_eq!(state.fallback_base_delay, Duration::from_millis(5));
         assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
+        assert_eq!(state.backoff_jitter_ratio, 0.25);
     }
 
     #[test]
-    fn throttle_retry_fallback_exponential_backoff() {
+    fn throttle_retry_fallback_backoff_with_jitter_bounds() {
         let state = ThrottleRetryState::new();
-        // attempt 0: 5ms * 2^0 = 5ms
-        assert_eq!(state.fallback_delay(), Duration::from_millis(5));
+        // attempt 0 base: 5ms; with +/-25% jitter => [3.75ms, 6.25ms]
+        let delay = state.fallback_delay();
+        assert!(delay >= Duration::from_nanos(3_750_000));
+        assert!(delay <= Duration::from_nanos(6_250_000));
 
         let state = ThrottleRetryState {
             attempt_count: 1,
             ..ThrottleRetryState::new()
         };
-        // attempt 1: 5ms * 2^1 = 10ms
-        assert_eq!(state.fallback_delay(), Duration::from_millis(10));
+        // attempt 1 base: 10ms; with +/-25% jitter => [7.5ms, 12.5ms]
+        let delay = state.fallback_delay();
+        assert!(delay >= Duration::from_nanos(7_500_000));
+        assert!(delay <= Duration::from_nanos(12_500_000));
 
         let state = ThrottleRetryState {
             attempt_count: 5,
             ..ThrottleRetryState::new()
         };
-        // attempt 5: 5ms * 2^5 = 160ms
+        // attempt 5 base: 160ms; with +/-25% jitter => [120ms, 200ms]
+        let delay = state.fallback_delay();
+        assert!(delay >= Duration::from_millis(120));
+        assert!(delay <= Duration::from_millis(200));
+    }
+
+    #[test]
+    fn throttle_retry_fallback_exponential_when_jitter_disabled() {
+        let state = ThrottleRetryState {
+            backoff_jitter_ratio: 0.0,
+            ..ThrottleRetryState::new()
+        };
+        assert_eq!(state.fallback_delay(), Duration::from_millis(5));
+
+        let state = ThrottleRetryState {
+            attempt_count: 1,
+            backoff_jitter_ratio: 0.0,
+            ..ThrottleRetryState::new()
+        };
+        assert_eq!(state.fallback_delay(), Duration::from_millis(10));
+
+        let state = ThrottleRetryState {
+            attempt_count: 5,
+            backoff_jitter_ratio: 0.0,
+            ..ThrottleRetryState::new()
+        };
         assert_eq!(state.fallback_delay(), Duration::from_millis(160));
     }
 

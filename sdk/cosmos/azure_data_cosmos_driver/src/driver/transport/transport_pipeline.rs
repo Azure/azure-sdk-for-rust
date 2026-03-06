@@ -375,8 +375,9 @@ mod tests {
 
         match evaluate_transport_retry(&result, &state) {
             ThrottleAction::Retry { delay, new_state } => {
-                // fallback: 5ms * 2^0 = 5ms
-                assert_eq!(delay, Duration::from_millis(5));
+                // fallback base is 5ms with +/-25% jitter.
+                assert!(delay >= Duration::from_nanos(3_750_000));
+                assert!(delay <= Duration::from_nanos(6_250_000));
                 assert_eq!(new_state.attempt_count, 1);
             }
             ThrottleAction::Propagate => panic!("expected Retry"),
