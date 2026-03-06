@@ -305,7 +305,7 @@ impl CosmosDriverRuntime {
         }
 
         // Create new driver (write lock)
-        let driver = {
+        let (driver, key_for_rollback) = {
             let mut registry = self.driver_registry.write().unwrap();
 
             // Double-check after acquiring write lock
@@ -317,11 +317,16 @@ impl CosmosDriverRuntime {
             let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
 
             let driver = Arc::new(CosmosDriver::new(self.clone(), options));
-            registry.insert(key, driver.clone());
-            driver
+            registry.insert(key.clone(), driver.clone());
+            (driver, key)
         };
 
-        driver.initialize().await?;
+        if let Err(e) = driver.initialize().await {
+            // Roll back: remove the driver so the next call retries creation.
+            let mut registry = self.driver_registry.write().unwrap();
+            registry.remove(&key_for_rollback);
+            return Err(e);
+        }
 
         Ok(driver)
     }

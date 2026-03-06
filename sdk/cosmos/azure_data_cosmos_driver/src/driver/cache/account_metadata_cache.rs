@@ -273,12 +273,14 @@ impl AccountMetadataCache {
     /// Refreshes account properties if they are stale.
     ///
     /// "Stale" means the last refresh was more than the staleness threshold
-    /// ago (default 10 minutes, matching the SDK's background refresh interval).
-    /// This method is rate-limited internally to avoid overwhelming the
-    /// metadata endpoint.
+    /// ago (default 10 minutes, matching the SDK's background refresh interval),
+    /// or there is no cached value for the endpoint.
     ///
-    /// Returns the (possibly refreshed) account properties, or `None` if
-    /// no cached value exists and the staleness predicate declines to fetch.
+    /// When the entry is considered stale, this method always attempts to
+    /// refresh it using `fetch_fn`. It returns the (possibly refreshed)
+    /// account properties if a cached value exists, or `None` only when there
+    /// is currently no cached value and the entry is not considered stale
+    /// (so no refresh is performed for that call).
     #[allow(dead_code)] // Consumer coming once Driver is used
     pub(crate) async fn refresh_if_stale<F, Fut>(
         &self,
@@ -289,18 +291,25 @@ impl AccountMetadataCache {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = AccountProperties>,
     {
+        // Look up the current cached value first so that staleness also reflects
+        // whether there is any data stored for this endpoint.
+        let cached = self.cache.get(&endpoint).await;
+
         // Check staleness before calling into the cache primitive.
         let is_stale = {
             let timestamps = self.last_refresh.read().await;
             match timestamps.get(&endpoint) {
-                Some(last) => last.elapsed() > self.staleness_threshold,
+                Some(last) => {
+                    // Treat a missing cached value as stale even if the timestamp is recent.
+                    cached.is_none() || last.elapsed() > self.staleness_threshold
+                }
                 None => true, // Never fetched
             }
         };
 
         if !is_stale {
-            // Not stale — return the current cached value (if any).
-            return self.cache.get(&endpoint).await;
+            // Not stale — return the current cached value.
+            return cached;
         }
 
         let endpoint_for_timestamp = endpoint.clone();
@@ -533,14 +542,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn refresh_if_stale_returns_none_when_empty_and_not_stale() {
-        // A cache with zero staleness threshold but no data should still
-        // return None from refresh_if_stale since there's nothing cached
-        // and the predicate will trigger a fetch.
+    async fn refresh_if_stale_returns_cached_value_when_fresh() {
+        // A fresh cache entry (within the default 10-minute staleness threshold)
+        // should be returned without calling the factory.
         let cache = AccountMetadataCache::new();
         let endpoint = test_endpoint("myaccount");
 
-        // First populate the cache
+        // Populate the cache
         cache
             .get_or_fetch(endpoint.clone(), || async { Ok(test_properties("westus")) })
             .await
