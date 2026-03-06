@@ -87,7 +87,7 @@ pub(crate) async fn execute_operation_pipeline(
             activity_id,
             execution_context,
             deadline,
-        );
+        )?;
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
@@ -166,7 +166,7 @@ fn build_transport_request(
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
-) -> TransportRequest {
+) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
     let url = join_url(&routing.endpoint, &request_path);
@@ -193,22 +193,22 @@ fn build_transport_request(
     // Add partition key headers
     if let Some(pk) = operation.partition_key() {
         use azure_core::http::headers::AsHeaders;
-        if let Ok(pk_headers) = pk.as_headers() {
-            for (name, value) in pk_headers {
-                headers.insert(name, value);
-            }
+        let pk_headers = pk.as_headers()?;
+        for (name, value) in pk_headers {
+            headers.insert(name, value);
         }
     }
 
-    TransportRequest {
+    Ok(TransportRequest {
         method,
         url,
+        region: routing.region.clone(),
         headers,
         body: operation.body().map(|b| b.to_vec()),
         auth_context,
         execution_context,
         deadline,
-    }
+    })
 }
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.

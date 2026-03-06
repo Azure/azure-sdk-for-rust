@@ -26,7 +26,6 @@ use crate::{
 
 use super::{
     cosmos_headers::apply_cosmos_headers, infer_request_sent_status, request_signing::sign_request,
-    AuthorizationContext,
 };
 
 use crate::driver::pipeline::components::{
@@ -132,7 +131,7 @@ pub(crate) async fn execute_transport_pipeline(
         };
 
         let endpoint_string = request.url.as_str().to_owned();
-        let region = None; // Step 1: single-region, no region tracking in transport
+        let region = request.region.clone();
         let request_handle = diagnostics.start_request(
             execution_context,
             pipeline_type,
@@ -248,11 +247,25 @@ async fn map_http_response(
         }
     });
 
-    // Read the body by converting to a raw response
-    let raw_response = response.try_into_raw_response().await;
-    let body = match &raw_response {
+    // Read the body by converting to a raw response.
+    // If conversion fails, this is a transport failure (truncated/invalid response stream),
+    // not a successful HTTP response with an empty payload.
+    let body = match response.try_into_raw_response().await {
         Ok(raw) => raw.body().to_vec(),
-        Err(_) => vec![],
+        Err(error) => {
+            diagnostics.add_event(
+                request_handle,
+                RequestEvent::new(RequestEventType::TransportFailed)
+                    .with_details(error.to_string()),
+            );
+            diagnostics.fail_request(request_handle, error.to_string(), RequestSentStatus::Unknown);
+            return TransportResult {
+                outcome: TransportOutcome::TransportError {
+                    error,
+                    request_sent: RequestSentStatus::Unknown,
+                },
+            };
+        }
     };
 
     if cosmos_status.is_success() {

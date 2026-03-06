@@ -14,7 +14,7 @@ use url::Url;
 
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
-    models::{CosmosResponseHeaders, CosmosStatus},
+    models::CosmosStatus,
     options::Region,
 };
 
@@ -83,6 +83,8 @@ pub(crate) struct TransportRequest {
     pub method: Method,
     /// The fully resolved URL for this attempt.
     pub url: Url,
+    /// The resolved region for this attempt, if known.
+    pub region: Option<Region>,
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
     /// Request body bytes (schema-agnostic).
@@ -155,43 +157,12 @@ pub(crate) struct TransportResult {
 }
 
 impl TransportResult {
-    /// Whether this result represents a successful response.
-    pub fn is_success(&self) -> bool {
-        matches!(self.outcome, TransportOutcome::Success { .. })
-    }
-
-    /// Returns the `CosmosStatus` if this is an HTTP response (success or error).
-    pub fn status(&self) -> Option<CosmosStatus> {
-        match &self.outcome {
-            TransportOutcome::Success { status, .. } => Some(*status),
-            TransportOutcome::HttpError { status, .. } => Some(*status),
-            TransportOutcome::TransportError { .. } => None,
-        }
-    }
-
     /// Returns the response headers if this is an HTTP response.
     pub fn response_headers(&self) -> Option<&Headers> {
         match &self.outcome {
             TransportOutcome::Success { headers, .. } => Some(headers),
             TransportOutcome::HttpError { headers, .. } => Some(headers),
             TransportOutcome::TransportError { .. } => None,
-        }
-    }
-
-    /// Extracts `CosmosResponseHeaders` from the HTTP response headers, if available.
-    pub fn cosmos_response_headers(&self) -> CosmosResponseHeaders {
-        match self.response_headers() {
-            Some(headers) => CosmosResponseHeaders::from_headers(headers),
-            None => CosmosResponseHeaders::default(),
-        }
-    }
-
-    /// Returns the request-sent status for retry safety decisions.
-    pub fn request_sent_status(&self) -> RequestSentStatus {
-        match &self.outcome {
-            TransportOutcome::Success { .. } => RequestSentStatus::Sent,
-            TransportOutcome::HttpError { request_sent, .. } => *request_sent,
-            TransportOutcome::TransportError { request_sent, .. } => *request_sent,
         }
     }
 }
