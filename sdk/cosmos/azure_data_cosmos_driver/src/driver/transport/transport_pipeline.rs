@@ -39,7 +39,7 @@ const RETRY_AFTER_MS: azure_core::http::headers::HeaderName =
 /// Keep a small budget before the e2e deadline so we still have time
 /// to send one final attempt.
 const DEADLINE_RETRY_SAFETY_MARGIN: Duration = Duration::from_millis(100);
-const MIN_PER_REQUEST_TIMEOUT: Duration = Duration::from_seconds(1);
+const MIN_PER_REQUEST_TIMEOUT: Duration = Duration::from_secs(1);
 
 fn deadline_capped_delay(requested_delay: Duration, remaining: Duration) -> Duration {
     let budget_for_delay = remaining.saturating_sub(DEADLINE_RETRY_SAFETY_MARGIN);
@@ -182,7 +182,10 @@ pub(crate) async fn execute_transport_pipeline(
         // TODO(azure_core): Apply per-request timeout directly on Request/HttpClient
         // once azure_core/typespec_client_core exposes timeout options.
         // Tracking issue: https://github.com/Azure/azure-sdk-for-rust/issues/3878
-        trace!(?per_request_timeout, "transport pipeline: computed per-request timeout");
+        trace!(
+            ?per_request_timeout,
+            "transport pipeline: computed per-request timeout"
+        );
 
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, user_agent);
