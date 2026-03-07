@@ -179,6 +179,7 @@ pub(crate) async fn execute_transport_pipeline(
         }
 
         let per_request_timeout = remaining_request_timeout(request.deadline);
+        // TODO(azure_core): Apply per-request timeout directly on Request/HttpClient
         // once azure_core/typespec_client_core exposes timeout options.
         // Tracking issue: https://github.com/Azure/azure-sdk-for-rust/issues/3878
         trace!(?per_request_timeout, "transport pipeline: computed per-request timeout");
