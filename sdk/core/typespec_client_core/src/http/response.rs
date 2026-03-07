@@ -10,6 +10,7 @@ use crate::{
     http::{headers::Headers, DeserializeWith, Format, StatusCode},
     Bytes,
 };
+use bytes::BytesMut;
 use futures::{Stream, StreamExt};
 use std::{fmt, marker::PhantomData, pin::Pin, task::Poll};
 use typespec::error::ResultExt as _;
@@ -312,13 +313,13 @@ impl AsyncResponseBody {
 
     /// Collect the stream into a [`Bytes`] collection.
     pub async fn collect(mut self) -> crate::Result<Bytes> {
-        let mut final_result = Vec::new();
+        let mut final_result = BytesMut::new();
 
         while let Some(res) = self.next().await {
             final_result.extend(&res?);
         }
 
-        Ok(final_result.into())
+        Ok(final_result.freeze())
     }
 
     /// Collect the stream into a [`String`].
@@ -368,7 +369,7 @@ impl fmt::Debug for AsyncResponseBody {
 mod tests {
     use super::*;
     use crate::http::{headers::Headers, AsyncRawResponse, RawResponse, Response, StatusCode};
-    use futures::stream;
+    use futures::{stream, StreamExt};
 
     #[test]
     fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {

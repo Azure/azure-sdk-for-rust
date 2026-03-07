@@ -22,7 +22,6 @@ impl MockJsonTest {
         async move {
             let count = runner
                 .try_get_test_arg("count")?
-                .cloned()
                 .unwrap_or(super::DEFAULT_COUNT);
             let pipeline = super::create_pipeline(count, json::to_json)?;
             Ok(Box::new(MockJsonTest { pipeline }) as Box<dyn PerfTest>)

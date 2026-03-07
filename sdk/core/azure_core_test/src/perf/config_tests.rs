@@ -32,6 +32,7 @@ fn create_basic_test_metadata() -> PerfTestMetadata {
             expected_args_len: 1,
             mandatory: false,
             sensitive: false,
+            option_type: TestOptionType::String,
         }],
         create_test: create_failed_test,
     }
@@ -51,6 +52,7 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
                 expected_args_len: 1,
                 mandatory: true,
                 sensitive: false,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "sensitive-option",
@@ -60,6 +62,7 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
                 expected_args_len: 1,
                 mandatory: false,
                 sensitive: true,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "flag-option",
@@ -86,6 +89,7 @@ fn create_no_short_activator_test_metadata() -> PerfTestMetadata {
             expected_args_len: 1,
             mandatory: false,
             sensitive: false,
+            ..Default::default()
         }],
         create_test: create_failed_test,
     }
@@ -417,9 +421,9 @@ fn test_perf_runner_with_complex_subcommand() {
     assert!(sensitive_value.is_some());
     assert_eq!(sensitive_value.unwrap(), "secret_value");
 
-    let flag_value = runner.try_get_test_arg("flag-option").ok().flatten();
+    let flag_value: Option<bool> = runner.try_get_test_arg("flag-option").ok().flatten();
     assert!(flag_value.is_some());
-    let flag_value: bool = *flag_value.unwrap();
+    let flag_value: bool = flag_value.unwrap();
     assert!(flag_value);
 }
 
@@ -603,6 +607,7 @@ async fn test_perf_runner_with_test_functions() {
                 expected_args_len: 1,
                 mandatory: true,
                 sensitive: false,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "sensitive-option",
@@ -612,6 +617,7 @@ async fn test_perf_runner_with_test_functions() {
                 expected_args_len: 1,
                 mandatory: false,
                 sensitive: true,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "flag-option",
@@ -621,6 +627,7 @@ async fn test_perf_runner_with_test_functions() {
                 expected_args_len: 0,
                 mandatory: false,
                 sensitive: false,
+                ..Default::default()
             },
         ],
         create_test: complex_test_create,
@@ -655,9 +662,9 @@ async fn test_perf_runner_with_test_functions() {
     assert!(sensitive_value.is_some());
     assert_eq!(sensitive_value.unwrap(), "secret_value");
 
-    let flag_value = runner.try_get_test_arg("flag-option").ok().flatten();
+    let flag_value: Option<bool> = runner.try_get_test_arg("flag-option").ok().flatten();
     assert!(flag_value.is_some());
-    let flag_value: bool = *flag_value.unwrap();
+    let flag_value: bool = flag_value.unwrap();
     assert!(flag_value);
 
     let perf_tests_impl = (runner.tests[0].create_test)(runner.clone())

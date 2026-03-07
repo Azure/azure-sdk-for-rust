@@ -63,6 +63,22 @@ pub struct PerfTestMetadata {
     pub create_test: CreatePerfTestFn,
 }
 
+#[derive(Debug, Clone, Default)]
+pub enum TestOptionType {
+    #[default]
+    String,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Uint8,
+    Uint16,
+    Uint32,
+    Uint64,
+    Usize,
+    Boolean,
+}
+
 /// A `PerfTestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
 #[derive(Debug, Default, Clone)]
 pub struct PerfTestOption {
@@ -86,6 +102,9 @@ pub struct PerfTestOption {
 
     /// Argument value is sensitive and should be sanitized.
     pub sensitive: bool,
+
+    /// The type of the argument value.
+    pub option_type: TestOptionType,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -218,14 +237,17 @@ impl PerfRunner {
     }
 
     /// Gets a reference to a typed argument by its id.
-    pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<&T>>
+    pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<T>>
     where
         T: Clone + Send + Sync + 'static,
     {
-        self.arguments.try_get_one::<T>(id).with_context(
-            ErrorKind::Other,
-            format!("Failed to get argument '{}'.", id),
-        )
+        self.arguments
+            .try_get_one::<T>(id)
+            .with_context(
+                ErrorKind::Other,
+                format!("Failed to get argument '{}'.", id),
+            )
+            .map(|arg| arg.cloned())
     }
 
     /// Gets a reference to a typed argument for the selected test by its id.
@@ -237,15 +259,17 @@ impl PerfRunner {
     /// # Returns
     ///
     /// A reference to the argument if it exists, or None.
-    pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<&T>>
+    pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<T>>
     where
         T: Clone + Send + Sync + 'static,
     {
         if let Some((_, args)) = self.arguments.subcommand() {
-            args.try_get_one::<T>(id).with_context(
-                ErrorKind::Other,
-                format!("Failed to get argument '{}' for test.", id),
-            )
+            args.try_get_one::<T>(id)
+                .with_context(
+                    ErrorKind::Other,
+                    format!("Failed to get argument '{}' for test.", id),
+                )
+                .map(|arg| arg.cloned())
         } else {
             Ok(None)
         }
@@ -546,6 +570,23 @@ impl PerfRunner {
                     .num_args(option.expected_args_len..=option.expected_args_len)
                     .required(option.mandatory)
                     .global(false);
+                arg = match option.option_type {
+                    TestOptionType::String => arg.value_parser(clap::value_parser!(String)),
+                    TestOptionType::Usize => arg.value_parser(clap::value_parser!(usize)),
+                    TestOptionType::Int8 => arg.value_parser(clap::value_parser!(i8)),
+                    TestOptionType::Int16 => arg.value_parser(clap::value_parser!(i16)),
+                    TestOptionType::Int32 => arg.value_parser(clap::value_parser!(i32)),
+                    TestOptionType::Int64 => arg.value_parser(clap::value_parser!(i64)),
+                    TestOptionType::Uint8 => arg.value_parser(clap::value_parser!(u8)),
+                    TestOptionType::Uint16 => arg.value_parser(clap::value_parser!(u16)),
+                    TestOptionType::Uint32 => arg.value_parser(clap::value_parser!(u32)),
+                    TestOptionType::Uint64 => arg.value_parser(clap::value_parser!(u64)),
+                    TestOptionType::Boolean => {
+                        // For boolean options, we can use the presence of the flag to indicate true, and absence to indicate false.
+                        // Therefore, we don't need to specify a value parser or expect any arguments for this type.
+                        arg.num_args(0)
+                    }
+                };
                 if let Some(short_activator) = option.short_activator {
                     arg = arg.short(short_activator);
                 }
