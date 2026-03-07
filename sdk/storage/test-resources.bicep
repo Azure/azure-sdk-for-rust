@@ -73,6 +73,12 @@ resource blobServices 'Microsoft.Storage/storageAccounts/blobServices@2024-01-01
   }
 }
 
+resource encryptionScope 'Microsoft.Storage/storageAccounts/encryptionScopes@2024-01-01' = {
+  parent: storage
+  name: 'testscope'
+  properties: {}
+}
+
 resource versionedStorage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
   name: '${baseName}ver'
   location: location
