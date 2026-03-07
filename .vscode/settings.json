@@ -18,4 +18,5 @@
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
   },
+  "cmake.ignoreCMakeListsMissing": true,
 }
