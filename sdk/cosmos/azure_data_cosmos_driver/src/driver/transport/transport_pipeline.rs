@@ -39,10 +39,33 @@ const RETRY_AFTER_MS: azure_core::http::headers::HeaderName =
 /// Keep a small budget before the e2e deadline so we still have time
 /// to send one final attempt.
 const DEADLINE_RETRY_SAFETY_MARGIN: Duration = Duration::from_millis(100);
+const MIN_PER_REQUEST_TIMEOUT: Duration = Duration::from_seconds(1);
 
 fn deadline_capped_delay(requested_delay: Duration, remaining: Duration) -> Duration {
     let budget_for_delay = remaining.saturating_sub(DEADLINE_RETRY_SAFETY_MARGIN);
     requested_delay.min(budget_for_delay)
+}
+
+fn remaining_request_timeout(deadline: Option<Instant>) -> Option<Duration> {
+    deadline.map(|deadline| {
+        deadline
+            .saturating_duration_since(Instant::now())
+            .max(MIN_PER_REQUEST_TIMEOUT)
+    })
+}
+
+fn forced_final_retry_delay(deadline: Option<Instant>) -> Option<Duration> {
+    match deadline {
+        Some(deadline) => {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                None
+            } else {
+                Some(deadline_capped_delay(remaining, remaining))
+            }
+        }
+        None => Some(Duration::ZERO),
+    }
 }
 
 /// Decides whether to retry a 429 throttling response at the transport level.
@@ -155,6 +178,11 @@ pub(crate) async fn execute_transport_pipeline(
             http_request.set_body(body.clone());
         }
 
+        let per_request_timeout = remaining_request_timeout(request.deadline);
+        // once azure_core/typespec_client_core exposes timeout options.
+        // Tracking issue: https://github.com/Azure/azure-sdk-for-rust/issues/3878
+        trace!(?per_request_timeout, "transport pipeline: computed per-request timeout");
+
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, user_agent);
 
@@ -246,24 +274,19 @@ pub(crate) async fn execute_transport_pipeline(
                 );
 
                 if !forced_final_throttle_retry && is_throttled {
-                    if let Some(deadline) = request.deadline {
-                        let remaining = deadline.saturating_duration_since(Instant::now());
-                        if !remaining.is_zero() {
-                            // One extra deadline-bounded retry attempt after throttle budget is
-                            // exhausted. Leave a small safety margin before e2e timeout.
-                            let final_delay = deadline_capped_delay(remaining, remaining);
-
-                            if !final_delay.is_zero() {
-                                azure_core::sleep(
-                                    azure_core::time::Duration::try_from(final_delay)
-                                        .unwrap_or(azure_core::time::Duration::ZERO),
-                                )
-                                .await;
-                            }
-
-                            forced_final_throttle_retry = true;
-                            continue;
+                    if let Some(final_delay) = forced_final_retry_delay(request.deadline) {
+                        // One extra retry attempt after throttle budget is exhausted.
+                        // When no deadline exists, this retry is immediate.
+                        if !final_delay.is_zero() {
+                            azure_core::sleep(
+                                azure_core::time::Duration::try_from(final_delay)
+                                    .unwrap_or(azure_core::time::Duration::ZERO),
+                            )
+                            .await;
                         }
+
+                        forced_final_throttle_retry = true;
+                        continue;
                     }
                 }
 
@@ -469,5 +492,24 @@ mod tests {
 
         let capped = deadline_capped_delay(requested, remaining);
         assert_eq!(capped, Duration::from_millis(150));
+    }
+
+    #[test]
+    fn forced_final_retry_delay_without_deadline_is_immediate() {
+        let delay = forced_final_retry_delay(None);
+        assert_eq!(delay, Some(Duration::ZERO));
+    }
+
+    #[test]
+    fn forced_final_retry_delay_with_expired_deadline_is_none() {
+        let delay = forced_final_retry_delay(Some(Instant::now() - Duration::from_millis(1)));
+        assert_eq!(delay, None);
+    }
+
+    #[test]
+    fn remaining_request_timeout_has_minimum_of_one_millisecond() {
+        let timeout = remaining_request_timeout(Some(Instant::now() - Duration::from_millis(1)))
+            .expect("timeout should be present when deadline exists");
+        assert_eq!(timeout, Duration::from_millis(1));
     }
 }
