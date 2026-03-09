@@ -7,7 +7,7 @@ use std::os::raw::c_char;
 use azure_core::credentials::Secret;
 use azure_data_cosmos::{
     clients::DatabaseClient, query::Query, ConnectionString, CosmosAccountEndpoint,
-    CosmosAccountReference, CosmosClient, CosmosClientBuilder, QueryOptions,
+    CosmosAccountReference, CosmosClient, CosmosClientBuilder, QueryOptions, RoutingStrategy,
 };
 use futures::TryStreamExt;
 
@@ -23,6 +23,7 @@ use crate::unwrap_required_ptr;
 /// * `ctx` - Pointer to a [`CallContext`] to use for this call.
 /// * `endpoint` - The Cosmos DB account endpoint, as a nul-terminated C string.
 /// * `key` - The Cosmos DB account key, as a nul-terminated C string
+/// * `region` - The Azure region for proximity-based routing, as a nul-terminated C string.
 /// * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
 /// * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
 ///
@@ -35,6 +36,7 @@ pub extern "C" fn cosmos_client_create_with_key(
     ctx: *mut CallContext,
     endpoint: *const c_char,
     key: *const c_char,
+    region: *const c_char,
     options: *const ClientOptions,
     out_client: *mut *mut CosmosClient,
 ) -> CosmosErrorCode {
@@ -42,6 +44,8 @@ pub extern "C" fn cosmos_client_create_with_key(
         let endpoint: CosmosAccountEndpoint =
             parse_cstr(endpoint, error::messages::INVALID_ENDPOINT)?.parse()?;
         let key = parse_cstr(key, error::messages::INVALID_KEY)?.to_string();
+        let region_str = parse_cstr(region, error::messages::INVALID_REGION)?;
+        let strategy = RoutingStrategy::ProximityTo(region_str.to_string().into());
 
         let account = CosmosAccountReference::with_master_key(endpoint, Secret::new(key));
         let mut builder = CosmosClientBuilder::new();
@@ -54,7 +58,7 @@ pub extern "C" fn cosmos_client_create_with_key(
             }
         }
 
-        let client = builder.build(account).await?;
+        let client = builder.build(account, strategy).await?;
 
         Ok(Box::new(client))
     })
@@ -68,6 +72,7 @@ pub extern "C" fn cosmos_client_create_with_key(
 ///                         Can be "emulator" to use the well-known emulator endpoint and key,
 ///                         or a full connection string in the format:
 ///                         `AccountEndpoint=https://...;AccountKey=...;`
+/// * `region` - The Azure region for proximity-based routing, as a nul-terminated C string.
 /// * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
 /// * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
 ///
@@ -79,6 +84,7 @@ pub extern "C" fn cosmos_client_create_with_key(
 pub extern "C" fn cosmos_client_create_with_connection_string(
     ctx: *mut CallContext,
     connection_string: *const c_char,
+    region: *const c_char,
     options: *const ClientOptions,
     out_client: *mut *mut CosmosClient,
 ) -> CosmosErrorCode {
@@ -87,6 +93,8 @@ pub extern "C" fn cosmos_client_create_with_connection_string(
             connection_string,
             error::messages::INVALID_CONNECTION_STRING,
         )?;
+        let region_str = parse_cstr(region, error::messages::INVALID_REGION)?;
+        let strategy = RoutingStrategy::ProximityTo(region_str.to_string().into());
 
         let conn: ConnectionString = connection_string_str.parse()?;
         let endpoint: CosmosAccountEndpoint = conn.account_endpoint.parse()?;
@@ -101,7 +109,7 @@ pub extern "C" fn cosmos_client_create_with_connection_string(
             }
         }
 
-        let client = builder.build(account).await?;
+        let client = builder.build(account, strategy).await?;
 
         Ok(Box::new(client))
     })

@@ -14,7 +14,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::time::Duration;
 
     use azure_core::credentials::Secret;
-    use azure_data_cosmos::{CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder};
+    use azure_data_cosmos::{
+        CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder, RoutingStrategy,
+    };
     use clap::Parser;
 
     use crate::config::{AuthMethod, Config};
@@ -43,13 +45,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build the Cosmos client using the builder pattern
-    let preferred_region: Option<azure_data_cosmos::regions::RegionName> =
-        config.preferred_regions.first().map(|r| r.clone().into());
+    let preferred_region: azure_data_cosmos::regions::RegionName = config
+        .preferred_regions
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "East US".to_string())
+        .into();
+    let strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
 
-    let mut builder = CosmosClientBuilder::new();
-    if let Some(region) = preferred_region.clone() {
-        builder = builder.with_application_region(region);
-    }
+    let builder = CosmosClientBuilder::new();
 
     let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
@@ -59,13 +63,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )?;
             let account =
                 CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
-            builder.build(account).await?
+            builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
             let credential: Arc<dyn azure_core::credentials::TokenCredential> =
                 azure_identity::ManagedIdentityCredential::new(None)?;
             let account = CosmosAccountReference::with_credential(endpoint, credential);
-            builder.build(account).await?
+            builder.build(account, strategy).await?
         }
     };
 
@@ -119,10 +123,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
         let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
-        let mut results_builder = CosmosClientBuilder::new();
-        if let Some(region) = preferred_region {
-            results_builder = results_builder.with_application_region(region);
-        }
+        let results_builder = CosmosClientBuilder::new();
+        let results_strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(
@@ -132,13 +134,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     results_ep,
                     Secret::from(key.to_string()),
                 );
-                results_builder.build(account).await?
+                results_builder.build(account, results_strategy).await?
             }
             AuthMethod::Aad => {
                 let credential: Arc<dyn azure_core::credentials::TokenCredential> =
                     azure_identity::ManagedIdentityCredential::new(None)?;
                 let account = CosmosAccountReference::with_credential(results_ep, credential);
-                results_builder.build(account).await?
+                results_builder.build(account, results_strategy).await?
             }
         };
         setup::ensure_database(&results_client, &config.results_database).await?;
