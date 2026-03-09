@@ -1,7 +1,6 @@
 # Gateway Endpoint Health Checks Specification
 
 **Issue**: [Azure/azure-sdk-for-rust#3846](https://github.com/Azure/azure-sdk-for-rust/issues/3846)
-**Branch**: `tvaron3/healthChecksSpec`
 **Status**: Draft
 
 ---
