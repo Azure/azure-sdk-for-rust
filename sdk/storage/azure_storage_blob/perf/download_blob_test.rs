@@ -15,11 +15,13 @@ use azure_core_test::{
     TestContext,
 };
 use azure_storage_blob::{BlobClient, BlobContainerClient};
+use bytes::BytesMut;
 use futures::{FutureExt, StreamExt, TryStreamExt};
 
 enum CollectOptions {
     Stream,
     Core,
+    VecBytes,
     Simple,
     Into,
 }
@@ -42,6 +44,7 @@ impl DownloadBlobTest {
             let collect_options = match collect.as_str() {
                 "stream" => CollectOptions::Stream,
                 "core" => CollectOptions::Core,
+                "vec_bytes" => CollectOptions::VecBytes,
                 "simple" => CollectOptions::Simple,
                 "into" => CollectOptions::Into,
                 "" => CollectOptions::Stream, // Default to streaming if no option is provided
@@ -115,8 +118,8 @@ impl DownloadBlobTest {
         }
     }
 
-    // This method represents the most basic way to download a blob, where we simply stream the contents and do nothing with them. This is useful for testing the performance of streaming downloads without any additional overhead.
-    async fn download_blob(&self, blob_client: BlobClient) -> azure_core::Result<()> {
+    /// This method represents the most basic way to download a blob, where we simply stream the contents and do nothing with them. This is useful for testing the performance of streaming downloads without any additional overhead.
+    async fn collect_stream(&self, blob_client: BlobClient) -> azure_core::Result<()> {
         let response = blob_client.download(None).await?;
 
         let mut body = response.into_body();
@@ -128,10 +131,20 @@ impl DownloadBlobTest {
         Ok(())
     }
 
-    // This method collects the entire blob into memory using the `collect` method on the stream.
-    //
-    // This is useful for testing the performance of collecting the entire blob into memory, which
-    // may be a common scenario for smaller blobs.
+    /// This method collects the entire blob into memory in 512K chunks using the `collect_into` method on the body
+    async fn collect_into(&self, blob_client: BlobClient) -> azure_core::Result<()> {
+        let response = blob_client.download(None).await?;
+
+        let mut buffer = vec![0u8; 512 * 1024]; // 512 KB buffer
+        response.into_body().collect_into(&mut buffer).await?;
+        black_box(buffer);
+        Ok(())
+    }
+
+    /// This method collects the entire blob into memory using the `collect` method on the stream.
+    ///
+    /// This is useful for testing the performance of collecting the entire blob into memory, which
+    /// may be a common scenario for smaller blobs.
     async fn collect_blob(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
@@ -139,8 +152,8 @@ impl DownloadBlobTest {
         Ok(black_box(body))
     }
 
-    // This method collects the entire blob into memory using a simple loop and extending a `Vec<u8>`.
-    // This is the original blob collect method.
+    /// This method collects the entire blob into memory using a simple loop and extending a `Vec<u8>`.
+    /// This is the original blob collect method.
     async fn collect_blob_simple(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
@@ -152,6 +165,21 @@ impl DownloadBlobTest {
         }
 
         Ok(black_box(Into::<Bytes>::into(final_result)))
+    }
+
+    /// This method collects the entire blob into memory using a `BytesMut` buffer.
+    async fn collect_blob_bytes_mut(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
+        let response = blob_client.download(None).await?;
+
+        let mut body = response.into_body();
+
+        let mut final_result = BytesMut::new();
+
+        while let Some(res) = body.next().await {
+            final_result.extend(&res?);
+        }
+
+        Ok(black_box(final_result.freeze()))
     }
 }
 
@@ -207,7 +235,7 @@ impl PerfTest for DownloadBlobTest {
                     .blob_client(blob.name.as_ref().unwrap());
                 match self.collect {
                     CollectOptions::Stream => {
-                        self.download_blob(blob_client).await?;
+                        self.collect_stream(blob_client).await?;
                     }
                     CollectOptions::Core => {
                         self.collect_blob(blob_client).await?;
@@ -215,9 +243,11 @@ impl PerfTest for DownloadBlobTest {
                     CollectOptions::Simple => {
                         self.collect_blob_simple(blob_client).await?;
                     }
+                    CollectOptions::VecBytes => {
+                        self.collect_blob_bytes_mut(blob_client).await?;
+                    }
                     CollectOptions::Into => {
-                        // For into collection, we could use a different method if it existed. For now, we'll just use the same collect method.
-                        todo!();
+                        self.collect_into(blob_client).await?;
                     }
                 }
             }
@@ -228,6 +258,16 @@ impl PerfTest for DownloadBlobTest {
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // Cleanup code after running the test
+        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
+        while let Some(blob) = iterator.try_next().await? {
+            let blob_client = self
+                .client
+                .get()
+                .unwrap()
+                .blob_client(blob.name.as_ref().unwrap());
+            let _result = blob_client.delete(None).await?;
+        }
+
         Ok(())
     }
 }

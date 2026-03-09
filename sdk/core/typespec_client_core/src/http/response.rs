@@ -313,13 +313,40 @@ impl AsyncResponseBody {
 
     /// Collect the stream into a [`Bytes`] collection.
     pub async fn collect(mut self) -> crate::Result<Bytes> {
-        let mut final_result = BytesMut::new();
+        let mut bytes = Vec::<Bytes>::new();
+        let mut total_length = 0usize;
 
         while let Some(res) = self.next().await {
-            final_result.extend(&res?);
+            let res = res?;
+            total_length += res.len();
+            bytes.push(res);
+        }
+        let mut final_result = BytesMut::with_capacity(total_length);
+        for b in bytes {
+            final_result.extend(&b);
         }
 
-        Ok(final_result.freeze())
+        Ok(final_result.into())
+    }
+
+    /// Collect the stream into a caller supplied buffer.
+    ///
+    /// The buffer must be large enough to hold the entire body, otherwise an error is returned.
+    ///
+    /// Arguments:
+    /// - `buffer`: The buffer to collect the body into.
+    pub async fn collect_into(mut self, buffer: &mut [u8]) -> crate::Result<()> {
+        while let Some(res) = self.next().await {
+            let bytes = res?;
+            if buffer.len() < bytes.len() {
+                return Err(crate::Error::with_message(
+                    ErrorKind::Other,
+                    "buffer is too small to hold response body",
+                ));
+            }
+            buffer[..bytes.len()].copy_from_slice(bytes.as_ref());
+        }
+        Ok(())
     }
 
     /// Collect the stream into a [`String`].
