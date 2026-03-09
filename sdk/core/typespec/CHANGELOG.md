@@ -1,16 +1,10 @@
 # Release History
 
-## 0.13.0 (Unreleased)
+## 0.13.0 (2026-03-05)
 
 ### Features Added
 
 - Added `ErrorKind::Connection` for connection errors.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.12.0 (2026-02-10)
 
