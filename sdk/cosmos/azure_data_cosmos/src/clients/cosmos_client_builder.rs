@@ -7,7 +7,7 @@ use crate::{
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential,
-    RegionSelectionStrategy,
+    RoutingStrategy,
 };
 
 use std::sync::Arc;
@@ -31,7 +31,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// [`CosmosAccountReference`] created via convenience constructors, or a tuple of
 /// `(CosmosAccountEndpoint, credential)` or `(Url, credential)`.
 ///
-/// A [`RegionSelectionStrategy`] is also required to specify how the SDK should select regions.
+/// A [`RoutingStrategy`] is also required to specify how the SDK should select regions.
 ///
 /// # Examples
 ///
@@ -40,7 +40,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// ```rust,no_run
 /// use azure_data_cosmos::{
 ///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
-///     RegionSelectionStrategy, regions,
+///     RoutingStrategy, regions,
 /// };
 /// use std::sync::Arc;
 ///
@@ -50,7 +50,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClientBuilder::new()
-///     .build(account, RegionSelectionStrategy::ProximityTo(regions::EAST_US))
+///     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -61,7 +61,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// ```rust,no_run,ignore
 /// use azure_data_cosmos::{
 ///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
-///     RegionSelectionStrategy, regions,
+///     RoutingStrategy, regions,
 /// };
 /// use azure_core::credentials::Secret;
 ///
@@ -69,7 +69,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
 /// let client = CosmosClientBuilder::new()
-///     .build(account, RegionSelectionStrategy::ProximityTo(regions::EAST_US))
+///     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -148,7 +148,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `account` - The account reference containing the endpoint and credential.
-    /// * `region_selection_strategy` - The strategy for selecting which Azure regions to route requests to.
+    /// * `routing_strategy` - The strategy for selecting which Azure regions to route requests to.
     ///
     /// # Errors
     ///
@@ -156,11 +156,11 @@ impl CosmosClientBuilder {
     pub async fn build(
         mut self,
         account: impl Into<CosmosAccountReference>,
-        region_selection_strategy: RegionSelectionStrategy,
+        routing_strategy: RoutingStrategy,
     ) -> azure_core::Result<CosmosClient> {
         // Apply the region selection strategy to internal options.
-        match region_selection_strategy {
-            RegionSelectionStrategy::ProximityTo(region) => {
+        match routing_strategy {
+            RoutingStrategy::ProximityTo(region) => {
                 self.options.application_region = Some(region);
             }
         }
@@ -325,7 +325,7 @@ impl CosmosClientBuilder {
 
 #[cfg(test)]
 mod tests {
-    use crate::{regions, CosmosAccountReference, CosmosClient, RegionSelectionStrategy};
+    use crate::{regions, CosmosAccountReference, CosmosClient, RoutingStrategy};
     use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
     use std::sync::Arc;
 
@@ -356,7 +356,7 @@ mod tests {
         let result = CosmosClient::builder()
             .build(
                 test_account(),
-                RegionSelectionStrategy::ProximityTo(regions::EAST_US),
+                RoutingStrategy::ProximityTo(regions::EAST_US),
             )
             .await;
         assert!(result.is_ok());
@@ -368,7 +368,7 @@ mod tests {
         let result = CosmosClient::builder()
             .build(
                 test_account(),
-                RegionSelectionStrategy::ProximityTo(unknown),
+                RoutingStrategy::ProximityTo(unknown),
             )
             .await;
         assert!(
@@ -387,7 +387,7 @@ mod tests {
         let client = CosmosClient::builder()
             .build(
                 test_account(),
-                RegionSelectionStrategy::ProximityTo(unknown),
+                RoutingStrategy::ProximityTo(unknown),
             )
             .await
             .expect("build should succeed");
@@ -436,7 +436,7 @@ mod tests {
         let client = CosmosClient::builder()
             .build(
                 test_account(),
-                RegionSelectionStrategy::ProximityTo(regions::EAST_US),
+                RoutingStrategy::ProximityTo(regions::EAST_US),
             )
             .await
             .expect("build should succeed with known region");
@@ -493,7 +493,7 @@ mod tests {
         let client = CosmosClient::builder()
             .build(
                 test_account(),
-                RegionSelectionStrategy::ProximityTo(regions::EAST_US),
+                RoutingStrategy::ProximityTo(regions::EAST_US),
             )
             .await
             .expect("build should succeed");

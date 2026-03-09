@@ -13,13 +13,13 @@ use crate::regions::RegionName;
 /// # Examples
 ///
 /// ```rust
-/// use azure_data_cosmos::{RegionSelectionStrategy, regions};
+/// use azure_data_cosmos::{RoutingStrategy, regions};
 ///
-/// let strategy = RegionSelectionStrategy::ProximityTo(regions::EAST_US);
+/// let strategy = RoutingStrategy::ProximityTo(regions::EAST_US);
 /// ```
 #[derive(Clone, Debug)]
 #[non_exhaustive]
-pub enum RegionSelectionStrategy {
+pub enum RoutingStrategy {
     /// Select regions by geographic proximity to the given region.
     ///
     /// The SDK generates a list of preferred regions sorted by estimated

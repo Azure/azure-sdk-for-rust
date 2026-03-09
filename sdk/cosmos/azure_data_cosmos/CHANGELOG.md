@@ -6,7 +6,7 @@
 
 ### Breaking Changes
 
-- Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RegionSelectionStrategy` parameter on `build()`. Use `RegionSelectionStrategy::ProximityTo(region)` to specify the application region.
+- Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RoutingStrategy` parameter on `build()`. Use `RoutingStrategy::ProximityTo(region)` to specify the application region.
 
 ### Bugs Fixed
 

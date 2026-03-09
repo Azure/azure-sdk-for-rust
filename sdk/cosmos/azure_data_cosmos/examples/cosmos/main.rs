@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_data_cosmos::{
-    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, RegionSelectionStrategy,
+    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, RoutingStrategy,
 };
 use azure_identity::DeveloperToolsCredential;
 use clap::{Args, CommandFactory, Parser, Subcommand};
@@ -87,7 +87,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
 async fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
     let endpoint: CosmosAccountEndpoint = args.endpoint.parse()?;
-    let strategy = RegionSelectionStrategy::ProximityTo(args.region.clone().into());
+    let strategy = RoutingStrategy::ProximityTo(args.region.clone().into());
     if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
         {

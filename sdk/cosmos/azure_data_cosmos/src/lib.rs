@@ -34,7 +34,7 @@ pub use models::CosmosResponse;
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
-pub use region_selection_strategy::RegionSelectionStrategy;
+pub use routing_strategy::RoutingStrategy;
 pub use transactional_batch::{
     BatchDeleteOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
     TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
@@ -50,7 +50,7 @@ mod hash;
 mod murmur_hash;
 mod operation_context;
 mod region_proximity;
-mod region_selection_strategy;
+mod routing_strategy;
 pub mod regions;
 mod request_context;
 mod retry_policies;

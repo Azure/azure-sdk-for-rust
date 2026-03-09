@@ -14,7 +14,7 @@ use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query, RegionSelectionStrategy,
+    Query, RoutingStrategy,
 };
 use futures::TryStreamExt;
 use std::time::Duration;
@@ -276,7 +276,7 @@ impl TestClient {
         let region = application_region
             .or(fault_client_application_region)
             .unwrap_or(HUB_REGION);
-        let strategy = RegionSelectionStrategy::ProximityTo(region);
+        let strategy = RoutingStrategy::ProximityTo(region);
 
         // Configure invalid certificate acceptance (e.g., for emulator)
         #[cfg(feature = "allow_invalid_certificates")]
@@ -809,7 +809,7 @@ impl TestRunContext {
                     endpoint,
                     parsed.account_key.clone(),
                 ),
-                RegionSelectionStrategy::ProximityTo(region),
+                RoutingStrategy::ProximityTo(region),
             )
             .await
     }
