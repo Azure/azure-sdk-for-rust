@@ -325,3 +325,135 @@ fn build_cosmos_response(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use azure_core::http::headers::HeaderName;
+    use url::Url;
+
+    use super::build_transport_request;
+    use crate::{
+        diagnostics::ExecutionContext,
+        driver::pipeline::components::RoutingDecision,
+        models::{
+            AccountReference, ActivityId, ContainerProperties, ContainerReference, CosmosOperation,
+            DatabaseReference, ItemReference, PartitionKey, PartitionKeyDefinition,
+            SystemProperties,
+        },
+    };
+
+    fn test_account() -> AccountReference {
+        AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "test-key",
+        )
+    }
+
+    fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {
+        serde_json::from_str(&format!(r#"{{"paths":["{path}"]}}"#)).unwrap()
+    }
+
+    fn test_container_props() -> ContainerProperties {
+        ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: test_partition_key_definition("/pk"),
+            system_properties: SystemProperties::default(),
+        }
+    }
+
+    fn test_container() -> ContainerReference {
+        ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &test_container_props(),
+        )
+    }
+
+    fn test_routing() -> RoutingDecision {
+        RoutingDecision {
+            endpoint: Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            region: None,
+        }
+    }
+
+    #[test]
+    fn build_transport_request_feed_path_is_resolved() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+
+        let request = build_transport_request(
+            &operation,
+            &test_routing(),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        assert_eq!(request.url.path(), "/dbs");
+    }
+
+    #[test]
+    fn build_transport_request_single_resource_path_is_resolved() {
+        let db = DatabaseReference::from_name(test_account(), "mydb");
+        let operation = CosmosOperation::read_database(db);
+
+        let request = build_transport_request(
+            &operation,
+            &test_routing(),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        assert_eq!(request.url.path(), "/dbs/mydb");
+    }
+
+    #[test]
+    fn build_transport_request_uses_operation_activity_id_when_present() {
+        let operation = CosmosOperation::read_all_databases(test_account())
+            .with_activity_id(ActivityId::from_string("operation-activity".to_string()));
+
+        let request = build_transport_request(
+            &operation,
+            &test_routing(),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        let activity_header = request
+            .headers
+            .get_optional_str(&HeaderName::from_static("x-ms-activity-id"))
+            .expect("activity id should be set");
+        assert_eq!(activity_header, "operation-activity");
+    }
+
+    #[test]
+    fn build_transport_request_adds_partition_key_header_for_item_operation() {
+        let item_ref =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item_ref);
+
+        let request = build_transport_request(
+            &operation,
+            &test_routing(),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Retry,
+            Some(std::time::Instant::now() + Duration::from_secs(5)),
+        )
+        .expect("request should build");
+
+        let partition_key_header = request
+            .headers
+            .get_optional_str(&HeaderName::from_static("x-ms-documentdb-partitionkey"))
+            .expect("partition key header should be set");
+        assert_eq!(partition_key_header, "[\"pk1\"]");
+    }
+}
