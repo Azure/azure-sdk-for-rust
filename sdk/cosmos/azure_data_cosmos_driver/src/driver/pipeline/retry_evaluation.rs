@@ -115,7 +115,7 @@ pub(crate) fn evaluate_transport_result(
                             // TODO(Step 3): Wire the actual partition key range ID from
                             // TransportResult or CosmosOperation once partition-level
                             // routing is implemented.
-                            partition_key_range_id: "unknown".to_owned(),
+                            partition_key_range_id: String::new(),
                             region: endpoint.region().cloned(),
                             is_read: operation.is_read_only(),
                         }),
