@@ -224,31 +224,28 @@ impl PerfTest for DownloadBlobTest {
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // The actual performance test code
 
-        let mut iterator = self.client.get().unwrap().list_blobs(None)?.into_pages();
-        while let Some(blob_segment) = iterator.try_next().await? {
-            let body = blob_segment.into_model()?;
-            for blob in body.segment.blob_items.iter() {
-                let blob_client = self
-                    .client
-                    .get()
-                    .unwrap()
-                    .blob_client(blob.name.as_ref().unwrap());
-                match self.collect {
-                    CollectOptions::Stream => {
-                        self.collect_stream(blob_client).await?;
-                    }
-                    CollectOptions::Core => {
-                        self.collect_blob(blob_client).await?;
-                    }
-                    CollectOptions::Simple => {
-                        self.collect_blob_simple(blob_client).await?;
-                    }
-                    CollectOptions::VecBytes => {
-                        self.collect_blob_bytes_mut(blob_client).await?;
-                    }
-                    CollectOptions::Into => {
-                        self.collect_into(blob_client).await?;
-                    }
+        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
+        while let Some(blob) = iterator.try_next().await? {
+            let blob_client = self
+                .client
+                .get()
+                .unwrap()
+                .blob_client(blob.name.unwrap().as_ref());
+            match self.collect {
+                CollectOptions::Stream => {
+                    self.collect_stream(blob_client).await?;
+                }
+                CollectOptions::Core => {
+                    self.collect_blob(blob_client).await?;
+                }
+                CollectOptions::Simple => {
+                    self.collect_blob_simple(blob_client).await?;
+                }
+                CollectOptions::VecBytes => {
+                    self.collect_blob_bytes_mut(blob_client).await?;
+                }
+                CollectOptions::Into => {
+                    self.collect_into(blob_client).await?;
                 }
             }
         }

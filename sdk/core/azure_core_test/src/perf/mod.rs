@@ -584,7 +584,7 @@ impl PerfRunner {
                     TestOptionType::Boolean => {
                         // For boolean options, we can use the presence of the flag to indicate true, and absence to indicate false.
                         // Therefore, we don't need to specify a value parser or expect any arguments for this type.
-                        arg.num_args(0)
+                        arg.action(clap::ArgAction::SetTrue).num_args(0)
                     }
                 };
                 if let Some(short_activator) = option.short_activator {

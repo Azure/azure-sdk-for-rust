@@ -5,7 +5,10 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::{error::ErrorKind, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{
+        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
+        TestOptionType,
+    },
     TestContext,
 };
 use azure_storage_blob::BlobContainerClient;
@@ -13,6 +16,7 @@ use futures::{FutureExt, TryStreamExt};
 
 pub struct UploadBlobTest {
     count: u32,
+    size: usize,
     endpoint: Option<String>,
     client: OnceLock<BlobContainerClient>,
 }
@@ -20,18 +24,15 @@ pub struct UploadBlobTest {
 impl UploadBlobTest {
     fn create_upload_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
-            let count: Option<&String> = runner.try_get_test_arg("count")?;
-
-            println!("UploadBlobTest with count: {:?}", count);
-            let count = count.expect("count argument is mandatory").parse::<u32>()?;
-            println!("Parsed count: {}", count);
-
-            let endpoint: Option<&String> = runner.try_get_test_arg("endpoint")?;
-
             Ok(Box::new(UploadBlobTest {
-                count,
-                endpoint: endpoint.cloned(),
+                count: runner
+                    .try_get_test_arg("count")?
+                    .expect("'count' argument is required."),
+                endpoint: runner.try_get_test_arg("endpoint")?,
                 client: OnceLock::new(),
+                size: runner
+                    .try_get_test_arg("size")?
+                    .expect("'size' parameter is required."),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
@@ -45,10 +46,11 @@ impl UploadBlobTest {
                 PerfTestOption {
                     name: "count",
                     display_message: "The number of blobs to upload",
-                    mandatory: true,
+                    mandatory: false,
                     short_activator: Some('c'),
                     long_activator: "count",
                     expected_args_len: 1,
+                    option_type: TestOptionType::Uint32,
                     ..Default::default()
                 },
                 PerfTestOption {
@@ -58,6 +60,16 @@ impl UploadBlobTest {
                     short_activator: Some('e'),
                     long_activator: "endpoint",
                     expected_args_len: 1,
+                    ..Default::default()
+                },
+                PerfTestOption {
+                    name: "size",
+                    display_message: "The size of each blob in bytes",
+                    mandatory: true,
+                    short_activator: Some('s'),
+                    long_activator: "size",
+                    expected_args_len: 1,
+                    option_type: TestOptionType::Usize,
                     ..Default::default()
                 },
             ],
@@ -95,7 +107,7 @@ impl PerfTest for UploadBlobTest {
         for i in 0..self.count {
             let blob_name = format!("blob-{}", i);
             let blob_client = container_client.blob_client(&blob_name);
-            let body = vec![0u8; 1024 * 1024]; // 1 MB blob
+            let body = vec![0u8; 10]; // Tiny blob to focus on upload overhead rather than payload size.
             let body_bytes = Bytes::from(body);
 
             let _result = blob_client.upload(body_bytes.into(), true, 5, None).await?;
@@ -107,12 +119,19 @@ impl PerfTest for UploadBlobTest {
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // The actual performance test code
 
-        let mut iterator = self.client.get().unwrap().list_blobs(None)?.into_pages();
-        while let Some(blob_segment) = iterator.try_next().await? {
-            let body = blob_segment.into_model()?;
-            for blob in body.segment.blob_items.iter() {
-                std::hint::black_box(blob);
-            }
+        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
+        while let Some(blob) = iterator.try_next().await? {
+            let blob_client = self
+                .client
+                .get()
+                .unwrap()
+                .blob_client(blob.name.unwrap().as_ref());
+
+            let data = vec![0u8; self.size]; // Tiny blob to focus on upload overhead rather than payload size.
+            let data_bytes = Bytes::from(data);
+            blob_client
+                .upload(data_bytes.into(), true, self.size as u64, None)
+                .await?;
         }
 
         Ok(())

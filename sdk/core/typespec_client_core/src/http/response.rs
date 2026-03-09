@@ -480,6 +480,7 @@ mod tests {
             .boxed(),
         )
         .into();
+        // Buffer holds the entire 2 chunk result payload.
         let mut buffer = vec![0u8; 4];
         let len = response
             .into_body()
@@ -525,6 +526,7 @@ mod tests {
             .boxed(),
         )
         .into();
+
         // Buffer is too small for the 2nd chunk, even if it can hold the 1st chunk.
         let mut buffer = vec![0u8; 6];
         let result = response.into_body().collect_into(&mut buffer).await;
@@ -548,7 +550,7 @@ mod tests {
             .boxed(),
         )
         .into();
-        // On any chunk
+        // Buffer is larger than the payload.
         let mut buffer = vec![0u8; 10];
         let length = response
             .into_body()
