@@ -11,7 +11,6 @@ use azure_core::error::ErrorKind;
 use azure_core::http::{
     headers::Headers, AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode,
 };
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -29,20 +28,12 @@ pub struct FaultClient {
 struct RuleState {
     /// The fault injection rule.
     rule: Arc<FaultInjectionRule>,
-    /// Number of times this rule has been applied.
-    hit_count: AtomicU32,
 }
 
 impl FaultClient {
     /// Creates a new instance of the FaultClient.
     pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
-        let rule_states = rules
-            .into_iter()
-            .map(|rule| RuleState {
-                rule,
-                hit_count: AtomicU32::new(0),
-            })
-            .collect();
+        let rule_states = rules.into_iter().map(|rule| RuleState { rule }).collect();
 
         Self {
             inner,
@@ -74,7 +65,7 @@ impl FaultClient {
 
         // Check if we've exceeded the hit limit on the rule
         if let Some(hit_limit) = rule.hit_limit {
-            if rule_state.hit_count.load(Ordering::SeqCst) >= hit_limit {
+            if rule.hit_count() >= hit_limit {
                 return false;
             }
         }
@@ -254,8 +245,8 @@ impl HttpClient for FaultClient {
             // Apply fault if we found an applicable rule
             if let Some(index) = applicable_rule_index {
                 let rule_state = &rules[index];
-                // Increment hit count
-                rule_state.hit_count.fetch_add(1, Ordering::SeqCst);
+                // Increment hit count on the rule itself
+                rule_state.rule.increment_hit_count();
                 // Clone and return the result
                 Some(rule_state.rule.result.clone())
             } else {

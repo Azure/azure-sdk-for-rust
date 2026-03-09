@@ -3,7 +3,7 @@
 
 //! Defines fault injection rules that combine conditions and results.
 
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Instant;
 
 use super::condition::FaultInjectionCondition;
@@ -26,6 +26,8 @@ pub struct FaultInjectionRule {
     pub id: String,
     /// Whether the rule is currently enabled.
     enabled: AtomicBool,
+    /// Number of times the rule has been matched and applied.
+    hit_count: AtomicU32,
 }
 
 impl Clone for FaultInjectionRule {
@@ -37,7 +39,8 @@ impl Clone for FaultInjectionRule {
             end_time: self.end_time,
             hit_limit: self.hit_limit,
             id: self.id.clone(),
-            enabled: AtomicBool::new(self.enabled.load(std::sync::atomic::Ordering::SeqCst)),
+            enabled: AtomicBool::new(self.enabled.load(Ordering::SeqCst)),
+            hit_count: AtomicU32::new(self.hit_count.load(Ordering::SeqCst)),
         }
     }
 }
@@ -45,19 +48,31 @@ impl Clone for FaultInjectionRule {
 impl FaultInjectionRule {
     /// Returns whether the rule is currently enabled.
     pub fn is_enabled(&self) -> bool {
-        self.enabled.load(std::sync::atomic::Ordering::SeqCst)
+        self.enabled.load(Ordering::SeqCst)
     }
 
     /// Enables the rule.
     pub fn enable(&self) {
-        self.enabled
-            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.enabled.store(true, Ordering::SeqCst);
     }
 
     /// Disables the rule.
     pub fn disable(&self) {
-        self.enabled
-            .store(false, std::sync::atomic::Ordering::SeqCst);
+        self.enabled.store(false, Ordering::SeqCst);
+    }
+
+    /// Returns the number of times this rule has been matched.
+    ///
+    /// The hit count is incremented each time the rule's condition matches a
+    /// request, regardless of whether the fault was actually applied (e.g.,
+    /// probability-based skipping still increments the count).
+    pub fn hit_count(&self) -> u32 {
+        self.hit_count.load(Ordering::SeqCst)
+    }
+
+    /// Increments the hit count by one and returns the previous value.
+    pub(super) fn increment_hit_count(&self) -> u32 {
+        self.hit_count.fetch_add(1, Ordering::SeqCst)
     }
 }
 
@@ -132,6 +147,7 @@ impl FaultInjectionRuleBuilder {
             hit_limit: self.hit_limit,
             id: self.id,
             enabled: AtomicBool::new(true),
+            hit_count: AtomicU32::new(0),
         }
     }
 }

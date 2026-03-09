@@ -932,3 +932,118 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
     )
     .await
 }
+
+/// Test 403.3 (WriteForbidden) triggers region failover and database account refresh.
+///
+/// Injects a WriteForbidden error for writes targeting the hub region. Verifies that:
+/// 1. The write succeeds via failover to the satellite region.
+/// 2. A database account refresh is triggered (tracked via a passthrough rule on
+///    `MetadataReadDatabaseAccount`).
+#[tokio::test]
+pub async fn fault_injection_write_forbidden_triggers_failover_and_account_refresh(
+) -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::WriteForbidden)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::CreateItem)
+        .with_region(HUB_REGION)
+        .build();
+
+    let write_forbidden_rule = Arc::new(
+        FaultInjectionRuleBuilder::new("write-forbidden-hub", server_error)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    );
+
+    // Passthrough rule to track database account refresh calls.
+    // Probability 0.0 means the fault is never injected, but the hit count is
+    // still incremented whenever the condition matches, allowing us to detect
+    // that the refresh was triggered.
+    let account_refresh_result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::InternalServerError)
+        .with_probability(0.0)
+        .build();
+
+    let account_refresh_condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataReadDatabaseAccount)
+        .build();
+
+    let account_refresh_rule = Arc::new(
+        FaultInjectionRuleBuilder::new("track-account-refresh", account_refresh_result)
+            .with_condition(account_refresh_condition)
+            .build(),
+    );
+
+    let fault_builder = FaultInjectionClientBuilder::new()
+        .with_rule(write_forbidden_rule.clone())
+        .with_rule(account_refresh_rule.clone());
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
+
+            // Capture the database account refresh count before the write.
+            let refresh_count_before = account_refresh_rule.hit_count();
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+
+            let result = fault_container_client.create_item(&pk, &item, None).await;
+
+            assert!(
+                result.is_ok(),
+                "Write should succeed via failover after 403.3, but got error: {:?}",
+                result.err()
+            );
+
+            let response = result.unwrap();
+            let request_url = response.request_url().to_string();
+
+            // Verify the write failed over to the satellite region.
+            assert!(
+                request_url.contains(SATELLITE_REGION.as_str()),
+                "request should have failed over to satellite region after 403.3, got: {request_url}"
+            );
+
+            // Verify a database account refresh was triggered by the 403.3 handling.
+            let refresh_count_after = account_refresh_rule.hit_count();
+            assert!(
+                refresh_count_after > refresh_count_before,
+                "database account refresh should have been triggered (before: {refresh_count_before}, after: {refresh_count_after})"
+            );
+
+            Ok(())
+        },
+        Some(
+            TestOptions::new()
+                .with_fault_injection_builder(fault_builder)
+                .with_fault_client_application_region(HUB_REGION),
+        ),
+    )
+    .await
+}
