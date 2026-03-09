@@ -628,4 +628,62 @@ mod tests {
         assert!(result.is_some());
         assert_eq!(result.unwrap().write_region().unwrap().as_str(), "eastus");
     }
+
+    #[tokio::test]
+    async fn refresh_if_stale_returns_cached_on_fetch_failure() {
+        // When the fetch fails but a cached value exists, the stale cached
+        // value should be returned instead of propagating the error.
+        let cache = AccountMetadataCache {
+            cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: Duration::from_secs(0),
+            refresh_mutex: async_lock::Mutex::new(()),
+        };
+        let endpoint = test_endpoint("myaccount");
+
+        // Populate with initial data
+        cache
+            .get_or_fetch(endpoint.clone(), || async { Ok(test_properties("westus")) })
+            .await
+            .unwrap();
+
+        // Fetch fails — should return the stale cached value
+        let result = cache
+            .refresh_if_stale(endpoint, || async {
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "network failure",
+                ))
+            })
+            .await
+            .unwrap();
+
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "westus");
+    }
+
+    #[tokio::test]
+    async fn refresh_if_stale_propagates_error_when_no_cached_value() {
+        // When the fetch fails and there is no cached value, the error
+        // should be propagated to the caller.
+        let cache = AccountMetadataCache {
+            cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: Duration::from_secs(0),
+            refresh_mutex: async_lock::Mutex::new(()),
+        };
+        let endpoint = test_endpoint("myaccount");
+
+        // No prior cached data — fetch fails
+        let result = cache
+            .refresh_if_stale(endpoint, || async {
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "network failure",
+                ))
+            })
+            .await;
+
+        assert!(result.is_err());
+    }
 }
