@@ -311,7 +311,7 @@ impl CheckpointStore for BlobCheckpointStore {
                     .and_then(|ap| ap.get(OWNER_ID).cloned());
             }
             if let Some(properties) = &blob.properties {
-                ownership.etag = properties.etag.as_ref().map(|s| Etag::from(s.clone()));
+                ownership.etag = properties.etag.clone();
                 ownership.last_modified_time = properties.last_modified;
             }
 
