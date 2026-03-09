@@ -263,8 +263,9 @@ impl AccountMetadataCache {
             .get_or_insert_with(endpoint.clone(), || async { properties })
             .await;
 
-        // Record the fetch time after caching, so a concurrent loser
-        // does not reset the staleness clock with a discarded fetch.
+        // Record the fetch time after caching, so a concurrent thread
+        // that loses the race does not reset the staleness clock with
+        // a discarded fetch.
         {
             let mut timestamps = self.last_refresh.write().await;
             timestamps.insert(endpoint, Instant::now());
