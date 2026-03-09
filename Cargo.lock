@@ -199,14 +199,10 @@ dependencies = [
  "azure_core_macros 0.6.0",
  "bytes",
  "futures",
- "hmac",
- "openssl",
  "pin-project",
  "rustc_version",
  "serde",
  "serde_json",
- "sha2",
- "tokio",
  "tracing",
  "typespec 0.12.0",
  "typespec_client_core 0.11.0",
@@ -244,6 +240,30 @@ dependencies = [
  "typespec 0.13.0",
  "typespec_client_core 0.12.0",
  "ureq",
+]
+
+[[package]]
+name = "azure_core"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd0160068f7a3021b5e749dc552374e82360463e9fb51e1127631a69fdde641f"
+dependencies = [
+ "async-lock",
+ "async-trait",
+ "azure_core_macros 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bytes",
+ "futures",
+ "hmac",
+ "openssl",
+ "pin-project",
+ "rustc_version",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "tracing",
+ "typespec 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "typespec_client_core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -290,6 +310,18 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "azure_core_macros"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bd69a8e70ec6be32ebf7e947cf9a58f6c7255e4cd9c48e640532ef3e37adc6d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.116",
+ "tracing",
 ]
 
 [[package]]
@@ -351,7 +383,7 @@ version = "0.32.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 0.32.0",
+ "azure_core 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_core_test",
  "azure_identity 0.32.0",
  "clap",
@@ -392,7 +424,7 @@ dependencies = [
 name = "azure_data_cosmos_native"
 version = "0.27.0"
 dependencies = [
- "azure_core 0.32.0",
+ "azure_core 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_data_cosmos",
  "cbindgen",
  "futures",
@@ -3583,6 +3615,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "typespec"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b63559a2aab9c7694fa8d2658a828d6b36f1e3904b1860d820c7cc6a2ead61c7"
+dependencies = [
+ "base64 0.22.1",
+ "bytes",
+ "futures",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "typespec_client_core"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3633,6 +3679,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "typespec_client_core"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de81ecf3a175da5a10ed60344caa8b53fe6d8ce28c6c978a7e3e09ca1e1b4131"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "dyn-clone",
+ "futures",
+ "pin-project",
+ "rand 0.10.0",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "time",
+ "tokio",
+ "tracing",
+ "typespec 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "typespec_macros 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "typespec_macros"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3657,6 +3727,18 @@ dependencies = [
  "syn 2.0.116",
  "tokio",
  "typespec_client_core 0.12.0",
+]
+
+[[package]]
+name = "typespec_macros"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07108c5d18e00ec7bb09d2e48df95ebfab6b7179112d1e4216e9968ac2a0a429"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "rustc_version",
+ "syn 2.0.116",
 ]
 
 [[package]]

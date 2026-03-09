@@ -240,7 +240,9 @@ pub(crate) trait RequestSentExt {
 impl RequestSentExt for azure_core::Error {
     fn request_sent_status(&self) -> RequestSentStatus {
         match self.kind() {
-            ErrorKind::Credential | ErrorKind::DataConversion => RequestSentStatus::NotSent,
+            ErrorKind::Connection | ErrorKind::Credential | ErrorKind::DataConversion => {
+                RequestSentStatus::NotSent
+            }
             ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
             _ => RequestSentStatus::Unknown,
         }
@@ -250,6 +252,12 @@ impl RequestSentExt for azure_core::Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn connection_error_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Connection, "connection refused");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
 
     #[test]
     fn io_error_is_unknown() {
