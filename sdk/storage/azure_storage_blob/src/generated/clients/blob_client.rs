@@ -825,6 +825,7 @@ impl BlobClient {
     /// * [`content_language`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_language) - content-language
     /// * [`content_length`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_length) - content-length
     /// * [`content_md5`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_md5) - content-md5
+    /// * [`content_type`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_type) - content-type
     /// * [`etag`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::last_modified) - last-modified
     /// * [`access_tier`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::access_tier) - x-ms-access-tier
