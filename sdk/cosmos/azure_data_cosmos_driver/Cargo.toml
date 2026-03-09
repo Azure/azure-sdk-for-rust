@@ -22,7 +22,7 @@ azure_core = { workspace = true, features = [
   "hmac_rust",
 ] }
 base64.workspace = true
-crossbeam-epoch.workspace = true
+crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
 reqwest = { workspace = true, features = ["native-tls"] }
 serde.workspace = true

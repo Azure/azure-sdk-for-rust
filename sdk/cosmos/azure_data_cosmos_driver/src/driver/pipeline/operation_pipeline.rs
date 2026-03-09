@@ -236,7 +236,8 @@ fn resolve_endpoint(
     endpoint_unavailability_ttl: Duration,
 ) -> RoutingDecision {
     let account = location.account.as_ref();
-    let account = expire_unavailable_endpoints(account, Instant::now(), endpoint_unavailability_ttl);
+    let account =
+        expire_unavailable_endpoints(account, Instant::now(), endpoint_unavailability_ttl);
     let endpoints = account.preferred_endpoints(operation.is_read_only());
 
     let base_index = if retry_state.location.is_current(account.generation) {
