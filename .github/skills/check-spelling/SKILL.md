@@ -1,4 +1,3 @@
-
 ---
 name: check-spelling
 description: Check and fix spelling in project source files using cSpell.
