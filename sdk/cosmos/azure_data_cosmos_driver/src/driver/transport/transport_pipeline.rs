@@ -166,8 +166,8 @@ pub(crate) async fn execute_transport_pipeline(
             ExecutionContext::Retry
         };
 
-        let endpoint_string = request.url.as_str().to_owned();
-        let region = request.region.clone();
+        let endpoint_string = request.endpoint.url().as_str().to_owned();
+        let region = request.endpoint.region().cloned();
         let request_handle = diagnostics.start_request(
             execution_context,
             pipeline_type,

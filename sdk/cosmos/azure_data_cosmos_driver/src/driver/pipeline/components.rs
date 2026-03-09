@@ -14,7 +14,11 @@ use url::Url;
 
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
-    driver::{jitter::with_jitter, transport::AuthorizationContext},
+    driver::{
+        jitter::with_jitter,
+        routing::{CosmosEndpoint, LocationIndex},
+        transport::AuthorizationContext,
+    },
     models::CosmosStatus,
     options::Region,
 };
@@ -27,10 +31,8 @@ use crate::{
 /// In Step 2+ this will carry `CosmosEndpoint` and partition overrides.
 #[derive(Clone, Debug)]
 pub(crate) struct RoutingDecision {
-    /// The resolved endpoint URL for this attempt.
-    pub endpoint: Url,
-    /// The region this endpoint resides in, if known.
-    pub region: Option<Region>,
+    /// The resolved endpoint for this attempt.
+    pub endpoint: CosmosEndpoint,
 }
 
 /// Operation-level retry state.
@@ -39,34 +41,73 @@ pub(crate) struct RoutingDecision {
 /// Expanded in Step 2 with failover, session, and location index fields.
 #[derive(Clone, Debug)]
 pub(crate) struct OperationRetryState {
-    /// How many transport-level retries have been attempted.
-    pub transport_retry_count: u32,
-    /// Maximum number of transport retries allowed.
-    pub max_transport_retries: u32,
+    /// Type-safe index into preferred endpoint lists.
+    pub location: LocationIndex,
+    /// Number of operation-level failover retries attempted.
+    pub failover_retry_count: u32,
+    /// Number of session-token retries attempted.
+    pub session_token_retry_count: u32,
+    /// Maximum failover retries.
+    pub max_failover_retries: u32,
+    /// Maximum session retries.
+    pub max_session_retries: u32,
+    /// Whether multiple write locations can be used.
+    pub can_use_multiple_write_locations: bool,
+    /// Regions excluded for this operation.
+    pub excluded_regions: Vec<Region>,
 }
 
 impl OperationRetryState {
     /// Creates the initial retry state for an operation.
-    pub fn initial() -> Self {
+    pub fn initial(
+        generation: u64,
+        can_use_multiple_write_locations: bool,
+        excluded_regions: Vec<Region>,
+        max_failover_retries: u32,
+        max_session_retries: u32,
+    ) -> Self {
         Self {
-            transport_retry_count: 0,
-            // Step 1 keeps the historical single transport retry behavior.
-            // TODO(Step 2): source this from runtime/retry options once failover
-            // and richer operation-level retry controls are wired.
-            max_transport_retries: 1,
+            location: LocationIndex::initial(generation),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries,
+            max_session_retries,
+            can_use_multiple_write_locations,
+            excluded_regions,
         }
     }
 
-    /// Whether the retry budget allows another transport retry.
-    pub fn can_retry_transport(&self) -> bool {
-        self.transport_retry_count < self.max_transport_retries
+    /// Whether failover retry budget allows another attempt.
+    pub fn can_retry_failover(&self) -> bool {
+        self.failover_retry_count < self.max_failover_retries
     }
 
-    /// Advance to the next transport retry attempt.
-    pub fn advance_transport_retry(&self) -> Self {
+    /// Whether session retry budget allows another attempt.
+    pub fn can_retry_session(&self) -> bool {
+        self.session_token_retry_count < self.max_session_retries
+    }
+
+    /// Returns a new state advanced for failover retry.
+    pub fn advance_failover(&self) -> Self {
         Self {
-            transport_retry_count: self.transport_retry_count + 1,
-            max_transport_retries: self.max_transport_retries,
+            failover_retry_count: self.failover_retry_count + 1,
+            ..self.clone()
+        }
+    }
+
+    /// Returns a new state advanced for session retry.
+    pub fn advance_session_retry(&self) -> Self {
+        Self {
+            session_token_retry_count: self.session_token_retry_count + 1,
+            ..self.clone()
+        }
+    }
+
+    /// Advances the location index for endpoint list of `list_len`.
+    pub fn advance_location(&self, list_len: usize) -> Self {
+        Self {
+            location: self.location.next(list_len),
+            ..self.clone()
         }
     }
 }
@@ -82,10 +123,10 @@ impl OperationRetryState {
 pub(crate) struct TransportRequest {
     /// The HTTP method.
     pub method: Method,
+    /// The endpoint selected for this attempt.
+    pub endpoint: CosmosEndpoint,
     /// The fully resolved URL for this attempt.
     pub url: Url,
-    /// The resolved region for this attempt, if known.
-    pub region: Option<Region>,
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
     /// Request body bytes (schema-agnostic).
@@ -273,8 +314,13 @@ pub(crate) enum TransportOutcome {
 pub(crate) enum OperationAction {
     /// Return the successful response.
     Complete(TransportResult),
-    /// Retry the transport attempt on the same endpoint.
-    TransportRetry { new_state: OperationRetryState },
+    /// Retry in another endpoint/region.
+    FailoverRetry {
+        new_state: OperationRetryState,
+        delay: Option<Duration>,
+    },
+    /// Retry for session consistency.
+    SessionRetry { new_state: OperationRetryState },
     /// Abort the operation with this error.
     Abort {
         error: azure_core::Error,
@@ -371,10 +417,10 @@ mod tests {
 
     #[test]
     fn operation_retry_state_budget() {
-        let state = OperationRetryState::initial();
-        assert!(state.can_retry_transport());
+        let state = OperationRetryState::initial(0, false, Vec::new(), 1, 1);
+        assert!(state.can_retry_failover());
 
-        let state = state.advance_transport_retry();
-        assert!(!state.can_retry_transport());
+        let state = state.advance_failover();
+        assert!(!state.can_retry_failover());
     }
 }

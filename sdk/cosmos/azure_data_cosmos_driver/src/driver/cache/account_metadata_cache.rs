@@ -248,6 +248,14 @@ impl AccountMetadataCache {
             .get_or_insert_with(endpoint, || async { properties })
             .await)
     }
+
+    /// Invalidates cached account properties for an endpoint.
+    pub(crate) async fn invalidate(
+        &self,
+        endpoint: &AccountEndpoint,
+    ) -> Option<Arc<AccountProperties>> {
+        self.cache.invalidate(endpoint).await
+    }
 }
 
 impl Default for AccountMetadataCache {

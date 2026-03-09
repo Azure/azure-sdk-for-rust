@@ -8,18 +8,19 @@
 //! (7-stage loop) that later steps will expand.
 
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
+    driver::routing::{expire_unavailable_endpoints, LocationSnapshot, LocationStateStore},
     models::{
-        AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
-        Credential, SubStatusCode,
+        ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
+        SubStatusCode,
     },
-    options::{OperationOptions, Region, RuntimeOptions},
+    options::{OperationOptions, RuntimeOptions},
 };
 
 use super::{
@@ -48,8 +49,7 @@ pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     _options: &OperationOptions,
     effective_options: &RuntimeOptions,
-    endpoint: &AccountEndpoint,
-    region: &Option<Region>,
+    location_state_store: &LocationStateStore,
     http_client: Arc<dyn HttpClient>,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
@@ -59,7 +59,35 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
-    let mut retry_state = OperationRetryState::initial();
+    let location_snapshot = location_state_store.snapshot();
+    let max_failover_retries = effective_options
+        .max_failover_retry_count
+        .unwrap_or_else(|| {
+            std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
+                .ok()
+                .and_then(|v| v.parse::<u32>().ok())
+                .unwrap_or(3)
+        });
+    let max_session_retries = effective_options
+        .max_session_retry_count
+        .unwrap_or_else(|| {
+            std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
+                .ok()
+                .and_then(|v| v.parse::<u32>().ok())
+                .unwrap_or(1)
+        });
+
+    let mut retry_state = OperationRetryState::initial(
+        location_snapshot.account.generation,
+        location_snapshot.account.multiple_write_locations_enabled,
+        effective_options
+            .excluded_regions
+            .as_ref()
+            .map(|r| r.0.clone())
+            .unwrap_or_default(),
+        max_failover_retries,
+        max_session_retries,
+    );
 
     let deadline = effective_options
         .end_to_end_latency_policy
@@ -68,13 +96,13 @@ pub(crate) async fn execute_operation_pipeline(
 
     loop {
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
-        // Step 1: no LocationSnapshot — single region.
+        let location = location_state_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
-        let routing = resolve_endpoint(endpoint, region);
+        let routing = resolve_endpoint(operation, &retry_state, &location);
 
         // ── STAGE 3: Build transport request ───────────────────────────
-        let execution_context = if retry_state.transport_retry_count == 0 {
+        let execution_context = if retry_state.failover_retry_count == 0 {
             ExecutionContext::Initial
         } else {
             ExecutionContext::Retry
@@ -101,17 +129,31 @@ pub(crate) async fn execute_operation_pipeline(
         .await;
 
         // ── STAGE 5: Evaluate result → action ──────────────────────────
-        let action = evaluate_transport_result(operation, result, &retry_state);
+        let (action, effects) =
+            evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
         // ── STAGE 6: Apply location effects ────────────────────────────
-        // Step 1: no location effects.
+        location_state_store.apply(&effects).await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
             OperationAction::Complete(result) => {
                 return build_cosmos_response(result, diagnostics);
             }
-            OperationAction::TransportRetry { new_state } => {
+            OperationAction::FailoverRetry { new_state, delay } => {
+                if let Some(delay) = delay {
+                    if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
+                        azure_core::sleep(duration).await;
+                    }
+                }
+
+                let endpoints_len = location
+                    .account
+                    .preferred_endpoints(operation.is_read_only())
+                    .len();
+
+                retry_state = new_state.advance_location(endpoints_len);
+
                 // Check deadline before retrying
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
@@ -131,8 +173,13 @@ pub(crate) async fn execute_operation_pipeline(
                         ));
                     }
                 }
-                retry_state = new_state;
-                // → next iteration
+            }
+            OperationAction::SessionRetry { new_state } => {
+                let endpoints_len = location
+                    .account
+                    .preferred_endpoints(operation.is_read_only())
+                    .len();
+                retry_state = new_state.advance_location(endpoints_len);
             }
             OperationAction::Abort { error, status } => {
                 if let Some(cosmos_status) = status {
@@ -149,13 +196,39 @@ pub(crate) async fn execute_operation_pipeline(
 
 /// Resolves the endpoint for this attempt.
 ///
-/// Step 1: trivially wraps the provided endpoint and region.
-/// Step 2 will use `LocationSnapshot` and `AccountEndpointState`.
-fn resolve_endpoint(endpoint: &AccountEndpoint, region: &Option<Region>) -> RoutingDecision {
-    RoutingDecision {
-        endpoint: endpoint.url().clone(),
-        region: region.clone(),
+/// Step 2 resolves from `LocationSnapshot` and `AccountEndpointState`.
+fn resolve_endpoint(
+    operation: &CosmosOperation,
+    retry_state: &OperationRetryState,
+    location: &LocationSnapshot,
+) -> RoutingDecision {
+    let account = location.account.as_ref();
+    let account = expire_unavailable_endpoints(account, Instant::now(), Duration::from_secs(60));
+    let endpoints = account.preferred_endpoints(operation.is_read_only());
+
+    let base_index = if retry_state.location.is_current(account.generation) {
+        retry_state.location.index()
+    } else {
+        0
+    };
+
+    let mut selected = None;
+    let len = endpoints.len();
+    for i in 0..len {
+        let candidate = &endpoints[(base_index + i) % len];
+        let excluded = candidate
+            .region()
+            .is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r));
+        let unavailable = account.unavailable_endpoints.contains_key(candidate);
+        if !excluded && !unavailable {
+            selected = Some(candidate.clone());
+            break;
+        }
     }
+
+    let selected = selected.unwrap_or_else(|| account.default_endpoint.clone());
+
+    RoutingDecision { endpoint: selected }
 }
 
 /// Builds a `TransportRequest` from the operation and routing decision.
@@ -169,7 +242,7 @@ fn build_transport_request(
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
     let url = {
-        let mut base = routing.endpoint.clone();
+        let mut base = routing.endpoint.url().clone();
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
         } else if request_path.is_empty() {
@@ -210,8 +283,8 @@ fn build_transport_request(
 
     Ok(TransportRequest {
         method,
+        endpoint: routing.endpoint.clone(),
         url,
-        region: routing.region.clone(),
         headers,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,

@@ -5,6 +5,7 @@
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
+    driver::routing::{build_account_endpoint_state, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
@@ -15,7 +16,9 @@ use crate::{
     },
 };
 use azure_core::http::Request;
+use futures::future::BoxFuture;
 use std::sync::Arc;
+use std::time::Duration;
 
 use super::{
     cache::AccountRegion,
@@ -41,9 +44,41 @@ pub struct CosmosDriver {
     runtime: CosmosDriverRuntime,
     /// Driver-level options including account reference.
     options: DriverOptions,
+    /// Shared operation routing state for multi-region failover.
+    location_state_store: Arc<LocationStateStore>,
 }
 
 impl CosmosDriver {
+    async fn fetch_account_properties_with_runtime(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let endpoint = AccountEndpoint::from(account);
+        let transport = runtime.transport();
+        let http_client = transport.get_metadata_http_client(&endpoint);
+        let user_agent = runtime.user_agent().as_str();
+
+        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
+        cosmos_headers::apply_cosmos_headers(
+            &mut request,
+            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
+        );
+        request_signing::sign_request(
+            &mut request,
+            account.auth(),
+            &AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                crate::models::ResourceType::DatabaseAccount,
+                "",
+            ),
+        )
+        .await?;
+
+        let response = http_client.execute_request(&request).await?;
+        let raw = response.try_into_raw_response().await?;
+        Self::parse_account_properties_payload(raw.body())
+    }
+
     fn parse_account_properties_payload(
         payload: &[u8],
     ) -> azure_core::Result<super::cache::AccountProperties> {
@@ -72,30 +107,7 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        let endpoint = AccountEndpoint::from(account);
-        let transport = self.runtime.transport();
-        let http_client = transport.get_metadata_http_client(&endpoint);
-        let user_agent = self.runtime.user_agent().as_str();
-
-        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
-        cosmos_headers::apply_cosmos_headers(
-            &mut request,
-            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
-        );
-        request_signing::sign_request(
-            &mut request,
-            account.auth(),
-            &AuthorizationContext::new(
-                azure_core::http::Method::Get,
-                crate::models::ResourceType::DatabaseAccount,
-                "",
-            ),
-        )
-        .await?;
-
-        let response = http_client.execute_request(&request).await?;
-        let raw = response.try_into_raw_response().await?;
-        Self::parse_account_properties_payload(raw.body())
+        Self::fetch_account_properties_with_runtime(&self.runtime, account).await
     }
 
     async fn fetch_container_by_name(
@@ -200,7 +212,47 @@ impl CosmosDriver {
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
     pub(crate) fn new(runtime: CosmosDriverRuntime, options: DriverOptions) -> Self {
-        Self { runtime, options }
+        let account = options.account().clone();
+        let account_endpoint = AccountEndpoint::from(&account);
+        let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
+
+        let runtime_clone = runtime.clone();
+        let account_clone = account.clone();
+        let refresh_callback = Arc::new(move || {
+            let runtime = runtime_clone.clone();
+            let account = account_clone.clone();
+            let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
+                Box::pin(async move {
+                    CosmosDriver::fetch_account_properties_with_runtime(&runtime, &account).await
+                });
+            fut
+        });
+
+        let endpoint_unavailability_ttl = runtime
+            .runtime_options()
+            .snapshot()
+            .endpoint_unavailability_ttl
+            .unwrap_or_else(|| {
+                std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .map(Duration::from_millis)
+                    .unwrap_or(Duration::from_secs(60))
+            });
+
+        let location_state_store = Arc::new(LocationStateStore::new(
+            runtime.account_metadata_cache().clone(),
+            account_endpoint,
+            default_endpoint,
+            refresh_callback,
+            endpoint_unavailability_ttl,
+        ));
+
+        Self {
+            runtime,
+            options,
+            location_state_store,
+        }
     }
 
     /// Returns the account reference.
@@ -355,8 +407,17 @@ impl CosmosDriver {
             .account_metadata_cache()
             .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
             .await?;
+
+        // Keep the operation routing snapshot in sync with current account metadata.
+        let previous_generation = Some(self.location_state_store.account_snapshot().generation);
+        let account_state = build_account_endpoint_state(
+            account_properties.as_ref(),
+            self.location_state_store.default_endpoint().clone(),
+            previous_generation,
+        );
+        self.location_state_store.swap_account(account_state);
+
         let write_region = account_properties.write_account_region();
-        let region = write_region.map(|r| r.name.clone());
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
         // Step 5: Select appropriate HttpClient based on pipeline type
@@ -403,8 +464,7 @@ impl CosmosDriver {
             &operation,
             &options,
             &effective_options,
-            &endpoint,
-            &region,
+            self.location_state_store.as_ref(),
             http_client,
             auth,
             &user_agent,

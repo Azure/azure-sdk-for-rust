@@ -14,7 +14,10 @@
 
 use azure_core::http::headers::Headers;
 
-use crate::models::{CosmosOperation, CosmosStatus, SubStatusCode};
+use crate::{
+    driver::routing::{CosmosEndpoint, LocationEffect, UnavailablePartition, UnavailableReason},
+    models::{CosmosOperation, CosmosStatus, SubStatusCode},
+};
 
 use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
 
@@ -24,15 +27,17 @@ use super::components::{OperationAction, OperationRetryState, TransportOutcome, 
 /// and returns an `OperationAction`. No side effects.
 pub(crate) fn evaluate_transport_result(
     operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
     result: TransportResult,
     retry_state: &OperationRetryState,
-) -> OperationAction {
+) -> (OperationAction, Vec<LocationEffect>) {
     // Destructure the owned outcome to move error values out without
     // losing the error source chain.
     match result.outcome {
-        outcome @ TransportOutcome::Success { .. } => {
-            OperationAction::Complete(TransportResult { outcome })
-        }
+        outcome @ TransportOutcome::Success { .. } => (
+            OperationAction::Complete(TransportResult { outcome }),
+            Vec::new(),
+        ),
 
         TransportOutcome::HttpError {
             status,
@@ -40,38 +45,144 @@ pub(crate) fn evaluate_transport_result(
             body,
             request_sent,
         } => {
-            // In Step 1, all HTTP errors (non-429) are propagated as abort.
-            // 429 is already handled by the transport pipeline's throttle retry.
-            // Step 2 will add handling for 403/3, 503, 404/1002, etc.
-            if retry_state.can_retry_transport()
-                && (request_sent.definitely_not_sent() || operation.is_idempotent())
-            {
-                // TODO(Step 2): retry on transient HTTP errors (403/3, 503,
-                // 404/1002, 429/3092, 500-for-reads) with failover.
+            let request_definitely_not_sent = request_sent.definitely_not_sent();
+
+            if status.is_write_forbidden() && retry_state.can_retry_failover() {
+                return (
+                    OperationAction::FailoverRetry {
+                        new_state: retry_state.advance_failover(),
+                        delay: None,
+                    },
+                    vec![
+                        LocationEffect::RefreshAccountProperties,
+                        LocationEffect::MarkEndpointUnavailable {
+                            endpoint: endpoint.clone(),
+                            reason: UnavailableReason::WriteForbidden,
+                        },
+                    ],
+                );
             }
 
-            OperationAction::Abort {
-                error: build_http_error(&status, &headers, &body),
-                status: Some(status),
+            if status.is_read_session_not_available() && retry_state.can_retry_session() {
+                if !retry_state.can_use_multiple_write_locations
+                    && retry_state.session_token_retry_count >= 1
+                {
+                    return (
+                        OperationAction::Abort {
+                            error: build_http_error(&status, &headers, &body),
+                            status: Some(status),
+                        },
+                        Vec::new(),
+                    );
+                }
+
+                return (
+                    OperationAction::SessionRetry {
+                        new_state: retry_state.advance_session_retry(),
+                    },
+                    Vec::new(),
+                );
             }
+
+            let is_system_resource_unavailable = status.is_throttled()
+                && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
+            let is_service_unavailable =
+                status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
+            let is_gone = status.is_gone();
+
+            if (is_system_resource_unavailable || is_service_unavailable || is_gone)
+                && retry_state.can_retry_failover()
+            {
+                if request_definitely_not_sent {
+                    return (
+                        OperationAction::FailoverRetry {
+                            new_state: retry_state.advance_failover(),
+                            delay: None,
+                        },
+                        Vec::new(),
+                    );
+                }
+
+                return (
+                    OperationAction::FailoverRetry {
+                        new_state: retry_state.advance_failover(),
+                        delay: None,
+                    },
+                    vec![
+                        LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                            partition_key_range_id: "unknown".to_owned(),
+                            region: endpoint.region().cloned(),
+                            is_read: operation.is_read_only(),
+                        }),
+                        LocationEffect::MarkEndpointUnavailable {
+                            endpoint: endpoint.clone(),
+                            reason: UnavailableReason::ServiceUnavailable,
+                        },
+                    ],
+                );
+            }
+
+            if status.status_code() == azure_core::http::StatusCode::InternalServerError
+                && operation.is_read_only()
+                && retry_state.can_retry_failover()
+            {
+                return (
+                    OperationAction::FailoverRetry {
+                        new_state: retry_state.advance_failover(),
+                        delay: None,
+                    },
+                    vec![LocationEffect::MarkEndpointUnavailable {
+                        endpoint: endpoint.clone(),
+                        reason: UnavailableReason::InternalServerError,
+                    }],
+                );
+            }
+
+            (
+                OperationAction::Abort {
+                    error: build_http_error(&status, &headers, &body),
+                    status: Some(status),
+                },
+                Vec::new(),
+            )
         }
 
         TransportOutcome::TransportError {
             error,
             request_sent,
         } => {
-            let is_safe_to_retry = request_sent.definitely_not_sent() || operation.is_idempotent();
+            if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
+                return (
+                    OperationAction::FailoverRetry {
+                        new_state: retry_state.advance_failover(),
+                        delay: None,
+                    },
+                    Vec::new(),
+                );
+            }
 
-            if is_safe_to_retry && retry_state.can_retry_transport() {
-                OperationAction::TransportRetry {
-                    new_state: retry_state.advance_transport_retry(),
-                }
-            } else {
+            if (operation.is_read_only() || operation.is_idempotent())
+                && retry_state.can_retry_failover()
+            {
+                return (
+                    OperationAction::FailoverRetry {
+                        new_state: retry_state.advance_failover(),
+                        delay: None,
+                    },
+                    vec![LocationEffect::MarkEndpointUnavailable {
+                        endpoint: endpoint.clone(),
+                        reason: UnavailableReason::TransportError,
+                    }],
+                );
+            }
+
+            (
                 OperationAction::Abort {
                     error,
                     status: None,
-                }
-            }
+                },
+                Vec::new(),
+            )
         }
     }
 }
@@ -176,39 +287,52 @@ mod tests {
     fn success_completes() {
         let op = make_read_operation();
         let result = make_success_result();
-        let state = OperationRetryState::initial();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
 
-        let action = evaluate_transport_result(&op, result, &state);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::Complete(_)));
+        assert!(effects.is_empty());
     }
 
     #[test]
     fn transport_error_not_sent_retries() {
         let op = make_create_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
-        let state = OperationRetryState::initial();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
 
-        let action = evaluate_transport_result(&op, result, &state);
-        assert!(matches!(action, OperationAction::TransportRetry { .. }));
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
     }
 
     #[test]
     fn transport_error_sent_idempotent_retries() {
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::Sent);
-        let state = OperationRetryState::initial();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
 
-        let action = evaluate_transport_result(&op, result, &state);
-        assert!(matches!(action, OperationAction::TransportRetry { .. }));
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
     }
 
     #[test]
     fn transport_error_sent_non_idempotent_aborts() {
         let op = make_create_operation();
         let result = make_transport_error(RequestSentStatus::Sent);
-        let state = OperationRetryState::initial();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
 
-        let action = evaluate_transport_result(&op, result, &state);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::Abort { .. }));
     }
 
@@ -217,21 +341,108 @@ mod tests {
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState {
-            transport_retry_count: 1,
-            max_transport_retries: 1,
+            location: crate::driver::routing::LocationIndex::initial(0),
+            failover_retry_count: 1,
+            session_token_retry_count: 0,
+            max_failover_retries: 1,
+            max_session_retries: 1,
+            can_use_multiple_write_locations: false,
+            excluded_regions: Vec::new(),
         };
 
-        let action = evaluate_transport_result(&op, result, &state);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::Abort { .. }));
     }
 
     #[test]
     fn http_error_aborts() {
         let op = make_read_operation();
-        let result = make_http_error(StatusCode::InternalServerError);
-        let state = OperationRetryState::initial();
+        let result = make_http_error(StatusCode::BadRequest);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
 
-        let action = evaluate_transport_result(&op, result, &state);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::Abort { .. }));
+    }
+
+    #[test]
+    fn write_forbidden_triggers_failover_and_refresh_effect() {
+        let op = make_create_operation();
+        let result = TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::WRITE_FORBIDDEN,
+                headers: azure_core::http::headers::Headers::new(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        };
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+    }
+
+    #[test]
+    fn read_session_not_available_triggers_session_retry() {
+        let op = make_read_operation();
+        let result = TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
+                headers: azure_core::http::headers::Headers::new(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        };
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::SessionRetry { .. }));
+        assert!(effects.is_empty());
+    }
+
+    #[test]
+    fn service_unavailable_marks_endpoint_unavailable() {
+        let op = make_read_operation();
+        let result = make_http_error(StatusCode::ServiceUnavailable);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn internal_server_error_on_read_fails_over() {
+        let op = make_read_operation();
+        let result = make_http_error(StatusCode::InternalServerError);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 }
