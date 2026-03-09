@@ -118,6 +118,11 @@ impl LocationStateStore {
         }
     }
 
+    /// Returns the configured endpoint unavailability TTL.
+    pub fn endpoint_unavailability_ttl(&self) -> Duration {
+        self.endpoint_unavailability_ttl
+    }
+
     /// Returns the latest account snapshot.
     #[allow(dead_code)]
     pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {

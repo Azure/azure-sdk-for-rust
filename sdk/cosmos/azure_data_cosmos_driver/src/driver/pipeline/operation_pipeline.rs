@@ -111,7 +111,12 @@ pub(crate) async fn execute_operation_pipeline(
         let location = location_state_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
-        let routing = resolve_endpoint(operation, &retry_state, &location);
+        let routing = resolve_endpoint(
+            operation,
+            &retry_state,
+            &location,
+            location_state_store.endpoint_unavailability_ttl(),
+        );
 
         // ── STAGE 3: Build transport request ───────────────────────────
         let execution_context = if retry_state.failover_retry_count == 0 {
@@ -233,9 +238,10 @@ fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
     location: &LocationSnapshot,
+    endpoint_unavailability_ttl: Duration,
 ) -> RoutingDecision {
     let account = location.account.as_ref();
-    let account = expire_unavailable_endpoints(account, Instant::now(), Duration::from_secs(60));
+    let account = expire_unavailable_endpoints(account, Instant::now(), endpoint_unavailability_ttl);
     let endpoints = account.preferred_endpoints(operation.is_read_only());
 
     let base_index = if retry_state.location.is_current(account.generation) {
