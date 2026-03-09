@@ -1,4 +1,4 @@
-# Dynamic Timeout Escalation Spec for `azure_data_cosmos_driver`
+# Dynamic Request Timeout Escalation Spec for `azure_data_cosmos_driver`
 
 **Status**: Draft
 **Date**: 2026-03-05
@@ -50,6 +50,8 @@ add latency to the common case.
 - **User-configurable ladders**: The escalation ladder is a fixed internal default. Users cannot
   override the step durations. The existing `ConnectionPoolOptions` min/max bounds still act as
   clamping limits (see [§7](#7-interaction-with-connectionpooloptions-bounds)).
+- **Connection timeout escalation**: Connection timeouts remain static, configured via
+  `ConnectionPoolOptions`. Only request timeouts are escalated.
 - **Query plan timeout escalation**: Deferred until query plan execution is implemented.
 - **Address refresh timeout escalation**: Deferred until direct mode is implemented.
 
@@ -107,14 +109,8 @@ internal defaults chosen to balance latency and reliability.
 
 ### Separate Ladders
 
-Two independent ladders govern different timeout types:
-
-1. **Request timeout ladder**: Controls how long to wait for a response after the connection is
-   established. Applied to the HTTP request timeout.
-2. **Connection timeout ladder**: Controls how long to wait for a TCP connection to be established.
-   Applied to the HTTP connection timeout.
-
-Each ladder has separate default values for data plane vs. metadata request types.
+Separate request timeout ladders are defined for data plane vs. metadata request types.
+Connection timeouts remain static (configured via `ConnectionPoolOptions`) and are not escalated.
 
 ---
 
@@ -128,14 +124,6 @@ Each ladder has separate default values for data plane vs. metadata request type
 | 1       | 10s     |
 | 2       | 65s     |
 
-### Data Plane Connection Timeout Ladder
-
-| Attempt | Timeout |
-|---------|---------|
-| 0       | 1s      |
-| 1       | 3s      |
-| 2       | 5s      |
-
 ### Metadata Request Timeout Ladder
 
 Following the Java SDK pattern for `DatabaseAccount` metadata calls:
@@ -145,16 +133,6 @@ Following the Java SDK pattern for `DatabaseAccount` metadata calls:
 | 0       | 5s      |
 | 1       | 10s     |
 | 2       | 20s     |
-
-### Metadata Connection Timeout Ladder
-
-Metadata requests use the same connection timeout ladder as data plane requests:
-
-| Attempt | Timeout |
-|---------|---------|
-| 0       | 1s      |
-| 1       | 3s      |
-| 2       | 5s      |
 
 ### Ladder Behavior
 
@@ -187,8 +165,7 @@ fn timeout_for_attempt(attempt: usize, ladder: &[Duration]) -> Duration {
 }
 ```
 
-The selected timeouts are applied to the HTTP request for that attempt. Both the connection timeout
-and the request timeout are set per-attempt.
+The selected timeout is applied to the HTTP request for that attempt.
 
 ### Hedging and Timeout Ladder Position
 
@@ -214,29 +191,17 @@ const DATAPLANE_REQUEST_TIMEOUT_LADDER: &[Duration] = &[
     Duration::from_secs(65),
 ];
 
-const DATAPLANE_CONNECTION_TIMEOUT_LADDER: &[Duration] = &[
-    Duration::from_secs(1),
-    Duration::from_secs(3),
-    Duration::from_secs(5),
-];
-
 const METADATA_REQUEST_TIMEOUT_LADDER: &[Duration] = &[
     Duration::from_secs(5),
     Duration::from_secs(10),
     Duration::from_secs(20),
 ];
 
-const METADATA_CONNECTION_TIMEOUT_LADDER: &[Duration] = &[
-    Duration::from_secs(1),
-    Duration::from_secs(3),
-    Duration::from_secs(5),
-];
-
 loop {
     // ── STAGE 2: Resolve endpoint ──────────────────────────────────
     let routing = resolve_endpoint(operation, &retry_state, &location);
 
-    // ── Compute attempt timeouts ───────────────────────────────────
+    // ── Compute attempt timeout ────────────────────────────────────
     let attempt = (retry_state.failover_retry_count
         + retry_state.session_token_retry_count) as usize;
 
@@ -248,24 +213,11 @@ loop {
             METADATA_REQUEST_TIMEOUT_LADDER
         },
     );
-    let connection_timeout = timeout_for_attempt(
-        attempt,
-        if is_dataplane {
-            DATAPLANE_CONNECTION_TIMEOUT_LADDER
-        } else {
-            METADATA_CONNECTION_TIMEOUT_LADDER
-        },
-    );
-
-    let attempt_timeouts = AttemptTimeouts {
-        connection_timeout,
-        request_timeout,
-    };
 
     // ── STAGE 3: Build transport request ───────────────────────────
     let transport_request = build_transport_request(
         operation, &routing, &activity_id, execution_context,
-        deadline, attempt_timeouts,
+        deadline, request_timeout,
     );
 
     // ── STAGE 4: Execute transport pipeline ────────────────────────
@@ -323,8 +275,8 @@ let effective_timeout = ladder_value
 
 This ensures that:
 - If a user sets `max_dataplane_request_timeout` to 10s, the 3rd tier (65s) is clamped to 10s.
-- If a user sets `min_dataplane_request_timeout` to 2s, the 1st tier connection timeout (1s) is
-  raised to 2s.
+- If a user sets `min_dataplane_request_timeout` to 2s, the 1st tier (6s) stays at 6s (already
+  above the minimum).
 - The existing validation bounds in `ConnectionPoolOptionsBuilder::build()` remain unchanged.
 
 ---
@@ -333,19 +285,20 @@ This ensures that:
 
 ### Per-Attempt Timeout Delivery via `TransportRequest`
 
-The per-attempt connection and request timeouts are delivered to the transport layer as a field on
-the `TransportRequest` struct. The operation pipeline computes the timeouts for each attempt and
-includes them when building the transport request via `build_transport_request()`.
+The per-attempt request timeout is delivered to the transport layer as a field on the
+`TransportRequest` struct. The operation pipeline computes the timeout for each attempt and
+includes it when building the transport request via `build_transport_request()`.
 
-The transport pipeline (`execute_transport_pipeline()`) reads the `AttemptTimeouts` from the
-`TransportRequest` and applies them to the underlying HTTP call.
+The transport pipeline (`execute_transport_pipeline()`) reads the timeout from the
+`TransportRequest` and applies it to the underlying HTTP call.
 
 #### Why `TransportRequest` instead of `Context`
 
 The operation pipeline's 7-stage loop constructs a `TransportRequest` struct for each attempt and
 passes it to `execute_transport_pipeline()`. The pipeline `Context` is only created inside the
-transport layer — it is not visible in the operation loop. Carrying timeouts on `TransportRequest`
-keeps the data flow explicit and avoids coupling to the transport layer's internal `Context`.
+transport layer — it is not visible in the operation loop. Carrying the timeout on
+`TransportRequest` keeps the data flow explicit and avoids coupling to the transport layer's
+internal `Context`.
 
 #### Required Changes
 
@@ -418,39 +371,9 @@ impl HttpClient for ::reqwest::Client {
 }
 ```
 
-**Note on connection timeout**: The `reqwest::RequestBuilder::timeout()` method sets the total
-request timeout (including connection). There is no per-request connection timeout override in
-reqwest — `connect_timeout` is set at the client level. For connection timeout escalation, the
-driver creates the `reqwest::Client` with `connect_timeout` set to the **maximum** ladder value
-(5s). The per-request `timeout` then provides the tighter overall bound on each attempt. This
-means that on attempt 0, the total timeout is 6s (dataplane) even though the client allows up to
-5s for connection — in practice, connection establishment rarely dominates the timeout window.
-
-**In `azure_core`** — Re-export the new API:
-
-Since `azure_core::http::Request` re-exports `typespec_client_core::http::Request`, the new
-`timeout()` and `set_timeout()` methods are automatically available. No additional changes needed
-in `azure_core`.
-
 **In `azure_data_cosmos_driver`**:
 
-1. **Define `AttemptTimeouts`**: A struct carried on `TransportRequest`.
-
-```rust
-/// Timeout configuration for a single transport attempt.
-///
-/// Computed by the operation pipeline from the timeout ladder and included
-/// in the `TransportRequest` for each attempt.
-#[derive(Clone, Debug)]
-pub(crate) struct AttemptTimeouts {
-    /// Maximum time to wait for a TCP connection to be established.
-    pub connection_timeout: Duration,
-    /// Maximum time to wait for the complete HTTP response after connection.
-    pub request_timeout: Duration,
-}
-```
-
-2. **Add to `TransportRequest`** (`components.rs`):
+1. **Add `request_timeout` to `TransportRequest`** (`components.rs`):
 
 ```rust
 pub(crate) struct TransportRequest {
@@ -462,11 +385,11 @@ pub(crate) struct TransportRequest {
     pub auth_context: AuthorizationContext,
     pub execution_context: ExecutionContext,
     pub deadline: Option<Instant>,
-    pub timeouts: AttemptTimeouts,  // NEW
+    pub request_timeout: Duration,  // NEW
 }
 ```
 
-3. **Set in `build_transport_request()`** (`operation_pipeline.rs`):
+2. **Set in `build_transport_request()`** (`operation_pipeline.rs`):
 
 ```rust
 fn build_transport_request(
@@ -475,38 +398,27 @@ fn build_transport_request(
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
-    timeouts: AttemptTimeouts,  // NEW parameter
+    request_timeout: Duration,  // NEW parameter
 ) -> azure_core::Result<TransportRequest> {
     // ... existing logic ...
     Ok(TransportRequest {
         // ... existing fields ...
-        timeouts,
+        request_timeout,
     })
 }
 ```
 
-4. **Apply in `execute_transport_pipeline()`** (`transport_pipeline.rs`): Before calling
+3. **Apply in `execute_transport_pipeline()`** (`transport_pipeline.rs`): Before calling
    `http_client.execute_request()`, set the per-request timeout on the `azure_core::http::Request`:
 
 ```rust
 // In execute_transport_pipeline(), after building the azure_core Request:
-request.set_timeout(transport_request.timeouts.request_timeout);
+request.set_timeout(transport_request.request_timeout);
 ```
 
-5. **Configure `reqwest::Client` with maximum connection timeout**: When creating the reqwest
-   client in `CosmosTransport::create_reqwest_client()`, use the maximum ladder value for
-   `connect_timeout` so that per-request timeouts can be tighter but not looser than the
-   connection limit:
-
-```rust
-// Use maximum connection ladder value (5s) instead of pool.max_connect_timeout()
-builder = builder.connect_timeout(Duration::from_secs(5));
-```
-
-6. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
-   (see `TRANSPORT_PIPELINE_SPEC.md` §6), it will read `AttemptTimeouts` from the
-   `TransportRequest` and pass them to the `HttpClientConfig` when selecting or configuring a shard.
-   The sharded transport's per-request configuration model already accommodates this.
+4. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
+   (see `TRANSPORT_PIPELINE_SPEC.md` §6), it will read the `request_timeout` from the
+   `TransportRequest` and pass it to the `HttpClientConfig` when selecting or configuring a shard.
 
 ### Data Structures
 
@@ -533,29 +445,26 @@ The effective per-attempt timeout values are recorded in `DiagnosticsContext` fo
 This helps users understand why a retry succeeded when the initial attempt failed (e.g., "attempt 0
 timed out at 6s, attempt 1 succeeded with a 10s timeout").
 
-For each request attempt, the following timeout information is recorded:
+For each request attempt, the effective request timeout is recorded:
 
 ```rust
 /// Timeout information recorded per attempt in diagnostics.
 pub(crate) struct AttemptTimeoutDiagnostics {
-    /// The effective connection timeout used for this attempt (after clamping).
-    pub connection_timeout: Duration,
     /// The effective request timeout used for this attempt (after clamping).
     pub request_timeout: Duration,
 }
 ```
 
 This is recorded via `DiagnosticsContextBuilder::update_request()` alongside existing per-request
-metadata (charge, activity ID, session token). The timeout values recorded are the **effective**
-values after clamping by both `ConnectionPoolOptions` bounds and the end-to-end deadline.
+metadata (charge, activity ID, session token). The timeout value recorded is the **effective**
+value after clamping by both `ConnectionPoolOptions` bounds and the end-to-end deadline.
 
 ### Where It Lives
 
-- `TimeoutLadder`, `AttemptTimeouts`, and the default ladder constants should be defined in the
-  driver crate, likely in a new module `src/driver/timeouts.rs` or inline in
-  `src/driver/pipeline/components.rs`.
+- `TimeoutLadder` and the default ladder constants should be defined in the driver crate, likely
+  in a new module `src/driver/timeouts.rs` or inline in `src/driver/pipeline/components.rs`.
 - The retry loop in `execute_operation_pipeline()` (`operation_pipeline.rs`) is the integration
-  point — it computes timeouts per attempt and passes them to `build_transport_request()`.
+  point — it computes the request timeout per attempt and passes it to `build_transport_request()`.
 - `AttemptTimeoutDiagnostics` lives alongside the existing diagnostics types in
   `src/diagnostics/`.
 
@@ -584,15 +493,15 @@ From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
 
 ### This Spec (Rust Driver)
 
-| Request Type | Request Timeout Ladder | Connection Timeout Ladder |
-|--------------|------------------------|---------------------------|
-| Data plane   | 6s, 10s, 65s           | 1s, 3s, 5s               |
-| Metadata     | 5s, 10s, 20s           | 1s, 3s, 5s               |
+| Request Type | Request Timeout Ladder |
+|--------------|------------------------|
+| Data plane   | 6s, 10s, 65s           |
+| Metadata     | 5s, 10s, 20s           |
 
 **Differences from Java SDK:**
-- Rust escalates connection timeouts per attempt; Java uses a flat 45s/5s.
 - Rust data plane uses 6s/10s/65s; Java direct mode uses a flat 5s.
 - Java gateway "Other HTTP calls" use a flat 60s; Rust data plane starts lower (6s).
+- Connection timeouts remain static in both SDKs (not escalated).
 
 ---
 
