@@ -8,7 +8,7 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
@@ -225,14 +225,19 @@ impl LocationStateStore {
         default_endpoint: &CosmosEndpoint,
     ) {
         let default_endpoint = default_endpoint.clone();
+        let ttl = self.endpoint_unavailability_ttl;
         self.apply_account(|current| {
             let mut next = build_account_endpoint_state(
                 properties,
                 default_endpoint.clone(),
                 Some(current.generation),
             );
-            // Carry forward unavailability marks from the current state.
-            next.unavailable_endpoints = current.unavailable_endpoints.clone();
+            // Carry forward unavailability marks from the current state,
+            // filtering out entries that have expired past the configured TTL.
+            let now = Instant::now();
+            let mut unavailable = current.unavailable_endpoints.clone();
+            unavailable.retain(|_, (marked_at, _)| now.saturating_duration_since(*marked_at) < ttl);
+            next.unavailable_endpoints = unavailable;
             next
         });
     }
