@@ -202,7 +202,9 @@ impl HealthProbe for GetDatabaseAccountProbe {
             body: None,
             auth_context,
             execution_context: ExecutionContext::HealthCheckProbe,
-            deadline: None, // Per-request timeout deferred; uses client-level timeout.
+            // Per-request timeout will be wired when PR #3871 lands.
+            // Until then, uses client-level metadata timeout.
+            deadline: None,
         };
 
         // Use a lightweight DiagnosticsContextBuilder for the probe.
@@ -267,25 +269,18 @@ pub(crate) struct HealthMonitorConfig {
     /// Default: 300s (5 minutes), matching the Python SDK.
     pub refresh_interval: Duration,
 
-    /// Maximum number of retries per probe attempt.
-    /// Default: 3, matching the Python SDK.
+    /// Maximum number of probe attempts per endpoint per sweep.
+    /// Default: 3 (3 total attempts), matching the Python SDK.
     /// Used by the probe's own retry loop; the transport pipeline handles
     /// 429 throttle retries independently.
-    pub max_probe_retries: u32,
-
-    /// Timeout for individual probe requests. Currently uses the
-    /// client-level metadata timeout from `ConnectionPoolOptions`.
-    /// Per-request timeout override is deferred.
-    /// Default: 5s.
-    pub probe_timeout: Duration,
+    pub max_probe_attempts: u32,
 }
 
 impl Default for HealthMonitorConfig {
     fn default() -> Self {
         Self {
             refresh_interval: Duration::from_secs(300),
-            max_probe_retries: 3,
-            probe_timeout: Duration::from_secs(5),
+            max_probe_attempts: 3,
         }
     }
 }
@@ -295,13 +290,24 @@ impl Default for HealthMonitorConfig {
 /// Spawned by `CosmosDriver` during initialization. Runs a periodic
 /// sweep that probes all relevant endpoints and updates the
 /// `AccountEndpointStateStore`.
+///
+/// On drop, the `CancellationToken` is cancelled and the background
+/// task exits (see §8).
 pub(crate) struct EndpointHealthMonitor {
     config: HealthMonitorConfig,
     probe: Arc<dyn HealthProbe>,
     endpoint_state_store: Arc<AccountEndpointStateStore>,
     account_metadata_cache: Arc<AccountMetadataCache>,
+    /// Cancellation token to signal the background task to stop.
+    shutdown: CancellationToken,
     /// Handle to the background sweep task. Dropped on shutdown.
     _sweep_handle: JoinHandle<()>,
+}
+
+impl Drop for EndpointHealthMonitor {
+    fn drop(&mut self) {
+        self.shutdown.cancel();
+    }
 }
 ```
 
@@ -356,11 +362,11 @@ Health probes use a two-layer retry approach matching the pipeline architecture:
 
 ```rust
 // Probe retry is a simple loop in run_sweep():
-for attempt in 0..=config.max_probe_retries {
+for attempt in 0..config.max_probe_attempts {
     let result = probe.probe(&ep).await;
     match &result {
         ProbeResult::Healthy { .. } => return result,
-        ProbeResult::Unhealthy { .. } if attempt < config.max_probe_retries => {
+        ProbeResult::Unhealthy { .. } if attempt + 1 < config.max_probe_attempts => {
             tokio::time::sleep(backoff_delay(attempt)).await;
         }
         _ => return result,
@@ -376,6 +382,9 @@ for attempt in 0..=config.max_probe_retries {
 impl EndpointHealthMonitor {
     /// The main background loop. Runs an initial sweep immediately,
     /// then periodically until the monitor is dropped.
+    ///
+    /// Uses `azure_core` async primitives (not tokio directly) to remain
+    /// async-runtime agnostic.
     async fn sweep_loop(
         config: HealthMonitorConfig,
         probe: Arc<dyn HealthProbe>,
@@ -393,9 +402,15 @@ impl EndpointHealthMonitor {
         .await;
 
         loop {
-            tokio::select! {
-                _ = tokio::time::sleep(config.refresh_interval) => {},
-                _ = shutdown.cancelled() => break,
+            // Wait for either the refresh interval to elapse or shutdown,
+            // using azure_core async primitives (runtime-agnostic).
+            let sleep = azure_core::task::sleep(config.refresh_interval);
+            let cancelled = shutdown.cancelled();
+            futures::pin_mut!(sleep, cancelled);
+
+            match futures::future::select(sleep, cancelled).await {
+                futures::future::Either::Left(_) => {},
+                futures::future::Either::Right(_) => break,
             }
 
             Self::run_sweep(
@@ -445,21 +460,18 @@ impl EndpointHealthMonitor {
 
         let results = futures::future::join_all(probe_futures).await;
 
-        // Apply results to endpoint state.
-        // We build a single new state snapshot with all changes applied atomically.
-        let mut new_state = (*state).clone();
+        // Apply results per-endpoint against the latest state to avoid
+        // overwriting concurrent reactive updates (no snapshot+swap).
         for (endpoint, result) in &results {
             match result {
                 ProbeResult::Healthy { .. } => {
-                    // Remove from unavailable set if present.
-                    new_state.unavailable_endpoints.remove(endpoint);
+                    endpoint_state_store.mark_available(endpoint);
                 }
                 ProbeResult::Unhealthy { failure, .. } => {
-                    // Mark unavailable (or keep unavailable if already marked).
-                    new_state.unavailable_endpoints.entry(endpoint.clone())
-                        .or_insert_with(|| {
-                            (Instant::now(), UnavailableReason::ServiceUnavailable)
-                        });
+                    endpoint_state_store.mark_unavailable(
+                        endpoint,
+                        UnavailableReason::ServiceUnavailable,
+                    );
                     tracing::warn!(
                         endpoint = %endpoint,
                         reason = %failure.message,
@@ -470,8 +482,6 @@ impl EndpointHealthMonitor {
                 }
             }
         }
-
-        endpoint_state_store.swap(new_state);
     }
 }
 ```
@@ -500,7 +510,7 @@ impl EndpointHealthMonitor {
         account_metadata_cache: Arc<AccountMetadataCache>,
     ) -> Self {
         let shutdown = CancellationToken::new();
-        let sweep_handle = tokio::spawn(Self::sweep_loop(
+        let sweep_handle = azure_core::task::spawn(Self::sweep_loop(
             config.clone(),
             Arc::clone(&probe),
             Arc::clone(&endpoint_state_store),
@@ -513,6 +523,7 @@ impl EndpointHealthMonitor {
             probe,
             endpoint_state_store,
             account_metadata_cache,
+            shutdown,
             _sweep_handle: sweep_handle,
         }
     }
@@ -602,7 +613,7 @@ same `AccountEndpointStateStore`:
 This means:
 - Reactive failures are detected instantly (no waiting for next sweep).
 - Proactive sweeps detect recovery (no waiting for expiration timer).
-- Both write atomically via `swap()` on the same store.
+- Both apply per-endpoint mutations to the same store (no lost updates).
 
 ### 4.4 Diagnostics Integration
 
@@ -652,20 +663,16 @@ New option group nested within `DriverOptions`:
 pub struct HealthCheckOptions {
     /// Interval between background health sweeps. Default: 300s (5 minutes).
     refresh_interval: Duration,
-    /// Maximum retries per probe attempt (probe-level retry loop).
+    /// Maximum probe attempts per endpoint per sweep (probe-level retry loop).
     /// Default: 3.
-    max_probe_retries: u32,
-    /// Timeout for individual probe requests. Currently uses client-level
-    /// metadata timeout; per-request override is deferred. Default: 5s.
-    probe_timeout: Duration,
+    max_probe_attempts: u32,
 }
 
 impl Default for HealthCheckOptions {
     fn default() -> Self {
         Self {
             refresh_interval: Duration::from_secs(300),
-            max_probe_retries: 3,
-            probe_timeout: Duration::from_secs(5),
+            max_probe_attempts: 3,
         }
     }
 }
@@ -680,13 +687,8 @@ impl HealthCheckOptions {
         self
     }
 
-    pub fn with_max_probe_retries(mut self, retries: u32) -> Self {
-        self.max_probe_retries = retries;
-        self
-    }
-
-    pub fn with_probe_timeout(mut self, timeout: Duration) -> Self {
-        self.probe_timeout = timeout;
+    pub fn with_max_probe_attempts(mut self, attempts: u32) -> Self {
+        self.max_probe_attempts = attempts;
         self
     }
 }
@@ -756,12 +758,12 @@ This is the key design benefit of the `HealthProbe` trait abstraction.
 
 ## 8. Shutdown & Resource Cleanup
 
-The `EndpointHealthMonitor` uses a `CancellationToken` to signal the background task to
-stop. When the `CosmosDriver` is dropped:
+The `EndpointHealthMonitor` implements `Drop` to cancel the background task.
+When the monitor is dropped:
 
-1. The `CancellationToken` is cancelled.
-2. The `JoinHandle` is dropped (the sweep loop exits on next `tokio::select!`).
-3. Any in-flight probe requests complete naturally (they have a timeout).
+1. `Drop::drop` cancels the `CancellationToken`.
+2. The sweep loop detects cancellation and exits.
+3. Any in-flight probe requests complete naturally (they have a client-level timeout).
 
 No explicit `shutdown()` method is needed — the RAII pattern via `Drop` handles cleanup.
 
