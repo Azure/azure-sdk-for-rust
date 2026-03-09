@@ -17,6 +17,7 @@ use futures::{FutureExt, TryStreamExt};
 pub struct UploadBlobTest {
     count: u32,
     size: usize,
+    upload_buffer: OnceLock<Bytes>,
     endpoint: Option<String>,
     client: OnceLock<BlobContainerClient>,
 }
@@ -33,6 +34,7 @@ impl UploadBlobTest {
                 size: runner
                     .try_get_test_arg("size")?
                     .expect("'size' parameter is required."),
+                upload_buffer: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
@@ -98,6 +100,9 @@ impl PerfTest for UploadBlobTest {
             BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)
                 .unwrap_or_else(|_| panic!("Failed to create BlobContainerClient"))
         });
+        let data = vec![0u8; self.size];
+        self.upload_buffer
+            .get_or_init(|| Bytes::copy_from_slice(&data));
 
         // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
         let container_client = self.client.get().unwrap();
@@ -127,8 +132,7 @@ impl PerfTest for UploadBlobTest {
                 .unwrap()
                 .blob_client(blob.name.unwrap().as_ref());
 
-            let data = vec![0u8; self.size]; // Tiny blob to focus on upload overhead rather than payload size.
-            let data_bytes = Bytes::from(data);
+            let data_bytes = self.upload_buffer.get().unwrap().clone();
             blob_client
                 .upload(data_bytes.into(), true, self.size as u64, None)
                 .await?;
