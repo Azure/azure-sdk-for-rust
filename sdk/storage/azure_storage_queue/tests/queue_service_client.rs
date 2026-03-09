@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, Response};
+mod common;
+
 use azure_core::time::OffsetDateTime;
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
@@ -9,6 +10,7 @@ use azure_storage_queue::{
     models::{GeoReplicationStatus, QueueServiceClientListQueuesOptions},
     QueueServiceClient, QueueServiceClientOptions,
 };
+use common::{assert_successful_response, get_queue_name, recorded_test_setup};
 use futures::StreamExt;
 
 use std::option::Option;
@@ -231,44 +233,4 @@ pub async fn get_queue_service_client_secondary(
     )?;
 
     Ok(queue_client)
-}
-
-/// Takes in a Recording instance and returns an instrumented options bag and endpoint.
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String, String) {
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
-    let endpoint = format!(
-        "https://{}.queue.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
-    let secondary_endpoint = format!(
-        "https://{}-secondary.queue.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
-
-    (client_options, endpoint, secondary_endpoint)
-}
-
-/// Returns a randomized queue name with prefix "q" of length 13.
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-fn get_queue_name(recording: &Recording) -> String {
-    recording
-        .random_string::<12>(Some("q"))
-        .to_ascii_lowercase()
-}
-
-/// Helper function to verify a successful response
-fn assert_successful_response<T, F>(response: &Response<T, F>) {
-    assert!(
-        response.status().is_success(),
-        "Expected successful status code, got {}",
-        response.status()
-    );
 }

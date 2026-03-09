@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, Response};
+mod common;
+
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext, TestMode};
 use azure_storage_queue::{
@@ -11,6 +12,7 @@ use azure_storage_queue::{
     },
     QueueClient, QueueClientOptions,
 };
+use common::{assert_successful_response, get_queue_name, recorded_test_setup};
 
 use std::collections::HashMap;
 
@@ -488,24 +490,13 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Returns a randomized queue name with prefix "q" of length 13.
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-fn get_queue_name(recording: &Recording) -> String {
-    recording
-        .random_string::<12>(Some("q"))
-        .to_ascii_lowercase()
-}
-
 /// Returns an instance of a QueueClient.
 ///
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
 pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<QueueClient> {
-    let (options, endpoint) = recorded_test_setup(recording);
+    let (options, endpoint, _) = recorded_test_setup(recording);
     let queue_client_options = QueueClientOptions {
         client_options: options.clone(),
         ..Default::default()
@@ -517,22 +508,6 @@ pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result
         Some(recording.credential()),
         Option::Some(queue_client_options),
     )
-}
-
-/// Takes in a Recording instance and returns an instrumented options bag and endpoint.
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
-    let endpoint = format!(
-        "https://{}.queue.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
-
-    (client_options, endpoint)
 }
 
 /// Helper function to set up a test queue with messages
@@ -550,15 +525,6 @@ async fn setup_test_queue_with_messages(
             .await?;
     }
     Ok(())
-}
-
-/// Helper function to verify a successful response
-fn assert_successful_response<T, F>(response: &Response<T, F>) {
-    assert!(
-        response.status().is_success(),
-        "Expected successful status code, got {}",
-        response.status()
-    );
 }
 
 /// Helper function to verify message contents
