@@ -1477,7 +1477,7 @@ principle of separating behavior from state — there's no `CosmosHeadersPolicy`
 Cosmos DB exposes **three gateway flavors** that differ in HTTP version support:
 
 | Gateway            | Usage                | HTTP Version                   | Notes                  |
-|--------------------|----------------------|--------------------------------|------------------------|
+| ------------------ | -------------------- | ------------------------------ | ---------------------- |
 | **RoutingGateway** | Metadata + Dataplane | HTTP/1.1 only                  | Legacy, no ALPN        |
 | **ComputeGateway** | Metadata + Dataplane | HTTP/2 via ALPN                | Preferred for metadata |
 | **Gateway 2.0**    | Dataplane only       | HTTP/2 forced (different port) | No HTTP/1.1 fallback   |
@@ -2341,23 +2341,24 @@ Refactor `execute_operation` to use the new pipeline architecture with the absol
 viable transport. No HTTP/2 sharding, no hedging, no circuit breaker, no session consistency —
 just the structural refactoring with a plain `Arc<dyn HttpClient>`.
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                          |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                                               | `driver/pipeline/components.rs`                                |
-| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff. | `driver/transport/transport_pipeline.rs`                       |
-| 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Only the happy path + 429 retry propagation. No failover, no hedging. Hard-coded deadline.                                           | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
-| 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                                                        | `driver/cosmos_driver.rs`                                      |
-| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                                                        | `tests/`                                                       |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                                                                                            | Files                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                                                                                                                                                                                                                      | `driver/pipeline/components.rs`                                |
+| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff.                                                                                                                                                                        | `driver/transport/transport_pipeline.rs`                       |
+| 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Include happy path plus minimal operation-level transport retries: retry `TransportError` only when request is definitely not sent or operation is idempotent and retry budget remains; propagate non-429 HTTP errors as abort (429 remains transport-level). No failover, no hedging. Hard-coded deadline. | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
+| 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                                                                                                                                                                                                                               | `driver/cosmos_driver.rs`                                      |
+| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path + minimal transport-error retry semantics, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                                                                                                                                                                                     | `tests/`                                                       |
 
 **What works after Step 1**: Operations flow through the new pipeline end-to-end against a
-single region with basic 429 retry. The architecture is in place for incremental additions.
+single region with basic 429 retry and minimal safe transport-error retries (not-sent or
+idempotent-only within budget). The architecture is in place for incremental additions.
 
 ### Step 2: Multi-region failover & endpoint management
 
 Add cross-region failover, `AccountEndpointState` + routing systems, and the `AccountMetadataCache` integration.
 
 | Sub-step | Work Item                                                                                                                                                                                                                                                                                      | Files                                                                                                 |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, the unified `LocationStateStore` (§4.6), and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                      | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `location_state_store.rs`, `routing_systems.rs` |
 | 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`                                        |
 | 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `driver/transport/transport_pipeline.rs`                                                              |
@@ -2370,7 +2371,7 @@ session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit brea
 ### Step 3: Session consistency & partition-level circuit breaker
 
 | Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                                                                   | Files                                                                                                 |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                                                                                            | `driver/routing/session_manager.rs`                                                                   |
 | 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, wire it into the existing `LocationStateStore` (§4.6), add `CircuitBreakerConfig` (resolved from `CircuitBreakerOptions` §9.4), and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `location_state_store.rs`, `circuit_breaker_systems.rs` |
 | 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                                                                                                     | `driver/pipeline/components.rs`, `operation_pipeline.rs`                                              |
@@ -2383,7 +2384,7 @@ with failback. Still HTTP/1.1, no hedging.
 ### Step 4: Hedging (speculative execution)
 
 | Sub-step | Work Item                                                                                                                                                                    | Files                        |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | 4.1      | **Hedging implementation** — `execute_hedged` with `tokio::select!` racing. Initial/Hedging `ExecutionContext` tracking. Static threshold first.                             | `driver/pipeline/hedging.rs` |
 | 4.2      | **Dynamic threshold** — P99 latency tracker with safety gates (50–4000 ms).                                                                                                  | `driver/pipeline/hedging.rs` |
 | 4.3      | **Hedging config** — `HedgingThreshold` enum (Dynamic/Static), `HedgingOptions` with `enabled` flag (§9.3). Nested in `RetryOptions`. Overridable at Runtime/Account layers. | `options/availability.rs`    |
@@ -2397,7 +2398,7 @@ Add protocol detection and the `AdaptiveTransport` enum, but without the sharded
 HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 
 | Sub-step | Work Item                                                                                                                                     | Files                                     |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | 5.1      | **Gateway probing** — ALPN negotiation to detect HTTP/2 vs HTTP/1.1. Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. | `driver/transport/adaptive_transport.rs`  |
 | 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                          | `driver/transport/adaptive_transport.rs`  |
 | 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                         | `driver/transport/http_client_factory.rs` |
@@ -2409,7 +2410,7 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 ### Step 6: HTTP/2 connection sharding
 
 | Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                    |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via `CachePadded` atomics. Epoch-guarded (`crossbeam::epoch::Atomic`) snapshot-swap for lock-free shard reads (§11.1).                                | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
 | 6.2      | **Shard selection algorithm** — `select_shard` with `load_spread_ratio`, active set, least-loaded routing, scale-up on capacity.                                                                                                                              | `driver/transport/shard_pool.rs`                         |
 | 6.3      | **`ShardingConfig`** — All knobs (`max_streams_per_client`, `max_clients_per_endpoint = num_cpus * 2`, `min_clients_per_endpoint`, `load_spread_ratio`, `idle_client_timeout`). Resolved from `ConnectionPoolOptions` (§9.1). Environment variable overrides. | `options/connection_pool.rs`                             |
@@ -2422,7 +2423,7 @@ checks or eviction yet — shards accumulate but do not get reclaimed.
 ### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
 
 | Sub-step | Work Item                                                                                                                                                          | Files                                     |
-|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
 | 7.1      | **Shard health checks** — `check_shard_health` (read-hang, consecutive failures with healthy peers, idle timeout). CPU-aware eviction guard (90% threshold).       | `driver/transport/shard_health.rs`        |
 | 7.2      | **Background health sweep** — `health_sweep_loop` (evict unhealthy, reclaim idle, proactive scale-up). Scale-down via `load_spread_ratio` + `idle_client_timeout`. | `driver/transport/shard_health.rs`        |
 | 7.3      | **TCP keepalive** — Enable TCP keepalive on all `HttpClient` instances (30s interval). Research reqwest/hyper APIs.                                                | `driver/transport/http_client_factory.rs` |
@@ -2435,7 +2436,7 @@ checks or eviction yet — shards accumulate but do not get reclaimed.
 ### Step 8: Fault injection
 
 | Sub-step | Work Item                                                                                                                                                                                                                     | Files                                                                            |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | 8.1      | **Move fault injection** — Move `FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult` from `azure_data_cosmos` to driver behind `fault_injection` feature flag.                                             | `driver/fault_injection/mod.rs`, `rule.rs`, `condition.rs`, `result.rs`          |
 | 8.2      | **`FaultInjectingHttpClientFactory`** — Wraps the real `HttpClientFactory`, producing `FaultInjectingHttpClient` instances that intercept at the `HttpClient` trait level (below `AdaptiveTransport`/`ShardedHttpTransport`). | `driver/fault_injection/fault_injecting_factory.rs`, `fault_injecting_client.rs` |
 | 8.3      | **Tests** — Shard eviction under injected failures, scale-up/down validation, full pipeline retry/failover with injected faults, rule matching, feature gate.                                                                 | `tests/`                                                                         |
@@ -2450,7 +2451,7 @@ new pipeline under real workloads with the two most common operations before com
 full cut-over.
 
 | Sub-step | Work Item                                                                                          | Files                                               |
-|----------|----------------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| -------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | 9.1      | Wire `ContainerClient::read_item` to build `CosmosOperation` and call `driver.execute_operation()` | `azure_data_cosmos/src/clients/container_client.rs` |
 | 9.2      | Wire `ContainerClient::create_item` similarly                                                      | `azure_data_cosmos/src/clients/container_client.rs` |
 | 9.3      | Integration tests verifying read/create through the new pipeline                                   | `tests/`                                            |
@@ -2463,7 +2464,7 @@ All other operations still use the old pipeline. No code is removed yet.
 Cut over all remaining operations and remove the old pipeline code.
 
 | Sub-step | Work Item                                                                                             | Files                                |
-|----------|-------------------------------------------------------------------------------------------------------|--------------------------------------|
+| -------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | 10.1     | Cut over all remaining operations in `azure_data_cosmos/src/clients/` to `driver.execute_operation()` | `azure_data_cosmos/src/clients/*.rs` |
 | 10.2     | Remove `azure_data_cosmos/src/pipeline/`                                                              | —                                    |
 | 10.3     | Remove `azure_data_cosmos/src/retry_policies/`                                                        | —                                    |
@@ -2545,7 +2546,7 @@ pub struct ConnectionPoolOptions {
 ```
 
 | Option                          | Type               | Env Var                                           | Notes                                        |
-|---------------------------------|--------------------|---------------------------------------------------|----------------------------------------------|
+| ------------------------------- | ------------------ | ------------------------------------------------- | -------------------------------------------- |
 | `idle_timeout`                  | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                  | *(existing)*                                 |
 | `max_connections`               | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`               | *(existing)*                                 |
 | `max_streams_per_client`        | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_STREAMS_PER_CLIENT`        | **New.** H2 stream limit per shard.          |
@@ -2612,7 +2613,7 @@ pub struct HedgingOptions {
 ```
 
 | Option      | Type                       | Env Var                             | Notes                                                                     |
-|-------------|----------------------------|-------------------------------------|---------------------------------------------------------------------------|
+| ----------- | -------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
 | `enabled`   | `Option<bool>`             | `AZURE_COSMOS_HEDGING_ENABLED`      | Set `false` to disable hedging entirely.                                  |
 | `threshold` | `Option<HedgingThreshold>` | `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Static threshold in ms; dynamic threshold is configured programmatically. |
 
@@ -2663,7 +2664,7 @@ pub struct CircuitBreakerOptions {
 ```
 
 | Option                       | Type               | Env Var                                      | Notes                                                         |
-|------------------------------|--------------------|----------------------------------------------|---------------------------------------------------------------|
+| ---------------------------- | ------------------ | -------------------------------------------- | ------------------------------------------------------------- |
 | `read_failure_threshold`     | `Option<u32>`      | `AZURE_COSMOS_CB_READ_FAILURE_THRESHOLD`     | Trips after N read failures within the counter reset window.  |
 | `write_failure_threshold`    | `Option<u32>`      | `AZURE_COSMOS_CB_WRITE_FAILURE_THRESHOLD`    | Trips after N write failures within the counter reset window. |
 | `counter_reset_window`       | `Option<Duration>` | `AZURE_COSMOS_CB_COUNTER_RESET_WINDOW`       | Resets failure counters after this period of no new failures. |
@@ -2872,7 +2873,7 @@ outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>
 **Already applied to spec structures** (see §4.6, §6.2, §6.3):
 
 | Structure              | Field        | Section | Hot-path?                                  | Notes                            |
-|------------------------|--------------|---------|--------------------------------------------|----------------------------------|
+| ---------------------- | ------------ | ------- | ------------------------------------------ | -------------------------------- |
 | `LocationStateStore`   | `account`    | §4.6    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`   |
 | `LocationStateStore`   | `partitions` | §4.6    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>` |
 | `ShardedHttpTransport` | `pools`      | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>`             |
@@ -2883,7 +2884,7 @@ outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>
 **Applies to (existing driver code)**:
 
 | Structure                       | Field                          | File                            | Notes                                                                                                                                                   |
-|---------------------------------|--------------------------------|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------- | ------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `AsyncCache<K, V>`              | inner `RwLock<HashMap>`        | `driver/cache/async_cache.rs`   | The outer map is read-heavy; writes only on cache miss. Wrap in `Atomic<HashMap<…>>` or `ArcSwap`. The per-entry `AsyncLazy` also benefits (see §11.2). |
 | `AsyncLazy<T>`                  | inner `RwLock<Option<Arc<T>>>` | `driver/cache/async_lazy.rs`    | After initialization the value is essentially immutable. Replace with `Atomic<T>` for truly zero-cost reads post-init. See §11.2.                       |
 | `DriverRuntime`                 | `driver_registry`              | `driver/runtime.rs`             | Read-heavy; new drivers created rarely.                                                                                                                 |
