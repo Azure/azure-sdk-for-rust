@@ -55,6 +55,17 @@ pub(crate) struct OperationRetryState {
     pub can_use_multiple_write_locations: bool,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
+    /// Session-retry routing override for read operations.
+    pub session_retry_routing: SessionRetryRouting,
+}
+
+/// How a session retry should resolve endpoints for a read operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SessionRetryRouting {
+    /// Continue using the normal preferred endpoint list for the operation kind.
+    PreferredEndpoints,
+    /// Route a read session retry through the preferred write endpoint list.
+    PreferredWriteEndpoints,
 }
 
 impl OperationRetryState {
@@ -74,6 +85,7 @@ impl OperationRetryState {
             max_session_retries,
             can_use_multiple_write_locations,
             excluded_regions,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
         }
     }
 
@@ -91,6 +103,7 @@ impl OperationRetryState {
     pub fn advance_failover(self) -> Self {
         Self {
             failover_retry_count: self.failover_retry_count + 1,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             ..self
         }
     }
@@ -99,6 +112,11 @@ impl OperationRetryState {
     pub fn advance_session_retry(self) -> Self {
         Self {
             session_token_retry_count: self.session_token_retry_count + 1,
+            session_retry_routing: if self.can_use_multiple_write_locations {
+                SessionRetryRouting::PreferredEndpoints
+            } else {
+                SessionRetryRouting::PreferredWriteEndpoints
+            },
             ..self
         }
     }
@@ -109,6 +127,14 @@ impl OperationRetryState {
             location: self.location.next(list_len),
             ..self
         }
+    }
+
+    /// Returns true when a read retry should use the write-endpoint list.
+    pub fn route_reads_to_write_endpoints(&self) -> bool {
+        matches!(
+            self.session_retry_routing,
+            SessionRetryRouting::PreferredWriteEndpoints
+        )
     }
 }
 
@@ -236,11 +262,7 @@ impl TransportResult {
     /// Creates a timeout result when the end-to-end operation deadline is exceeded.
     pub fn deadline_exceeded(request_sent: RequestSentStatus) -> Self {
         Self {
-            outcome: TransportOutcome::TransportError {
-                error: azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    "end-to-end operation timeout exceeded",
-                ),
+            outcome: TransportOutcome::DeadlineExceeded {
                 request_sent,
             },
         }
@@ -276,7 +298,9 @@ impl TransportResult {
         match &self.outcome {
             TransportOutcome::Success { headers, .. } => Some(headers),
             TransportOutcome::HttpError { headers, .. } => Some(headers),
-            TransportOutcome::TransportError { .. } => None,
+            TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
+                None
+            }
         }
     }
 }
@@ -302,6 +326,8 @@ pub(crate) enum TransportOutcome {
         error: azure_core::Error,
         request_sent: RequestSentStatus,
     },
+    /// End-to-end deadline exceeded while this transport attempt was pending.
+    DeadlineExceeded { request_sent: RequestSentStatus },
 }
 
 // ── Decision Enums ─────────────────────────────────────────────────────

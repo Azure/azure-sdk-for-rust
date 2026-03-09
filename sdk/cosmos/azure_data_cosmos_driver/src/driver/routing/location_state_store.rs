@@ -36,6 +36,16 @@ pub(crate) struct LocationSnapshot {
     pub partitions: Arc<PartitionEndpointState>,
 }
 
+#[cfg(test)]
+impl LocationSnapshot {
+    pub(crate) fn for_tests(account: Arc<AccountEndpointState>) -> Self {
+        Self {
+            account,
+            partitions: Arc::new(PartitionEndpointState),
+        }
+    }
+}
+
 type AccountRefreshFn =
     Arc<dyn Fn() -> BoxFuture<'static, azure_core::Result<AccountProperties>> + Send + Sync>;
 

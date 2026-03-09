@@ -105,6 +105,16 @@ pub(crate) fn evaluate_transport_result(
                     );
                 }
 
+                if !(operation.is_read_only() || operation.is_idempotent()) {
+                    return (
+                        OperationAction::Abort {
+                            error: build_http_error(&status, &headers, &body),
+                            status: Some(status),
+                        },
+                        Vec::new(),
+                    );
+                }
+
                 return (
                     OperationAction::FailoverRetry {
                         new_state: retry_state.clone().advance_failover(),
@@ -185,6 +195,28 @@ pub(crate) fn evaluate_transport_result(
                 OperationAction::Abort {
                     error,
                     status: None,
+                },
+                Vec::new(),
+            )
+        }
+
+        TransportOutcome::DeadlineExceeded { request_sent } => {
+            let message = if request_sent.definitely_not_sent() {
+                "end-to-end operation timeout exceeded before request was sent"
+            } else {
+                "end-to-end operation timeout exceeded"
+            };
+
+            (
+                OperationAction::Abort {
+                    error: azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        message,
+                    ),
+                    status: Some(CosmosStatus::from_parts(
+                        azure_core::http::StatusCode::RequestTimeout,
+                        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                    )),
                 },
                 Vec::new(),
             )
@@ -353,6 +385,8 @@ mod tests {
             max_session_retries: 1,
             can_use_multiple_write_locations: false,
             excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
         };
 
         let endpoint = CosmosEndpoint::global(
@@ -433,6 +467,48 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn service_unavailable_sent_non_idempotent_aborts() {
+        let op = make_create_operation();
+        let result = make_http_error(StatusCode::ServiceUnavailable);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::Abort { .. }));
+        assert!(effects.is_empty());
+    }
+
+    #[test]
+    fn deadline_exceeded_aborts_with_timeout_status() {
+        let op = make_read_operation();
+        let result = TransportResult {
+            outcome: TransportOutcome::DeadlineExceeded {
+                request_sent: RequestSentStatus::Unknown,
+            },
+        };
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        match action {
+            OperationAction::Abort { status, .. } => {
+                let status = status.expect("timeout status should be set");
+                assert_eq!(status.status_code(), StatusCode::RequestTimeout);
+                assert_eq!(
+                    status.sub_status(),
+                    Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+                );
+            }
+            _ => panic!("expected timeout to abort"),
+        }
+        assert!(effects.is_empty());
     }
 
     #[test]

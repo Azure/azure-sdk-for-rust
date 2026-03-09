@@ -15,7 +15,10 @@ use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{expire_unavailable_endpoints, LocationSnapshot, LocationStateStore},
+    driver::routing::{
+        expire_unavailable_endpoints, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
+        LocationStateStore,
+    },
     models::{
         ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
         SubStatusCode,
@@ -145,10 +148,12 @@ pub(crate) async fn execute_operation_pipeline(
                     }
                 }
 
-                let endpoints_len = location
-                    .account
-                    .preferred_endpoints(operation.is_read_only())
-                    .len();
+                let endpoints_len = preferred_endpoints_for_attempt(
+                    location.account.as_ref(),
+                    &new_state,
+                    operation.is_read_only(),
+                )
+                .len();
 
                 retry_state = new_state.advance_location(endpoints_len);
 
@@ -173,10 +178,12 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::SessionRetry { new_state } => {
-                let endpoints_len = location
-                    .account
-                    .preferred_endpoints(operation.is_read_only())
-                    .len();
+                let endpoints_len = preferred_endpoints_for_attempt(
+                    location.account.as_ref(),
+                    &new_state,
+                    operation.is_read_only(),
+                )
+                .len();
                 retry_state = new_state.advance_location(endpoints_len);
 
                 // Check deadline before retrying
@@ -224,7 +231,7 @@ fn resolve_endpoint(
     let account = location.account.as_ref();
     let account =
         expire_unavailable_endpoints(account, Instant::now(), endpoint_unavailability_ttl);
-    let endpoints = account.preferred_endpoints(operation.is_read_only());
+    let endpoints = preferred_endpoints_for_attempt(&account, retry_state, operation.is_read_only());
 
     let base_index = if retry_state.location.is_current(account.generation) {
         retry_state.location.index()
@@ -249,6 +256,18 @@ fn resolve_endpoint(
     let selected = selected.unwrap_or_else(|| account.default_endpoint.clone());
 
     RoutingDecision { endpoint: selected }
+}
+
+fn preferred_endpoints_for_attempt<'a>(
+    account: &'a AccountEndpointState,
+    retry_state: &OperationRetryState,
+    read_only: bool,
+) -> &'a [CosmosEndpoint] {
+    if read_only && retry_state.route_reads_to_write_endpoints() {
+        &account.preferred_write_endpoints
+    } else {
+        account.preferred_endpoints(read_only)
+    }
 }
 
 /// Builds a `TransportRequest` from the operation and routing decision.
@@ -348,7 +367,7 @@ fn build_cosmos_response(
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
+    use std::{sync::Arc, time::Duration};
 
     use azure_core::http::headers::HeaderName;
     use url::Url;
@@ -356,7 +375,10 @@ mod tests {
     use super::build_transport_request;
     use crate::{
         diagnostics::ExecutionContext,
-        driver::{pipeline::components::RoutingDecision, routing::CosmosEndpoint},
+        driver::{
+            pipeline::components::RoutingDecision,
+            routing::{AccountEndpointState, CosmosEndpoint, LocationIndex, LocationSnapshot},
+        },
         models::{
             AccountReference, ActivityId, ContainerProperties, ContainerReference, CosmosOperation,
             DatabaseReference, ItemReference, PartitionKey, PartitionKeyDefinition,
@@ -476,5 +498,42 @@ mod tests {
             .get_optional_str(&HeaderName::from_static("x-ms-documentdb-partitionkey"))
             .expect("partition key header should be set");
         assert_eq!(partition_key_header, "[\"pk1\"]");
+    }
+
+    #[test]
+    fn resolve_endpoint_uses_write_region_for_single_write_session_retry() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+                generation: 0,
+                preferred_read_endpoints: vec![read_endpoint],
+                preferred_write_endpoints: vec![write_endpoint.clone()],
+                unavailable_endpoints: Default::default(),
+                multiple_write_locations_enabled: false,
+                default_endpoint: write_endpoint.clone(),
+            }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 1,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+        };
+
+        let routing = super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
+        assert_eq!(routing.endpoint, write_endpoint);
     }
 }
