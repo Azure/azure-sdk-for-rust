@@ -180,6 +180,26 @@ pub(crate) async fn execute_operation_pipeline(
                     .preferred_endpoints(operation.is_read_only())
                     .len();
                 retry_state = new_state.advance_location(endpoints_len);
+
+                // Check deadline before retrying
+                if let Some(d) = deadline {
+                    if Instant::now() >= d {
+                        let timeout_duration = effective_options
+                            .end_to_end_latency_policy
+                            .as_ref()
+                            .map(|p| p.timeout())
+                            .unwrap_or_default();
+
+                        diagnostics.set_operation_status(
+                            azure_core::http::StatusCode::RequestTimeout,
+                            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                        );
+                        return Err(azure_core::Error::new(
+                            azure_core::error::ErrorKind::Other,
+                            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
+                        ));
+                    }
+                }
             }
             OperationAction::Abort { error, status } => {
                 if let Some(cosmos_status) = status {
