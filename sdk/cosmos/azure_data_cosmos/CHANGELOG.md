@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
+
 ### Breaking Changes
 
 ### Bugs Fixed
