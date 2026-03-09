@@ -42,9 +42,8 @@ add latency to the common case.
 3. **Align with other Cosmos SDKs**: The Java SDK already implements timeout escalation for
    metadata requests. This brings the same pattern to the Rust driver for both data plane and
    metadata requests.
-4. **Increase transport retry count**: Raise the maximum transport retry count from 1 to 2
-   (3 total attempts) so that all tiers of the escalation ladder are reachable. This mirrors the
-   connection-error retry behavior already present in the SDK.
+4. **Leverage existing retry budget**: The operation pipeline already supports up to 3 failover
+   retries by default, which naturally maps to the 3 tiers of the escalation ladder.
 
 ### Non-Goals
 
@@ -74,23 +73,26 @@ request attempt:
 
 ### Transport Retry
 
-The current retry loop in `CosmosDriver::execute_operation_internal` uses a fixed
-`MAX_TRANSPORT_RETRIES = 1` (2 total attempts). On transport failure, if the operation is
-idempotent or the request was definitely not sent, the request is retried once with the same
-timeout.
+The retry loop lives in `execute_operation_pipeline()` (in `operation_pipeline.rs`), which runs a
+7-stage loop. When a transport failure occurs, the pipeline evaluates the result and produces one
+of:
+
+- `FailoverRetry`: Retry in a different region/endpoint (budget: `max_failover_retries`, default 3)
+- `SessionRetry`: Retry for session consistency (budget: `max_session_retries`, default 1)
+
+The retry state is tracked in `OperationRetryState`:
 
 ```rust
-const MAX_TRANSPORT_RETRIES: usize = 1;
-
-fn should_retry_transport_failure(
-    attempt: usize,
-    max_transport_retries: usize,
-    is_idempotent: bool,
-    request_sent: TransportRequestSentStatus,
-) -> bool {
-    attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
+pub(crate) struct OperationRetryState {
+    pub failover_retry_count: u32,
+    pub max_failover_retries: u32,
+    pub session_token_retry_count: u32,
+    pub max_session_retries: u32,
+    // ... location, excluded regions, etc.
 }
 ```
+
+Currently, timeouts are static — every attempt uses the same timeout regardless of retry count.
 
 ---
 
@@ -164,19 +166,16 @@ Metadata requests use the same connection timeout ladder as data plane requests:
 
 ## 5. Integration with Retry Loop
 
-### Retry Count Change
+### Retry Model
 
-The maximum transport retry count is increased from 1 to 2:
+The operation pipeline in `execute_operation_pipeline()` already supports multiple retry attempts
+via `FailoverRetry` (default budget: 3 retries) and `SessionRetry` (default budget: 1 retry).
+Dynamic timeout escalation is indexed by the **total attempt number** (i.e.,
+`failover_retry_count + session_token_retry_count`), so timeouts escalate regardless of the retry
+reason.
 
-```rust
-// Before
-const MAX_TRANSPORT_RETRIES: usize = 1;
-
-// After
-const MAX_TRANSPORT_RETRIES: usize = 2;
-```
-
-This means 3 total attempts (initial + 2 retries), matching the 3 tiers in the timeout ladders.
+With `max_failover_retries = 3`, all 3 tiers of the timeout ladder are reachable on the first 3
+attempts.
 
 ### Timeout Selection per Attempt
 
@@ -204,6 +203,10 @@ at the same escalated tier as the primary would waste time if the secondary regi
 
 ### Pseudocode
 
+The timeout selection integrates into the 7-stage loop in `execute_operation_pipeline()`. Between
+Stage 2 (resolve endpoint) and Stage 3 (build transport request), the attempt timeouts are
+computed and passed to `build_transport_request()` which includes them in the `TransportRequest`:
+
 ```rust
 const DATAPLANE_REQUEST_TIMEOUT_LADDER: &[Duration] = &[
     Duration::from_secs(6),
@@ -229,9 +232,14 @@ const METADATA_CONNECTION_TIMEOUT_LADDER: &[Duration] = &[
     Duration::from_secs(5),
 ];
 
-const MAX_TRANSPORT_RETRIES: usize = 2;
-
 loop {
+    // ── STAGE 2: Resolve endpoint ──────────────────────────────────
+    let routing = resolve_endpoint(operation, &retry_state, &location);
+
+    // ── Compute attempt timeouts ───────────────────────────────────
+    let attempt = (retry_state.failover_retry_count
+        + retry_state.session_token_retry_count) as usize;
+
     let request_timeout = timeout_for_attempt(
         attempt,
         if is_dataplane {
@@ -249,21 +257,32 @@ loop {
         },
     );
 
-    // Insert AttemptTimeouts into the pipeline Context (see §8)
-    ctx.insert(AttemptTimeouts {
+    let attempt_timeouts = AttemptTimeouts {
         connection_timeout,
         request_timeout,
-    });
+    };
 
-    match result {
-        Ok(response) => return Ok(response),
-        Err(e) => {
-            if should_retry_transport_failure(attempt, MAX_TRANSPORT_RETRIES, ...) {
-                attempt += 1;
-                continue;
-            }
-            return Err(e);
+    // ── STAGE 3: Build transport request ───────────────────────────
+    let transport_request = build_transport_request(
+        operation, &routing, &activity_id, execution_context,
+        deadline, attempt_timeouts,
+    );
+
+    // ── STAGE 4: Execute transport pipeline ────────────────────────
+    let result = execute_transport_pipeline(transport_request, ...).await;
+
+    // ── STAGE 5–7: Evaluate, apply effects, act ────────────────────
+    match action {
+        OperationAction::Complete(result) => return Ok(result),
+        OperationAction::FailoverRetry { new_state, .. } => {
+            retry_state = new_state;
+            continue;
         }
+        OperationAction::SessionRetry { new_state } => {
+            retry_state = new_state;
+            continue;
+        }
+        OperationAction::Abort { error, .. } => return Err(error),
     }
 }
 ```
@@ -312,35 +331,33 @@ This ensures that:
 
 ## 8. Implementation Details
 
-### Per-Attempt Timeout Delivery via Pipeline `Context`
+### Per-Attempt Timeout Delivery via `TransportRequest`
 
-The per-attempt connection and request timeouts are delivered to the transport layer through the
-pipeline `Context` type-map — the same extensibility mechanism already used for
-`RequestAttemptTelemetryContext`.
+The per-attempt connection and request timeouts are delivered to the transport layer as a field on
+the `TransportRequest` struct. The operation pipeline computes the timeouts for each attempt and
+includes them when building the transport request via `build_transport_request()`.
 
-Before each attempt, the retry loop in `CosmosDriver::execute_operation_internal` inserts an
-`AttemptTimeouts` value into the `Context`. The transport policy (`TrackedTransportPolicy`, and
-eventually `ShardedHttpTransport`) reads this value from the `Context` and applies the timeouts
-to the underlying HTTP call.
+The transport pipeline (`execute_transport_pipeline()`) reads the `AttemptTimeouts` from the
+`TransportRequest` and applies them to the underlying HTTP call.
 
-#### Why `Context` instead of `Request`
+#### Why `TransportRequest` instead of `Context`
 
-The `Request` struct lives in `typespec_client_core` and contains only wire-format data (`url`,
-`method`, `headers`, `body`). Timeout configuration is an SDK-internal concern, not part of the
-HTTP request itself. The `Context` type-map is designed for exactly this kind of per-call metadata
-that flows through the pipeline without being serialized onto the wire.
+The operation pipeline's 7-stage loop constructs a `TransportRequest` struct for each attempt and
+passes it to `execute_transport_pipeline()`. The pipeline `Context` is only created inside the
+transport layer — it is not visible in the operation loop. Carrying timeouts on `TransportRequest`
+keeps the data flow explicit and avoids coupling to the transport layer's internal `Context`.
 
 #### Required Changes
 
 **In `azure_data_cosmos_driver`** (no changes to `azure_core` or `typespec_client_core`):
 
-1. **Define `AttemptTimeouts`**: A struct inserted into the `Context` before each attempt.
+1. **Define `AttemptTimeouts`**: A struct carried on `TransportRequest`.
 
 ```rust
 /// Timeout configuration for a single transport attempt.
 ///
-/// Inserted into the pipeline [`Context`] by the retry loop before each attempt.
-/// The transport policy reads this to configure per-request timeouts.
+/// Computed by the operation pipeline from the timeout ladder and included
+/// in the `TransportRequest` for each attempt.
 #[derive(Clone, Debug)]
 pub(crate) struct AttemptTimeouts {
     /// Maximum time to wait for a TCP connection to be established.
@@ -350,34 +367,49 @@ pub(crate) struct AttemptTimeouts {
 }
 ```
 
-2. **Insert into `Context` in the retry loop** (`cosmos_driver.rs`):
+2. **Add to `TransportRequest`** (`components.rs`):
 
 ```rust
-// Before sending each attempt:
-let attempt_timeouts = AttemptTimeouts {
-    connection_timeout: timeout_for_attempt(attempt, connection_ladder),
-    request_timeout: timeout_for_attempt(attempt, request_ladder),
-};
-ctx.insert(attempt_timeouts);
-```
-
-3. **Read in `TrackedTransportPolicy`**: Before forwarding to the underlying `HttpClient`, the
-   transport policy reads `AttemptTimeouts` from the `Context` and sets the per-request timeout
-   on the `Request` (via `Request::set_timeout()` if available, or by wrapping the send future
-   in `tokio::time::timeout()`).
-
-```rust
-// In TrackedTransportPolicy::send():
-if let Some(timeouts) = ctx.value::<AttemptTimeouts>() {
-    // Apply request timeout to the HTTP call
-    // Apply connection timeout (if the transport supports per-request connection timeouts)
+pub(crate) struct TransportRequest {
+    pub method: Method,
+    pub endpoint: CosmosEndpoint,
+    pub url: Url,
+    pub headers: Headers,
+    pub body: Option<Bytes>,
+    pub auth_context: AuthorizationContext,
+    pub execution_context: ExecutionContext,
+    pub deadline: Option<Instant>,
+    pub timeouts: AttemptTimeouts,  // NEW
 }
 ```
 
-4. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
-   (see `TRANSPORT_PIPELINE_SPEC.md` §6), it will read `AttemptTimeouts` from the `Context` and
-   pass them to the `HttpClientConfig` when selecting or configuring a shard for the request. The
-   sharded transport's per-request configuration model already accommodates this.
+3. **Set in `build_transport_request()`** (`operation_pipeline.rs`):
+
+```rust
+fn build_transport_request(
+    operation: &CosmosOperation,
+    routing: &RoutingDecision,
+    activity_id: &ActivityId,
+    execution_context: ExecutionContext,
+    deadline: Option<Instant>,
+    timeouts: AttemptTimeouts,  // NEW parameter
+) -> azure_core::Result<TransportRequest> {
+    // ... existing logic ...
+    Ok(TransportRequest {
+        // ... existing fields ...
+        timeouts,
+    })
+}
+```
+
+4. **Read in `execute_transport_pipeline()`** (`transport_pipeline.rs`): Before forwarding to the
+   underlying `HttpClient`, the transport pipeline reads `request.timeouts` and applies them to the
+   HTTP call (via the `Request` timeout mechanism or by wrapping the send future in a timeout).
+
+5. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
+   (see `TRANSPORT_PIPELINE_SPEC.md` §6), it will read `AttemptTimeouts` from the
+   `TransportRequest` and pass them to the `HttpClientConfig` when selecting or configuring a shard.
+   The sharded transport's per-request configuration model already accommodates this.
 
 ### Data Structures
 
@@ -424,8 +456,9 @@ values after clamping by both `ConnectionPoolOptions` bounds and the end-to-end 
 
 - `TimeoutLadder`, `AttemptTimeouts`, and the default ladder constants should be defined in the
   driver crate, likely in a new module `src/driver/timeouts.rs` or inline in
-  `src/driver/cosmos_driver.rs`.
-- The retry loop in `CosmosDriver::execute_operation_internal` is the integration point.
+  `src/driver/pipeline/components.rs`.
+- The retry loop in `execute_operation_pipeline()` (`operation_pipeline.rs`) is the integration
+  point — it computes timeouts per attempt and passes them to `build_transport_request()`.
 - `AttemptTimeoutDiagnostics` lives alongside the existing diagnostics types in
   `src/diagnostics/`.
 
