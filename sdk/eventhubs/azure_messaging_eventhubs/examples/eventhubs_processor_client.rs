@@ -71,6 +71,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
     let processor = EventProcessor::builder()
+        // Setting owner_level enables epoch-based partition ownership.
+        // The Event Hub broker will disconnect any existing receiver on
+        // the same partition when a new receiver with the same or higher
+        // owner level connects, preventing duplicate event processing
+        // across multiple consumer instances.
+        .with_owner_level(0)
         .build(consumer, checkpoint_store)
         .await?;
     let background_processor = BackgroundProcessor::new(processor.clone());
@@ -90,6 +96,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut event_stream = partition_client.stream_events();
     let mut event_count = 0;
     while let Some(event) = event_stream.next().await {
+        // Check if the partition was reassigned to another consumer
+        // during rebalancing. When revoked, stop processing so the
+        // partition client can be re-acquired.
+        if partition_client.is_revoked() {
+            println!("Partition was reassigned, stopping.");
+            break;
+        }
         println!("Received message {event_count}");
         event_count += 1;
         if event_count > 10 {
