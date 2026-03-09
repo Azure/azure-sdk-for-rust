@@ -1,4 +1,4 @@
-# Dynamic Request Timeout Escalation Spec for `azure_data_cosmos_driver`
+# Dynamic Timeout Spec for `azure_data_cosmos_driver`
 
 **Status**: Draft
 **Date**: 2026-03-05
@@ -16,8 +16,9 @@
 6. [Interaction with End-to-End Deadline](#6-interaction-with-end-to-end-deadline)
 7. [Interaction with ConnectionPoolOptions Bounds](#7-interaction-with-connectionpooloptions-bounds)
 8. [Implementation Details](#8-implementation-details)
-9. [Cross-SDK Reference](#9-cross-sdk-reference)
-10. [Open Questions](#10-open-questions)
+10. [Adaptive Connection Timeout](#10-adaptive-connection-timeout)
+11. [Cross-SDK Reference](#11-cross-sdk-reference)
+12. [Open Questions](#12-open-questions)
 
 ---
 
@@ -50,8 +51,9 @@ add latency to the common case.
 - **User-configurable ladders**: The escalation ladder is a fixed internal default. Users cannot
   override the step durations. The existing `ConnectionPoolOptions` min/max bounds still act as
   clamping limits (see [§7](#7-interaction-with-connectionpooloptions-bounds)).
-- **Connection timeout escalation**: Connection timeouts remain static, configured via
-  `ConnectionPoolOptions`. Only request timeouts are escalated.
+- **Connection timeout escalation per retry**: Connection timeouts are NOT escalated per retry
+  attempt like request timeouts are. Instead, connection timeouts use an adaptive model described
+  in [§10](#10-adaptive-connection-timeout).
 - **Query plan timeout escalation**: Deferred until query plan execution is implemented.
 - **Address refresh timeout escalation**: Deferred until direct mode is implemented.
 
@@ -107,10 +109,13 @@ a fixed sequence of increasing timeout durations indexed by the attempt number. 
 next (longer) timeout in the ladder is used. The ladder values are not user-configurable — they are
 internal defaults chosen to balance latency and reliability.
 
-### Separate Ladders
+### Separate Mechanisms
 
-Separate request timeout ladders are defined for data plane vs. metadata request types.
-Connection timeouts remain static (configured via `ConnectionPoolOptions`) and are not escalated.
+- **Request timeouts**: Escalated per retry attempt via a fixed ladder (see [§4](#4-timeout-ladders)).
+  Applied per-request through `Request::set_timeout()`.
+- **Connection timeouts**: Adaptively tuned based on observed failure rate (see
+  [§10](#10-adaptive-connection-timeout)). Applied at the `HttpClient` level by the
+  `ShardedHttpTransport`.
 
 ---
 
@@ -470,7 +475,81 @@ value after clamping by both `ConnectionPoolOptions` bounds and the end-to-end d
 
 ---
 
-## 9. Cross-SDK Reference
+## 10. Adaptive Connection Timeout
+
+### Motivation
+
+Connection timeouts operate at a different level than request timeouts. The `reqwest::Client` sets
+`connect_timeout` at construction time — it cannot be overridden per-request. This means the
+per-retry escalation ladder pattern used for request timeouts does not apply.
+
+However, a static connection timeout is also suboptimal. A 1s connection timeout is correct for
+virtually all cloud/datacenter network environments and keeps the fast path aggressive. But
+developers working from machines with higher-latency connections (e.g., VPN, poor Wi-Fi, remote
+networks) may see persistent connection failures at 1s.
+
+### Design: Failure-Rate Adaptive Tuning
+
+The connection timeout starts at **1s** (the aggressive default) and is **adaptively increased to
+5s** if the `ShardedHttpTransport` observes a sustained connection failure rate above a threshold.
+This is a **one-time, persistent transition** — not a per-retry escalation.
+
+```text
+Normal state: connect_timeout = 1s
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │ Connection failure    │
+        │ rate exceeds          │──── YES ───▶ connect_timeout = 5s
+        │ threshold?            │             (create new HttpClient)
+        └───────────────────────┘
+                    │ NO
+                    ▼
+              Keep 1s
+```
+
+### Key Properties
+
+- **Start at 1s**: Sufficient for any well-connected cloud environment. Keeps the common case fast.
+- **Fall back to 5s**: Only triggered when connection failures are persistent, indicating the
+  client is on a slow or unreliable network. >1s is essentially only needed for developers on
+  poor connections — production workloads running in Azure should never hit this.
+- **Exactly-once transition**: This is not a per-attempt ladder. Once the `ShardedHttpTransport`
+  decides to increase the connection timeout, it creates new `HttpClient` instances with the higher
+  timeout. The old clients drain naturally and are reclaimed by the health sweep.
+- **No fallback to 1s**: Once elevated to 5s, the connection timeout stays at 5s for the lifetime
+  of the driver. A restart resets to 1s. This keeps the logic simple and avoids oscillation.
+
+### Implementation in `ShardedHttpTransport`
+
+The `ShardedHttpTransport` (see `TRANSPORT_PIPELINE_SPEC.md` §6) manages a pool of `HttpClient`
+shards per endpoint. It already tracks per-shard health metrics and performs health sweeps.
+
+Connection timeout adaptation fits naturally into this model:
+
+1. **Track connection failure rate**: The `ShardedHttpTransport` monitors connection failures
+   (errors where `is_connect()` returns `true`) across all shards for an endpoint.
+2. **Threshold check**: When the connection failure rate exceeds a configurable threshold (e.g.,
+   >50% of recent connection attempts fail), the transport transitions to the elevated timeout.
+3. **Create new clients**: New `HttpClient` instances are created with `connect_timeout = 5s`
+   via the `HttpClientFactory`. Existing shards with the old timeout continue serving inflight
+   requests and are eventually reclaimed when idle.
+4. **No `azure_core` changes needed**: This is entirely internal to the `ShardedHttpTransport`.
+   The `HttpClientFactory::create()` already accepts `HttpClientConfig` which includes
+   `connect_timeout`.
+
+```rust
+// In ShardedHttpTransport, on health sweep or after connection failure:
+if connection_failure_rate > CONNECT_TIMEOUT_ESCALATION_THRESHOLD {
+    self.effective_connect_timeout = Duration::from_secs(5);
+    // New shards will be created with the elevated timeout.
+    // Existing shards drain and are reclaimed by the health sweep.
+}
+```
+
+---
+
+## 11. Cross-SDK Reference
 
 ### Java SDK (`azure-cosmos`)
 
@@ -501,13 +580,23 @@ From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
 **Differences from Java SDK:**
 - Rust data plane uses 6s/10s/65s; Java direct mode uses a flat 5s.
 - Java gateway "Other HTTP calls" use a flat 60s; Rust data plane starts lower (6s).
-- Connection timeouts remain static in both SDKs (not escalated).
+- Connection timeouts: Java uses a flat 45s (gateway) / 5s (direct). Rust uses an adaptive
+  model starting at 1s and escalating to 5s on sustained connection failures.
 
 ---
 
-## 10. Open Questions
+## 12. Open Questions
 
 1. **Metadata timeout ladder scope**: Should the metadata ladder (5s → 10s → 20s) apply to all
    metadata operations uniformly, or should specific metadata operations (e.g., database account
    reads) have their own ladders? For now, a single metadata ladder is proposed. Query plan and
    address refresh are deferred.
+
+2. **Connection failure rate threshold**: What failure rate should trigger the connection timeout
+   escalation from 1s to 5s? Candidates: >50% of recent attempts, or >N consecutive failures.
+   The threshold should be high enough to avoid false positives from transient blips but low enough
+   to react before the application sees widespread failures.
+
+3. **Connection failure rate window**: Over what time window or sample size should the failure rate
+   be measured? A sliding window of recent connection attempts (e.g., last 20 attempts) vs. a
+   time-based window (e.g., last 30 seconds).
