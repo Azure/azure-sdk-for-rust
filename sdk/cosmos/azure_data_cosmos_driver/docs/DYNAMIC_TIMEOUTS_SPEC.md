@@ -349,7 +349,90 @@ keeps the data flow explicit and avoids coupling to the transport layer's intern
 
 #### Required Changes
 
-**In `azure_data_cosmos_driver`** (no changes to `azure_core` or `typespec_client_core`):
+**In `typespec_client_core`** — Add an optional per-request timeout to `Request`:
+
+The `Request` struct (`typespec_client_core::http::request::Request`) currently has no timeout
+field. Per-request timeouts are needed so that callers (like the Cosmos driver) can override the
+client-level timeout on individual requests. The change is minimal and backwards-compatible:
+
+```rust
+// In typespec_client_core::http::request::Request
+#[derive(Clone)]
+pub struct Request {
+    pub(crate) url: Url,
+    pub(crate) method: Method,
+    pub(crate) headers: Headers,
+    pub(crate) body: Body,
+    pub(crate) timeout: Option<Duration>,  // NEW — per-request timeout override
+}
+
+impl Request {
+    pub fn new(url: Url, method: Method) -> Self {
+        Self {
+            url,
+            method,
+            headers: Headers::new(),
+            body: Body::Bytes(Bytes::new()),
+            timeout: None,  // No override by default
+        }
+    }
+
+    /// Returns the per-request timeout override, if set.
+    ///
+    /// When `Some`, this overrides the client-level timeout for this request only.
+    /// When `None`, the client-level timeout applies.
+    pub fn timeout(&self) -> Option<Duration> {
+        self.timeout
+    }
+
+    /// Sets a per-request timeout that overrides the client-level timeout.
+    pub fn set_timeout(&mut self, timeout: Duration) {
+        self.timeout = Some(timeout);
+    }
+}
+```
+
+**In `typespec_client_core`** — Apply the timeout in the `reqwest` `HttpClient` implementation:
+
+The `reqwest::RequestBuilder` already supports per-request timeouts via `.timeout()`. The
+`HttpClient` implementation reads the timeout from the `Request` and applies it:
+
+```rust
+// In typespec_client_core::http::clients::reqwest
+impl HttpClient for ::reqwest::Client {
+    async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
+        let url = request.url().clone();
+        let method = request.method();
+        let mut req = self.request(from_method(method), url.clone());
+
+        // Apply per-request timeout if set (overrides client-level timeout)
+        if let Some(timeout) = request.timeout() {
+            req = req.timeout(timeout);
+        }
+
+        for (name, value) in request.headers().iter() {
+            req = req.header(name.as_str(), value.as_str());
+        }
+        // ... rest unchanged ...
+    }
+}
+```
+
+**Note on connection timeout**: The `reqwest::RequestBuilder::timeout()` method sets the total
+request timeout (including connection). There is no per-request connection timeout override in
+reqwest — `connect_timeout` is set at the client level. For connection timeout escalation, the
+driver creates the `reqwest::Client` with `connect_timeout` set to the **maximum** ladder value
+(5s). The per-request `timeout` then provides the tighter overall bound on each attempt. This
+means that on attempt 0, the total timeout is 6s (dataplane) even though the client allows up to
+5s for connection — in practice, connection establishment rarely dominates the timeout window.
+
+**In `azure_core`** — Re-export the new API:
+
+Since `azure_core::http::Request` re-exports `typespec_client_core::http::Request`, the new
+`timeout()` and `set_timeout()` methods are automatically available. No additional changes needed
+in `azure_core`.
+
+**In `azure_data_cosmos_driver`**:
 
 1. **Define `AttemptTimeouts`**: A struct carried on `TransportRequest`.
 
@@ -402,11 +485,25 @@ fn build_transport_request(
 }
 ```
 
-4. **Read in `execute_transport_pipeline()`** (`transport_pipeline.rs`): Before forwarding to the
-   underlying `HttpClient`, the transport pipeline reads `request.timeouts` and applies them to the
-   HTTP call (via the `Request` timeout mechanism or by wrapping the send future in a timeout).
+4. **Apply in `execute_transport_pipeline()`** (`transport_pipeline.rs`): Before calling
+   `http_client.execute_request()`, set the per-request timeout on the `azure_core::http::Request`:
 
-5. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
+```rust
+// In execute_transport_pipeline(), after building the azure_core Request:
+request.set_timeout(transport_request.timeouts.request_timeout);
+```
+
+5. **Configure `reqwest::Client` with maximum connection timeout**: When creating the reqwest
+   client in `CosmosTransport::create_reqwest_client()`, use the maximum ladder value for
+   `connect_timeout` so that per-request timeouts can be tighter but not looser than the
+   connection limit:
+
+```rust
+// Use maximum connection ladder value (5s) instead of pool.max_connect_timeout()
+builder = builder.connect_timeout(Duration::from_secs(5));
+```
+
+6. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
    (see `TRANSPORT_PIPELINE_SPEC.md` §6), it will read `AttemptTimeouts` from the
    `TransportRequest` and pass them to the `HttpClientConfig` when selecting or configuring a shard.
    The sharded transport's per-request configuration model already accommodates this.
