@@ -27,8 +27,8 @@ use crate::{
 
 /// Routing decision for the current attempt.
 ///
-/// In Step 1 this is a simple endpoint + region pair.
-/// In Step 2+ this will carry `CosmosEndpoint` and partition overrides.
+/// Wraps a `CosmosEndpoint` that carries the resolved URL and optional
+/// region for diagnostics and routing purposes.
 #[derive(Clone, Debug)]
 pub(crate) struct RoutingDecision {
     /// The resolved endpoint for this attempt.
@@ -37,8 +37,8 @@ pub(crate) struct RoutingDecision {
 
 /// Operation-level retry state.
 ///
-/// Slim for Step 1 — only tracks transport-level retry count.
-/// Expanded in Step 2 with failover, session, and location index fields.
+/// Tracks failover retry count, session retry count, location index,
+/// and write-region topology for the multi-region operation loop.
 #[derive(Clone, Debug)]
 pub(crate) struct OperationRetryState {
     /// Type-safe index into preferred endpoint lists.

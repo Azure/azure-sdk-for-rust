@@ -3,14 +3,16 @@
 
 //! Pure function: evaluate the result of a transport attempt.
 //!
-//! This is the "slim" version for Step 1:
+//! Handles all HTTP error cases for the multi-region operation loop:
 //! - Success → Complete
 //! - Transport error (NotSent) → TransportRetry if budget allows
 //! - Transport error (Sent/Unknown, idempotent) → TransportRetry if budget allows
 //! - Transport error (Sent/Unknown, non-idempotent) → Abort
-//! - HTTP error (non-429; 429 is handled by the transport pipeline) → Abort
-//!
-//! Step 2 will expand this with failover, session retry, and location effects.
+//! - 403/3 WriteForbidden → FailoverRetry + refresh + mark unavailable
+//! - 404/1002 ReadSessionNotAvailable → SessionRetry (advances region)
+//! - 503, 429/3092, 410 → FailoverRetry + mark partition/endpoint unavailable
+//! - 500 (reads only) → FailoverRetry
+//! - Other HTTP errors → Abort
 
 use azure_core::http::headers::Headers;
 

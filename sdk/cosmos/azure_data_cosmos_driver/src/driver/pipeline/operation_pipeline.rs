@@ -3,9 +3,9 @@
 
 //! Operation pipeline: the core loop for executing Cosmos DB operations.
 //!
-//! This is the "slim" Step 1 version: single-region, no hedging, no circuit
-//! breaker, no session consistency. It establishes the architectural pattern
-//! (7-stage loop) that later steps will expand.
+//! Implements the 7-stage operation loop with multi-region failover,
+//! session retry, endpoint unavailability tracking, and deadline
+//! enforcement. No hedging or circuit breaker yet (planned for later steps).
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -39,11 +39,6 @@ use crate::driver::transport::{
 ///
 /// This is the entry point called by `CosmosDriver::execute_operation`.
 /// It orchestrates the 7-stage operation loop described in the spec.
-///
-/// NOTE: The parameter count is intentionally high for Step 1. Step 2
-/// introduces `LocationStateStore` and `AdaptiveTransport` which bundle
-/// several of these parameters into higher-level abstractions, naturally
-/// reducing the count to ~6 parameters.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
