@@ -191,6 +191,17 @@ fn timeout_for_attempt(attempt: usize, ladder: &[Duration]) -> Duration {
 The selected timeouts are applied to the HTTP request for that attempt. Both the connection timeout
 and the request timeout are set per-attempt.
 
+### Hedging and Timeout Ladder Position
+
+When hedging is enabled (see `TRANSPORT_PIPELINE_SPEC.md` §4.2), the hedged attempt runs in a
+secondary region as a speculative execution. **Hedged attempts always start at tier 0 of the
+timeout ladder**, independent of the primary attempt's ladder position.
+
+Rationale: The hedged attempt targets a different regional endpoint. Network conditions (latency,
+connectivity) are independent between regions. A short initial timeout that was insufficient for
+the primary region may be perfectly adequate for the secondary region. Starting the hedged attempt
+at the same escalated tier as the primary would waste time if the secondary region is responsive.
+
 ### Pseudocode
 
 ```rust
@@ -238,8 +249,11 @@ loop {
         },
     );
 
-    // Apply timeouts to the request/transport for this attempt
-    // ...
+    // Insert AttemptTimeouts into the pipeline Context (see §8)
+    ctx.insert(AttemptTimeouts {
+        connection_timeout,
+        request_timeout,
+    });
 
     match result {
         Ok(response) => return Ok(response),
@@ -298,33 +312,72 @@ This ensures that:
 
 ## 8. Implementation Details
 
-### Per-Attempt Connection Timeout
+### Per-Attempt Timeout Delivery via Pipeline `Context`
 
-The current architecture creates `HttpClient` instances with a fixed `connect_timeout` set at
-creation time (via `HttpClientConfig`). To support per-attempt connection timeouts, one of the
-following approaches must be used:
+The per-attempt connection and request timeouts are delivered to the transport layer through the
+pipeline `Context` type-map — the same extensibility mechanism already used for
+`RequestAttemptTelemetryContext`.
 
-#### Option A: Set Timeout on the Request
+Before each attempt, the retry loop in `CosmosDriver::execute_operation_internal` inserts an
+`AttemptTimeouts` value into the `Context`. The transport policy (`TrackedTransportPolicy`, and
+eventually `ShardedHttpTransport`) reads this value from the `Context` and applies the timeouts
+to the underlying HTTP call.
 
-Extend the per-request context or `Request` to carry both a connection timeout and a request
-timeout. The `HttpClient` / transport layer reads these values per-request and applies them.
-This requires changes to `azure_core::http::Request` or the pipeline `Context`.
+#### Why `Context` instead of `Request`
 
-#### Option B: Create Per-Attempt HttpClients
+The `Request` struct lives in `typespec_client_core` and contains only wire-format data (`url`,
+`method`, `headers`, `body`). Timeout configuration is an SDK-internal concern, not part of the
+HTTP request itself. The `Context` type-map is designed for exactly this kind of per-call metadata
+that flows through the pipeline without being serialized onto the wire.
 
-Create a new `HttpClient` for each attempt with the appropriate connection timeout. This is
-wasteful (new TLS handshake, new connection pool) and is not recommended.
+#### Required Changes
 
-#### Option C: Use Tokio Timeout Wrapper
+**In `azure_data_cosmos_driver`** (no changes to `azure_core` or `typespec_client_core`):
 
-Wrap the connection phase in a `tokio::time::timeout()` at the transport layer, independently of
-the `HttpClient`'s built-in connection timeout. The `HttpClient`'s connection timeout is set to the
-maximum ladder value, and the per-attempt timeout is enforced externally.
+1. **Define `AttemptTimeouts`**: A struct inserted into the `Context` before each attempt.
 
-**Recommended**: **Option A** is the cleanest approach. The `ShardedHttpTransport` design
-(see `TRANSPORT_PIPELINE_SPEC.md` §6) already plans to accept per-request configuration including
-timeouts. Until that transport is implemented, the current pipeline can set per-request timeouts
-via the `Request` timeout mechanism if available, or via the `Context`.
+```rust
+/// Timeout configuration for a single transport attempt.
+///
+/// Inserted into the pipeline [`Context`] by the retry loop before each attempt.
+/// The transport policy reads this to configure per-request timeouts.
+#[derive(Clone, Debug)]
+pub(crate) struct AttemptTimeouts {
+    /// Maximum time to wait for a TCP connection to be established.
+    pub connection_timeout: Duration,
+    /// Maximum time to wait for the complete HTTP response after connection.
+    pub request_timeout: Duration,
+}
+```
+
+2. **Insert into `Context` in the retry loop** (`cosmos_driver.rs`):
+
+```rust
+// Before sending each attempt:
+let attempt_timeouts = AttemptTimeouts {
+    connection_timeout: timeout_for_attempt(attempt, connection_ladder),
+    request_timeout: timeout_for_attempt(attempt, request_ladder),
+};
+ctx.insert(attempt_timeouts);
+```
+
+3. **Read in `TrackedTransportPolicy`**: Before forwarding to the underlying `HttpClient`, the
+   transport policy reads `AttemptTimeouts` from the `Context` and sets the per-request timeout
+   on the `Request` (via `Request::set_timeout()` if available, or by wrapping the send future
+   in `tokio::time::timeout()`).
+
+```rust
+// In TrackedTransportPolicy::send():
+if let Some(timeouts) = ctx.value::<AttemptTimeouts>() {
+    // Apply request timeout to the HTTP call
+    // Apply connection timeout (if the transport supports per-request connection timeouts)
+}
+```
+
+4. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
+   (see `TRANSPORT_PIPELINE_SPEC.md` §6), it will read `AttemptTimeouts` from the `Context` and
+   pass them to the `HttpClientConfig` when selecting or configuring a shard for the request. The
+   sharded transport's per-request configuration model already accommodates this.
 
 ### Data Structures
 
@@ -343,19 +396,38 @@ impl TimeoutLadder {
         self.steps[attempt.min(self.steps.len() - 1)]
     }
 }
+```
 
-/// Timeout configuration for a single attempt, combining connection and request timeouts.
-struct AttemptTimeouts {
-    connection_timeout: Duration,
-    request_timeout: Duration,
+### Diagnostic Recording
+
+The effective per-attempt timeout values are recorded in `DiagnosticsContext` for observability.
+This helps users understand why a retry succeeded when the initial attempt failed (e.g., "attempt 0
+timed out at 6s, attempt 1 succeeded with a 10s timeout").
+
+For each request attempt, the following timeout information is recorded:
+
+```rust
+/// Timeout information recorded per attempt in diagnostics.
+pub(crate) struct AttemptTimeoutDiagnostics {
+    /// The effective connection timeout used for this attempt (after clamping).
+    pub connection_timeout: Duration,
+    /// The effective request timeout used for this attempt (after clamping).
+    pub request_timeout: Duration,
 }
 ```
 
+This is recorded via `DiagnosticsContextBuilder::update_request()` alongside existing per-request
+metadata (charge, activity ID, session token). The timeout values recorded are the **effective**
+values after clamping by both `ConnectionPoolOptions` bounds and the end-to-end deadline.
+
 ### Where It Lives
 
-- `TimeoutLadder` and the default ladder constants should be defined in the driver crate, likely in
-  a new module `src/driver/timeouts.rs` or inline in `src/driver/cosmos_driver.rs`.
+- `TimeoutLadder`, `AttemptTimeouts`, and the default ladder constants should be defined in the
+  driver crate, likely in a new module `src/driver/timeouts.rs` or inline in
+  `src/driver/cosmos_driver.rs`.
 - The retry loop in `CosmosDriver::execute_operation_internal` is the integration point.
+- `AttemptTimeoutDiagnostics` lives alongside the existing diagnostics types in
+  `src/diagnostics/`.
 
 ---
 
@@ -396,20 +468,7 @@ From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
 
 ## 10. Open Questions
 
-1. **Per-attempt connection timeout mechanism**: Which approach (Option A/B/C in §8) should be used
-   to apply per-attempt connection timeouts? This depends on the timeline for
-   `ShardedHttpTransport` (see `TRANSPORT_PIPELINE_SPEC.md` §6).
-
-2. **Metadata timeout ladder scope**: Should the metadata ladder (5s → 10s → 20s) apply to all
+1. **Metadata timeout ladder scope**: Should the metadata ladder (5s → 10s → 20s) apply to all
    metadata operations uniformly, or should specific metadata operations (e.g., database account
    reads) have their own ladders? For now, a single metadata ladder is proposed. Query plan and
    address refresh are deferred.
-
-3. **Interaction with hedging**: When hedging is enabled (see `TRANSPORT_PIPELINE_SPEC.md` §4.2),
-   the hedged attempt runs in a secondary region. Should the hedged attempt use the same ladder
-   position as the primary, or always start at tier 0? The hedged attempt is architecturally
-   independent, so starting at tier 0 is likely correct.
-
-4. **Diagnostic reporting**: Should the per-attempt timeout values be recorded in
-   `DiagnosticsContext` for observability? This would help users understand why a retry succeeded
-   when the initial attempt failed.
