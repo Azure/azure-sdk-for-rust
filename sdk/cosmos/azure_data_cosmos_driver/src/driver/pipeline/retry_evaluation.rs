@@ -65,7 +65,7 @@ pub(crate) fn evaluate_transport_result(
 
             if status.is_read_session_not_available() && retry_state.can_retry_session() {
                 if !retry_state.can_use_multiple_write_locations
-                    && retry_state.session_token_retry_count >= 1
+                    && retry_state.session_token_retry_count >= 2
                 {
                     return (
                         OperationAction::Abort {
