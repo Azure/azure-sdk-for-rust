@@ -3,6 +3,13 @@
 **Issue**: [Azure/azure-sdk-for-rust#3846](https://github.com/Azure/azure-sdk-for-rust/issues/3846)
 **Status**: Draft
 
+> **Step 2 Dependency**: This spec depends on Transport Pipeline Spec Step 2
+> (`AccountEndpointState`, `AccountEndpointStateStore`, `AccountEndpoint`-based
+> routing with `preferred_read_endpoints` / `preferred_write_endpoints`).
+> Code examples referencing these types are **pseudocode** until Step 2 lands.
+> Step 1 (PR #3875) established the pipeline architecture; this spec aligns with
+> the new pipeline design (plain async functions, no azure_core policy pipeline).
+
 ---
 
 ## 1. Goals & Motivation
@@ -76,9 +83,10 @@ This spec extends the Transport Pipeline Spec (§4.4) by adding:
 2. **Availability recovery** — marking endpoints available again after successful probes
 3. **Startup probing** — verifying endpoint reachability in the background during client initialization
 
-The `AccountEndpointState`, `AccountEndpointStateStore`, `mark_endpoint_unavailable`, and
-`expire_unavailable_endpoints` systems defined in §4.4 are consumed as-is. This spec adds
-`mark_endpoint_available` and the orchestration layer.
+The `AccountEndpointState`, `AccountEndpointStateStore`, and
+`expire_unavailable_endpoints` systems defined in §4.4 are consumed as-is (once
+implemented in Step 2). This spec adds `mark_endpoint_available`,
+`mark_endpoint_unavailable`, and the orchestration layer.
 
 ---
 
@@ -113,10 +121,9 @@ pub(crate) enum ProbeResult {
 /// needed by the `DiagnosticsContext` system without string parsing.
 #[derive(Clone, Debug)]
 pub(crate) struct ProbeFailure {
-    /// HTTP status code, if the probe received an HTTP response.
-    pub status_code: Option<u16>,
-    /// Cosmos sub-status code, if present in the response headers.
-    pub sub_status_code: Option<u32>,
+    /// Cosmos status (HTTP status code + optional sub-status code),
+    /// if the probe received an HTTP response.
+    pub status: Option<CosmosStatus>,
     /// Human-readable description of the failure.
     pub message: String,
 }
@@ -135,14 +142,14 @@ pub(crate) trait HealthProbe: Send + Sync {
     ///
     /// Implementations should use a short timeout (e.g. 5s) to avoid blocking
     /// the health sweep for too long.
-    async fn probe(&self, endpoint: &CosmosEndpoint) -> ProbeResult;
+    async fn probe(&self, endpoint: &AccountEndpoint) -> ProbeResult;
 }
 ```
 
 ### 3.2 `GetDatabaseAccountProbe` — Current Implementation
 
-Uses the existing `fetch_account_properties` path to issue a `GET /` (GetDatabaseAccount)
-against a specific regional endpoint:
+Uses `execute_transport_pipeline` from the new pipeline architecture (Step 1, PR #3875) to
+issue a `GET /` (GetDatabaseAccount) against a specific regional endpoint:
 
 ```rust
 // driver/health/get_database_account_probe.rs
@@ -153,86 +160,92 @@ against a specific regional endpoint:
 /// a new `GatewayHealthProbe` will replace this — only this struct changes,
 /// not the orchestration.
 pub(crate) struct GetDatabaseAccountProbe {
-    /// The transport layer — reuses the existing metadata pipeline for
-    /// authenticated requests.
+    /// The transport layer — provides raw HttpClient for metadata requests.
     transport: Arc<CosmosTransport>,
-    /// Auth context for the account (key or AAD).
-    auth: Arc<dyn Authorization>,
-    /// Timeout for individual probe requests.
-    probe_timeout: Duration,
+    /// Credential for the account (master key or AAD token).
+    credential: Credential,
+    /// User agent header value.
+    user_agent: HeaderValue,
 }
 
 impl GetDatabaseAccountProbe {
     pub fn new(
         transport: Arc<CosmosTransport>,
-        auth: Arc<dyn Authorization>,
-        probe_timeout: Duration,
+        credential: Credential,
+        user_agent: HeaderValue,
     ) -> Self {
         Self {
             transport,
-            auth,
-            probe_timeout,
+            credential,
+            user_agent,
         }
     }
 }
 
 #[async_trait]
 impl HealthProbe for GetDatabaseAccountProbe {
-    async fn probe(&self, endpoint: &CosmosEndpoint) -> ProbeResult {
+    async fn probe(&self, endpoint: &AccountEndpoint) -> ProbeResult {
         let start = Instant::now();
-        let account_endpoint = endpoint.to_account_endpoint();
-        let pipeline = self
-            .transport
-            .create_metadata_pipeline(&account_endpoint, &*self.auth);
+        let http_client = self.transport.get_metadata_http_client(endpoint);
 
-        let mut request = Request::new(
-            account_endpoint.join_path("/"),
-            azure_core::http::Method::Get,
-        );
-        let mut context = Context::default();
-        context.insert(AuthorizationContext::new(
-            azure_core::http::Method::Get,
+        // Build a TransportRequest for GetDatabaseAccount (GET /).
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
             ResourceType::DatabaseAccount,
             "",
-        ));
+        );
+        let transport_request = TransportRequest {
+            method: Method::Get,
+            url: endpoint.url().clone(),
+            region: None,
+            headers: Headers::new(),
+            body: None,
+            auth_context,
+            execution_context: ExecutionContext::HealthCheckProbe,
+            deadline: None, // Per-request timeout deferred; uses client-level timeout.
+        };
 
-        // Apply probe-specific timeout at the HTTP transport layer.
-        // The timeout is set on the request context so the pipeline applies it
-        // at the TCP/TLS level, ensuring clean connection abort rather than
-        // async task cancellation which may leave half-open connections.
-        context.insert(ProbeTimeout(self.probe_timeout));
+        // Use a lightweight DiagnosticsContextBuilder for the probe.
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::new(),
+            PipelineType::Metadata,
+            TransportSecurity::Tls,
+        );
 
-        let result = pipeline.send(&context, &mut request).await;
+        let result = execute_transport_pipeline(
+            transport_request,
+            http_client.as_ref(),
+            &self.credential,
+            &self.user_agent,
+            PipelineType::Metadata,
+            TransportSecurity::Tls,
+            &mut diagnostics,
+        )
+        .await;
 
         let latency = start.elapsed();
-        match result {
-            Ok(response) if response.status().is_success() => {
+        match result.outcome {
+            TransportOutcome::Success { status, .. } => {
                 ProbeResult::Healthy { latency }
             }
-            Ok(response) => {
-                let status_code = Some(response.status().as_u16());
-                let sub_status_code = response
-                    .headers()
-                    .get("x-ms-substatus")
-                    .and_then(|v| v.to_str().ok())
-                    .and_then(|v| v.parse().ok());
+            TransportOutcome::HttpError { status, .. } => {
                 ProbeResult::Unhealthy {
                     failure: ProbeFailure {
-                        status_code,
-                        sub_status_code,
-                        message: format!("HTTP {}", response.status()),
+                        status: Some(status),
+                        message: format!("HTTP {}", status.status_code()),
                     },
                     latency,
                 }
             }
-            Err(e) => ProbeResult::Unhealthy {
-                failure: ProbeFailure {
-                    status_code: None,
-                    sub_status_code: None,
-                    message: format!("transport error: {e}"),
-                },
-                latency,
-            },
+            TransportOutcome::TransportError { error, .. } => {
+                ProbeResult::Unhealthy {
+                    failure: ProbeFailure {
+                        status: None,
+                        message: format!("transport error: {error}"),
+                    },
+                    latency,
+                }
+            }
         }
     }
 }
@@ -256,12 +269,13 @@ pub(crate) struct HealthMonitorConfig {
 
     /// Maximum number of retries per probe attempt.
     /// Default: 3, matching the Python SDK.
-    /// This is passed to `ClientRetryPolicy` via per-request options;
-    /// no custom retry loop is used.
+    /// Used by the probe's own retry loop; the transport pipeline handles
+    /// 429 throttle retries independently.
     pub max_probe_retries: u32,
 
-    /// Timeout for individual probe requests, applied at the HTTP
-    /// transport layer.
+    /// Timeout for individual probe requests. Currently uses the
+    /// client-level metadata timeout from `ConnectionPoolOptions`.
+    /// Per-request timeout override is deferred.
     /// Default: 5s.
     pub probe_timeout: Duration,
 }
@@ -306,7 +320,7 @@ Following the Python SDK pattern, the monitor probes:
 ///
 /// Returns a deduplicated list of endpoints from the current
 /// `AccountEndpointState`.
-fn endpoints_to_probe(state: &AccountEndpointState) -> Vec<CosmosEndpoint> {
+fn endpoints_to_probe(state: &AccountEndpointState) -> Vec<AccountEndpoint> {
     let mut endpoints = Vec::new();
     let mut seen = HashSet::new();
 
@@ -328,19 +342,30 @@ fn endpoints_to_probe(state: &AccountEndpointState) -> Vec<CosmosEndpoint> {
 }
 ```
 
-### 3.5 Probe Retries via `ClientRetryPolicy`
+### 3.5 Probe Retry Strategy
 
-Health probes are retried by the standard `ClientRetryPolicy` from the Transport Pipeline
-Spec — there is no custom retry loop. The probe-specific retry count
-(`HealthMonitorConfig::max_probe_retries`) is passed to the retry policy via per-request
-options, allowing probes to use different retry limits than normal data-plane requests
-while sharing the same retry mechanism and backoff logic.
+Health probes use a two-layer retry approach matching the pipeline architecture:
+
+1. **Transport-level (429 throttling)**: Handled automatically by
+   `execute_transport_pipeline()` — the probe benefits from this for free.
+2. **Probe-level (transient failures)**: The health monitor retries failed probes
+   up to `max_probe_retries` times with exponential backoff. This is a simple retry
+   loop in the sweep, not a shared policy object — the pipeline's operation-level
+   retry (`OperationRetryState`) is designed for user-facing operations and not
+   suitable for background probes.
 
 ```rust
-// Conceptual: retry configuration is applied per-request, not via a separate loop.
-// The HealthProbe::probe() call flows through the standard pipeline which includes
-// ClientRetryPolicy. The probe's max_probe_retries overrides the default retry count
-// for that request only.
+// Probe retry is a simple loop in run_sweep():
+for attempt in 0..=config.max_probe_retries {
+    let result = probe.probe(&ep).await;
+    match &result {
+        ProbeResult::Healthy { .. } => return result,
+        ProbeResult::Unhealthy { .. } if attempt < config.max_probe_retries => {
+            tokio::time::sleep(backoff_delay(attempt)).await;
+        }
+        _ => return result,
+    }
+}
 ```
 
 ### 3.6 Background Sweep Loop
@@ -404,7 +429,8 @@ impl EndpointHealthMonitor {
         }
 
         // Probe all endpoints concurrently.
-        // Retries are handled by `ClientRetryPolicy` within each probe call.
+        // 429 throttle retries are handled by execute_transport_pipeline().
+        // Probe-level retries are handled by the sweep (see §3.5).
         let probe_futures: Vec<_> = endpoints
             .iter()
             .map(|ep| {
@@ -437,8 +463,8 @@ impl EndpointHealthMonitor {
                     tracing::warn!(
                         endpoint = %endpoint,
                         reason = %failure.message,
-                        status_code = ?failure.status_code,
-                        sub_status_code = ?failure.sub_status_code,
+                        status_code = ?failure.status.as_ref().map(|s| s.status_code()),
+                        sub_status_code = ?failure.status.as_ref().and_then(|s| s.sub_status()),
                         "health probe failed, marking endpoint unavailable"
                     );
                 }
@@ -495,11 +521,11 @@ impl EndpointHealthMonitor {
 
 ### 3.8 `mark_endpoint_available` System Function
 
-This is a new system function complementing the existing `mark_endpoint_unavailable` from
-the Transport Pipeline Spec §4.4:
+New system function for endpoint recovery, part of the Step 2 endpoint state system
+(alongside `mark_endpoint_unavailable` which is also new in Step 2):
 
 ```rust
-// driver/routing/account_endpoint_state.rs (addition to existing systems)
+// driver/routing/account_endpoint_state.rs (new in Step 2)
 
 /// Produce a new state with an endpoint marked as available (removed from
 /// the unavailable set).
@@ -508,7 +534,7 @@ the Transport Pipeline Spec §4.4:
 /// unchanged.
 fn mark_endpoint_available(
     state: &AccountEndpointState,
-    endpoint: &CosmosEndpoint,
+    endpoint: &AccountEndpoint,
 ) -> AccountEndpointState {
     if !state.unavailable_endpoints.contains_key(endpoint) {
         return state.clone();
@@ -540,8 +566,8 @@ let endpoint_state_store = Arc::new(AccountEndpointStateStore::new(endpoint_stat
 // Create health probe (swappable).
 let health_probe: Arc<dyn HealthProbe> = Arc::new(GetDatabaseAccountProbe::new(
     Arc::clone(&self.runtime.transport()),
-    account.auth().clone(),
-    health_config.probe_timeout,
+    account.credential().clone(),
+    user_agent.clone(),
 ));
 
 // Start health monitor (non-blocking — spawns background sweep immediately).
@@ -553,15 +579,15 @@ let health_monitor = EndpointHealthMonitor::start(
 );
 ```
 
-### 4.2 `execute_operation` Integration
+### 4.2 `execute_operation_pipeline` Integration
 
-The operation loop in `execute_operation` already reads from `AccountEndpointStateStore`
-(via the `LocationSnapshot` in the Transport Pipeline Spec). Health check results
-automatically influence routing because the sweep updates the same
+The operation pipeline (`execute_operation_pipeline`) already reads from
+`AccountEndpointStateStore` (via `resolve_endpoint` in the Transport Pipeline Spec).
+Health check results automatically influence routing because the sweep updates the same
 `unavailable_endpoints` map that `resolve_endpoint` reads.
 
-No changes to `execute_operation` are required. The integration is purely through shared
-state.
+No changes to `execute_operation_pipeline` are required. The integration is purely through
+shared state.
 
 ### 4.3 Reactive + Proactive Synergy
 
@@ -598,8 +624,8 @@ tracing::debug!(
     endpoint = %endpoint,
     execution_context = "HealthCheckProbe",
     latency_ms = latency.as_millis(),
-    status_code = ?failure.as_ref().and_then(|f| f.status_code),
-    sub_status_code = ?failure.as_ref().and_then(|f| f.sub_status_code),
+    status_code = ?failure.as_ref().and_then(|f| f.status.as_ref().map(|s| s.status_code())),
+    sub_status_code = ?failure.as_ref().and_then(|f| f.status.as_ref().and_then(|s| s.sub_status())),
     "health probe completed"
 );
 ```
@@ -626,11 +652,11 @@ New option group nested within `DriverOptions`:
 pub struct HealthCheckOptions {
     /// Interval between background health sweeps. Default: 300s (5 minutes).
     refresh_interval: Duration,
-    /// Maximum retries per probe attempt, applied via `ClientRetryPolicy`.
+    /// Maximum retries per probe attempt (probe-level retry loop).
     /// Default: 3.
     max_probe_retries: u32,
-    /// Timeout for individual probe requests, applied at the HTTP transport
-    /// layer. Default: 5s.
+    /// Timeout for individual probe requests. Currently uses client-level
+    /// metadata timeout; per-request override is deferred. Default: 5s.
     probe_timeout: Duration,
 }
 
@@ -711,7 +737,7 @@ When the dedicated gateway health endpoint ships, the migration is:
 
    #[async_trait]
    impl HealthProbe for GatewayHealthProbe {
-       async fn probe(&self, endpoint: &CosmosEndpoint) -> ProbeResult {
+       async fn probe(&self, endpoint: &AccountEndpoint) -> ProbeResult {
            // GET {endpoint}/_health (or whatever the API is)
            // Parse response for per-region health details
        }
@@ -770,13 +796,13 @@ No explicit `shutdown()` method is needed — the RAII pattern via `Drop` handle
 /// Test-only health probe that returns preconfigured results per endpoint.
 #[cfg(test)]
 pub(crate) struct MockHealthProbe {
-    results: HashMap<CosmosEndpoint, ProbeResult>,
+    results: HashMap<AccountEndpoint, ProbeResult>,
 }
 
 #[cfg(test)]
 #[async_trait]
 impl HealthProbe for MockHealthProbe {
-    async fn probe(&self, endpoint: &CosmosEndpoint) -> ProbeResult {
+    async fn probe(&self, endpoint: &AccountEndpoint) -> ProbeResult {
         self.results
             .get(endpoint)
             .cloned()
@@ -798,9 +824,9 @@ since it requires `AccountEndpointState` and `AccountEndpointStateStore`.
 | Sub-step | Work Item | Files |
 |----------|-----------|-------|
 | HC.1 | **`HealthProbe` trait + `ProbeResult` + `ProbeFailure`** — Define the swappable probe interface with structured failure details. | `driver/health/probe.rs` |
-| HC.2 | **`GetDatabaseAccountProbe`** — Implement using existing metadata pipeline with transport-layer timeout. | `driver/health/get_database_account_probe.rs` |
+| HC.2 | **`GetDatabaseAccountProbe`** — Implement using `execute_transport_pipeline()` and `get_metadata_http_client()`. | `driver/health/get_database_account_probe.rs` |
 | HC.3 | **`HealthCheckOptions`** — Public configuration surface (no env vars, no enabled toggle). | `options/health.rs` |
-| HC.4 | **`EndpointHealthMonitor`** — Sweep loop with concurrent probing. Retries delegated to `ClientRetryPolicy` with probe-specific config. | `driver/health/monitor.rs`, `driver/health/config.rs` |
+| HC.4 | **`EndpointHealthMonitor`** — Sweep loop with concurrent probing and probe-level retry. 429 retries handled by transport pipeline. | `driver/health/monitor.rs`, `driver/health/config.rs` |
 | HC.5 | **`mark_endpoint_available`** — New system function for endpoint recovery. | `driver/routing/account_endpoint_state.rs` |
 | HC.6 | **Wire into `CosmosDriver`** — Create probe + monitor during driver init (non-blocking). | `driver/cosmos_driver.rs` |
 | HC.7 | **`ExecutionContext::HealthCheckProbe`** — New diagnostics variant, separate from PPCB. | `driver/diagnostics/` |
@@ -810,7 +836,8 @@ since it requires `AccountEndpointState` and `AccountEndpointStateStore`.
 ### Dependency
 
 - **Requires**: Transport Pipeline Spec Step 2 (`AccountEndpointState`,
-  `AccountEndpointStateStore`, `CosmosEndpoint`, `UnavailableReason`).
+  `AccountEndpointStateStore`, `AccountEndpoint`-based routing, `UnavailableReason`).
+  Step 1 (PR #3875) provides the pipeline architecture used by probes.
 - **Enables**: Faster failover and recovery in Steps 3+ (circuit breaker, hedging).
 
 ---
