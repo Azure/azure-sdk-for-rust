@@ -20,31 +20,21 @@ pub struct FaultClient {
     /// The inner HTTP client to which requests are delegated.
     inner: Arc<dyn HttpClient>,
     /// The fault injection rules to apply.
-    rules: Arc<Mutex<Vec<RuleState>>>,
-}
-
-/// Tracks the state of a fault injection rule.
-#[derive(Debug)]
-struct RuleState {
-    /// The fault injection rule.
-    rule: Arc<FaultInjectionRule>,
+    rules: Arc<Mutex<Vec<Arc<FaultInjectionRule>>>>,
 }
 
 impl FaultClient {
     /// Creates a new instance of the FaultClient.
     pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
-        let rule_states = rules.into_iter().map(|rule| RuleState { rule }).collect();
-
         Self {
             inner,
-            rules: Arc::new(Mutex::new(rule_states)),
+            rules: Arc::new(Mutex::new(rules)),
         }
     }
 
     /// Checks if a rule is currently applicable based on timing constraints.
-    fn is_rule_applicable(&self, rule_state: &RuleState) -> bool {
+    fn is_rule_applicable(&self, rule: &FaultInjectionRule) -> bool {
         let now = Instant::now();
-        let rule = &rule_state.rule;
 
         // Check if the rule is enabled
         if !rule.is_enabled() {
@@ -233,10 +223,8 @@ impl HttpClient for FaultClient {
             let rules = self.rules.lock().unwrap();
             let mut applicable_rule_index: Option<usize> = None;
 
-            for (index, rule_state) in rules.iter().enumerate() {
-                if self.is_rule_applicable(rule_state)
-                    && self.matches_condition(request, &rule_state.rule)
-                {
+            for (index, rule) in rules.iter().enumerate() {
+                if self.is_rule_applicable(rule) && self.matches_condition(request, rule) {
                     applicable_rule_index = Some(index);
                     break;
                 }
@@ -244,11 +232,9 @@ impl HttpClient for FaultClient {
 
             // Apply fault if we found an applicable rule
             if let Some(index) = applicable_rule_index {
-                let rule_state = &rules[index];
-                // Increment hit count on the rule itself
-                rule_state.rule.increment_hit_count();
-                // Clone and return the result
-                Some(rule_state.rule.result.clone())
+                let rule = &rules[index];
+                rule.increment_hit_count();
+                Some(rule.result.clone())
             } else {
                 None
             }

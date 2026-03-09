@@ -70,9 +70,9 @@ impl FaultInjectionRule {
         self.hit_count.load(Ordering::SeqCst)
     }
 
-    /// Increments the hit count by one and returns the previous value.
-    pub(super) fn increment_hit_count(&self) -> u32 {
-        self.hit_count.fetch_add(1, Ordering::SeqCst)
+    /// Increments the hit count by one.
+    pub(super) fn increment_hit_count(&self) {
+        self.hit_count.fetch_add(1, Ordering::SeqCst);
     }
 }
 
@@ -176,5 +176,18 @@ mod tests {
         assert!(rule.hit_limit.is_none());
         assert!(rule.condition.operation_type.is_none());
         assert!(rule.is_enabled());
+        assert_eq!(rule.hit_count(), 0);
+    }
+
+    #[test]
+    fn hit_count_increments() {
+        let rule = FaultInjectionRuleBuilder::new("hit-test", create_test_error()).build();
+
+        assert_eq!(rule.hit_count(), 0);
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 1);
+        rule.increment_hit_count();
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 3);
     }
 }
