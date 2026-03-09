@@ -70,7 +70,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  * Using Entra ID authentication:
  *
  * ```rust,no_run
- * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, RoutingStrategy, regions};
  * use std::sync::Arc;
  *
  * # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -81,7 +81,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  *     .unwrap();
  * let account = CosmosAccountReference::with_credential(endpoint, credential);
  * let client = CosmosClient::builder()
- *     .build(account)
+ *     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
  *     .await?;
  * # Ok(())
  * # }
@@ -90,7 +90,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  * Using key authentication (requires `key_auth` feature):
  *
  * ```rust,no_run,ignore
- * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, RoutingStrategy, regions};
  * use azure_core::credentials::Secret;
  *
  * # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -102,7 +102,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  *     Secret::from("my_account_key"),
  * );
  * let client = CosmosClient::builder()
- *     .build(account)
+ *     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
  *     .await?;
  * # Ok(())
  * # }
