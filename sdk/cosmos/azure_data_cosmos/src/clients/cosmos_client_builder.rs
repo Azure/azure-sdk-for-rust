@@ -6,8 +6,7 @@
 use crate::{
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
     resource_context::{ResourceLink, ResourceType},
-    CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential,
-    RoutingStrategy,
+    CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
 use std::sync::Arc;
@@ -366,10 +365,7 @@ mod tests {
     async fn build_with_unknown_region_succeeds() {
         let unknown = regions::RegionName::from("unknown");
         let result = CosmosClient::builder()
-            .build(
-                test_account(),
-                RoutingStrategy::ProximityTo(unknown),
-            )
+            .build(test_account(), RoutingStrategy::ProximityTo(unknown))
             .await;
         assert!(
             result.is_ok(),
@@ -385,10 +381,7 @@ mod tests {
 
         let unknown = regions::RegionName::from("unknown");
         let client = CosmosClient::builder()
-            .build(
-                test_account(),
-                RoutingStrategy::ProximityTo(unknown),
-            )
+            .build(test_account(), RoutingStrategy::ProximityTo(unknown))
             .await
             .expect("build should succeed");
 
