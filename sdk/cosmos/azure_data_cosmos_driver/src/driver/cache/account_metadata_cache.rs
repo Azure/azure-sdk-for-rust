@@ -224,6 +224,11 @@ pub(crate) struct AccountMetadataCache {
     /// Minimum interval between refresh attempts to rate-limit requests.
     #[allow(dead_code)] // Used by refresh_if_stale, consumer coming once Driver is used
     staleness_threshold: Duration,
+
+    /// Serializes refresh attempts so that concurrent callers share a single
+    /// network fetch instead of each issuing redundant requests.
+    #[allow(dead_code)] // Used by refresh_if_stale, consumer coming once Driver is used
+    refresh_mutex: async_lock::Mutex<()>,
 }
 
 impl AccountMetadataCache {
@@ -233,6 +238,7 @@ impl AccountMetadataCache {
             cache: AsyncCache::new(),
             last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
             staleness_threshold: DEFAULT_STALENESS_THRESHOLD,
+            refresh_mutex: async_lock::Mutex::new(()),
         }
     }
 
@@ -280,10 +286,14 @@ impl AccountMetadataCache {
     /// ago (default 10 minutes, matching the SDK's background refresh interval),
     /// or there is no cached value for the endpoint.
     ///
+    /// Uses double-checked locking to ensure that concurrent callers share a
+    /// single network fetch: the first caller to acquire the refresh mutex
+    /// performs the fetch while subsequent callers wait and re-check staleness,
+    /// finding the entry already refreshed.
+    ///
     /// When the entry is considered stale, this method attempts to refresh it
-    /// using `fetch_fn`. If the fetch fails, the error is propagated and the
-    /// existing cached value (if any) is preserved. Returns the (possibly
-    /// refreshed) account properties, or `None` only when there is no cached
+    /// using `fetch_fn`. If the fetch fails, the existing cached value (if any)
+    /// is preserved and returned. Returns `None` only when there is no cached
     /// value and the entry is not considered stale.
     #[allow(dead_code)] // Consumer coming in cutover
     pub(crate) async fn refresh_if_stale<F, Fut>(
@@ -295,28 +305,21 @@ impl AccountMetadataCache {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = azure_core::Result<AccountProperties>>,
     {
-        // Look up the current cached value first so that staleness also reflects
-        // whether there is any data stored for this endpoint.
-        let cached = self.cache.get(&endpoint).await;
-
-        // Check staleness before calling into the cache primitive.
-        let is_stale = {
-            let timestamps = self.last_refresh.read().await;
-            match timestamps.get(&endpoint) {
-                Some(last) => {
-                    // Treat a missing cached value as stale even if the timestamp is recent.
-                    cached.is_none() || last.elapsed() > self.staleness_threshold
-                }
-                None => true, // Never fetched
-            }
-        };
-
-        if !is_stale {
-            // Not stale — return the current cached value.
-            return Ok(cached);
+        // First check: fast path without exclusive locking.
+        if !self.is_stale(&endpoint).await {
+            return Ok(self.cache.get(&endpoint).await);
         }
 
-        // Fetch outside the cache primitive so we can handle errors.
+        // Acquire refresh mutex to serialize concurrent refresh attempts.
+        let _guard = self.refresh_mutex.lock().await;
+
+        // Second check: another caller may have refreshed while we waited.
+        if !self.is_stale(&endpoint).await {
+            return Ok(self.cache.get(&endpoint).await);
+        }
+
+        // We are the sole refresher — fetch from the service.
+        let cached = self.cache.get(&endpoint).await;
         let properties = match fetch_fn().await {
             Ok(props) => props,
             Err(e) => {
@@ -340,13 +343,24 @@ impl AccountMetadataCache {
             )
             .await;
 
-        // Update the refresh timestamp if we got a value back.
+        // Update the refresh timestamp.
         if result.is_some() {
             let mut timestamps = self.last_refresh.write().await;
             timestamps.insert(endpoint_for_timestamp, Instant::now());
         }
 
         Ok(result)
+    }
+
+    /// Returns `true` if the cached metadata for `endpoint` is stale or absent.
+    #[allow(dead_code)] // Used by refresh_if_stale
+    async fn is_stale(&self, endpoint: &AccountEndpoint) -> bool {
+        let cached = self.cache.get(endpoint).await;
+        let timestamps = self.last_refresh.read().await;
+        match timestamps.get(endpoint) {
+            Some(last) => cached.is_none() || last.elapsed() > self.staleness_threshold,
+            None => true,
+        }
     }
 }
 
@@ -595,6 +609,7 @@ mod tests {
             cache: AsyncCache::new(),
             last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
             staleness_threshold: Duration::from_secs(0),
+            refresh_mutex: async_lock::Mutex::new(()),
         };
         let endpoint = test_endpoint("myaccount");
 
