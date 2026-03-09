@@ -119,6 +119,8 @@ pub(crate) struct ThrottleRetryState {
     pub backoff_factor: f64,
     /// Jitter ratio applied to fallback backoff (for example 0.25 = +/- 25%).
     pub backoff_jitter_ratio: f64,
+    /// Whether the one-time forced final throttle retry has been used.
+    pub forced_final_retry_used: bool,
 }
 
 /// Hard-coded defaults for throttle retry.
@@ -141,6 +143,20 @@ impl ThrottleRetryState {
             fallback_base_delay: DEFAULT_FALLBACK_BASE_DELAY,
             backoff_factor: DEFAULT_BACKOFF_FACTOR,
             backoff_jitter_ratio: DEFAULT_BACKOFF_JITTER_RATIO,
+            forced_final_retry_used: false,
+        }
+    }
+
+    /// Returns true when a one-time forced final retry can still be attempted.
+    pub fn can_use_forced_final_retry(&self) -> bool {
+        !self.forced_final_retry_used
+    }
+
+    /// Marks the one-time forced final retry as consumed.
+    pub fn mark_forced_final_retry_used(&self) -> Self {
+        Self {
+            forced_final_retry_used: true,
+            ..self.clone()
         }
     }
 
@@ -291,6 +307,16 @@ mod tests {
         assert_eq!(state.fallback_base_delay, Duration::from_millis(5));
         assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
         assert_eq!(state.backoff_jitter_ratio, 0.25);
+        assert!(!state.forced_final_retry_used);
+    }
+
+    #[test]
+    fn throttle_retry_state_marks_forced_final_retry_as_used() {
+        let state = ThrottleRetryState::new();
+        assert!(state.can_use_forced_final_retry());
+
+        let updated = state.mark_forced_final_retry_used();
+        assert!(!updated.can_use_forced_final_retry());
     }
 
     #[test]

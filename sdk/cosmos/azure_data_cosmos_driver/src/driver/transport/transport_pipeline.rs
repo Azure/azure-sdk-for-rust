@@ -57,16 +57,25 @@ fn remaining_request_timeout(deadline: Option<Instant>) -> Option<Duration> {
     })
 }
 
+fn forced_final_retry_delay_from_remaining(remaining: Duration) -> Option<Duration> {
+    if remaining.is_zero() {
+        return None;
+    }
+
+    let half_remaining = remaining / 2;
+
+    if half_remaining < DEADLINE_RETRY_SAFETY_MARGIN {
+        return Some(Duration::ZERO);
+    }
+
+    Some(half_remaining)
+}
+
 fn forced_final_retry_delay(deadline: Option<Instant>) -> Option<Duration> {
     match deadline {
-        Some(deadline) => {
-            let remaining = deadline.saturating_duration_since(Instant::now());
-            if remaining.is_zero() {
-                None
-            } else {
-                Some(deadline_capped_delay(remaining, remaining))
-            }
-        }
+        Some(deadline) => forced_final_retry_delay_from_remaining(
+            deadline.saturating_duration_since(Instant::now()),
+        ),
         None => Some(Duration::ZERO),
     }
 }
@@ -140,7 +149,6 @@ pub(crate) async fn execute_transport_pipeline(
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new();
-    let mut forced_final_throttle_retry = false;
 
     loop {
         // Check deadline before each attempt
@@ -280,7 +288,7 @@ pub(crate) async fn execute_transport_pipeline(
                     TransportOutcome::HttpError { status, .. } if status.is_throttled()
                 );
 
-                if !forced_final_throttle_retry && is_throttled {
+                if throttle_state.can_use_forced_final_retry() && is_throttled {
                     if let Some(final_delay) = forced_final_retry_delay(request.deadline) {
                         // One extra retry attempt after throttle budget is exhausted.
                         // When no deadline exists, this retry is immediate.
@@ -292,7 +300,7 @@ pub(crate) async fn execute_transport_pipeline(
                             .await;
                         }
 
-                        forced_final_throttle_retry = true;
+                        throttle_state = throttle_state.mark_forced_final_retry_used();
                         continue;
                     }
                 }
@@ -511,6 +519,24 @@ mod tests {
     fn forced_final_retry_delay_with_expired_deadline_is_none() {
         let delay = forced_final_retry_delay(Some(Instant::now() - Duration::from_millis(1)));
         assert_eq!(delay, None);
+    }
+
+    #[test]
+    fn forced_final_retry_delay_under_margin_is_immediate() {
+        let delay = forced_final_retry_delay_from_remaining(Duration::from_millis(50));
+        assert_eq!(delay, Some(Duration::ZERO));
+    }
+
+    #[test]
+    fn forced_final_retry_delay_when_half_remaining_below_margin_is_immediate() {
+        let delay = forced_final_retry_delay_from_remaining(Duration::from_millis(150));
+        assert_eq!(delay, Some(Duration::ZERO));
+    }
+
+    #[test]
+    fn forced_final_retry_delay_uses_half_remaining() {
+        let delay = forced_final_retry_delay_from_remaining(Duration::from_millis(400));
+        assert_eq!(delay, Some(Duration::from_millis(200)));
     }
 
     #[test]
