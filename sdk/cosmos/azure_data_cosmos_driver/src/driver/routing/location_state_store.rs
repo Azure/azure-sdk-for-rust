@@ -119,21 +119,12 @@ impl LocationStateStore {
     }
 
     /// Returns the latest account snapshot.
+    #[allow(dead_code)]
     pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {
         let guard = epoch::pin();
         // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
         let current = unsafe { self.account.load(Ordering::Acquire, &guard).deref() };
         Arc::new(current.clone())
-    }
-
-    /// Unconditionally replaces account state.
-    pub fn swap_account(&self, new_state: AccountEndpointState) {
-        let guard = epoch::pin();
-        let old = self
-            .account
-            .swap(Owned::new(new_state), Ordering::AcqRel, &guard);
-        // SAFETY: old pointer is no longer reachable after swap.
-        unsafe { guard.defer_destroy(old) };
     }
 
     /// Applies location effects. Step 2 applies endpoint unavailability and account refresh.
@@ -217,13 +208,28 @@ impl LocationStateStore {
             return;
         };
 
-        let previous_generation = Some(self.account_snapshot().generation);
-        let next = build_account_endpoint_state(
-            properties.as_ref(),
-            self.default_endpoint.clone(),
-            previous_generation,
-        );
-        self.swap_account(next);
+        let default_endpoint = self.default_endpoint.clone();
+        self.sync_account_properties(properties.as_ref(), &default_endpoint);
+    }
+
+    /// Updates account state from properties using a CAS loop that preserves
+    /// existing `unavailable_endpoints` marks set by concurrent operations.
+    pub fn sync_account_properties(
+        &self,
+        properties: &AccountProperties,
+        default_endpoint: &CosmosEndpoint,
+    ) {
+        let default_endpoint = default_endpoint.clone();
+        self.apply_account(|current| {
+            let mut next = build_account_endpoint_state(
+                properties,
+                default_endpoint.clone(),
+                Some(current.generation),
+            );
+            // Carry forward unavailability marks from the current state.
+            next.unavailable_endpoints = current.unavailable_endpoints.clone();
+            next
+        });
     }
 }
 

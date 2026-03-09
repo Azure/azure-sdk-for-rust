@@ -5,7 +5,7 @@
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
-    driver::routing::{build_account_endpoint_state, CosmosEndpoint, LocationStateStore},
+    driver::routing::{CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
@@ -409,13 +409,11 @@ impl CosmosDriver {
             .await?;
 
         // Keep the operation routing snapshot in sync with current account metadata.
-        let previous_generation = Some(self.location_state_store.account_snapshot().generation);
-        let account_state = build_account_endpoint_state(
+        // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
+        self.location_state_store.sync_account_properties(
             account_properties.as_ref(),
-            self.location_state_store.default_endpoint().clone(),
-            previous_generation,
+            self.location_state_store.default_endpoint(),
         );
-        self.location_state_store.swap_account(account_state);
 
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
