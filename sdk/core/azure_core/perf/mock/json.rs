@@ -7,7 +7,10 @@ use azure_core::{
     json,
 };
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{
+        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
+        TestOptionType,
+    },
     TestContext,
 };
 use futures::FutureExt as _;
@@ -40,6 +43,7 @@ impl MockJsonTest {
                 short_activator: None,
                 long_activator: "count",
                 expected_args_len: 1,
+                option_type: TestOptionType::Usize,
                 ..Default::default()
             }],
             create_test: Self::create_items,

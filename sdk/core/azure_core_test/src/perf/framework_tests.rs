@@ -46,18 +46,9 @@ fn create_fibonacci1_test(runner: PerfRunner) -> CreatePerfTestReturn {
 
     // Return a pinned future that creates the test.
     async move {
-        let count: Option<&String> = runner.try_get_test_arg("count")?;
-
-        println!("Fibonacci1Test with count: {:?}", count);
-        let count = count.expect("count argument is mandatory");
-        let count = count.parse::<u32>().map_err(|e| {
-            azure_core::Error::with_error(
-                azure_core::error::ErrorKind::Other,
-                e,
-                "Invalid count argument",
-            )
-        })?;
-        Ok(Box::new(Fibonacci1Test { count }) as Box<dyn PerfTest>)
+        Ok(Box::new(Fibonacci1Test {
+            count: runner.try_get_test_arg("count")?.unwrap(),
+        }) as Box<dyn PerfTest>)
     }
     .boxed()
 }
@@ -92,6 +83,7 @@ async fn test_perf_runner_with_single_test() {
                 short_activator: Some('c'),
                 expected_args_len: 1,
                 display_message: "The Fibonacci number to compute",
+                option_type: TestOptionType::Uint32,
                 ..Default::default()
             }],
             create_test: create_fibonacci1_test,
