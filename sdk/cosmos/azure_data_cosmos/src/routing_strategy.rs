@@ -24,7 +24,7 @@ pub enum RoutingStrategy {
     ///
     /// The SDK generates a list of preferred regions sorted by estimated
     /// proximity to the specified region. Proximity estimates are built
-    /// in to the SDK and may differ from actual round-trip times observed
+    /// into the SDK and may differ from actual round-trip times observed
     /// at runtime.
     ///
     /// If the application is not running in an Azure region, specify the
