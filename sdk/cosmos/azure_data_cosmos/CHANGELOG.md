@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RegionSelectionStrategy` parameter on `build()`. Use `RegionSelectionStrategy::ProximityTo(region)` to specify the application region.
+
 ### Bugs Fixed
 
 - Fixes Circuit Breaker Failover Logic for Multi-Master Writes on 403/3. ([#3861](https://github.com/Azure/azure-sdk-for-rust/pull/3861))

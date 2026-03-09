@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_data_cosmos::{CosmosAccountEndpoint, CosmosAccountReference, CosmosClient};
+use azure_data_cosmos::{
+    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, RegionSelectionStrategy,
+};
 use azure_identity::DeveloperToolsCredential;
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::error::Error;
@@ -34,6 +36,10 @@ struct ProgramArgs {
 struct SharedArgs {
     /// The Cosmos DB endpoint to connect to.
     endpoint: String,
+
+    /// The Azure region where the application is running (e.g. "East US").
+    #[arg(long)]
+    region: String,
 
     /// An authentication key to use when connecting to the Cosmos DB account. If omitted, the connection will use Entra ID.
     #[arg(long)]
@@ -81,6 +87,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
 async fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
     let endpoint: CosmosAccountEndpoint = args.endpoint.parse()?;
+    let strategy = RegionSelectionStrategy::ProximityTo(args.region.clone().into());
     if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
         {
@@ -88,17 +95,17 @@ async fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>
                 endpoint,
                 azure_core::credentials::Secret::from(key.clone()),
             );
-            Ok(CosmosClient::builder().build(account).await?)
+            Ok(CosmosClient::builder().build(account, strategy).await?)
         }
         #[cfg(not(feature = "key_auth"))]
         {
-            let _ = key; // Mark 'key' as used to make the compiler happy.
+            let _ = (key, strategy); // Mark as used to make the compiler happy.
             Err("cannot authenticate with a key unless the 'key_auth' feature is enabled".into())
         }
     } else {
         let cred: Arc<dyn azure_core::credentials::TokenCredential> =
             DeveloperToolsCredential::new(None).unwrap();
         let account = CosmosAccountReference::with_credential(endpoint, cred);
-        Ok(CosmosClient::builder().build(account).await?)
+        Ok(CosmosClient::builder().build(account, strategy).await?)
     }
 }

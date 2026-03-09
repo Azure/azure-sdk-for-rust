@@ -46,11 +46,6 @@ impl CosmosClientOptions {
         self
     }
 
-    pub fn with_application_region(mut self, application_region: impl Into<RegionName>) -> Self {
-        self.application_region = Some(application_region.into());
-        self
-    }
-
     pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
         self.custom_headers = custom_headers;
         self
