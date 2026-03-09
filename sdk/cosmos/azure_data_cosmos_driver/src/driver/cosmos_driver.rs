@@ -322,6 +322,11 @@ impl CosmosDriver {
     /// [`execute_operation`](Self::execute_operation) call. This avoids
     /// cold-start latency on the first data-plane operation.
     ///
+    /// This method is called automatically by
+    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver)
+    /// on a best-effort basis. Callers may invoke it again to retry if the
+    /// initial attempt failed (the result is idempotent).
+    ///
     /// Returns an error if the account is unreachable.
     pub async fn initialize(&self) -> azure_core::Result<()> {
         let account = self.options.account();
