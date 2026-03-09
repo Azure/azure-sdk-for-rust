@@ -20,17 +20,13 @@ pub struct ListBlobTest {
 impl ListBlobTest {
     fn create_list_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
-            let count: Option<&String> = runner.try_get_test_arg("count")?;
-
-            println!("ListBlobTest with count: {:?}", count);
-            let count = count.expect("count argument is mandatory").parse::<u32>()?;
-            println!("Parsed count: {}", count);
-
-            let endpoint: Option<&String> = runner.try_get_test_arg("endpoint")?;
+            let endpoint: Option<String> = runner.try_get_test_arg("endpoint")?;
 
             Ok(Box::new(ListBlobTest {
-                count,
-                endpoint: endpoint.cloned(),
+                count: runner
+                    .try_get_test_arg("count")?
+                    .expect("count argument is mandatory"),
+                endpoint,
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
