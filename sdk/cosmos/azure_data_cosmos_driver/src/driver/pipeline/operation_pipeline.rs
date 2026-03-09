@@ -336,7 +336,7 @@ mod tests {
     use super::build_transport_request;
     use crate::{
         diagnostics::ExecutionContext,
-        driver::pipeline::components::RoutingDecision,
+        driver::{pipeline::components::RoutingDecision, routing::CosmosEndpoint},
         models::{
             AccountReference, ActivityId, ContainerProperties, ContainerReference, CosmosOperation,
             DatabaseReference, ItemReference, PartitionKey, PartitionKeyDefinition,
@@ -376,8 +376,9 @@ mod tests {
 
     fn test_routing() -> RoutingDecision {
         RoutingDecision {
-            endpoint: Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            region: None,
+            endpoint: CosmosEndpoint::global(
+                Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            ),
         }
     }
 
