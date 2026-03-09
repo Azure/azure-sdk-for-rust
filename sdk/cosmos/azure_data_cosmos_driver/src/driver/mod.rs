@@ -9,9 +9,12 @@
 //! - [`CosmosDriverRuntime`] - The global runtime environment shared across drivers
 //! - [`CosmosDriverRuntimeBuilder`] - Builder for creating runtime instances
 //! - [`CosmosDriver`] - A driver instance for a specific Cosmos DB account
+// cspell:ignore splitmix
 
 pub(crate) mod cache;
 mod cosmos_driver;
+pub(crate) mod jitter;
+pub(crate) mod pipeline;
 mod runtime;
 pub(crate) mod transport;
 

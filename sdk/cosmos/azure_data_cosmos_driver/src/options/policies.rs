@@ -6,6 +6,8 @@
 use crate::options::Region;
 use std::time::Duration;
 
+const MIN_END_TO_END_OPERATION_TIMEOUT: Duration = Duration::from_secs(1);
+
 /// Controls whether the response body is returned for write operations.
 ///
 /// When disabled, reduces networking and CPU load by not sending the payload
@@ -47,8 +49,13 @@ pub struct EndToEndOperationLatencyPolicy {
 
 impl EndToEndOperationLatencyPolicy {
     /// Creates a new end-to-end operation latency policy with the given timeout.
+    ///
+    /// Timeouts below 1 second are clamped to 1 second at the public API boundary
+    /// to avoid unrealistic operation-level timeout settings.
     pub fn new(timeout: Duration) -> Self {
-        Self { timeout }
+        Self {
+            timeout: timeout.max(MIN_END_TO_END_OPERATION_TIMEOUT),
+        }
     }
 
     /// Returns the maximum end-to-end timeout for the operation.
@@ -196,5 +203,24 @@ impl From<bool> for EmulatorServerCertValidation {
 impl From<EmulatorServerCertValidation> for bool {
     fn from(value: EmulatorServerCertValidation) -> Self {
         matches!(value, EmulatorServerCertValidation::DangerousDisabled)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::EndToEndOperationLatencyPolicy;
+
+    #[test]
+    fn end_to_end_latency_policy_clamps_timeout_below_one_second() {
+        let policy = EndToEndOperationLatencyPolicy::new(Duration::from_millis(250));
+        assert_eq!(policy.timeout(), Duration::from_secs(1));
+    }
+
+    #[test]
+    fn end_to_end_latency_policy_keeps_timeout_at_or_above_one_second() {
+        let policy = EndToEndOperationLatencyPolicy::new(Duration::from_secs(2));
+        assert_eq!(policy.timeout(), Duration::from_secs(2));
     }
 }

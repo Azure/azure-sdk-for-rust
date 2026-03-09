@@ -378,6 +378,9 @@ impl RequestDiagnostics {
     /// Sets the status to 408 (Request Timeout) with sub-status
     /// [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
     /// operation timeout from the client side.
+    // TODO(Step 2): remove this allow once operation/transport deadline wiring
+    // uses the builder timeout path directly again.
+    #[allow(dead_code)]
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
         self.timed_out = true;
@@ -915,11 +918,17 @@ impl DiagnosticsContextBuilder {
     }
 
     /// Returns the operation-level activity ID.
+    // TODO(Step 2): remove this allow once Step 2 diagnostics assertions are
+    // added in integration tests for operation pipeline retries/failover.
+    #[allow(dead_code)]
     pub(crate) fn activity_id(&self) -> &ActivityId {
         &self.activity_id
     }
 
     /// Returns the number of tracked requests for this operation.
+    // TODO(Step 2): remove this allow once Step 2 diagnostics assertions are
+    // added in integration tests for operation pipeline retries/failover.
+    #[allow(dead_code)]
     pub(crate) fn request_count(&self) -> usize {
         self.requests.len()
     }
@@ -982,6 +991,9 @@ impl DiagnosticsContextBuilder {
     ///
     /// For transport-level timeouts (connection timeouts, etc.), use
     /// [`fail_request`](Self::fail_request) instead with the appropriate error.
+    // TODO(Step 2): remove this allow once timeout handling is unified across
+    // operation and transport pipelines.
+    #[allow(dead_code)]
     pub(crate) fn timeout_request(&mut self, handle: RequestHandle) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.timeout();
