@@ -12,7 +12,7 @@ PackageVersions:
 
 Tests:
   - Test: download
-    Class: DownloadBlob
+    Class: download_blob
     Arguments:
       - --size 10240 --parallel 64
       - --size 10485760 --parallel 32
@@ -23,7 +23,7 @@ Tests:
       - --size 1073741824 --parallel 64 --warmup 60 --duration 60 -l simple
 
   # - Test: upload
-  #   Class: UploadBlob
+  #   Class: upload_blob
   #   Arguments:
   #   - --size 10240 --parallel 64
   #   - --size 10485760 --parallel 32
