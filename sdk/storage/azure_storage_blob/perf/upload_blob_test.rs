@@ -3,7 +3,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use azure_core::{error::ErrorKind, Bytes};
+use azure_core::Bytes;
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
@@ -94,10 +94,10 @@ impl PerfTest for UploadBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
-        self.client.set(client).map_err(|_| {
-            azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
-        })?;
+        self.client.get_or_init(|| {
+            BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)
+                .unwrap_or_else(|_| panic!("Failed to create BlobContainerClient"))
+        });
 
         // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
         let container_client = self.client.get().unwrap();

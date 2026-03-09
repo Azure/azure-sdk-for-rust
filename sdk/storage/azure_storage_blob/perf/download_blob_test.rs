@@ -126,7 +126,7 @@ impl DownloadBlobTest {
 
         while let Some(result) = body.next().await {
             // We don't actually care about the contents of the blob for this test, we just want to download it.
-            result?;
+            black_box(result?);
         }
         Ok(())
     }
@@ -135,7 +135,7 @@ impl DownloadBlobTest {
     async fn collect_into(&self, blob_client: BlobClient) -> azure_core::Result<()> {
         let response = blob_client.download(None).await?;
 
-        let mut buffer = vec![0u8; 512 * 1024]; // 512 KB buffer
+        let mut buffer = vec![0u8; self.size];
         response.into_body().collect_into(&mut buffer).await?;
         black_box(buffer);
         Ok(())
@@ -199,10 +199,10 @@ impl PerfTest for DownloadBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
-        self.client.set(client).map_err(|_| {
-            azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
-        })?;
+        self.client.get_or_init(|| {
+            BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)
+                .unwrap_or_else(|_| panic!("Failed to create BlobContainerClient"))
+        });
 
         // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
         let container_client = self.client.get().unwrap();

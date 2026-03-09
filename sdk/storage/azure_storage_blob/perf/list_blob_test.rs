@@ -5,7 +5,10 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::{error::ErrorKind, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{
+        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
+        TestOptionType,
+    },
     TestContext,
 };
 use azure_storage_blob::BlobContainerClient;
@@ -45,6 +48,7 @@ impl ListBlobTest {
                     short_activator: Some('c'),
                     long_activator: "count",
                     expected_args_len: 1,
+                    option_type: TestOptionType::Uint32,
                     ..Default::default()
                 },
                 PerfTestOption {
