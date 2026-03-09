@@ -1,6 +1,7 @@
+
 ---
 name: check-spelling
-description: Invoked when the user requests to check and fix spelling in project source files using cSpell, add words to ignore lists, configure per-crate cSpell settings, or resolve CI spell-check failures.
+description: Check and fix spelling in project source files using cSpell.
 ---
 
 # Spell checking
