@@ -55,34 +55,20 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
-    let max_failover_retries = effective_options
-        .max_failover_retry_count
-        .unwrap_or_else(|| {
-            std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
-                .ok()
-                .and_then(|v| v.parse::<u32>().ok())
-                .unwrap_or(3)
-        });
-    let max_session_retries = effective_options
-        .max_session_retry_count
-        .unwrap_or_else(|| {
-            std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
-                .ok()
-                .and_then(|v| v.parse::<u32>().ok())
-                .unwrap_or_else(|| {
-                    // Java SDK parity: 2 for single-write, endpoints.len() for multi-write.
-                    // Uses the original endpoint count (before unavailability filtering).
-                    if location_snapshot.account.multiple_write_locations_enabled {
-                        let endpoints_len = location_snapshot
-                            .account
-                            .preferred_endpoints(operation.is_read_only())
-                            .len();
-                        endpoints_len as u32
-                    } else {
-                        2
-                    }
-                })
-        });
+    let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
+    let max_session_retries = effective_options.max_session_retry_count.unwrap_or_else(|| {
+        // Java SDK parity: 2 for single-write, endpoints.len() for multi-write.
+        // Uses the original endpoint count (before unavailability filtering).
+        if location_snapshot.account.multiple_write_locations_enabled {
+            let endpoints_len = location_snapshot
+                .account
+                .preferred_endpoints(operation.is_read_only())
+                .len();
+            endpoints_len as u32
+        } else {
+            2
+        }
+    });
 
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,

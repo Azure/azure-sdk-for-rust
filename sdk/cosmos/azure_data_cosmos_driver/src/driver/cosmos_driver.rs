@@ -46,6 +46,10 @@ pub struct CosmosDriver {
     options: DriverOptions,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
+    /// Resolved default for max failover retries (from env or hardcoded default).
+    default_max_failover_retries: u32,
+    /// Resolved default for max session retries (from env or None = compute at operation time).
+    default_max_session_retries: Option<u32>,
 }
 
 impl CosmosDriver {
@@ -248,10 +252,33 @@ impl CosmosDriver {
             endpoint_unavailability_ttl,
         ));
 
+        let default_max_failover_retries = runtime
+            .runtime_options()
+            .snapshot()
+            .max_failover_retry_count
+            .unwrap_or_else(|| {
+                std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
+                    .ok()
+                    .and_then(|v| v.parse::<u32>().ok())
+                    .unwrap_or(3)
+            });
+
+        let default_max_session_retries = runtime
+            .runtime_options()
+            .snapshot()
+            .max_session_retry_count
+            .or_else(|| {
+                std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
+                    .ok()
+                    .and_then(|v| v.parse::<u32>().ok())
+            });
+
         Self {
             runtime,
             options,
             location_state_store,
+            default_max_failover_retries,
+            default_max_session_retries,
         }
     }
 
@@ -384,7 +411,15 @@ impl CosmosDriver {
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
         // Step 1: Derive effective runtime options
-        let effective_options = self.effective_runtime_options(&options);
+        let mut effective_options = self.effective_runtime_options(&options);
+
+        // Fill in resolved defaults for retry counts (env vars read once at construction).
+        if effective_options.max_failover_retry_count.is_none() {
+            effective_options.max_failover_retry_count = Some(self.default_max_failover_retries);
+        }
+        if effective_options.max_session_retry_count.is_none() {
+            effective_options.max_session_retry_count = self.default_max_session_retries;
+        }
 
         // Step 2: Resolve effective throughput control group (if any).
         // Step 1 transport pipeline does not consume this yet.
