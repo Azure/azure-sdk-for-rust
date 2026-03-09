@@ -7,13 +7,15 @@ use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
-    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
-    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    CustomResponseBuilder, FaultInjectionClientBuilder, FaultInjectionConditionBuilder,
+    FaultInjectionErrorType, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+    FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::ItemOptions;
 use framework::{
-    get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+    get_effective_hub_endpoint, get_global_endpoint, mock_account, TestClient, TestOptions,
+    HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -933,53 +935,70 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
     .await
 }
 
-/// Test 403.3 (WriteForbidden) triggers region failover and database account refresh.
+/// Test that a 403.3 (WriteForbidden) via `CustomResponse` triggers a database
+/// account refresh, and the refreshed account response (also via `CustomResponse`)
+/// transitions the SDK from multi-write to single-write mode.
 ///
-/// Injects a WriteForbidden error for writes targeting the hub region. Verifies that:
-/// 1. The write succeeds via failover to the satellite region.
-/// 2. A database account refresh is triggered (tracked via a passthrough rule on
-///    `MetadataReadDatabaseAccount`).
+/// Flow:
+/// 1. Write to HUB_REGION → receives 403.3 custom response → triggers failover + account refresh
+/// 2. Account refresh intercepted → returns mock single-write account with only SATELLITE_REGION writable
+/// 3. Write retries on SATELLITE_REGION → succeeds
 #[tokio::test]
-pub async fn fault_injection_write_forbidden_triggers_failover_and_account_refresh(
+pub async fn fault_injection_custom_response_403_3_transitions_to_single_write(
 ) -> Result<(), Box<dyn Error>> {
-    let server_error = FaultInjectionResultBuilder::new()
-        .with_error(FaultInjectionErrorType::WriteForbidden)
+    // Build a 403.3 custom response for writes on HUB_REGION.
+    let write_forbidden = CustomResponseBuilder::new(StatusCode::Forbidden)
+        .with_sub_status(3u32)
         .build();
 
-    let condition = FaultInjectionConditionBuilder::new()
+    let write_result = FaultInjectionResultBuilder::new()
+        .with_custom_response(write_forbidden)
+        .build();
+
+    let write_condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::CreateItem)
         .with_region(HUB_REGION)
         .build();
 
     let write_forbidden_rule = Arc::new(
-        FaultInjectionRuleBuilder::new("write-forbidden-hub", server_error)
-            .with_condition(condition)
+        FaultInjectionRuleBuilder::new("custom-403-3-hub", write_result)
+            .with_condition(write_condition)
             .with_hit_limit(1)
             .build(),
     );
 
-    // Passthrough rule to track database account refresh calls.
-    // Probability 0.0 means the fault is never injected, but the hit count is
-    // still incremented whenever the condition matches, allowing us to detect
-    // that the refresh was triggered.
-    let account_refresh_result = FaultInjectionResultBuilder::new()
-        .with_error(FaultInjectionErrorType::InternalServerError)
-        .with_probability(0.0)
+    // Extract the real account name so the mock response has valid endpoint URLs.
+    let global_host = get_global_endpoint();
+    let account_name = global_host
+        .find(".documents.azure.com")
+        .map(|pos| &global_host[..pos])
+        .unwrap_or("test");
+
+    // Mock database account response: single-write, only SATELLITE_REGION writable.
+    let mock_account = mock_account::mock_database_account_response_for_account(
+        account_name,
+        &[SATELLITE_REGION],
+        &[HUB_REGION, SATELLITE_REGION],
+        false,
+    );
+
+    let account_result = FaultInjectionResultBuilder::new()
+        .with_custom_response(mock_account)
         .build();
 
-    let account_refresh_condition = FaultInjectionConditionBuilder::new()
+    let account_condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::MetadataReadDatabaseAccount)
         .build();
 
-    let account_refresh_rule = Arc::new(
-        FaultInjectionRuleBuilder::new("track-account-refresh", account_refresh_result)
-            .with_condition(account_refresh_condition)
+    let account_rule = Arc::new(
+        FaultInjectionRuleBuilder::new("mock-single-write-account", account_result)
+            .with_condition(account_condition)
             .build(),
     );
 
     let fault_builder = FaultInjectionClientBuilder::new()
         .with_rule(write_forbidden_rule.clone())
-        .with_rule(account_refresh_rule.clone());
+        .with_rule(account_rule.clone());
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -998,8 +1017,7 @@ pub async fn fault_injection_write_forbidden_triggers_failover_and_account_refre
             let fault_db_client = fault_client.database_client(&db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await;
 
-            // Capture the database account refresh count before the write.
-            let refresh_count_before = account_refresh_rule.hit_count();
+            let refresh_count_before = account_rule.hit_count();
 
             let unique_id = Uuid::new_v4().to_string();
             let item = TestItem {
@@ -1017,21 +1035,22 @@ pub async fn fault_injection_write_forbidden_triggers_failover_and_account_refre
 
             assert!(
                 result.is_ok(),
-                "Write should succeed via failover after 403.3, but got error: {:?}",
+                "Write should succeed via failover after custom 403.3, but got error: {:?}",
                 result.err()
             );
 
             let response = result.unwrap();
             let request_url = response.request_url().to_string();
 
-            // Verify the write failed over to the satellite region.
+            // Verify the write failed over to satellite (the only write region
+            // in the mock single-write account).
             assert!(
                 request_url.contains(SATELLITE_REGION.as_str()),
                 "request should have failed over to satellite region after 403.3, got: {request_url}"
             );
 
-            // Verify a database account refresh was triggered by the 403.3 handling.
-            let refresh_count_after = account_refresh_rule.hit_count();
+            // Verify the database account refresh was triggered and intercepted.
+            let refresh_count_after = account_rule.hit_count();
             assert!(
                 refresh_count_after > refresh_count_before,
                 "database account refresh should have been triggered (before: {refresh_count_before}, after: {refresh_count_after})"
