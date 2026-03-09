@@ -63,6 +63,12 @@ pub struct PerfTestMetadata {
     pub create_test: CreatePerfTestFn,
 }
 
+/// The expected type of a test option, used in [`PerfRunner.try_get_test_arg`] and [`PerfRunner::try_get_global_arg`]
+///
+/// This allows a test author to declare the expected numeric type of the option value, which
+/// simplifies the work involved in processing a test option value and reduces the chance of errors in that processing.
+///
+/// The default option type is `String`,
 #[derive(Debug, Clone, Default)]
 pub enum TestOptionType {
     #[default]
@@ -103,7 +109,7 @@ pub struct PerfTestOption {
     /// Argument value is sensitive and should be sanitized.
     pub sensitive: bool,
 
-    /// The type of the argument value.
+    /// The expected type of the argument value.
     pub option_type: TestOptionType,
 }
 

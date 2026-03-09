@@ -41,10 +41,8 @@ impl CreateKey {
 
     fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
-            let vault_url_ref: Option<String> = runner.try_get_test_arg("vault_url")?;
-            let vault_url = vault_url_ref.cloned();
             Ok(Box::new(CreateKey {
-                vault_url,
+                vault_url: runner.try_get_test_arg("vault_url")?,
                 random_key_name: OnceLock::new(),
                 client: OnceLock::new(),
                 body: CreateKeyParameters {
