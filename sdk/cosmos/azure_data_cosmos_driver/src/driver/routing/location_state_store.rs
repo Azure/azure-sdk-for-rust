@@ -11,7 +11,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use crossbeam::epoch::{self, Atomic, Owned};
+use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
 
 use crate::{
