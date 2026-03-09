@@ -52,7 +52,7 @@ pub(crate) fn evaluate_transport_result(
             if status.is_write_forbidden() && retry_state.can_retry_failover() {
                 return (
                     OperationAction::FailoverRetry {
-                        new_state: retry_state.advance_failover(),
+                        new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
                     vec![
@@ -80,7 +80,7 @@ pub(crate) fn evaluate_transport_result(
 
                 return (
                     OperationAction::SessionRetry {
-                        new_state: retry_state.advance_session_retry(),
+                        new_state: retry_state.clone().advance_session_retry(),
                     },
                     Vec::new(),
                 );
@@ -98,7 +98,7 @@ pub(crate) fn evaluate_transport_result(
                 if request_definitely_not_sent {
                     return (
                         OperationAction::FailoverRetry {
-                            new_state: retry_state.advance_failover(),
+                            new_state: retry_state.clone().advance_failover(),
                             delay: None,
                         },
                         Vec::new(),
@@ -107,7 +107,7 @@ pub(crate) fn evaluate_transport_result(
 
                 return (
                     OperationAction::FailoverRetry {
-                        new_state: retry_state.advance_failover(),
+                        new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
                     vec![
@@ -133,7 +133,7 @@ pub(crate) fn evaluate_transport_result(
             {
                 return (
                     OperationAction::FailoverRetry {
-                        new_state: retry_state.advance_failover(),
+                        new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
                     vec![LocationEffect::MarkEndpointUnavailable {
@@ -159,7 +159,7 @@ pub(crate) fn evaluate_transport_result(
             if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
                 return (
                     OperationAction::FailoverRetry {
-                        new_state: retry_state.advance_failover(),
+                        new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
                     Vec::new(),
@@ -171,7 +171,7 @@ pub(crate) fn evaluate_transport_result(
             {
                 return (
                     OperationAction::FailoverRetry {
-                        new_state: retry_state.advance_failover(),
+                        new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
                     vec![LocationEffect::MarkEndpointUnavailable {

@@ -88,26 +88,26 @@ impl OperationRetryState {
     }
 
     /// Returns a new state advanced for failover retry.
-    pub fn advance_failover(&self) -> Self {
+    pub fn advance_failover(self) -> Self {
         Self {
             failover_retry_count: self.failover_retry_count + 1,
-            ..self.clone()
+            ..self
         }
     }
 
     /// Returns a new state advanced for session retry.
-    pub fn advance_session_retry(&self) -> Self {
+    pub fn advance_session_retry(self) -> Self {
         Self {
             session_token_retry_count: self.session_token_retry_count + 1,
-            ..self.clone()
+            ..self
         }
     }
 
     /// Advances the location index for endpoint list of `list_len`.
-    pub fn advance_location(&self, list_len: usize) -> Self {
+    pub fn advance_location(self, list_len: usize) -> Self {
         Self {
             location: self.location.next(list_len),
-            ..self.clone()
+            ..self
         }
     }
 }
