@@ -39,7 +39,10 @@ const RETRY_AFTER_MS: azure_core::http::headers::HeaderName =
 /// Keep a small budget before the e2e deadline so we still have time
 /// to send one final attempt.
 const DEADLINE_RETRY_SAFETY_MARGIN: Duration = Duration::from_millis(100);
-const MIN_PER_REQUEST_TIMEOUT: Duration = Duration::from_secs(1);
+// Internal floor used only when computing remaining deadline budget.
+// This is intentionally lower than public option validation to avoid
+// collapsing near-deadline retries to an entire second.
+const MIN_REMAINING_REQUEST_TIMEOUT: Duration = Duration::from_millis(1);
 
 fn deadline_capped_delay(requested_delay: Duration, remaining: Duration) -> Duration {
     let budget_for_delay = remaining.saturating_sub(DEADLINE_RETRY_SAFETY_MARGIN);
@@ -50,7 +53,7 @@ fn remaining_request_timeout(deadline: Option<Instant>) -> Option<Duration> {
     deadline.map(|deadline| {
         deadline
             .saturating_duration_since(Instant::now())
-            .max(MIN_PER_REQUEST_TIMEOUT)
+            .max(MIN_REMAINING_REQUEST_TIMEOUT)
     })
 }
 
