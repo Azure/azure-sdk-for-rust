@@ -71,6 +71,7 @@ impl LocationIndex {
 
     /// Advances to the next index, wrapping within list bounds.
     pub fn next(self, list_len: usize) -> Self {
+        debug_assert!(list_len > 0, "endpoint list should never be empty");
         if list_len == 0 {
             return self;
         }
