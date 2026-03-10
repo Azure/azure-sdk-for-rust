@@ -6,6 +6,10 @@
 
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 
+### Other Changes
+
+- Updated dependencies.
+
 ## 0.11.0 (2026-02-11)
 
 ### Breaking Changes
