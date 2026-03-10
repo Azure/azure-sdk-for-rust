@@ -89,7 +89,8 @@ impl HttpClientFactory for DefaultHttpClientFactory {
     ) -> azure_core::Result<Arc<dyn HttpClient>> {
         let mut builder = reqwest::Client::builder();
 
-        builder = builder.pool_max_idle_per_host(connection_pool.max_idle_connections_per_endpoint());
+        builder =
+            builder.pool_max_idle_per_host(connection_pool.max_idle_connections_per_endpoint());
 
         if let Some(idle_timeout) = connection_pool.idle_connection_timeout() {
             builder = builder.pool_idle_timeout(idle_timeout);

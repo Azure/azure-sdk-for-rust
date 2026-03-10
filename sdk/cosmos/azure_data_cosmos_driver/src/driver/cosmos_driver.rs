@@ -468,8 +468,7 @@ impl CosmosDriver {
             && matches!(
                 adaptive_transport.version_policy(),
                 super::transport::http_client_factory::HttpVersionPolicy::Http2Only
-            )
-        {
+            ) {
             Some(thin_client_endpoint_overrides(
                 account_properties.as_ref(),
                 operation.is_read_only(),

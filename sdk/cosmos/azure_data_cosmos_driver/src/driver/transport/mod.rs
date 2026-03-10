@@ -13,8 +13,8 @@
 //! - **Emulator operations**: Lazily-initialized pools for local emulator
 //!   with certificate validation disabled.
 
-mod authorization_policy;
 pub(crate) mod adaptive_transport;
+mod authorization_policy;
 pub(crate) mod cosmos_headers;
 mod emulator;
 pub(crate) mod http_client_factory;
@@ -123,7 +123,10 @@ impl CosmosTransport {
 
         let metadata_transport = AdaptiveTransport::from_policy(
             HttpClientConfig::metadata(&connection_pool).version_policy,
-            http_client_factory.build(&connection_pool, HttpClientConfig::metadata(&connection_pool))?,
+            http_client_factory.build(
+                &connection_pool,
+                HttpClientConfig::metadata(&connection_pool),
+            )?,
         );
 
         let dataplane_gateway_transport = AdaptiveTransport::from_policy(
@@ -209,7 +212,6 @@ impl CosmosTransport {
             self.dataplane_gateway_transport.clone()
         }
     }
-
 }
 
 #[cfg(test)]
@@ -319,8 +321,8 @@ mod tests {
             .build()
             .unwrap();
         let transport = CosmosTransport::new(pool).unwrap();
-        let endpoint = AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/")
-            .unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
             transport.get_metadata_transport(&endpoint),
@@ -335,8 +337,8 @@ mod tests {
             .build()
             .unwrap();
         let transport = CosmosTransport::new(pool).unwrap();
-        let endpoint = AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/")
-            .unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
             transport.get_metadata_transport(&endpoint),
@@ -352,8 +354,8 @@ mod tests {
             .build()
             .unwrap();
         let transport = CosmosTransport::new(pool).unwrap();
-        let endpoint = AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/")
-            .unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
             transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client()),
@@ -369,8 +371,8 @@ mod tests {
             .build()
             .unwrap();
         let transport = CosmosTransport::new(pool).unwrap();
-        let endpoint = AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/")
-            .unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
             transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client()),

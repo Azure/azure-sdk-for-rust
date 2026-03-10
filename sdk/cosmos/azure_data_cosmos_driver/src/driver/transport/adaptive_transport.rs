@@ -24,10 +24,7 @@ pub(crate) enum AdaptiveTransport {
 }
 
 impl AdaptiveTransport {
-    pub(crate) fn from_policy(
-        policy: HttpVersionPolicy,
-        client: Arc<dyn HttpClient>,
-    ) -> Self {
+    pub(crate) fn from_policy(policy: HttpVersionPolicy, client: Arc<dyn HttpClient>) -> Self {
         match policy {
             HttpVersionPolicy::Http1Only => Self::Http1(client),
             HttpVersionPolicy::Http2Preferred => Self::Http2Preferred(client),
@@ -49,9 +46,7 @@ impl AdaptiveTransport {
 
     fn client(&self) -> &Arc<dyn HttpClient> {
         match self {
-            Self::Http1(client) | Self::Http2Preferred(client) | Self::Http2Only(client) => {
-                client
-            }
+            Self::Http1(client) | Self::Http2Preferred(client) | Self::Http2Only(client) => client,
         }
     }
 }

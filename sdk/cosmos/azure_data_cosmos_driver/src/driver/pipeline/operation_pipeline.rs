@@ -309,7 +309,12 @@ fn build_transport_request(
     let request_path = resource_ref.request_path();
     let url = {
         let mut base = thin_client_overrides
-            .and_then(|overrides| routing.endpoint.region().and_then(|region| overrides.get(region)))
+            .and_then(|overrides| {
+                routing
+                    .endpoint
+                    .region()
+                    .and_then(|region| overrides.get(region))
+            })
             .cloned()
             .unwrap_or_else(|| routing.endpoint.url().clone());
         let normalized = if request_path.starts_with('/') {
@@ -536,10 +541,8 @@ mod tests {
 
     #[test]
     fn build_transport_request_overrides_regional_url_for_thin_client() {
-        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
-            test_account(),
-            "mydb",
-        ));
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let routing = RoutingDecision {
             endpoint: CosmosEndpoint::regional(
                 "westus2".into(),
