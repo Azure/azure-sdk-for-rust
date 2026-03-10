@@ -103,10 +103,14 @@ pub(crate) async fn execute_operation_pipeline(
         );
 
         // ── STAGE 3: Build transport request ───────────────────────────
-        let execution_context = if retry_state.failover_retry_count == 0 {
+        let execution_context = if retry_state.failover_retry_count == 0
+            && retry_state.session_token_retry_count == 0
+        {
             ExecutionContext::Initial
-        } else {
+        } else if retry_state.session_token_retry_count > 0 {
             ExecutionContext::Retry
+        } else {
+            ExecutionContext::RegionFailover
         };
 
         let transport_request = build_transport_request(
