@@ -14,18 +14,18 @@ int test_null_pointer_handling() {
     cosmos_client *client = NULL;
     cosmos_error_code code;
     
-    code = cosmos_client_create_with_key(NULL, endpoint, key, NULL, &client);
+    code = cosmos_client_create_with_key(NULL, endpoint, key, "East US", NULL, &client);
     ASSERT_ERROR_CODE(code, COSMOS_ERROR_CODE_CALL_CONTEXT_MISSING, "NULL context rejected with CALL_CONTEXT_MISSING");
 
-    code = cosmos_client_create_with_key(&ctx.call_ctx, NULL, key, NULL, &client);
+    code = cosmos_client_create_with_key(&ctx.call_ctx, NULL, key, "East US", NULL, &client);
     ASSERT(code != COSMOS_ERROR_CODE_SUCCESS, "NULL endpoint correctly rejected");
     if (code == COSMOS_ERROR_CODE_SUCCESS && client) cosmos_client_free(client);
 
-    code = cosmos_client_create_with_key(&ctx.call_ctx, endpoint, NULL, NULL, &client);
+    code = cosmos_client_create_with_key(&ctx.call_ctx, endpoint, NULL, "East US", NULL, &client);
     ASSERT(code != COSMOS_ERROR_CODE_SUCCESS, "NULL key correctly rejected");
     if (code == COSMOS_ERROR_CODE_SUCCESS && client) cosmos_client_free(client);
 
-    code = cosmos_client_create_with_key(&ctx.call_ctx, endpoint, key, NULL, NULL);
+    code = cosmos_client_create_with_key(&ctx.call_ctx, endpoint, key, "East US", NULL, NULL);
     ASSERT(code != COSMOS_ERROR_CODE_SUCCESS, "NULL output pointer correctly rejected");
 
     REQUIRE(test_context_create_runtime(&ctx, 0) == TEST_PASS, "Created runtime context for remaining tests");
@@ -60,7 +60,7 @@ int test_invalid_runtime_context() {
     ctx.include_error_details = false;
     
     cosmos_client *client = NULL;
-    cosmos_error_code code = cosmos_client_create_with_connection_string(&ctx, connection_string, NULL, &client);
+    cosmos_error_code code = cosmos_client_create_with_connection_string(&ctx, connection_string, "East US", NULL, &client);
     
     ASSERT(code != COSMOS_ERROR_CODE_SUCCESS, "Invalid/freed runtime context correctly rejected");
     if (client) {
