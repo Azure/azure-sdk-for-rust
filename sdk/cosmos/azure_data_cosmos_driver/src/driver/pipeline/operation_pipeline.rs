@@ -16,8 +16,7 @@ use azure_core::http::HttpClient;
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
     driver::routing::{
-        expire_unavailable_endpoints, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
-        LocationStateStore,
+        AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore,
     },
     models::{
         ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
@@ -233,9 +232,7 @@ fn resolve_endpoint(
     endpoint_unavailability_ttl: Duration,
 ) -> RoutingDecision {
     let account = location.account.as_ref();
-    let account =
-        expire_unavailable_endpoints(account, Instant::now(), endpoint_unavailability_ttl);
-    let endpoints = preferred_endpoints_for_attempt(&account, retry_state, operation.is_read_only());
+    let endpoints = preferred_endpoints_for_attempt(account, retry_state, operation.is_read_only());
 
     let base_index = if retry_state.location.is_current(account.generation) {
         retry_state.location.index()
@@ -243,6 +240,7 @@ fn resolve_endpoint(
         0
     };
 
+    let now = Instant::now();
     let mut selected = None;
     let len = endpoints.len();
     for i in 0..len {
@@ -250,7 +248,12 @@ fn resolve_endpoint(
         let excluded = candidate
             .region()
             .is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r));
-        let unavailable = account.unavailable_endpoints.contains_key(candidate);
+        let unavailable = account
+            .unavailable_endpoints
+            .get(candidate)
+            .is_some_and(|(marked_at, _)| {
+                now.saturating_duration_since(*marked_at) < endpoint_unavailability_ttl
+            });
         if !excluded && !unavailable {
             selected = Some(candidate.clone());
             break;

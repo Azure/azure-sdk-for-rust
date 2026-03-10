@@ -64,6 +64,7 @@ pub(crate) fn mark_endpoint_unavailable(
 }
 
 /// Returns a new state with expired endpoint unavailability removed.
+#[allow(dead_code)] // Spec-defined system function; used in tests and future steps.
 pub(crate) fn expire_unavailable_endpoints(
     state: &AccountEndpointState,
     now: Instant,

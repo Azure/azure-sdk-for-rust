@@ -13,6 +13,7 @@ pub(crate) use account_endpoint_state::AccountEndpointState;
 pub(crate) use endpoint::{CosmosEndpoint, LocationIndex, UnavailableReason};
 pub(crate) use location_effects::{LocationEffect, UnavailablePartition};
 pub(crate) use location_state_store::{LocationSnapshot, LocationStateStore};
+#[allow(unused_imports)] // Spec-defined system function; kept for future steps.
 pub(crate) use routing_systems::{
     build_account_endpoint_state, expire_unavailable_endpoints, mark_endpoint_unavailable,
 };
