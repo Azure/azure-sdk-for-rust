@@ -270,7 +270,10 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         ..Default::default()
     };
     blob_client
-        .upload(RequestContent::from(data.to_vec()), Some(options_with_metadata))
+        .upload(
+            RequestContent::from(data.to_vec()),
+            Some(options_with_metadata),
+        )
         .await?;
     // Assert
     let response = blob_client.get_properties(None).await?;
