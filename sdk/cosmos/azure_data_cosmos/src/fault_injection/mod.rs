@@ -75,10 +75,13 @@
 //! // 5. Create the client with fault injection
 //! let client = CosmosClientBuilder::new()
 //!     .with_fault_injection(fault_builder)
-//!     .build(CosmosAccountReference::with_master_key(
-//!         "https://myaccount.documents.azure.com/".parse().unwrap(),
-//!         Secret::new("my_account_key"),
-//!     ))
+//!     .build(
+//!         CosmosAccountReference::with_master_key(
+//!             "https://myaccount.documents.azure.com/".parse().unwrap(),
+//!             Secret::new("my_account_key"),
+//!         ),
+//!         azure_data_cosmos::RoutingStrategy::ProximityTo("East US".into()),
+//!     )
 //!     .await
 //!     .unwrap();
 //! # }
