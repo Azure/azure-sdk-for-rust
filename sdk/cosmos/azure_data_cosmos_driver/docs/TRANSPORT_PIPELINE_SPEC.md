@@ -602,6 +602,14 @@ pub(crate) async fn execute_operation_pipeline(
             }
             OperationAction::SessionRetry { new_state } => {
                 retry_state = new_state;
+                // Advance to next preferred region. In Gateway mode, in-region
+                // replica retries are already handled by Gateway, so the
+                // operation-level session retry moves to the next suitable
+                // region (hub/write region for single-write accounts,
+                // round-robin for multi-write accounts).
+                retry_state = retry_state.advance_location(endpoints_len);
+                // Check deadline — same as FailoverRetry.
+                check_deadline(deadline)?;
             }
             OperationAction::Hedge { secondary_routing } => {
                 // See §4.2 Hedging
@@ -794,9 +802,16 @@ fn evaluate_transport_result(
                 }
 
                 // 404/1002 ReadSessionNotAvailable → session retry.
-                // No location effects — session consistency errors are resolved
-                // by retrying with a different session token, not by changing
-                // the endpoint topology.
+                // In Gateway mode, in-region replica retries are already
+                // handled by Gateway. The operation-level session retry
+                // advances to the next preferred region (hub/write region
+                // for single-write accounts, round-robin for multi-write).
+                //
+                // Default max retries (Java SDK parity):
+                //   - Single-write: 2 (try local + hub + one more)
+                //   - Multi-write: endpoints.len() (try each region once)
+                // For single-write accounts, abort after 2 retries even if
+                // max_session_retries is higher.
                 CosmosStatus::READ_SESSION_NOT_AVAILABLE => {
                     if retry_state.session_token_retry_count < MAX_SESSION_RETRIES {
                         (
