@@ -122,9 +122,9 @@ impl OperationRetryState {
     }
 
     /// Advances the location index for endpoint list of `list_len`.
-    pub fn advance_location(self, list_len: usize) -> Self {
+    pub fn advance_location(self, list_len: usize, generation: u64) -> Self {
         Self {
-            location: self.location.next(list_len),
+            location: self.location.next_for_generation(list_len, generation),
             ..self
         }
     }
@@ -262,9 +262,7 @@ impl TransportResult {
     /// Creates a timeout result when the end-to-end operation deadline is exceeded.
     pub fn deadline_exceeded(request_sent: RequestSentStatus) -> Self {
         Self {
-            outcome: TransportOutcome::DeadlineExceeded {
-                request_sent,
-            },
+            outcome: TransportOutcome::DeadlineExceeded { request_sent },
         }
     }
 

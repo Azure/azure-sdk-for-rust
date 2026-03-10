@@ -20,8 +20,8 @@ use crate::{
 };
 
 use super::{
-    build_account_endpoint_state, mark_endpoint_unavailable, AccountEndpointState, CosmosEndpoint,
-    LocationEffect,
+    build_account_endpoint_state, expire_unavailable_endpoints, mark_endpoint_unavailable,
+    AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
 
 /// Placeholder for partition-level state (not yet implemented).
@@ -172,7 +172,10 @@ impl LocationStateStore {
             Arc::new(current.clone())
         };
 
-        let snapshot = LocationSnapshot { account, partitions };
+        let snapshot = LocationSnapshot {
+            account,
+            partitions,
+        };
 
         // Cache the new snapshot.
         let mut cached = self.cached_snapshot.lock().unwrap();
@@ -294,6 +297,8 @@ impl LocationStateStore {
         properties: &AccountProperties,
         default_endpoint: &CosmosEndpoint,
     ) {
+        self.prune_expired_unavailable_endpoints();
+
         if !properties.etag.is_empty() {
             let last = self.last_synced_etag.lock().unwrap();
             if *last == properties.etag {
@@ -322,6 +327,23 @@ impl LocationStateStore {
             let mut last = self.last_synced_etag.lock().unwrap();
             *last = properties.etag.clone();
         }
+    }
+
+    fn prune_expired_unavailable_endpoints(&self) {
+        let now = Instant::now();
+        let ttl = self.endpoint_unavailability_ttl;
+        let snapshot = self.account_snapshot();
+
+        let has_expired = snapshot
+            .unavailable_endpoints
+            .values()
+            .any(|(marked_at, _)| now.saturating_duration_since(*marked_at) >= ttl);
+
+        if !has_expired {
+            return;
+        }
+
+        self.apply_account(|current| expire_unavailable_endpoints(current, now, ttl));
     }
 }
 
@@ -352,6 +374,7 @@ mod tests {
             "_self": "",
             "id": "test",
             "_rid": "test.documents.azure.com",
+            "_etag": "etag-1",
             "media": "//media/",
             "addresses": "//addresses/",
             "_dbs": "//dbs/",
@@ -429,5 +452,48 @@ mod tests {
 
         // The second call should be throttled by refresh_interval.
         assert_eq!(refresh_calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn sync_account_properties_prunes_expired_marks_even_when_etag_is_unchanged() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            Duration::from_secs(60),
+        );
+
+        let properties = test_refresh_payload();
+        store.sync_account_properties(&properties, &default_endpoint);
+
+        let expired_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                expired_endpoint.clone(),
+                (
+                    Instant::now() - Duration::from_secs(120),
+                    UnavailableReason::TransportError,
+                ),
+            );
+            next
+        });
+
+        store.sync_account_properties(&properties, &default_endpoint);
+
+        let snapshot = store.snapshot();
+        assert!(snapshot.account.unavailable_endpoints.is_empty());
     }
 }

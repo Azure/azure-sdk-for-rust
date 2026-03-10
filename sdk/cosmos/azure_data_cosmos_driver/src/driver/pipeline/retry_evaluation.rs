@@ -209,10 +209,7 @@ pub(crate) fn evaluate_transport_result(
 
             (
                 OperationAction::Abort {
-                    error: azure_core::Error::new(
-                        azure_core::error::ErrorKind::Other,
-                        message,
-                    ),
+                    error: azure_core::Error::new(azure_core::error::ErrorKind::Other, message),
                     status: Some(CosmosStatus::from_parts(
                         azure_core::http::StatusCode::RequestTimeout,
                         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),

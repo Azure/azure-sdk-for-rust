@@ -82,6 +82,28 @@ impl LocationIndex {
         }
     }
 
+    /// Advances to the next index for the provided generation.
+    ///
+    /// When the generation changes, stale indices are rebased to the first
+    /// endpoint in the refreshed snapshot before advancing.
+    pub fn next_for_generation(self, list_len: usize, generation: u64) -> Self {
+        debug_assert!(list_len > 0, "endpoint list should never be empty");
+        if list_len == 0 {
+            return self;
+        }
+
+        if self.generation == generation {
+            return self.next(list_len);
+        }
+
+        let base_index = 0;
+
+        Self {
+            index: (base_index + 1) % list_len,
+            generation,
+        }
+    }
+
     /// Returns the numeric index.
     pub fn index(self) -> usize {
         self.index
@@ -100,4 +122,19 @@ pub(crate) enum UnavailableReason {
     ServiceUnavailable,
     InternalServerError,
     TransportError,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LocationIndex;
+
+    #[test]
+    fn next_for_generation_rebases_stale_index_before_advancing() {
+        let stale = LocationIndex::initial(3).next(3).next(3);
+
+        let next = stale.next_for_generation(3, 4);
+
+        assert_eq!(next.index(), 1);
+        assert!(next.is_current(4));
+    }
 }

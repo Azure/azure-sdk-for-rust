@@ -15,9 +15,7 @@ use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{
-        AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore,
-    },
+    driver::routing::{AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore},
     models::{
         ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
         SubStatusCode,
@@ -58,19 +56,21 @@ pub(crate) async fn execute_operation_pipeline(
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
-    let max_session_retries = effective_options.max_session_retry_count.unwrap_or_else(|| {
-        // Java SDK parity: 2 for single-write, endpoints.len() for multi-write.
-        // Uses the original endpoint count (before unavailability filtering).
-        if location_snapshot.account.multiple_write_locations_enabled {
-            let endpoints_len = location_snapshot
-                .account
-                .preferred_endpoints(operation.is_read_only())
-                .len();
-            endpoints_len as u32
-        } else {
-            2
-        }
-    });
+    let max_session_retries = effective_options
+        .max_session_retry_count
+        .unwrap_or_else(|| {
+            // Java SDK parity: 2 for single-write, endpoints.len() for multi-write.
+            // Uses the original endpoint count (before unavailability filtering).
+            if location_snapshot.account.multiple_write_locations_enabled {
+                let endpoints_len = location_snapshot
+                    .account
+                    .preferred_endpoints(operation.is_read_only())
+                    .len();
+                endpoints_len as u32
+            } else {
+                2
+            }
+        });
 
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,
@@ -151,14 +151,16 @@ pub(crate) async fn execute_operation_pipeline(
                     }
                 }
 
+                let next_location = location_state_store.snapshot();
                 let endpoints_len = preferred_endpoints_for_attempt(
-                    location.account.as_ref(),
+                    next_location.account.as_ref(),
                     &new_state,
                     operation.is_read_only(),
                 )
                 .len();
 
-                retry_state = new_state.advance_location(endpoints_len);
+                retry_state =
+                    new_state.advance_location(endpoints_len, next_location.account.generation);
 
                 // Check deadline before retrying
                 if let Some(d) = deadline {
@@ -181,13 +183,15 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::SessionRetry { new_state } => {
+                let next_location = location_state_store.snapshot();
                 let endpoints_len = preferred_endpoints_for_attempt(
-                    location.account.as_ref(),
+                    next_location.account.as_ref(),
                     &new_state,
                     operation.is_read_only(),
                 )
                 .len();
-                retry_state = new_state.advance_location(endpoints_len);
+                retry_state =
+                    new_state.advance_location(endpoints_len, next_location.account.generation);
 
                 // Check deadline before retrying
                 if let Some(d) = deadline {
@@ -249,12 +253,22 @@ fn resolve_endpoint(
         let excluded = candidate
             .region()
             .is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r));
-        let unavailable = account
-            .unavailable_endpoints
-            .get(candidate)
-            .is_some_and(|(marked_at, _)| {
-                now.saturating_duration_since(*marked_at) < endpoint_unavailability_ttl
-            });
+        let unavailable =
+            account
+                .unavailable_endpoints
+                .get(candidate)
+                .is_some_and(|(marked_at, reason)| {
+                    if operation.is_read_only()
+                        && matches!(
+                            reason,
+                            crate::driver::routing::UnavailableReason::WriteForbidden
+                        )
+                    {
+                        return false;
+                    }
+
+                    now.saturating_duration_since(*marked_at) < endpoint_unavailability_ttl
+                });
         if !excluded && !unavailable {
             selected = Some(candidate.clone());
             break;
@@ -521,13 +535,13 @@ mod tests {
         );
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
-                generation: 0,
-                preferred_read_endpoints: vec![read_endpoint],
-                preferred_write_endpoints: vec![write_endpoint.clone()],
-                unavailable_endpoints: Default::default(),
-                multiple_write_locations_enabled: false,
-                default_endpoint: write_endpoint.clone(),
-            }));
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint],
+            preferred_write_endpoints: vec![write_endpoint.clone()],
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        }));
 
         let retry_state = crate::driver::pipeline::components::OperationRetryState {
             location: LocationIndex::initial(0),
@@ -541,16 +555,16 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
         };
 
-        let routing = super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
+        let routing =
+            super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
         assert_eq!(routing.endpoint, write_endpoint);
     }
 
     #[test]
     fn resolve_endpoint_falls_back_to_default_when_all_unavailable() {
         let operation = CosmosOperation::read_all_databases(test_account());
-        let default_endpoint = CosmosEndpoint::global(
-            Url::parse("https://test.documents.azure.com:443/").unwrap(),
-        );
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
         let read_endpoint = CosmosEndpoint::regional(
             "westus2".into(),
             Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
@@ -586,12 +600,117 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
         };
 
-        let routing = super::resolve_endpoint(
+        let routing =
+            super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
+        assert_eq!(routing.endpoint, default_endpoint);
+    }
+
+    #[test]
+    fn resolve_endpoint_ignores_write_forbidden_for_reads() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            read_endpoint.clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::WriteForbidden,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint.clone()],
+            preferred_write_endpoints: vec![read_endpoint.clone()],
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: read_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+        };
+
+        let routing =
+            super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
+        assert_eq!(routing.endpoint, read_endpoint);
+    }
+
+    #[test]
+    fn stale_generation_advances_across_refreshed_endpoint_list() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let endpoint_a = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let endpoint_b = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let endpoint_c = CosmosEndpoint::regional(
+            "centralus".into(),
+            Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 1,
+            preferred_read_endpoints: vec![
+                endpoint_a.clone(),
+                endpoint_b.clone(),
+                endpoint_c.clone(),
+            ],
+            preferred_write_endpoints: vec![
+                endpoint_a.clone(),
+                endpoint_b.clone(),
+                endpoint_c.clone(),
+            ],
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: true,
+            default_endpoint: endpoint_a.clone(),
+        }));
+
+        let stale_retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0).next(3),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 3,
+            can_use_multiple_write_locations: true,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+        };
+
+        let first_routing = super::resolve_endpoint(
             &operation,
-            &retry_state,
+            &stale_retry_state,
             &location,
             Duration::from_secs(60),
         );
-        assert_eq!(routing.endpoint, default_endpoint);
+        assert_eq!(first_routing.endpoint, endpoint_a);
+
+        let advanced_state = stale_retry_state
+            .advance_failover()
+            .advance_location(3, location.account.generation);
+
+        let second_routing = super::resolve_endpoint(
+            &operation,
+            &advanced_state,
+            &location,
+            Duration::from_secs(60),
+        );
+        assert_eq!(second_routing.endpoint, endpoint_b);
     }
 }
