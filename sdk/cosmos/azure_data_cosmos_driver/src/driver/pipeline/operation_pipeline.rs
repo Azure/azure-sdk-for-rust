@@ -543,4 +543,54 @@ mod tests {
         let routing = super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
         assert_eq!(routing.endpoint, write_endpoint);
     }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_default_when_all_unavailable() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let default_endpoint = CosmosEndpoint::global(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            read_endpoint.clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::TransportError,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint],
+            preferred_write_endpoints: vec![default_endpoint.clone()],
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+        };
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, default_endpoint);
+    }
 }
