@@ -26,7 +26,7 @@ workspace = true
 
 [dev-dependencies]
 azure_core_opentelemetry.workspace = true
-azure_core_test.workspace = true
+azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 futures.workspace = true
 opentelemetry-stdout.workspace = true

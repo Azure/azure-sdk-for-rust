@@ -112,7 +112,7 @@ impl BlobCheckpointStore {
                 metadata, blob_name, etag
             );
             let options = BlobClientSetMetadataOptions {
-                if_match: etag.map(|e| e.to_string()),
+                if_match: etag,
                 ..Default::default()
             };
             let metadata_ref = metadata.unwrap_or_default();
@@ -129,7 +129,7 @@ impl BlobCheckpointStore {
         let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
         let options = BlockBlobClientUploadOptions {
             metadata: metadata.clone(),
-            if_none_match: Some("*".to_string()), // Upload without an etag, creating a new blob
+            if_none_match: Some(Etag::from("*")), // Upload without an etag, creating a new blob
             ..Default::default()
         };
 
@@ -311,7 +311,7 @@ impl CheckpointStore for BlobCheckpointStore {
                     .and_then(|ap| ap.get(OWNER_ID).cloned());
             }
             if let Some(properties) = &blob.properties {
-                ownership.etag = properties.etag.as_ref().map(|s| Etag::from(s.clone()));
+                ownership.etag = properties.etag.clone();
                 ownership.last_modified_time = properties.last_modified;
             }
 

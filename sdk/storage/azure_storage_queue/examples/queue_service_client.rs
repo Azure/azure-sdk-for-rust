@@ -134,7 +134,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let queue_client = QueueServiceClient::new(&endpoint, Some(credential.clone()), None)?;
 
     // Create and manage queue
-    let result = queue_client.create_queue(&queue_name, None).await;
+    let result = queue_client.queue_client(&queue_name)?.create(None).await;
     log_operation_result(&result, "create_queue");
 
     set_and_get_properties(&queue_client).await?;
@@ -146,7 +146,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     get_statistics(credential.clone()).await?;
 
     // Cleanup
-    let result = queue_client.delete_queue(&queue_name, None).await;
+    let result = queue_client.queue_client(&queue_name)?.delete(None).await;
     log_operation_result(&result, "delete_queue");
 
     Ok(())

@@ -318,7 +318,7 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
     let props = blob_client.get_properties(None).await?;
     let etag = props.etag()?.unwrap();
     let conditional_options = BlobClientCreateSnapshotOptions {
-        if_match: Some(etag.into()),
+        if_match: Some(etag),
         ..Default::default()
     };
     let conditional_snapshot = blob_client

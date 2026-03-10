@@ -350,7 +350,7 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Test: Conditional Operation with Version
     let etag = props.etag()?.unwrap();
     let get_options = BlobClientGetPropertiesOptions {
-        if_match: Some(etag.into()),
+        if_match: Some(etag),
         version_id: Some(lease_version_1.clone()),
         ..Default::default()
     };
