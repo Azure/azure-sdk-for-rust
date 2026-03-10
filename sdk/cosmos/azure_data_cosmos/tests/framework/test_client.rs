@@ -14,7 +14,7 @@ use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query,
+    Query, RoutingStrategy,
 };
 use futures::TryStreamExt;
 use std::time::Duration;
@@ -272,10 +272,11 @@ impl TestClient {
         let credential = connection_string.account_key.clone();
         let mut builder = azure_data_cosmos::CosmosClient::builder();
 
-        // Apply application region for the client
-        if let Some(region) = application_region.or(fault_client_application_region) {
-            builder = builder.with_application_region(region);
-        }
+        // Determine the region selection strategy
+        let region = application_region
+            .or(fault_client_application_region)
+            .unwrap_or(HUB_REGION);
+        let strategy = RoutingStrategy::ProximityTo(region);
 
         // Configure invalid certificate acceptance (e.g., for emulator)
         #[cfg(feature = "allow_invalid_certificates")]
@@ -299,9 +300,10 @@ impl TestClient {
         let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
             connection_string.account_endpoint.parse()?;
         let cosmos_client = builder
-            .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
-                endpoint, credential,
-            ))
+            .build(
+                azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+                strategy,
+            )
             .await?;
 
         Ok(TestClient {
@@ -802,11 +804,13 @@ impl TestRunContext {
                 )
             })?;
         CosmosClient::builder()
-            .with_application_region(region)
-            .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
-                endpoint,
-                parsed.account_key.clone(),
-            ))
+            .build(
+                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                    endpoint,
+                    parsed.account_key.clone(),
+                ),
+                RoutingStrategy::ProximityTo(region),
+            )
             .await
     }
 
