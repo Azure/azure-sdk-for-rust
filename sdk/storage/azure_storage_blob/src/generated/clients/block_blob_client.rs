@@ -112,14 +112,14 @@ impl BlockBlobClient {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match.as_ref() {
-            request.insert_header("if-match", if_match);
+        if let Some(if_match) = options.if_match {
+            request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match.as_ref() {
-            request.insert_header("if-none-match", if_none_match);
+        if let Some(if_none_match) = options.if_none_match {
+            request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
@@ -529,8 +529,8 @@ impl BlockBlobClient {
                 source_encryption_key_sha256,
             );
         }
-        if let Some(source_if_match) = options.source_if_match.as_ref() {
-            request.insert_header("x-ms-source-if-match", source_if_match);
+        if let Some(source_if_match) = options.source_if_match {
+            request.insert_header("x-ms-source-if-match", source_if_match.to_string());
         }
         if let Some(source_if_modified_since) = options.source_if_modified_since {
             request.insert_header(
@@ -538,8 +538,11 @@ impl BlockBlobClient {
                 to_rfc7231(&source_if_modified_since),
             );
         }
-        if let Some(source_if_none_match) = options.source_if_none_match.as_ref() {
-            request.insert_header("x-ms-source-if-none-match", source_if_none_match);
+        if let Some(source_if_none_match) = options.source_if_none_match {
+            request.insert_header(
+                "x-ms-source-if-none-match",
+                source_if_none_match.to_string(),
+            );
         }
         if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
             request.insert_header(
@@ -632,14 +635,14 @@ impl BlockBlobClient {
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
-        if let Some(if_match) = options.if_match.as_ref() {
-            request.insert_header("if-match", if_match);
+        if let Some(if_match) = options.if_match {
+            request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match.as_ref() {
-            request.insert_header("if-none-match", if_none_match);
+        if let Some(if_none_match) = options.if_none_match {
+            request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
@@ -729,8 +732,8 @@ impl BlockBlobClient {
                 source_encryption_key_sha256,
             );
         }
-        if let Some(source_if_match) = options.source_if_match.as_ref() {
-            request.insert_header("x-ms-source-if-match", source_if_match);
+        if let Some(source_if_match) = options.source_if_match {
+            request.insert_header("x-ms-source-if-match", source_if_match.to_string());
         }
         if let Some(source_if_modified_since) = options.source_if_modified_since {
             request.insert_header(
@@ -738,8 +741,11 @@ impl BlockBlobClient {
                 to_rfc7231(&source_if_modified_since),
             );
         }
-        if let Some(source_if_none_match) = options.source_if_none_match.as_ref() {
-            request.insert_header("x-ms-source-if-none-match", source_if_none_match);
+        if let Some(source_if_none_match) = options.source_if_none_match {
+            request.insert_header(
+                "x-ms-source-if-none-match",
+                source_if_none_match.to_string(),
+            );
         }
         if let Some(source_if_tags) = options.source_if_tags.as_ref() {
             request.insert_header("x-ms-source-if-tags", source_if_tags);
@@ -836,14 +842,14 @@ impl BlockBlobClient {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
-        if let Some(if_match) = options.if_match.as_ref() {
-            request.insert_header("if-match", if_match);
+        if let Some(if_match) = options.if_match {
+            request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match.as_ref() {
-            request.insert_header("if-none-match", if_none_match);
+        if let Some(if_none_match) = options.if_none_match {
+            request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
