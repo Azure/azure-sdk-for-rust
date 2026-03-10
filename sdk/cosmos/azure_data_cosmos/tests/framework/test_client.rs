@@ -705,6 +705,7 @@ impl TestRunContext {
     /// 1. Creates the container with the specified properties and throughput
     /// 2. Creates two clients with preferred regions (hub and satellite)
     /// 3. Polls until both clients can successfully read the container
+    ///    (up to 60 attempts with 2-second intervals, i.e. ~2 minutes)
     /// 4. Returns a [`ContainerClient`] for the created container
     ///
     /// This is useful for tests that need to ensure the container is fully available
@@ -715,6 +716,9 @@ impl TestRunContext {
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
     ) -> azure_core::Result<ContainerClient> {
+        const MAX_RETRIES: u32 = 60;
+        const RETRY_DELAY: Duration = Duration::from_secs(2);
+
         let created_properties = db_client
             .create_container(
                 properties,
@@ -730,7 +734,7 @@ impl TestRunContext {
         let container_id = &created_properties.id;
 
         // Wait for hub region client to successfully read the container
-        loop {
+        for attempt in 1..=MAX_RETRIES {
             match hub_client
                 .database_client(db_client.id())
                 .container_client(container_id)
@@ -739,19 +743,25 @@ impl TestRunContext {
                 .await
             {
                 Ok(_) => break,
+                Err(e) if attempt == MAX_RETRIES => {
+                    panic!(
+                        "container not available in hub region ({}) after {MAX_RETRIES} attempts: {e}",
+                        HUB_REGION.as_str(),
+                    );
+                }
                 Err(e) => {
                     println!(
-                        "waiting for container to be created in hub region ({}): {}",
+                        "waiting for container to be created in hub region ({}) [attempt {attempt}/{MAX_RETRIES}]: {}",
                         HUB_REGION.as_str(),
                         e
                     );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    tokio::time::sleep(RETRY_DELAY).await;
                 }
             }
         }
 
         // Wait for satellite region client to successfully read the container
-        loop {
+        for attempt in 1..=MAX_RETRIES {
             match satellite_client
                 .database_client(db_client.id())
                 .container_client(container_id)
@@ -760,13 +770,19 @@ impl TestRunContext {
                 .await
             {
                 Ok(_) => break,
+                Err(e) if attempt == MAX_RETRIES => {
+                    panic!(
+                        "container not available in satellite region ({}) after {MAX_RETRIES} attempts: {e}",
+                        SATELLITE_REGION.as_str(),
+                    );
+                }
                 Err(e) => {
                     println!(
-                        "waiting for container to be created in satellite region ({}): {}",
+                        "waiting for container to be created in satellite region ({}) [attempt {attempt}/{MAX_RETRIES}]: {}",
                         SATELLITE_REGION.as_str(),
                         e
                     );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    tokio::time::sleep(RETRY_DELAY).await;
                 }
             }
         }
