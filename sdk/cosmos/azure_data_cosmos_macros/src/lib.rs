@@ -18,8 +18,9 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 
 /// Derives layered configuration boilerplate for Cosmos DB option group structs.
 ///
-/// Generates a View struct, a Builder type, a `from_env()` constructor, and a
-/// `Default` implementation.
+/// Generates a View struct, a Builder type, a `Default` implementation, and,
+/// if any fields have `#[option(env = "...")]`, `from_env()`/`from_env_vars()`
+/// constructors for loading from environment variables.
 ///
 /// # Struct-Level Attributes
 ///

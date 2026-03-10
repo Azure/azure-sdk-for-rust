@@ -253,14 +253,14 @@ pub struct RegionOptions {
 }
 
 #[test]
-fn no_env_group_has_no_env_field_in_view() {
+fn no_env_group_view_still_accepts_env_arg() {
     let runtime = Arc::new(RegionOptions {
         application_region: Some("West US".to_string()),
         preferred_regions: None,
     });
     let account = RegionOptions::default();
 
-    let view = RegionOptionsView::new(Some(runtime), Some(&account));
+    let view = RegionOptionsView::new(None, Some(runtime), Some(&account));
     assert_eq!(view.application_region(), Some(&"West US".to_string()));
 }
 

@@ -63,7 +63,6 @@ impl Layer {
 }
 
 /// Parsed representation of a single field in the option struct.
-#[allow(dead_code)]
 pub struct OptionField {
     /// The field name.
     pub ident: Ident,
@@ -77,8 +76,6 @@ pub struct OptionField {
     pub merge: Option<String>,
     /// Whether this field is a nested option group.
     pub nested: bool,
-    /// The field's visibility.
-    pub vis: syn::Visibility,
 }
 
 impl OptionsInput {
@@ -187,7 +184,6 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
             env_var,
             merge,
             nested,
-            vis: field.vis.clone(),
         });
     }
 
@@ -213,6 +209,9 @@ fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<(Option<String>, Optio
             } else if meta.path.is_ident("merge") {
                 let value = meta.value()?;
                 let lit: syn::LitStr = value.parse()?;
+                if lit.value() != "extend" {
+                    return Err(meta.error("only `merge = \"extend\"` is supported"));
+                }
                 merge = Some(lit.value());
                 Ok(())
             } else if meta.path.is_ident("nested") {

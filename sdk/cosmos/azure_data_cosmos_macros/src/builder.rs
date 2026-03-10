@@ -27,7 +27,7 @@ pub fn generate_builder(input: &OptionsInput) -> Result<TokenStream> {
         let inner_type = &field.inner_type;
         quote! {
             /// Sets this field on the builder.
-            pub fn #setter_name(mut self, value: #inner_type) -> Self {
+            #vis fn #setter_name(mut self, value: #inner_type) -> Self {
                 self.#field_name = Some(value);
                 self
             }
@@ -65,7 +65,7 @@ pub fn generate_builder(input: &OptionsInput) -> Result<TokenStream> {
             #(#setters)*
 
             /// Consumes the builder and returns the constructed option group.
-            pub fn build(self) -> #struct_name #ty_generics {
+            #vis fn build(self) -> #struct_name #ty_generics {
                 #struct_name {
                     #(#build_fields),*
                 }

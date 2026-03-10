@@ -5,6 +5,19 @@ use crate::parse::OptionsInput;
 use crate::Result;
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::{PathArguments, Type};
+
+/// Returns true if `ty` is a `Vec<T>` type (checking the last path segment).
+fn is_vec_type(ty: &Type) -> bool {
+    match ty {
+        Type::Path(type_path) if type_path.qself.is_none() => {
+            type_path.path.segments.last().is_some_and(|seg| {
+                seg.ident == "Vec" && matches!(seg.arguments, PathArguments::AngleBracketed(_))
+            })
+        }
+        _ => false,
+    }
+}
 
 /// Generates `from_env()` and `from_env_vars()` methods on the original struct.
 ///
@@ -22,10 +35,9 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
     let field_inits = input.fields.iter().map(|field| {
         let field_name = &field.ident;
         if let Some(ref env_var) = field.env_var {
-            // Check if inner type looks like Vec<T> to do comma splitting
+            // Check if inner type is Vec<T> to do comma splitting
             let inner_type = &field.inner_type;
-            let inner_type_str = quote!(#inner_type).to_string();
-            if inner_type_str.starts_with("Vec") {
+            if is_vec_type(inner_type) {
                 quote! {
                     #field_name: env_var(#env_var)
                         .ok()

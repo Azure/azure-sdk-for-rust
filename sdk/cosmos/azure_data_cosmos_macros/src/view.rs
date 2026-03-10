@@ -13,20 +13,19 @@ pub fn generate_view(input: &OptionsInput) -> Result<TokenStream> {
     let struct_name = &input.name;
     let vis = &input.vis;
 
-    let has_env = input.has_env_fields();
     let layers = &input.layers;
     let last_layer_idx = layers.len() - 1;
 
-    // Build struct fields: env (optional) + explicit layers.
+    // Build struct fields: env + explicit layers.
+    // The env layer is always present so that nested Views have a uniform constructor
+    // signature regardless of whether their fields use `#[option(env)]`.
     // All layers are wrapped in Option. Arc layers are Option<Arc<T>>,
-    // the last (bottom) layer is Option<&'a T> to avoid cloning.
+    // the last (highest-priority) layer is Option<&'a T> to avoid cloning.
     let mut struct_fields = Vec::new();
     let mut new_params = Vec::new();
 
-    if has_env {
-        struct_fields.push(quote! { env: Option<::std::sync::Arc<#struct_name>> });
-        new_params.push(quote! { env: Option<::std::sync::Arc<#struct_name>> });
-    }
+    struct_fields.push(quote! { env: Option<::std::sync::Arc<#struct_name>> });
+    new_params.push(quote! { env: Option<::std::sync::Arc<#struct_name>> });
 
     for (i, layer) in layers.iter().enumerate() {
         let field_name = layer.ident();
@@ -40,18 +39,16 @@ pub fn generate_view(input: &OptionsInput) -> Result<TokenStream> {
         }
     }
 
-    // Build accessor methods
+    // Build accessor methods — env layer is always checked.
     let accessors = input
         .fields
         .iter()
-        .map(|field| generate_accessor(field, layers, has_env))
+        .map(|field| generate_accessor(field, layers))
         .collect::<Result<Vec<_>>>()?;
 
     // Build the new() constructor body
     let mut new_body_fields = Vec::new();
-    if has_env {
-        new_body_fields.push(quote! { env });
-    }
+    new_body_fields.push(quote! { env });
     for layer in layers {
         let field_name = layer.ident();
         new_body_fields.push(quote! { #field_name });
@@ -78,26 +75,20 @@ pub fn generate_view(input: &OptionsInput) -> Result<TokenStream> {
     })
 }
 
-fn generate_accessor(field: &OptionField, layers: &[Layer], has_env: bool) -> Result<TokenStream> {
-    let _field_name = &field.ident;
-
+fn generate_accessor(field: &OptionField, layers: &[Layer]) -> Result<TokenStream> {
     if field.nested {
-        return generate_nested_accessor(field, layers, has_env);
+        return generate_nested_accessor(field, layers);
     }
 
     if field.merge.is_some() {
-        return generate_merge_accessor(field, layers, has_env);
+        return generate_merge_accessor(field, layers);
     }
 
-    generate_shadow_accessor(field, layers, has_env)
+    generate_shadow_accessor(field, layers)
 }
 
 /// Generates a shadow accessor: returns `Option<&T>` walking highest → lowest priority.
-fn generate_shadow_accessor(
-    field: &OptionField,
-    layers: &[Layer],
-    has_env: bool,
-) -> Result<TokenStream> {
+fn generate_shadow_accessor(field: &OptionField, layers: &[Layer]) -> Result<TokenStream> {
     let field_name = &field.ident;
     let inner_type = &field.inner_type;
     let last_layer_idx = layers.len() - 1;
@@ -122,11 +113,9 @@ fn generate_shadow_accessor(
         }
     }
 
-    if has_env {
-        chain_parts.push(quote! {
-            self.env.as_ref().and_then(|l| l.#field_name.as_ref())
-        });
-    }
+    chain_parts.push(quote! {
+        self.env.as_ref().and_then(|l| l.#field_name.as_ref())
+    });
 
     // Build the chain with .or()
     let first = &chain_parts[0];
@@ -145,11 +134,7 @@ fn generate_shadow_accessor(
 }
 
 /// Generates a merge accessor for `#[option(merge = "extend")]` fields.
-fn generate_merge_accessor(
-    field: &OptionField,
-    layers: &[Layer],
-    has_env: bool,
-) -> Result<TokenStream> {
+fn generate_merge_accessor(field: &OptionField, layers: &[Layer]) -> Result<TokenStream> {
     let field_name = &field.ident;
     let inner_type = &field.inner_type;
     let last_layer_idx = layers.len() - 1;
@@ -158,15 +143,13 @@ fn generate_merge_accessor(
     // Each layer is Optional, so we unwrap before checking the field.
     let mut extend_stmts = Vec::new();
 
-    if has_env {
-        extend_stmts.push(quote! {
-            if let Some(ref env) = self.env {
-                if let Some(ref v) = env.#field_name {
-                    merged.extend(v.clone());
-                }
+    extend_stmts.push(quote! {
+        if let Some(ref env) = self.env {
+            if let Some(ref v) = env.#field_name {
+                merged.extend(v.clone());
             }
-        });
-    }
+        }
+    });
 
     for (i, layer) in layers.iter().enumerate() {
         let layer_name = layer.ident();
@@ -202,29 +185,24 @@ fn generate_merge_accessor(
 }
 
 /// Generates a nested accessor that delegates to a child View.
-fn generate_nested_accessor(
-    field: &OptionField,
-    layers: &[Layer],
-    has_env: bool,
-) -> Result<TokenStream> {
+fn generate_nested_accessor(field: &OptionField, layers: &[Layer]) -> Result<TokenStream> {
     let field_name = &field.ident;
     let inner_type = &field.inner_type;
     let view_path = nested_view_path(inner_type)?;
     let last_layer_idx = layers.len() - 1;
 
     // Build arguments for the child View's new().
+    // The env arg is always passed — all Views uniformly accept it.
     // Arc layers extract the nested field and clone into a new Arc.
     // The bottom layer borrows the nested field (no clone).
     // All results are Option — None when the parent layer or nested field is absent.
     let mut new_args = Vec::new();
 
-    if has_env {
-        new_args.push(quote! {
-            self.env.as_ref()
-                .and_then(|l| l.#field_name.as_ref())
-                .map(|v| ::std::sync::Arc::new(v.clone()))
-        });
-    }
+    new_args.push(quote! {
+        self.env.as_ref()
+            .and_then(|l| l.#field_name.as_ref())
+            .map(|v| ::std::sync::Arc::new(v.clone()))
+    });
 
     for (i, layer) in layers.iter().enumerate() {
         let layer_name = layer.ident();
@@ -298,6 +276,7 @@ mod tests {
             /// Snapshot view across all layers for resolution.
             #[automatically_derived]
             pub struct RequestOptionsView<'a> {
+                env: Option<::std::sync::Arc<RequestOptions>>,
                 runtime: Option<::std::sync::Arc<RequestOptions>>,
                 account: Option<::std::sync::Arc<RequestOptions>>,
                 operation: Option<&'a RequestOptions>
@@ -307,11 +286,12 @@ mod tests {
             impl<'a> RequestOptionsView<'a> {
                 /// Creates a new view from layer snapshots.
                 pub fn new(
+                    env: Option<::std::sync::Arc<RequestOptions>>,
                     runtime: Option<::std::sync::Arc<RequestOptions>>,
                     account: Option<::std::sync::Arc<RequestOptions>>,
                     operation: Option<&'a RequestOptions>
                 ) -> Self {
-                    Self { runtime, account, operation }
+                    Self { env, runtime, account, operation }
                 }
 
                 /// Resolves this field across layers (highest priority first).
@@ -319,6 +299,7 @@ mod tests {
                     self.operation.and_then(|l| l.consistency_level.as_ref())
                         .or(self.account.as_ref().and_then(|l| l.consistency_level.as_ref()))
                         .or(self.runtime.as_ref().and_then(|l| l.consistency_level.as_ref()))
+                        .or(self.env.as_ref().and_then(|l| l.consistency_level.as_ref()))
                 }
 
                 /// Resolves this field across layers (highest priority first).
@@ -326,6 +307,7 @@ mod tests {
                     self.operation.and_then(|l| l.throughput_bucket.as_ref())
                         .or(self.account.as_ref().and_then(|l| l.throughput_bucket.as_ref()))
                         .or(self.runtime.as_ref().and_then(|l| l.throughput_bucket.as_ref()))
+                        .or(self.env.as_ref().and_then(|l| l.throughput_bucket.as_ref()))
                 }
             }
         };
@@ -348,6 +330,7 @@ mod tests {
             /// Snapshot view across all layers for resolution.
             #[automatically_derived]
             pub struct ConnectionOptionsView<'a> {
+                env: Option<::std::sync::Arc<ConnectionOptions>>,
                 runtime: Option<::std::sync::Arc<ConnectionOptions>>,
                 account: Option<&'a ConnectionOptions>
             }
@@ -356,16 +339,18 @@ mod tests {
             impl<'a> ConnectionOptionsView<'a> {
                 /// Creates a new view from layer snapshots.
                 pub fn new(
+                    env: Option<::std::sync::Arc<ConnectionOptions>>,
                     runtime: Option<::std::sync::Arc<ConnectionOptions>>,
                     account: Option<&'a ConnectionOptions>
                 ) -> Self {
-                    Self { runtime, account }
+                    Self { env, runtime, account }
                 }
 
                 /// Resolves this field across layers (highest priority first).
                 pub fn request_timeout(&self) -> Option<&u64> {
                     self.account.and_then(|l| l.request_timeout.as_ref())
                         .or(self.runtime.as_ref().and_then(|l| l.request_timeout.as_ref()))
+                        .or(self.env.as_ref().and_then(|l| l.request_timeout.as_ref()))
                 }
             }
         };
@@ -434,6 +419,7 @@ mod tests {
             /// Snapshot view across all layers for resolution.
             #[automatically_derived]
             pub struct TestOptionsView<'a> {
+                env: Option<::std::sync::Arc<TestOptions>>,
                 runtime: Option<::std::sync::Arc<TestOptions>>,
                 account: Option<&'a TestOptions>
             }
@@ -442,15 +428,21 @@ mod tests {
             impl<'a> TestOptionsView<'a> {
                 /// Creates a new view from layer snapshots.
                 pub fn new(
+                    env: Option<::std::sync::Arc<TestOptions>>,
                     runtime: Option<::std::sync::Arc<TestOptions>>,
                     account: Option<&'a TestOptions>
                 ) -> Self {
-                    Self { runtime, account }
+                    Self { env, runtime, account }
                 }
 
                 /// Merges this field across all layers (lowest priority first).
                 pub fn headers(&self) -> Vec<String> {
                     let mut merged = <#inner_type>::default();
+                    if let Some(ref env) = self.env {
+                        if let Some(ref v) = env.headers {
+                            merged.extend(v.clone());
+                        }
+                    }
                     if let Some(ref runtime) = self.runtime {
                         if let Some(ref v) = runtime.headers {
                             merged.extend(v.clone());
@@ -485,6 +477,7 @@ mod tests {
             /// Snapshot view across all layers for resolution.
             #[automatically_derived]
             pub struct TestOptionsView<'a> {
+                env: Option<::std::sync::Arc<TestOptions>>,
                 runtime: Option<::std::sync::Arc<TestOptions>>,
                 account: Option<&'a TestOptions>
             }
@@ -493,15 +486,19 @@ mod tests {
             impl<'a> TestOptionsView<'a> {
                 /// Creates a new view from layer snapshots.
                 pub fn new(
+                    env: Option<::std::sync::Arc<TestOptions>>,
                     runtime: Option<::std::sync::Arc<TestOptions>>,
                     account: Option<&'a TestOptions>
                 ) -> Self {
-                    Self { runtime, account }
+                    Self { env, runtime, account }
                 }
 
                 /// Returns a child View for the nested option group.
                 pub fn child(&self) -> inner::ChildOptionsView<'_> {
                     inner::ChildOptionsView::new(
+                        self.env.as_ref()
+                            .and_then(|l| l.child.as_ref())
+                            .map(|v| ::std::sync::Arc::new(v.clone())),
                         self.runtime.as_ref()
                             .and_then(|l| l.child.as_ref())
                             .map(|v| ::std::sync::Arc::new(v.clone())),
@@ -530,6 +527,7 @@ mod tests {
             /// Snapshot view across all layers for resolution.
             #[automatically_derived]
             pub struct TestOptionsView<'a> {
+                env: Option<::std::sync::Arc<TestOptions>>,
                 runtime: Option<::std::sync::Arc<TestOptions>>,
                 account: Option<&'a TestOptions>
             }
@@ -538,15 +536,19 @@ mod tests {
             impl<'a> TestOptionsView<'a> {
                 /// Creates a new view from layer snapshots.
                 pub fn new(
+                    env: Option<::std::sync::Arc<TestOptions>>,
                     runtime: Option<::std::sync::Arc<TestOptions>>,
                     account: Option<&'a TestOptions>
                 ) -> Self {
-                    Self { runtime, account }
+                    Self { env, runtime, account }
                 }
 
                 /// Returns a child View for the nested option group.
                 pub fn child(&self) -> ChildOptionsView<'_> {
                     ChildOptionsView::new(
+                        self.env.as_ref()
+                            .and_then(|l| l.child.as_ref())
+                            .map(|v| ::std::sync::Arc::new(v.clone())),
                         self.runtime.as_ref()
                             .and_then(|l| l.child.as_ref())
                             .map(|v| ::std::sync::Arc::new(v.clone())),
