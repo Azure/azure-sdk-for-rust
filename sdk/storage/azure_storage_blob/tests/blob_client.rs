@@ -121,9 +121,20 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data = b"hello rusty world";
 
     // No Overwrite Scenario
-    blob_client
+    let upload_result = blob_client
         .upload(RequestContent::from(data.to_vec()), None)
         .await?;
+
+    // Assert upload result fields and raw response
+    assert!(upload_result.etag.is_some());
+    assert!(upload_result.last_modified.is_some());
+    assert_eq!(Some(true), upload_result.is_server_encrypted);
+    assert_eq!(StatusCode::Created, upload_result.raw_response.status());
+    assert!(upload_result
+        .raw_response
+        .headers()
+        .get_optional_str(&azure_core::http::headers::ETAG)
+        .is_some());
 
     // Assert
     let response = blob_client.download(None).await?;

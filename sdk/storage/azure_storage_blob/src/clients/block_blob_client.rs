@@ -273,12 +273,14 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
             .await?;
         *self.result.lock().await = Some(BlockBlobClientUploadResult {
             content_md5: rsp.content_md5()?,
+            content_crc64: rsp.content_crc64()?,
             encryption_key_sha256: rsp.encryption_key_sha256()?,
             encryption_scope: rsp.encryption_scope()?,
             etag: rsp.etag()?,
             is_server_encrypted: rsp.is_server_encrypted()?,
             last_modified: rsp.last_modified()?,
             version_id: rsp.version_id()?,
+            raw_response: rsp.to_raw_response(),
         });
         Ok(())
     }
@@ -328,12 +330,14 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
             .await?;
         *self.result.lock().await = Some(BlockBlobClientUploadResult {
             content_md5: rsp.content_md5()?,
+            content_crc64: rsp.content_crc64()?,
             encryption_key_sha256: rsp.encryption_key_sha256()?,
             encryption_scope: rsp.encryption_scope()?,
             etag: rsp.etag()?,
             is_server_encrypted: rsp.is_server_encrypted()?,
             last_modified: rsp.last_modified()?,
             version_id: rsp.version_id()?,
+            raw_response: rsp.to_raw_response(),
         });
         Ok(())
     }

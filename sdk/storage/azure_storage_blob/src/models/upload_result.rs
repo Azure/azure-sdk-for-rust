@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{fmt::SafeDebug, http::Etag};
+use azure_core::{
+    fmt::SafeDebug,
+    http::{Etag, RawResponse},
+};
 use time::OffsetDateTime;
 
 /// Result of a `BlockBlobClient::upload()` or `BlobClient::upload()` operation.
@@ -16,6 +19,9 @@ pub struct BlockBlobClientUploadResult {
     /// The MD5 hash of the blob content, if present.
     pub content_md5: Option<Vec<u8>>,
 
+    /// The CRC64 hash of the blob content, if present.
+    pub content_crc64: Option<Vec<u8>>,
+
     /// The SHA-256 hash of the encryption key used to encrypt the blob, if any.
     pub encryption_key_sha256: Option<String>,
 
@@ -27,4 +33,7 @@ pub struct BlockBlobClientUploadResult {
 
     /// The version ID of the blob, if versioning is enabled on the storage account.
     pub version_id: Option<String>,
+
+    /// The raw HTTP response.
+    pub raw_response: RawResponse,
 }
