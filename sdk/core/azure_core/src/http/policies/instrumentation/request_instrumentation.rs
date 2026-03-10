@@ -117,6 +117,11 @@ impl Policy for RequestInstrumentationPolicy {
             tracer.start_span(method_str.into(), SpanKind::Client, span_attributes)
         };
 
+        // Now add the newly created span to the context. This span will become the parent span
+        // for any downstream spans created by other policies or the transport, thus establishing a correct
+        // distributed trace span hierarchy.
+        let ctx = ctx.clone().with_value(span.clone());
+
         if span.is_recording() {
             if let Some(client_request_id) = request
                 .headers()
@@ -140,9 +145,6 @@ impl Policy for RequestInstrumentationPolicy {
 
         // Propagate the headers for distributed tracing into the request.
         span.propagate_headers(request);
-
-        // Now add the span to the context, this will prevent downstream policies (such as bearer token authentication) from creating a new span.
-        let ctx = ctx.clone().with_value(span.clone());
 
         let result = next[0].send(&ctx, request, &next[1..]).await;
 
