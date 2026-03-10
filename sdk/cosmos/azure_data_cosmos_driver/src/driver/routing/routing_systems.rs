@@ -10,6 +10,13 @@ use crate::driver::cache::AccountProperties;
 use super::{AccountEndpointState, CosmosEndpoint, UnavailableReason};
 
 /// Builds account endpoint state from account metadata.
+///
+/// TODO: Accept `preferred_locations: &[Region]` to reorder endpoint lists
+/// based on user configuration (derived from `application_region` via
+/// `generate_preferred_region_list` in `azure_data_cosmos`). Wire this when
+/// operations in `azure_data_cosmos` are migrated to the driver's
+/// `execute_operation` API — that cross-crate change is the natural point
+/// to thread preferred regions through `DriverOptions` → `LocationStateStore`.
 pub(crate) fn build_account_endpoint_state(
     properties: &AccountProperties,
     default_endpoint: CosmosEndpoint,
