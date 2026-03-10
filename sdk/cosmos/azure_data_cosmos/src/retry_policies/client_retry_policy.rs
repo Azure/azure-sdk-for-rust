@@ -685,7 +685,7 @@ impl ClientRetryPolicy {
                 return self.should_retry_on_connection_failure().await;
             }
             RequestSentStatus::Sent | RequestSentStatus::Unknown => {
-                if matches!(err.kind(), ErrorKind::Io | ErrorKind::Connection) {
+                if matches!(err.kind(), ErrorKind::Io) {
                     if self.is_read_only() {
                         return self.should_retry_on_unavailable_endpoint_status_codes();
                     }

@@ -385,7 +385,7 @@ dependencies = [
  "async-trait",
  "azure_core 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_core_test",
- "azure_identity 0.32.0",
+ "azure_identity 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap",
  "futures",
  "pin-project",
@@ -494,6 +494,24 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "url",
+]
+
+[[package]]
+name = "azure_identity"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c89484f1ce8b81471c897150ec748b02beef8870bd0d43693bc5ef42365b8f"
+dependencies = [
+ "async-lock",
+ "async-trait",
+ "azure_core 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "time",
+ "tracing",
  "url",
 ]
 
