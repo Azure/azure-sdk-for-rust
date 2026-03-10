@@ -63,6 +63,12 @@ pub(crate) struct LocationStateStore {
     /// The etag of the last `AccountProperties` that was synced.
     /// Used to skip the CAS loop when the account metadata hasn't changed.
     last_synced_etag: std::sync::Mutex<String>,
+    /// Monotonic version counter bumped on every successful CAS write.
+    account_version: AtomicU64,
+    /// Cached snapshot: (version, snapshot). When the version matches
+    /// `account_version`, `snapshot()` returns `Arc::clone()` of the cached
+    /// arcs (refcount increment only) instead of a full clone.
+    cached_snapshot: std::sync::Mutex<(u64, LocationSnapshot)>,
 }
 
 impl std::fmt::Debug for LocationStateStore {
@@ -108,6 +114,11 @@ impl LocationStateStore {
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
 
+        let initial_snapshot = LocationSnapshot {
+            account: Arc::new(account_state.clone()),
+            partitions: Arc::new(PartitionEndpointState),
+        };
+
         Self {
             account: Atomic::new(account_state),
             partitions: Atomic::new(PartitionEndpointState),
@@ -120,6 +131,8 @@ impl LocationStateStore {
             refresh_interval: Duration::from_secs(5),
             last_refresh_epoch_ms: AtomicU64::new(0),
             last_synced_etag: std::sync::Mutex::new(String::new()),
+            account_version: AtomicU64::new(0),
+            cached_snapshot: std::sync::Mutex::new((0, initial_snapshot)),
         }
     }
 
@@ -128,8 +141,23 @@ impl LocationStateStore {
         &self.default_endpoint
     }
 
-    /// Returns a lock-free snapshot of account and partition state.
+    /// Returns a snapshot of account and partition state.
+    ///
+    /// On the fast path (no state changes since last call), this returns
+    /// `Arc::clone()` of the cached snapshot (refcount increment only).
+    /// A full clone is only performed when the version counter has advanced.
     pub fn snapshot(&self) -> LocationSnapshot {
+        let current_version = self.account_version.load(Ordering::Acquire);
+
+        // Fast path: return cached snapshot if version hasn't changed.
+        {
+            let cached = self.cached_snapshot.lock().unwrap();
+            if cached.0 == current_version {
+                return cached.1.clone();
+            }
+        }
+
+        // Slow path: state changed, take a new snapshot.
         let guard = epoch::pin();
 
         let account = {
@@ -144,10 +172,16 @@ impl LocationStateStore {
             Arc::new(current.clone())
         };
 
-        LocationSnapshot {
-            account,
-            partitions,
+        let snapshot = LocationSnapshot { account, partitions };
+
+        // Cache the new snapshot.
+        let mut cached = self.cached_snapshot.lock().unwrap();
+        // Re-check: another thread may have updated the cache while we cloned.
+        if cached.0 < current_version {
+            *cached = (current_version, snapshot.clone());
         }
+
+        snapshot
     }
 
     /// Returns the configured endpoint unavailability TTL.
@@ -204,6 +238,7 @@ impl LocationStateStore {
                 Ok(old) => {
                     // SAFETY: old pointer is detached after successful exchange.
                     unsafe { guard.defer_destroy(old) };
+                    self.account_version.fetch_add(1, Ordering::Release);
                     return;
                 }
                 Err(_) => continue,
