@@ -7,6 +7,7 @@ use include_file::include_markdown;
 #[tokio::test]
 async fn readme() -> Result<(), Box<dyn std::error::Error>> {
     include_markdown!("README.md", "new-client");
+    include_markdown!("README.md", "request", scope);
     include_markdown!("README.md", "response");
     include_markdown!("README.md", "errors");
     include_markdown!("README.md", "item-pager", scope);

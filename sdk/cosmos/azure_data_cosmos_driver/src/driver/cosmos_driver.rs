@@ -4,84 +4,30 @@
 //! Cosmos DB driver instance.
 
 use crate::{
-    diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestEvent,
-        RequestSentStatus as DiagnosticsRequestSentStatus, TransportSecurity,
-    },
+    diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
+    driver::routing::{CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
-        DatabaseReference, SubStatusCode,
+        CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
         DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
         ThroughputControlGroupSnapshot,
     },
 };
-use azure_core::http::headers::{HeaderName, HeaderValue};
-use azure_core::http::{Context, Request, StatusCode};
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use azure_core::http::Request;
+use futures::future::BoxFuture;
+use std::sync::Arc;
+use std::time::Duration;
 
 use super::{
     cache::AccountRegion,
     transport::{
-        infer_request_sent_status, is_emulator_host, uses_dataplane_pipeline, AuthorizationContext,
-        RequestAttemptTelemetryContext, RequestAttemptTelemetrySink,
-        RequestSentStatus as TransportRequestSentStatus,
+        cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
+        AuthorizationContext,
     },
     CosmosDriverRuntime,
 };
-
-#[derive(Clone, Debug, Default)]
-struct RequestAttemptTelemetry {
-    request_reached_transport: bool,
-    request_sent_status: Option<TransportRequestSentStatus>,
-    events: Vec<RequestEvent>,
-}
-
-#[derive(Debug, Default)]
-struct RequestAttemptTelemetryHandle(Mutex<RequestAttemptTelemetry>);
-
-impl RequestAttemptTelemetryHandle {
-    fn new() -> Self {
-        Self(Mutex::new(RequestAttemptTelemetry::default()))
-    }
-
-    fn reset_attempt(&self) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            *telemetry = RequestAttemptTelemetry::default();
-        }
-    }
-
-    fn take_attempt(&self) -> RequestAttemptTelemetry {
-        if let Ok(mut telemetry) = self.0.lock() {
-            std::mem::take(&mut *telemetry)
-        } else {
-            RequestAttemptTelemetry::default()
-        }
-    }
-}
-
-impl RequestAttemptTelemetrySink for RequestAttemptTelemetryHandle {
-    fn mark_reached_transport(&self) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            telemetry.request_reached_transport = true;
-        }
-    }
-
-    fn set_request_sent_status(&self, request_sent_status: TransportRequestSentStatus) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            telemetry.request_sent_status = Some(request_sent_status);
-        }
-    }
-
-    fn record_event(&self, event: RequestEvent) {
-        if let Ok(mut telemetry) = self.0.lock() {
-            telemetry.events.push(event);
-        }
-    }
-}
 
 /// Cosmos DB driver instance.
 ///
@@ -98,9 +44,45 @@ pub struct CosmosDriver {
     runtime: CosmosDriverRuntime,
     /// Driver-level options including account reference.
     options: DriverOptions,
+    /// Shared operation routing state for multi-region failover.
+    location_state_store: Arc<LocationStateStore>,
+    /// Resolved default for max failover retries (from env or hardcoded default).
+    default_max_failover_retries: u32,
+    /// Resolved default for max session retries (from env or None = compute at operation time).
+    default_max_session_retries: Option<u32>,
 }
 
 impl CosmosDriver {
+    async fn fetch_account_properties_with_runtime(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let endpoint = AccountEndpoint::from(account);
+        let transport = runtime.transport();
+        let http_client = transport.get_metadata_http_client(&endpoint);
+        let user_agent = runtime.user_agent().as_str();
+
+        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
+        cosmos_headers::apply_cosmos_headers(
+            &mut request,
+            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
+        );
+        request_signing::sign_request(
+            &mut request,
+            account.auth(),
+            &AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                crate::models::ResourceType::DatabaseAccount,
+                "",
+            ),
+        )
+        .await?;
+
+        let response = http_client.execute_request(&request).await?;
+        let raw = response.try_into_raw_response().await?;
+        Self::parse_account_properties_payload(raw.body())
+    }
+
     fn parse_account_properties_payload(
         payload: &[u8],
     ) -> azure_core::Result<super::cache::AccountProperties> {
@@ -129,21 +111,7 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        let endpoint = AccountEndpoint::from(account);
-        let transport = self.runtime.transport();
-        let pipeline = transport.create_metadata_pipeline(&endpoint, account.auth());
-        let auth_context = AuthorizationContext::new(
-            azure_core::http::Method::Get,
-            crate::models::ResourceType::DatabaseAccount,
-            "",
-        );
-
-        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
-        let mut context = Context::default();
-        context.insert(auth_context);
-
-        let response = pipeline.send(&context, &mut request).await?;
-        Self::parse_account_properties_payload(response.into_body().as_ref())
+        Self::fetch_account_properties_with_runtime(&self.runtime, account).await
     }
 
     async fn fetch_container_by_name(
@@ -244,60 +212,74 @@ impl CosmosDriver {
         ))
     }
 
-    fn should_retry_transport_failure(
-        attempt: usize,
-        max_transport_retries: usize,
-        is_idempotent: bool,
-        request_sent: TransportRequestSentStatus,
-    ) -> bool {
-        attempt < max_transport_retries && (is_idempotent || request_sent.definitely_not_sent())
-    }
-
-    /// Checks whether the end-to-end deadline has been exceeded and, if so,
-    /// records the timeout in diagnostics and returns an error.
-    ///
-    /// Returns `Ok(())` when no deadline is set or it has not yet expired.
-    fn check_e2e_deadline(
-        deadline: Option<Instant>,
-        timeout_duration: std::time::Duration,
-        diagnostics_builder: &mut DiagnosticsContextBuilder,
-        request_handle: Option<crate::diagnostics::RequestHandle>,
-    ) -> azure_core::Result<()> {
-        let deadline = match deadline {
-            Some(d) => d,
-            None => return Ok(()),
-        };
-        if Instant::now() < deadline {
-            return Ok(());
-        }
-        if let Some(handle) = request_handle {
-            diagnostics_builder.timeout_request(handle);
-        }
-        diagnostics_builder.set_operation_status(
-            StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-        );
-        Err(azure_core::Error::new(
-            azure_core::error::ErrorKind::Other,
-            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-        ))
-    }
-
-    fn map_request_sent_status(
-        request_sent: TransportRequestSentStatus,
-    ) -> DiagnosticsRequestSentStatus {
-        match request_sent {
-            TransportRequestSentStatus::Sent => DiagnosticsRequestSentStatus::Sent,
-            TransportRequestSentStatus::NotSent => DiagnosticsRequestSentStatus::NotSent,
-            TransportRequestSentStatus::Unknown => DiagnosticsRequestSentStatus::Unknown,
-        }
-    }
-
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
     pub(crate) fn new(runtime: CosmosDriverRuntime, options: DriverOptions) -> Self {
-        Self { runtime, options }
+        let account = options.account().clone();
+        let account_endpoint = AccountEndpoint::from(&account);
+        let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
+
+        let runtime_clone = runtime.clone();
+        let account_clone = account.clone();
+        let refresh_callback = Arc::new(move || {
+            let runtime = runtime_clone.clone();
+            let account = account_clone.clone();
+            let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
+                Box::pin(async move {
+                    CosmosDriver::fetch_account_properties_with_runtime(&runtime, &account).await
+                });
+            fut
+        });
+
+        let endpoint_unavailability_ttl = runtime
+            .runtime_options()
+            .snapshot()
+            .endpoint_unavailability_ttl
+            .unwrap_or_else(|| {
+                std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .map(Duration::from_millis)
+                    .unwrap_or(Duration::from_secs(60))
+            });
+
+        let location_state_store = Arc::new(LocationStateStore::new(
+            runtime.account_metadata_cache().clone(),
+            account_endpoint,
+            default_endpoint,
+            refresh_callback,
+            endpoint_unavailability_ttl,
+        ));
+
+        let default_max_failover_retries = runtime
+            .runtime_options()
+            .snapshot()
+            .max_failover_retry_count
+            .unwrap_or_else(|| {
+                std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
+                    .ok()
+                    .and_then(|v| v.parse::<u32>().ok())
+                    .unwrap_or(3)
+            });
+
+        let default_max_session_retries = runtime
+            .runtime_options()
+            .snapshot()
+            .max_session_retry_count
+            .or_else(|| {
+                std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
+                    .ok()
+                    .and_then(|v| v.parse::<u32>().ok())
+            });
+
+        Self {
+            runtime,
+            options,
+            location_state_store,
+            default_max_failover_retries,
+            default_max_session_retries,
+        }
     }
 
     /// Returns the account reference.
@@ -429,9 +411,19 @@ impl CosmosDriver {
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
         // Step 1: Derive effective runtime options
-        let effective_options = self.effective_runtime_options(&options);
+        let mut effective_options = self.effective_runtime_options(&options);
 
-        // Step 2: Get effective throughput control group (if any)
+        // Fill in resolved defaults for retry counts (env vars read once at construction).
+        if effective_options.max_failover_retry_count.is_none() {
+            effective_options.max_failover_retry_count = Some(self.default_max_failover_retries);
+        }
+        if effective_options.max_session_retry_count.is_none() {
+            effective_options.max_session_retry_count = self.default_max_session_retries;
+        }
+
+        // Step 2: Resolve effective throughput control group (if any).
+        // Step 1 transport pipeline does not consume this yet.
+        // TODO(Step 2): wire resolved throughput control into operation/transport execution.
         let _effective_control_group = operation.container().and_then(|container| {
             self.effective_throughput_control_group(&effective_options, container)
         });
@@ -450,51 +442,36 @@ impl CosmosDriver {
             .account_metadata_cache()
             .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
             .await?;
+
+        // Keep the operation routing snapshot in sync with current account metadata.
+        // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
+        // Skips the CAS loop when the etag matches (same server version).
+        self.location_state_store.sync_account_properties(
+            account_properties.as_ref(),
+            self.location_state_store.default_endpoint(),
+        );
+
         let write_region = account_properties.write_account_region();
-        let region = write_region.map(|r| r.name.clone());
-
-        // Step 5: Build resource link for authorization
-        let resource_ref = operation.resource_reference();
-        let resource_link = resource_ref.link_for_signing();
-
-        // Step 6: Build request URL
-        let request_path = resource_ref.request_path();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
-        let url = endpoint.join_path(&request_path);
 
-        // Step 7: Determine HTTP method
+        // Step 5: Select appropriate HttpClient based on pipeline type
+        let transport = self.runtime.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
-        let method = operation_type.http_method();
-
-        // Step 8: Create authorization context
-        // Strip leading slash from resource link for signing
-        let signing_link = resource_link.trim_start_matches('/');
-        let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
-
-        // Step 9: Select and create appropriate pipeline
-        let transport = self.runtime.transport();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        let pipeline = if is_dataplane {
-            transport.create_dataplane_pipeline(&endpoint, auth)
+        let http_client = if is_dataplane {
+            transport.get_dataplane_http_client(&endpoint)
         } else {
-            transport.create_metadata_pipeline(&endpoint, auth)
+            transport.get_metadata_http_client(&endpoint)
         };
 
-        // Step 10: Execute with a slim transport retry wrapper.
-        //
-        // Retry only once, and only when it is safe:
-        // - operation is idempotent, OR
-        // - operation may be non-idempotent but transport failure happened before bytes were sent
-        const MAX_TRANSPORT_RETRIES: usize = 1;
-        let mut attempt = 0usize;
+        // Step 6: Initialize diagnostics
         let mut diagnostics_builder = DiagnosticsContextBuilder::new(
             activity_id.clone(),
             std::sync::Arc::new(DiagnosticsOptions::default()),
         );
         diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
         diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
-        debug_assert_eq!(diagnostics_builder.activity_id(), &activity_id);
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -511,160 +488,28 @@ impl CosmosDriver {
         } else {
             TransportSecurity::Secure
         };
-        let endpoint_string = endpoint.url().as_str().to_owned();
-        let attempt_telemetry = Arc::new(RequestAttemptTelemetryHandle::new());
-        let deadline = effective_options
-            .end_to_end_latency_policy
-            .as_ref()
-            .map(|p| Instant::now() + p.timeout());
 
-        let e2e_timeout_duration = effective_options
-            .end_to_end_latency_policy
-            .as_ref()
-            .map(|p| p.timeout())
-            .unwrap_or_default();
+        let user_agent = azure_core::http::headers::HeaderValue::from(
+            self.runtime.user_agent().as_str().to_owned(),
+        );
 
-        loop {
-            // Check if the end-to-end deadline has already been exceeded before
-            // starting the next attempt.
-            Self::check_e2e_deadline(
-                deadline,
-                e2e_timeout_duration,
-                &mut diagnostics_builder,
-                None,
-            )?;
-
-            let execution_context = if attempt == 0 {
-                ExecutionContext::Initial
-            } else {
-                ExecutionContext::Retry
-            };
-            let request_handle = diagnostics_builder.start_request(
-                execution_context,
-                pipeline_type,
-                transport_security,
-                region.clone(),
-                endpoint_string.clone(),
-            );
-            debug_assert!(diagnostics_builder.request_count() > 0);
-
-            let mut request = Request::new(url.clone(), method);
-
-            if let Some(body) = operation.body() {
-                request.set_body(body.to_vec());
-            }
-
-            operation
-                .request_headers()
-                .write_to_headers(request.headers_mut());
-
-            if operation.request_headers().activity_id.is_none() {
-                request.insert_header(
-                    HeaderName::from_static("x-ms-activity-id"),
-                    HeaderValue::from(activity_id.as_str().to_owned()),
-                );
-            }
-
-            if let Some(pk) = operation.partition_key() {
-                let _partition_key_definition = operation
-                    .container()
-                    .map(|container| container.partition_key_definition());
-
-                use azure_core::http::headers::AsHeaders;
-                let pk_headers = match pk.as_headers() {
-                    Ok(headers) => headers,
-                    Err(e) => return Err(e),
-                };
-
-                for (name, value) in pk_headers {
-                    request.insert_header(name, value);
-                }
-            }
-
-            let mut ctx = Context::default();
-            ctx.insert(auth_context.clone());
-            attempt_telemetry.reset_attempt();
-            ctx.insert(RequestAttemptTelemetryContext::new(
-                attempt_telemetry.clone() as Arc<dyn RequestAttemptTelemetrySink>,
-            ));
-
-            let result = pipeline.send(&ctx, &mut request).await;
-            let telemetry = attempt_telemetry.take_attempt();
-            let request_reached_transport = telemetry.request_reached_transport;
-            let request_sent_from_transport = telemetry.request_sent_status;
-
-            for event in telemetry.events {
-                diagnostics_builder.add_event(request_handle, event);
-            }
-
-            match result {
-                Ok(response) => {
-                    let status_code = response.status();
-                    let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
-                    let sub_status = cosmos_headers.substatus;
-
-                    diagnostics_builder.update_request(request_handle, |request| {
-                        if let Some(charge) = cosmos_headers.request_charge {
-                            request.with_charge(charge);
-                        }
-                        if let Some(activity_id) = cosmos_headers.activity_id.clone() {
-                            request.with_activity_id(activity_id);
-                        }
-                        if let Some(token) = cosmos_headers.session_token.clone() {
-                            request.with_session_token(token.to_string());
-                        }
-                    });
-                    diagnostics_builder.complete_request(request_handle, status_code, sub_status);
-                    diagnostics_builder.set_operation_status(status_code, sub_status);
-
-                    let body = response.into_body();
-                    let status = CosmosStatus::from_parts(status_code, sub_status);
-                    let diagnostics = std::sync::Arc::new(diagnostics_builder.complete());
-
-                    return Ok(CosmosResponse::new(
-                        body.as_ref().to_vec(),
-                        cosmos_headers,
-                        status,
-                        diagnostics,
-                    ));
-                }
-                Err(e) => {
-                    let request_sent = if request_reached_transport {
-                        request_sent_from_transport.unwrap_or_else(|| infer_request_sent_status(&e))
-                    } else {
-                        TransportRequestSentStatus::NotSent
-                    };
-                    diagnostics_builder.fail_request(
-                        request_handle,
-                        e.to_string(),
-                        Self::map_request_sent_status(request_sent),
-                    );
-
-                    let should_retry = Self::should_retry_transport_failure(
-                        attempt,
-                        MAX_TRANSPORT_RETRIES,
-                        operation.is_idempotent(),
-                        request_sent,
-                    );
-
-                    if should_retry {
-                        // If the e2e deadline has already been exceeded, do not
-                        // retry: record the timeout and return immediately.
-                        Self::check_e2e_deadline(
-                            deadline,
-                            e2e_timeout_duration,
-                            &mut diagnostics_builder,
-                            Some(request_handle),
-                        )?;
-                        attempt += 1;
-                        continue;
-                    }
-
-                    return Err(e);
-                }
-            }
-        }
+        // Step 7: Execute via the new operation pipeline
+        super::pipeline::operation_pipeline::execute_operation_pipeline(
+            &operation,
+            &options,
+            &effective_options,
+            self.location_state_store.as_ref(),
+            http_client,
+            auth,
+            &user_agent,
+            &activity_id,
+            pipeline_type,
+            transport_security,
+            diagnostics_builder,
+        )
+        .await
     }
+
     /// Resolves a container by database and container name.
     ///
     /// Reads the database and container from the service to obtain their
@@ -1045,52 +890,6 @@ mod tests {
             effective.content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
         );
-    }
-
-    #[test]
-    fn retry_gate_allows_only_idempotent_not_sent_with_budget() {
-        assert!(CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            true,
-            TransportRequestSentStatus::NotSent
-        ));
-    }
-
-    #[test]
-    fn retry_gate_blocks_non_idempotent_when_request_may_have_been_sent() {
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            TransportRequestSentStatus::Unknown
-        ));
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            TransportRequestSentStatus::Sent
-        ));
-    }
-
-    #[test]
-    fn retry_gate_allows_non_idempotent_when_not_sent() {
-        assert!(CosmosDriver::should_retry_transport_failure(
-            0,
-            1,
-            false,
-            TransportRequestSentStatus::NotSent
-        ));
-    }
-
-    #[test]
-    fn retry_gate_blocks_when_budget_exhausted() {
-        assert!(!CosmosDriver::should_retry_transport_failure(
-            1,
-            1,
-            true,
-            TransportRequestSentStatus::NotSent
-        ));
     }
 
     #[test]

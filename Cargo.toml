@@ -101,6 +101,7 @@ cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
 criterion = { version = "0.8", features = ["async_tokio"] }
 crossbeam = { version = "0.8", default-features = false }
+crossbeam-epoch = { version = "0.9", default-features = false }
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.14", features = ["uuid"] }
 fe2o3-amqp-ext = { version = "0.14" }
