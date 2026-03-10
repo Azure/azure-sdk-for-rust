@@ -46,33 +46,29 @@ impl SessionManager {
             return Some(token.clone());
         }
 
-        // Look up from cache using the container RID
+        // TODO(partition-key-range-parents): When a PKRange cache is available,
+        // use it to resolve parent range IDs during splits/merges. Currently
+        // only the direct RID is looked up. Java uses PartitionKeyRangeCache to
+        // map child ranges back to their parent session tokens.
+
+        // Look up from cache using the container RID, with name fallback
         let container = operation.container()?;
         let rid = container.rid();
-
-        // Try direct RID lookup first
-        if let Some(token) = self.container.get_session_token(rid) {
-            return Some(SessionToken::new(token));
-        }
-
-        // Fall back to name→RID resolution
         let name_path = format!(
             "dbs/{}/colls/{}",
             container.database_name(),
             container.name()
         );
-        if let Some(resolved_rid) = self.container.resolve_rid(&name_path) {
-            if let Some(token) = self.container.get_session_token(&resolved_rid) {
-                return Some(SessionToken::new(token));
-            }
-        }
 
-        None
+        self.container
+            .get_or_resolve_session_token(rid, &name_path)
+            .map(SessionToken::new)
     }
 
     /// Captures the session token from a response into the cache.
     ///
     /// Only captures if:
+    /// - The operation is NOT a master/metadata resource operation.
     /// - The operation targets a container (has a `ContainerReference`).
     /// - The response headers contain a session token.
     /// - The response headers contain an owner ID (collection RID).
@@ -81,6 +77,13 @@ impl SessionManager {
         operation: &CosmosOperation,
         headers: &CosmosResponseHeaders,
     ) {
+        // Skip capture for master/metadata resource types. Session tokens
+        // from metadata partition replicas should not be used for data reads.
+        // Matches Java's isMasterResource() and .NET's IsReadingFromMaster().
+        if operation.resource_type().is_metadata() {
+            return;
+        }
+
         let session_token = match &headers.session_token {
             Some(t) => t.as_str(),
             None => return,

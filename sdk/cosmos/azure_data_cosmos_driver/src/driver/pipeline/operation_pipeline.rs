@@ -155,14 +155,28 @@ pub(crate) async fn execute_operation_pipeline(
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
         // ── STAGE 5b: Capture session token ────────────────────────────
-        // On any successful transport result that carries response headers,
-        // capture the session token into the cache (regardless of retry action).
+        // Capture session tokens from both successful and certain error
+        // responses (409 Conflict, 412 Precondition Failed, 404 non-1002).
+        // The server advances the session token even on these errors, so
+        // not capturing would break read-your-writes guarantees.
         if session_consistency_active {
-            if let OperationAction::Complete(ref tr) = action {
-                if let TransportOutcome::Success { ref headers, .. } = tr.outcome {
-                    let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
-                    session_manager.capture_session_token(operation, &cosmos_headers);
+            match &action {
+                OperationAction::Complete(ref tr) => {
+                    if let TransportOutcome::Success { ref headers, .. }
+                    | TransportOutcome::HttpError { ref headers, .. } = tr.outcome
+                    {
+                        let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
+                        if should_capture_session_token_from_status(
+                            cosmos_headers.substatus.as_ref(),
+                            &tr.outcome,
+                        ) {
+                            session_manager.capture_session_token(operation, &cosmos_headers);
+                        }
+                    }
                 }
+                OperationAction::SessionRetry { .. }
+                | OperationAction::FailoverRetry { .. }
+                | OperationAction::Abort { .. } => {}
             }
         }
 
@@ -421,6 +435,38 @@ fn build_cosmos_response(
                 "build_cosmos_response called with non-success result",
             ))
         }
+    }
+}
+
+/// Determines whether a session token should be captured from this response.
+///
+/// Follows Java/. NET patterns: capture on success (2xx), and on error responses
+/// where the server still advanced the session token:
+/// - 409 Conflict
+/// - 412 Precondition Failed
+/// - 404 when substatus is NOT ReadSessionNotAvailable (1002)
+///
+/// Does NOT capture on 404/1002 (that's the trigger for session retry/clear).
+fn should_capture_session_token_from_status(
+    substatus: Option<&SubStatusCode>,
+    outcome: &TransportOutcome,
+) -> bool {
+    match outcome {
+        TransportOutcome::Success { .. } => true,
+        TransportOutcome::HttpError { status, .. } => {
+            let code = status.status_code();
+            if code == azure_core::http::StatusCode::Conflict
+                || code == azure_core::http::StatusCode::PreconditionFailed
+            {
+                return true;
+            }
+            if code == azure_core::http::StatusCode::NotFound {
+                // Capture on 404 unless substatus is ReadSessionNotAvailable (1002)
+                return substatus != Some(&SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+            }
+            false
+        }
+        _ => false,
     }
 }
 

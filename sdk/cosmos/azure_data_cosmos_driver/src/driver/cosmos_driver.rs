@@ -507,7 +507,7 @@ impl CosmosDriver {
         let read_consistency_strategy = effective_options
             .read_consistency_strategy
             .unwrap_or(ReadConsistencyStrategy::Default);
-        let session_consistency_active = !self.options.disable_session_capturing()
+        let session_consistency_active = self.options.session_capturing_enabled()
             && is_session_consistency_effective(
                 read_consistency_strategy,
                 &account_properties

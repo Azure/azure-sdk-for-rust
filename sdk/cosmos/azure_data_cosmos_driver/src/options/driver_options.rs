@@ -50,8 +50,8 @@ pub struct DriverOptions {
     account: AccountReference,
     /// Thread-safe runtime options for operation options at the driver level.
     runtime_options: SharedRuntimeOptions,
-    /// When true, session token capturing is disabled for all operations.
-    disable_session_capturing: bool,
+    /// Whether session token capturing is enabled for all operations.
+    session_capturing_enabled: bool,
 }
 
 impl DriverOptions {
@@ -74,14 +74,14 @@ impl DriverOptions {
         &self.runtime_options
     }
 
-    /// Returns whether session token capturing is disabled.
+    /// Returns whether session token capturing is enabled.
     ///
-    /// When `true`, the driver will not capture, resolve, or clear session tokens
-    /// from response headers. This can be useful for scenarios where session
-    /// consistency is not needed and the overhead of maintaining the session cache
-    /// should be avoided.
-    pub fn disable_session_capturing(&self) -> bool {
-        self.disable_session_capturing
+    /// When `true` (the default), the driver captures, resolves, and clears
+    /// session tokens from response headers for session consistency.
+    /// Set to `false` to disable session token management for scenarios where
+    /// session consistency is not needed.
+    pub fn session_capturing_enabled(&self) -> bool {
+        self.session_capturing_enabled
     }
 }
 
@@ -94,7 +94,7 @@ impl DriverOptions {
 pub struct DriverOptionsBuilder {
     account: AccountReference,
     runtime_options: Option<RuntimeOptions>,
-    disable_session_capturing: bool,
+    session_capturing_enabled: bool,
 }
 
 impl DriverOptionsBuilder {
@@ -103,7 +103,7 @@ impl DriverOptionsBuilder {
         Self {
             account,
             runtime_options: None,
-            disable_session_capturing: false,
+            session_capturing_enabled: true,
         }
     }
 
@@ -115,12 +115,12 @@ impl DriverOptionsBuilder {
         self
     }
 
-    /// Disables session token capturing.
+    /// Enables or disables session token capturing.
     ///
-    /// When set to `true`, the driver will not capture, resolve, or clear session
-    /// tokens. This is useful for scenarios where session consistency is not needed.
-    pub fn with_disable_session_capturing(mut self, disable: bool) -> Self {
-        self.disable_session_capturing = disable;
+    /// When `true` (the default), the driver captures, resolves, and clears
+    /// session tokens for session consistency. Set to `false` to disable.
+    pub fn with_session_capturing_enabled(mut self, enabled: bool) -> Self {
+        self.session_capturing_enabled = enabled;
         self
     }
 
@@ -131,7 +131,7 @@ impl DriverOptionsBuilder {
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),
-            disable_session_capturing: self.disable_session_capturing,
+            session_capturing_enabled: self.session_capturing_enabled,
         }
     }
 }

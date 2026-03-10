@@ -41,9 +41,20 @@ impl SessionContainer {
     /// `<pkRangeId>:<vector>` segment, separated by commas.
     ///
     /// Returns `None` if no tokens are cached for the given RID.
+    // TODO(perf): This allocates on every resolve call. Consider caching the
+    // composite string or using a `Cow` to avoid allocations on the hot path.
+    #[allow(dead_code)] // Used by tests; primary callers use get_or_resolve_session_token
     pub(crate) fn get_session_token(&self, collection_rid: &str) -> Option<String> {
-        let guard = self.inner.read().expect("session container lock poisoned");
-        let pk_map = guard.tokens.get(collection_rid)?;
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        Self::build_composite_token(&guard, collection_rid)
+    }
+
+    /// Builds a composite session token string from the cached inner state.
+    fn build_composite_token(
+        inner: &SessionContainerInner,
+        collection_rid: &str,
+    ) -> Option<String> {
+        let pk_map = inner.tokens.get(collection_rid)?;
         if pk_map.is_empty() {
             return None;
         }
@@ -56,9 +67,33 @@ impl SessionContainer {
     }
 
     /// Resolves a collection name path to its cached RID.
+    #[allow(dead_code)] // Used by tests; primary callers use get_or_resolve_session_token
     pub(crate) fn resolve_rid(&self, collection_name_path: &str) -> Option<String> {
-        let guard = self.inner.read().expect("session container lock poisoned");
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
         guard.name_to_rid.get(collection_name_path).cloned()
+    }
+
+    /// Attempts to resolve a session token using first the collection RID, then
+    /// falling back to name-based resolution. This avoids acquiring the read
+    /// lock multiple times for the common resolve path.
+    pub(crate) fn get_or_resolve_session_token(
+        &self,
+        collection_rid: &str,
+        collection_name_path: &str,
+    ) -> Option<String> {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+
+        // Try direct RID lookup
+        if let Some(token) = Self::build_composite_token(&guard, collection_rid) {
+            return Some(token);
+        }
+
+        // Fall back to name → RID → token
+        if let Some(resolved_rid) = guard.name_to_rid.get(collection_name_path) {
+            return Self::build_composite_token(&guard, resolved_rid);
+        }
+
+        None
     }
 
     /// Stores (or merges) a session token for a given collection.
@@ -75,7 +110,7 @@ impl SessionContainer {
         collection_name_path: Option<&str>,
         session_token_value: &str,
     ) {
-        let mut guard = self.inner.write().expect("session container lock poisoned");
+        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
 
         // RID mismatch detection: if the name pointed at a different RID, clear old.
         if let Some(name_path) = collection_name_path {
@@ -115,7 +150,7 @@ impl SessionContainer {
     /// Used on 404/1002 (ReadSessionNotAvailable) when the request used a
     /// name-based resource link — the container may have been recreated.
     pub(crate) fn clear_by_collection_name(&self, collection_name_path: &str) {
-        let mut guard = self.inner.write().expect("session container lock poisoned");
+        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
         if let Some(rid) = guard.name_to_rid.remove(collection_name_path) {
             guard.tokens.remove(&rid);
         }
@@ -124,7 +159,7 @@ impl SessionContainer {
     /// Clears all tokens for a given collection RID.
     #[allow(dead_code)] // Kept for future use (RID-based clearing).
     pub(crate) fn clear_by_collection_rid(&self, collection_rid: &str) {
-        let mut guard = self.inner.write().expect("session container lock poisoned");
+        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
         guard.tokens.remove(collection_rid);
         guard.name_to_rid.retain(|_, rid| rid != collection_rid);
     }

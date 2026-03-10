@@ -46,11 +46,22 @@ impl VectorSessionToken {
         })
     }
 
-    /// Returns `true` if every region LSN in `self` is ≥ the corresponding LSN
-    /// in `other`, **and** `self.global_lsn >= other.global_lsn`.
+    /// Returns `true` if this token is at least as recent as `other`.
+    ///
+    /// A token with a higher version is always considered more recent (captures
+    /// partition topology changes). For same-version tokens, compares
+    /// `global_lsn` and per-region LSN values.
     ///
     /// Regions present in `other` but missing in `self` are treated as behind.
+    #[allow(dead_code)] // Will be used by PKRange cache resolution
     pub(crate) fn is_at_least_as_recent_as(&self, other: &Self) -> bool {
+        if self.version > other.version {
+            return true;
+        }
+        if self.version < other.version {
+            return false;
+        }
+        // Same version: compare LSNs
         if self.global_lsn < other.global_lsn {
             return false;
         }
@@ -65,6 +76,14 @@ impl VectorSessionToken {
 
     /// Merges `other` into `self`, keeping the higher version and
     /// per-region maximum LSN values. Returns `true` if `self` was modified.
+    ///
+    /// # Divergence from Java SDK
+    ///
+    /// Java's `VectorSessionToken.merge()` throws `InternalServerErrorException`
+    /// if the versions differ or if region sets don't match. Our implementation
+    /// uses a silent-union approach (take max of each region, ignore missing),
+    /// following the .NET/Python pattern which is more tolerant of topology
+    /// changes during splits/merges.
     pub(crate) fn merge(&mut self, other: &Self) -> bool {
         let mut changed = false;
 
@@ -211,5 +230,14 @@ mod tests {
         let a = VectorSessionToken::parse("1#100#1=10").unwrap();
         let b = VectorSessionToken::parse("1#100#1=10#2=20").unwrap();
         assert!(!a.is_at_least_as_recent_as(&b));
+    }
+
+    #[test]
+    fn is_at_least_as_recent_higher_version() {
+        // A higher version token is always more recent, even with lower LSNs
+        let a = VectorSessionToken::parse("2#50#1=5").unwrap();
+        let b = VectorSessionToken::parse("1#100#1=10").unwrap();
+        assert!(a.is_at_least_as_recent_as(&b));
+        assert!(!b.is_at_least_as_recent_as(&a));
     }
 }
