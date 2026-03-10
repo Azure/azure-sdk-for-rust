@@ -30,6 +30,8 @@ pub struct FaultInjectionRule {
     hit_count: AtomicU32,
 }
 
+/// Cloning snapshots the current `hit_count` and `enabled` state rather than
+/// resetting them, so a clone of a rule that has been hit 5 times starts at 5.
 impl Clone for FaultInjectionRule {
     fn clone(&self) -> Self {
         Self {
@@ -73,6 +75,11 @@ impl FaultInjectionRule {
     /// Increments the hit count by one.
     pub(super) fn increment_hit_count(&self) {
         self.hit_count.fetch_add(1, Ordering::SeqCst);
+    }
+
+    /// Resets the hit count to zero.
+    pub fn reset_hit_count(&self) {
+        self.hit_count.store(0, Ordering::SeqCst);
     }
 }
 
@@ -189,5 +196,17 @@ mod tests {
         rule.increment_hit_count();
         rule.increment_hit_count();
         assert_eq!(rule.hit_count(), 3);
+    }
+
+    #[test]
+    fn reset_hit_count_clears_counter() {
+        let rule = FaultInjectionRuleBuilder::new("reset-test", create_test_error()).build();
+
+        rule.increment_hit_count();
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 2);
+
+        rule.reset_hit_count();
+        assert_eq!(rule.hit_count(), 0);
     }
 }

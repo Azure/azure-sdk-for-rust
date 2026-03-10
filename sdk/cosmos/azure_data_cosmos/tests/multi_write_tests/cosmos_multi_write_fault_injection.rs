@@ -993,6 +993,7 @@ pub async fn fault_injection_custom_response_403_3_transitions_to_single_write(
     let account_rule = Arc::new(
         FaultInjectionRuleBuilder::new("mock-single-write-account", account_result)
             .with_condition(account_condition)
+            .with_hit_limit(2)
             .build(),
     );
 
