@@ -15,7 +15,7 @@ pub(crate) enum LocationEffect {
         endpoint: CosmosEndpoint,
         reason: UnavailableReason,
     },
-    /// Marks a partition unavailable (Step 2 bridge; fully used in Step 3).
+    /// Marks a partition unavailable (placeholder; applied by partition-level routing).
     #[allow(dead_code)]
     MarkPartitionUnavailable(UnavailablePartition),
     /// Requests a rate-limited account metadata refresh.

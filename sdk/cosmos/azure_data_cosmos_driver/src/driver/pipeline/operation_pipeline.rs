@@ -224,7 +224,8 @@ pub(crate) async fn execute_operation_pipeline(
 
 /// Resolves the endpoint for this attempt.
 ///
-/// Step 2 resolves from `LocationSnapshot` and `AccountEndpointState`.
+/// Uses `LocationSnapshot` and `AccountEndpointState` to select the best
+/// available endpoint, respecting excluded regions and unavailability TTL.
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,

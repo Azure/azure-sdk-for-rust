@@ -122,7 +122,7 @@ pub(crate) fn evaluate_transport_result(
                     },
                     vec![
                         LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
-                            // TODO(Step 3): Wire the actual partition key range ID from
+                            // TODO(partition-routing): Wire the actual partition key range ID from
                             // TransportResult or CosmosOperation once partition-level
                             // routing is implemented.
                             partition_key_range_id: String::new(),

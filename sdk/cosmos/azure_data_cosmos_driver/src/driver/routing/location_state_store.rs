@@ -24,7 +24,7 @@ use super::{
     LocationEffect,
 };
 
-/// Step 3 adds partition-level state; Step 2 keeps this as a placeholder.
+/// Placeholder for partition-level state (not yet implemented).
 #[derive(Clone, Debug, Default)]
 pub(crate) struct PartitionEndpointState;
 
@@ -127,7 +127,7 @@ impl LocationStateStore {
             account_refresh_fn,
             default_endpoint,
             endpoint_unavailability_ttl,
-            // Fixed refresh throttling for Step 2.
+            // TODO(refresh-config): Make refresh interval configurable.
             refresh_interval: Duration::from_secs(5),
             last_refresh_epoch_ms: AtomicU64::new(0),
             last_synced_etag: std::sync::Mutex::new(String::new()),
@@ -198,7 +198,7 @@ impl LocationStateStore {
         Arc::new(current.clone())
     }
 
-    /// Applies location effects. Step 2 applies endpoint unavailability and account refresh.
+    /// Applies location effects (endpoint unavailability and account refresh).
     pub async fn apply(&self, effects: &[LocationEffect]) {
         for effect in effects {
             match effect {
@@ -210,7 +210,7 @@ impl LocationStateStore {
                     });
                 }
                 LocationEffect::MarkPartitionUnavailable(_) => {
-                    // Step 2 keeps partition-level logic as a no-op bridge for Step 3.
+                    // TODO(partition-routing): Apply partition-level unavailability.
                 }
                 LocationEffect::RefreshAccountProperties => {
                     self.refresh_account_properties_if_due().await;
