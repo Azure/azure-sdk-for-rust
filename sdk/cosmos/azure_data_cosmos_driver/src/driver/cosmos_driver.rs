@@ -23,8 +23,8 @@ use std::time::Duration;
 use super::{
     cache::AccountRegion,
     transport::{
-        cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
-        AuthorizationContext,
+        adaptive_transport::thin_client_endpoint_overrides, cosmos_headers, is_emulator_host,
+        request_signing, uses_dataplane_pipeline, AuthorizationContext,
     },
     CosmosDriverRuntime,
 };
@@ -59,7 +59,7 @@ impl CosmosDriver {
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.transport();
-        let http_client = transport.get_metadata_http_client(&endpoint);
+        let adaptive_transport = transport.get_metadata_transport(&endpoint);
         let user_agent = runtime.user_agent().as_str();
 
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
@@ -78,7 +78,7 @@ impl CosmosDriver {
         )
         .await?;
 
-        let response = http_client.execute_request(&request).await?;
+        let response = adaptive_transport.send(&request).await?;
         let raw = response.try_into_raw_response().await?;
         Self::parse_account_properties_payload(raw.body())
     }
@@ -459,10 +459,23 @@ impl CosmosDriver {
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        let http_client = if is_dataplane {
-            transport.get_dataplane_http_client(&endpoint)
+        let adaptive_transport = if is_dataplane {
+            transport.get_dataplane_transport(&endpoint, account_properties.as_ref())
         } else {
-            transport.get_metadata_http_client(&endpoint)
+            transport.get_metadata_transport(&endpoint)
+        };
+        let thin_client_overrides = if is_dataplane
+            && matches!(
+                adaptive_transport.version_policy(),
+                super::transport::http_client_factory::HttpVersionPolicy::Http2Only
+            )
+        {
+            Some(thin_client_endpoint_overrides(
+                account_properties.as_ref(),
+                operation.is_read_only(),
+            ))
+        } else {
+            None
         };
 
         // Step 6: Initialize diagnostics
@@ -499,7 +512,8 @@ impl CosmosDriver {
             &options,
             &effective_options,
             self.location_state_store.as_ref(),
-            http_client,
+            adaptive_transport,
+            thin_client_overrides,
             auth,
             &user_agent,
             &activity_id,

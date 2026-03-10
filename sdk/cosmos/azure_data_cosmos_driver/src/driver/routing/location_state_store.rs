@@ -87,17 +87,19 @@ impl std::fmt::Debug for LocationStateStore {
 
 impl Drop for LocationStateStore {
     fn drop(&mut self) {
-        // SAFETY: We have `&mut self`, so no concurrent access is possible.
-        // `epoch::unprotected()` is safe here because we are the sole owner.
+        // crossbeam_epoch::Atomic<T> intentionally has no destructor.
+        // Detach each field and convert to Owned for immediate deallocation.
+        // Safety: &mut self in Drop guarantees exclusive access.
+        let account = std::mem::replace(&mut self.account, Atomic::null());
+        let partitions = std::mem::replace(&mut self.partitions, Atomic::null());
+
         unsafe {
-            let guard = epoch::unprotected();
-            let acct = self.account.load(Ordering::Relaxed, guard);
-            if !acct.is_null() {
-                drop(acct.into_owned());
+            if let Some(account) = account.try_into_owned() {
+                drop(account);
             }
-            let part = self.partitions.load(Ordering::Relaxed, guard);
-            if !part.is_null() {
-                drop(part.into_owned());
+
+            if let Some(partitions) = partitions.try_into_owned() {
+                drop(partitions);
             }
         }
     }
@@ -142,14 +144,9 @@ impl LocationStateStore {
     }
 
     /// Returns a snapshot of account and partition state.
-    ///
-    /// On the fast path (no state changes since last call), this returns
-    /// `Arc::clone()` of the cached snapshot (refcount increment only).
-    /// A full clone is only performed when the version counter has advanced.
     pub fn snapshot(&self) -> LocationSnapshot {
         let current_version = self.account_version.load(Ordering::Acquire);
 
-        // Fast path: return cached snapshot if version hasn't changed.
         {
             let cached = self.cached_snapshot.lock().unwrap();
             if cached.0 == current_version {
@@ -157,17 +154,14 @@ impl LocationStateStore {
             }
         }
 
-        // Slow path: state changed, take a new snapshot.
         let guard = epoch::pin();
 
         let account = {
-            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current = unsafe { self.account.load(Ordering::Acquire, &guard).deref() };
             Arc::new(current.clone())
         };
 
         let partitions = {
-            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current = unsafe { self.partitions.load(Ordering::Acquire, &guard).deref() };
             Arc::new(current.clone())
         };
@@ -177,9 +171,7 @@ impl LocationStateStore {
             partitions,
         };
 
-        // Cache the new snapshot.
         let mut cached = self.cached_snapshot.lock().unwrap();
-        // Re-check: another thread may have updated the cache while we cloned.
         if cached.0 < current_version {
             *cached = (current_version, snapshot.clone());
         }
@@ -196,7 +188,6 @@ impl LocationStateStore {
     #[allow(dead_code)]
     pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {
         let guard = epoch::pin();
-        // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
         let current = unsafe { self.account.load(Ordering::Acquire, &guard).deref() };
         Arc::new(current.clone())
     }
@@ -227,7 +218,6 @@ impl LocationStateStore {
 
         loop {
             let current = self.account.load(Ordering::Acquire, &guard);
-            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current_ref = unsafe { current.deref() };
             let next_state = f(current_ref);
 
@@ -238,9 +228,10 @@ impl LocationStateStore {
                 Ordering::Acquire,
                 &guard,
             ) {
-                Ok(old) => {
-                    // SAFETY: old pointer is detached after successful exchange.
-                    unsafe { guard.defer_destroy(old) };
+                Ok(_new) => {
+                    // `current` is the old value that was just replaced.
+                    // `_new` is the newly installed value (do NOT retire it).
+                    unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
                     return;
                 }
