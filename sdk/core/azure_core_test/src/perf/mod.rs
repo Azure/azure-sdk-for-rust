@@ -242,7 +242,7 @@ impl PerfRunner {
         })
     }
 
-    /// Gets a reference to a typed argument by its id.
+    /// Gets a typed argument by its id.
     pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<T>>
     where
         T: Clone + Send + Sync + 'static,
@@ -256,7 +256,7 @@ impl PerfRunner {
             .map(|arg| arg.cloned())
     }
 
-    /// Gets a reference to a typed argument for the selected test by its id.
+    /// Gets a typed argument for the selected test by its id.
     ///
     /// # Arguments
     ///
@@ -264,7 +264,7 @@ impl PerfRunner {
     ///
     /// # Returns
     ///
-    /// A reference to the argument if it exists, or None.
+    /// The argument if it exists, or None.
     pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<T>>
     where
         T: Clone + Send + Sync + 'static,

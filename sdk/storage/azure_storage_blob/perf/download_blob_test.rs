@@ -199,10 +199,8 @@ impl PerfTest for DownloadBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        self.client.get_or_init(|| {
-            BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)
-                .unwrap_or_else(|_| panic!("Failed to create BlobContainerClient"))
-        });
+        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        self.client.get_or_init(|| client);
 
         // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
         let container_client = self.client.get().unwrap();

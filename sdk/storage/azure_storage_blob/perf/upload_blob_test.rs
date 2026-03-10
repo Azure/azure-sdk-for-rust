@@ -26,9 +26,7 @@ impl UploadBlobTest {
     fn create_upload_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
             Ok(Box::new(UploadBlobTest {
-                count: runner
-                    .try_get_test_arg("count")?
-                    .expect("'count' argument is required."),
+                count: runner.try_get_test_arg("count")?.unwrap_or(5),
                 endpoint: runner.try_get_test_arg("endpoint")?,
                 client: OnceLock::new(),
                 size: runner
@@ -96,10 +94,8 @@ impl PerfTest for UploadBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        self.client.get_or_init(|| {
-            BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)
-                .unwrap_or_else(|_| panic!("Failed to create BlobContainerClient"))
-        });
+        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        self.client.get_or_init(|| client);
         let data = vec![0u8; self.size];
         self.upload_buffer
             .get_or_init(|| Bytes::copy_from_slice(&data));
@@ -112,10 +108,11 @@ impl PerfTest for UploadBlobTest {
         for i in 0..self.count {
             let blob_name = format!("blob-{}", i);
             let blob_client = container_client.blob_client(&blob_name);
-            let body = vec![0u8; 10]; // Tiny blob to focus on upload overhead rather than payload size.
-            let body_bytes = Bytes::from(body);
+            let body = self.upload_buffer.get().unwrap().clone();
 
-            let _result = blob_client.upload(body_bytes.into(), true, 5, None).await?;
+            let _result = blob_client
+                .upload(body.into(), true, self.size as u64, None)
+                .await?;
         }
 
         Ok(())
@@ -143,6 +140,21 @@ impl PerfTest for UploadBlobTest {
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // Cleanup code after running the test
+        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
+        while let Some(blob) = iterator.try_next().await? {
+            let blob_client = self
+                .client
+                .get()
+                .unwrap()
+                .blob_client(blob.name.as_ref().unwrap());
+            let _result = blob_client.delete(None).await?;
+        }
+        // After deleting all blobs, delete the container itself to avoid accumulating
+        // empty containers across repeated perf runs.
+        if let Some(container_client) = self.client.get() {
+            // Ignore "not found" errors in case the container was already removed.
+            container_client.delete(None).await?;
+        }
         Ok(())
     }
 }
