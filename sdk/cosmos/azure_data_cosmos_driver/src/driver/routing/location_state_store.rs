@@ -76,6 +76,24 @@ impl std::fmt::Debug for LocationStateStore {
     }
 }
 
+impl Drop for LocationStateStore {
+    fn drop(&mut self) {
+        // SAFETY: We have `&mut self`, so no concurrent access is possible.
+        // `epoch::unprotected()` is safe here because we are the sole owner.
+        unsafe {
+            let guard = epoch::unprotected();
+            let acct = self.account.load(Ordering::Relaxed, guard);
+            if !acct.is_null() {
+                drop(acct.into_owned());
+            }
+            let part = self.partitions.load(Ordering::Relaxed, guard);
+            if !part.is_null() {
+                drop(part.into_owned());
+            }
+        }
+    }
+}
+
 impl LocationStateStore {
     /// Creates a new location store with a single-endpoint account snapshot.
     pub fn new(
