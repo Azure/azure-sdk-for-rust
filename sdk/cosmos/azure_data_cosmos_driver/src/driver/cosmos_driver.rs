@@ -445,6 +445,7 @@ impl CosmosDriver {
 
         // Keep the operation routing snapshot in sync with current account metadata.
         // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
+        // Skips the CAS loop when the etag matches (same server version).
         self.location_state_store.sync_account_properties(
             account_properties.as_ref(),
             self.location_state_store.default_endpoint(),

@@ -60,6 +60,9 @@ pub(crate) struct LocationStateStore {
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
     last_refresh_epoch_ms: AtomicU64,
+    /// The etag of the last `AccountProperties` that was synced.
+    /// Used to skip the CAS loop when the account metadata hasn't changed.
+    last_synced_etag: std::sync::Mutex<String>,
 }
 
 impl std::fmt::Debug for LocationStateStore {
@@ -116,6 +119,7 @@ impl LocationStateStore {
             // Fixed refresh throttling for Step 2.
             refresh_interval: Duration::from_secs(5),
             last_refresh_epoch_ms: AtomicU64::new(0),
+            last_synced_etag: std::sync::Mutex::new(String::new()),
         }
     }
 
@@ -247,11 +251,21 @@ impl LocationStateStore {
 
     /// Updates account state from properties using a CAS loop that preserves
     /// existing `unavailable_endpoints` marks set by concurrent operations.
+    ///
+    /// Skips the CAS loop when the `AccountProperties` etag matches
+    /// the last synced value (same server version, properties unchanged).
     pub fn sync_account_properties(
         &self,
         properties: &AccountProperties,
         default_endpoint: &CosmosEndpoint,
     ) {
+        if !properties.etag.is_empty() {
+            let last = self.last_synced_etag.lock().unwrap();
+            if *last == properties.etag {
+                return;
+            }
+        }
+
         let default_endpoint = default_endpoint.clone();
         let ttl = self.endpoint_unavailability_ttl;
         self.apply_account(|current| {
@@ -268,6 +282,11 @@ impl LocationStateStore {
             next.unavailable_endpoints = unavailable;
             next
         });
+
+        if !properties.etag.is_empty() {
+            let mut last = self.last_synced_etag.lock().unwrap();
+            *last = properties.etag.clone();
+        }
     }
 }
 
