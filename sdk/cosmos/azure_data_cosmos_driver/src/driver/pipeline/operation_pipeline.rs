@@ -15,10 +15,13 @@ use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore},
+    driver::routing::{
+        session_manager::SessionManager, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
+        LocationStateStore,
+    },
     models::{
-        ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
-        SubStatusCode,
+        request_header_names, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
+        Credential, SubStatusCode,
     },
     options::{OperationOptions, RuntimeOptions},
 };
@@ -42,7 +45,7 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
-    _options: &OperationOptions,
+    options: &OperationOptions,
     effective_options: &RuntimeOptions,
     location_state_store: &LocationStateStore,
     http_client: Arc<dyn HttpClient>,
@@ -52,6 +55,8 @@ pub(crate) async fn execute_operation_pipeline(
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
+    session_manager: &SessionManager,
+    session_consistency_active: bool,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -112,13 +117,29 @@ pub(crate) async fn execute_operation_pipeline(
             ExecutionContext::RegionFailover
         };
 
-        let transport_request = build_transport_request(
+        let mut transport_request = build_transport_request(
             operation,
             &routing,
             activity_id,
             execution_context,
             deadline,
         )?;
+
+        // ── STAGE 3b: Attach cached session token ─────────────────────
+        // If session consistency is active and the user hasn't provided an explicit
+        // session token in the operation options or request headers, resolve and
+        // attach the cached token from the session manager.
+        if session_consistency_active
+            && options.session_token_ref().is_none()
+            && operation.request_headers().session_token.is_none()
+        {
+            if let Some(cached_token) = session_manager.resolve_session_token(operation) {
+                transport_request.headers.insert(
+                    request_header_names::SESSION_TOKEN.clone(),
+                    HeaderValue::from(cached_token),
+                );
+            }
+        }
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
@@ -131,6 +152,17 @@ pub(crate) async fn execute_operation_pipeline(
             &mut diagnostics,
         )
         .await;
+
+        // ── STAGE 4b: Capture session token from response ─────────────
+        // Capture the session token from the response headers regardless of
+        // success/error status. This must happen before evaluate_transport_result
+        // takes ownership of the TransportResult.
+        if session_consistency_active {
+            if let Some(response_headers) = result.response_headers() {
+                let cosmos_headers = CosmosResponseHeaders::from_headers(response_headers);
+                session_manager.capture_session_token(operation, &cosmos_headers);
+            }
+        }
 
         // ── STAGE 5: Evaluate result → action ──────────────────────────
         let (action, effects) =
@@ -183,6 +215,12 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::SessionRetry { new_state } => {
+                // Clear stale session tokens before retrying on a different endpoint.
+                // This follows the .NET/Java pattern: 404/1002 means the local replica
+                // doesn't have the requested session token, so we remove the cached
+                // token and retry against another endpoint.
+                session_manager.clear_session_token(operation);
+
                 let next_location = location_state_store.snapshot();
                 let endpoints_len = preferred_endpoints_for_attempt(
                     next_location.account.as_ref(),
