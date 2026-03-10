@@ -13,6 +13,9 @@
   - `BlockBlobClient::upload()` accepts `BlockBlobClientUploadOptions`; `BlobClient::upload()` accepts `BlobClientUploadOptions` (a re-export of the same type).
   - Returns `Result<BlockBlobClientUploadResult>` (or `Result<BlobClientUploadResult>` via `BlobClient`) instead of `Result<Response<BlockBlobClientUploadInternalResult, NoFormat>>`.
   - Changed `BlockBlobClientUploadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
+- Changed `if_match`, `if_none_match`, `source_if_match`, and `source_if_none_match` fields in all method option structs from `Option<String>` to `Option<Etag>`.
+- Changed `BlobProperties::etag` and `ContainerProperties::etag` from `Option<String>` to `Option<Etag>`.
+- Renamed `ContainerItem.delete` to `ContainerItem.deleted`.
 - Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
 - Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.
 - Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))

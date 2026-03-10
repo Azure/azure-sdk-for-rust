@@ -13,7 +13,7 @@ use super::{
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     RehydratePriority,
 };
-use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
+use azure_core::{base64, fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -350,7 +350,7 @@ pub struct BlobProperties {
 
     /// The blob ETag.
     #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    pub etag: Option<Etag>,
 
     /// The expire time of the blob.
     #[serde(
@@ -632,7 +632,7 @@ pub struct ClearRange {
 pub struct ContainerItem {
     /// Whether the container is deleted.
     #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
-    pub delete: Option<bool>,
+    pub deleted: Option<bool>,
 
     /// The metadata of the container.
     #[serde(rename = "Metadata", skip_serializing_if = "Option::is_none")]
@@ -673,7 +673,7 @@ pub struct ContainerProperties {
 
     /// The ETag of the container.
     #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    pub etag: Option<Etag>,
 
     /// Whether it has an immutability policy.
     #[serde(

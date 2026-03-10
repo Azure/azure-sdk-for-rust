@@ -3,16 +3,12 @@
 
 pub use crate::generated::clients::{QueueServiceClient, QueueServiceClientOptions};
 
-use crate::{
-    clients::QueueClient,
-    generated::models::{QueueClientCreateOptions, QueueClientDeleteOptions},
-    logging::apply_storage_logging_defaults,
-};
+use crate::{clients::QueueClient, logging::apply_storage_logging_defaults};
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, Response, Url,
+        Pipeline, Url,
     },
     tracing, Result,
 };
@@ -89,33 +85,5 @@ impl QueueServiceClient {
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         })
-    }
-
-    /// Creates a new queue under the given account.
-    ///
-    /// # Arguments
-    ///
-    /// * `queue_name` - The name of the queue to create.
-    /// * `options` - Optional configuration for the request.
-    pub async fn create_queue(
-        &self,
-        queue_name: &str,
-        options: Option<QueueClientCreateOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.queue_client(queue_name)?.create(options).await
-    }
-
-    /// Permanently deletes the specified queue.
-    ///
-    /// # Arguments
-    ///
-    /// * `queue_name` - The name of the queue to delete.
-    /// * `options` - Optional configuration for the request.
-    pub async fn delete_queue(
-        &self,
-        queue_name: &str,
-        options: Option<QueueClientDeleteOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.queue_client(queue_name)?.delete(options).await
     }
 }
