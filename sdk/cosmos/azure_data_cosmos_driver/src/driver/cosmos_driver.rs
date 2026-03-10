@@ -5,14 +5,17 @@
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
-    driver::routing::{CosmosEndpoint, LocationStateStore},
+    driver::{
+        effective_consistency::is_session_consistency_effective,
+        routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
+    },
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
-        DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
-        ThroughputControlGroupSnapshot,
+        DiagnosticsOptions, DriverOptions, OperationOptions, ReadConsistencyStrategy,
+        RuntimeOptions, ThroughputControlGroupSnapshot,
     },
 };
 use azure_core::http::Request;
@@ -50,6 +53,8 @@ pub struct CosmosDriver {
     default_max_failover_retries: u32,
     /// Resolved default for max session retries (from env or None = compute at operation time).
     default_max_session_retries: Option<u32>,
+    /// Session token cache for session consistency.
+    session_manager: SessionManager,
 }
 
 impl CosmosDriver {
@@ -279,6 +284,7 @@ impl CosmosDriver {
             location_state_store,
             default_max_failover_retries,
             default_max_session_retries,
+            session_manager: SessionManager::new(),
         }
     }
 
@@ -493,7 +499,23 @@ impl CosmosDriver {
             self.runtime.user_agent().as_str().to_owned(),
         );
 
-        // Step 7: Execute via the new operation pipeline
+        // Step 7a: Determine if session consistency is active for this operation.
+        //
+        // TODO(read-consistency-strategy): Once full consistency level override
+        // pipeline is wired up, revisit this to use the merged consistency level
+        // rather than just the runtime strategy + account default.
+        let read_consistency_strategy = effective_options
+            .read_consistency_strategy
+            .unwrap_or(ReadConsistencyStrategy::Default);
+        let session_consistency_active = !self.options.disable_session_capturing()
+            && is_session_consistency_effective(
+                read_consistency_strategy,
+                &account_properties
+                    .user_consistency_policy
+                    .default_consistency_level,
+            );
+
+        // Step 7b: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             &operation,
             &options,
@@ -506,6 +528,8 @@ impl CosmosDriver {
             pipeline_type,
             transport_security,
             diagnostics_builder,
+            &self.session_manager,
+            session_consistency_active,
         )
         .await
     }

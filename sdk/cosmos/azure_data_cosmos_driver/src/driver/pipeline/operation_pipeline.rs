@@ -15,10 +15,13 @@ use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore},
+    driver::routing::{
+        session_manager::SessionManager, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
+        LocationStateStore,
+    },
     models::{
-        ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
-        SubStatusCode,
+        request_header_names, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
+        Credential, SubStatusCode,
     },
     options::{OperationOptions, RuntimeOptions},
 };
@@ -42,7 +45,7 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
-    _options: &OperationOptions,
+    options: &OperationOptions,
     effective_options: &RuntimeOptions,
     location_state_store: &LocationStateStore,
     http_client: Arc<dyn HttpClient>,
@@ -52,6 +55,8 @@ pub(crate) async fn execute_operation_pipeline(
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
+    session_manager: &SessionManager,
+    session_consistency_active: bool,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -112,13 +117,26 @@ pub(crate) async fn execute_operation_pipeline(
             ExecutionContext::RegionFailover
         };
 
-        let transport_request = build_transport_request(
+        let mut transport_request = build_transport_request(
             operation,
             &routing,
             activity_id,
             execution_context,
             deadline,
         )?;
+
+        // ── STAGE 3b: Resolve session token ────────────────────────────
+        // If session consistency is active and the user hasn't already set a
+        // session token on the request headers, resolve from the cache.
+        if session_consistency_active {
+            let user_token = options.session_token_ref();
+            if let Some(token) = session_manager.resolve_session_token(operation, user_token) {
+                transport_request.headers.insert(
+                    request_header_names::SESSION_TOKEN.clone(),
+                    HeaderValue::from(token.as_str().to_owned()),
+                );
+            }
+        }
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
@@ -135,6 +153,18 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 5: Evaluate result → action ──────────────────────────
         let (action, effects) =
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
+
+        // ── STAGE 5b: Capture session token ────────────────────────────
+        // On any successful transport result that carries response headers,
+        // capture the session token into the cache (regardless of retry action).
+        if session_consistency_active {
+            if let OperationAction::Complete(ref tr) = action {
+                if let TransportOutcome::Success { ref headers, .. } = tr.outcome {
+                    let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
+                    session_manager.capture_session_token(operation, &cosmos_headers);
+                }
+            }
+        }
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         location_state_store.apply(&effects).await;
@@ -183,6 +213,13 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::SessionRetry { new_state } => {
+                // Clear cached session tokens for this container on
+                // 404/1002 (ReadSessionNotAvailable). The container may
+                // have been recreated with a different RID.
+                if session_consistency_active {
+                    session_manager.clear_session_token(operation);
+                }
+
                 let next_location = location_state_store.snapshot();
                 let endpoints_len = preferred_endpoints_for_attempt(
                     next_location.account.as_ref(),

@@ -25,6 +25,9 @@ mod request_charge;
 mod resource_id;
 mod resource_reference;
 mod user_agent;
+pub(crate) mod vector_session_token;
+
+pub(crate) use cosmos_headers::request_header_names;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
