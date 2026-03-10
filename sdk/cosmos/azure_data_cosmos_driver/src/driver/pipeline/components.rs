@@ -449,4 +449,32 @@ mod tests {
         let state = state.advance_failover();
         assert!(!state.can_retry_failover());
     }
+
+    #[test]
+    fn advance_session_retry_single_write_routes_to_write_endpoints() {
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 2);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredEndpoints
+        );
+
+        let state = state.advance_session_retry();
+        assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredWriteEndpoints
+        );
+    }
+
+    #[test]
+    fn advance_session_retry_multi_write_stays_on_preferred_endpoints() {
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 2);
+
+        let state = state.advance_session_retry();
+        assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredEndpoints
+        );
+    }
 }
