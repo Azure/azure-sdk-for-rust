@@ -130,17 +130,11 @@ pub(crate) async fn execute_operation_pipeline(
         // session token on the request headers, resolve from the cache.
         if session_consistency_active {
             let user_token = options.session_token_ref();
-            // Do not overwrite an explicitly set per-request session token.
-            let has_explicit_session_token = transport_request
-                .headers
-                .contains_key(&request_header_names::SESSION_TOKEN);
-            if !has_explicit_session_token {
-                if let Some(token) = session_manager.resolve_session_token(operation, user_token) {
-                    transport_request.headers.insert(
-                        request_header_names::SESSION_TOKEN.clone(),
-                        HeaderValue::from(token.as_str().to_owned()),
-                    );
-                }
+            if let Some(token) = session_manager.resolve_session_token(operation, user_token) {
+                transport_request.headers.insert(
+                    request_header_names::SESSION_TOKEN.clone(),
+                    HeaderValue::from(token.as_str().to_owned()),
+                );
             }
         }
 
