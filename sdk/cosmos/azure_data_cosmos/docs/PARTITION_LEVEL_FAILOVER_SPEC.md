@@ -561,32 +561,45 @@ the counter fresh.
 ### 7.4 Circuit Breaker State Transitions
 
 ```
-                                ┌──────────────┐
-                                │   HEALTHY     │
-              ┌─────────────────│ (no entry in  │◄─────────────┐
-              │   request       │  failover map)│              │
-              │   failure       └──────┬───────┘              │
-              │                        │                       │
-              ▼                        │                       │
-     ┌────────────────┐                │               ┌────────┴─────────┐
-     │  COUNTING       │                │              │   FAILBACK       │
-     │ (entry exists,  │                │              │ (background loop │
-     │  threshold NOT  │                │              │  removes entry   │
-     │  exceeded)      │                │              │ after cool-down) │
-     │                 │    consecutive  │             └──────────────────┘
-     │  counter++      │    failures    │                       ▲
-     │                 │    > threshold  │                       │
-     └────────┬───────┘                │                       │
-              │                        │                       │
-              ▼                        │                       │
-     ┌────────────────┐                │                       │
-     │   TRIPPED       │ ──────────────┘                       │
-     │ (entry.current  │                                       │
-     │  = next region, │                                       │
-     │  override       ├───────────────────────────────────────┘
-     │  applied)       │   unavailability_duration exceeded
-     └────────────────┘   (non-deterministic health recovery)
+                              ┌───────────────────┐
+                              │     HEALTHY       │
+           ┌──────────────────│  (no entry in     │◄────────────────────────────┐
+           │  (1) first       │   failover map)   │                             │
+           │      failure     └──▲────────────▲───┘                             │
+           │                     │            │                                 │
+           ▼                (3)  │       (4)  │                            (5)  │
+  ┌──────────────────┐  failback │  all locs  │                     ┌──────────┴───────────┐
+  │   COUNTING       │  removes  │  exhausted │                     │      FAILBACK        │
+  │ (entry exists,   │  entry    │  → entry   │                     │  (background loop    │
+  │  threshold NOT   │────────── ┘  removed   │                     │   removes entry      │
+  │  exceeded)       │                        │                     │   after cool down)   │
+  │  counter++       │                        │                     └──────────▲───────────┘
+  └────────┬─────────┘                        │                                │
+           │                                  │                                │
+           │ (2) consecutive failures         │                                │
+           │     > threshold                  │                                │
+           ▼                                  │                                │
+  ┌──────────────────┐                        │                                │
+  │   TRIPPED        │────────────────────────┘                                │
+  │ (entry.current   │                                                         │
+  │  = next region,  │─────────────────────────────────────────────────────────┘
+  │  override        │   unavailability_duration exceeded
+  │  applied)        │
+  │                  │◄──┐  (6) next region also fails:
+  └──────────────────┘   │      move to subsequent region
+           └─────────────┘
 ```
+
+**Transitions:**
+
+| # | From | To | Trigger |
+|---|---|---|---|
+| 1 | HEALTHY | COUNTING | First failure creates an entry in the failover map; counter incremented but below threshold. |
+| 2 | COUNTING | TRIPPED | Counter exceeds threshold; `try_mark_endpoint_unavailable_for_partition_key_range()` moves the partition to the next region; override is now applied on subsequent requests. |
+| 3 | COUNTING | HEALTHY | Background failback loop removes the entry after `partition_unavailability_duration` elapses (threshold was never reached). |
+| 4 | TRIPPED | HEALTHY | All locations exhausted in `try_move_next_location()`; entry is removed from the map and the partition returns to default routing. |
+| 5 | TRIPPED | HEALTHY (via FAILBACK) | Background failback loop removes the entry after `partition_unavailability_duration` elapses; next request routes back to the original region. |
+| 6 | TRIPPED | TRIPPED | Alternate region also fails; `try_move_next_location()` advances to the next available region. |
 
 ---
 
