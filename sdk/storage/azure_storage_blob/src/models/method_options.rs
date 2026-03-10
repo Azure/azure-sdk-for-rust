@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{collections::HashMap, num::NonZero};
+use std::{collections::HashMap, num::NonZero, ops::Range};
 
-use azure_core::{fmt::SafeDebug, http::ClientMethodOptions};
+use azure_core::{
+    fmt::SafeDebug,
+    http::{ClientMethodOptions, Etag},
+};
 use time::OffsetDateTime;
 
 use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode};
@@ -52,6 +55,15 @@ pub struct BlobClientManagedDownloadOptions<'a> {
     /// Optional. Size to partition data into.
     /// A default value will be chosen if none is provided.
     pub partition_size: Option<NonZero<usize>>,
+
+    /// Optional range of the blob to download.
+    ///
+    /// The range is specified in byte offsets and uses standard Rust range semantics:
+    /// `start` is the first byte offset to include, and `end` is a byte offset that is
+    /// *not* included in the download (i.e. `start..end` is end-exclusive).
+    ///
+    /// When set to `None`, the entire blob will be downloaded.
+    pub range: Option<Range<usize>>,
 
     /// Optional. When this header is set to true and specified together with the Range header, the service returns the CRC64
     /// hash for the range, as long as the range is less than or equal to 4 MB in size.
@@ -131,7 +143,7 @@ pub struct BlockBlobClientManagedUploadOptions<'a> {
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
@@ -139,7 +151,7 @@ pub struct BlockBlobClientManagedUploadOptions<'a> {
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.

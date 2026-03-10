@@ -24,8 +24,7 @@ pub type PolicyResult = typespec::error::Result<AsyncRawResponse>;
 /// Policies can then inspect the response, potentially signaling failure.
 /// The only runtime enforced check is that the last policy must be a Transport policy. It's up to
 /// the implementer to call the subsequent policy.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait Policy: Send + Sync + std::fmt::Debug {
     /// Send the request through this policy and the subsequent policies in the pipeline.
     ///

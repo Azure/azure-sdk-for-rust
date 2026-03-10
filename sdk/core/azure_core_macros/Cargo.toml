@@ -1,6 +1,6 @@
 [package]
 name = "azure_core_macros"
-version = "0.6.0"
+version = "0.7.0"
 description = "Procedural macros for client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_core"
-keywords = ["azure", "cloud", "iot", "rest", "sdk"]
+keywords = ["cloud", "iot", "rest", "sdk"]
 categories = ["development-tools"]
 edition.workspace = true
 rust-version.workspace = true

@@ -29,28 +29,18 @@ where
 ///
 /// # Constructing
 ///
-/// When constructing this type, you should **always** use [Struct Update] syntax using `..Default::default()`, for example:
+/// When constructing this type, use [`ContainerProperties::new()`] with the required values, for example:
 ///
 /// ```rust
 /// # use azure_data_cosmos::models::ContainerProperties;
-/// let properties = ContainerProperties {
-///     id: "NewContainer".into(),
-///     partition_key: "/partitionKey".into(),
-///     ..Default::default()
-/// };
+/// let properties = ContainerProperties::new("NewContainer", "/partitionKey".into());
 /// ```
 ///
-/// Using this syntax has two purposes:
-///
-/// 1. It allows you to construct the type even though [`SystemProperties`] is not constructable (these properties should always be empty when you send a request).
-/// 2. It protects you if we add additional properties to this struct.
-///
 /// Also, note that the `id` and `partition_key` values are **required** by the server. You will get an error from the server if you omit them.
-///
-/// [Struct Update]: https://doc.rust-lang.org/stable/book/ch05-01-defining-structs.html?highlight=Struct#creating-instances-from-other-instances-with-struct-update-syntax
-#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct ContainerProperties {
     /// The ID of the container.
     pub id: Cow<'static, str>,
@@ -97,10 +87,63 @@ pub struct ContainerProperties {
     pub system_properties: SystemProperties,
 }
 
+impl ContainerProperties {
+    pub fn new(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self {
+        Self {
+            id: id.into(),
+            partition_key,
+            indexing_policy: None,
+            unique_key_policy: None,
+            conflict_resolution_policy: None,
+            vector_embedding_policy: None,
+            default_ttl: None,
+            analytical_storage_ttl: None,
+            system_properties: SystemProperties::default(),
+        }
+    }
+
+    pub fn with_indexing_policy(mut self, indexing_policy: IndexingPolicy) -> Self {
+        self.indexing_policy = Some(indexing_policy);
+        self
+    }
+
+    pub fn with_unique_key_policy(mut self, unique_key_policy: UniqueKeyPolicy) -> Self {
+        self.unique_key_policy = Some(unique_key_policy);
+        self
+    }
+
+    pub fn with_conflict_resolution_policy(
+        mut self,
+        conflict_resolution_policy: ConflictResolutionPolicy,
+    ) -> Self {
+        self.conflict_resolution_policy = Some(conflict_resolution_policy);
+        self
+    }
+
+    pub fn with_vector_embedding_policy(
+        mut self,
+        vector_embedding_policy: VectorEmbeddingPolicy,
+    ) -> Self {
+        self.vector_embedding_policy = Some(vector_embedding_policy);
+        self
+    }
+
+    pub fn with_default_ttl(mut self, default_ttl: Duration) -> Self {
+        self.default_ttl = Some(default_ttl);
+        self
+    }
+
+    pub fn with_analytical_storage_ttl(mut self, analytical_storage_ttl: Duration) -> Self {
+        self.analytical_storage_ttl = Some(analytical_storage_ttl);
+        self
+    }
+}
+
 /// Represents the vector embedding policy for a container.
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct VectorEmbeddingPolicy {
     /// The [`VectorEmbedding`]s that describe the vector embeddings of items in the container.
     #[serde(rename = "vectorEmbeddings")]
@@ -111,6 +154,7 @@ pub struct VectorEmbeddingPolicy {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct VectorEmbedding {
     /// The path to the property containing the vector.
     pub path: String,
@@ -165,6 +209,7 @@ pub enum VectorDistanceFunction {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct UniqueKeyPolicy {
     /// The keys defined in this policy.
     pub unique_keys: Vec<UniqueKey>,
@@ -174,6 +219,7 @@ pub struct UniqueKeyPolicy {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct UniqueKey {
     /// The set of paths which must be unique for each item.
     pub paths: Vec<String>,
@@ -185,6 +231,7 @@ pub struct UniqueKey {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct ConflictResolutionPolicy {
     /// The conflict resolution mode.
     pub mode: ConflictResolutionMode,
@@ -265,14 +312,10 @@ mod tests {
     pub fn container_properties_default_serialization() {
         // This test asserts that the default value serializes the same way across SDK versions.
         // When new properties are added to ContainerProperties, this test should not break.
-        // If it does, users who are using `..Default::default()` syntax will start sending an unexpected payload to the server.
+        // If it does, users may start sending an unexpected payload to the server.
         // In rare cases, it's reasonable to update this test, if the new generated JSON is considered _equivalent_ to the original by the server.
         // But in general, a failure in this test means that the same user code will send an unexpected value in a new version of the SDK.
-        let properties = ContainerProperties {
-            id: "MyContainer".into(),
-            partition_key: "/partitionKey".into(),
-            ..Default::default()
-        };
+        let properties = ContainerProperties::new("MyContainer", "/partitionKey".into());
         let json = serde_json::to_string(&properties).unwrap();
 
         assert_eq!(

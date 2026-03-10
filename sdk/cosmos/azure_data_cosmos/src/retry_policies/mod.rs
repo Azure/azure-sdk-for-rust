@@ -5,13 +5,13 @@ pub mod client_retry_policy;
 pub mod metadata_request_retry_policy;
 pub mod resource_throttle_retry_policy;
 
-use crate::constants::{SubStatusCode, SUB_STATUS};
+use crate::constants::{SubStatusCode, RETRY_WITH, SUB_STATUS};
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use azure_core::error::ErrorKind;
-use azure_core::http::RawResponse;
+use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 
 /// Result of a retry policy decision
@@ -64,7 +64,7 @@ impl RetryResult {
 #[allow(dead_code)]
 pub enum RetryPolicy {
     /// Data plane retry policy for document operations with comprehensive failure handling
-    Client(ClientRetryPolicy),
+    Client(Box<ClientRetryPolicy>),
     /// Metadata operation retry policy for control plane operations with endpoint failover
     Metadata(MetadataRequestRetryPolicy),
     /// Throttling-focused retry policy for rate limit scenarios with exponential backoff
@@ -127,6 +127,39 @@ impl RetryPolicy {
     }
 }
 
+/// Returns `true` if the given status code and sub-status code combination is non-retryable.
+///
+/// Most status codes listed here indicate client-side errors that will not succeed on retry,
+/// regardless of which endpoint handles the request. The sub-status code is needed for
+/// `NotFound` (404): a plain 404 is non-retryable, but `404:1002` (ReadSessionNotAvailable)
+/// is retryable and handled by session-aware retry logic. `TooManyRequests` (429) is also
+/// included because it should not be retried by the client/metadata retry policies; instead,
+/// it is handled by the dedicated `ResourceThrottleRetryPolicy` which implements proper
+/// exponential backoff with `x-ms-retry-after-ms` headers.
+fn is_non_retryable_status_code(
+    status_code: StatusCode,
+    sub_status_code: Option<SubStatusCode>,
+) -> bool {
+    // 404 is non-retryable unless the sub-status indicates ReadSessionNotAvailable (1002),
+    // which is a transient routing condition retried via session-aware logic.
+    if status_code == StatusCode::NotFound {
+        return sub_status_code != Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+    }
+
+    matches!(
+        status_code,
+        StatusCode::BadRequest
+            | StatusCode::Unauthorized
+            | StatusCode::MethodNotAllowed
+            | StatusCode::Conflict
+            | StatusCode::PreconditionFailed
+            | StatusCode::PayloadTooLarge
+            | StatusCode::Locked
+            | StatusCode::TooManyRequests
+            | RETRY_WITH
+    )
+}
+
 /// Extracts the Cosmos DB sub-status code from an error.
 ///
 /// # Summary
@@ -176,4 +209,78 @@ fn get_substatus_code_from_response(response: &RawResponse) -> Option<SubStatusC
         .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
         .ok()
         .map(SubStatusCode::from)
+}
+
+/// Whether the HTTP request was actually sent to the server.
+///
+/// This determines retry safety:
+/// - [`NotSent`](RequestSentStatus::NotSent): safe to retry both reads and writes.
+/// - [`Sent`](RequestSentStatus::Sent) or [`Unknown`](RequestSentStatus::Unknown):
+///   only safe to retry reads because writes may have been applied.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RequestSentStatus {
+    /// The request was definitely not sent (e.g., connection refused, DNS failure).
+    NotSent,
+    /// The request was definitely sent (e.g., got an HTTP response, decode error).
+    Sent,
+    /// Cannot determine whether the request was sent (e.g., timeout, body error).
+    Unknown,
+}
+
+/// Extension trait for determining request sent status from errors.
+///
+/// Uses [`ErrorKind`] to classify errors. The HTTP client layer (e.g., reqwest)
+/// is responsible for mapping transport errors to the appropriate `ErrorKind`
+/// variants (`Connection`, etc.).
+pub(crate) trait RequestSentExt {
+    /// Returns the [`RequestSentStatus`] based on error analysis.
+    fn request_sent_status(&self) -> RequestSentStatus;
+}
+
+impl RequestSentExt for azure_core::Error {
+    fn request_sent_status(&self) -> RequestSentStatus {
+        match self.kind() {
+            ErrorKind::Connection | ErrorKind::Credential | ErrorKind::DataConversion => {
+                RequestSentStatus::NotSent
+            }
+            ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
+            _ => RequestSentStatus::Unknown,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn connection_error_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Connection, "connection refused");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
+
+    #[test]
+    fn io_error_is_unknown() {
+        let err = azure_core::Error::with_message(ErrorKind::Io, "some io error");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+    }
+
+    #[test]
+    fn http_response_is_sent() {
+        let err = azure_core::Error::with_message(
+            ErrorKind::HttpResponse {
+                status: azure_core::http::StatusCode::InternalServerError,
+                error_code: None,
+                raw_response: None,
+            },
+            "server error",
+        );
+        assert_eq!(err.request_sent_status(), RequestSentStatus::Sent);
+    }
+
+    #[test]
+    fn credential_is_not_sent() {
+        let err = azure_core::Error::with_message(ErrorKind::Credential, "auth failed");
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
 }

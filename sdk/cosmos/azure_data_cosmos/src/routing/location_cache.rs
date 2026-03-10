@@ -56,7 +56,7 @@ impl RequestOperation {
 
 /// Contains location and endpoint information for a Cosmos DB account.
 #[derive(Clone, Default, Debug)]
-pub struct DatabaseAccountLocationsInfo {
+pub(crate) struct DatabaseAccountLocationsInfo {
     /// User-specified preferred Azure regions for request routing
     pub preferred_locations: Vec<RegionName>,
     /// List of regions where write operations are supported
@@ -75,7 +75,7 @@ pub struct DatabaseAccountLocationsInfo {
 
 /// Tracks when an endpoint was marked unavailable and for which operations.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct LocationUnavailabilityInfo {
+pub(crate) struct LocationUnavailabilityInfo {
     /// Timestamp when the endpoint was last marked unavailable
     pub last_check_time: SystemTime,
     /// Type of operation(s) for which the endpoint is unavailable
@@ -88,7 +88,7 @@ pub struct LocationUnavailabilityInfo {
 /// handles preferred location ordering, and resolves service endpoints based on request
 /// characteristics and regional preferences.
 #[derive(Debug)]
-pub struct LocationCache {
+pub(crate) struct LocationCache {
     /// The primary default endpoint URL for the Cosmos DB account
     pub default_endpoint: Url,
     /// Location and endpoint information including preferred regions and available endpoints
@@ -205,6 +205,13 @@ impl LocationCache {
         }
 
         self.locations_info.preferred_locations = effective_preferred_locations;
+
+        // Clear existing endpoint lists before repopulating to prevent
+        // duplicate accumulation across repeated update() calls (e.g.
+        // periodic account-property refreshes).
+        self.locations_info.write_endpoints.clear();
+        self.locations_info.read_endpoints.clear();
+
         // Separate write locations into appropriate hashmap and list
         if !write_locations.is_empty() {
             let (account_write_endpoints_by_location, account_write_locations) =
@@ -317,7 +324,7 @@ impl LocationCache {
     /// The resolved endpoint URL as a String
     pub fn resolve_service_endpoint(&self, request: &CosmosRequest) -> Url {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
-        let location_index = request.request_context.location_index_to_route.unwrap_or(0) as usize;
+        let location_index = request.request_context.location_index_to_route.unwrap_or(0);
         let mut location_endpoint_to_route = None;
         if !request
             .request_context
@@ -405,12 +412,11 @@ impl LocationCache {
     ///
     /// # Summary
     /// Retrieves the list of endpoints applicable for the request based on operation type.
-    /// Currently, returns read endpoints for all requests. . Used by retry policies to
-    /// determine available
-    /// failover endpoints.
+    /// Returns read endpoints for read-only operations and write endpoints for write operations.
+    /// Used by retry policies to determine available failover endpoints.
     ///
     /// # Arguments
-    /// * `_request` - The Cosmos DB request (currently unused, pending fix)
+    /// * `operation_type` - The type of Cosmos DB operation
     ///
     /// # Returns
     /// A vector of applicable endpoint URLs
@@ -440,9 +446,29 @@ impl LocationCache {
     /// Refreshes the ordered endpoint lists based on availability and preferences.
     ///
     /// # Summary
-    /// Removes stale unavailability for entries older than 5 minutes.
-    /// Called after marking endpoints unavailable or updating account regions.
+    /// Rebuilds the read and write endpoint lists by querying preferred locations against
+    /// available endpoints from the account. Orders endpoints by preference with available
+    /// endpoints first and unavailable endpoints last. Also removes stale unavailability
+    /// entries older than 5 minutes. Called after marking endpoints unavailable or updating
+    /// account regions.
     fn refresh_endpoints(&mut self) {
+        // Rebuild the preferred-and-availability-ordered endpoint lists so
+        // that unavailable endpoints are pushed to the back.  Without this,
+        // mark_endpoint_unavailable has no effect on routing order.
+        self.locations_info.write_endpoints = self.get_preferred_available_endpoints(
+            &self.locations_info.account_write_endpoints_by_location,
+            RequestOperation::Write,
+            &self.default_endpoint,
+            None,
+        );
+
+        self.locations_info.read_endpoints = self.get_preferred_available_endpoints(
+            &self.locations_info.account_read_endpoints_by_location,
+            RequestOperation::Read,
+            &self.default_endpoint,
+            None,
+        );
+
         self.refresh_stale_endpoints();
     }
 
@@ -568,6 +594,8 @@ impl LocationCache {
 mod tests {
     use super::*;
     use crate::operation_context::OperationType;
+    use crate::region_proximity::generate_preferred_region_list;
+    use crate::regions;
     use crate::resource_context::{ResourceLink, ResourceType};
     use std::{collections::HashSet, vec};
 
@@ -1163,6 +1191,261 @@ mod tests {
     }
 
     #[test]
+    fn repeated_update_does_not_duplicate_write_endpoints() {
+        // Bug 1: Calling update() multiple times should NOT accumulate
+        // duplicate entries in write_endpoints.
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
+
+        let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
+
+        // First update — 2 write endpoints expected
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(cache.locations_info.write_endpoints.len(), 2);
+
+        // Second update (simulates periodic account-property refresh)
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(
+            cache.locations_info.write_endpoints.len(),
+            2,
+            "write_endpoints should not grow after a second update()"
+        );
+
+        // Third update — still 2
+        cache.update(write_locations, read_locations).unwrap();
+        assert_eq!(
+            cache.locations_info.write_endpoints.len(),
+            2,
+            "write_endpoints should not grow after a third update()"
+        );
+    }
+
+    #[test]
+    fn repeated_update_does_not_duplicate_read_endpoints() {
+        // Bug 1: Calling update() multiple times should NOT accumulate
+        // duplicate entries in read_endpoints.
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
+
+        let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
+
+        // First update — 4 read endpoints expected
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(cache.locations_info.read_endpoints.len(), 4);
+
+        // Second update
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+        assert_eq!(
+            cache.locations_info.read_endpoints.len(),
+            4,
+            "read_endpoints should not grow after a second update()"
+        );
+
+        // Third update — still 4
+        cache.update(write_locations, read_locations).unwrap();
+        assert_eq!(
+            cache.locations_info.read_endpoints.len(),
+            4,
+            "read_endpoints should not grow after a third update()"
+        );
+    }
+
+    #[test]
+    fn single_write_region_stays_single_after_repeated_updates() {
+        // Bug 3: A single-master account (1 write region) must keep
+        // can_use_multiple_write_locations() == false even after many update() calls.
+        let default_endpoint: Url = "https://default.documents.example.com".parse().unwrap();
+
+        let single_write = vec![AccountRegion {
+            database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
+            name: RegionName::from("Location 1"),
+        }];
+
+        let read_locations = vec![
+            AccountRegion {
+                database_account_endpoint: "https://location1.documents.example.com"
+                    .parse()
+                    .unwrap(),
+                name: RegionName::from("Location 1"),
+            },
+            AccountRegion {
+                database_account_endpoint: "https://location2.documents.example.com"
+                    .parse()
+                    .unwrap(),
+                name: RegionName::from("Location 2"),
+            },
+        ];
+
+        let preferred = vec![
+            RegionName::from("Location 1"),
+            RegionName::from("Location 2"),
+        ];
+
+        let mut cache = LocationCache::new(default_endpoint, preferred, vec![]);
+
+        for i in 0..10 {
+            cache
+                .update(single_write.clone(), read_locations.clone())
+                .unwrap();
+            assert_eq!(
+                cache.locations_info.write_endpoints.len(),
+                1,
+                "write_endpoints should stay at 1 after update #{}",
+                i + 1
+            );
+            assert!(
+                !cache.can_use_multiple_write_locations(),
+                "single-master must report can_use_multiple_write_locations() == false after update #{}", i + 1
+            );
+        }
+    }
+
+    #[test]
+    fn mark_write_endpoint_unavailable_reorders_after_refresh() {
+        // Bug 2: mark_endpoint_unavailable must cause refresh_endpoints to
+        // push the unavailable endpoint to the back of write_endpoints.
+        let mut cache = create_test_location_cache();
+
+        let endpoint1: Url = "https://location1.documents.example.com".parse().unwrap();
+        let endpoint2: Url = "https://location2.documents.example.com".parse().unwrap();
+
+        // Before marking: endpoint1 is first
+        assert_eq!(cache.locations_info.write_endpoints[0], endpoint1);
+
+        // Mark endpoint1 unavailable for writes
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Write);
+
+        // After marking: endpoint2 should be first, endpoint1 last
+        assert_eq!(
+            cache.locations_info.write_endpoints.first(),
+            Some(&endpoint2),
+            "available endpoint should be first after marking endpoint1 unavailable"
+        );
+        assert_eq!(
+            cache.locations_info.write_endpoints.last(),
+            Some(&endpoint1),
+            "unavailable endpoint should be last after marking endpoint1 unavailable"
+        );
+    }
+
+    #[test]
+    fn mark_read_endpoint_unavailable_reorders_after_refresh() {
+        // Bug 2: mark_endpoint_unavailable must cause refresh_endpoints to
+        // push the unavailable endpoint to the back of read_endpoints.
+        let mut cache = create_test_location_cache();
+
+        let endpoint1: Url = "https://location1.documents.example.com".parse().unwrap();
+
+        // Before marking: endpoint1 is first
+        assert_eq!(cache.locations_info.read_endpoints[0], endpoint1);
+
+        // Mark endpoint1 unavailable for reads
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
+
+        // After marking: endpoint1 should be last in read_endpoints
+        assert_ne!(
+            cache.locations_info.read_endpoints.first(),
+            Some(&endpoint1),
+            "unavailable endpoint should not be first after marking"
+        );
+        assert_eq!(
+            cache.locations_info.read_endpoints.last(),
+            Some(&endpoint1),
+            "unavailable endpoint should be last after marking"
+        );
+    }
+
+    #[test]
+    fn mark_unavailable_then_update_preserves_correct_count() {
+        // Combined scenario: mark an endpoint unavailable, then call update()
+        // again (simulating a refresh cycle). Endpoints should not duplicate
+        // and the unavailable endpoint should still be ordered last.
+        let (
+            default_endpoint,
+            write_locations,
+            read_locations,
+            preferred_locations,
+            excluded_regions,
+        ) = create_test_data();
+
+        let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
+        cache
+            .update(write_locations.clone(), read_locations.clone())
+            .unwrap();
+
+        let endpoint1: Url = "https://location1.documents.example.com".parse().unwrap();
+        let endpoint2: Url = "https://location2.documents.example.com".parse().unwrap();
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Write);
+
+        // Endpoint count should still be 2, with unavailable endpoint last
+        assert_eq!(cache.locations_info.write_endpoints.len(), 2);
+        assert_eq!(
+            cache.locations_info.write_endpoints.first(),
+            Some(&endpoint2),
+            "available endpoint should be first after marking endpoint1 unavailable"
+        );
+        assert_eq!(
+            cache.locations_info.write_endpoints.last(),
+            Some(&endpoint1),
+            "unavailable endpoint should be last after marking endpoint1 unavailable"
+        );
+
+        // Now simulate an account-property refresh
+        cache.update(write_locations, read_locations).unwrap();
+
+        // Endpoint count should still be 2 (no duplicates)
+        assert_eq!(
+            cache.locations_info.write_endpoints.len(),
+            2,
+            "write_endpoints should not accumulate after update following mark_unavailable"
+        );
+
+        // The unavailable endpoint should still be ordered last after the update()
+        // because refresh_endpoints() rebuilds lists with availability ordering.
+        assert_eq!(
+            cache.locations_info.write_endpoints.first(),
+            Some(&endpoint2),
+            "available endpoint should still be first after update()"
+        );
+        assert_eq!(
+            cache.locations_info.write_endpoints.last(),
+            Some(&endpoint1),
+            "previously-unavailable endpoint should still be last after update()"
+        );
+
+        // Also verify via get_applicable_endpoints (the public routing API)
+        let applicable = cache.get_applicable_endpoints(OperationType::Create, None);
+        assert_eq!(
+            applicable.first(),
+            Some(&endpoint2),
+            "get_applicable_endpoints should route to available endpoint first"
+        );
+        assert_eq!(
+            applicable.last(),
+            Some(&endpoint1),
+            "get_applicable_endpoints should place unavailable endpoint last"
+        );
+    }
+
+    #[test]
     fn resolve_service_endpoint_effective_preferred_regions() {
         // effective preferred regions should be ordered as preferred regions + remaining regions from account - excluded regions
         // normal region order is Location 1, Location 2, Location 3, Location 4
@@ -1196,6 +1479,298 @@ mod tests {
         assert_eq!(
             endpoint,
             Url::parse("https://location1.documents.example.com").unwrap()
+        );
+    }
+
+    /// Verifies that when preferred regions come from the proximity table (many regions),
+    /// the LocationCache correctly filters them to only account-present regions while
+    /// preserving the proximity ordering.
+    #[test]
+    fn preferred_regions_filtered_to_account_regions_in_proximity_order() {
+        // Simulate application_region = EAST_US → generates ~96 proximity-sorted regions
+        let proximity_list = generate_preferred_region_list(&regions::EAST_US)
+            .expect("EAST_US should be a known region")
+            .to_vec();
+
+        // Account only has these 3 regions (subset of the 96)
+        let account_regions = vec![
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_EUROPE.clone(),
+                database_account_endpoint: "https://test-westeurope.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        let default_endpoint: Url = "https://test.documents.azure.com:443/".parse().unwrap();
+
+        let mut cache = LocationCache::new(
+            default_endpoint.clone(),
+            proximity_list,
+            vec![], // no excluded regions
+        );
+        // Feed account properties (writable = readable for simplicity)
+        cache
+            .update(account_regions.clone(), account_regions)
+            .unwrap();
+
+        let read_endpoints = cache.read_endpoints();
+
+        // Only the 3 account-present regions should appear in the read endpoints,
+        // in proximity order: from EAST_US, East US 2 is closest, then West US, then West Europe.
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        assert_eq!(
+            endpoint_strings,
+            vec![
+                "https://test-eastus2.documents.azure.com/",
+                "https://test-westus.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
+            "endpoints should be in proximity order from East US"
+        );
+    }
+
+    /// Verifies that write endpoints also respect proximity ordering from
+    /// the preferred regions list.
+    #[test]
+    fn write_endpoints_respect_proximity_order() {
+        let proximity_list = generate_preferred_region_list(&regions::WEST_EUROPE)
+            .expect("WEST_EUROPE should be a known region")
+            .to_vec();
+
+        // Account has 2 write regions
+        let write_regions = vec![
+            AccountRegion {
+                name: regions::EAST_US.clone(),
+                database_account_endpoint: "https://test-eastus.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::NORTH_EUROPE.clone(),
+                database_account_endpoint: "https://test-northeurope.documents.azure.com:443/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+        let read_regions = write_regions.clone();
+
+        let default_endpoint: Url = "https://test.documents.azure.com:443/".parse().unwrap();
+
+        let mut cache = LocationCache::new(default_endpoint, proximity_list, vec![]);
+        cache.update(write_regions, read_regions).unwrap();
+
+        let write_endpoints = cache.write_endpoints();
+
+        // From West Europe, North Europe is much closer than East US
+        let endpoint_strings: Vec<&str> = write_endpoints.iter().map(|u| u.as_str()).collect();
+        assert_eq!(
+            endpoint_strings,
+            vec![
+                "https://test-northeurope.documents.azure.com/",
+                "https://test-eastus.documents.azure.com/",
+            ],
+            "write endpoints should be in proximity order from West Europe"
+        );
+    }
+
+    // --- Proximity + excluded regions interaction tests ---
+
+    /// Helper: creates a LocationCache with EAST_US proximity-sorted preferred regions,
+    /// the given account regions, and client-level excluded regions.
+    fn create_proximity_cache_with_exclusions(
+        account_regions: &[AccountRegion],
+        client_excluded: Vec<RegionName>,
+    ) -> LocationCache {
+        let proximity_list = generate_preferred_region_list(&regions::EAST_US)
+            .expect("EAST_US should be a known region")
+            .to_vec();
+        let default_endpoint: Url = "https://test.documents.azure.com/".parse().unwrap();
+
+        let mut cache = LocationCache::new(default_endpoint, proximity_list, client_excluded);
+        cache
+            .update(account_regions.to_vec(), account_regions.to_vec())
+            .unwrap();
+        cache
+    }
+
+    fn east_us_account_regions() -> Vec<AccountRegion> {
+        vec![
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_EUROPE.clone(),
+                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ]
+    }
+
+    /// Excluding the closest proximity region routes to the next-closest.
+    #[test]
+    fn proximity_with_closest_region_excluded() {
+        let cache = create_proximity_cache_with_exclusions(
+            &east_us_account_regions(),
+            vec![regions::EAST_US_2],
+        );
+
+        let read_endpoints = cache.read_endpoints();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        assert_eq!(
+            endpoint_strings,
+            vec![
+                "https://test-westus.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
+            "West US should be first after East US 2 is excluded"
+        );
+    }
+
+    /// Excluding multiple regions preserves proximity order among the remaining.
+    #[test]
+    fn proximity_with_multiple_regions_excluded() {
+        let mut regions_list = east_us_account_regions();
+        regions_list.push(AccountRegion {
+            name: regions::NORTH_EUROPE.clone(),
+            database_account_endpoint: "https://test-northeurope.documents.azure.com/"
+                .parse()
+                .unwrap(),
+        });
+
+        let cache = create_proximity_cache_with_exclusions(
+            &regions_list,
+            vec![regions::EAST_US_2, regions::WEST_US],
+        );
+
+        let read_endpoints = cache.read_endpoints();
+
+        // From EAST_US, North Europe (76ms) is closer than West Europe (81ms)
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        assert_eq!(
+            endpoint_strings,
+            vec![
+                "https://test-northeurope.documents.azure.com/",
+                "https://test-westeurope.documents.azure.com/",
+            ],
+            "remaining regions should preserve proximity order from East US"
+        );
+    }
+
+    /// Request-level excluded regions override client-level, restoring proximity order.
+    #[test]
+    fn proximity_request_excluded_overrides_client_excluded() {
+        // Client excludes East US 2 (closest)
+        let cache = create_proximity_cache_with_exclusions(
+            &east_us_account_regions(),
+            vec![regions::EAST_US_2],
+        );
+
+        // Request excludes West Europe instead — overrides client exclusion,
+        // so East US 2 is back and West Europe is removed.
+        let request = CosmosRequest::builder(
+            OperationType::Read,
+            ResourceLink::root(ResourceType::Documents),
+        )
+        .excluded_regions(Some(vec![regions::WEST_EUROPE]))
+        .build()
+        .ok()
+        .unwrap();
+
+        let endpoint = cache.resolve_service_endpoint(&request);
+        assert_eq!(
+            endpoint.as_str(),
+            "https://test-eastus2.documents.azure.com/",
+            "East US 2 should be routed to (request overrides client exclusion)"
+        );
+    }
+
+    /// Excluding all account regions falls back to the default endpoint.
+    #[test]
+    fn proximity_exclude_all_falls_back_to_default() {
+        let account = vec![
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        let cache = create_proximity_cache_with_exclusions(
+            &account,
+            vec![regions::EAST_US_2, regions::WEST_US],
+        );
+
+        let read_endpoints = cache.read_endpoints();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        assert_eq!(
+            endpoint_strings,
+            vec!["https://test.documents.azure.com/"],
+            "should fall back to default endpoint when all regions excluded"
+        );
+    }
+
+    /// Excluding a region not present in the account has no effect on proximity ordering.
+    #[test]
+    fn proximity_exclude_non_account_region_is_noop() {
+        let account = vec![
+            AccountRegion {
+                name: regions::EAST_US_2.clone(),
+                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+            AccountRegion {
+                name: regions::WEST_US.clone(),
+                database_account_endpoint: "https://test-westus.documents.azure.com/"
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        let cache = create_proximity_cache_with_exclusions(
+            &account,
+            vec![regions::AUSTRALIA_EAST], // not in the account
+        );
+
+        let read_endpoints = cache.read_endpoints();
+        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
+        assert_eq!(
+            endpoint_strings,
+            vec![
+                "https://test-eastus2.documents.azure.com/",
+                "https://test-westus.documents.azure.com/",
+            ],
+            "excluding a non-account region should have no effect"
         );
     }
 }

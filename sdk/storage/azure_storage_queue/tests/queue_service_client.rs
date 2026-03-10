@@ -1,14 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, Response};
+mod common;
+
 use azure_core::time::OffsetDateTime;
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
-    models::{GeoReplicationStatusType, QueueServiceClientListQueuesOptions},
+    models::{GeoReplicationStatus, QueueServiceClientListQueuesOptions},
     QueueServiceClient, QueueServiceClientOptions,
 };
+use common::{assert_successful_response, get_queue_name, recorded_test_setup};
 use futures::StreamExt;
 
 use std::option::Option;
@@ -18,9 +20,11 @@ use std::option::Option;
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
+    let queue_name = get_queue_name(recording);
 
     let response = queue_service_client
-        .create_queue("test-service-create-queue", None)
+        .queue_client(&queue_name)?
+        .create(None)
         .await?;
     let test_result = async {
         assert_successful_response(&response);
@@ -30,7 +34,8 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 
     // Clean up by deleting the queue - this always executes
     queue_service_client
-        .delete_queue("test-service-create-queue", None)
+        .queue_client(&queue_name)?
+        .delete(None)
         .await
         .unwrap();
 
@@ -45,11 +50,17 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
 
-    let queue_name = "test-service-delete-queue";
+    let queue_name = get_queue_name(recording);
 
-    queue_service_client.create_queue(queue_name, None).await?;
+    queue_service_client
+        .queue_client(&queue_name)?
+        .create(None)
+        .await?;
 
-    let response = queue_service_client.delete_queue(queue_name, None).await?;
+    let response = queue_service_client
+        .queue_client(&queue_name)?
+        .delete(None)
+        .await?;
 
     assert!(
         response.status() == 204,
@@ -108,8 +119,11 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     let queue_service_client = get_queue_service_client(recording).await?;
 
     // Create a queue to ensure we have at least one queue to list
-    let queue_name = "test-service-list-queues";
-    queue_service_client.create_queue(queue_name, None).await?;
+    let queue_name = get_queue_name(recording);
+    queue_service_client
+        .queue_client(&queue_name)?
+        .create(None)
+        .await?;
 
     let options = QueueServiceClientListQueuesOptions {
         maxresults: Some(1),
@@ -136,14 +150,17 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
 
     // Assert that our test queue is in the list
     assert!(
-        all_queue_names.contains(&queue_name.to_string()),
+        all_queue_names.contains(&queue_name),
         "Expected queue '{}' to be found in the list of queues: {:?}",
         queue_name,
         all_queue_names
     );
 
     // Clean up by deleting the created queue
-    queue_service_client.delete_queue(queue_name, None).await?;
+    queue_service_client
+        .queue_client(&queue_name)?
+        .delete(None)
+        .await?;
 
     Ok(())
 }
@@ -163,7 +180,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
     let stats = response.into_model()?;
     let geo_replication = stats.geo_replication.as_ref().unwrap();
     assert!(
-        geo_replication.status.as_ref().unwrap() == &GeoReplicationStatusType::Live,
+        geo_replication.status.as_ref().unwrap() == &GeoReplicationStatus::Live,
         "Geo-replication status should be Live"
     );
     // assert that last_sync_time is greater than Fri, 1 Jun 2025 00:00:00 GMT
@@ -189,7 +206,7 @@ pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServ
     };
     let queue_client = QueueServiceClient::new(
         &endpoint,
-        recording.credential(),
+        Some(recording.credential()),
         Option::Some(queue_client_options),
     )?;
 
@@ -211,38 +228,9 @@ pub async fn get_queue_service_client_secondary(
     };
     let queue_client = QueueServiceClient::new(
         &endpoint,
-        recording.credential(),
+        Some(recording.credential()),
         Option::Some(queue_client_options),
     )?;
 
     Ok(queue_client)
-}
-
-/// Takes in a Recording instance and returns an instrumented options bag and endpoint.
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String, String) {
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
-    let endpoint = format!(
-        "https://{}.queue.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
-    let secondary_endpoint = format!(
-        "https://{}-secondary.queue.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
-
-    (client_options, endpoint, secondary_endpoint)
-}
-
-/// Helper function to verify a successful response
-fn assert_successful_response<T, F>(response: &Response<T, F>) {
-    assert!(
-        response.status().is_success(),
-        "Expected successful status code, got {}",
-        response.status()
-    );
 }

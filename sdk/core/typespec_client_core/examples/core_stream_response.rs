@@ -5,8 +5,7 @@ use futures::StreamExt;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::fmt::format::FmtSpan;
 
-#[cfg_attr(not(target_arch = "wasm32"), tokio::main)]
-#[cfg_attr(target_arch = "wasm32", tokio::main(flavor = "current_thread"))]
+#[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Log traces to stdout.
     tracing_subscriber::fmt()

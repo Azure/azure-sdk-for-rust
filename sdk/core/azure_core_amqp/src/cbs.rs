@@ -5,15 +5,14 @@ use super::session::AmqpSession;
 use crate::error::Result;
 use azure_core::{credentials::Secret, time::OffsetDateTime};
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 
-#[cfg(any(not(any(feature = "fe2o3_amqp")), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
 /// Trait defining the asynchronous APIs for Claims-Based Security (CBS) operations over AMQP.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait AmqpClaimsBasedSecurityApis {
     /// Asynchronously attaches the Claims-Based Security (CBS) node to the AMQP session.
     ///
@@ -60,8 +59,7 @@ impl AmqpClaimsBasedSecurity {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
     async fn authorize_path(
         &self,

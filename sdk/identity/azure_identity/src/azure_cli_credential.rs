@@ -47,7 +47,7 @@ impl CliTokenResponse {
 }
 
 impl OutputProcessor for CliTokenResponse {
-    fn get_error_message(_stderr: &str) -> Option<&str> {
+    fn get_error_message(_stderr: &str) -> Option<String> {
         // Azure CLI's errors are generally clear and more helpful than anything we'd write here
         None
     }

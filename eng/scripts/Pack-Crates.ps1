@@ -148,11 +148,11 @@ try {
       Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
       Copy-Item -Path "$sourcePath.crate" -Destination $targetPath -Force
 
-      # Write-Host "Creating API review file"
-      # $apiReviewFile = Create-ApiViewFile $package
+      Write-Host "Creating API review file"
+      $apiReviewFile = Create-ApiViewFile $package
 
-      # Write-Host "Copying API review file to '$targetApiReviewFile'"
-      # Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
+      Write-Host "Copying API review file to '$targetApiReviewFile'"
+      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
   }
 

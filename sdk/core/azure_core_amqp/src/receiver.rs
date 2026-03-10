@@ -9,10 +9,10 @@ use crate::{
     ReceiverSettleMode,
 };
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
 
-#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 type ReceiverImplementation = super::noop::NoopAmqpReceiver;
 
 /// Represents the mode of issuing credit to the sender in an AMQP receiver.
@@ -65,8 +65,7 @@ pub struct AmqpReceiverOptions {
 impl AmqpReceiverOptions {}
 
 /// Trait defining the asynchronous APIs for AMQP receiver operations.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait AmqpReceiverApis {
     /// Attaches the AMQP receiver to the specified session and source.
     ///
@@ -117,8 +116,7 @@ pub struct AmqpReceiver {
     implementation: ReceiverImplementation,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl AmqpReceiverApis for AmqpReceiver {
     async fn attach(
         &self,

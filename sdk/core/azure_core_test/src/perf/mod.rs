@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![cfg(not(target_arch = "wasm32"))]
-
 use crate::TestContext;
 use azure_core::{
     error::{ErrorKind, ResultExt},

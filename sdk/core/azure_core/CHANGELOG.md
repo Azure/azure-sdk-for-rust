@@ -1,6 +1,20 @@
 # Release History
 
-## 0.32.0 (Unreleased)
+## 0.33.0 (2026-03-05)
+
+### Features Added
+
+- Added `ErrorKind::Connection` for connection errors.
+- Added `QueryBuilder`, `DEFAULT_ALLOWED_HEADER_NAMES`, `DEFAULT_ALLOWED_QUERY_PARAMETERS`, and `REDACTED_PATTERN` to `azure_core::http`.
+- Added `request_header!`, `request_option!`, and `request_query!` macros.
+- Added `SecretBytes` to `azure_core::credentials` for securely passing byte secrets without printing them in `Debug` or `Display` output.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+
+## 0.32.0 (2026-02-10)
 
 ### Features Added
 
@@ -18,10 +32,6 @@
 - Renamed `PageIterator::continuation_token` to `continuation`.
 - Renamed `PageIterator::into_continuation_token` to `into_continuation`.
 - `Pager` callbacks must now return `Result`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.31.0 (2026-01-16)
 

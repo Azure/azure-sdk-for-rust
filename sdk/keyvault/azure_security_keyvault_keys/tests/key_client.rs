@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
-
 use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_keys::{
     models::{
-        CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyClientDecryptOptions,
-        KeyClientEncryptOptions, KeyClientGetKeyOptions, KeyClientSignOptions,
-        KeyClientUnwrapKeyOptions, KeyClientVerifyOptions, KeyClientWrapKeyOptions,
+        CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyClientGetKeyOptions,
         KeyOperationParameters, KeyType, SignParameters, SignatureAlgorithm,
         UpdateKeyPropertiesParameters, VerifyParameters,
     },
@@ -241,7 +237,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
         .create_key(NAME, body.try_into()?, None)
         .await?
         .into_model()?;
-    let key_version = key.resource_id()?.version;
+    let key_version = key.resource_id()?.version.expect("key version required");
 
     // Encrypt plaintext.
     let plaintext = b"plaintext".to_vec();
@@ -251,14 +247,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let encrypted = client
-        .encrypt(
-            NAME,
-            parameters.clone().try_into()?,
-            Some(KeyClientEncryptOptions {
-                key_version: key_version.clone(),
-                ..Default::default()
-            }),
-        )
+        .encrypt(NAME, &key_version, parameters.clone().try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(encrypted.result.as_ref(), Some(ciphertext) if !ciphertext.is_empty()));
@@ -266,14 +255,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     // Decrypt ciphertext.
     parameters.value = encrypted.result;
     let decrypted = client
-        .decrypt(
-            NAME,
-            parameters.try_into()?,
-            Some(KeyClientDecryptOptions {
-                key_version,
-                ..Default::default()
-            }),
-        )
+        .decrypt(NAME, &key_version, parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(decrypted.result, Some(result) if result.eq(&plaintext)));
@@ -310,7 +292,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         .create_key(NAME, body.try_into()?, None)
         .await?
         .into_model()?;
-    let key_version = key.resource_id()?.version;
+    let key_version = key.resource_id()?.version.expect("key version required");
 
     // Hash and sign plaintext.
     let plaintext = b"plaintext".to_vec();
@@ -321,14 +303,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         value: Some(digest.clone()),
     };
     let signed = client
-        .sign(
-            NAME,
-            parameters.try_into()?,
-            Some(KeyClientSignOptions {
-                key_version: key_version.clone(),
-                ..Default::default()
-            }),
-        )
+        .sign(NAME, &key_version, parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(signed.result.as_ref(), Some(signature) if !signature.is_empty()));
@@ -340,14 +315,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         signature: signed.result,
     };
     let verified = client
-        .verify(
-            NAME,
-            parameters.try_into()?,
-            Some(KeyClientVerifyOptions {
-                key_version,
-                ..Default::default()
-            }),
-        )
+        .verify(NAME, &key_version, parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert_eq!(verified.value, Some(true));
@@ -382,7 +350,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
         .create_key(NAME, body.try_into()?, None)
         .await?
         .into_model()?;
-    let key_version = key.resource_id()?.version;
+    let key_version = key.resource_id()?.version.expect("key version required");
 
     // Generate a data encryption key.
     let dek = recording.random::<[u8; 32]>().to_vec();
@@ -394,14 +362,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let wrapped = client
-        .wrap_key(
-            NAME,
-            parameters.clone().try_into()?,
-            Some(KeyClientWrapKeyOptions {
-                key_version: key_version.clone(),
-                ..Default::default()
-            }),
-        )
+        .wrap_key(NAME, &key_version, parameters.clone().try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
@@ -409,14 +370,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     // Unwrap the DEK.
     parameters.value = wrapped.result;
     let unwrapped = client
-        .unwrap_key(
-            NAME,
-            parameters.try_into()?,
-            Some(KeyClientUnwrapKeyOptions {
-                key_version,
-                ..Default::default()
-            }),
-        )
+        .unwrap_key(NAME, &key_version, parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));

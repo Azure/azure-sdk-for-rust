@@ -344,7 +344,6 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-// TODO successfully record block ID generation to remove live-only marker
 #[recorded::test(live)]
 async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));

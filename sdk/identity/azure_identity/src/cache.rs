@@ -11,16 +11,6 @@ use tracing::trace;
 #[derive(Debug)]
 pub(crate) struct TokenCache(RwLock<HashMap<Vec<String>, AccessToken>>);
 
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) trait MaybeSend: Send {}
-#[cfg(not(target_arch = "wasm32"))]
-impl<T: Send> MaybeSend for T {}
-
-#[cfg(target_arch = "wasm32")]
-pub(crate) trait MaybeSend {}
-#[cfg(target_arch = "wasm32")]
-impl<T> MaybeSend for T {}
-
 impl TokenCache {
     pub(crate) fn new() -> Self {
         Self(RwLock::new(HashMap::new()))
@@ -33,8 +23,8 @@ impl TokenCache {
         callback: C,
     ) -> azure_core::Result<AccessToken>
     where
-        C: FnOnce(&'a [&'a str], Option<TokenRequestOptions<'a>>) -> F + MaybeSend,
-        F: Future<Output = azure_core::Result<AccessToken>> + MaybeSend,
+        C: FnOnce(&'a [&'a str], Option<TokenRequestOptions<'a>>) -> F + Send,
+        F: Future<Output = azure_core::Result<AccessToken>> + Send,
     {
         let token_cache = self.0.read().await;
         let scopes_owned = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();

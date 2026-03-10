@@ -62,8 +62,7 @@ impl KeyVaultAuthorizer {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl OnRequest for KeyVaultAuthorizer {
     /// Runs on each request before it is sent.
     ///
@@ -106,8 +105,7 @@ impl OnRequest for KeyVaultAuthorizer {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl OnChallenge for KeyVaultAuthorizer {
     /// Runs when a request receives an authentication challenge.
     ///
@@ -213,8 +211,7 @@ mod tests {
         }
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    #[async_trait]
     impl TokenCredential for MockCredential {
         async fn get_token(
             &self,

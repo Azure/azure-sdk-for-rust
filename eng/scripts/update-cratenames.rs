@@ -111,7 +111,14 @@ fn main() {
         })
         .collect();
     crate_names.extend(import_names);
-    crate_names.sort();
+    // Sort using the same order as VSCode "Sort lines ascending" (and cSpell),
+    // where '_' sorts before '-' (opposite of standard ASCII order).
+    let sort_key = |c: char| match c {
+        '-' => '_',
+        '_' => '-',
+        c => c,
+    };
+    crate_names.sort_by(|a, b| a.chars().map(sort_key).cmp(b.chars().map(sort_key)));
 
     let crate_names_path = workspace_root
         .join("eng/dict/crates.txt")

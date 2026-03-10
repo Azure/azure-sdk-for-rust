@@ -170,8 +170,7 @@ impl ImdsManagedIdentityCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(
         &self,

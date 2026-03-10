@@ -58,13 +58,14 @@
 /sdk/cosmos/             @Azure/azure-cosmos-rust-sdk
 
 # ServiceLabel: %Cosmos
-# AzureSDKOwners: @heaths
+# AzureSDKOwners: @analogrelay
 # ServiceOwners: @Pilchie
 
 # PRLabel: %KeyVault
 /sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
 
 # ServiceLabel: %KeyVault
+# AzureSDKOwners: @heaths
 # ServiceOwners: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage

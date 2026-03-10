@@ -42,10 +42,10 @@ pub extern "C" fn cosmos_database_container_client(
     container_id: *const c_char,
     out_container: *mut *mut ContainerClient,
 ) -> CosmosErrorCode {
-    context!(ctx).run_sync_with_output(out_container, || {
+    context!(ctx).run_async_with_output(out_container, async {
         let database = unwrap_required_ptr(database, error::messages::INVALID_DATABASE_POINTER)?;
         let container_id = parse_cstr(container_id, error::messages::INVALID_CONTAINER_ID)?;
-        let container_client = database.container_client(container_id);
+        let container_client = database.container_client(container_id).await;
         Ok(Box::new(container_client))
     })
 }
@@ -131,15 +131,12 @@ pub extern "C" fn cosmos_database_create_container(
             parse_cstr(container_id, error::messages::INVALID_CONTAINER_ID)?.to_string();
         let partition_key_path =
             parse_cstr(partition_key_path, error::messages::INVALID_PARTITION_KEY)?.to_string();
-        let properties = ContainerProperties {
-            id: container_id.clone().into(),
-            partition_key: partition_key_path.clone().into(),
-            ..Default::default()
-        };
+        let properties =
+            ContainerProperties::new(container_id.clone(), partition_key_path.clone().into());
 
         database.create_container(properties, None).await?;
 
-        let container_client = database.container_client(&container_id);
+        let container_client = database.container_client(&container_id).await;
 
         Ok(Box::new(container_client))
     })

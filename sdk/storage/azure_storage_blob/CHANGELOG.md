@@ -1,6 +1,25 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.10.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Changed `if_match`, `if_none_match`, `source_if_match`, and `source_if_none_match` fields in all method option structs from `Option<String>` to `Option<Etag>`.
+- Changed `BlobProperties::etag` and `ContainerProperties::etag` from `Option<String>` to `Option<Etag>`.
+- Renamed `ContainerItem.delete` to `ContainerItem.deleted`.
+- Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
+- Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+
+### Bugs Fixed
+
+- Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Blob Storage client.
+
+### Other Changes
+
+## 0.9.0 (2026-02-11)
 
 ### Features Added
 

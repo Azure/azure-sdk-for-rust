@@ -1,16 +1,22 @@
 # Release History
 
-## 0.11.0 (Unreleased)
+## 0.12.0 (2026-03-05)
 
 ### Features Added
+
+- Added `ErrorKind::Connection` for connection errors.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- Removed `tracing::FutureExt` and `tracing::WithContext`.
+
+## 0.11.0 (2026-02-10)
 
 ### Breaking Changes
 
 - Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.10.0 (2026-01-16)
 

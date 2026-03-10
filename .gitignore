@@ -19,6 +19,7 @@ review/
 results.json
 
 # Dependencies.
+node_modules/
 vcpkg_installed/
 
 # Editor user customizations.
@@ -36,3 +37,4 @@ vcpkg_installed/
 # Temporary folder to refresh SDK with TypeSpec.
 TempTypeSpecFiles/
 test-results/
+.DS_Store

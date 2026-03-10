@@ -5,7 +5,7 @@ use super::*;
 use crate::time::Duration;
 use std::sync::{Arc, Mutex};
 
-#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+#[cfg(not(feature = "tokio"))]
 #[test]
 fn test_task_spawner_execution() {
     let runtime = get_async_runtime();
@@ -108,7 +108,6 @@ async fn tokio_task_execution() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
-#[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn std_specific_handling() {
     let spawner = Arc::new(standard_runtime::StdRuntime);
@@ -126,7 +125,6 @@ fn std_specific_handling() {
 }
 
 #[test]
-#[cfg(not(target_arch = "wasm32"))]
 fn std_multiple_tasks() {
     let spawner = Arc::new(standard_runtime::StdRuntime);
     let counter = Arc::new(Mutex::new(0));
@@ -152,7 +150,7 @@ fn std_multiple_tasks() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
-#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+#[cfg(not(feature = "tokio"))]
 #[test]
 fn std_task_execution() {
     let runtime = Arc::new(standard_runtime::StdRuntime);
@@ -176,7 +174,7 @@ fn std_task_execution() {
 // Basic test that launches 10k futures and waits for them to complete:
 // it has a high chance of failing if there is a race condition in the sleep method;
 // otherwise, it runs quickly.
-#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+#[cfg(not(feature = "tokio"))]
 #[tokio::test]
 async fn test_timeout() {
     use super::*;
@@ -203,7 +201,6 @@ async fn test_timeout() {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[tokio::test]
 async fn test_sleep() {
     let runtime = get_async_runtime();
@@ -211,37 +208,6 @@ async fn test_sleep() {
     runtime.sleep(Duration::milliseconds(100)).await;
     let elapsed = start.elapsed();
     assert!(elapsed >= Duration::milliseconds(100));
-}
-
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-use wasm_bindgen_test::*;
-
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-#[wasm_bindgen_test]
-async fn wasm_bindgen_test_sleep() {
-    let runtime = get_async_runtime();
-    runtime.sleep(Duration::milliseconds(100)).await;
-}
-
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-#[wasm_bindgen_test]
-async fn wasm_bindgen_task_execution() {
-    let spawner = Arc::new(web_runtime::WasmBindgenRuntime);
-    let result = Arc::new(Mutex::new(false));
-    let result_clone = Arc::clone(&result);
-
-    let handle = spawner.spawn(Box::pin(async move {
-        // Simulate some work
-        crate::sleep::sleep(Duration::milliseconds(50)).await;
-        let mut value = result_clone.lock().unwrap();
-        *value = true;
-    }));
-
-    // Wait for task completion
-    handle.await.expect("Task should complete successfully");
-
-    // Verify the task executed
-    assert!(*result.lock().unwrap());
 }
 
 #[test]

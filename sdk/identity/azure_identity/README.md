@@ -68,8 +68,7 @@ struct AccessTokenAssertion {
     credential: Arc<dyn TokenCredential>,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl ClientAssertion for AccessTokenAssertion {
     async fn secret(&self, _: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
         Ok(self
@@ -106,29 +105,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Developer tools
 
-|Credential|Usage
-|-|-
-|[`AzureCliCredential`][cli_cred_ref]| Authenticate with [Azure CLI][Azure CLI].
-|[`AzureDeveloperCliCredential`][azd_cred_ref]| Authenticate with [Azure Developer CLI][Azure Developer CLI].
-|[`DeveloperToolsCredential`][devtool_cred_ref]| Simplified authentication for application development.
+| Credential | Usage
+| - | -
+| [`AzureCliCredential`][cli_cred_ref] | Authenticate with [Azure CLI][Azure CLI].
+| [`AzureDeveloperCliCredential`][azd_cred_ref] | Authenticate with [Azure Developer CLI][Azure Developer CLI].
+| [`DeveloperToolsCredential`][devtool_cred_ref] | Simplified authentication for application development.
 
 ### Azure-hosted applications
 
-|Credential|Usage
-|-|-
-|[`ManagedIdentityCredential`][managed_id_cred_ref]| Authenticate the managed identity of an Azure resource.
-|[`WorkloadIdentityCredential`][workload_id_cred_ref]| Supports [Workload Identity on Kubernetes](https://learn.microsoft.com/azure/aks/workload-identity-overview).
+| Credential | Usage
+| - | -
+| [`ManagedIdentityCredential`][managed_id_cred_ref] | Authenticate the managed identity of an Azure resource.
+| [`WorkloadIdentityCredential`][workload_id_cred_ref] | Supports [Workload Identity on Kubernetes](https://learn.microsoft.com/azure/aks/workload-identity-overview).
 
 ### Service principals
 
 See [Service principal authentication](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals) for general information about service principals.
 
-|Credential|Usage
-|-|-
-|[`AzurePipelinesCredential`][az_pipelines_cred_ref]| Authenticate an Azure Pipelines [service connection](https://learn.microsoft.com/azure/devops/pipelines/library/service-endpoints).
-|[`ClientAssertionCredential`][assert_cred_ref]| Authenticate a service principal with client assertions.
-|[`ClientCertificateCredential`][cert_cred_ref]| Authenticate a service principal with a certificate.
-|[`ClientSecretCredential`][secret_cred_ref]| Authenticate a service principal with a secret.
+| Credential | Usage
+| - | -
+| [`AzurePipelinesCredential`][az_pipelines_cred_ref] | Authenticate an Azure Pipelines [service connection](https://learn.microsoft.com/azure/devops/pipelines/library/service-endpoints).
+| [`ClientAssertionCredential`][assert_cred_ref] | Authenticate a service principal with client assertions.
+| [`ClientCertificateCredential`][cert_cred_ref] | Authenticate a service principal with a certificate.
+| [`ClientSecretCredential`][secret_cred_ref] | Authenticate a service principal with a secret.
 
 ## Next steps
 
@@ -165,5 +164,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Package (crates.io)]: https://crates.io/crates/azure_identity
 [secret_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientSecretCredential.html
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-[token_cred_ref]: https://docs.rs/azure_core/latest/azure_core/credentials/trait.TokenCredential.html
 [workload_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.WorkloadIdentityCredential.html

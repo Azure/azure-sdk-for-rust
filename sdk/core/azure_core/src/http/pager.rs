@@ -4,7 +4,6 @@
 //! Types and methods for pageable responses.
 
 use crate::{
-    conditional_send::ConditionalSend,
     error::ErrorKind,
     http::{
         headers::HeaderName, policies::create_public_api_span, response::Response, Context,
@@ -120,8 +119,7 @@ impl TryFrom<PagerContinuation> for Url {
 }
 
 /// Represents a single page of items returned by a collection request to a service.
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 pub trait Page {
     /// The type of items in the collection.
     type Item;
@@ -132,8 +130,7 @@ pub trait Page {
     async fn into_items(self) -> crate::Result<Self::IntoIter>;
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl<P, F> Page for Response<P, F>
 where
     P: DeserializeWith<F> + Page + Send,
@@ -204,22 +201,10 @@ pub type Pager<P, F = JsonFormat> = ItemIterator<Response<P, F>>;
 /// A pinned boxed [`Future`] that can be stored and called dynamically.
 ///
 /// Intended only for [`ItemIterator`] and [`PageIterator`].
-#[cfg(not(target_arch = "wasm32"))]
 pub type PagerResultFuture<P> =
     Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
 
-#[cfg(not(target_arch = "wasm32"))]
 type PagerFn<P> = Box<dyn Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send>;
-
-/// A pinned boxed [`Future`] that can be stored and called dynamically.
-///
-/// Intended only for [`ItemIterator`] and [`PageIterator`].
-#[cfg(target_arch = "wasm32")]
-pub type PagerResultFuture<P> =
-    Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + 'static>>;
-
-#[cfg(target_arch = "wasm32")]
-type PagerFn<P> = Box<dyn Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P>>;
 
 /// Options for configuring the behavior of a [`Pager`].
 #[derive(Clone)]
@@ -340,7 +325,7 @@ impl<'a> Default for PagerOptions<'a> {
 #[pin_project(project = ItemIteratorProjection, project_replace = ItemIteratorProjectionOwned)]
 pub struct ItemIterator<P>
 where
-    P: Page + ConditionalSend,
+    P: Page + Send,
 {
     #[pin]
     iter: PageIterator<P>,
@@ -355,7 +340,7 @@ where
 
 impl<P> ItemIterator<P>
 where
-    P: Page + ConditionalSend,
+    P: Page + Send,
 {
     /// Creates a [`ItemIterator`] from a callback that will be called repeatedly to request each page.
     ///
@@ -381,8 +366,7 @@ where
     ///     items: Vec<String>,
     ///     next_link: Option<String>,
     /// }
-    /// #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-    /// #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    /// #[async_trait::async_trait]
     /// impl Page for ListItemsResult {
     ///     type Item = String;
     ///     type IntoIter = <Vec<String> as IntoIterator>::IntoIter;
@@ -437,8 +421,7 @@ where
     /// struct ListItemsResult {
     ///     items: Vec<String>,
     /// }
-    /// #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-    /// #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    /// #[async_trait::async_trait]
     /// impl Page for ListItemsResult {
     ///     type Item = String;
     ///     type IntoIter = <Vec<String> as IntoIterator>::IntoIter;
@@ -465,7 +448,7 @@ where
     /// }, None);
     /// ```
     pub fn new<
-        F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + ConditionalSend + 'static,
+        F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send + 'static,
     >(
         make_request: F,
         options: Option<PagerOptions<'static>>,
@@ -537,7 +520,7 @@ where
 
 impl<P> Stream for ItemIterator<P>
 where
-    P: Page + ConditionalSend,
+    P: Page + Send,
 {
     type Item = crate::Result<P::Item>;
 
@@ -586,7 +569,7 @@ where
 
 impl<P> fmt::Debug for ItemIterator<P>
 where
-    P: Page + ConditionalSend,
+    P: Page + Send,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ItemIterator")
@@ -598,7 +581,7 @@ where
 
 impl<P> FusedStream for ItemIterator<P>
 where
-    P: Page + ConditionalSend,
+    P: Page + Send,
 {
     fn is_terminated(&self) -> bool {
         self.iter.is_terminated()
@@ -639,7 +622,7 @@ where
 #[pin_project(project = PageIteratorProjection, project_replace = PageIteratorProjectionOwned)]
 pub struct PageIterator<P>
 where
-    P: ConditionalSend,
+    P: Send,
 {
     #[pin]
     make_request: PagerFn<P>,
@@ -650,7 +633,7 @@ where
 
 impl<P> PageIterator<P>
 where
-    P: ConditionalSend,
+    P: Send,
 {
     /// Creates a [`PageIterator`] from a callback that will be called repeatedly to request each page.
     ///
@@ -742,7 +725,7 @@ where
     /// }, None);
     /// ```
     pub fn new<
-        F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + ConditionalSend + 'static,
+        F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send + 'static,
     >(
         make_request: F,
         options: Option<PagerOptions<'static>>,
@@ -798,7 +781,7 @@ where
 
 impl<P> Stream for PageIterator<P>
 where
-    P: ConditionalSend,
+    P: Send,
 {
     type Item = crate::Result<P>;
 
@@ -912,7 +895,7 @@ where
 
 impl<P> fmt::Debug for PageIterator<P>
 where
-    P: ConditionalSend,
+    P: Send,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PageIterator")
@@ -926,7 +909,7 @@ where
 
 impl<P> FusedStream for PageIterator<P>
 where
-    P: ConditionalSend,
+    P: Send,
 {
     fn is_terminated(&self) -> bool {
         self.state == State::Done
@@ -982,8 +965,7 @@ mod tests {
         pub page: Option<i32>,
     }
 
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+    #[async_trait]
     impl super::Page for Page {
         type Item = i32;
         type IntoIter = <Vec<i32> as IntoIterator>::IntoIter;

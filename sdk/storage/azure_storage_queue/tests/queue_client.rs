@@ -1,16 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, Response};
+mod common;
+
 use azure_core::Result;
-use azure_core_test::{recorded, Recording, TestContext};
+use azure_core_test::{recorded, Recording, TestContext, TestMode};
 use azure_storage_queue::{
     models::{
-        QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
-        QueueClientUpdateOptions, QueueMessage,
+        AccessPolicy, QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
+        QueueClientUpdateMessageOptions, QueueMessage, SignedIdentifier, SignedIdentifiers,
     },
     QueueClient, QueueClientOptions,
 };
+use common::{assert_successful_response, get_queue_name, recorded_test_setup};
 
 use std::collections::HashMap;
 
@@ -18,7 +20,7 @@ use std::collections::HashMap;
 #[recorded::test]
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-create-queue").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
 
     let response = queue_client.create(None).await?;
     let test_result = async {
@@ -39,7 +41,7 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_send_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-send-message").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
     let queue_message = QueueMessage {
         message_text: Some("send_message".to_string()),
@@ -71,7 +73,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-delete-queue").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
 
     queue_client.create(None).await?;
 
@@ -89,7 +91,7 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_queue_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-queue-exists").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     let test_result = async {
@@ -117,7 +119,7 @@ async fn test_queue_exists(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-queue-metadata").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     let test_result = async {
@@ -125,7 +127,7 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 
         let response = queue_client
             .set_metadata(
-                HashMap::from([
+                &HashMap::from([
                     ("key1".to_string(), "value1".to_string()),
                     ("key2".to_string(), "value2".to_string()),
                 ]),
@@ -150,7 +152,7 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_clear_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-clear-messages").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -174,7 +176,7 @@ async fn test_clear_messages(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_delete_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-delete-message").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -197,8 +199,8 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 
         let delete_response = queue_client
             .delete_message(
-                &send_message.message_id.unwrap(),
-                &send_message.pop_receipt.unwrap(),
+                &send_message.message_id.clone().unwrap(),
+                &send_message.pop_receipt.clone().unwrap(),
                 None,
             )
             .await?;
@@ -218,7 +220,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_update_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-update-message").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -239,7 +241,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         let sent_message = send_message_response.into_model()?;
 
         // Update the message in the queue
-        let option = Some(QueueClientUpdateOptions {
+        let option = Some(QueueClientUpdateMessageOptions {
             queue_message: Some(
                 QueueMessage {
                     message_text: Some("Updated message text from Rust".to_string()),
@@ -252,8 +254,8 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         // Update the message in the queue
         let update_response = queue_client
             .update_message(
-                &sent_message.message_id.unwrap(),
-                &sent_message.pop_receipt.unwrap(),
+                &sent_message.message_id.clone().unwrap(),
+                &sent_message.pop_receipt.clone().unwrap(),
                 10,
                 option,
             )
@@ -279,7 +281,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-peek-messages-empty").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -308,7 +310,7 @@ async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_peek_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-peek-messages").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
@@ -353,7 +355,7 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-receive-messages-empty").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     queue_client.create(None).await?;
 
     // Run the test logic and ensure cleanup always happens
@@ -382,7 +384,7 @@ async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-receive-messages").await?;
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
@@ -424,41 +426,88 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     test_result
 }
 
+/// Sets an access policy on a queue and then gets it to verify.
+#[recorded::test]
+async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Verify the queue starts with no access policy.
+        let response = queue_client.get_access_policy(None).await?;
+        assert_successful_response(&response);
+
+        let acl = response.into_model()?;
+        assert!(
+            acl.items.is_none(),
+            "Expected no signed identifiers, got {:?}",
+            acl.items
+        );
+
+        let policy = SignedIdentifiers {
+            items: Some(vec![SignedIdentifier {
+                id: Some("policy1".to_string()),
+                access_policy: Some(AccessPolicy {
+                    permission: Some("raup".to_string()),
+                    ..Default::default()
+                }),
+            }]),
+        };
+
+        let set_response = queue_client
+            .set_access_policy(policy.try_into()?, None)
+            .await?;
+
+        assert_successful_response(&set_response);
+
+        // Sleep in live mode to allow access policies to take effect.
+        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        }
+
+        let get_response = queue_client.get_access_policy(None).await?;
+        assert_successful_response(&get_response);
+
+        let acl = get_response.into_model()?;
+        let items = acl.items.expect("Expected signed identifiers");
+        assert_eq!(items.len(), 1, "Expected exactly one signed identifier");
+        assert_eq!(items[0].id.as_deref(), Some("policy1"));
+        let ap = items[0]
+            .access_policy
+            .as_ref()
+            .expect("Expected access policy");
+        assert_eq!(ap.permission.as_deref(), Some("raup"));
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+
+    Ok(())
+}
+
 /// Returns an instance of a QueueClient.
 ///
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
 pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<QueueClient> {
-    let (options, endpoint) = recorded_test_setup(recording);
+    let (options, endpoint, _) = recorded_test_setup(recording);
     let queue_client_options = QueueClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
-    let queue_client = QueueClient::new(
+
+    QueueClient::new(
         &endpoint,
         queue_name,
-        recording.credential(),
+        Some(recording.credential()),
         Option::Some(queue_client_options),
-    )?;
-
-    Ok(queue_client)
-}
-
-/// Takes in a Recording instance and returns an instrumented options bag and endpoint.
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
-    let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
-    let endpoint = format!(
-        "https://{}.queue.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
-
-    (client_options, endpoint)
+    )
 }
 
 /// Helper function to set up a test queue with messages
@@ -476,15 +525,6 @@ async fn setup_test_queue_with_messages(
             .await?;
     }
     Ok(())
-}
-
-/// Helper function to verify a successful response
-fn assert_successful_response<T, F>(response: &Response<T, F>) {
-    assert!(
-        response.status().is_success(),
-        "Expected successful status code, got {}",
-        response.status()
-    );
 }
 
 /// Helper function to verify message contents

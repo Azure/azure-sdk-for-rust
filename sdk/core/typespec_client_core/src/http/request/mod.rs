@@ -5,7 +5,6 @@
 
 pub mod options;
 
-#[cfg(not(target_arch = "wasm32"))]
 use crate::stream::{BytesStream, SeekableStream};
 #[cfg(feature = "json")]
 use crate::{http::JsonFormat, json::to_json};
@@ -33,11 +32,6 @@ pub enum Body {
     Bytes(crate::Bytes),
 
     /// A streaming body.
-    ///
-    /// This is not currently supported on WASM targets.
-    // We cannot currently implement `Body::SeekableStream` for WASM
-    // because `reqwest::Body::wrap_stream()` is not implemented for WASM.
-    #[cfg(not(target_arch = "wasm32"))]
     SeekableStream(Box<dyn SeekableStream>),
 }
 
@@ -46,7 +40,6 @@ impl Body {
     pub fn len(&self) -> usize {
         match self {
             Body::Bytes(bytes) => bytes.len(),
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(stream) => stream.len(),
         }
     }
@@ -62,7 +55,6 @@ impl Body {
     pub async fn reset(&mut self) -> crate::Result<()> {
         match self {
             Body::Bytes(_) => Ok(()),
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(stream) => stream.reset().await,
         }
     }
@@ -71,7 +63,6 @@ impl Body {
     pub fn take(&mut self) -> Body {
         match self {
             Body::Bytes(_) => std::mem::replace(self, Body::Bytes(Bytes::new())),
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(_) => std::mem::replace(
                 self,
                 Body::SeekableStream(Box::new(BytesStream::new_empty())),
@@ -97,9 +88,7 @@ impl fmt::Debug for Body {
             #[cfg(not(test))]
             Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { .. }"),
             Self::Bytes(_) => f.write_str("Bytes {}"),
-            #[cfg(not(target_arch = "wasm32"))]
             Self::SeekableStream(v) if !v.is_empty() => f.write_str("SeekableStream { .. }"),
-            #[cfg(not(target_arch = "wasm32"))]
             Self::SeekableStream(_) => f.write_str("SeekableStream {}"),
         }
     }
@@ -118,13 +107,11 @@ impl From<&Body> for Bytes {
     fn from(value: &Body) -> Self {
         match value {
             Body::Bytes(bytes) => bytes.clone(),
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(_) => unimplemented!(),
         }
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl From<Box<dyn SeekableStream>> for Body {
     fn from(seekable_stream: Box<dyn SeekableStream>) -> Self {
         Self::SeekableStream(seekable_stream)
@@ -134,7 +121,6 @@ impl From<Box<dyn SeekableStream>> for Body {
 #[cfg(test)]
 impl PartialEq for Body {
     fn eq(&self, other: &Self) -> bool {
-        #[cfg_attr(target_arch = "wasm32", allow(irrefutable_let_patterns))]
         if let Self::Bytes(this) = self {
             if let Self::Bytes(other) = other {
                 return this.eq(other);
@@ -733,14 +719,12 @@ mod tests {
 
         match body.take() {
             Body::Bytes(b) => assert_eq!(bytes, b.as_ref()),
-            #[cfg(not(target_arch = "wasm32"))]
             _ => panic!("expected Bytes"),
         };
 
         assert!(body.is_empty());
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     #[tokio::test]
     async fn body_take_stream() {
         use futures::TryStreamExt;

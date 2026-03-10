@@ -11,6 +11,7 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::{
+    http::StatusCode,
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
@@ -20,7 +21,10 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult},
+    models::{
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
+        EncryptionAlgorithmType,
+    },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
@@ -30,6 +34,61 @@ use futures::{AsyncRead, AsyncReadExt};
 pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
 pub const GB: usize = MB * 1024;
+
+/// Returns a valid customer-provided key tuple used by blob encryption tests.
+pub fn get_cpk() -> (EncryptionAlgorithmType, String, String) {
+    (
+        EncryptionAlgorithmType::Aes256,
+        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=".to_string(),
+        "Yw3NKWbEM2aRElRIu7JbT/QSpJxzLbLIq8G4WBvXEN0=".to_string(),
+    )
+}
+
+/// Returns a second valid customer-provided key tuple for mismatch testing.
+pub fn get_cpk_2() -> (EncryptionAlgorithmType, String, String) {
+    (
+        EncryptionAlgorithmType::Aes256,
+        "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=".to_string(),
+        "riFsLvUkejeCwTXvonmj5M3GEJQnD10r5YxiBLemEsk=".to_string(),
+    )
+}
+
+/// Returns the encryption scope name provisioned in test-resources.bicep.
+pub fn get_valid_encryption_scope() -> String {
+    "testscope".to_string()
+}
+
+/// Returns an encryption scope name that should not exist in test accounts.
+pub fn get_invalid_encryption_scope() -> String {
+    "invalid-encryption-scope-for-tests".to_string()
+}
+
+/// Returns a base64-encoded value that is valid but intentionally not the SHA-256 hash of
+/// any test key.
+///
+/// Used to verify that the service rejects mismatched key hashes.
+pub fn invalid_key_sha256() -> String {
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".to_string()
+}
+
+/// Returns a [`BlockLookupList`] that stages the given block ID from the latest block list.
+///
+/// Used by block blob tests to finalize a staged block into a committed blob.
+pub fn block_lookup(block_id: Vec<u8>) -> BlockLookupList {
+    BlockLookupList {
+        committed: Some(Vec::new()),
+        latest: Some(vec![block_id]),
+        uncommitted: Some(Vec::new()),
+    }
+}
+
+/// Asserts the error status for invalid encryption configuration requests.
+pub fn assert_bad_request_or_conflict(status: Option<StatusCode>) {
+    assert!(matches!(
+        status,
+        Some(StatusCode::BadRequest | StatusCode::Conflict)
+    ));
+}
 
 /// Specifies which storage account to use for testing.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -254,7 +313,6 @@ impl BodyTestExt for Body {
     async fn collect_bytes(&mut self) -> azure_core::Result<Bytes> {
         match self {
             Body::Bytes(bytes) => Ok(bytes.clone()),
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(seekable_stream) => {
                 seekable_stream.reset().await?;
                 let mut bytes = BytesMut::with_capacity(seekable_stream.len());
@@ -346,8 +404,7 @@ impl TestPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Policy for TestPolicy {
     async fn send(
         &self,

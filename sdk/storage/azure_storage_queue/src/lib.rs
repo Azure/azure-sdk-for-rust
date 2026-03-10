@@ -6,14 +6,14 @@
 #[allow(unused_imports)]
 mod generated;
 
+mod logging;
+
 /// Data models and types used by the Azure Storage Queue service.
 ///
 /// This module contains all the request and response models, enums, and other data types
 /// used when interacting with Azure Storage Queues, including queue messages, metadata,
 /// and service properties.
-pub mod models {
-    pub use crate::generated::models::*;
-}
+pub mod models;
 
 /// Client implementations for interacting with Azure Storage Queue service.
 ///
