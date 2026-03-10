@@ -141,7 +141,10 @@ impl Policy for RequestInstrumentationPolicy {
         // Propagate the headers for distributed tracing into the request.
         span.propagate_headers(request);
 
-        let result = next[0].send(ctx, request, &next[1..]).await;
+        // Now add the span to the context, this will prevent downstream policies (such as bearer token authentication) from creating a new span.
+        let ctx = ctx.clone().with_value(span.clone());
+
+        let result = next[0].send(&ctx, request, &next[1..]).await;
 
         if span.is_recording() {
             if let Some(err) = result.as_ref().err() {
@@ -191,7 +194,10 @@ pub(crate) mod tests {
         },
     };
     use futures::future::BoxFuture;
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    };
 
     async fn run_instrumentation_test<C>(
         test_namespace: Option<&'static str>,
@@ -221,6 +227,46 @@ pub(crate) mod tests {
         mock_tracer_provider
     }
 
+    /// Runs an instrumentation test with a custom policy in the pipeline. The custom policy is run *after* the
+    /// request instrumentation policy in the pipeline, which allows us to verify that the span is properly set
+    /// in the context for downstream policies.
+    async fn run_instrumentation_test_with_policy<C>(
+        test_namespace: Option<&'static str>,
+        crate_name: Option<&'static str>,
+        version: Option<&'static str>,
+        pre_policy: Arc<dyn Policy>,
+        post_policy: Arc<dyn Policy>,
+        request: &mut Request,
+        callback: C,
+    ) -> Arc<MockTracingProvider>
+    where
+        C: FnMut(&Request) -> BoxFuture<'_, Result<AsyncRawResponse>> + Send + Sync + 'static,
+    {
+        let mock_tracer_provider = Arc::new(MockTracingProvider::new());
+        let tracer = mock_tracer_provider.get_tracer(
+            test_namespace,
+            crate_name.unwrap_or("unknown"),
+            version,
+        );
+        let instrumentation_policy =
+            Arc::new(RequestInstrumentationPolicy::new(Some(tracer.clone()))) as Arc<dyn Policy>;
+
+        let transport =
+            TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
+
+        let pipeline = [
+            pre_policy,
+            instrumentation_policy,
+            post_policy,
+            Arc::new(transport),
+        ];
+
+        let ctx = Context::default();
+        let _result = pipeline[0].send(&ctx, request, &pipeline[1..]).await;
+
+        mock_tracer_provider
+    }
+
     #[tokio::test]
     async fn simple_instrumentation_policy() {
         let url = "http://example.com/path?query=value&api-version=2024-01-01";
@@ -244,6 +290,103 @@ pub(crate) mod tests {
             },
         )
         .await;
+
+        check_instrumentation_result(
+            mock_tracer,
+            vec![ExpectedTracerInformation {
+                namespace: Some("test namespace"),
+                name: "test_crate",
+                version: Some("1.0.0"),
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "GET",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Client,
+                    span_id: Uuid::new_v4(),
+                    parent_id: None,
+                    attributes: vec![
+                        (
+                            AZ_NAMESPACE_ATTRIBUTE,
+                            AttributeValue::from("test namespace"),
+                        ),
+                        (
+                            HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                            AttributeValue::from(200),
+                        ),
+                        (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
+                        (
+                            SERVER_ADDRESS_ATTRIBUTE,
+                            AttributeValue::from("example.com"),
+                        ),
+                        (SERVER_PORT_ATTRIBUTE, AttributeValue::from(80)),
+                        (
+                            URL_FULL_ATTRIBUTE,
+                            AttributeValue::from(
+                                "http://example.com/path?query=value&api-version=2024-01-01",
+                            ),
+                        ),
+                    ],
+                    ..Default::default()
+                }],
+            }],
+        );
+    }
+
+    #[derive(Debug)]
+    struct CustomPolicy {
+        has_span: AtomicBool,
+    }
+
+    #[async_trait::async_trait]
+    impl Policy for CustomPolicy {
+        async fn send(
+            &self,
+            ctx: &Context,
+            request: &mut Request,
+            next: &[Arc<dyn Policy>],
+        ) -> PolicyResult {
+            // Remember the state of the span in the context for verification later.
+            self.has_span
+                .store(ctx.value::<Arc<dyn Span>>().is_some(), Ordering::SeqCst);
+
+            next[0].send(ctx, request, &next[1..]).await
+        }
+    }
+
+    #[tokio::test]
+    async fn instrumentation_policy_sets_span() {
+        let url = "http://example.com/path?query=value&api-version=2024-01-01";
+        let mut request = Request::new(url.parse().unwrap(), Method::Get);
+
+        let pre_policy = Arc::new(CustomPolicy {
+            has_span: AtomicBool::new(false),
+        });
+        let post_policy = Arc::new(CustomPolicy {
+            has_span: AtomicBool::new(false),
+        });
+
+        let mock_tracer = run_instrumentation_test_with_policy(
+            Some("test namespace"),
+            Some("test_crate"),
+            Some("1.0.0"),
+            pre_policy.clone(),
+            post_policy.clone(),
+            &mut request,
+            |req| {
+                Box::pin(async move {
+                    assert_eq!(req.url().host_str(), Some("example.com"));
+                    assert_eq!(req.method(), Method::Get);
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        vec![],
+                    ))
+                })
+            },
+        )
+        .await;
+
+        assert!(!pre_policy.has_span.load(Ordering::SeqCst));
+        assert!(post_policy.has_span.load(Ordering::SeqCst));
 
         check_instrumentation_result(
             mock_tracer,
