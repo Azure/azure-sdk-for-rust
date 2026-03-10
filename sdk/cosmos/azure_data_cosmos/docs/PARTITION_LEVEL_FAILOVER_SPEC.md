@@ -423,7 +423,7 @@ before_send_request(request)
           │       └─ if entry found BUT threshold NOT exceeded:
           │           └─ no override (continue to original endpoint)
           │
-          └─ elif eligible for PPAF:
+          └─ else if eligible for PPAF:
               └─ lookup in partition_key_range_to_location_for_write
                   └─ if entry found:
                       └─ override request endpoint → entry.current
@@ -457,7 +457,7 @@ try_mark_endpoint_unavailable_for_partition_key_range(request)
   │         partition_key_range_to_location_for_read_and_write,
   │      )
   │
-  └─ elif eligible for PPAF:
+  └─ else if eligible for PPAF:
       │
       │  next_locations = global_endpoint_manager.account_read_endpoints()
       │  (account-level read regions — for single-master write failover)
@@ -568,12 +568,12 @@ the counter fresh.
               │   failure       └──────┬───────┘              │
               │                        │                       │
               ▼                        │                       │
-     ┌────────────────┐                │              ┌────────┴────────┐
-     │  COUNTING       │                │              │   FAILBACK      │
-     │ (entry exists,  │                │              │ (background loop│
-     │  threshold NOT  │                │              │  removes entry  │
-     │  exceeded)      │                │              │  after cooldown)│
-     │                 │    consecutive  │              └─────────────────┘
+     ┌────────────────┐                │               ┌────────┴─────────┐
+     │  COUNTING       │                │              │   FAILBACK       │
+     │ (entry exists,  │                │              │ (background loop │
+     │  threshold NOT  │                │              │  removes entry   │
+     │  exceeded)      │                │              │ after cool-down) │
+     │                 │    consecutive  │             └──────────────────┘
      │  counter++      │    failures    │                       ▲
      │                 │    > threshold  │                       │
      └────────┬───────┘                │                       │
