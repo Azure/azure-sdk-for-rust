@@ -315,8 +315,7 @@ async fn execute_http_attempt(
             Either::Left((attempt_result, _)) => {
                 finalize_http_attempt(attempt_result, request_handle, diagnostics)
             }
-            Either::Right((_, remaining_transport_future)) => {
-                drop(remaining_transport_future);
+            Either::Right((_, _remaining_transport_future)) => {
                 diagnostics.add_event(
                     request_handle,
                     RequestEvent::new(RequestEventType::TransportFailed)
