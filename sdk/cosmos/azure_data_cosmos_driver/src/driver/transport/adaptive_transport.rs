@@ -13,7 +13,9 @@ use azure_core::http::{AsyncRawResponse, HttpClient, Request};
 use tracing::warn;
 use url::Url;
 
-use crate::{driver::cache::AccountProperties, options::Region};
+use crate::{
+    diagnostics::TransportKind, driver::cache::AccountProperties, options::Region,
+};
 
 use super::http_client_factory::HttpVersionPolicy;
 
@@ -50,6 +52,14 @@ impl AdaptiveTransport {
         match self {
             Self::Gateway(_) => "Gateway",
             Self::Gateway20(_) => "Gateway20",
+        }
+    }
+
+    /// Returns the [`TransportKind`] for diagnostics reporting.
+    pub(crate) fn diagnostics_kind(&self) -> TransportKind {
+        match self {
+            Self::Gateway(_) => TransportKind::Gateway,
+            Self::Gateway20(_) => TransportKind::Gateway20,
         }
     }
 
